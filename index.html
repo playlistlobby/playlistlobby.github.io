@@ -72,7 +72,7 @@ input{font:inherit;color:var(--ink);border:0;background:none;outline:none;min-wi
 .field.glass::before, .bar > .circle.glass::before{opacity:.5}
 /* focused: a soft white glow that fades out, no hard ring */
 .field.glass:focus-within{box-shadow:inset 0 1px 0 #fff,inset 0 -1px 1.5px rgba(0,0,0,.04),0 0 0 .75px rgba(0,0,0,.22),0 1px 2px rgba(0,0,0,.05),
-  0 0 14px 2px rgba(255,255,255,.75),0 0 34px 8px rgba(255,255,255,.4)}
+  0 0 10px 1px rgba(255,255,255,.4),0 0 24px 4px rgba(255,255,255,.16)}
 input,textarea{caret-color:#0A84FF}
 .glass.live:hover::after,.glass.live.pressed::after{opacity:1}
 .glass > *{position:relative;z-index:2}
@@ -116,7 +116,7 @@ input,textarea{caret-color:#0A84FF}
 .live:hover{transform:scale(1.05)}
 .live.pressed{transform:scale(1.07,.9);transition:transform .14s ease-out}
 .circle{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none}
-.circle:focus-visible{outline:none;filter:drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 16px rgba(255,255,255,.5))}
+.circle:focus-visible{outline:none;filter:drop-shadow(0 0 6px rgba(255,255,255,.6)) drop-shadow(0 0 14px rgba(255,255,255,.22))}
 .field:focus-within{outline:none}
 .circle svg{width:22px;height:22px}
 
@@ -204,6 +204,7 @@ input,textarea{caret-color:#0A84FF}
 .logout{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--muted);opacity:.7;transition:opacity .2s,background .2s}
 .logout:hover,.logout:focus-visible{opacity:1;background:rgba(255,255,255,.45)}
 .logout svg{width:12px;height:12px}
+.back-x{margin-top:16px}
 /* admin shortcut, only on browsers that have opened the admin panel */
 
 #chat .bar{position:absolute;bottom:calc(max(28px,env(safe-area-inset-bottom)) + var(--kb,0px));left:50%;transform:translateX(-50%);z-index:3;width:min(402px,calc(100% - 32px))}
@@ -541,6 +542,9 @@ body[data-screen=s-admin] .overlay{opacity:0}
     <input class="shade-range" id="shade-user" type="range" min="0" max="100" value="80" aria-label="Profile color, from greenish white to vibrant green">
     <span class="shade-dot" aria-hidden="true"></span>
   </div>
+  <button class="logout back-x stagger" style="--i:3" type="button" id="user-back" aria-label="Back to the code screen" title="Back">
+    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+  </button>
 </section>
 
 <!-- 3. CHAT -->
@@ -1323,12 +1327,17 @@ function openChat(){
   setTimeout(()=>$('msg').focus(),360);
 }
 // log out: forget the code on this browser. Logging back in with the same code keeps the username.
-$('logout').addEventListener('click',()=>{
-  if(me.kind==='admin') return adminLogout(); // × while chatting as admin ends the admin session
+function backToCode(){
   logOutUser();
   $('code').value=''; $('n-code').textContent='';
   go('s-code'); setTimeout(()=>$('code').focus(),360);
+}
+$('logout').addEventListener('click',()=>{
+  if(me.kind==='admin') return adminLogout(); // × while chatting as admin ends the admin session
+  backToCode();
 });
+// × on the username screen: back to the code screen (a chosen username is kept; the code logs straight in next time)
+$('user-back').addEventListener('click',backToCode);
 // the admin can rename, reset or delete this browser's account while it is open
 function onMyCode(name){
   if(!me.code) return;
