@@ -70,7 +70,9 @@ input{font:inherit;color:var(--ink);border:0;background:none;outline:none;min-wi
   color:var(--ink);
 }
 .field.glass::before, .bar > .circle.glass::before{opacity:.5}
-.field.glass:focus-within{box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1.5px rgba(0,0,0,.05),0 0 0 .75px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.06),0 8px 16px -8px rgba(0,0,0,.14),0 0 0 4px rgba(10,132,255,.12)}
+/* focused: a soft white glow that fades out, no hard ring */
+.field.glass:focus-within{box-shadow:inset 0 1px 0 #fff,inset 0 -1px 1.5px rgba(0,0,0,.04),0 0 0 .75px rgba(0,0,0,.22),0 1px 2px rgba(0,0,0,.05),
+  0 0 14px 2px rgba(255,255,255,.75),0 0 34px 8px rgba(255,255,255,.4)}
 input,textarea{caret-color:#0A84FF}
 .glass.live:hover::after,.glass.live.pressed::after{opacity:1}
 .glass > *{position:relative;z-index:2}
@@ -114,7 +116,7 @@ input,textarea{caret-color:#0A84FF}
 .live:hover{transform:scale(1.05)}
 .live.pressed{transform:scale(1.07,.9);transition:transform .14s ease-out}
 .circle{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none}
-.circle:focus-visible{outline:2px solid rgba(10,132,255,.6);outline-offset:2px}
+.circle:focus-visible{outline:none;filter:drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 16px rgba(255,255,255,.5))}
 .field:focus-within{outline:none}
 .circle svg{width:22px;height:22px}
 
