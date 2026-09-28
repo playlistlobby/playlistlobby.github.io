@@ -314,7 +314,13 @@ service cloud.firestore {
           || (request.resource.data.keys().hasOnly(['code','name','item','price','ref','status','ts','currency'])
             && request.resource.data.currency == 'likes' && request.resource.data.status == 'paid'
             && okLikePrice(request.resource.data)
-            && getAfter(walletPath(myCode())).data.get('last', null) == id));
+            && getAfter(walletPath(myCode())).data.get('last', null) == id)
+          || (request.resource.data.keys().hasOnly(['code','name','item','price','ref','status','ts','currency','size','msg','token'])
+            && request.resource.data.currency == 'credit' && request.resource.data.status == 'paid'
+            && okPrice(request.resource.data)
+            && getAfter(walletPath(myCode())).data.get('last', null) == id
+            && (request.resource.data.item != 'tshirt' || (request.resource.data.get('size', '') in ['XS', 'S', 'M', 'L', 'XL', 'XXL'] && isToken(request.resource.data.get('token', null))))
+            && (request.resource.data.item != 'screen' || okMsg(request.resource.data.get('msg', {})))));
       allow update: if isAdmin()
         || (isMember() && resource.data.code == myCode()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
@@ -325,20 +331,31 @@ service cloud.firestore {
     }
 
     // likes to spend = likes received + bonus (the admin gives or takes) - spent (the store)
+    // store credit (kr) = credit (the admin gives) - creditSpent (the store)
     match /wallets/{code} {
+      function was(k) { return resource == null ? 0 : resource.data.get(k, 0); }
+      function now(k) { return request.resource.data.get(k, 0); }
+      function same(k) { return request.resource.data.get(k, null) == (resource == null ? null : resource.data.get(k, null)); }
+      function lastOrder() { return getAfter(orderPath(request.resource.data.last)).data; }
+      function okKeys() { return request.resource.data.keys().hasOnly(['bonus','spent','last','credit','creditSpent','dailyAt']); }
       allow read: if isAdmin() || (isMember() && myCode() == code);
-      allow create, update: if isAdmin()
-        && request.resource.data.keys().hasOnly(['bonus','spent','last'])
-        && request.resource.data.get('bonus', 0) is int && request.resource.data.get('spent', 0) is int;
-      // a member only ever adds the price of the order they create in the same write
-      allow create, update: if isMember() && myCode() == code
-        && request.resource.data.keys().hasOnly(['bonus','spent','last'])
-        && request.resource.data.get('bonus', 0) == (resource == null ? 0 : resource.data.get('bonus', 0))
-        && request.resource.data.last is string
-        && !exists(orderPath(request.resource.data.last))
-        && getAfter(orderPath(request.resource.data.last)).data.code == code
-        && getAfter(orderPath(request.resource.data.last)).data.currency == 'likes'
-        && request.resource.data.spent == (resource == null ? 0 : resource.data.get('spent', 0)) + getAfter(orderPath(request.resource.data.last)).data.price;
+      allow create, update: if isAdmin() && okKeys()
+        && now('bonus') is int && now('spent') is int && now('credit') is int && now('creditSpent') is int;
+      // a member pays for the order they create in the same write: with likes, or with store credit (never more credit than they have)
+      allow create, update: if isMember() && myCode() == code && okKeys()
+        && request.resource.data.last is string && !exists(orderPath(request.resource.data.last))
+        && lastOrder().code == code
+        && now('bonus') == was('bonus') && now('credit') == was('credit') && same('dailyAt')
+        && ((lastOrder().currency == 'likes' && now('spent') == was('spent') + lastOrder().price && now('creditSpent') == was('creditSpent'))
+          || (lastOrder().currency == 'credit' && now('creditSpent') == was('creditSpent') + lastOrder().price
+            && now('spent') == was('spent') && now('creditSpent') <= now('credit')));
+      // number 1 on the Flappy Bird leaderboard: 10 likes, once a day
+      allow create, update: if isMember() && myCode() == code && okKeys()
+        && now('bonus') == was('bonus') + 10 && now('spent') == was('spent')
+        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last')
+        && request.resource.data.dailyAt == request.time
+        && (resource == null || resource.data.get('dailyAt', null) == null || resource.data.dailyAt < request.time - duration.value(20, 'h'))
+        && get(/databases/$(database)/documents/site/flappyTop).data.get('code', '') == code;
     }
     // profile pictures (everyone logged in sees them) and personal backgrounds (only the owner), bought with likes
     function boughtWith(code, item, d) {
@@ -367,7 +384,14 @@ service cloud.firestore {
     match /merch/{t} {
       allow get: if canDoor() || (isMember() && get(orderPath(resource.data.order)).data.code == myCode());
       allow list: if canDoor();
-      allow create: if isAdmin();
+      allow create: if isAdmin()
+        || (isMember() && request.resource.data.keys().hasOnly(['name','size','order','ts'])
+          && !exists(orderPath(request.resource.data.order))
+          && getAfter(orderPath(request.resource.data.order)).data.code == myCode()
+          && getAfter(orderPath(request.resource.data.order)).data.currency == 'credit'
+          && getAfter(orderPath(request.resource.data.order)).data.item == 'tshirt'
+          && getAfter(orderPath(request.resource.data.order)).data.token == t
+          && request.resource.data.ts == request.time);
       allow update: if canDoor() && !('usedAt' in resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedAt','by','who'])
         && request.resource.data.usedAt == request.time
@@ -379,6 +403,69 @@ service cloud.firestore {
     match /screenQueue/{id} {
       allow read: if true;
       allow write: if isAdmin();
+      allow create: if isMember() && !exists(orderPath(id))
+        && getAfter(orderPath(id)).data.code == myCode()
+        && getAfter(orderPath(id)).data.currency == 'credit' && getAfter(orderPath(id)).data.item == 'screen'
+        && request.resource.data.keys().hasOnly(['name','text','weight','tint','size','startAt','endAt','ts'])
+        && request.resource.data.startAt is timestamp && request.resource.data.startAt > request.time - duration.value(5, 'm')
+        && request.resource.data.endAt == request.resource.data.startAt + duration.value(6, 'h')
+        && request.resource.data.ts == request.time;
+    }
+
+    // apps the admin puts in the Store: his own pages (like ___), Song Wars and Flappy Bird. "gen" goes up whenever
+    // an app is turned off, so people download it again when it comes back.
+    function appOn(id) { return exists(/databases/$(database)/documents/apps/$(id)) && get(/databases/$(database)/documents/apps/$(id)).data.get('on', false) == true; }
+    match /apps/{id} {
+      allow read: if isMember() || isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['type','name','icon','on','gen','text','image','bg','fg','pickBy','order','ts'])
+        && request.resource.data.type in ['page', 'songwars', 'flappy']
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 24
+        && request.resource.data.on is bool && request.resource.data.gen is int
+        && (request.resource.data.get('icon', null) == null || (request.resource.data.icon is string && request.resource.data.icon.size() < 80000))
+        && (request.resource.data.get('image', null) == null || (request.resource.data.image is string && request.resource.data.image.size() < 400000))
+        && request.resource.data.get('text', '').size() <= 500 && request.resource.data.get('pickBy', '').size() <= 80;
+    }
+
+    // Song Wars: one song per person (the doc id is their code), 1 to 3 minutes, with a title and a cover.
+    // The song itself is stored in pieces (songChunks/<code>_<n>). Likes are a list of codes; the admin picks the winner.
+    match /songs/{code} {
+      allow read: if isMember() || isAdmin();
+      allow create: if isMember() && myCode() == code && appOn('songwars')
+        && request.resource.data.keys().hasOnly(['code','name','title','cover','dur','size','mime','chunks','likedBy','ts'])
+        && request.resource.data.code == code && request.resource.data.name == get(codePath(code)).data.username
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 40
+        && request.resource.data.cover is string && request.resource.data.cover.size() < 150000
+        && request.resource.data.dur is number && request.resource.data.dur >= 60 && request.resource.data.dur <= 180
+        && request.resource.data.chunks is int && request.resource.data.chunks > 0 && request.resource.data.chunks <= 12
+        && request.resource.data.likedBy == [] && request.resource.data.ts == request.time;
+      allow update: if (isMember()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
+          && request.resource.data.likedBy is list && request.resource.data.likedBy.size() <= 500
+          && request.resource.data.likedBy.toSet().difference(resource.data.likedBy.toSet()).hasOnly([myCode()])
+          && resource.data.likedBy.toSet().difference(request.resource.data.likedBy.toSet()).hasOnly([myCode()]))
+        || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['winner']) && request.resource.data.winner is bool);
+      allow delete: if isAdmin() || (isMember() && myCode() == code);
+    }
+    match /songChunks/{id} {
+      allow get: if isMember() || isAdmin();
+      allow create: if isMember() && request.resource.data.code == myCode()
+        && id.matches('^' + myCode() + '_[0-9]+$')
+        && request.resource.data.keys().hasOnly(['code','i','data'])
+        && request.resource.data.data is bytes && request.resource.data.data.size() <= 1000000;
+      allow delete: if isAdmin() || (isMember() && resource.data.code == myCode());
+    }
+
+    // Flappy Bird: each person's best score. The admin can take someone off the leaderboard.
+    match /flappy/{code} {
+      allow read: if isMember() || isAdmin();
+      allow create, update: if isMember() && myCode() == code && appOn('flappy')
+        && request.resource.data.keys().hasOnly(['name','best','ts'])
+        && request.resource.data.name == get(codePath(code)).data.username
+        && request.resource.data.best is int && request.resource.data.best >= 0 && request.resource.data.best <= 9999
+        && (resource == null || request.resource.data.best > resource.data.best)
+        && request.resource.data.ts == request.time;
+      allow delete: if isAdmin();
     }
 
     // chat between door staff and the admin
@@ -473,6 +560,13 @@ service cloud.firestore {
     function inRange(d, k, lo, hi) { return !(k in d) || (d[k] is number && d[k] >= lo && d[k] <= hi); }
     match /site/{doc} {
       allow read: if true;
+      // a new Flappy Bird record: only with the score saved on your own leaderboard entry, and only if it beats the record
+      allow write: if doc == 'flappyTop' && isMember()
+        && request.resource.data.keys().hasOnly(['code','name','best','ts'])
+        && request.resource.data.code == myCode()
+        && request.resource.data.best == getAfter(/databases/$(database)/documents/flappy/$(myCode())).data.best
+        && (resource == null || request.resource.data.best > resource.data.get('best', -1))
+        && request.resource.data.ts == request.time;
       allow write: if isAdmin() && request.resource.data.ts == request.time
         && ((doc == 'screen'
             && request.resource.data.keys().hasOnly(['items','ts'])
@@ -496,6 +590,8 @@ service cloud.firestore {
           || (doc == 'session'
             && request.resource.data.keys().hasOnly(['epoch','ts'])
             && request.resource.data.epoch == request.time)
+          || (doc == 'flappyTop'
+            && request.resource.data.keys().hasOnly(['code','name','best','ts']))
           || (doc == 'store'
             && request.resource.data.keys().hasOnly(['mobilepay','ts'])
             && request.resource.data.mobilepay is string && request.resource.data.mobilepay.size() <= 20));
