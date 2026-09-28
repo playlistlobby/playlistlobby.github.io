@@ -339,6 +339,9 @@ service cloud.firestore {
           || (doc == 'countdown'
             && request.resource.data.keys().hasOnly(['target','ts'])
             && request.resource.data.target is timestamp)
+          || (doc == 'features'
+            && request.resource.data.keys().hasOnly(['mystery','ts'])
+            && request.resource.data.get('mystery', false) is bool)
           || (doc == 'session'
             && request.resource.data.keys().hasOnly(['epoch','ts'])
             && request.resource.data.epoch == request.time)
