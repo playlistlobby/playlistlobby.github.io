@@ -73,7 +73,8 @@ service cloud.firestore {
     match /doorSessions/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
       allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['key','ts'])
+        && request.resource.data.keys().hasOnly(['key','ts','name'])
+        && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 20))
         && request.resource.data.ts == request.time
         && request.resource.data.key == get(/databases/$(database)/documents/config/door).data.key;
       allow delete: if signedIn() && request.auth.uid == uid;
@@ -187,6 +188,7 @@ service cloud.firestore {
           || (isAdmin() && request.resource.data.from == '_admin'))
         && request.resource.data.keys().hasOnly(['from','fromName','to','toName','text','ts'])
         && request.resource.data.from != request.resource.data.to
+        && !exists(/databases/$(database)/documents/blocks/$(request.resource.data.to + '_' + request.resource.data.from))
         && get(codePath(request.resource.data.from)).data.username == request.resource.data.fromName
         && exists(codePath(request.resource.data.to))
         && request.resource.data.toName is string
@@ -233,7 +235,8 @@ service cloud.firestore {
       allow get: if canDoor() || ownsTicket(t);
       allow list: if canDoor();
       allow create: if canDoor() && exists(ticketPath(t))
-        && request.resource.data.keys().hasOnly(['ts','by','name'])
+        && request.resource.data.keys().hasOnly(['ts','by','name','who'])
+        && (!('who' in request.resource.data) || (request.resource.data.who is string && request.resource.data.who.size() <= 20))
         && request.resource.data.ts == request.time
         && request.resource.data.by in ['door', 'admin']
         && request.resource.data.name == get(ticketPath(t)).data.name;
@@ -315,7 +318,7 @@ service cloud.firestore {
       allow list: if canDoor();
       allow create: if isAdmin();
       allow update: if canDoor() && !('usedAt' in resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedAt','by'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedAt','by','who'])
         && request.resource.data.usedAt == request.time
         && request.resource.data.by in ['door', 'admin'];
       allow delete: if isAdmin();
@@ -325,6 +328,69 @@ service cloud.firestore {
     match /screenQueue/{id} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // chat between door staff and the admin
+    match /doorChat/{id} {
+      allow read: if canDoor();
+      allow create: if canDoor()
+        && request.resource.data.keys().hasOnly(['name','text','role','ts'])
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
+        && request.resource.data.ts == request.time
+        && ((isAdmin() && request.resource.data.role == 'admin' && request.resource.data.name == 'Admin')
+          || (isDoor() && request.resource.data.role == 'door'
+            && request.resource.data.name == get(doorPath()).data.get('name', 'Door')));
+      allow delete: if isAdmin();
+    }
+
+    // Forum: posts (title, optional text and picture) that users see for 24 hours; likes are a list of codes on the post
+    function mutedPath(c) { return /databases/$(database)/documents/muted/$(c); }
+    function okPoster(d) {
+      return isMember() && d.code == myCode() && !exists(mutedPath(myCode()))
+        && d.name == get(codePath(myCode())).data.username
+        && okShade(d) && (!('kind' in d) || d.kind in ['blue', 'rare']);
+    }
+    match /posts/{id} {
+      allow read: if isMember() || isAdmin();
+      allow create: if okPoster(request.resource.data)
+        && request.resource.data.keys().hasOnly(['code','name','shade','kind','title','text','image','likedBy','ts'])
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 18
+        && (!('text' in request.resource.data) || (request.resource.data.text is string && request.resource.data.text.size() <= 128))
+        && (!('image' in request.resource.data) || (request.resource.data.image is string && request.resource.data.image.size() < 300000))
+        && request.resource.data.likedBy == []
+        && request.resource.data.ts == request.time;
+      // liking: you can only add or remove yourself
+      allow update: if isMember()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
+        && request.resource.data.likedBy is list && request.resource.data.likedBy.size() <= 500
+        && request.resource.data.likedBy.toSet().difference(resource.data.likedBy.toSet()).hasOnly([myCode()])
+        && resource.data.likedBy.toSet().difference(request.resource.data.likedBy.toSet()).hasOnly([myCode()]);
+      allow delete: if isAdmin() || (isMember() && resource.data.code == myCode());
+    }
+    match /comments/{id} {
+      allow read: if isMember() || isAdmin();
+      allow create: if okPoster(request.resource.data)
+        && request.resource.data.keys().hasOnly(['post','code','name','shade','kind','text','ts'])
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 200
+        && exists(/databases/$(database)/documents/posts/$(request.resource.data.post))
+        && request.resource.data.ts == request.time;
+      allow delete: if isAdmin() || (isMember() && resource.data.code == myCode());
+    }
+    // the admin can mute someone in the forum
+    match /muted/{code} {
+      allow read: if isMember() || isAdmin();
+      allow write: if isAdmin();
+    }
+    // blocking: "<from>_<to>"; only you see who you blocked
+    match /blocks/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.from == myCode());
+      allow create: if isMember() && request.resource.data.from == myCode()
+        && request.resource.data.keys().hasOnly(['from','to','toName','ts'])
+        && id == request.resource.data.from + '_' + request.resource.data.to
+        && request.resource.data.from != request.resource.data.to
+        && request.resource.data.toName is string && request.resource.data.toName.size() <= 20
+        && request.resource.data.ts == request.time;
+      allow delete: if isAdmin() || (isMember() && resource.data.from == myCode());
     }
 
     // public site settings: up to three texts on everyone's screen, the countdown target,
