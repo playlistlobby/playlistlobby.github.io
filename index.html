@@ -207,9 +207,9 @@ input,textarea{caret-color:#0A84FF}
 .back-x{margin-top:16px}
 /* admin shortcut, only on browsers that have opened the admin panel */
 
-#chat .bar{position:absolute;bottom:calc(max(28px,env(safe-area-inset-bottom)) + var(--kb,0px));left:50%;transform:translateX(-50%);z-index:3;width:min(402px,calc(100% - 32px))}
+#chat .bar{position:absolute;bottom:calc(max(28px,env(safe-area-inset-bottom)) + var(--kb,0px) + var(--homeglyph,0px));left:50%;transform:translateX(-50%);z-index:3;width:min(402px,calc(100% - 32px))}
 body.kb #chat .bar{bottom:calc(10px + var(--kb,0px))}
-.log{position:absolute;inset:0;margin:0 auto;width:min(410px,calc(100% - 24px));overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:150px 4px calc(100px + var(--kb,0px));scrollbar-width:none;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.log{position:absolute;inset:0;margin:0 auto;width:min(410px,calc(100% - 24px));overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:150px 4px calc(100px + var(--kb,0px) + var(--homeglyph,0px));scrollbar-width:none;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .log::-webkit-scrollbar{display:none}
 .log .spacer{margin-top:auto}
 .stamp{align-self:center;font-size:13px;color:var(--muted);margin:6px 0 2px}
@@ -374,6 +374,65 @@ body[data-screen=s-admin] .overlay{opacity:0}
 /* account search */
 .a-search{flex:none;height:42px;width:100%}
 .a-search input{font-size:16px}
+/* ===================== HOME SCREEN (iOS 6 SpringBoard) =====================
+   Everything that decides the look is here and in HOME_THEME (script settings), so the design can be swapped.
+   Measurements come from the Legacy iOS UI Kit frame (320×568): status bar 20, icons 57 on a 76 grid,
+   rows 88, labels 11px bold, page dots 90 from the bottom, dock shelf 45 high. --u scales them up on bigger phones. */
+.ios-home{padding:0;justify-content:flex-start;--w:min(100vw,400px);--u:calc(min(100vw,400px) / 320); /* one design pixel */
+  transform-origin:var(--ox,50%) var(--oy,40%);transition:opacity .38s ease,transform .45s cubic-bezier(.3,.8,.3,1)}
+.ios-home.out{transform:scale(1.7)}                         /* opening an app zooms into its icon; closing zooms back */
+body[data-screen=s-home]{background:var(--home-wall-color,#264a66) var(--home-wall) center/cover no-repeat}
+body[data-screen=s-home] .bg{opacity:0}
+.bg{transition:opacity .5s ease,transform 1.2s cubic-bezier(.2,.8,.2,1)}
+.sb-status{position:absolute;z-index:3;top:0;left:0;right:0;height:calc(20px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 6px 0;
+  display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.62),rgba(0,0,0,.46));
+  color:#fff;font:700 12px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 rgba(0,0,0,.6);user-select:none;-webkit-user-select:none}
+.sb-status > span{display:flex;align-items:center;gap:4px}
+.sb-time{position:absolute;left:50%;transform:translateX(-50%)}
+.sb-bars{display:flex;align-items:flex-end;gap:1px;height:9px}
+.sb-bars i{width:2.5px;background:#fff;border-radius:.5px;box-shadow:0 -1px 0 rgba(0,0,0,.35)}
+.sb-status svg{display:block;filter:drop-shadow(0 -1px 0 rgba(0,0,0,.45))}
+.sb-grid{position:absolute;z-index:2;left:50%;transform:translateX(-50%);top:calc(20px + env(safe-area-inset-top) + 11 * var(--u));
+  width:var(--w);display:grid;grid-template-columns:repeat(4,1fr);row-gap:calc(12 * var(--u));padding:0 calc(4 * var(--u))}
+.sb-app{display:flex;flex-direction:column;align-items:center;gap:calc(5 * var(--u));background:none;border:0;padding:0;cursor:pointer;color:#fff;-webkit-touch-callout:none}
+.sb-app:focus-visible{outline:none}
+.sb-app:focus-visible .sb-icon{box-shadow:0 0 0 2px rgba(255,255,255,.7),0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.5)}
+.sb-icon{position:relative;display:block;width:calc(57 * var(--u));height:calc(57 * var(--u));border-radius:calc(10 * var(--u));
+  background:#333 center/cover no-repeat;box-shadow:0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.5)}
+.sb-icon::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--home-gloss) center/100% 100% no-repeat;opacity:.6;mix-blend-mode:soft-light;pointer-events:none}
+.sb-icon::before{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(0,0,0,.45);opacity:0;transition:opacity .12s;z-index:1}
+.sb-app.pressed .sb-icon::before{opacity:1}                  /* iOS 6 darkens a tapped icon */
+.sb-label{font:700 11px/13px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 1px rgba(0,0,0,.6);white-space:nowrap}
+.sb-badge{position:absolute;z-index:2;top:calc(-7 * var(--u));right:calc(-9 * var(--u));min-width:calc(24 * var(--u));height:calc(24 * var(--u));
+  padding:0 calc(6 * var(--u));border-radius:999px;display:grid;place-items:center;font:700 calc(14 * var(--u))/1 "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;
+  background:radial-gradient(120% 90% at 50% 0%,#ff6b6b 0%,#e0141a 55%,#b3060a 100%);border:calc(2 * var(--u)) solid #fff;
+  box-shadow:0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.55),inset 0 calc(5 * var(--u)) calc(4 * var(--u)) rgba(255,255,255,.22)}
+.sb-badge.pop{animation:badgepop .45s var(--spring)}
+@keyframes badgepop{from{transform:scale(.3)}}
+.sb-dots{position:absolute;z-index:2;left:0;right:0;bottom:calc(88 * var(--u) + env(safe-area-inset-bottom));display:flex;justify-content:center;align-items:center;gap:calc(9 * var(--u))}
+.sb-dots i{width:calc(6 * var(--u));height:calc(6 * var(--u));border-radius:50%;background:#fff;box-shadow:0 1px 1px rgba(0,0,0,.25)}
+.sb-dots svg{width:calc(8 * var(--u));height:calc(8 * var(--u));opacity:.45;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.sb-dock{position:absolute;z-index:1;left:0;right:0;bottom:0;height:calc(45 * var(--u) + env(safe-area-inset-bottom));pointer-events:none}
+.sb-shelf{position:absolute;left:0;right:0;bottom:env(safe-area-inset-bottom);height:calc(45 * var(--u));
+  clip-path:polygon(calc(10 * var(--u)) 0,calc(100% - 10 * var(--u)) 0,100% 91%,100% 100%,0 100%,0 91%);
+  background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,.34) 50%,rgba(255,255,255,.12)),linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.04));
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.sb-shelf::before{content:"";position:absolute;inset:0;border-top:1px solid rgba(255,255,255,.35)}
+.sb-dock::after{content:"";position:absolute;left:0;right:0;bottom:0;height:env(safe-area-inset-bottom);background:rgba(255,255,255,.12)}
+.sb-shade{position:absolute;z-index:0;left:0;right:0;bottom:0;height:calc(220 * var(--u));pointer-events:none;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.35))}
+.ios-home.enter .sb-app{animation:appin .55s cubic-bezier(.2,.9,.25,1.1) both;animation-delay:calc(var(--i,0) * 45ms)}
+@keyframes appin{from{opacity:0;transform:scale(.6)}}
+/* the home button's symbol under the chat's message bar */
+.home-glyph{position:absolute;z-index:3;left:50%;transform:translateX(-50%);bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--kb,0px));
+  width:44px;height:30px;display:grid;place-items:center;border-radius:12px;transition:transform .45s var(--spring),opacity .2s}
+.home-glyph span{width:15px;height:15px;border:1.6px solid rgba(60,60,67,.55);border-radius:4.5px;
+  box-shadow:0 1px 0 rgba(255,255,255,.8),inset 0 1px 0 rgba(255,255,255,.6);transition:border-color .2s}
+.home-glyph:hover span{border-color:rgba(60,60,67,.8)}
+.home-glyph:hover{transform:translateX(-50%) scale(1.12)}
+.home-glyph:active{transform:translateX(-50%) scale(.9)}
+.home-glyph:focus-visible{outline:none}
+.home-glyph:focus-visible span{box-shadow:0 0 10px rgba(255,255,255,.8)}
+body.kb .home-glyph{opacity:0;pointer-events:none}
 /* admin history: private messages */
 .hist .bubble.pm{outline:1.5px dashed rgba(0,0,0,.28);outline-offset:2px}
 .hist .bubble.pm.sent{align-self:flex-end}
@@ -566,6 +625,28 @@ body[data-screen=s-admin] .overlay{opacity:0}
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
     </button>
   </form>
+  <button class="home-glyph" type="button" id="go-home" aria-label="Home screen" title="Home" hidden><span></span></button>
+</section>
+
+
+<!-- 5. HOME SCREEN (iOS 6 SpringBoard). Apps come from APPS in the script; the look from HOME_THEME + the CSS block -->
+<section class="screen out ios-home" id="s-home" aria-label="Home screen" hidden>
+  <div class="sb-status" aria-hidden="true">
+    <span><span class="sb-bars"><i style="height:3px"></i><i style="height:4.5px"></i><i style="height:6px"></i><i style="height:7.5px"></i><i style="height:9px"></i></span>
+      Playlist
+      <svg width="13" height="10" viewBox="0 0 13 10"><path d="M6.5 2.2c1.9 0 3.6.7 4.9 1.9l1-1C10.8 1.6 8.8.8 6.5.8S2.2 1.6.6 3.1l1 1C2.9 2.9 4.6 2.2 6.5 2.2zm0 2.6c1.2 0 2.2.4 3 1.2l1-1C9.4 4 8 3.4 6.5 3.4S3.6 4 2.5 5l1 1c.8-.8 1.8-1.2 3-1.2zm0 2.6c-.5 0-.9.2-1.2.5L6.5 9.2l1.2-1.3c-.3-.3-.7-.5-1.2-.5z" fill="#fff"/></svg></span>
+    <span class="sb-time" id="sb-time">9:41 AM</span>
+    <span>100% <svg width="23" height="11" viewBox="0 0 23 11"><rect x=".6" y=".6" width="19" height="9.8" rx="1.6" fill="none" stroke="#fff" stroke-width="1.2"/><rect x="2" y="2" width="16.2" height="7" rx=".6" fill="#fff"/><rect x="20.4" y="3.4" width="1.8" height="4.2" rx=".6" fill="#fff"/></svg></span>
+  </div>
+  <div class="sb-grid" id="sb-grid" role="list"></div>
+  <div class="sb-shade" aria-hidden="true"></div>
+  <div class="sb-dots" aria-hidden="true">
+    <svg viewBox="0 0 10 10"><circle cx="4" cy="4" r="3" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M6.2 6.2l3 3" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <i></i>
+  </div>
+  <div class="sb-dock" aria-hidden="true">
+    <div class="sb-shelf"></div>
+  </div>
 </section>
 
 <!-- 4. ADMIN (opened by typing the admin code) -->
@@ -574,6 +655,7 @@ body[data-screen=s-admin] .overlay{opacity:0}
     <header class="a-head stagger" style="--i:0">
       <h1>Admin</h1>
       <span class="a-muted" id="a-who"></span>
+      <button class="a-btn glass live" type="button" id="a-home" title="Home screen" hidden>Home</button>
       <button class="a-btn glass live" type="button" id="a-chat" title="Post in the chat as admin">Chat</button>
       <button class="a-btn glass live" type="button" id="a-exit">Log out</button>
     </header>
@@ -810,6 +892,15 @@ const FIREBASE_CONFIG = { // public web config for the "Playlist Lobby" Firebase
   appId: "1:98113831672:web:caae55b5c34ba63688310d"
 };
 const COUNTDOWN_TARGET = "2026-10-31T20:00:00+01:00"; // what the timer counts down to
+// Home screen: after logging in, people land on an iOS 6-style home screen with their apps.
+// false = the old behaviour (straight into the chat / admin panel). Nothing of the old look was removed.
+const USE_HOME_SCREEN = true;
+// The home screen's look (assets from the Figma "Legacy iOS UI Kit"). Swap these (and the CSS block) to restyle it.
+const HOME_THEME = {
+  wallpaper: "assets/ios6/wallpaper.jpg", wallpaperColor: "#264a66",
+  gloss: "assets/ios6/icon-gloss.png",
+  icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png" },
+};
 const LOCAL_CODES = ["1","2","3","4","5"]; // only used in offline demo mode (no Firebase)
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
 const ADMIN_CODE = "admin"; // demo mode only: the real admin password lives in the database (config/admin), not in this file                  // typing this in the code box logs in as admin (for this browser session only)
@@ -1277,12 +1368,12 @@ $('f-code').addEventListener('submit',async e=>{
     const r=await api.joinCode(code);
     if(!r.valid){
       // not a code: maybe it's the admin password (checked by the database, not by this page)
-      if(await api.adminLogin(code)){ $('code').value=''; note.textContent=''; return openAdmin(); }
+      if(await api.adminLogin(code)){ $('code').value=''; note.textContent=''; return openHome({admin:true}); }
       note.className='note err'; note.textContent="That code doesn't work."; shake($('f-code')); $('code').select(); return;
     }
     session.del('playlist-admin'); api.adminLogout(); // a code login ends any admin session
     setMe(code,r.username,r.shade,r.kind); store.set('playlist-code',code); note.textContent='';
-    if(r.username) openChat();
+    if(r.username) openHome();
     else { $('shade-user').value=me.shade; go('s-user'); setTimeout(()=>$('uname').focus(),360); }
   }catch(err){ console.error(err); note.className='note err'; note.textContent="Couldn't check the code. Try again."; }
 });
@@ -1306,7 +1397,7 @@ $('f-user').addEventListener('submit',async e=>{
   }catch(err){ console.error(err); note.className='note err'; note.textContent="Couldn't save your username. Try again."; }
   finally{ $('lock').disabled=false; }
 });
-$('next').addEventListener('click',()=>locked&&openChat());
+$('next').addEventListener('click',()=>locked&&openHome());
 function resetUserStep(){
   locked=false; $('uname').value=''; $('uname').readOnly=false;
   $('ic-open').hidden=false; $('ic-closed').hidden=true; $('lock').setAttribute('aria-label','Lock username'); $('lock').classList.remove('locked');
@@ -1314,16 +1405,83 @@ function resetUserStep(){
   const n=$('n-user'); n.className='note'; prepUserScreen();
 }
 
+/* ---------- home screen (iOS 6) ---------- */
+// Apps on the home screen: one entry per app. "for" decides who sees it (a code account, or the admin).
+const APPS = [
+  { id:'chat',  name:'Chat',  for:'user',  open:()=>openChat() },
+  { id:'admin', name:'Admin', for:'admin', open:()=>openAdmin() },
+];
+(()=>{ const r=document.documentElement.style;
+  r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
+  r.setProperty('--home-gloss',`url("${HOME_THEME.gloss}")`);
+  if(USE_HOME_SCREEN) document.documentElement.style.setProperty('--homeglyph','26px');
+  $('go-home').hidden=!USE_HOME_SCREEN; $('a-home').hidden=!USE_HOME_SCREEN;
+})();
+let homeMode='user';
+function renderHome(){
+  const grid=$('sb-grid'); grid.replaceChildren();
+  APPS.filter(a=>a.for===homeMode).forEach((a,i)=>{
+    const b=document.createElement('button'); b.type='button'; b.className='sb-app'; b.style.setProperty('--i',i); b.setAttribute('role','listitem');
+    b.setAttribute('aria-label',a.name);
+    const ic=document.createElement('span'); ic.className='sb-icon'; ic.style.backgroundImage=`url("${HOME_THEME.icons[a.id]}")`;
+    if(a.id==='chat'){ const bd=document.createElement('span'); bd.className='sb-badge'; bd.id='badge-chat'; bd.hidden=true; ic.append(bd); }
+    const lb=document.createElement('span'); lb.className='sb-label'; lb.textContent=a.name;
+    b.append(ic,lb);
+    b.addEventListener('pointerdown',()=>b.classList.add('pressed'));
+    ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>b.classList.remove('pressed')));
+    b.addEventListener('click',()=>launchApp(a,b));
+    grid.append(b);
+  });
+  updateBadge();
+}
+// the app zooms open from its icon, and the home screen zooms back into it when you return
+function launchApp(app,btn){
+  const r=btn.querySelector('.sb-icon').getBoundingClientRect(), h=$('s-home');
+  h.style.setProperty('--ox',(r.left+r.width/2)+'px'); h.style.setProperty('--oy',(r.top+r.height/2)+'px');
+  app.open();
+}
+function openHome(opts={}){
+  const admin=!!opts.admin;
+  if(!USE_HOME_SCREEN) return admin?openAdmin():openChat();
+  homeMode=admin?'admin':'user';
+  if(admin){ if(me.code) logOutUser(); session.set('playlist-admin','1'); startSocial(); }
+  else { // same per-login listeners the chat uses, so private messages and account changes work from here too
+    applyMyShade(me.shade); startSocial(); countLikes();
+    if(!unwatch) unwatch=api.watch(render);
+    if(!unwatchMe) unwatchMe=api.watchCode(me.code,onMyCode);
+    watchMyDMs();
+  }
+  renderHome(); tickClock(); go('s-home');
+}
+// status bar clock
+function tickClock(){ $('sb-time').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
+setInterval(()=>{ if(current.id==='s-home') tickClock(); },15000);
+// red badge on Chat: messages from others since you last had the chat open
+const seenKey=()=>'playlist-seen-'+me.code;
+function updateBadge(){
+  const b=$('badge-chat'); if(!b||!me.code) return;
+  if(current.id==='chat'){ const last=lastList.length?lastList[lastList.length-1].ts:Date.now(); store.set(seenKey(),String(last)); b.hidden=true; return; }
+  const seen=+store.get(seenKey())||0, n=fresh(lastList).filter(m=>m.code!==me.code&&m.ts>seen).length;
+  const was=b.hidden?0:+b.textContent||0;
+  b.hidden=!n; b.textContent=n>99?'99+':String(n);
+  if(n>was){ b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+}
+$('go-home').addEventListener('click',()=>{
+  if(me.kind==='admin') return openAdmin(); // the admin's chat identity goes back to the panel
+  openHome();
+});
+$('a-home').addEventListener('click',()=>openHome({admin:true}));
+
 /* ---------- 3. chat ---------- */
 let unwatch=null, unwatchMe=null;
 function openChat(){
   go('chat'); startCountdown(); applyMyShade(me.shade);
-  const asAdmin=me.kind==='admin'; $('me-color').hidden=me.hasShade&&!asAdmin; $('to-admin').hidden=!asAdmin;
+  const asAdmin=me.kind==='admin'; $('me-color').hidden=me.hasShade&&!asAdmin; $('to-admin').hidden=USE_HOME_SCREEN||!asAdmin;
   $('me-color').title=asAdmin?'Your name and color':'Pick your color';
   startSocial(); countLikes();
   if(!unwatch) unwatch=api.watch(render); else render(lastList); // re-render so "mine" matches the account that just logged in
   if(!unwatchMe) unwatchMe=api.watchCode(me.code,onMyCode);
-  watchMyDMs();
+  watchMyDMs(); updateBadge();
   setTimeout(()=>$('msg').focus(),360);
 }
 // log out: forget the code on this browser. Logging back in with the same code keeps the username.
@@ -1350,12 +1508,12 @@ function onMyCode(name){
   }
   if(name===null){
     me.username=null; me.shade=DEFAULT_SHADE; me.hasShade=false; applyMyShade(me.shade); // a reset account starts fresh, colour too
-    if(current.id==='chat'){ resetUserStep(); $('shade-user').value=me.shade; go('s-user'); toast('Your username was reset. Choose a new one.'); }
+    if(current.id==='chat'||current.id==='s-home'){ resetUserStep(); $('shade-user').value=me.shade; go('s-user'); toast('Your username was reset. Choose a new one.'); }
     return;
   }
   if(name!==me.username){
     const was=me.username; me.username=name;
-    if(current.id==='s-user') openChat();
+    if(current.id==='s-user') openHome();
     else if(was && current.id==='chat') toast(`Your username is now ${name}.`);
   }
 }
@@ -1395,6 +1553,7 @@ function render(all){
   }
   firstRender=false;
   if(atBottom||list.length<14) log.scrollTop=log.scrollHeight;
+  updateBadge();
 }
 let sending=false;
 $('f-msg').addEventListener('submit',async e=>{
@@ -1997,10 +2156,10 @@ function resumeCode(){
   api.joinCode(saved).then(r=>{
     if(!r.valid){ store.del('playlist-code'); return; }
     setMe(saved,r.username,r.shade,r.kind);
-    if(r.username) openChat(); else go('s-user');
+    if(r.username) openHome(); else go('s-user');
   }).catch(()=>{});
 }
-if(session.get('playlist-admin')==='1') api.adminActive().then(ok=>{ if(ok) openAdmin(); else { session.del('playlist-admin'); resumeCode(); } });
+if(session.get('playlist-admin')==='1') api.adminActive().then(ok=>{ if(ok) openHome({admin:true}); else { session.del('playlist-admin'); resumeCode(); } });
 else resumeCode();
 </script>
 </body>
