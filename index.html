@@ -381,21 +381,21 @@ body[data-screen=s-admin] .overlay{opacity:0}
 .ios-home{padding:0;justify-content:flex-start;--w:min(100vw,400px);--u:calc(min(100vw,400px) / 320); /* one design pixel */
   transform-origin:var(--ox,50%) var(--oy,40%);transition:opacity .38s ease,transform .45s cubic-bezier(.3,.8,.3,1)}
 .ios-home.out{transform:scale(1.7)}                         /* opening an app zooms into its icon; closing zooms back */
-body[data-screen=s-home]{background:var(--home-wall-color,#264a66) var(--home-wall) center/cover no-repeat}
+body[data-screen=s-home]{background:var(--home-wall-color,#264a66) var(--home-wall) var(--home-wall-pos,center)/cover no-repeat}
 body[data-screen=s-home] .bg{opacity:0}
 /* white home background: smooth white with a soft green vignette towards the edges */
 body.home-white[data-screen=s-home]{background:
   radial-gradient(140% 110% at 50% 38%,#ffffff 0%,#fbfdfb 38%,#eef6f0 66%,#dcece1 88%,#cfe4d6 100%),#fff}
-body.home-white .sb-label{color:#2c3136;text-shadow:0 1px 0 rgba(255,255,255,.9)}
-body.home-white .sb-dots i{background:rgba(44,49,54,.55);box-shadow:none}
-body.home-white .sb-dots svg{opacity:.4;filter:none}
-body.home-white .sb-dots svg circle,body.home-white .sb-dots svg path{stroke:#2c3136}
-body.home-white .sb-shade{display:none}
-body.home-white .sb-shelf{background:linear-gradient(90deg,rgba(40,70,50,.05),rgba(40,70,50,.1) 50%,rgba(40,70,50,.05)),linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,.2));
+body.home-light .sb-label{color:#2c3136;text-shadow:0 1px 0 rgba(255,255,255,.9)}
+body.home-light .sb-dots i{background:rgba(44,49,54,.55);box-shadow:none}
+body.home-light .sb-dots svg{opacity:.4;filter:none}
+body.home-light .sb-dots svg circle,body.home-light .sb-dots svg path{stroke:#2c3136}
+body.home-light .sb-shade{display:none}
+body.home-light .sb-shelf{background:linear-gradient(90deg,rgba(40,70,50,.05),rgba(40,70,50,.1) 50%,rgba(40,70,50,.05)),linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,.2));
   box-shadow:none}
-body.home-white .sb-shelf::before{border-top-color:rgba(40,70,50,.18)}
-body.home-white .sb-shelf::after{border-top-color:rgba(40,70,50,.12)}
-body.home-white .sb-icon{box-shadow:0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(30,50,40,.28),0 calc(8 * var(--u)) calc(16 * var(--u)) calc(-6 * var(--u)) rgba(30,50,40,.25)}
+body.home-light .sb-shelf::before{border-top-color:rgba(40,70,50,.18)}
+body.home-light .sb-shelf::after{border-top-color:rgba(40,70,50,.12)}
+body.home-light .sb-icon{box-shadow:0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(30,50,40,.28),0 calc(8 * var(--u)) calc(16 * var(--u)) calc(-6 * var(--u)) rgba(30,50,40,.25)}
 .bg{transition:opacity .5s ease,transform 1.2s cubic-bezier(.2,.8,.2,1)}
 .sb-status{position:absolute;z-index:3;top:0;left:0;right:0;height:calc(20px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 6px 0;
   display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.62),rgba(0,0,0,.46));
@@ -1012,9 +1012,11 @@ const USE_HOME_SCREEN = true;
 const CHAT_STYLE = 'ios6';
 // The home screen's look (assets from the Figma "Legacy iOS UI Kit"). Swap these (and the CSS block) to restyle it.
 const HOME_THEME = {
-  // background: 'white' = smooth white with a soft green vignette; 'wallpaper' = the iOS 6 water photo below
-  background: "white",
-  wallpaper: "assets/ios6/wallpaper.jpg", wallpaperColor: "#264a66",
+  // background: 'wallpaper' = the image below; 'white' = smooth white with a soft green vignette
+  background: "wallpaper",
+  wallpaper: "assets/ios6/wallpaper-drops.webp", wallpaperColor: "#cdd9dc", wallpaperPosition: "center top",
+  // earlier wallpaper (iOS 6 water): wallpaper: "assets/ios6/wallpaper.jpg", wallpaperColor: "#264a66", wallpaperPosition: "center", light: false
+  light: true,   // light background → dark icon labels, grey page dots, light dock
   gloss: "assets/ios6/icon-gloss.png",
   icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png" },
 };
@@ -1538,6 +1540,8 @@ const APPS = [
   r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
   r.setProperty('--home-gloss',`url("${HOME_THEME.gloss}")`);
   document.body.classList.toggle('home-white',HOME_THEME.background==='white');
+  document.body.classList.toggle('home-light',HOME_THEME.background==='white'||!!HOME_THEME.light);
+  r.setProperty('--home-wall-pos',HOME_THEME.wallpaperPosition||'center');
   if(USE_HOME_SCREEN) document.documentElement.style.setProperty('--homeglyph','26px');
   $('go-home').hidden=!USE_HOME_SCREEN; $('a-home').hidden=!USE_HOME_SCREEN;
 })();
