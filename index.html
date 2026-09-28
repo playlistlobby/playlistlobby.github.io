@@ -2970,7 +2970,7 @@ if(window.visualViewport){
 // styles and likes are only readable while logged in (code or admin), so they're watched per login
 let socialUnsubs=[];
 function startSocial(){ if(socialUnsubs.length) return; socialUnsubs=[api.watchStyles(onStyles),api.watchLikes(onLikes),
-  api.watchMuted(s=>{ mutedSet=s; if(current.id==='s-forum') drawForum(); syncHistMute(); }), api.watchAvatars(o=>onAvatars(o))]; }
+  api.watchMuted(s=>{ mutedSet=s; if(current.id==='s-forum') drawForum(); syncHistMute(); }), api.watchAvatars(o=>onAvatars(o)), api.watchApps(onApps)]; }
 function stopSocial(){ socialUnsubs.forEach(u=>u&&u()); socialUnsubs=[]; }
 function onStyles(o){
   styles=o||{};
@@ -3030,9 +3030,10 @@ let features={};
    no longer counts, and the app has to be downloaded again when it comes back. */
 let storeApps=[], appsLoaded=false, editingApp=null, appDraft={}, openAppId=null;
 api.watchFeatures(f=>{ features=f||{}; migrateMystery(); });
-api.watchApps(l=>{ storeApps=(l||[]).sort((a,b)=>(a.order??0)-(b.order??0)||String(a.name).localeCompare(b.name)); appsLoaded=true;
+// listened to per login (a visitor on the lock screen may not read it): see startSocial
+function onApps(l){ storeApps=(l||[]).sort((a,b)=>(a.order??0)-(b.order??0)||String(a.name).localeCompare(b.name)); appsLoaded=true;
   if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore(); if(adminOn){ drawAppsAdmin(); seedApps(); migrateMystery(); }
-  if(openAppId){ const a=storeApps.find(x=>x.id===openAppId); if(!a||(!a.on&&homeMode!=='admin')) goHome(); else if(a.type==='page') drawPage(a); else if(a.type==='songwars') drawSongs(); } });
+  if(openAppId){ const a=storeApps.find(x=>x.id===openAppId); if(!a||(!a.on&&homeMode!=='admin')) goHome(); else if(a.type==='page') drawPage(a); else if(a.type==='songwars') drawSongs(); } }
 function appIcon(a){ return a.icon||APP_ICONS[a.type]||APP_ICONS.page; }
 function installKey(a){ return `playlist-app-${a.id}-${me.code}`; }
 function appInstalled(a){ return !!a.on&&!!me.code&&store.get(installKey(a))===String(a.gen||0); }
