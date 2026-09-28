@@ -1294,6 +1294,23 @@ body[data-screen=s-itunes] .bg,body[data-screen=s-itunes] .overlay{opacity:0}
 .it-player h2{margin:0;font:700 18px "Helvetica Neue",Helvetica,Arial,sans-serif;text-align:center}
 .it-player audio{width:min(420px,100%)}
 .it-close{position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px}
+
+/* the ___ app: whatever the admin puts in it */
+#s-mystery{background:var(--mys-bg,#000);color:var(--mys-fg,#fff);overflow-y:auto;justify-content:center;align-items:center;padding:40px 0 70px}
+#s-mystery > *{flex:none}
+#s-mystery .mys-text{letter-spacing:.12em;margin:0}
+body[data-screen=s-mystery]{background:var(--mys-bg,#000)}
+#s-mystery .mys-text{color:var(--mys-fg,#fff);max-width:min(520px,calc(100% - 40px));text-align:center;white-space:pre-wrap;line-height:1.35}
+#s-mystery .mys-img{display:block;max-width:min(520px,calc(100% - 40px));max-height:60vh;border-radius:8px;margin-bottom:18px;animation:mysin 2s ease both}
+#s-mystery .mys-home span{border-color:var(--mys-fg,#fff)}
+.st-ic.ic-mystery.pic{background-size:cover;background-position:center}
+.mys-edit{display:flex;flex-direction:column;gap:8px}
+.mys-edit textarea{width:100%;min-height:70px;border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.18);resize:vertical;font:inherit}
+.mys-icon{width:44px;height:44px;border-radius:10px;background:#000 center/cover;box-shadow:0 1px 3px rgba(0,0,0,.4);flex:none}
+.mys-colors{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mys-colors input[type=color]{width:38px;height:28px;padding:0;border:0;background:none}
+/* anti-spam: the send button counts down */
+.send.wait{opacity:.5}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
@@ -1637,7 +1654,8 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 </section>
 
 <section class="screen out app" id="s-mystery" aria-label="___" hidden>
-  <p class="mys-text">test</p>
+  <img class="mys-img" id="mys-img-show" alt="" hidden>
+  <p class="mys-text" id="mys-text-show">test</p>
   <button class="mys-home" type="button" id="mys-home" aria-label="Home screen"><span></span></button>
 </section>
 
@@ -1869,6 +1887,19 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
           <div class="a-row">
             <span class="a-muted" id="lab-mys-state">Hidden from everyone</span>
             <button class="a-btn sm glass live tog" type="button" id="lab-mystery" aria-pressed="false">Off</button>
+          </div>
+          <div class="mys-edit">
+            <div class="a-row wrap"><span class="mys-icon" id="mys-icon-prev" aria-hidden="true"></span>
+              <input class="a-in" id="mys-name" maxlength="20" placeholder="App name (___)" aria-label="App name">
+              <label class="a-btn sm glass live file-btn">Logo<input type="file" id="mys-icon" accept="image/*" hidden></label></div>
+            <textarea id="mys-text" maxlength="500" placeholder="What the app shows (test)" aria-label="What the app shows"></textarea>
+            <div class="a-row wrap">
+              <label class="a-btn sm glass live file-btn">Picture<input type="file" id="mys-img" accept="image/*" hidden></label>
+              <button class="a-btn sm glass live" type="button" id="mys-noimg">No picture</button>
+              <span class="mys-colors"><span class="a-muted">Background</span><input type="color" id="mys-bg" value="#000000" aria-label="Background color">
+                <span class="a-muted">Text</span><input type="color" id="mys-fg" value="#ffffff" aria-label="Text color"></span>
+            </div>
+            <div class="a-row wrap"><span class="a-muted" id="mys-img-lbl"></span><button class="a-btn sm glass live" type="button" id="mys-reset">Reset</button><button class="a-btn glass green live" type="button" id="mys-save">Save app</button></div>
           </div>
         </div>
         <div class="glass card a-stack lab">
@@ -2271,6 +2302,7 @@ async function firebaseApi(cfg){
     // switches the admin flips in the Experimental tab (public, so every phone can follow them)
     watchFeatures(cb){ return fs.onSnapshot(fs.doc(db,"site","features"),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
     setFeature(k,v){ return fs.setDoc(fs.doc(db,"site","features"),{...features,[k]:v,ts:fs.serverTimestamp()}); },
+    saveFeatures(patch){ return fs.setDoc(fs.doc(db,"site","features"),{...features,...patch,ts:fs.serverTimestamp()}); },
     watchSession(cb){ return fs.onSnapshot(fs.doc(db,"site","session"),s=>{ const e=s.exists()&&s.data({serverTimestamps:'estimate'}).epoch; cb(e?e.toMillis():0); },e=>console.error(e)); },
     logoutEveryone(){ return fs.setDoc(fs.doc(db,"site","session"),{epoch:fs.serverTimestamp(),ts:fs.serverTimestamp()}); },
     watchStore(cb){ return fs.onSnapshot(fs.doc(db,"site","store"),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
@@ -2482,6 +2514,7 @@ function localApi(){
     watchSession:cb=>sub(d=>cb(d.epoch||0)),
     watchFeatures:cb=>sub(d=>cb(d.features||{})),
     async setFeature(k,v){ mut(d=>{ d.features={...(d.features||{}),[k]:v}; }); },
+    async saveFeatures(patch){ mut(d=>{ d.features={...(d.features||{}),...patch}; }); },
     async logoutEveryone(){ mut(d=>{ d.epoch=Date.now(); }); },
     async setMobilePay(n){ mut(d=>{ d.store={mobilepay:n}; }); },
     async order(o){ return mut(d=>{ const id='or'+Date.now()+Math.floor(Math.random()*1e4); d.orders.push({id,...o,status:'pending',ts:Date.now()}); return id; }); },
@@ -2833,12 +2866,43 @@ async function logOutApp(){
 }
 
 /* ---------- experimental switches, and the ___ app ---------- */
-let features={};
+let features={}, mysDraft={};
 api.watchFeatures(f=>{ const was=!!features.mystery; features=f||{};
   const on=!!features.mystery, b=$('lab-mystery');
   b.setAttribute('aria-pressed',String(on)); b.textContent=on?'On':'Off';
   $('lab-mys-state').textContent=on?'In the Store for everyone':'Hidden from everyone';
-  if(was!==on){ if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore(); if(!on&&current.id==='s-mystery') goHome(); }
+  if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore();
+  if(!on&&current.id==='s-mystery') goHome(); else drawMystery();
+  if(!mysDraft.dirty) mysLoad();
+});
+// what the admin set for the app (name, logo, text, picture, colours)
+function mysName(){ return (features.mysName||'').trim()||'___'; }
+function drawMystery(){
+  const r=$('s-mystery').style; r.setProperty('--mys-bg',features.mysBg||'#000000'); r.setProperty('--mys-fg',features.mysFg||'#ffffff');
+  document.body.style.setProperty('--mys-bg',features.mysBg||'#000000');
+  $('mys-text-show').textContent=features.mysText!=null&&features.mysText!==''?features.mysText:'test';
+  const im=$('mys-img-show'); im.hidden=!features.mysImage; if(features.mysImage) im.src=features.mysImage; else im.removeAttribute('src');
+  $('s-mystery').setAttribute('aria-label',mysName());
+}
+function mysLoad(){ mysDraft={name:features.mysName||'',icon:features.mysIcon||null,text:features.mysText||'',image:features.mysImage||null,bg:features.mysBg||'#000000',fg:features.mysFg||'#ffffff'}; mysEditDraw(); }
+function mysEditDraw(){ if(!$('mys-name')) return;
+  if(document.activeElement!==$('mys-name')) $('mys-name').value=mysDraft.name; if(document.activeElement!==$('mys-text')) $('mys-text').value=mysDraft.text;
+  $('mys-bg').value=mysDraft.bg; $('mys-fg').value=mysDraft.fg;
+  $('mys-icon-prev').style.backgroundImage=mysDraft.icon?`url("${mysDraft.icon}")`:`url("${HOME_THEME.icons.mystery}")`;
+  $('mys-img-lbl').textContent=mysDraft.image?'Picture added':'No picture'; }
+$('mys-name').addEventListener('input',e=>{ mysDraft.name=e.target.value; mysDraft.dirty=true; });
+$('mys-text').addEventListener('input',e=>{ mysDraft.text=e.target.value; mysDraft.dirty=true; });
+$('mys-bg').addEventListener('input',e=>{ mysDraft.bg=e.target.value; mysDraft.dirty=true; });
+$('mys-fg').addEventListener('input',e=>{ mysDraft.fg=e.target.value; mysDraft.dirty=true; });
+$('mys-icon').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ mysDraft.icon=squareJpeg(await createImageBitmap(f),120); mysDraft.dirty=true; mysEditDraw(); }catch{ toast("Couldn't read that picture."); } });
+$('mys-img').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ mysDraft.image=fitJpeg(await createImageBitmap(f),1200,350000); mysDraft.dirty=true; mysEditDraw(); }catch{ toast("Couldn't read that picture."); } });
+$('mys-noimg').addEventListener('click',()=>{ mysDraft.image=null; mysDraft.dirty=true; mysEditDraw(); });
+$('mys-reset').addEventListener('click',()=>{ mysDraft={name:'',icon:null,text:'',image:null,bg:'#000000',fg:'#ffffff',dirty:true}; mysEditDraw(); });
+$('mys-save').addEventListener('click',async()=>{
+  const patch={mysName:mysDraft.name.trim().slice(0,20),mysIcon:mysDraft.icon||null,mysText:mysDraft.text.slice(0,500),mysImage:mysDraft.image||null,mysBg:mysDraft.bg,mysFg:mysDraft.fg};
+  try{ await api.saveFeatures(patch); mysDraft.dirty=false; toast(`${patch.mysName||'___'} is updated for everyone.`); }catch(err){ fail('save the app')(err); }
 });
 $('lab-mystery').addEventListener('click',async()=>{
   const on=!features.mystery;
@@ -2847,7 +2911,7 @@ $('lab-mystery').addEventListener('click',async()=>{
 // "downloading" it is remembered per account on this phone
 const mysKey=()=>'playlist-app-mystery-'+me.code;
 const mysteryInstalled=()=>!!features.mystery&&!!me.code&&store.get(mysKey())==='1';
-function openMystery(){ go('s-mystery'); }
+function openMystery(){ drawMystery(); go('s-mystery'); }
 $('mys-home').addEventListener('click',()=>goHome());
 
 /* ---------- lock screen: reload everything and forget this phone ---------- */
@@ -2897,6 +2961,21 @@ async function applyWall(){
 }
 api.watchWallpaper(w=>{ wall=w; applyWall(); if(adminOn) wpLoad(); });
 addEventListener('resize',()=>{ clearTimeout(applyWall.t); applyWall.t=setTimeout(applyWall,150); });
+
+/* ---------- anti-spam: after 3 messages in a row (each within 10 s of the last), the next one waits 5 seconds ---------- */
+const SPAM_ROW = 3, SPAM_GAP = 10e3, SPAM_WAIT = 5e3;
+let spamTimes=[], spamUntil=0;
+// true = go ahead (and counts the message); false = too fast (shows the wait)
+function spamOk(btn){
+  const now=Date.now();
+  if(now<spamUntil){ const s=Math.ceil((spamUntil-now)/1000); toast(`Slow down a little. You can send again in ${s} second${s===1?'':'s'}.`); spamTick(btn); return false; }
+  spamTimes=spamTimes.filter((t,i,a)=>now-a[a.length-1]<SPAM_GAP); // a pause of 10 s starts a new row
+  spamTimes.push(now);
+  if(spamTimes.length>=SPAM_ROW){ spamUntil=now+SPAM_WAIT; spamTimes=[]; spamTick(btn); }
+  return true;
+}
+function spamTick(btn){ if(!btn) return; btn.classList.add('wait'); clearTimeout(spamTick.t);
+  const step=()=>{ const left=spamUntil-Date.now(); if(left<=0){ btn.classList.remove('wait'); btn.removeAttribute('data-wait'); return; } btn.dataset.wait=Math.ceil(left/1000); spamTick.t=setTimeout(step,250); }; step(); }
 
 /* ---------- iOS 6 alert with a text field ---------- */
 function promptBox({title,text='',placeholder='',ok='OK',value=''}){
@@ -2998,7 +3077,7 @@ const APPS = [
   { id:'door',     name:'Door',     for:['admin','door'], open:()=>openDoor() },
   { id:'photos',   name:'Photos',   for:'admin', open:()=>openPhotos() },
   { id:'orders',   name:'Store',    for:'admin', open:()=>openOrders() },
-  { id:'mystery',  name:'___',      for:'user',  open:()=>openMystery(), shown:()=>mysteryInstalled() },
+  { id:'mystery',  get name(){ return mysName(); }, for:'user', open:()=>openMystery(), shown:()=>mysteryInstalled(), icon:()=>features.mysIcon||null },
   { id:'logout',   name:'Log Out',  for:['user','admin','door'], open:()=>logOutApp(), dock:true },
 ];
 (()=>{ const r=document.documentElement.style;
@@ -3017,7 +3096,7 @@ function renderHome(){
   APPS.filter(a=>[].concat(a.for).includes(homeMode)&&(!a.shown||a.shown())).forEach((a,i)=>{
     const b=document.createElement('button'); b.type='button'; b.className='sb-app'; b.style.setProperty('--i',i); b.setAttribute('role','listitem');
     b.setAttribute('aria-label',a.name);
-    const ic=document.createElement('span'); ic.className='sb-icon'; ic.style.backgroundImage=`url("${HOME_THEME.icons[a.id]}")`;
+    const ic=document.createElement('span'); ic.className='sb-icon'; ic.style.backgroundImage=`url("${(a.icon&&a.icon())||HOME_THEME.icons[a.id]}")`;
     if(a.id==='chat'){ const bd=document.createElement('span'); bd.className='sb-badge'; bd.id='badge-chat'; bd.hidden=true; ic.append(bd); }
     const lb=document.createElement('span'); lb.className='sb-label'; lb.textContent=a.name;
     b.append(ic,lb);
@@ -3181,6 +3260,7 @@ let sending=false;
 $('f-msg').addEventListener('submit',async e=>{
   e.preventDefault(); const t=$('msg').value.trim(); if(!t||sending) return;
   if(me.kind==='admin'&&!me.username){ openMePop(); return toast('Pick a name first.'); }
+  if(me.kind!=='admin'&&!spamOk(document.querySelector('#f-msg .send'))) return;
   sending=true;
   const sb=document.querySelector('#f-msg .send'); sb.classList.remove('launch'); void sb.offsetWidth; sb.classList.add('launch');
   try{ await api.send(me.code,me.username,t,me.kind==='rare'||me.kind==='admin'?undefined:me.shade,me.kind,me.tint); $('msg').value=''; $('f-msg').classList.remove('has-text'); $('log').scrollTop=$('log').scrollHeight; }
@@ -3237,6 +3317,7 @@ $('pm-like').addEventListener('click',async()=>{
 });
 $('pm-form').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('pm-text').value.trim(); if(!text||!pmTo) return;
+  if(me.kind!=='admin'&&!spamOk()) return;
   const to=pmTo;
   try{ await api.sendDM({from:me.code,fromName:me.username,to:to.code,toName:to.name,text}); closePM(); toast(`Sent privately to ${to.name}.`); }
   catch(err){ console.error(err); toast(`Private message not sent. ${to.name} may have blocked you, or the connection dropped.`); }
@@ -4528,14 +4609,15 @@ function drawStore(){
   });
   if(features.mystery){
     const row=mk('div','st-item'), ic=mk('span','st-ic ic-mystery'), tx=mk('div','st-txt'), have=mysteryInstalled();
-    ic.innerHTML='<svg viewBox="0 0 40 10"><path d="M1 8h10M15 8h10M29 8h10" stroke="#444" stroke-width="2"/></svg>';
-    tx.append(mk('b',null,'___'),mk('small',null,'?'));
+    if(features.mysIcon){ ic.classList.add('pic'); ic.style.backgroundImage=`url("${features.mysIcon}")`; }
+    else ic.innerHTML='<svg viewBox="0 0 40 10"><path d="M1 8h10M15 8h10M29 8h10" stroke="#444" stroke-width="2"/></svg>';
+    tx.append(mk('b',null,mysName()),mk('small',null,'?'));
     const pb=mk('button','st-price free'+(buyArmed==='mystery'?' buy':''),have?'OPEN':buyArmed==='mystery'?'INSTALL':'FREE'); pb.type='button';
     pb.addEventListener('click',()=>{
       if(mysteryInstalled()) return openMystery();
       if(buyArmed!=='mystery'){ buyArmed='mystery'; drawStore(); return; }
       buyArmed=null; pb.disabled=true; pb.textContent='INSTALLING'; pb.classList.remove('buy');
-      setTimeout(()=>{ store.set(mysKey(),'1'); drawStore(); toast('___ is on your home screen.'); },1400);
+      setTimeout(()=>{ store.set(mysKey(),'1'); drawStore(); toast(`${mysName()} is on your home screen.`); },1400);
     });
     row.append(ic,tx,pb); list.append(row);
   }
@@ -4837,6 +4919,7 @@ function drawFmComments(){
 $('f-comment').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('fm-c-in').value.trim(); if(!text||!fmOpen) return;
   if(mutedSet.has(me.code)) return toast('You are muted in the forum.');
+  if(!spamOk()) return;
   try{ await api.addComment({post:fmOpen,code:me.code,name:me.username,...(me.kind==='rare'?{}:{shade:me.shade}),...(me.kind==='blue'||me.kind==='rare'?{kind:me.kind}:{}),text});
     $('fm-c-in').value=''; const sc=$('fm-post').querySelector('.app-body'); setTimeout(()=>sc.scrollTop=sc.scrollHeight,200); }
   catch(err){ console.error(err); toast('Comment not posted. Try again.'); }
@@ -4899,6 +4982,7 @@ function drawThread(){
 }
 $('f-fmdm').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('fm-dm-in').value.trim(); if(!text||!fmThread) return;
+  if(!spamOk()) return;
   try{ await api.sendDM({from:me.code,fromName:me.username,to:fmThread.code,toName:fmThread.name,text}); $('fm-dm-in').value=''; }
   catch(err){ console.error(err); toast(`Not sent. ${fmThread.name} may have blocked you, or the connection dropped.`); }
 });
