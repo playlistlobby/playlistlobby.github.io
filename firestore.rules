@@ -487,8 +487,12 @@ service cloud.firestore {
             && (request.resource.data.get('image', null) == null
               || (request.resource.data.image is string && request.resource.data.image.size() < 950000)))
           || (doc == 'features'
-            && request.resource.data.keys().hasOnly(['mystery','ts'])
-            && request.resource.data.get('mystery', false) is bool)
+            && request.resource.data.keys().hasOnly(['mystery','mysName','mysIcon','mysText','mysImage','mysBg','mysFg','ts'])
+            && request.resource.data.get('mystery', false) is bool
+            && request.resource.data.get('mysName', '') is string && request.resource.data.get('mysName', '').size() <= 20
+            && request.resource.data.get('mysText', '') is string && request.resource.data.get('mysText', '').size() <= 500
+            && (request.resource.data.get('mysIcon', null) == null || (request.resource.data.mysIcon is string && request.resource.data.mysIcon.size() < 80000))
+            && (request.resource.data.get('mysImage', null) == null || (request.resource.data.mysImage is string && request.resource.data.mysImage.size() < 400000)))
           || (doc == 'session'
             && request.resource.data.keys().hasOnly(['epoch','ts'])
             && request.resource.data.epoch == request.time)
