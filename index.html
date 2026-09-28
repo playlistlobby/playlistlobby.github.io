@@ -2648,15 +2648,22 @@ addEventListener('resize',()=>{ drawLive(); drawEditor&&drawEditor(); });
 if(window.visualViewport){
   // With the keyboard open, each screen is sized and placed to the visible part of the window,
   // so only the text box moves up (instead of the whole page sliding up, as on iPhones).
-  const vv=visualViewport, fit=()=>{
-    const r=document.documentElement.style, open=innerHeight-vv.height>80;
-    r.setProperty('--vvh',Math.round(vv.height)+'px'); r.setProperty('--vvtop',Math.round(vv.offsetTop)+'px'); r.setProperty('--kb','0px');
+  const vv=visualViewport, r=document.documentElement.style; let last='', wasOpen=false, settle=0;
+  const fit=()=>{
+    const open=innerHeight-vv.height>80, h=Math.round(vv.height), top=Math.round(vv.offsetTop), key=`${h}|${top}|${open}`;
+    if(key===last) return; last=key; // only touch the page when something changed (this runs every frame while settling)
+    r.setProperty('--vvh',h+'px'); r.setProperty('--vvtop',top+'px'); r.setProperty('--kb','0px');
     document.body.classList.toggle('kb',open);
-    if(open && current.id==='chat') $('log').scrollTop=$('log').scrollHeight;
+    if(open && !wasOpen && current.id==='chat') $('log').scrollTop=$('log').scrollHeight;
+    wasOpen=open;
   };
-  vv.addEventListener('resize',fit); vv.addEventListener('scroll',fit);
-  // iOS sometimes scrolls the page itself behind the fixed screens; put it back
-  addEventListener('scroll',()=>{ if(scrollY) scrollTo(0,0); },{passive:true});
+  // iPhones animate the keyboard in and only report its final size afterwards, so keep measuring for a moment
+  const fitSoon=()=>{ cancelAnimationFrame(settle); const t0=performance.now();
+    const loop=()=>{ fit(); if(performance.now()-t0<1500) settle=requestAnimationFrame(loop); }; loop(); };
+  vv.addEventListener('resize',fitSoon); vv.addEventListener('scroll',fit);
+  addEventListener('focusin',fitSoon); addEventListener('focusout',()=>setTimeout(fitSoon,60));
+  // once the keyboard is gone, undo any scrolling iOS did behind the fixed screens (never while it's open: that fights iOS)
+  addEventListener('scroll',()=>{ fit(); if(scrollY&&!document.body.classList.contains('kb')) scrollTo(0,0); },{passive:true});
 }
 // styles and likes are only readable while logged in (code or admin), so they're watched per login
 let socialUnsubs=[];
