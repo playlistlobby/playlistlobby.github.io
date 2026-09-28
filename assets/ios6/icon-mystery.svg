@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="114" height="114" viewBox="0 0 114 114">
+  <!-- the ___ app: black, with a faint sheen (the home screen adds the rounded corners and gloss) -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1a1c"/>
+      <stop offset="1" stop-color="#000"/>
+    </linearGradient>
+  </defs>
+  <rect width="114" height="114" fill="url(#bg)"/>
+  <path d="M27 66h14M50 66h14M73 66h14" stroke="#3a3a3d" stroke-width="3" stroke-linecap="round"/>
+</svg>

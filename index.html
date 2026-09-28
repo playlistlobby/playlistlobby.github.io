@@ -1056,6 +1056,26 @@ body.lock-ios6 .remember{position:absolute;z-index:2;left:50%;transform:translat
   bottom:calc(96px + env(safe-area-inset-bottom) + 14px + var(--kb,0px));padding:6px 8px 6px 14px;border-radius:20px;color:#fff;
   text-shadow:0 -1px 0 rgba(0,0,0,.5);background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 body.lock-ios6.kb .remember{display:none}
+
+/* apps in the dock ("favorites"): icons stand on the glass shelf, labels on its front */
+.sb-dockapps{position:absolute;z-index:2;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 3 * var(--u));
+  display:flex;justify-content:center;gap:calc(19 * var(--u));width:var(--w)}
+.sb-dockapps .sb-app{gap:calc(3 * var(--u))}
+body.home-light .sb-dockapps .sb-label{color:#1f2428}
+@media (min-width:700px){ .sb-dockapps{width:var(--stage);gap:48px;bottom:calc(env(safe-area-inset-bottom) + 4px)} }
+.sb-dock{height:calc(45 * var(--u) + env(safe-area-inset-bottom))}
+/* the mystery app: black, nothing but "test" */
+body[data-screen=s-mystery]{background:#000}
+body[data-screen=s-mystery] .bg,body[data-screen=s-mystery] .overlay{opacity:0}
+#s-mystery{background:#000;padding:0}
+#s-mystery .mys-text{color:#fff;font:300 22px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.3em;opacity:.85;animation:mysin 2s ease both}
+@keyframes mysin{from{opacity:0;letter-spacing:.8em}}
+#s-mystery .mys-home{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);width:44px;height:30px;display:grid;place-items:center;opacity:.35}
+#s-mystery .mys-home span{width:15px;height:15px;border:1.6px solid #fff;border-radius:4.5px}
+#s-mystery .mys-home:hover{opacity:.7}
+.st-ic.ic-mystery{background:#000;box-shadow:0 1px 3px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px rgba(255,255,255,.06)}
+.st-ic.ic-mystery svg{width:40px;height:10px;filter:none}
+.st-price.free{min-width:66px}
 </style>
 </head>
 <body data-screen="s-code">
@@ -1211,6 +1231,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
     <svg viewBox="0 0 10 10"><circle cx="4" cy="4" r="3" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M6.2 6.2l3 3" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
     <i></i>
   </div>
+  <div class="sb-dockapps" id="sb-dockapps" role="list" aria-label="Favorites"></div>
   <div class="sb-dock" aria-hidden="true">
     <div class="sb-shelf"></div>
   </div>
@@ -1377,6 +1398,11 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
   </div></div>
 </section>
 
+<section class="screen out app" id="s-mystery" aria-label="___" hidden>
+  <p class="mys-text">test</p>
+  <button class="mys-home" type="button" id="mys-home" aria-label="Home screen"><span></span></button>
+</section>
+
 <div class="viewer" id="viewer" role="dialog" aria-label="Photo" hidden>
   <div class="vw-bar"><button class="cam-pill" type="button" id="vw-close">Done</button><span class="vw-cap" id="vw-cap"></span><a class="cam-pill" id="vw-save" download="playlist-photo.jpg" href="#">Save</a></div>
   <img id="vw-img" alt="">
@@ -1508,6 +1534,14 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
           <div class="a-row">
             <span class="a-muted" id="lab-count"></span>
             <button class="a-btn sm glass live" type="button" id="lab-copy">Copy free blue codes</button>
+          </div>
+        </div>
+        <div class="glass card a-stack lab">
+          <div><span class="lab-badge">Experimental</span><h3>The ___ app</h3></div>
+          <p class="a-muted">A black, mysterious app. When this is on, everyone can download it for free in the Store and it appears on their home screen. Turn it off and it disappears again.</p>
+          <div class="a-row">
+            <span class="a-muted" id="lab-mys-state">Hidden from everyone</span>
+            <button class="a-btn sm glass live tog" type="button" id="lab-mystery" aria-pressed="false">Off</button>
           </div>
         </div>
         <div class="glass card a-stack lab">
@@ -1659,7 +1693,7 @@ const HOME_THEME = {
   gloss: "assets/ios6/icon-gloss.png",
   icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png", settings: "assets/ios6/icon-settings.png",
            ticket: "assets/ios6/icon-ticket.png", camera: "assets/ios6/icon-camera.png", door: "assets/ios6/icon-door.png", photos: "assets/ios6/icon-photos.png",
-           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png", logout: "assets/ios6/icon-logout.svg" },
+           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png", logout: "assets/ios6/icon-logout.svg", mystery: "assets/ios6/icon-mystery.svg" },
 };
 const LOCAL_CODES = ["1","2","3","4","5"]; // only used in offline demo mode (no Firebase)
 const DOOR_CODE = "door";                     // demo mode only: the real door password is set by the admin (config/door)
@@ -1849,6 +1883,9 @@ async function firebaseApi(cfg){
     deleteFilter(id){ return fs.deleteDoc(fs.doc(db,"filters",id)); },
     // store
     // "Log everyone out": a time; logins from before it stop working (the rules check it too)
+    // switches the admin flips in the Experimental tab (public, so every phone can follow them)
+    watchFeatures(cb){ return fs.onSnapshot(fs.doc(db,"site","features"),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
+    setFeature(k,v){ return fs.setDoc(fs.doc(db,"site","features"),{...features,[k]:v,ts:fs.serverTimestamp()}); },
     watchSession(cb){ return fs.onSnapshot(fs.doc(db,"site","session"),s=>{ const e=s.exists()&&s.data({serverTimestamps:'estimate'}).epoch; cb(e?e.toMillis():0); },e=>console.error(e)); },
     logoutEveryone(){ return fs.setDoc(fs.doc(db,"site","session"),{epoch:fs.serverTimestamp(),ts:fs.serverTimestamp()}); },
     watchStore(cb){ return fs.onSnapshot(fs.doc(db,"site","store"),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
@@ -2030,6 +2067,8 @@ function localApi(){
     async deleteFilter(id){ store.del('playlist-demo-fx-'+id+'-lut'); store.del('playlist-demo-fx-'+id+'-ov'); mut(d=>{ d.filters=d.filters.filter(f=>f.id!==id); }); },
     watchStore:cb=>sub(d=>cb(d.store)),
     watchSession:cb=>sub(d=>cb(d.epoch||0)),
+    watchFeatures:cb=>sub(d=>cb(d.features||{})),
+    async setFeature(k,v){ mut(d=>{ d.features={...(d.features||{}),[k]:v}; }); },
     async logoutEveryone(){ mut(d=>{ d.epoch=Date.now(); }); },
     async setMobilePay(n){ mut(d=>{ d.store={mobilepay:n}; }); },
     async order(o){ return mut(d=>{ const id='or'+Date.now()+Math.floor(Math.random()*1e4); d.orders.push({id,...o,status:'pending',ts:Date.now()}); return id; }); },
@@ -2327,6 +2366,24 @@ async function logOutApp(){
   if(homeMode==='admin') adminLogout(); else if(homeMode==='door') doorLogout(); else backToCode();
 }
 
+/* ---------- experimental switches, and the ___ app ---------- */
+let features={};
+api.watchFeatures(f=>{ const was=!!features.mystery; features=f||{};
+  const on=!!features.mystery, b=$('lab-mystery');
+  b.setAttribute('aria-pressed',String(on)); b.textContent=on?'On':'Off';
+  $('lab-mys-state').textContent=on?'In the Store for everyone':'Hidden from everyone';
+  if(was!==on){ if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore(); if(!on&&current.id==='s-mystery') goHome(); }
+});
+$('lab-mystery').addEventListener('click',async()=>{
+  const on=!features.mystery;
+  try{ await api.setFeature('mystery',on); toast(on?'The ___ app is in the Store now.':'The ___ app is hidden again.'); }catch(err){ fail('change that')(err); }
+});
+// "downloading" it is remembered per account on this phone
+const mysKey=()=>'playlist-app-mystery-'+me.code;
+const mysteryInstalled=()=>!!features.mystery&&!!me.code&&store.get(mysKey())==='1';
+function openMystery(){ go('s-mystery'); }
+$('mys-home').addEventListener('click',()=>goHome());
+
 /* ---------- 1. code ---------- */
 $('f-code').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -2380,9 +2437,10 @@ function resetUserStep(){
 /* ---------- home screen (iOS 6) ---------- */
 // Apps on the home screen: one entry per app. "for" decides who sees it (a code account, or the admin).
 // "for" is 'user' (a code account), 'admin', 'door' (door staff), or a list of them. Icons are in HOME_THEME.icons.
+// dock:true puts the app in the bottom bar (favorites); shown() can hide an app (e.g. until it is downloaded).
 const APPS = [
   { id:'chat',     name:'Chat',     for:'user',  open:()=>openChat() },
-  { id:'ticket',   name:'Ticket',   for:'user',  open:()=>openTicket() },
+  { id:'ticket',   name:'Ticket',   for:'user',  open:()=>openTicket(), dock:true },
   { id:'camera',   name:'Camera',   for:'user',  open:()=>openCamera() },
   { id:'store',    name:'Store',    for:'user',  open:()=>openStore() },
   { id:'settings', name:'Settings', for:'user',  open:()=>openSettings() },
@@ -2390,7 +2448,8 @@ const APPS = [
   { id:'door',     name:'Door',     for:['admin','door'], open:()=>openDoor() },
   { id:'photos',   name:'Photos',   for:'admin', open:()=>openPhotos() },
   { id:'orders',   name:'Store',    for:'admin', open:()=>openOrders() },
-  { id:'logout',   name:'Log Out',  for:['user','admin','door'], open:()=>logOutApp() },
+  { id:'mystery',  name:'___',      for:'user',  open:()=>openMystery(), shown:()=>mysteryInstalled() },
+  { id:'logout',   name:'Log Out',  for:['user','admin','door'], open:()=>logOutApp(), dock:true },
 ];
 (()=>{ const r=document.documentElement.style;
   r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
@@ -2403,8 +2462,8 @@ const APPS = [
 })();
 let homeMode='user';
 function renderHome(){
-  const grid=$('sb-grid'); grid.replaceChildren();
-  APPS.filter(a=>[].concat(a.for).includes(homeMode)).forEach((a,i)=>{
+  const grid=$('sb-grid'), dock=$('sb-dockapps'); grid.replaceChildren(); dock.replaceChildren();
+  APPS.filter(a=>[].concat(a.for).includes(homeMode)&&(!a.shown||a.shown())).forEach((a,i)=>{
     const b=document.createElement('button'); b.type='button'; b.className='sb-app'; b.style.setProperty('--i',i); b.setAttribute('role','listitem');
     b.setAttribute('aria-label',a.name);
     const ic=document.createElement('span'); ic.className='sb-icon'; ic.style.backgroundImage=`url("${HOME_THEME.icons[a.id]}")`;
@@ -2414,7 +2473,7 @@ function renderHome(){
     b.addEventListener('pointerdown',()=>b.classList.add('pressed'));
     ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>b.classList.remove('pressed')));
     b.addEventListener('click',()=>launchApp(a,b));
-    grid.append(b);
+    (a.dock?dock:grid).append(b);
   });
   updateBadge();
 }
@@ -3779,6 +3838,19 @@ function drawStore(){
     pb.addEventListener('click',()=>{ if(buyArmed!==it.id){ buyArmed=it.id; drawStore(); return; } buyArmed=null; drawStore(); openBuy(it); });
     row.append(ic,tx,pb); list.append(row);
   });
+  if(features.mystery){
+    const row=mk('div','st-item'), ic=mk('span','st-ic ic-mystery'), tx=mk('div','st-txt'), have=mysteryInstalled();
+    ic.innerHTML='<svg viewBox="0 0 40 10"><path d="M1 8h10M15 8h10M29 8h10" stroke="#444" stroke-width="2"/></svg>';
+    tx.append(mk('b',null,'___'),mk('small',null,'?'));
+    const pb=mk('button','st-price free'+(buyArmed==='mystery'?' buy':''),have?'OPEN':buyArmed==='mystery'?'INSTALL':'FREE'); pb.type='button';
+    pb.addEventListener('click',()=>{
+      if(mysteryInstalled()) return openMystery();
+      if(buyArmed!=='mystery'){ buyArmed='mystery'; drawStore(); return; }
+      buyArmed=null; pb.disabled=true; pb.textContent='INSTALLING'; pb.classList.remove('buy');
+      setTimeout(()=>{ store.set(mysKey(),'1'); drawStore(); toast('___ is on your home screen.'); },1400);
+    });
+    row.append(ic,tx,pb); list.append(row);
+  }
   if(!open) list.append(Object.assign(mk('p','grp-foot','The store opens soon.'),{style:'margin:10px 16px 12px'}));
   // your purchases
   const mine=$('st-mine'); mine.replaceChildren(); const shown=myOrders.filter(o=>o.status!=='cancelled'||Date.now()-o.ts<86400e3);
