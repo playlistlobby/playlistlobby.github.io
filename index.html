@@ -541,7 +541,7 @@ body.lock-ios6 .lk-head, body.lock-ios6 .lk-foot{position:absolute;left:0;right:
   -webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4)}
 body.lock-ios6 .lk-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   top:calc(20px + env(safe-area-inset-top));height:96px;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 .5px 0 rgba(0,0,0,.5)}
-.lk-clock:empty::before,.lk-date:empty::before{content:" a0"}
+.lk-clock:empty::before,.lk-date:empty::before{content:"\a0"}
 .lk-clock{font:300 min(60px,14.5vw)/1 "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
   text-shadow:0 -1px 0 rgba(0,0,0,.45),0 2px 10px rgba(0,0,0,.25)}
 .lk-date{font:700 13px/18px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.5)}
@@ -1311,6 +1311,78 @@ body[data-screen=s-mystery]{background:var(--mys-bg,#000)}
 .mys-colors input[type=color]{width:38px;height:28px;padding:0;border:0;background:none}
 /* anti-spam: the send button counts down */
 .send.wait{opacity:.5}
+
+/* admin: the apps he puts in the Store */
+.apps-list{display:flex;flex-direction:column;gap:6px}
+.app-li{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(0,0,0,.07)}
+.app-li:first-child{border-top:0}
+.app-li .ico{width:40px;height:40px;border-radius:9px;background:#000 center/cover;flex:none;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.app-li .grow{flex:1;min-width:0}
+.app-li b{display:block;font-size:15px}
+.app-li small{color:var(--muted);font-size:12px}
+.app-edit{border-radius:14px;padding:12px;background:rgba(255,255,255,.45);box-shadow:inset 0 0 0 .6px rgba(0,0,0,.12)}
+/* Song Wars (iTunes look, light) */
+body[data-screen=s-songs]{background:#e9e9ea}
+body[data-screen=s-songs] .bg,body[data-screen=s-songs] .overlay{opacity:0}
+#s-songs{background:linear-gradient(#f4f4f5,#e3e3e5)}
+#s-songs .app-top .sb-status{background:#000}
+#s-songs .ios-nav{background:linear-gradient(#5b5b5f 0%,#3a3a3d 49%,#26262a 50%,#131315 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #000,0 3px 8px rgba(0,0,0,.35)}
+#s-songs .ios-back-shape path:first-child{stroke:rgba(0,0,0,.9)}
+#s-songs .ios-navbtn{box-shadow:0 0 0 .8px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.25)}
+.sw-banner{margin:12px;padding:12px 14px;border-radius:12px;color:#fff;font:600 14px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:linear-gradient(135deg,#ff5a7a,#c2185b 55%,#5a0d4a);box-shadow:0 4px 14px -6px rgba(90,13,74,.8),inset 0 1px 0 rgba(255,255,255,.35)}
+.sw-banner b{display:block;font-size:17px;margin-bottom:2px}
+.sw-win{display:flex;align-items:center;gap:12px;margin:12px;padding:12px;border-radius:12px;background:linear-gradient(#fff6d0,#ffe28a);box-shadow:0 0 0 1px #e0b53c,0 6px 16px -8px rgba(160,110,0,.7)}
+.sw-win .it-art{width:64px;height:64px}
+.sw-mine{margin:12px;padding:12px;border-radius:12px;background:#fff;box-shadow:0 0 0 .6px rgba(0,0,0,.18),0 3px 10px -5px rgba(0,0,0,.3)}
+.sw-mine h3{margin:0 0 8px;font:700 16px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.sw-mine .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.sw-mine input[type=text]{flex:1;min-width:140px;height:34px;border-radius:8px;padding:0 10px;background:#f2f2f4;box-shadow:inset 0 0 0 .6px rgba(0,0,0,.2)}
+.sw-mine .muted{font:400 12px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8a8a8e}
+.sw-cover{width:56px;height:56px;border-radius:4px;background:#ddd center/cover;flex:none;box-shadow:0 0 0 .6px rgba(0,0,0,.2)}
+.sw-sort{display:flex;justify-content:center;margin:14px 12px 4px}
+.sw-sort .st-seg{width:240px}
+.sw-rank{width:22px;flex:none;text-align:center;font:700 15px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8a8a8e}
+.sw-like{display:flex;align-items:center;gap:4px;min-width:50px;justify-content:center}
+.sw-like.on{color:#d93a30}
+.sw-name{background:none;padding:0;color:#1f6fe0;font:400 12px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;cursor:pointer}
+.sw-crown{margin-left:4px}
+/* Flappy Bird */
+body[data-screen=s-flappy]{background:#4ec0ca}
+body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
+#s-flappy{padding:0;background:#4ec0ca;justify-content:center;align-items:center;touch-action:none;-webkit-user-select:none;user-select:none}
+#fb-canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;max-width:100%;max-height:100%}
+.fb-bar{position:absolute;z-index:2;top:calc(10px + env(safe-area-inset-top));left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none}
+.fb-bar button{pointer-events:auto}
+.fb-board{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.45);animation:fadein .2s ease}
+.fb-card{width:min(360px,100%);max-height:80vh;overflow-y:auto;border-radius:10px;padding:14px;background:#ded895;border:4px solid #543847;box-shadow:0 10px 30px rgba(0,0,0,.5);color:#543847;font:700 15px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.fb-card h2{margin:0 0 4px;font:800 22px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#e86101;text-shadow:0 2px 0 #fff}
+.fb-card p{margin:0 0 10px;font-weight:600;font-size:13px}
+.fb-row{display:flex;align-items:center;gap:8px;padding:6px 4px;border-top:2px solid rgba(84,56,71,.2)}
+.fb-row .n{width:26px;text-align:center}
+.fb-row .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fb-row.me{background:rgba(255,255,255,.35);border-radius:6px}
+
+/* admin accounts: live activity, top lists, compact rows */
+.act-feed{display:flex;flex-direction:column;max-height:300px;overflow-y:auto}
+.act-row{display:flex;align-items:center;gap:10px;padding:7px 2px;border-top:1px solid rgba(0,0,0,.06);font-size:14px;line-height:18px}
+.act-row:first-child{border-top:0}
+.act-row .ic{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:13px;background:rgba(0,0,0,.06)}
+.act-row .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act-row .t{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;flex:none}
+.act-row.new{animation:ddnew 1.6s ease}
+.act-filter{display:flex;gap:6px;flex-wrap:wrap}
+.act-filter button{height:26px;padding:0 10px;border-radius:13px;font-size:12px;font-weight:600;color:var(--muted);background:rgba(0,0,0,.05)}
+.act-filter button[aria-pressed=true]{color:#fff;background:#1f6fe0}
+.tops{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.top{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.45);box-shadow:inset 0 0 0 .6px rgba(0,0,0,.1)}
+.top small{display:block;color:var(--muted);font-size:12px}
+.top b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top ol{margin:4px 0 0;padding-left:18px;font-size:13px;line-height:18px}
+.acct-more{display:none;gap:6px;flex-wrap:wrap;flex-basis:100%;justify-content:flex-end}
+.acct.open .acct-more{display:flex}
+.acct-stats{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.acct-stats b{color:var(--ink);font-weight:700}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
@@ -1710,6 +1782,15 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
     <button type="button" role="tab" data-t="video" aria-selected="false"><svg viewBox="0 0 26 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="18" height="18" rx="1.5"/><path d="M8 3v18M18 3v18M4 8h4M4 12h4M4 16h4M18 8h4M18 12h4M18 16h4"/></svg>Videos</button>
   </nav>
 </section>
+<section class="screen out app" id="s-songs" aria-label="Song Wars" hidden>
+  <div class="app-body" id="sw-body"></div>
+</section>
+<section class="screen out app" id="s-flappy" aria-label="Flappy Bird" hidden>
+  <canvas id="fb-canvas" width="288" height="512" aria-label="Flappy Bird. Tap or press space to flap."></canvas>
+  <div class="fb-bar"><button class="cam-pill" type="button" id="fb-home">Home</button><button class="cam-pill" type="button" id="fb-lb">🏆 Leaderboard</button></div>
+  <div class="fb-board" id="fb-board" hidden><div class="fb-card" role="dialog" aria-label="Leaderboard"><h2>Leaderboard</h2><p id="fb-lb-sub"></p><div id="fb-lb-list"></div>
+    <div class="a-row" style="justify-content:flex-end;margin-top:10px"><button class="mini-btn" type="button" id="fb-lb-close">Close</button></div></div></div>
+</section>
 <div class="it-player" id="it-player" hidden role="dialog" aria-label="Player">
   <button class="cam-pill it-close" type="button" id="it-close">Done</button>
   <div id="it-stage"></div>
@@ -1785,6 +1866,12 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
         </form>
       </div>
       <div class="a-panel" id="t-accounts" role="tabpanel" hidden>
+        <div class="glass card a-stack">
+          <div class="a-row"><h3 class="dd-h">Live activity</h3><span class="live-dot" aria-hidden="true"></span></div>
+          <div class="act-filter" id="act-filter"></div>
+          <div class="act-feed" id="act-feed" aria-live="polite"></div>
+        </div>
+        <div class="tops" id="a-tops"></div>
         <div class="stats stagger" style="--i:2">
           <div class="stat glass"><b id="st-total">0</b><span>Codes</span></div>
           <div class="stat glass"><b id="st-claimed">0</b><span>Claimed</span></div>
@@ -1823,6 +1910,10 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
             <button type="button" data-f="rare" aria-checked="false" role="radio">Rare</button>
             <button type="button" data-f="in" aria-checked="false" role="radio">In</button>
           </div>
+          <label class="a-muted" style="display:flex;align-items:center;gap:6px">Sort
+            <select class="a-in" id="a-sort" style="min-width:0;flex:none;height:32px" aria-label="Sort accounts">
+              <option value="code">Code</option><option value="likes">Most likes</option><option value="chats">Most chats</option><option value="active">Last active</option><option value="new">Newest</option><option value="credit">Store credit</option>
+            </select></label>
           <button class="a-btn sm glass live" type="button" id="a-copyfree">Copy free codes</button>
         </div>
         <label class="field glass pill a-search"><input id="a-search" type="search" placeholder="Search codes or names" aria-label="Search codes or names" autocomplete="off"></label>
@@ -1882,24 +1973,26 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
           </div>
         </div>
         <div class="glass card a-stack lab">
-          <div><span class="lab-badge">Experimental</span><h3>The ___ app</h3></div>
-          <p class="a-muted">A black, mysterious app. When this is on, everyone can download it for free in the Store and it appears on their home screen. Turn it off and it disappears again.</p>
-          <div class="a-row">
-            <span class="a-muted" id="lab-mys-state">Hidden from everyone</span>
-            <button class="a-btn sm glass live tog" type="button" id="lab-mystery" aria-pressed="false">Off</button>
-          </div>
-          <div class="mys-edit">
+          <div><span class="lab-badge">Experimental</span><h3>Apps in the Store</h3></div>
+          <p class="a-muted">Apps you switch on can be downloaded free in the Store. Switching one off takes it off everyone’s home screen: if it comes back, people download it again.</p>
+          <div class="apps-list" id="apps-list"></div>
+          <div class="a-row wrap"><button class="a-btn sm glass live" type="button" id="app-new">New app</button></div>
+          <div class="app-edit mys-edit" id="app-edit" hidden>
             <div class="a-row wrap"><span class="mys-icon" id="mys-icon-prev" aria-hidden="true"></span>
-              <input class="a-in" id="mys-name" maxlength="20" placeholder="App name (___)" aria-label="App name">
+              <input class="a-in" id="mys-name" maxlength="24" placeholder="App name" aria-label="App name">
               <label class="a-btn sm glass live file-btn">Logo<input type="file" id="mys-icon" accept="image/*" hidden></label></div>
-            <textarea id="mys-text" maxlength="500" placeholder="What the app shows (test)" aria-label="What the app shows"></textarea>
-            <div class="a-row wrap">
-              <label class="a-btn sm glass live file-btn">Picture<input type="file" id="mys-img" accept="image/*" hidden></label>
-              <button class="a-btn sm glass live" type="button" id="mys-noimg">No picture</button>
-              <span class="mys-colors"><span class="a-muted">Background</span><input type="color" id="mys-bg" value="#000000" aria-label="Background color">
-                <span class="a-muted">Text</span><input type="color" id="mys-fg" value="#ffffff" aria-label="Text color"></span>
+            <div id="ae-page">
+              <textarea id="mys-text" maxlength="500" placeholder="What the app shows" aria-label="What the app shows"></textarea>
+              <div class="a-row wrap">
+                <label class="a-btn sm glass live file-btn">Picture<input type="file" id="mys-img" accept="image/*" hidden></label>
+                <button class="a-btn sm glass live" type="button" id="mys-noimg">No picture</button>
+                <span class="mys-colors"><span class="a-muted">Background</span><input type="color" id="mys-bg" value="#000000" aria-label="Background color">
+                  <span class="a-muted">Text</span><input type="color" id="mys-fg" value="#ffffff" aria-label="Text color"></span>
+                <span class="a-muted" id="mys-img-lbl"></span>
+              </div>
             </div>
-            <div class="a-row wrap"><span class="a-muted" id="mys-img-lbl"></span><button class="a-btn sm glass live" type="button" id="mys-reset">Reset</button><button class="a-btn glass green live" type="button" id="mys-save">Save app</button></div>
+            <div id="ae-songs"><input class="a-in" id="ae-pick" maxlength="80" placeholder="Winner will be picked by … (e.g. October 30)" aria-label="Winner will be picked by"></div>
+            <div class="a-row wrap"><button class="a-btn sm glass live" type="button" id="mys-reset">Close</button><button class="a-btn glass green live" type="button" id="mys-save">Save app</button></div>
           </div>
         </div>
         <div class="glass card a-stack lab">
@@ -2085,7 +2178,11 @@ const STORE_ITEMS = [
 const SCREEN_MSG_HOURS = 6;
 const POST_HOURS = 24;
 // iTunes uploads: the file is stored in the database in pieces (the free plan has no file storage), so keep files small
-const MEDIA_MAX_MB = 40, MEDIA_CHUNK = 900000;                         // forum posts disappear for users after this (the admin keeps seeing them)
+const MEDIA_MAX_MB = 40, MEDIA_CHUNK = 900000;
+const SONG_MIN_S = 60, SONG_MAX_S = 180, SONG_MAX_MB = 10;   // Song Wars uploads
+const FLAPPY_DAILY_LIKES = 10;                                // number 1 on the Flappy Bird leaderboard, once a day
+// default icons of the apps the admin can switch on
+const APP_ICONS = { page:"assets/ios6/icon-mystery.svg", songwars:"assets/ios6/icon-songwars.svg", flappy:"assets/ios6/icon-flappy.png" };                         // forum posts disappear for users after this (the admin keeps seeing them)
 const SCREEN_SIZES = { S:.06, M:.09, L:.13 };   // share of the screen, like the admin's text tool
 const TSHIRT_SIZES = ['XS','S','M','L','XL','XXL'];
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
@@ -2258,6 +2355,44 @@ async function firebaseApi(cfg){
     watchAllPhotos(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"photos"),fs.orderBy("ts","desc"),fs.limit(300)),s=>cb(s.docs.map(msgOut)),lost); },
     async photoFull(id){ const s=await fs.getDoc(fs.doc(db,"photoData",id)); return s.exists()?s.data().image:null; },
     async deletePhoto(id){ const b=fs.writeBatch(db); b.delete(fs.doc(db,"photos",id)); b.delete(fs.doc(db,"photoData",id)); await b.commit(); },
+    // apps in the Store (admin-made pages, Song Wars, Flappy Bird)
+    watchApps(cb){ return fs.onSnapshot(fs.collection(db,"apps"),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>console.error(e)); },
+    saveApp(id,a){ const r=id?fs.doc(db,"apps",id):fs.doc(fs.collection(db,"apps")); return fs.setDoc(r,{...a,ts:fs.serverTimestamp()}).then(()=>r.id); },
+    deleteApp(id){ return fs.deleteDoc(fs.doc(db,"apps",id)); },
+    // Song Wars
+    watchSongs(cb){ return fs.onSnapshot(fs.collection(db,"songs"),s=>cb(s.docs.map(msgOut)),e=>console.error(e)); },
+    async uploadSong(code,meta,bytes,onProgress){
+      const n=Math.ceil(bytes.length/MEDIA_CHUNK);
+      for(let i=0;i<n;i+=5){ const b=fs.writeBatch(db);
+        for(let j=i;j<Math.min(n,i+5);j++) b.set(fs.doc(db,"songChunks",code+"_"+j),{code,i:j,data:fs.Bytes.fromUint8Array(bytes.subarray(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK))});
+        await b.commit(); onProgress&&onProgress(Math.min(n,i+5)/n); }
+      await fs.setDoc(fs.doc(db,"songs",code),{...meta,code,chunks:n,likedBy:[],ts:fs.serverTimestamp()}); },
+    async songChunk(code,i){ const s=await fs.getDoc(fs.doc(db,"songChunks",code+"_"+i)); if(!s.exists()) throw new Error('missing'); return s.data().data.toUint8Array(); },
+    async deleteSong(code,chunks){ const b=fs.writeBatch(db); for(let j=0;j<Math.max(chunks||0,12);j++) b.delete(fs.doc(db,"songChunks",code+"_"+j)); b.delete(fs.doc(db,"songs",code)); await b.commit(); },
+    likeSong(code,me_,on){ return fs.updateDoc(fs.doc(db,"songs",code),{likedBy:on?fs.arrayUnion(me_):fs.arrayRemove(me_)}); },
+    async pickWinner(code,all){ const b=fs.writeBatch(db); all.forEach(s=>{ if(!!s.winner!==(s.code===code)) b.update(fs.doc(db,"songs",s.code),{winner:s.code===code}); }); await b.commit(); },
+    // Flappy Bird
+    watchFlappy(cb){ return fs.onSnapshot(fs.collection(db,"flappy"),s=>cb(s.docs.map(d=>({code:d.id,...d.data(),ts:d.data().ts?d.data().ts.toMillis():0}))),e=>console.error(e)); },
+    watchFlappyTop(cb){ return fs.onSnapshot(fs.doc(db,"site","flappyTop"),s=>cb(s.exists()?s.data():null),e=>console.error(e)); },
+    async saveFlappy(code,name,best,top){ const b=fs.writeBatch(db);
+      b.set(fs.doc(db,"flappy",code),{name,best,ts:fs.serverTimestamp()});
+      if(!top||best>(top.best??-1)) b.set(fs.doc(db,"site","flappyTop"),{code,name,best,ts:fs.serverTimestamp()});
+      await b.commit(); },
+    async removeFlappy(code,next){ await fs.deleteDoc(fs.doc(db,"flappy",code));
+      await fs.setDoc(fs.doc(db,"site","flappyTop"),next?{code:next.code,name:next.name,best:next.best,ts:fs.serverTimestamp()}:{code:'',name:'',best:-1,ts:fs.serverTimestamp()}); },
+    async addCredit(code,n){ return fs.runTransaction(db,async tx=>{ const r=fs.doc(db,"wallets",code), w=await tx.get(r), d=w.exists()?w.data():{};
+      tx.set(r,{...d,credit:Math.max(d.creditSpent||0,(d.credit||0)+n)}); }); },
+    // paying with store credit: order (paid), wallet, and the T-shirt ticket or the screen message's turn, in one write
+    async buyWithCredit(o,slot){
+      const wr=fs.doc(db,"wallets",o.code), w=await fs.getDoc(wr), d=w.exists()?w.data():{}, oref=fs.doc(fs.collection(db,"orders")), b=fs.writeBatch(db);
+      const token=o.item==='tshirt'?newToken():null;
+      b.set(oref,{...o,currency:'credit',status:'paid',...(token?{token}:{}),ts:fs.serverTimestamp()});
+      b.set(wr,{...d,creditSpent:(d.creditSpent||0)+o.price,last:oref.id});
+      if(token) b.set(fs.doc(db,"merch",token),{name:o.name,size:o.size,order:oref.id,ts:fs.serverTimestamp()});
+      if(o.item==='screen') b.set(fs.doc(db,"screenQueue",oref.id),{name:o.name,...o.msg,startAt:fs.Timestamp.fromMillis(slot.start),endAt:fs.Timestamp.fromMillis(slot.start+SCREEN_MSG_HOURS*3600e3),ts:fs.serverTimestamp()});
+      await b.commit(); return oref.id; },
+    async claimDaily(code){ const r=fs.doc(db,"wallets",code), w=await fs.getDoc(r), d=w.exists()?w.data():{};
+      await fs.setDoc(r,{...d,bonus:(d.bonus||0)+FLAPPY_DAILY_LIKES,dailyAt:fs.serverTimestamp()}); },
     // iTunes
     watchMedia(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"media"),fs.orderBy("ts","desc")),s=>cb(s.docs.map(msgOut),!s.metadata.fromCache),e=>console.error(e)); },
     async uploadMedia(meta,bytes,onProgress){
@@ -2276,12 +2411,12 @@ async function firebaseApi(cfg){
     watchWallet(code,cb){ return fs.onSnapshot(fs.doc(db,"wallets",code),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
     watchWallets(cb){ return fs.onSnapshot(fs.collection(db,"wallets"),s=>{ const o={}; s.docs.forEach(d=>o[d.id]=d.data()); cb(o); },e=>console.error(e)); },
     async addBonus(code,n){ return fs.runTransaction(db,async tx=>{ const r=fs.doc(db,"wallets",code), w=await tx.get(r), d=w.exists()?w.data():{};
-      tx.set(r,{bonus:(d.bonus||0)+n,spent:d.spent||0,...(d.last?{last:d.last}:{})}); }); },
+      tx.set(r,{...d,bonus:(d.bonus||0)+n,spent:d.spent||0}); }); },
     // one write: the order (paid), the wallet's "spent", and (for a picture) the picture itself
     async buyWithLikes(code,name,item,price,extra={}){
       const wr=fs.doc(db,"wallets",code), w=await fs.getDoc(wr), d=w.exists()?w.data():{}, oref=fs.doc(fs.collection(db,"orders")), b=fs.writeBatch(db);
       b.set(oref,{code,name,item,price,currency:'likes',ref:'LIKES',status:'paid',ts:fs.serverTimestamp()});
-      b.set(wr,{bonus:d.bonus||0,spent:(d.spent||0)+price,last:oref.id});
+      b.set(wr,{...d,bonus:d.bonus||0,spent:(d.spent||0)+price,last:oref.id});
       if(extra.avatar) b.set(fs.doc(db,"avatars",code),{image:extra.avatar,order:oref.id,ts:fs.serverTimestamp()});
       if(extra.background) b.set(fs.doc(db,"backgrounds",code),{image:extra.background,order:oref.id,ts:fs.serverTimestamp()});
       await b.commit(); return oref.id; },
@@ -2533,6 +2668,28 @@ function localApi(){
       if(m.usedAt) return {status:'already',name:m.name,size:m.size,ts:m.usedAt};
       m.usedAt=Date.now(); m.by=by; if(who) m.who=who; return {status:'ok',name:m.name,size:m.size,ts:m.usedAt}; }); },
     watchDoorChat:cb=>sub(d=>cb(d.doorChat.slice(-150))),
+    watchApps:cb=>sub(d=>cb(Object.entries(d.apps||{}).map(([id,a])=>({id,...a})))),
+    async saveApp(id,a){ id=id||('ap'+Date.now()); mut(d=>{ d.apps=d.apps||{}; d.apps[id]={...a}; }); return id; },
+    async deleteApp(id){ mut(d=>{ delete (d.apps||{})[id]; }); },
+    watchSongs:cb=>sub(d=>cb(Object.values(d.songs||{}))),
+    async uploadSong(code,meta,bytes,onProgress){ const n=Math.ceil(bytes.length/MEDIA_CHUNK);
+      for(let j=0;j<n;j++){ await idb.set('demo-song:'+code+'_'+j,bytes.slice(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK)); onProgress&&onProgress((j+1)/n); }
+      mut(d=>{ d.songs=d.songs||{}; d.songs[code]={...meta,id:code,code,chunks:n,likedBy:[],ts:Date.now()}; }); },
+    async songChunk(code,i){ const v=await idb.get('demo-song:'+code+'_'+i); if(!v) throw new Error('missing'); return v; },
+    async deleteSong(code,chunks){ for(let j=0;j<(chunks||12);j++) await idb.del('demo-song:'+code+'_'+j); mut(d=>{ delete (d.songs||{})[code]; }); },
+    async likeSong(code,me_,on){ mut(d=>{ const s=(d.songs||{})[code]; if(!s) return; s.likedBy=s.likedBy.filter(c=>c!==me_); if(on) s.likedBy.push(me_); }); },
+    async pickWinner(code){ mut(d=>{ Object.values(d.songs||{}).forEach(s=>s.winner=s.code===code); }); },
+    watchFlappy:cb=>sub(d=>cb(Object.entries(d.flappy||{}).map(([code,f])=>({code,...f})))),
+    watchFlappyTop:cb=>sub(d=>cb(d.flappyTop||null)),
+    async saveFlappy(code,name,best,top){ mut(d=>{ d.flappy=d.flappy||{}; d.flappy[code]={name,best,ts:Date.now()}; if(!top||best>(top.best??-1)) d.flappyTop={code,name,best}; }); },
+    async removeFlappy(code,next){ mut(d=>{ delete (d.flappy||{})[code]; d.flappyTop=next?{code:next.code,name:next.name,best:next.best}:{code:'',name:'',best:-1}; }); },
+    async addCredit(c,n){ mut(d=>{ const w=d.wallets[c]||{}; d.wallets[c]={...w,credit:Math.max(w.creditSpent||0,(w.credit||0)+n)}; }); },
+    async buyWithCredit(o,slot){ return mut(d=>{ const id='or'+Date.now(), w=d.wallets[o.code]||{}, token=o.item==='tshirt'?newToken():null;
+      d.orders.push({id,...o,currency:'credit',status:'paid',...(token?{token}:{}),ts:Date.now()});
+      d.wallets[o.code]={...w,creditSpent:(w.creditSpent||0)+o.price,last:id};
+      if(token) d.merch[token]={name:o.name,size:o.size,order:id};
+      if(o.item==='screen') d.queue.push({id,name:o.name,...o.msg,startAt:slot.start,endAt:slot.start+SCREEN_MSG_HOURS*3600e3}); return id; }); },
+    async claimDaily(code){ mut(d=>{ const w=d.wallets[code]||{}; if(w.dailyAt&&Date.now()-w.dailyAt<20*3600e3) throw new Error('already today'); d.wallets[code]={...w,bonus:(w.bonus||0)+FLAPPY_DAILY_LIKES,dailyAt:Date.now()}; }); },
     watchMedia:cb=>sub(d=>cb((d.media||[]).slice().reverse(),true)),
     async uploadMedia(meta,bytes,onProgress){ const id='md'+Date.now(), n=Math.ceil(bytes.length/MEDIA_CHUNK);
       for(let j=0;j<n;j++){ await idb.set('demo-chunk:'+id+'_'+j,bytes.slice(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK)); onProgress&&onProgress((j+1)/n); }
@@ -2865,54 +3022,87 @@ async function logOutApp(){
   if(homeMode==='admin') adminLogout(); else if(homeMode==='door') doorLogout(); else backToCode();
 }
 
-/* ---------- experimental switches, and the ___ app ---------- */
-let features={}, mysDraft={};
-api.watchFeatures(f=>{ const was=!!features.mystery; features=f||{};
-  const on=!!features.mystery, b=$('lab-mystery');
-  b.setAttribute('aria-pressed',String(on)); b.textContent=on?'On':'Off';
-  $('lab-mys-state').textContent=on?'In the Store for everyone':'Hidden from everyone';
-  if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore();
-  if(!on&&current.id==='s-mystery') goHome(); else drawMystery();
-  if(!mysDraft.dirty) mysLoad();
-});
-// what the admin set for the app (name, logo, text, picture, colours)
-function mysName(){ return (features.mysName||'').trim()||'___'; }
-function drawMystery(){
-  const r=$('s-mystery').style; r.setProperty('--mys-bg',features.mysBg||'#000000'); r.setProperty('--mys-fg',features.mysFg||'#ffffff');
-  document.body.style.setProperty('--mys-bg',features.mysBg||'#000000');
-  $('mys-text-show').textContent=features.mysText!=null&&features.mysText!==''?features.mysText:'test';
-  const im=$('mys-img-show'); im.hidden=!features.mysImage; if(features.mysImage) im.src=features.mysImage; else im.removeAttribute('src');
-  $('s-mystery').setAttribute('aria-label',mysName());
+/* ---------- experimental switches (site/features) ---------- */
+let features={};
+
+/* ---------- apps in the Store: pages the admin makes (like ___), Song Wars, Flappy Bird ----------
+   Each app has "gen": it goes up whenever the admin switches the app off, so a phone's download (which remembers the gen)
+   no longer counts, and the app has to be downloaded again when it comes back. */
+let storeApps=[], appsLoaded=false, editingApp=null, appDraft={}, openAppId=null;
+api.watchFeatures(f=>{ features=f||{}; migrateMystery(); });
+api.watchApps(l=>{ storeApps=(l||[]).sort((a,b)=>(a.order??0)-(b.order??0)||String(a.name).localeCompare(b.name)); appsLoaded=true;
+  if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore(); if(adminOn){ drawAppsAdmin(); seedApps(); migrateMystery(); }
+  if(openAppId){ const a=storeApps.find(x=>x.id===openAppId); if(!a||(!a.on&&homeMode!=='admin')) goHome(); else if(a.type==='page') drawPage(a); else if(a.type==='songwars') drawSongs(); } });
+function appIcon(a){ return a.icon||APP_ICONS[a.type]||APP_ICONS.page; }
+function installKey(a){ return `playlist-app-${a.id}-${me.code}`; }
+function appInstalled(a){ return !!a.on&&!!me.code&&store.get(installKey(a))===String(a.gen||0); }
+const APP_SUB={page:'?',songwars:'Upload your song. The winner performs it live.',flappy:'Tap to fly. Top the leaderboard for 10 likes a day.'};
+function openStoreApp(a){ openAppId=a.id; if(a.type==='songwars') return openSongs(a); if(a.type==='flappy') return openFlappy(a); drawPage(a); go('s-mystery'); }
+// the admin's own pages
+function drawPage(a){
+  const r=$('s-mystery').style; r.setProperty('--mys-bg',a.bg||'#000000'); r.setProperty('--mys-fg',a.fg||'#ffffff');
+  document.body.style.setProperty('--mys-bg',a.bg||'#000000');
+  $('mys-text-show').textContent=a.text||'';
+  const im=$('mys-img-show'); im.hidden=!a.image; if(a.image) im.src=a.image; else im.removeAttribute('src');
+  $('s-mystery').setAttribute('aria-label',a.name);
 }
-function mysLoad(){ mysDraft={name:features.mysName||'',icon:features.mysIcon||null,text:features.mysText||'',image:features.mysImage||null,bg:features.mysBg||'#000000',fg:features.mysFg||'#ffffff'}; mysEditDraw(); }
-function mysEditDraw(){ if(!$('mys-name')) return;
-  if(document.activeElement!==$('mys-name')) $('mys-name').value=mysDraft.name; if(document.activeElement!==$('mys-text')) $('mys-text').value=mysDraft.text;
-  $('mys-bg').value=mysDraft.bg; $('mys-fg').value=mysDraft.fg;
-  $('mys-icon-prev').style.backgroundImage=mysDraft.icon?`url("${mysDraft.icon}")`:`url("${HOME_THEME.icons.mystery}")`;
-  $('mys-img-lbl').textContent=mysDraft.image?'Picture added':'No picture'; }
-$('mys-name').addEventListener('input',e=>{ mysDraft.name=e.target.value; mysDraft.dirty=true; });
-$('mys-text').addEventListener('input',e=>{ mysDraft.text=e.target.value; mysDraft.dirty=true; });
-$('mys-bg').addEventListener('input',e=>{ mysDraft.bg=e.target.value; mysDraft.dirty=true; });
-$('mys-fg').addEventListener('input',e=>{ mysDraft.fg=e.target.value; mysDraft.dirty=true; });
-$('mys-icon').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
-  try{ mysDraft.icon=squareJpeg(await createImageBitmap(f),120); mysDraft.dirty=true; mysEditDraw(); }catch{ toast("Couldn't read that picture."); } });
-$('mys-img').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
-  try{ mysDraft.image=fitJpeg(await createImageBitmap(f),1200,350000); mysDraft.dirty=true; mysEditDraw(); }catch{ toast("Couldn't read that picture."); } });
-$('mys-noimg').addEventListener('click',()=>{ mysDraft.image=null; mysDraft.dirty=true; mysEditDraw(); });
-$('mys-reset').addEventListener('click',()=>{ mysDraft={name:'',icon:null,text:'',image:null,bg:'#000000',fg:'#ffffff',dirty:true}; mysEditDraw(); });
-$('mys-save').addEventListener('click',async()=>{
-  const patch={mysName:mysDraft.name.trim().slice(0,20),mysIcon:mysDraft.icon||null,mysText:mysDraft.text.slice(0,500),mysImage:mysDraft.image||null,mysBg:mysDraft.bg,mysFg:mysDraft.fg};
-  try{ await api.saveFeatures(patch); mysDraft.dirty=false; toast(`${patch.mysName||'___'} is updated for everyone.`); }catch(err){ fail('save the app')(err); }
-});
-$('lab-mystery').addEventListener('click',async()=>{
-  const on=!features.mystery;
-  try{ await api.setFeature('mystery',on); toast(on?'The ___ app is in the Store now.':'The ___ app is hidden again.'); }catch(err){ fail('change that')(err); }
-});
-// "downloading" it is remembered per account on this phone
-const mysKey=()=>'playlist-app-mystery-'+me.code;
-const mysteryInstalled=()=>!!features.mystery&&!!me.code&&store.get(mysKey())==='1';
-function openMystery(){ drawMystery(); go('s-mystery'); }
 $('mys-home').addEventListener('click',()=>goHome());
+// the admin makes sure Song Wars and Flappy Bird exist (off), and moves the old ___ settings into an app
+function seedApps(){
+  if(!adminOn||!appsLoaded||seedApps.done) return; seedApps.done=true;
+  if(!storeApps.some(a=>a.id==='songwars')) api.saveApp('songwars',{type:'songwars',name:'Song Wars',on:false,gen:0,pickBy:'',order:10}).catch(()=>{});
+  if(!storeApps.some(a=>a.id==='flappy')) api.saveApp('flappy',{type:'flappy',name:'Flappy Bird',on:false,gen:0,order:11}).catch(()=>{});
+}
+function migrateMystery(){
+  if(!adminOn||!appsLoaded||migrateMystery.done||storeApps.some(a=>a.id==='mystery')) return;
+  if(!('mystery' in features)&&!features.mysName&&!features.mysText) return;
+  migrateMystery.done=true;
+  api.saveApp('mystery',{type:'page',name:(features.mysName||'').trim()||'___',icon:features.mysIcon||null,on:!!features.mystery,gen:0,
+    text:features.mysText||'test',image:features.mysImage||null,bg:features.mysBg||'#000000',fg:features.mysFg||'#ffffff',order:0}).catch(()=>{});
+}
+// admin: the list, switches, and the editor
+function drawAppsAdmin(){
+  const box=$('apps-list'); if(!box) return; box.replaceChildren();
+  if(!storeApps.length) box.append(mk('p','a-muted','No apps yet.'));
+  storeApps.forEach(a=>{
+    const row=mk('div','app-li'), ic=mk('span','ico'), g=mk('div','grow'); ic.style.backgroundImage=`url("${appIcon(a)}")`;
+    g.append(mk('b',null,a.name),mk('small',null,({page:'Your page',songwars:'Song Wars',flappy:'Flappy Bird'})[a.type]+' · '+(a.on?'in the Store':'off')));
+    const tog=btn(a.on?'On':'Off','tog'); tog.setAttribute('aria-pressed',String(!!a.on));
+    tog.addEventListener('click',async()=>{ const on=!a.on;
+      try{ await api.saveApp(a.id,{...stripApp(a),on,gen:on?(a.gen||0):(a.gen||0)+1}); toast(on?`${a.name} is in the Store.`:`${a.name} is off. People will need to download it again.`); }catch(err){ fail('change that')(err); } });
+    const ed=btn('Edit','',()=>openAppEditor(a));
+    row.append(ic,g,tog,ed);
+    if(a.type==='page') row.append(twoStep(btn('Delete','danger'),()=>api.deleteApp(a.id).then(()=>toast(`${a.name} deleted.`),fail('delete it')),{title:`Delete ${a.name}?`,text:'It disappears from the Store and from everyone’s home screen.'}));
+    box.append(row);
+  });
+}
+function stripApp(a){ const {id,ts,...rest}=a; return rest; }
+$('app-new').addEventListener('click',()=>openAppEditor({type:'page',name:'New app',on:false,gen:0,text:'',bg:'#000000',fg:'#ffffff',order:storeApps.length}));
+function openAppEditor(a){ editingApp=a; appDraft={name:a.name||'',icon:a.icon||null,text:a.text||'',image:a.image||null,bg:a.bg||'#000000',fg:a.fg||'#ffffff',pickBy:a.pickBy||''};
+  $('app-edit').hidden=false; $('ae-page').hidden=a.type!=='page'; $('ae-songs').hidden=a.type!=='songwars'; mysEditDraw(); $('mys-name').focus(); }
+function mysEditDraw(){
+  $('mys-name').value=appDraft.name; $('mys-text').value=appDraft.text; $('ae-pick').value=appDraft.pickBy||'';
+  $('mys-bg').value=appDraft.bg; $('mys-fg').value=appDraft.fg;
+  $('mys-icon-prev').style.backgroundImage=`url("${appDraft.icon||APP_ICONS[editingApp&&editingApp.type]||APP_ICONS.page}")`;
+  $('mys-img-lbl').textContent=appDraft.image?'Picture added':'No picture'; }
+$('mys-name').addEventListener('input',e=>{ appDraft.name=e.target.value; });
+$('mys-text').addEventListener('input',e=>{ appDraft.text=e.target.value; });
+$('ae-pick').addEventListener('input',e=>{ appDraft.pickBy=e.target.value; });
+$('mys-bg').addEventListener('input',e=>{ appDraft.bg=e.target.value; });
+$('mys-fg').addEventListener('input',e=>{ appDraft.fg=e.target.value; });
+$('mys-icon').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ appDraft.icon=squareJpeg(await createImageBitmap(f),120); mysEditDraw(); }catch{ toast("Couldn't read that picture."); } });
+$('mys-img').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ appDraft.image=fitJpeg(await createImageBitmap(f),1200,350000); mysEditDraw(); }catch{ toast("Couldn't read that picture."); } });
+$('mys-noimg').addEventListener('click',()=>{ appDraft.image=null; mysEditDraw(); });
+$('mys-reset').addEventListener('click',()=>{ editingApp=null; $('app-edit').hidden=true; });
+$('mys-save').addEventListener('click',async()=>{
+  if(!editingApp) return; const a=editingApp, name=appDraft.name.trim().slice(0,24); if(!name) return toast('Give the app a name.');
+  const data={...stripApp(a),type:a.type,name,icon:appDraft.icon||null,on:!!a.on,gen:a.gen||0,order:a.order??storeApps.length};
+  if(a.type==='page') Object.assign(data,{text:appDraft.text.slice(0,500),image:appDraft.image||null,bg:appDraft.bg,fg:appDraft.fg});
+  if(a.type==='songwars') data.pickBy=appDraft.pickBy.trim().slice(0,80);
+  try{ await api.saveApp(a.id||null,data); toast(`${name} saved.`); editingApp=null; $('app-edit').hidden=true; }catch(err){ fail('save the app')(err); }
+});
 
 /* ---------- lock screen: reload everything and forget this phone ---------- */
 $('lk-reload').addEventListener('click',async()=>{
@@ -2929,10 +3119,11 @@ const priceOf=it=>Number.isFinite(+prices[it.id])&&prices[it.id]!==''&&prices[it
 const itemOf=id=>LIKE_ITEMS.find(i=>i.id===id)||STORE_ITEMS.find(i=>i.id===id)||{id,name:id,price:0};
 const balanceOf=(code,w)=>(likeCount[code]||0)+((w&&w.bonus)||0)-((w&&w.spent)||0);
 const myBalance=()=>balanceOf(me.code,wallet);
+const creditOf=w=>Math.max(0,((w&&w.credit)||0)-((w&&w.creditSpent)||0));
 api.watchPrices(p=>{ prices=p||{}; if(current.id==='s-store') drawStore(); if(current.id==='s-orders') fillPrices(); });
 function watchMine(){ // per member login: my likes wallet and my background
   walletUnsub&&walletUnsub(); bgUnsub&&bgUnsub();
-  walletUnsub=api.watchWallet(me.code,w=>{ wallet=w||{}; if(current.id==='s-store') drawStore(); if(current.id==='s-settings') renderSettings(); });
+  walletUnsub=api.watchWallet(me.code,w=>{ wallet=w||{}; if(current.id==='s-store') drawStore(); if(current.id==='s-settings') renderSettings(); tryDaily(); });
   bgUnsub=api.watchBackground(me.code,img=>{ myBg=img; applyWall(); if(current.id==='s-store') drawStore(); });
 }
 function stopMine(){ walletUnsub&&walletUnsub(); bgUnsub&&bgUnsub(); walletUnsub=bgUnsub=null; wallet={}; myBg=null; applyWall(); }
@@ -3077,7 +3268,6 @@ const APPS = [
   { id:'door',     name:'Door',     for:['admin','door'], open:()=>openDoor() },
   { id:'photos',   name:'Photos',   for:'admin', open:()=>openPhotos() },
   { id:'orders',   name:'Store',    for:'admin', open:()=>openOrders() },
-  { id:'mystery',  get name(){ return mysName(); }, for:'user', open:()=>openMystery(), shown:()=>mysteryInstalled(), icon:()=>features.mysIcon||null },
   { id:'logout',   name:'Log Out',  for:['user','admin','door'], open:()=>logOutApp(), dock:true },
 ];
 (()=>{ const r=document.documentElement.style;
@@ -3093,7 +3283,13 @@ const APPS = [
 let homeMode='user';
 function renderHome(){
   const grid=$('sb-grid'), dock=$('sb-dockapps'); grid.replaceChildren(); dock.replaceChildren();
-  APPS.filter(a=>[].concat(a.for).includes(homeMode)&&(!a.shown||a.shown())).forEach((a,i)=>{
+  // the built-in apps, then the Store apps this person downloaded (before the dock apps)
+  // (the admin sees every Store app, on or off, to manage them: the Song Wars winner, the Flappy Bird leaderboard)
+  const mine_=homeMode==='user'?storeApps.filter(appInstalled):homeMode==='admin'?storeApps:[];
+  const extra=mine_.map(x=>({id:'app-'+x.id,name:x.name,icon:()=>appIcon(x),open:()=>openStoreApp(x),for:homeMode}));
+  const list=APPS.filter(a=>[].concat(a.for).includes(homeMode)&&(!a.shown||a.shown()));
+  const at=list.findIndex(a=>a.dock); if(at<0) list.push(...extra); else list.splice(at,0,...extra);
+  list.forEach((a,i)=>{
     const b=document.createElement('button'); b.type='button'; b.className='sb-app'; b.style.setProperty('--i',i); b.setAttribute('role','listitem');
     b.setAttribute('aria-label',a.name);
     const ic=document.createElement('span'); ic.className='sb-icon'; ic.style.backgroundImage=`url("${(a.icon&&a.icon())||HOME_THEME.icons[a.id]}")`;
@@ -3279,7 +3475,7 @@ function countLikes(){
 function onLikes(list){
   likesRaw=list; countLikes();
   if(current.id==='chat') render(lastList);
-  if(adminOn) renderCodes(codeList);
+  if(adminOn){ renderCodes(codeList); drawActivity(); }
   if(pmTo) syncLike();
   if(current.id==='s-settings') renderSettings();
   if(current.id==='s-store') drawStore();
@@ -3415,20 +3611,69 @@ function openAdmin(){
   if(adminOn) return;
   adminOn=true; $('a-who').textContent=''; syncScreenTab(true);
   adminUnsubs.push(api.watchAll(renderAdminMsgs), api.watchCodes(l=>{ renderCodes(l); drawAdminDoor(); }),
-    api.watchCheckins(l=>{ adminCheckins=new Map(l.map(x=>[x.id,x])); adminArrivals=l; renderCodes(codeList); drawAdminDoor(); }));
+    api.watchCheckins(l=>{ adminCheckins=new Map(l.map(x=>[x.id,x])); adminArrivals=l; renderCodes(codeList); drawAdminDoor(); drawActivity(); }));
   ensureAdminDoorFeed();
   adminUnsubs.push(api.watchWallets(o=>{ wallets=o||{}; renderCodes(codeList); }));
+  drawAppsAdmin(); seedApps(); migrateMystery(); startActivity(); drawActivity();
   wpLoad();
 }
 function adminLogout(){
   closeHistory(); closeRare();
-  adminOn=false; adminUnsubs.forEach(u=>u&&u()); adminUnsubs=[]; stopAdminDoorFeed(); stopForum(true);
+  adminOn=false; adminUnsubs.forEach(u=>u&&u()); adminUnsubs=[]; stopAdminDoorFeed(); stopForum(true); actSeen=null; seedApps.done=false;
   codeRows.clear(); $('a-codes').replaceChildren(); $('a-msgs').replaceChildren();
   logOutUser(); stopSocial(); keep.del('playlist-admin'); api.adminLogout(); $('code').value='';
   go('s-code'); toast('Logged out of admin.');
 }
 $('a-exit').addEventListener('click',adminLogout);
 let adminCheckins=new Map(); // ticket token → check-in
+/* live activity: everything people do, newest first; and per-account numbers for sorting and the top lists */
+let actData={posts:[],comments:[],orders:[],flappy:[],songs:[]}, acctStats={}, actSeen=null, actFilter='all';
+const ACT_KINDS=[['all','All'],['msg','Chat'],['like','Likes'],['forum','Forum'],['buy','Store'],['door','Door'],['game','Games'],['join','Joins']];
+function nameOf(code){ const c=codeList.find(x=>x.code===code); return (c&&c.username)||code; }
+const tsOf=t=>t&&t.toMillis?t.toMillis():+t||0;
+function buildActivity(){
+  const ev=[], add=(k,ic,ts,text,code)=>{ if(ts) ev.push({k,ic,ts,text,code}); };
+  adminMsgs.forEach(m=>add('msg','💬',m.ts,`${m.username}: “${m.text.slice(0,60)}”`,m.code));
+  likesRaw.forEach(l=>add('like','♥',tsOf(l.ts),`${nameOf(l.from)} liked ${nameOf(l.to)}`,l.from));
+  actData.posts.forEach(p=>add('forum','📝',p.ts,`${p.name} posted “${p.title}” in the Forum`,p.code));
+  actData.comments.forEach(c=>add('forum','💭',c.ts,`${c.name} commented: “${c.text.slice(0,50)}”`,c.code));
+  actData.orders.forEach(o=>add('buy','🛍',o.ts,`${o.name} ${o.status==='pending'?'ordered':'bought'} ${itemOf(o.item).name} (${o.currency==='likes'?o.price+' ♥':kr(o.price)})`,o.code));
+  adminArrivals.forEach(c=>add('door','🚪',c.ts,`${c.name} checked in${c.who?' ('+c.who+')':''}`,null));
+  actData.flappy.forEach(f=>add('game','🐤',f.ts,`${f.name} scored ${f.best} in Flappy Bird`,f.code));
+  actData.songs.forEach(sg=>add('game','🎤',sg.ts,`${sg.name} entered “${sg.title}” in Song Wars`,sg.code));
+  codeList.forEach(c=>{ if(c.username&&c.claimedAt) add('join','👋',c.claimedAt,`${c.username} joined`,c.code); });
+  ev.sort((a,b)=>b.ts-a.ts);
+  // per-account numbers
+  acctStats={}; const S=c=>acctStats[c]||(acctStats[c]={msgs:0,posts:0,last:0});
+  ev.forEach(e=>{ if(!e.code) return; const x=S(e.code); if(e.k==='msg') x.msgs++; if(e.ic==='📝') x.posts++; if(e.ts>x.last) x.last=e.ts; });
+  return ev;
+}
+function drawActivity(){
+  if(!adminOn) return; clearTimeout(drawActivity.t); drawActivity.t=setTimeout(()=>{
+    const ev=buildActivity(), box=$('act-feed'), first=actSeen===null; actSeen=actSeen||new Set(); box.replaceChildren();
+    const f=$('act-filter'); if(!f.children.length) ACT_KINDS.forEach(([k,l])=>{ const b=mk('button',null,l); b.type='button'; b.dataset.k=k; b.onclick=()=>{ actFilter=k; drawActivity(); }; f.append(b); });
+    [...f.children].forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===actFilter)));
+    const shown=ev.filter(e=>actFilter==='all'||e.k===actFilter).slice(0,80);
+    if(!shown.length) box.append(mk('p','a-muted','Nothing yet.'));
+    shown.forEach(e=>{ const id=e.k+e.ts+e.text, r=mk('div','act-row'+(!first&&!actSeen.has(id)?' new':'')); actSeen.add(id);
+      r.append(mk('span','ic',e.ic),mk('span','grow',e.text),mk('span','t',fmtDay(e.ts))); if(e.code) r.style.cursor='pointer', r.onclick=()=>openHistory(e.code,nameOf(e.code)); box.append(r); });
+    // top lists
+    const people=codeList.filter(c=>c.username&&c.code!==ADMIN_ID), top=(fn,n=3)=>people.slice().sort((a,b)=>fn(b)-fn(a)).filter(c=>fn(c)>0).slice(0,n);
+    const card=(title,list,fmt)=>{ const t=mk('div','top'); t.append(mk('small',null,title)); const ol=mk('ol'); list.forEach(c=>ol.append(mk('li',null,`${c.username} · ${fmt(c)}`))); if(!list.length) ol.append(mk('li',null,'—')); t.append(ol); return t; };
+    const today=new Date(); today.setHours(0,0,0,0);
+    $('a-tops').replaceChildren(
+      card('Most likes',top(c=>likeCount[c.code]||0),c=>`${likeCount[c.code]} ♥`),
+      card('Most chats',top(c=>(acctStats[c.code]||{}).msgs||0),c=>`${acctStats[c.code].msgs}`),
+      card('Active today',top(c=>((acctStats[c.code]||{}).last||0)>today?(acctStats[c.code].last):0),c=>fmtTime(acctStats[c.code].last)),
+      card('Flappy Bird',actData.flappy.slice().sort((a,b)=>b.best-a.best).slice(0,3).map(f=>({username:f.name,best:f.best})),c=>c.best));
+    if(codeSort!=='code') renderCodes(codeList);
+  },120);
+}
+function startActivity(){
+  adminUnsubs.push(api.watchPosts(true,l=>{ actData.posts=l; drawActivity(); }), api.watchComments(true,l=>{ actData.comments=l; drawActivity(); }),
+    api.watchOrders(l=>{ actData.orders=l; drawActivity(); }), api.watchFlappy(l=>{ actData.flappy=l; drawActivity(); }),
+    api.watchSongs(l=>{ actData.songs=l; drawActivity(); }));
+}
 let adminArrivals=[], adminMerchList=[], adminDoorUnsubs=[], ddSeen=null;
 // the Door tab: a live feed of arrivals (and T-shirts handed out), and the chat with the door team
 function ensureAdminDoorFeed(){
@@ -3635,7 +3880,8 @@ $('f-newcode').addEventListener('submit',async e=>{
   try{ const ok=await api.createCode(c); toast(ok?`Code ${c} created.`:`Code ${c} already exists.`); if(ok){ $('a-newcode').value=''; markFresh([c]); } }
   catch(err){ fail('create the code')(err); }
 });
-let codeFilter='all', codeList=[], codeQuery='';
+let codeFilter='all', codeList=[], codeQuery='', codeSort='code';
+$('a-sort').addEventListener('change',e=>{ codeSort=e.target.value; renderCodes(codeList); });
 $('a-search').addEventListener('input',e=>{ codeQuery=e.target.value.trim().toLowerCase(); renderCodes(codeList); });
 const matchesQuery=c=>!codeQuery||c.code.toLowerCase().includes(codeQuery)||(c.username||'').toLowerCase().includes(codeQuery);
 function pickFilter(f){
@@ -3678,11 +3924,18 @@ function codeRow(code){
   const likesB=btn('Likes','',async()=>{ const n=await promptBox({title:`Likes for ${cur||code}`,text:`${Math.max(0,balanceOf(code,wallets[code]))} to spend now. Give likes (e.g. 5) or take them (e.g. -3).`,placeholder:'e.g. 5 or -3',ok:'Apply'});
     if(n==null) return; const v=parseInt(n,10); if(!Number.isFinite(v)||!v) return toast('Type a number like 5 or -3.');
     try{ await api.addBonus(code,v); toast(v>0?`Gave ${v} like${v===1?'':'s'} to ${cur||code}.`:`Took ${-v} like${v===-1?'':'s'} from ${cur||code}.`); }catch(err){ fail('change the likes')(err); } });
+  const creditB=btn('Credit','',async()=>{ const w=wallets[code]; const n=await promptBox({title:`Store credit for ${cur||code}`,text:`${kr(creditOf(w))} left now. Give credit in kr (e.g. 50) or take it back (e.g. -20).`,placeholder:'e.g. 50 or -20',ok:'Apply'});
+    if(n==null) return; const v=parseInt(n,10); if(!Number.isFinite(v)||!v) return toast('Type a number like 50 or -20.');
+    try{ await api.addCredit(code,v); toast(v>0?`Gave ${kr(v)} of credit to ${cur||code}.`:`Took ${kr(-v)} of credit from ${cur||code}.`); }catch(err){ fail('change the credit')(err); } });
+  const moreB=btn('More ▾','',()=>{ el.classList.toggle('open'); moreB.textContent=el.classList.contains('open')?'Less ▴':'More ▾'; });
+  const stats=mk('div','acct-stats');
   const rareB=btn('Make rare','',()=>openRare(code)); // only for free codes
   let tkn=null; // a new ticket for a leaked pass (the old QR stops working); not after they're in
   const newTk=twoStep(btn('New ticket'),()=>api.resetTicket(code,tkn).then(()=>toast(`${cur||code} gets a new ticket next time they open Ticket.`),fail('reset the ticket')),
     ()=>({title:`New ticket for ${cur||code}?`,text:'Their current QR code stops working. They get a fresh one the next time they open the Ticket app.',ok:'New ticket'}));
-  mid.append(inp,when); acts.append(rareB,hist,likesB,newTk,save,reset,del); el.append(chip,mid,acts);
+  // the everyday buttons; the rest under "More"
+  const more=mk('div','acct-more'); more.append(rareB,newTk,reset,del);
+  mid.append(inp,when,stats); acts.append(save,hist,likesB,creditB,moreB,more); el.append(chip,mid,acts);
   return { el, update(c){
     cur=c.username; if(document.activeElement!==inp) inp.value=cur||'';
     el.classList.toggle('free',!cur); el.classList.toggle('fresh',fresh_.has(code));
@@ -3691,8 +3944,11 @@ function codeRow(code){
     rareB.hidden=!!cur; rareB.textContent=c.kind==='rare'?'Edit rare':'Make rare';
     const dot=mk('span','dot'); if(cur||c.kind==='rare') dot.style.background=lookOf(code,c.shade,c.kind).bg;
     const lk=likeCount[code]||0, ci=c.ticket&&adminCheckins.get(c.ticket); tkn=c.ticket; newTk.hidden=!c.ticket||!!ci;
-    const spend=balanceOf(code,wallets[code]); likesB.hidden=!cur;
-    when.replaceChildren(dot, (cur ? (c.claimedAt?'Claimed '+fmtDay(c.claimedAt):'Claimed') : 'Not claimed yet')+(lk?` · ${lk} like${lk===1?'':'s'}`:'')+(cur&&spend!==lk?` · ${Math.max(0,spend)} to spend`:''));
+    const spend=balanceOf(code,wallets[code]), st=acctStats[code]||{}; likesB.hidden=creditB.hidden=!cur;
+    when.replaceChildren(dot, cur ? (c.claimedAt?'Joined '+fmtDay(c.claimedAt):'Joined') : 'Not claimed yet');
+    stats.replaceChildren(); if(cur){ const add=(n,l)=>{ const x=mk('span'); x.append(mk('b',null,String(n)),' '+l); stats.append(x); };
+      add(lk,'♥'); add(Math.max(0,spend),'to spend'); add(st.msgs||0,'chats'); if(st.posts) add(st.posts,'posts'); if(creditOf(wallets[code])) add(kr(creditOf(wallets[code])),'credit');
+      if(st.last) stats.append(mk('span',null,'active '+fmtDay(st.last))); }
     if(ci) when.append(mk('span','tag in-tag','In '+fmtTime(ci.ts)));
     reset.disabled=!cur; dirty(); } };
 }
@@ -3705,7 +3961,11 @@ function countTo(el,to){ // numbers roll to their new value
 function renderCodes(all){
   codeList=all; syncLab();
   const list=all.filter(c=>c.code!==ADMIN_ID); // the admin's chat account isn't a login code
-  list.sort((a,b)=>a.code.localeCompare(b.code,undefined,{numeric:true}));
+  const byCode=(a,b)=>a.code.localeCompare(b.code,undefined,{numeric:true}), st=c=>acctStats[c.code]||{};
+  const sorts={code:byCode, likes:(a,b)=>(likeCount[b.code]||0)-(likeCount[a.code]||0)||byCode(a,b), chats:(a,b)=>(st(b).msgs||0)-(st(a).msgs||0)||byCode(a,b),
+    active:(a,b)=>(st(b).last||0)-(st(a).last||0)||byCode(a,b), new:(a,b)=>(b.claimedAt||0)-(a.claimedAt||0)||byCode(a,b),
+    credit:(a,b)=>creditOf(wallets[b.code])-creditOf(wallets[a.code])||byCode(a,b)};
+  list.sort(sorts[codeSort]||byCode);
   const box=$('a-codes'), seen=new Set(), claimed=list.filter(c=>c.username).length;
   countTo($('st-total'),list.length); countTo($('st-claimed'),claimed); countTo($('st-free'),list.length-claimed);
   const isIn=c=>!!(c.ticket&&adminCheckins.has(c.ticket));
@@ -3938,7 +4198,7 @@ $('a-clearall').addEventListener('click',async()=>{
 });
 setInterval(()=>adminOn&&renderAdminMsgs(adminMsgs),60e3);
 function renderAdminMsgs(list){
-  adminMsgs=list; drawMock(); const box=$('a-msgs'), cutoff=Date.now()-TTL;
+  adminMsgs=list; drawActivity(); drawMock(); const box=$('a-msgs'), cutoff=Date.now()-TTL;
   const visible=list.filter(m=>m.ts>cutoff).length;
   $('a-mcount').textContent = `${list.length} message${list.length===1?'':'s'} · ${visible} visible to users (last ${MESSAGE_TTL_HOURS} h)`;
   box.replaceChildren();
@@ -3976,6 +4236,9 @@ function leaveApp(from){
   if(from==='s-store') stopStore();
   if(from==='s-forum'){ fmOpen=null; fmThread=null; if(homeMode==='admin') stopForum(true); }
   if(from==='s-itunes'){ closePlayer(); itUnsub&&itUnsub(); itUnsub=null; }
+  if(from==='s-songs'){ closePlayer(); swUnsub&&swUnsub(); swUnsub=null; }
+  if(from==='s-flappy') stopFlappy();
+  if(['s-mystery','s-songs','s-flappy'].includes(from)) openAppId=null;
   if(from==='s-orders') stopOrders();
   closeViewer();
 }
@@ -3988,6 +4251,7 @@ const SETTINGS_ROWS = [
     {label:'Member since', value:()=>acct.claimedAt?new Date(acct.claimedAt).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'}):'—'} ],
   [ {label:'Likes', value:()=>String(likeCount[me.code]||0)},
     {label:'Likes to spend', value:()=>String(Math.max(0,myBalance()))},
+    {label:'Store credit', value:()=>kr(creditOf(wallet))},
     {label:'Ticket', value:()=>tk.checkin?`Checked in ${fmtTime(tk.checkin.ts)}`:tk.token?'Not used yet':'—'} ],
 ];
 function colorValue(){
@@ -4590,6 +4854,7 @@ function drawStore(){
   // spend likes
   const bal=Math.max(0,myBalance()), lk=$('st-likes'); lk.replaceChildren();
   $('st-bal').replaceChildren(mk('span','heart','♥'),'You have ',mk('b',null,String(bal)),` like${bal===1?'':'s'} to spend`);
+  if(creditOf(wallet)) $('st-bal').append(' · ',mk('b',null,kr(creditOf(wallet))),' store credit');
   LIKE_ITEMS.forEach(it=>{
     const cost=priceOf(it), row=mk('div','st-item'), ic=mk('span','st-ic ic-'+it.id), tx=mk('div','st-txt'), armed=buyArmed===it.id;
     const pb=mk('button','st-price likes'+(armed?' buy':''),armed?'BUY':`${cost} ♥`); pb.type='button'; pb.disabled=bal<cost;
@@ -4607,20 +4872,18 @@ function drawStore(){
     pb.addEventListener('click',()=>{ if(buyArmed!==it.id){ buyArmed=it.id; drawStore(); return; } buyArmed=null; drawStore(); openBuy(it); });
     row.append(ic,tx,pb); list.append(row);
   });
-  if(features.mystery){
-    const row=mk('div','st-item'), ic=mk('span','st-ic ic-mystery'), tx=mk('div','st-txt'), have=mysteryInstalled();
-    if(features.mysIcon){ ic.classList.add('pic'); ic.style.backgroundImage=`url("${features.mysIcon}")`; }
-    else ic.innerHTML='<svg viewBox="0 0 40 10"><path d="M1 8h10M15 8h10M29 8h10" stroke="#444" stroke-width="2"/></svg>';
-    tx.append(mk('b',null,mysName()),mk('small',null,'?'));
-    const pb=mk('button','st-price free'+(buyArmed==='mystery'?' buy':''),have?'OPEN':buyArmed==='mystery'?'INSTALL':'FREE'); pb.type='button';
+  storeApps.filter(a=>a.on).forEach(a=>{
+    const row=mk('div','st-item'), ic=mk('span','st-ic ic-mystery pic'), tx=mk('div','st-txt'), have=appInstalled(a), key='app:'+a.id;
+    ic.style.backgroundImage=`url("${appIcon(a)}")`; tx.append(mk('b',null,a.name),mk('small',null,APP_SUB[a.type]||'?'));
+    const pb=mk('button','st-price free'+(buyArmed===key?' buy':''),have?'OPEN':buyArmed===key?'INSTALL':'FREE'); pb.type='button';
     pb.addEventListener('click',()=>{
-      if(mysteryInstalled()) return openMystery();
-      if(buyArmed!=='mystery'){ buyArmed='mystery'; drawStore(); return; }
+      if(appInstalled(a)) return openStoreApp(a);
+      if(buyArmed!==key){ buyArmed=key; drawStore(); return; }
       buyArmed=null; pb.disabled=true; pb.textContent='INSTALLING'; pb.classList.remove('buy');
-      setTimeout(()=>{ store.set(mysKey(),'1'); drawStore(); toast(`${mysName()} is on your home screen.`); },1400);
+      setTimeout(()=>{ store.set(installKey(a),String(a.gen||0)); drawStore(); toast(`${a.name} is on your home screen.`); },1400);
     });
     row.append(ic,tx,pb); list.append(row);
-  }
+  });
   if(!open) list.append(Object.assign(mk('p','grp-foot','The store opens soon.'),{style:'margin:10px 16px 12px'}));
   // your purchases
   const mine=$('st-mine'); mine.replaceChildren(); const shown=myOrders.filter(o=>o.status!=='cancelled'||Date.now()-o.ts<86400e3);
@@ -4679,12 +4942,23 @@ function openBuy(it){
       else info.append('The screen is free. Your message goes up as soon as your payment is confirmed, for ',mk('b',null,`${SCREEN_MSG_HOURS} hours`),'.');
       s.append(info); draw();
       s.append(Object.assign(mk('div','st-btns'),{}));
-      s.lastChild.append(sbtn(L.busy?`Get in line · ${kr(it.price)}`:`Buy · ${kr(it.price)}`,'green',()=>{ if(!m.text.trim()){ toast('Write your message first.'); return ta.focus(); } m.text=m.text.trim(); placeOrder(it,draft); }),
-        sbtn('Go back','grey',closeSheet));
+      s.lastChild.append(sbtn(L.busy?`Get in line · ${kr(it.price)}`:`Buy · ${kr(it.price)}`,'green',()=>{ if(!m.text.trim()){ toast('Write your message first.'); return ta.focus(); } m.text=m.text.trim(); placeOrder(it,draft); }));
+      if(creditOf(wallet)>=it.price) s.lastChild.append(sbtn(`Pay with store credit (${kr(creditOf(wallet))} left)`,'',()=>{ if(!m.text.trim()){ toast('Write your message first.'); return ta.focus(); } m.text=m.text.trim(); payWithCredit(it,draft); }));
+      s.lastChild.append(sbtn('Go back','grey',closeSheet));
       return;
     }
-    const btns=mk('div','st-btns'); btns.append(sbtn(`Buy · ${kr(it.price)}`,'green',()=>placeOrder(it,draft)),sbtn('Go back','grey',closeSheet)); s.append(btns);
+    const btns=mk('div','st-btns'); btns.append(sbtn(`Buy · ${kr(it.price)}`,'green',()=>placeOrder(it,draft)));
+    if(creditOf(wallet)>=it.price) btns.append(sbtn(`Pay with store credit (${kr(creditOf(wallet))} left)`,'',()=>payWithCredit(it,draft)));
+    btns.append(sbtn('Go back','grey',closeSheet)); s.append(btns);
   });
+}
+// paying with store credit (the admin gives it out): no MobilePay, unlocked at once
+async function payWithCredit(it,draft){
+  const o={code:me.code,name:me.username,item:it.id,price:it.price,ref:newRef(),...(draft.size?{size:draft.size}:{}),...(draft.msg?{msg:draft.msg}:{})};
+  if(!await confirmBox(`Pay ${kr(it.price)} with store credit?`,`You have ${kr(creditOf(wallet))} of credit.`,'Pay')) return;
+  try{ const L=lineInfo(); await api.buyWithCredit(o,{start:L.start}); closeSheet();
+    toast(it.id==='tshirt'?'Paid! Your T-shirt ticket is under Your purchases.':'Paid! Your message is in line.'); }
+  catch(err){ console.error(err); toast("Couldn't pay with credit. Try again."); }
 }
 async function placeOrder(it,draft){
   const o={code:me.code,name:me.username,item:it.id,price:it.price,ref:newRef(),...(draft.size?{size:draft.size}:{}),...(draft.msg?{msg:draft.msg}:{})};
@@ -4783,7 +5057,7 @@ $('f-mp').addEventListener('submit',async e=>{
 });
 function orderCell(o,actions){
   const it=itemOf(o.item), c=mk('div','ocell'), top=mk('div','top');
-  top.append(mk('span','ref',o.ref),mk('span','oname',o.name),mk('span','amt',o.currency==='likes'?`${o.price} ♥`:kr(o.price))); c.append(top);
+  top.append(mk('span','ref',o.ref),mk('span','oname',o.name),mk('span','amt',o.currency==='likes'?`${o.price} ♥`:o.currency==='credit'?`${kr(o.price)} credit`:kr(o.price))); c.append(top);
   let what=it.name; if(o.item==='tshirt') what+=` · size ${o.size}`; if(o.item==='screen'&&o.msg) what+=` · “${o.msg.text}”`;
   c.append(mk('div','what',what+' · '+fmtDay(o.ts)));
   if(actions&&actions.length){ const a=mk('div','acts'); a.append(...actions); c.append(a); }
@@ -5003,7 +5277,7 @@ async function openItunes(){
   if(!itUnsub) itUnsub=api.watchMedia(async(l,fromServer)=>{
     itMedia=l;
     // wiped by the admin: remove it from this phone too
-    if(fromServer&&!admin){ const ids=new Set(l.map(m=>m.id)); for(const id of [...itLib.keys()]) if(!ids.has(id)){ itLib.delete(id); idb.del(libKey(id)).catch(()=>{}); } }
+    if(fromServer&&!admin){ const ids=new Set(l.map(m=>m.id)); for(const [id,v] of [...itLib]) if(!ids.has(id)&&!v.src){ itLib.delete(id); idb.del(libKey(id)).catch(()=>{}); } }
     drawItunes(); drawUsage();
   });
 }
@@ -5054,7 +5328,7 @@ function drawItunes(){
       if(itBusy.has(m.id)){ const bar=mk('div','it-bar'), i=mk('i'); i.style.width=(itBusy.get(m.id)*100)+'%'; bar.append(i); tx.append(bar); }
       if(admin){ const acts=adminActs(m); acts.style.marginTop='6px'; tx.append(acts); }
       r.append(art(m),tx,itButton(m)); box.append(r); });
-  if(kept.length&&!admin){ head('On this phone','Removed from the store');
+  if(kept.length&&!admin){ head('On this phone','Saved songs and removed items');
     kept.forEach(v=>{ const r=mk('div','it-row'), tx=mk('div','it-txt'); tx.append(mk('b',null,v.title),mk('small',null,meta(v)));
       const b=mk('button','it-btn play','PLAY'); b.type='button'; b.addEventListener('click',()=>playMedia(v)); r.append(art(v),tx,b); box.append(r); }); }
 }
@@ -5113,6 +5387,174 @@ $('it-upload').addEventListener('click',async()=>{
   }catch(err){ fail('upload it')(err); }
   finally{ b.disabled=false; setTimeout(()=>{ bar.hidden=true; },800); }
 });
+
+/* ---------- Song Wars: one song each (1-3 min, title and cover), likes, ranking, the admin picks the winner ---------- */
+let swApp=null, songs=[], swUnsub=null, swSort='likes', swDraft={title:'',cover:null,file:null,dur:0}, swBusy=false;
+const swTop=appTop($('s-songs'),'Song Wars');
+function openSongs(a){ swApp=a; go('s-songs'); swTop.back.querySelector('span').textContent='Home'; $('s-songs').querySelector('.ios-title').textContent=a.name;
+  if(!swUnsub) swUnsub=api.watchSongs(l=>{ songs=l; drawSongs(); }); drawSongs();
+  alertBox('🏆 '+a.name,`Winner will be picked by ${(a.pickBy||'').trim()||'the admin'} to perform their song live at the event.`); }
+function alertBox(title,text){ return new Promise(res=>{ $('al-title').textContent=title; $('al-text').textContent=text; $('al-in').hidden=true; $('al-no').hidden=true; $('al-ok').textContent='OK';
+  $('al-wrap').hidden=false; setTimeout(()=>$('al-ok').focus(),60);
+  $('al-form').onsubmit=e=>{ e.preventDefault(); $('al-wrap').hidden=true; $('al-in').hidden=false; $('al-no').hidden=false; $('al-form').onsubmit=null; res(); }; }); }
+async function songBlob(s){ const parts=[]; for(let i=0;i<s.chunks;i++) parts.push(await api.songChunk(s.code,i)); return new Blob(parts,{type:s.mime||'audio/mpeg'}); }
+async function playSong(s){ try{ toast('Loading…'); const blob=await songBlob(s); await playMedia({id:'song-'+s.code,kind:'music',title:`${s.title} · ${s.name}`,cover:s.cover,blob}); }catch(err){ fail('play it')(err); } }
+async function saveSong(s){
+  try{ toast('Saving to iTunes…'); const blob=await songBlob(s), id='song-'+s.code+'-'+s.ts;
+    const item={id,src:'songwars',title:`${s.title} · ${s.name}`,kind:'music',mime:blob.type,size:blob.size,dur:s.dur,cover:s.cover,blob,ts:Date.now()};
+    await idb.set(libKey(id),item); toast('Saved. It’s in iTunes → Music, under “On this phone”.'); }
+  catch(err){ fail('save it')(err); }
+}
+function drawSongs(){
+  if(current.id!=='s-songs') return;
+  const box=$('sw-body'), admin=homeMode==='admin', mine=songs.find(x=>x.code===me.code), a=swApp||{};
+  box.replaceChildren();
+  const ban=mk('div','sw-banner'); ban.append(mk('b',null,'🏆 Win a live show'),`Winner will be picked by ${(a.pickBy||'').trim()||'the admin'} to perform their song live at the event.`); box.append(ban);
+  const win=songs.find(x=>x.winner);
+  if(win){ const w=mk('div','sw-win'), c=mk('div','it-art'); c.style.backgroundImage=`url("${win.cover}")`; const t=mk('div','it-txt');
+    t.append(mk('small',null,'👑 WINNER'),mk('b',null,win.title),mk('small',null,win.name)); const pb=mk('button','it-btn play','PLAY'); pb.type='button'; pb.onclick=()=>playSong(win);
+    w.append(c,t,pb); box.append(w); }
+  // your song
+  if(!admin){ const m=mk('div','sw-mine'); m.append(mk('h3',null,mine?'Your song':'Upload your song'));
+    if(mine&&!swDraft.editing){ const r=mk('div','row'), c=mk('span','sw-cover'); c.style.backgroundImage=`url("${mine.cover}")`; const t=mk('div','it-txt');
+      t.append(mk('b',null,mine.title),mk('small',null,`${fmtDur(mine.dur)} · ♥ ${(mine.likedBy||[]).length}`)); r.append(c,t);
+      const ch=mk('button','mini-btn','Change'); ch.type='button'; ch.onclick=()=>{ swDraft={title:mine.title,cover:mine.cover,file:null,dur:0,editing:true}; drawSongs(); };
+      const rm=mk('button','mini-btn red','Remove'); rm.type='button';
+      rm.onclick=async()=>{ if(!await confirmBox('Remove your song?','Its likes are lost. You can upload a new one after.','Remove')) return; try{ await api.deleteSong(me.code,mine.chunks); toast('Song removed.'); }catch(err){ fail('remove it')(err); } };
+      r.append(ch,rm); m.append(r); }
+    else { const ti=mk('input'); ti.type='text'; ti.maxLength=40; ti.placeholder='Song title'; ti.value=swDraft.title; ti.oninput=()=>swDraft.title=ti.value;
+      const r1=mk('div','row'); r1.append(ti);
+      const cv=mk('span','sw-cover'); if(swDraft.cover) cv.style.backgroundImage=`url("${swDraft.cover}")`;
+      const cb=mk('button','mini-btn grey','Cover'); cb.type='button'; cb.onclick=async()=>{ const img=await pickImage(); if(!img) return; swDraft.cover=squareJpeg(img,300); drawSongs(); };
+      const fb=mk('button','mini-btn grey',swDraft.file?'Other song':'Song file'); fb.type='button';
+      fb.onclick=()=>{ const i=document.createElement('input'); i.type='file'; i.accept='audio/*'; i.onchange=async()=>{ const f=i.files&&i.files[0]; if(!f) return;
+        if(f.size>SONG_MAX_MB*1e6) return toast(`That file is ${fmtSize(f.size)}. The limit is ${SONG_MAX_MB} MB.`);
+        const info=await mediaInfo(f); if(info.dur<SONG_MIN_S||info.dur>SONG_MAX_S) return toast(`Your song is ${fmtDur(info.dur)||'an unknown length'}. It has to be between 1 and 3 minutes.`);
+        swDraft.file=f; swDraft.dur=info.dur; if(!swDraft.title) swDraft.title=f.name.replace(/\.[^.]+$/,'').slice(0,40); drawSongs(); }; i.click(); };
+      const r2=mk('div','row'); r2.append(cv,cb,fb,mk('span','muted',swDraft.file?`${fmtDur(swDraft.dur)} · ${fmtSize(swDraft.file.size)}`:'1 to 3 minutes'));
+      const up=mk('button','mini-btn green',swBusy?'Uploading…':(mine?'Replace my song':'Upload')); up.type='button'; up.disabled=swBusy;
+      const bar=mk('div','it-bar'), bi=mk('i'); bar.append(bi); bar.hidden=!swBusy;
+      up.onclick=async()=>{ if(!swDraft.title.trim()) return toast('Give your song a title.'); if(!swDraft.cover) return toast('Add a cover.'); if(!swDraft.file) return toast('Choose the song file.');
+        swBusy=true; up.disabled=true; up.textContent='Uploading…'; bar.hidden=false;
+        try{ if(mine) await api.deleteSong(me.code,mine.chunks);
+          const bytes=new Uint8Array(await swDraft.file.arrayBuffer());
+          await api.uploadSong(me.code,{name:me.username,title:swDraft.title.trim().slice(0,40),cover:swDraft.cover,dur:swDraft.dur,size:swDraft.file.size,mime:swDraft.file.type||'audio/mpeg'},bytes,f=>bi.style.width=Math.round(f*100)+'%');
+          swDraft={title:'',cover:null,file:null,dur:0}; toast('Your song is in Song Wars!'); }
+        catch(err){ fail('upload your song')(err); } finally{ swBusy=false; drawSongs(); } };
+      const r3=mk('div','row'); r3.append(up);
+      if(swDraft.editing){ const cx=mk('button','mini-btn grey','Cancel'); cx.type='button'; cx.onclick=()=>{ swDraft={title:'',cover:null,file:null,dur:0}; drawSongs(); }; r3.append(cx); }
+      m.append(r1,r2,r3,bar); }
+    box.append(m); }
+  // ranking
+  const sortRow=mk('div','sw-sort'); sortRow.append(seg([['likes','Most liked'],['new','Newest']],swSort,v=>{ swSort=v; drawSongs(); })); box.append(sortRow);
+  const list=songs.slice().sort(swSort==='likes'?(a,b)=>(b.likedBy||[]).length-(a.likedBy||[]).length||a.ts-b.ts:(a,b)=>b.ts-a.ts);
+  if(!list.length) box.append(mk('p','it-empty','No songs yet. Be the first!'));
+  list.forEach((sg,i)=>{ const r=mk('div','it-row'), c=mk('div','it-art'); c.style.backgroundImage=`url("${sg.cover}")`;
+    const t=mk('div','it-txt'), title=mk('b',null,sg.title); if(sg.winner) title.append(mk('span','sw-crown','👑'));
+    const nm=mk('button','sw-name',sg.name); nm.type='button'; nm.onclick=e=>{ e.stopPropagation(); if(admin) return openHistory(sg.code,sg.name); if(sg.code!==me.code) openPM({code:sg.code,name:sg.name},nm.getBoundingClientRect()); };
+    t.append(title,nm,mk('small',null,fmtDur(sg.dur)));
+    const liked=!!me.code&&(sg.likedBy||[]).includes(me.code), lb=mk('button','it-btn sw-like'+(liked?' on':''),`♥ ${(sg.likedBy||[]).length}`); lb.type='button';
+    lb.disabled=admin||sg.code===me.code; lb.onclick=()=>api.likeSong(sg.code,me.code,!liked).catch(fail('save the like'));
+    const pb=mk('button','it-btn play','▶'); pb.type='button'; pb.onclick=()=>playSong(sg); pb.setAttribute('aria-label','Play '+sg.title);
+    r.append(mk('span','sw-rank',swSort==='likes'?String(i+1):''),c,t,lb,pb);
+    if(!admin&&sg.code!==me.code){ const sv=mk('button','it-btn','SAVE'); sv.type='button'; sv.onclick=()=>saveSong(sg); sv.setAttribute('aria-label','Save to iTunes'); r.append(sv); }
+    if(admin){ const w=mk('button','mini-btn '+(sg.winner?'green':''),sg.winner?'Winner ✓':'Pick winner'); w.type='button';
+      w.onclick=async()=>{ if(sg.winner) return; if(!await confirmBox(`Pick “${sg.title}” as the winner?`,`${sg.name} will perform it live at the event. Everyone sees it at the top of Song Wars.`,'Pick winner')) return;
+        try{ await api.pickWinner(sg.code,songs); toast(`${sg.name} is the winner!`); }catch(err){ fail('pick the winner')(err); } };
+      const d=mk('button','mini-btn red','Delete'); d.type='button'; d.onclick=async()=>{ if(!await confirmBox(`Delete “${sg.title}”?`,`${sg.name}'s song is removed.`,'Delete')) return; api.deleteSong(sg.code,sg.chunks).then(()=>toast('Deleted.'),fail('delete it')); };
+      r.append(w,d); }
+    box.append(r); });
+}
+
+/* ---------- Flappy Bird: the playable one from the Figma file, with a leaderboard ---------- */
+const FB={W:288,H:512,GROUND:400,GAP:104,SPEED:2,GRAV:.25,FLAP:-4.6,PIPE_W:52,SPACING:170};
+const fbImg={}; ['background','base','pipe','message','gameover','panel','restart','bird-0','bird-1','bird-2',...'0123456789'].forEach(n=>{ const i=new Image(); i.src=`assets/flappy/${n}.png`; fbImg[n]=i; });
+let fb=null, fbRaf=0, fbScores=[], fbTop=null, fbUnsubs=[];
+function openFlappy(a){ go('s-flappy'); fbReset(); fitFlappy(); cancelAnimationFrame(fbRaf); let last=performance.now();
+  const loop=t=>{ const dt=Math.max(0,Math.min(3,(t-last)/16.67)); last=t; fbRaf=requestAnimationFrame(loop); fbStep(dt); fbDraw(); }; fbRaf=requestAnimationFrame(loop);
+  if(!fbUnsubs.length) fbUnsubs.push(api.watchFlappy(l=>{ fbScores=l; if(!$('fb-board').hidden) drawBoard(); })); }
+function stopFlappy(){ cancelAnimationFrame(fbRaf); fbRaf=0; fbUnsubs.forEach(u=>u&&u()); fbUnsubs=[]; $('fb-board').hidden=true; }
+const fbBestKey=()=>'playlist-flappy-best-'+(me.code||'admin');
+function fbReset(){ fb={state:'ready',y:240,v:0,t:0,score:0,best:+store.get(fbBestKey())||0,groundX:0,pipes:[],flash:0}; }
+function fbGapY(){ return 90+Math.random()*(FB.GROUND-FB.GAP-150); }
+function fbFlap(){
+  if(!fb) return;
+  if(fb.state==='ready'){ fb.state='play'; fb.pipes=[{x:FB.W+40,gap:fbGapY(),passed:false},{x:FB.W+40+FB.SPACING,gap:fbGapY(),passed:false}]; }
+  if(fb.state==='play'){ fb.v=FB.FLAP; return; }
+  if(fb.state==='over'&&fb.t>30) fbReset();
+}
+function fbStep(dt){
+  if(!fb) return; fb.t+=dt;
+  if(fb.state!=='over') fb.groundX=(fb.groundX-FB.SPEED*dt)%24;
+  if(fb.state==='ready'){ fb.y=240+Math.sin(fb.t/8)*5; return; }
+  if(fb.state==='over'){ if(fb.y<FB.GROUND-12){ fb.v=Math.min(fb.v+FB.GRAV*dt,10); fb.y+=fb.v*dt; } fb.flash=Math.max(0,fb.flash-.08*dt); return; }
+  fb.v=Math.min(fb.v+FB.GRAV*dt,10); fb.y+=fb.v*dt;
+  for(const p of fb.pipes){ p.x-=FB.SPEED*dt;
+    if(p.x+FB.PIPE_W<0){ p.x+=FB.SPACING*2; p.gap=fbGapY(); p.passed=false; }
+    if(!p.passed&&p.x+FB.PIPE_W<60){ p.passed=true; fb.score++; } }
+  // hit a pipe, the ground or fly off the top
+  const bx=60+4, by=fb.y-12+4, bw=34-8, bh=24-8;
+  const hit=fb.y+12>=FB.GROUND||fb.y<-30||fb.pipes.some(p=>bx+bw>p.x&&bx<p.x+FB.PIPE_W&&(by<p.gap||by+bh>p.gap+FB.GAP));
+  if(hit) fbOver();
+}
+function fbOver(){
+  fb.state='over'; fb.t=0; fb.flash=1; if(navigator.vibrate) navigator.vibrate(60);
+  if(fb.score>fb.best){ fb.best=fb.score; store.set(fbBestKey(),String(fb.best)); }
+  // your best on the leaderboard (members; the rules only take a higher score)
+  const mineNow=fbScores.find(x=>x.code===me.code);
+  if(me.code&&homeMode==='user'&&fb.score>0&&(!mineNow||fb.score>mineNow.best))
+    api.saveFlappy(me.code,me.username,fb.score,fbTop).then(()=>{ if(!fbTop||fb.score>(fbTop.best??-1)) toast('New number 1! You get 10 likes every day while you stay on top.'); },err=>console.error(err));
+}
+function fbDigits(g,n,cx,y,h){ const s=String(n), w=[...s].map(c=>(fbImg[c].naturalWidth||24)*h/36), total=w.reduce((a,b)=>a+b,0)+(s.length-1)*2; let x=cx-total/2;
+  [...s].forEach((c,i)=>{ g.drawImage(fbImg[c],x,y,w[i],h); x+=w[i]+2; }); }
+function fbDraw(){
+  const c=$('fb-canvas'), g=c.getContext('2d'); if(!fb) return; g.imageSmoothingEnabled=false;
+  g.drawImage(fbImg.background,0,0,FB.W,FB.H);
+  const ph=FB.PIPE_W*(fbImg.pipe.naturalHeight||793)/(fbImg.pipe.naturalWidth||138);
+  for(const p of fb.pipes){ if(fb.state==='ready') break;
+    g.save(); g.translate(p.x+FB.PIPE_W/2,p.gap); g.scale(1,-1); g.drawImage(fbImg.pipe,-FB.PIPE_W/2,0,FB.PIPE_W,ph); g.restore(); // the top pipe, upside down
+    g.drawImage(fbImg.pipe,p.x,p.gap+FB.GAP,FB.PIPE_W,ph); }
+  g.drawImage(fbImg.base,fb.groundX,FB.GROUND,336,112);
+  const frame=fb.state==='over'?1:(Math.floor(Math.max(0,fb.t)/6)%3), ang=fb.state==='play'||fb.state==='over'?Math.max(-.4,Math.min(1.4,fb.v/8)):0;
+  g.save(); g.translate(60+17,fb.y); g.rotate(ang); g.drawImage(fbImg['bird-'+frame],-17,-12,34,24); g.restore();
+  if(fb.state==='ready') g.drawImage(fbImg.message,(FB.W-184)/2,80,184,267);
+  if(fb.state==='play') fbDigits(g,fb.score,FB.W/2,40,36);
+  if(fb.state==='over'){
+    g.drawImage(fbImg.gameover,(FB.W-192)/2,90,192,42);
+    const pw=150, phh=pw*(fbImg.panel.naturalHeight||228)/(fbImg.panel.naturalWidth||172), px=(FB.W-pw)/2, py=142;
+    g.drawImage(fbImg.panel,px,py,pw,phh); fbDigits(g,fb.score,px+pw/2,py+phh*.37,22); fbDigits(g,fb.best,px+pw/2,py+phh*.72,22);
+    if(fb.t>30) g.drawImage(fbImg.restart,(FB.W-130)/2,py+phh+10,130,45);
+    if(fb.flash>0){ g.fillStyle=`rgba(255,255,255,${fb.flash})`; g.fillRect(0,0,FB.W,FB.H); } }
+}
+function fitFlappy(){ const c=$('fb-canvas'), k=Math.min(innerWidth/FB.W,(innerHeight)/FB.H); c.style.width=Math.floor(FB.W*k)+'px'; c.style.height=Math.floor(FB.H*k)+'px'; }
+addEventListener('resize',()=>{ if(current.id==='s-flappy') fitFlappy(); });
+$('fb-canvas').addEventListener('pointerdown',e=>{ e.preventDefault(); fbFlap(); });
+document.addEventListener('keydown',e=>{ if(current.id==='s-flappy'&&(e.code==='Space'||e.key===' '||e.key==='ArrowUp')){ e.preventDefault(); fbFlap(); } });
+$('fb-home').addEventListener('click',()=>goHome());
+$('fb-lb').addEventListener('click',()=>{ $('fb-board').hidden=false; drawBoard(); });
+$('fb-lb-close').addEventListener('click',()=>{ $('fb-board').hidden=true; });
+$('fb-board').addEventListener('pointerdown',e=>{ if(e.target===$('fb-board')) $('fb-board').hidden=true; });
+function drawBoard(){
+  const box=$('fb-lb-list'), admin=homeMode==='admin', list=fbScores.slice().sort((a,b)=>b.best-a.best||a.ts-b.ts); box.replaceChildren();
+  $('fb-lb-sub').textContent=`Number 1 gets ${FLAPPY_DAILY_LIKES} likes every day. Your best on this phone: ${fb?fb.best:0}.`;
+  if(!list.length) box.append(mk('p',null,'No scores yet. Be the first!'));
+  list.slice(0,50).forEach((x,i)=>{ const r=mk('div','fb-row'+(x.code===me.code?' me':'')); r.append(mk('span','n',i===0?'👑':String(i+1)),mk('span','grow',x.name),mk('b',null,String(x.best)));
+    if(admin){ const d=mk('button','mini-btn red','Remove'); d.type='button';
+      d.onclick=async()=>{ if(!await confirmBox(`Remove ${x.name} from the leaderboard?`,'Their score is deleted. They can play again and get back on.','Remove')) return;
+        const next=list.filter(y=>y.code!==x.code)[0]||null; try{ await api.removeFlappy(x.code,next); toast(`${x.name} is off the leaderboard.`); }catch(err){ fail('remove them')(err); } };
+      r.append(d); }
+    box.append(r); });
+}
+// number 1 on the leaderboard gets 10 likes a day, the first time they open the home screen that day
+api.watchFlappyTop(t=>{ fbTop=t; tryDaily(); });
+function tryDaily(){
+  if(!me.code||homeMode!=='user'||!fbTop||fbTop.code!==me.code||tryDaily.busy||!walletUnsub) return;
+  const last=Math.max(wallet.dailyAt?(wallet.dailyAt.toMillis?wallet.dailyAt.toMillis():+wallet.dailyAt):0,+store.get('playlist-daily-'+me.code)||0);
+  if(Date.now()-last<20*3600e3) return;
+  store.set('playlist-daily-'+me.code,String(Date.now())); // once a day on this phone too (the database checks it as well)
+  tryDaily.busy=true;
+  api.claimDaily(me.code).then(()=>toast(`🏆 You’re number 1 in Flappy Bird: +${FLAPPY_DAILY_LIKES} likes today!`),err=>console.error(err)).finally(()=>{ setTimeout(()=>tryDaily.busy=false,5000); });
+}
 
 /* ---------- resume session ---------- */
 const saved=keep.get('playlist-code');
