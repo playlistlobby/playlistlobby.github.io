@@ -576,6 +576,40 @@ body.lock-ios6 #n-code{position:absolute;z-index:2;left:50%;transform:translateX
 body.lock-ios6 #n-code:empty{display:none}
 body.lock-ios6 #n-code.err{color:#ffd0d0}
 @media (min-width:700px){ body.lock-ios6 .lk-head{height:120px} .lk-clock{font-size:72px} body.lock-ios6 #n-code{top:calc(20px + 120px + 16px)} }
+/* ===================== USERNAME STEP, iOS 6 Setup style =====================
+   Active when USER_STYLE = 'ios6' (body.user-ios6); 'glass' keeps the previous username screen.
+   Like the kit's Setup screens: black glossy nav bar (Back / Next), dark textured background, grouped white cells. */
+.su-top,.su-lbl{display:none}
+body.user-ios6[data-screen=s-user]{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),radial-gradient(130% 80% at 50% 0%,#62666e 0%,#45484e 50%,#2f3136 100%)}
+body.user-ios6[data-screen=s-user] .bg{opacity:0}
+body.user-ios6 .su-top{display:block;position:absolute;z-index:4;top:0;left:0;right:0}
+body.user-ios6 .su-top .sb-status{position:relative;background:#000}
+body.user-ios6 .su-nav{background:linear-gradient(rgba(84,86,92,.94) 0%,rgba(40,41,45,.95) 50%,rgba(20,20,23,.97) 51%,rgba(10,10,12,.98) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 .5px 0 #000,0 8px 18px -8px rgba(0,0,0,.6)}
+body.user-ios6 .su-nav .ios-title{text-shadow:0 -1px 0 rgba(0,0,0,.8)}
+body.user-ios6 .su-nav .ios-navbtn{box-shadow:0 0 0 .8px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 rgba(255,255,255,.12);color:rgba(255,255,255,.4)}
+/* Next turns into the iOS 6 blue button once the name is valid */
+body.user-ios6 .su-nav .su-next.on{color:#fff;background:linear-gradient(#7aaef5 0%,#3f7fe4 50%,#2b6ad8 52%,#2d6fdb 100%);
+  box-shadow:0 0 0 .8px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.45),0 1px 0 rgba(255,255,255,.12)}
+body.user-ios6 #s-user{justify-content:flex-start;padding-top:calc(20px + 44px + env(safe-area-inset-top) + 26px)}
+body.user-ios6 #s-user #lock, body.user-ios6 #s-user #next, body.user-ios6 #user-back{display:none}
+/* grouped white cells */
+body.user-ios6 #f-user, body.user-ios6 #shade-box, body.user-ios6 #rare-note{width:min(420px,calc(100% - 20px));background:#fff;border-radius:10px;
+  -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 0 0 .6px rgba(0,0,0,.65),0 1px 0 rgba(255,255,255,.14),0 3px 8px rgba(0,0,0,.35)}
+body.user-ios6 #shade-box::before, body.user-ios6 #rare-note::before, body.user-ios6 #shade-box::after, body.user-ios6 #rare-note::after{display:none}
+body.user-ios6 #f-user{height:46px;padding:0}
+body.user-ios6 #f-user .field.glass{height:46px;padding:0 12px 0 14px;background:none;box-shadow:none;border-radius:10px;-webkit-backdrop-filter:none;backdrop-filter:none;transform:none}
+body.user-ios6 #f-user .field.glass::before, body.user-ios6 #f-user .field.glass::after{display:none}
+body.user-ios6 .su-lbl{display:block;flex:none;width:98px;font:700 16px/46px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#111}
+body.user-ios6 #uname{color:#385487;font:400 16px "Helvetica Neue",Helvetica,Arial,sans-serif;caret-color:#0A84FF}
+body.user-ios6 #uname::placeholder{color:#b8b8bd}
+body.user-ios6 #n-user{width:min(420px,calc(100% - 20px));margin:12px 0 16px;color:rgba(255,255,255,.88);font:700 14px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  text-shadow:0 -1px 0 rgba(0,0,0,.7)}
+body.user-ios6 #n-user.err{color:#ffb4b4}
+body.user-ios6 #shade-box{height:46px;margin-top:0;padding:0 14px;gap:12px}
+body.user-ios6 .shade-lbl{width:84px;font:700 16px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#111}
+body.user-ios6 #rare-note{margin-top:0;padding:6px 8px 6px 14px}
+body.user-ios6 #rare-note span{color:#111;font-weight:700}
 /* admin history: private messages */
 .hist .bubble.pm{outline:1.5px dashed rgba(0,0,0,.28);outline-offset:2px}
 .hist .bubble.pm.sent{align-self:flex-end}
@@ -740,8 +774,26 @@ body.lock-ios6 #n-code.err{color:#ffd0d0}
 
 <!-- 2. USERNAME -->
 <section class="screen out" id="s-user" aria-label="Choose username" hidden>
+  <!-- iOS 6 Setup style parts (shown when USER_STYLE = 'ios6'): status bar + black nav bar with Back / Next -->
+  <div class="su-top" id="su-top">
+    <div class="sb-status" aria-hidden="true">
+      <span><span class="sb-bars"><i style="height:3px"></i><i style="height:4.5px"></i><i style="height:6px"></i><i style="height:7.5px"></i><i style="height:9px"></i></span> Playlist</span>
+      <span class="sb-time">00:00:00:00</span>
+      <span>100% <svg width="23" height="11" viewBox="0 0 23 11"><rect x=".6" y=".6" width="19" height="9.8" rx="1.6" fill="none" stroke="#fff" stroke-width="1.2"/><rect x="2" y="2" width="16.2" height="7" rx=".6" fill="#fff"/><rect x="20.4" y="3.4" width="1.8" height="4.2" rx=".6" fill="#fff"/></svg></span>
+    </div>
+    <nav class="ios-nav su-nav">
+      <button class="ios-back" type="button" id="su-back" aria-label="Back to the code screen">
+        <svg class="ios-back-shape" viewBox="0 0 62 30" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="bkg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset=".52" stop-color="#000" stop-opacity=".1"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs>
+          <path d="M12.5 1H57a4.5 4.5 0 0 1 4.5 4.5v19a4.5 4.5 0 0 1-4.5 4.5H12.5a3 3 0 0 1-2.3-1.1L1.6 16.6a2.5 2.5 0 0 1 0-3.2l8.6-11.3A3 3 0 0 1 12.5 1Z" fill="url(#bkg2)" stroke="rgba(0,0,0,.75)" stroke-width=".8"/>
+          <path d="M13 2h44" stroke="rgba(255,255,255,.3)" stroke-width=".8"/></svg>
+        <span>Back</span></button>
+      <h1 class="ios-title">Username</h1>
+      <button class="ios-navbtn su-next" type="button" id="su-next" aria-label="Save and continue">Next</button>
+    </nav>
+  </div>
   <form class="bar stagger" style="--i:0" id="f-user" autocomplete="off">
-    <label class="field glass pill"><input id="uname" placeholder="Choose username" aria-label="Username" maxlength="20"></label>
+    <label class="field glass pill"><span class="su-lbl">Username</span><input id="uname" placeholder="Choose username" aria-label="Username" maxlength="20"></label>
     <button class="circle glass live" type="submit" id="lock" aria-label="Lock username">
       <svg id="ic-open" viewBox="0 0 22 24"><path d="M15 11V7a4 4 0 0 0-8 0v1" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><rect x="2" y="11" width="18" height="12" rx="3"/></svg>
       <svg id="ic-closed" viewBox="0 0 22 24" hidden><path d="M6.5 11V7a4.5 4.5 0 0 1 9 0v4" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><rect x="2" y="11" width="18" height="12" rx="3"/></svg>
@@ -1079,6 +1131,8 @@ const USE_HOME_SCREEN = true;
 const CHAT_STYLE = 'ios6';
 // Code screen look: 'ios6' = iOS 6 lock screen with a "member code" track; 'glass' = the previous code screen.
 const LOCK_STYLE = 'ios6';
+// Username step look: 'ios6' = iOS 6 Setup screen (Back / Next, grouped cells); 'glass' = the previous screen.
+const USER_STYLE = 'ios6';
 // The home screen's look (assets from the Figma "Legacy iOS UI Kit"). Swap these (and the CSS block) to restyle it.
 const HOME_THEME = {
   // background: 'wallpaper' = the image below; 'white' = smooth white with a soft green vignette
@@ -1582,12 +1636,13 @@ $('f-user').addEventListener('submit',async e=>{
   try{
     const r=await api.claim(me.code,name,me.kind==='rare'?undefined:me.shade);
     if(r.taken){ note.className='note err'; note.textContent='That username is taken. Pick another.'; shake($('f-user')); return; }
-    if(r.existing){ me.username=r.existing; toast(`This code is already ${r.existing}.`); return openChat(); }
+    if(r.existing){ me.username=r.existing; toast(`This code is already ${r.existing}.`); return openHome(); }
     me.username=name; me.hasShade=true; locked=true;
     $('uname').readOnly=true; $('ic-open').hidden=true; $('ic-closed').hidden=false;
     $('lock').setAttribute('aria-label','Username locked'); $('lock').classList.add('locked');
     note.className='note'; note.textContent=`Locked as ${name}`;
     const nx=$('next'); nx.classList.add('on'); nx.tabIndex=0; setTimeout(()=>nx.focus(),350);
+    if(USER_STYLE==='ios6') setTimeout(()=>openHome(),500); // Setup style: Next saves and continues in one step
   }catch(err){ console.error(err); note.className='note err'; note.textContent="Couldn't save your username. Try again."; }
   finally{ $('lock').disabled=false; }
 });
@@ -1596,7 +1651,7 @@ function resetUserStep(){
   locked=false; $('uname').value=''; $('uname').readOnly=false;
   $('ic-open').hidden=false; $('ic-closed').hidden=true; $('lock').setAttribute('aria-label','Lock username'); $('lock').classList.remove('locked');
   $('next').classList.remove('on'); $('next').tabIndex=-1;
-  const n=$('n-user'); n.className='note'; prepUserScreen();
+  const n=$('n-user'); n.className='note'; prepUserScreen(); syncNext();
 }
 
 /* ---------- home screen (iOS 6) ---------- */
@@ -1658,9 +1713,16 @@ function tickClock(){
   const d=new Date(countdownTarget), when=d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
   if($('lk-date').textContent!==when) $('lk-date').textContent=when;
 }
-setInterval(()=>{ if(current.id==='s-home'||current.id==='chat'||current.id==='s-code') tickClock(); },1000);
+setInterval(()=>{ if(['s-home','chat','s-code','s-user'].includes(current.id)) tickClock(); },1000);
 document.body.classList.toggle('chat-ios6',CHAT_STYLE==='ios6');
 document.body.classList.toggle('lock-ios6',LOCK_STYLE==='ios6');
+document.body.classList.toggle('user-ios6',USER_STYLE==='ios6');
+if(USER_STYLE==='ios6') $('uname').placeholder='Required';
+// Setup nav bar: Back = the × (log out of the code), Next = save the name, then continue
+$('su-back').addEventListener('click',()=>$('user-back').click());
+$('su-next').addEventListener('click',()=>{ if(locked) return openHome(); $('f-user').requestSubmit(); });
+function syncNext(){ $('su-next').classList.toggle('on',locked||NAME_RE.test($('uname').value.trim())); }
+$('uname').addEventListener('input',syncNext);
 // lock screen: hide the shimmering "member code" once something is typed
 $('code').addEventListener('input',()=>$('f-code').classList.toggle('typed',!!$('code').value));
 // on a valid code the knob slides across the track, like unlocking
