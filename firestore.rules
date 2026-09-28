@@ -30,6 +30,17 @@ service cloud.firestore {
     function isToken(v) { return v is string && v.matches('^[A-Z2-9]{12}$'); }
     // the ticket token saved on the member's own code
     function ownsTicket(t) { return isMember() && get(codePath(myCode())).data.get('ticket', null) == t; }
+    function orderPath(id) { return /databases/$(database)/documents/orders/$(id); }
+    function stylePath(c) { return /databases/$(database)/documents/styles/$(c); }
+    // a member's own bubble design: saved together with marking their paid bubble order as used
+    function boughtBubble(code) {
+      return isMember() && myCode() == code
+        && getAfter(stylePath(code)).data.get('order', null) is string
+        && get(orderPath(getAfter(stylePath(code)).data.order)).data.code == code
+        && get(orderPath(getAfter(stylePath(code)).data.order)).data.item == 'bubble'
+        && get(orderPath(getAfter(stylePath(code)).data.order)).data.status == 'paid'
+        && getAfter(orderPath(getAfter(stylePath(code)).data.order)).data.status == 'used';
+    }
     function isHex(v) { return v is string && v.matches('^#[0-9A-Fa-f]{6}$'); }
     // profile colour: 0 = whitish … 100 = vibrant
     function okShade(d) { return !('shade' in d) || (d.shade is number && d.shade >= 0 && d.shade <= 100); }
@@ -107,7 +118,8 @@ service cloud.firestore {
             && existsAfter(ticketPath(request.resource.data.ticket))))
         && okKind(request.resource.data, code)
         && (request.resource.data.get('kind', 'green') == resource.data.get('kind', 'green')
-          || (isAdmin() && resource.data.username == null && request.resource.data.username == null))
+          || (isAdmin() && resource.data.username == null && request.resource.data.username == null)
+          || (request.resource.data.get('kind', 'green') == 'rare' && boughtBubble(code)))
         && (!('tint' in request.resource.data) || isHex(request.resource.data.tint))
         && okShade(request.resource.data)
         && shadeLocked()
@@ -148,8 +160,8 @@ service cloud.firestore {
     // the look of a rare code
     match /styles/{code} {
       allow read: if isMember() || isAdmin();
-      allow write: if isAdmin()
-        && request.resource.data.keys().hasOnly(['texture','strength','tint','ink','weight','radius','zoom','px','py','gloss','glow','shimmer'])
+      allow write: if (isAdmin() || boughtBubble(code))
+        && request.resource.data.keys().hasOnly(['texture','strength','tint','ink','weight','radius','zoom','px','py','gloss','glow','shimmer','order'])
         && inRange(request.resource.data, 'zoom', 1, 4)
         && inRange(request.resource.data, 'px', 0, 100) && inRange(request.resource.data, 'py', 0, 100)
         && inRange(request.resource.data, 'gloss', 0, 1) && inRange(request.resource.data, 'glow', 0, 1)
@@ -230,7 +242,8 @@ service cloud.firestore {
     match /photos/{id} {
       allow read: if isAdmin() || (isMember() && resource.data.code == myCode());
       allow create: if isMember() && request.resource.data.code == myCode()
-        && request.resource.data.keys().hasOnly(['code','username','thumb','w','h','ts'])
+        && request.resource.data.keys().hasOnly(['code','username','thumb','w','h','ts','filter'])
+        && (!('filter' in request.resource.data) || (request.resource.data.filter is string && request.resource.data.filter.size() <= 40))
         && request.resource.data.username == get(codePath(myCode())).data.username
         && request.resource.data.thumb is string && request.resource.data.thumb.size() < 60000
         && request.resource.data.w is number && request.resource.data.h is number
@@ -249,6 +262,67 @@ service cloud.firestore {
       allow delete: if isAdmin() || (isMember() && resource.data.code == myCode());
     }
 
+    // camera filters made by the admin: a colour look-up table (.cube, stored as a small PNG) and/or an overlay image
+    match /filters/{id} {
+      allow read: if isMember() || isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['name','lut','overlay','opacity','blend','ts'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 24
+        && (request.resource.data.lut == null || (request.resource.data.lut is string && request.resource.data.lut.size() < 400000))
+        && (request.resource.data.overlay == null || (request.resource.data.overlay is string && request.resource.data.overlay.size() < 650000))
+        && inRange(request.resource.data, 'opacity', 0, 1)
+        && request.resource.data.blend in ['normal', 'screen', 'multiply', 'overlay', 'soft']
+        && request.resource.data.ts == request.time;
+    }
+
+    // the store: a member orders (pending), pays with MobilePay, and the admin marks it paid.
+    // Prices are fixed here, so nobody can order something cheaper.
+    function okPrice(d) {
+      return (d.item == 'bubble' && d.price == 20) || (d.item == 'tshirt' && d.price == 200) || (d.item == 'screen' && d.price == 50);
+    }
+    function okMsg(m) {
+      return m.keys().hasOnly(['text','weight','tint','size'])
+        && m.text is string && m.text.size() > 0 && m.text.size() <= 60
+        && m.weight in [100, 300, 400, 700, 900] && isHex(m.tint) && m.size in ['S', 'M', 'L'];
+    }
+    match /orders/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.code == myCode());
+      allow create: if isMember() && request.resource.data.code == myCode()
+        && request.resource.data.keys().hasOnly(['code','name','item','price','ref','status','ts','size','msg'])
+        && request.resource.data.name == get(codePath(myCode())).data.username
+        && okPrice(request.resource.data)
+        && request.resource.data.status == 'pending'
+        && request.resource.data.ref is string && request.resource.data.ref.size() <= 12
+        && request.resource.data.ts == request.time
+        && (request.resource.data.item != 'tshirt' || request.resource.data.get('size', '') in ['XS', 'S', 'M', 'L', 'XL', 'XXL'])
+        && (request.resource.data.item != 'screen' || okMsg(request.resource.data.get('msg', {})));
+      allow update: if isAdmin()
+        || (isMember() && resource.data.code == myCode()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && ((resource.data.status == 'pending' && request.resource.data.status == 'cancelled')
+            || (resource.data.item == 'bubble' && resource.data.status == 'paid' && request.resource.data.status == 'used'
+              && getAfter(stylePath(myCode())).data.get('order', null) == id)));
+      allow delete: if isAdmin();
+    }
+
+    // T-shirt tickets (made by the admin when a T-shirt is paid), scanned once at the merch stand
+    match /merch/{t} {
+      allow get: if canDoor() || (isMember() && get(orderPath(resource.data.order)).data.code == myCode());
+      allow list: if canDoor();
+      allow create: if isAdmin();
+      allow update: if canDoor() && !('usedAt' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedAt','by'])
+        && request.resource.data.usedAt == request.time
+        && request.resource.data.by in ['door', 'admin'];
+      allow delete: if isAdmin();
+    }
+
+    // paid screen messages, one after another, 6 hours each. Everyone sees them, so everyone can read the line.
+    match /screenQueue/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // public site settings: up to three texts on everyone's screen, and the countdown target
     function inRange(d, k, lo, hi) { return !(k in d) || (d[k] is number && d[k] >= lo && d[k] <= hi); }
     match /site/{doc} {
@@ -259,7 +333,10 @@ service cloud.firestore {
             && request.resource.data.items is list && request.resource.data.items.size() <= 3)
           || (doc == 'countdown'
             && request.resource.data.keys().hasOnly(['target','ts'])
-            && request.resource.data.target is timestamp));
+            && request.resource.data.target is timestamp)
+          || (doc == 'store'
+            && request.resource.data.keys().hasOnly(['mobilepay','ts'])
+            && request.resource.data.mobilepay is string && request.resource.data.mobilepay.size() <= 20));
     }
   }
 }

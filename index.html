@@ -916,6 +916,126 @@ body[data-screen=s-photos]{background:#fff}
 .vw-cap{flex:1;min-width:0;text-align:center;font:600 14px/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .viewer img{flex:1;min-height:0;width:100%;object-fit:contain;transition:filter .3s}
 .viewer img.lo{filter:blur(6px)}
+
+/* grouped-table extras (Settings, Store, admin Store, Filters) */
+.grp:empty{display:none}
+.grp:empty + .grp-foot{margin-top:0}
+.grp-title{margin:0 12px 8px;font:700 15px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#4c566a;text-shadow:0 1px 0 rgba(255,255,255,.85)}
+.cell input,.cell select{flex:1;min-width:0;height:44px;text-align:right;color:#385487;font:400 17px "Helvetica Neue",Helvetica,Arial,sans-serif;background:none;border:0;outline:none}
+.cell select{-webkit-appearance:none;appearance:none;direction:rtl;cursor:pointer}
+.cell input[type=range]{flex:1;accent-color:#3f7fe4}
+.cell.btn.blue{color:#1f5fd6}
+.cell .file-lbl{color:#1f5fd6;font-weight:400;cursor:pointer}
+.cell small{font:400 13px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8e8e93}
+
+/* Camera filters: the strip over the viewfinder */
+.cam-lens canvas{position:absolute;inset:0;width:100%;height:100%;display:none}
+.cam-view.gl .cam-lens canvas{display:block}
+.cam-view.gl .cam-lens video{opacity:0}
+.cam-fx[aria-pressed=true]{background:linear-gradient(#ffd75e,#f0a90e 50%,#e29b05 52%,#eaa815);color:#2a1d00;text-shadow:none}
+.cam-fx svg{width:20px;height:16px}
+.cam-fxname{position:absolute;z-index:2;left:50%;top:14px;transform:translateX(-50%);padding:5px 12px;border-radius:12px;color:#fff;font:700 14px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .4s;pointer-events:none}
+.cam-fxname.on{opacity:1}
+.cam-strip{position:absolute;z-index:2;left:0;right:0;bottom:0;display:flex;gap:10px;overflow-x:auto;padding:10px 12px;scrollbar-width:none;
+  background:linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.6));-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);animation:stripin .3s ease}
+.cam-strip::-webkit-scrollbar{display:none}
+@keyframes stripin{from{transform:translateY(100%)}}
+.fx-tile{flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;color:#fff;font:700 11px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 1px 2px #000}
+.fx-tile img{width:64px;height:64px;border-radius:8px;object-fit:cover;background:#333;box-shadow:0 0 0 1px rgba(255,255,255,.25),0 3px 8px rgba(0,0,0,.5);transition:box-shadow .2s,transform .3s var(--spring)}
+.fx-tile[aria-selected=true] img{box-shadow:0 0 0 2.5px #ffd75e,0 3px 10px rgba(0,0,0,.6);transform:scale(1.06)}
+/* admin: filter maker */
+.fxa-bg{background:repeating-linear-gradient(90deg,#cfd5dc 0 5px,#d7dce2 5px 9px)}
+.fxa-prev{display:block;width:100%;aspect-ratio:4/3;border-radius:10px;background:#222;margin:0 0 16px;box-shadow:0 0 0 .6px rgba(0,0,0,.35),0 6px 16px -8px rgba(0,0,0,.5)}
+.fxa-row{display:flex;align-items:center;gap:10px}
+.fxa-row .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-btn{height:28px;padding:0 10px;border-radius:6px;font:700 13px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;flex:none;
+  background:linear-gradient(#7aaef5 0%,#3f7fe4 50%,#2b6ad8 52%,#2d6fdb 100%);box-shadow:0 0 0 .8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+.mini-btn.red{background:linear-gradient(#ff7a7a,#e0262c 50%,#c81b21 52%,#d4222a)}
+.mini-btn.green{background:linear-gradient(#7fe39a 0%,#34c759 50%,#26a947 52%,#2cb54e 100%)}
+.mini-btn.grey{background:linear-gradient(#a6a9ae 0%,#7d8086 50%,#6b6e74 52%,#74777d 100%)}
+.mini-btn:active{filter:brightness(.85)}
+.mini-btn:disabled{opacity:.5}
+
+/* Door: entry or merch */
+.door-mode{display:flex;margin:0 auto 12px;width:min(260px,100%);height:32px;border-radius:7px;overflow:hidden;box-shadow:0 0 0 .8px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.1)}
+.door-mode button{flex:1;color:rgba(255,255,255,.8);font:700 13px "Helvetica Neue",Helvetica,Arial,sans-serif;background:linear-gradient(#5a5d63,#3b3e43 50%,#303338 52%,#383b40)}
+.door-mode button + button{border-left:1px solid rgba(0,0,0,.7)}
+.door-mode button[aria-checked=true]{color:#fff;background:linear-gradient(#7aaef5 0%,#3f7fe4 50%,#2b6ad8 52%,#2d6fdb 100%);box-shadow:inset 0 1px 3px rgba(0,0,0,.35)}
+
+/* Store: the iOS 6 App Store */
+body[data-screen=s-store]{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),linear-gradient(#e9ebee,#d5d9de)}
+body[data-screen=s-store] .bg,body[data-screen=s-orders] .bg,body[data-screen=s-store] .overlay,body[data-screen=s-orders] .overlay{opacity:0}
+body[data-screen=s-orders]{background:radial-gradient(120% 50% at 50% 0%,rgba(255,255,255,.55),rgba(255,255,255,0) 70%),repeating-linear-gradient(90deg,#cfd5dc 0 5px,#d7dce2 5px 9px)}
+.st-hero{position:relative;overflow:hidden;border-radius:12px;padding:22px 18px 20px;margin-bottom:16px;color:#fff;
+  background:radial-gradient(120% 140% at 0% 0%,#6fb2ff 0%,#2f6fd6 45%,#1c3f8f 100%);box-shadow:0 0 0 .6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.4),0 10px 22px -12px rgba(20,40,90,.7)}
+.st-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 40%,rgba(255,255,255,.22) 50%,rgba(255,255,255,0) 60%);background-size:250% 100%;animation:passshine 6s ease-in-out infinite}
+.st-hero b{display:block;font:800 26px/1.1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:-.01em;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.st-hero span{display:block;margin-top:6px;font:500 14px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;opacity:.9}
+.st-list{background:#fff;border-radius:10px;overflow:hidden;margin-bottom:20px;box-shadow:0 0 0 .6px rgba(0,0,0,.3),0 1px 0 rgba(255,255,255,.8),0 6px 14px -8px rgba(20,35,60,.3)}
+.st-item{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 10px}
+.st-item + .st-item{border-top:1px solid #e1e1e1}
+.st-ic{width:57px;height:57px;border-radius:12px;flex:none;display:grid;place-items:center;color:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -12px 18px -12px rgba(0,0,0,.25)}
+.st-ic svg{width:34px;height:34px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+.st-ic.ic-bubble{background:linear-gradient(135deg,#ffd166,#ff7eb3 55%,#9b6bff)}
+.st-ic.ic-tshirt{background:linear-gradient(#4a4d53,#1f2124)}
+.st-ic.ic-screen{background:linear-gradient(#5ec8ff,#1d7bd8)}
+.st-txt{flex:1;min-width:0}
+.st-txt b{display:block;font:700 15px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#111}
+.st-txt small{display:block;font:400 13px/17px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#6d7480}
+.st-txt i{display:inline-block;margin-top:4px;padding:1px 6px;border-radius:4px;font:700 10px/15px "Helvetica Neue",Helvetica,Arial,sans-serif;font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#8a5a00;background:#ffe8a3}
+.st-price{flex:none;height:26px;min-width:66px;padding:0 10px;border-radius:5px;font:700 13px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#56606c;
+  background:linear-gradient(#fdfdfd,#e2e4e8);box-shadow:0 0 0 1px #a8adb5,inset 0 1px 0 #fff;transition:min-width .25s ease}
+.st-price.buy{min-width:84px;color:#fff;background:linear-gradient(#78d971,#3aa233 50%,#2f9a2a 52%,#37a431);box-shadow:0 0 0 1px #2c7f27,inset 0 1px 0 rgba(255,255,255,.45);text-shadow:0 -1px 0 rgba(0,0,0,.25)}
+.st-price:disabled{opacity:.5}
+.st-mine .cell{min-height:56px;padding:8px 12px}
+.st-mine .cell .lbl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.st-mine .cell .lbl small{white-space:normal}
+/* the pay / details sheet */
+.st-wrap{position:absolute;inset:0;z-index:6;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.4);animation:fadein .25s ease}
+.st-sheet{width:min(520px,100%);max-height:92%;overflow-y:auto;border-radius:16px 16px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));
+  background:linear-gradient(#f7f8fa,#e9ecf0);box-shadow:0 -8px 30px rgba(0,0,0,.35),inset 0 1px 0 #fff;animation:rollup .38s cubic-bezier(.2,.9,.25,1)}
+.st-sheet::before{content:"";display:block;width:38px;height:5px;border-radius:3px;background:rgba(0,0,0,.18);margin:0 auto 12px}
+.st-sheet h2{margin:0;font:800 21px/26px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#111}
+.st-sheet .st-sub{margin:4px 0 14px;font:400 15px/21px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#555c66}
+.st-sheet .st-lbl{margin:14px 2px 6px;font:700 12px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6d7480}
+.st-seg{display:flex;height:32px;border-radius:7px;overflow:hidden;box-shadow:0 0 0 .8px rgba(0,0,0,.35)}
+.st-seg button{flex:1;font:700 13px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#3b4450;background:linear-gradient(#fff,#e6e8ec)}
+.st-seg button + button{border-left:1px solid rgba(0,0,0,.18)}
+.st-seg button[aria-checked=true]{color:#fff;background:linear-gradient(#7aaef5 0%,#3f7fe4 50%,#2b6ad8 52%,#2d6fdb 100%)}
+.st-sheet textarea{width:100%;min-height:64px;resize:none;border:0;outline:none;border-radius:10px;padding:10px 12px;background:#fff;font:400 17px/22px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#111;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.18),0 0 0 .6px rgba(0,0,0,.2)}
+.st-sheet .swatches{display:flex;gap:10px;flex-wrap:wrap}
+.st-prev{position:relative;overflow:hidden;width:100%;aspect-ratio:16/10;border-radius:10px;margin-top:6px;background:var(--home-wall-color) var(--home-wall) center/cover;
+  box-shadow:0 0 0 .6px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.2)}
+.st-prev .ov-text{animation:none;z-index:0}
+.st-line{margin:14px 0 0;padding:12px 14px;border-radius:10px;background:#fff;font:400 15px/21px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#333;box-shadow:0 0 0 .6px rgba(0,0,0,.18)}
+.st-line b{color:#111}
+.st-pay{margin:6px 0 0;border-radius:12px;background:#fff;box-shadow:0 0 0 .6px rgba(0,0,0,.2);overflow:hidden}
+.st-pay .cell b{margin-left:auto;font:700 20px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#111;letter-spacing:.03em}
+.st-mp{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:12px 14px;border-radius:12px;color:#fff;
+  background:linear-gradient(#5a78ff,#3651d8);font:700 16px "Helvetica Neue",Helvetica,Arial,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 12px -6px rgba(30,50,160,.8)}
+.st-btns{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.st-btn{height:46px;border-radius:10px;font:700 17px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.3);
+  background:linear-gradient(#7aaef5 0%,#3f7fe4 50%,#2b6ad8 52%,#2d6fdb 100%);box-shadow:0 0 0 .8px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.4)}
+.st-btn.grey{color:#333;text-shadow:0 1px 0 #fff;background:linear-gradient(#fff,#dfe2e6);box-shadow:0 0 0 .8px rgba(0,0,0,.3),inset 0 1px 0 #fff}
+.st-btn.green{background:linear-gradient(#78d971,#3aa233 50%,#2f9a2a 52%,#37a431)}
+.st-btn:active{filter:brightness(.88)}
+.st-btn:disabled{opacity:.55}
+/* the T-shirt ticket (a pass, like the entry ticket) */
+.st-passwrap{position:absolute;inset:0;z-index:5;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),radial-gradient(130% 70% at 50% 0%,#50555d 0%,#33363b 55%,#232528 100%);animation:rollup .42s cubic-bezier(.2,.9,.25,1)}
+.pass.merch{--p-bg:#2d2f34;--p-ink:#fff}
+.pass.merch .pass-stamp{color:#1f5fd6;border-color:#1f5fd6}
+/* admin Store: orders */
+.ocell{display:flex;flex-direction:column;gap:6px;padding:10px 12px;font:400 15px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#111}
+.ocell + .ocell{border-top:1px solid #e1e1e1}
+.ocell .top{display:flex;align-items:center;gap:8px}
+.ocell .ref{flex:none;padding:1px 7px;border-radius:5px;font:700 13px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.04em;color:#1f5fd6;background:#e6efff}
+.ocell .oname{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ocell .amt{flex:none;font-weight:700}
+.ocell .what{color:#555c66;font-size:14px;overflow-wrap:anywhere}
+.ocell .acts{display:flex;gap:8px;justify-content:flex-end}
 </style>
 </head>
 <body data-screen="s-code">
@@ -1105,6 +1225,9 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 
 <section class="screen out app" id="s-door" aria-label="Door" hidden>
   <div class="app-body"><div class="app-col">
+    <div class="door-mode" id="door-mode" role="radiogroup" aria-label="What you are scanning">
+      <button type="button" role="radio" data-m="door" aria-checked="true">Entry</button><button type="button" role="radio" data-m="merch" aria-checked="false">Merch</button>
+    </div>
     <div class="door-cam">
       <video id="door-video" playsinline muted autoplay></video>
       <div class="door-frame" aria-hidden="true"><i class="door-line"></i></div>
@@ -1114,7 +1237,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
         <p class="door-who" id="door-who"><i id="door-dot"></i><span id="door-name"></span></p><p id="door-d"></p>
       </div>
     </div>
-    <div class="door-count"><b id="door-n">0</b><span>checked in</span></div>
+    <div class="door-count"><b id="door-n">0</b><span id="door-n-lbl">checked in</span></div>
     <form class="door-type" id="f-door" autocomplete="off">
       <input id="door-in" placeholder="Ticket number" aria-label="Ticket number" maxlength="24" autocapitalize="characters" spellcheck="false">
       <button type="submit" class="door-btn">Check in</button>
@@ -1124,7 +1247,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
       <label class="door-type"><input id="door-q" type="search" placeholder="Name or code" aria-label="Find a guest by name or code" autocomplete="off"></label>
       <div class="door-rows" id="door-found"></div>
     </div>
-    <p class="door-h">Latest arrivals</p>
+    <p class="door-h" id="door-h-list">Latest arrivals</p>
     <div class="door-rows" id="door-list"></div>
     <p class="door-empty" id="door-empty">No one has checked in yet.</p>
   </div></div>
@@ -1133,14 +1256,19 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 <section class="screen out app" id="s-camera" aria-label="Camera" data-mode="live" hidden>
   <div class="cam-top">
     <button class="cam-pill" type="button" id="cam-home">Home</button>
+    <button class="cam-pill cam-fx" type="button" id="cam-fx" aria-pressed="false" aria-label="Filters" title="Filters">
+      <svg viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="6" r="4.2"/><circle cx="13" cy="6" r="4.2"/><circle cx="10" cy="10.5" r="4.2"/></svg>
+    </button>
     <button class="cam-pill" type="button" id="cam-flip" aria-label="Switch between front and back camera" title="Switch camera">
       <svg viewBox="0 0 22 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h8l1.3 2H19a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 19 14.5H3A1.5 1.5 0 0 1 1.5 13V7A1.5 1.5 0 0 1 3 5.5h2.7z"/><path d="M8 9.5a3 3 0 0 1 5.3-1.8M14 10a3 3 0 0 1-5.3 1.8"/><path d="M13.6 6.2v1.6H12M8.4 13.4v-1.6H10"/></svg>
     </button>
   </div>
   <div class="cam-view" id="cam-view">
-    <div class="cam-lens"><video id="cam-video" playsinline muted autoplay></video></div>
+    <div class="cam-lens"><video id="cam-video" playsinline muted autoplay></video><canvas id="cam-gl" aria-hidden="true"></canvas></div>
     <img class="cam-shot" id="cam-shot" alt="The photo you just took">
     <div class="cam-off" id="cam-off" hidden><p id="cam-off-msg">The camera isn't available here. You can still choose a photo.</p><button class="cam-btn use" type="button" id="cam-pick">Choose photo</button></div>
+    <span class="cam-fxname" id="cam-fxname" aria-live="polite"></span>
+    <div class="cam-strip" id="cam-strip" role="listbox" aria-label="Filters" hidden></div>
     <div class="cam-flash" id="cam-flash"></div>
   </div>
   <div class="cam-bar live-bar">
@@ -1163,6 +1291,68 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 
 <section class="screen out app" id="s-photos" aria-label="Photos" hidden>
   <div class="app-body flush"><div class="ph-grid" id="ph-grid"></div><p class="ph-empty" id="ph-empty">No one has taken a photo yet.</p></div>
+  <div class="roll fxa-bg" id="fx-admin" hidden>
+    <div class="app-body fxa-bg"><div class="app-col">
+      <canvas class="fxa-prev" id="fxa-prev" aria-label="Preview of the filter"></canvas>
+      <p class="grp-title">New filter</p>
+      <div class="grp">
+        <label class="cell"><span>Name</span><input id="fxa-name" maxlength="24" placeholder="Required" autocomplete="off"></label>
+        <label class="cell"><span>Color (.cube)</span><span class="file-lbl" id="fxa-lut-lbl">Choose…</span><input type="file" id="fxa-lut" accept=".cube,text/plain" hidden></label>
+        <label class="cell"><span>Overlay image</span><span class="file-lbl" id="fxa-ov-lbl">Choose…</span><input type="file" id="fxa-ov" accept="image/*" hidden></label>
+        <label class="cell"><span>Overlay strength</span><input id="fxa-op" type="range" min="0" max="100" value="80" aria-label="Overlay strength"></label>
+        <label class="cell"><span>Overlay blend</span><select id="fxa-blend" aria-label="Overlay blend">
+          <option value="normal">Normal</option><option value="screen">Screen (light leaks)</option><option value="multiply">Multiply (dust, frames)</option><option value="overlay">Overlay</option><option value="soft">Soft light</option></select></label>
+      </div>
+      <p class="grp-foot">A .cube file sets the colors (export one from Lightroom, Photoshop or any LUT pack). The overlay image goes on top: light leaks, dust, a frame. Use one or both.</p>
+      <div class="grp"><button class="cell btn blue" type="button" id="fxa-save">Save filter</button></div>
+      <p class="grp-title">Camera filters</p>
+      <div class="grp" id="fxa-list"></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="screen out app" id="s-store" aria-label="Store" hidden>
+  <div class="app-body"><div class="app-col">
+    <div class="st-hero"><b>Playlist Store</b><span>Pay with MobilePay. Your purchase unlocks as soon as the payment is confirmed.</span></div>
+    <div class="st-list" id="st-items"></div>
+    <p class="grp-title" id="st-mine-h" hidden>Your purchases</p>
+    <div class="grp st-mine" id="st-mine"></div>
+  </div></div>
+  <div class="st-passwrap" id="st-pass" hidden>
+    <div class="app-body">
+      <div class="pass merch" id="mpass">
+        <div class="pass-row">
+          <span class="pass-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>PLAYLIST</span>
+          <div class="pf r"><small>Merch</small><b>T-shirt</b></div>
+        </div>
+        <div class="pass-row"><div class="pf big"><small>Name</small><b id="mp-name"></b></div></div>
+        <div class="pass-row"><div class="pf"><small>Size</small><b id="mp-size"></b></div><div class="pf r"><small>Order</small><b id="mp-ref"></b></div></div>
+        <div class="pass-cut" aria-hidden="true"><i></i></div>
+        <div class="pass-qr"><canvas id="mpass-qr" width="1" height="1" role="img" aria-label="T-shirt ticket QR code"></canvas><span class="pass-no" id="mp-no"></span></div>
+        <div class="pass-live"><i></i><span id="mpass-clock"></span></div>
+        <div class="pass-stamp" id="mp-stamp" hidden>COLLECTED<small id="mp-stamp-time"></small></div>
+      </div>
+      <p class="tk-note" id="mp-note"></p>
+    </div>
+  </div>
+  <div class="st-wrap" id="st-wrap" hidden><div class="st-sheet" id="st-sheet" role="dialog" aria-modal="true" aria-label="Buy"></div></div>
+</section>
+
+<section class="screen out app" id="s-orders" aria-label="Store orders" hidden>
+  <div class="app-body"><div class="app-col">
+    <p class="grp-title">MobilePay</p>
+    <form class="grp" id="f-mp" autocomplete="off">
+      <label class="cell"><span>Number</span><input id="mp-num" inputmode="tel" placeholder="Not set" maxlength="20"></label>
+      <button class="cell btn blue" type="submit">Save number</button>
+    </form>
+    <p class="grp-foot">Buyers see this number, the price, and an order code to write in the MobilePay comment.</p>
+    <p class="grp-title">Waiting for payment</p>
+    <div class="grp" id="or-pending"></div><p class="grp-foot" id="or-pending-empty">No orders are waiting.</p>
+    <p class="grp-title">Screen messages</p>
+    <div class="grp" id="or-screen"></div><p class="grp-foot" id="or-screen-empty">No paid messages in line.</p>
+    <p class="grp-title">Paid</p>
+    <div class="grp" id="or-paid"></div><p class="grp-foot" id="or-paid-empty">Nothing paid yet.</p>
+  </div></div>
 </section>
 
 <div class="viewer" id="viewer" role="dialog" aria-label="Photo" hidden>
@@ -1324,7 +1514,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
   <div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="rare-title">
     <div class="sheet-head"><span class="lab-badge rare-badge">Rare</span><h2 id="rare-title">Code</h2>
       <button class="circle glass live mini" type="button" id="rare-close" aria-label="Close"><svg viewBox="0 0 12 12" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
-    <p class="a-muted sheet-sub">Whoever claims this code gets this look. It can only be changed while the code is free.</p>
+    <p class="a-muted sheet-sub" id="rare-sub">Whoever claims this code gets this look. It can only be changed while the code is free.</p>
     <div class="rare-body">
       <div class="lab-preview" id="rare-preview" aria-hidden="true"></div>
       <div class="ed-row"><span class="ed-lbl">Image</span>
@@ -1438,7 +1628,8 @@ const HOME_THEME = {
   light: true,   // light background → dark icon labels, grey page dots, light dock
   gloss: "assets/ios6/icon-gloss.png",
   icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png", settings: "assets/ios6/icon-settings.png",
-           ticket: "assets/ios6/icon-ticket.png", camera: "assets/ios6/icon-camera.png", door: "assets/ios6/icon-door.png", photos: "assets/ios6/icon-photos.png" },
+           ticket: "assets/ios6/icon-ticket.png", camera: "assets/ios6/icon-camera.png", door: "assets/ios6/icon-door.png", photos: "assets/ios6/icon-photos.png",
+           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png" },
 };
 const LOCAL_CODES = ["1","2","3","4","5"]; // only used in offline demo mode (no Firebase)
 const DOOR_CODE = "door";                     // demo mode only: the real door password is set by the admin (config/door)
@@ -1447,6 +1638,15 @@ const QR_LIB = "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.j
 const JSQR_LIB = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
 // photos: longest side in pixels, and the largest saved size (the free database allows 1 MB per document)
 const PHOTO_MAX_PX = 1600, PHOTO_MAX_CHARS = 700000;
+// the Store. Prices in kroner (they are also fixed in firestore.rules, so change both together).
+const STORE_ITEMS = [
+  { id:'bubble', name:'Custom chat bubble', price:20, sub:'Design your own bubble once: image, colors, font, gloss. Yours for good.' },
+  { id:'tshirt', name:'Playlist T-shirt', price:200, sub:'Pre-order. You get a T-shirt ticket to show at the merch stand.', tag:'Design coming soon' },
+  { id:'screen', name:'Your message on the screen', price:50, sub:'Shown on everyone’s screen for 6 hours. Messages take turns.' },
+];
+const SCREEN_MSG_HOURS = 6;
+const SCREEN_SIZES = { S:.06, M:.09, L:.13 };   // share of the screen, like the admin's text tool
+const TSHIRT_SIZES = ['XS','S','M','L','XL','XXL'];
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
 const ADMIN_CODE = "admin"; // demo mode only: the real admin password lives in the database (config/admin), not in this file                  // typing this in the code box logs in as admin (for this browser session only)
 const MESSAGE_TTL_HOURS = 4;                  // users only see messages newer than this; the admin sees all
@@ -1601,7 +1801,7 @@ async function firebaseApi(cfg){
     // photos: a small preview for grids, and the full picture in its own document (loaded only when opened)
     async savePhoto(p){
       const ref=fs.doc(fs.collection(db,"photos")), b=fs.writeBatch(db);
-      b.set(ref,{code:p.code,username:p.username,thumb:p.thumb,w:p.w,h:p.h,ts:fs.serverTimestamp()});
+      b.set(ref,{code:p.code,username:p.username,thumb:p.thumb,w:p.w,h:p.h,...(p.filter?{filter:p.filter}:{}),ts:fs.serverTimestamp()});
       b.set(fs.doc(db,"photoData",ref.id),{code:p.code,image:p.image});
       await b.commit(); return ref.id;
     },
@@ -1609,6 +1809,50 @@ async function firebaseApi(cfg){
     watchAllPhotos(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"photos"),fs.orderBy("ts","desc"),fs.limit(300)),s=>cb(s.docs.map(msgOut)),lost); },
     async photoFull(id){ const s=await fs.getDoc(fs.doc(db,"photoData",id)); return s.exists()?s.data().image:null; },
     async deletePhoto(id){ const b=fs.writeBatch(db); b.delete(fs.doc(db,"photos",id)); b.delete(fs.doc(db,"photoData",id)); await b.commit(); },
+    // camera filters (admin-made)
+    watchFilters(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"filters"),fs.orderBy("ts","asc")),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>console.error(e)); },
+    saveFilter(f){ return fs.addDoc(fs.collection(db,"filters"),{...f,ts:fs.serverTimestamp()}); },
+    deleteFilter(id){ return fs.deleteDoc(fs.doc(db,"filters",id)); },
+    // store
+    watchStore(cb){ return fs.onSnapshot(fs.doc(db,"site","store"),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
+    setMobilePay(n){ return fs.setDoc(fs.doc(db,"site","store"),{mobilepay:n,ts:fs.serverTimestamp()}); },
+    async order(o){ const r=await fs.addDoc(fs.collection(db,"orders"),{...o,status:'pending',ts:fs.serverTimestamp()}); return r.id; },
+    watchMyOrders(code,cb){ return fs.onSnapshot(fs.query(fs.collection(db,"orders"),fs.where("code","==",code)),s=>cb(s.docs.map(msgOut).sort((a,b)=>b.ts-a.ts)),e=>console.error(e)); },
+    watchOrders(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"orders"),fs.orderBy("ts","desc"),fs.limit(400)),s=>cb(s.docs.map(msgOut)),lost); },
+    cancelOrder(id){ return fs.updateDoc(fs.doc(db,"orders",id),{status:'cancelled'}); },
+    // admin: payment seen. A T-shirt gets its ticket; a screen message gets its turn.
+    async markPaid(o,slot){
+      const b=fs.writeBatch(db), ref=fs.doc(db,"orders",o.id);
+      if(o.item==='tshirt'){ const t=newToken(); b.update(ref,{status:'paid',token:t}); b.set(fs.doc(db,"merch",t),{name:o.name,size:o.size||'',order:o.id,ts:fs.serverTimestamp()}); }
+      else if(o.item==='screen'){ b.update(ref,{status:'paid'});
+        b.set(fs.doc(db,"screenQueue",o.id),{name:o.name,...o.msg,startAt:fs.Timestamp.fromMillis(slot.start),endAt:fs.Timestamp.fromMillis(slot.end),ts:fs.serverTimestamp()}); }
+      else b.update(ref,{status:'paid'});
+      await b.commit();
+    },
+    watchScreenQueue(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"screenQueue"),fs.where("endAt",">",fs.Timestamp.now())),
+      s=>cb(s.docs.map(d=>{ const q=d.data(); return {id:d.id,...q,startAt:q.startAt.toMillis(),endAt:q.endAt.toMillis()}; }).sort((a,b)=>a.startAt-b.startAt)),e=>console.error(e)); },
+    takeDown(id){ return fs.deleteDoc(fs.doc(db,"screenQueue",id)); },
+    // a bought bubble: the design, the rare look and the used order are saved together
+    async useBubble(code,orderId,st){
+      const b=fs.writeBatch(db);
+      b.set(fs.doc(db,"styles",code),{...st,order:orderId}); b.update(codeRef(code),{kind:'rare'}); b.update(fs.doc(db,"orders",orderId),{status:'used'});
+      await b.commit();
+    },
+    // T-shirt tickets
+    watchMerchTicket(t,cb){ return fs.onSnapshot(fs.doc(db,"merch",t),s=>cb(s.exists()?{...s.data(),usedAt:s.data().usedAt?s.data().usedAt.toMillis():null}:null),e=>console.error(e)); },
+    watchMerch(cb){ return fs.onSnapshot(fs.collection(db,"merch"),s=>cb(s.docs.map(d=>{ const m=d.data(); return {id:d.id,name:m.name,size:m.size,usedAt:m.usedAt?m.usedAt.toMillis():null}; })),e=>console.error(e)); },
+    async scanMerch(t,by){
+      if(!/^[A-Z2-9]{12}$/.test(t)) return {status:'invalid'};
+      const ref=fs.doc(db,"merch",t);
+      const read=async()=>{ const m=await fs.getDoc(ref); return m.exists()?m.data():null; };
+      try{
+        return await fs.runTransaction(db,async tx=>{
+          const m=await tx.get(ref); if(!m.exists()) return {status:'invalid'};
+          const d=m.data(); if(d.usedAt) return {status:'already',name:d.name,size:d.size,ts:d.usedAt.toMillis()};
+          tx.update(ref,{usedAt:fs.serverTimestamp(),by}); return {status:'ok',name:d.name,size:d.size,ts:Date.now()};
+        });
+      }catch(err){ const d=await read().catch(()=>null); if(d&&d.usedAt) return {status:'already',name:d.name,size:d.size,ts:d.usedAt.toMillis()}; throw err; }
+    },
     async claim(code,name,shade){
       const lower=name.toLowerCase();
       return fs.runTransaction(db, async tx=>{
@@ -1708,7 +1952,8 @@ function localApi(){
     d=d||{codes:{},msgs:[]};
     if(!d.v){ d.codes={...Object.fromEntries(LOCAL_CODES.map(c=>[c,null])),...d.codes}; d.v=2; } // seed the demo codes once
     d.msgs=d.msgs||[]; d.screen=d.screen||""; d.shades=d.shades||{}; d.kinds=d.kinds||{}; d.styles=d.styles||{}; d.dms=d.dms||[]; d.likes=d.likes||{}; d.tints=d.tints||{};
-    d.claimed=d.claimed||{}; d.ticketOf=d.ticketOf||{}; d.tickets=d.tickets||{}; d.checkins=d.checkins||{}; d.photos=d.photos||[]; return d; };
+    d.claimed=d.claimed||{}; d.ticketOf=d.ticketOf||{}; d.tickets=d.tickets||{}; d.checkins=d.checkins||{}; d.photos=d.photos||[];
+    d.filters=d.filters||[]; d.store=d.store||{}; d.orders=d.orders||[]; d.merch=d.merch||{}; d.queue=d.queue||[]; return d; };
   const subs=new Set(), emit=()=>{const d=load(); subs.forEach(f=>f(d));};
   const save=d=>{store.set(K,JSON.stringify(d)); ch&&ch.postMessage(1); emit();};
   const sub=f=>{subs.add(f); f(load()); return ()=>subs.delete(f);};
@@ -1736,11 +1981,33 @@ function localApi(){
     async resetTicket(c,t){ mut(d=>{ delete d.ticketOf[c]; delete d.tickets[t]; }); },
     // demo photos: the preview in the shared demo data, the full picture under its own key
     async savePhoto(p){ const id='ph'+Date.now()+Math.floor(Math.random()*1e6); store.set('playlist-demo-photo-'+id,p.image);
-      mut(d=>{ d.photos.push({id,code:p.code,username:p.username,thumb:p.thumb,w:p.w,h:p.h,ts:Date.now()}); }); return id; },
+      mut(d=>{ d.photos.push({id,code:p.code,username:p.username,thumb:p.thumb,w:p.w,h:p.h,filter:p.filter||null,ts:Date.now()}); }); return id; },
     watchMyPhotos:(c,cb)=>sub(d=>cb(d.photos.filter(x=>x.code===c).reverse())),
     watchAllPhotos:cb=>sub(d=>cb(d.photos.slice().reverse())),
     async photoFull(id){ return store.get('playlist-demo-photo-'+id); },
     async deletePhoto(id){ store.del('playlist-demo-photo-'+id); mut(d=>{ d.photos=d.photos.filter(x=>x.id!==id); }); },
+    // demo filters keep their images under their own keys (they can be large)
+    watchFilters:cb=>sub(d=>cb(d.filters.map(f=>({...f,lut:f.lut&&store.get('playlist-demo-fx-'+f.id+'-lut'),overlay:f.overlay&&store.get('playlist-demo-fx-'+f.id+'-ov')})))),
+    async saveFilter(f){ const id='fx'+Date.now(); if(f.lut) store.set('playlist-demo-fx-'+id+'-lut',f.lut); if(f.overlay) store.set('playlist-demo-fx-'+id+'-ov',f.overlay);
+      mut(d=>{ d.filters.push({id,name:f.name,opacity:f.opacity,blend:f.blend,lut:!!f.lut,overlay:!!f.overlay,ts:Date.now()}); }); },
+    async deleteFilter(id){ store.del('playlist-demo-fx-'+id+'-lut'); store.del('playlist-demo-fx-'+id+'-ov'); mut(d=>{ d.filters=d.filters.filter(f=>f.id!==id); }); },
+    watchStore:cb=>sub(d=>cb(d.store)),
+    async setMobilePay(n){ mut(d=>{ d.store={mobilepay:n}; }); },
+    async order(o){ return mut(d=>{ const id='or'+Date.now()+Math.floor(Math.random()*1e4); d.orders.push({id,...o,status:'pending',ts:Date.now()}); return id; }); },
+    watchMyOrders:(c,cb)=>sub(d=>cb(d.orders.filter(o=>o.code===c).slice().reverse())),
+    watchOrders:cb=>sub(d=>cb(d.orders.slice().reverse())),
+    async cancelOrder(id){ mut(d=>{ const o=d.orders.find(x=>x.id===id); if(o) o.status='cancelled'; }); },
+    async markPaid(o,slot){ mut(d=>{ const x=d.orders.find(y=>y.id===o.id); if(!x) return; x.status='paid';
+      if(o.item==='tshirt'){ const t=newToken(); x.token=t; d.merch[t]={name:o.name,size:o.size||'',order:o.id}; }
+      if(o.item==='screen') d.queue.push({id:o.id,name:o.name,...o.msg,startAt:slot.start,endAt:slot.end}); }); },
+    watchScreenQueue:cb=>sub(d=>cb(d.queue.filter(q=>q.endAt>Date.now()).sort((a,b)=>a.startAt-b.startAt))),
+    async takeDown(id){ mut(d=>{ d.queue=d.queue.filter(q=>q.id!==id); }); },
+    async useBubble(code,orderId,st){ mut(d=>{ d.styles[code]={...st,order:orderId}; d.kinds[code]='rare'; const o=d.orders.find(x=>x.id===orderId); if(o) o.status='used'; }); },
+    watchMerchTicket:(t,cb)=>sub(d=>cb(d.merch[t]||null)),
+    watchMerch:cb=>sub(d=>cb(Object.entries(d.merch).map(([id,m])=>({id,name:m.name,size:m.size,usedAt:m.usedAt||null})))),
+    async scanMerch(t,by){ return mut(d=>{ const m=d.merch[t]; if(!m) return {status:'invalid'};
+      if(m.usedAt) return {status:'already',name:m.name,size:m.size,ts:m.usedAt};
+      m.usedAt=Date.now(); m.by=by; return {status:'ok',name:m.name,size:m.size,ts:m.usedAt}; }); },
     async send(code,username,text,shade,kind,tint){ mut(d=>{ d.msgs.push({id:Date.now()+""+Math.random(),code,username,text,...(Number.isFinite(shade)?{shade}:{}),...(kind==='blue'||kind==='rare'?{kind}:{}),...(kind==='admin'?{kind,tint}:{}),ts:Date.now()}); }); },
     async ensureAdmin(){ return mut(d=>{ if(!(ADMIN_ID in d.codes)){ d.codes[ADMIN_ID]=null; d.kinds[ADMIN_ID]='admin'; } return {username:d.codes[ADMIN_ID],tint:d.tints[ADMIN_ID]||null}; }); },
     async setAdminTint(t){ mut(d=>{ d.tints[ADMIN_ID]=t; }); },
@@ -1944,11 +2211,16 @@ function drawText(el,c,W,H){
   if(w>max) el.style.fontSize=(c.size*Math.min(W,H)*max/w)+'px';
 }
 let screenCfg=[];
+// the paid screen message whose turn it is (6 hours each, one after another)
+let screenLine=[];
+const paidNow=()=>{ const now=Date.now(); return screenLine.find(q=>q.startAt<=now&&now<q.endAt)||null; };
+const paidItem=q=>normItem({text:q.text,x:.5,y:.8,size:SCREEN_SIZES[q.size]||SCREEN_SIZES.M,weight:q.weight,tint:q.tint,opacity:.85});
 function drawLive(){
-  const box=$('overlay');
-  while(box.children.length<screenCfg.length) box.append(mk('div','ov-text'));
-  while(box.children.length>screenCfg.length) box.lastChild.remove();
-  screenCfg.forEach((c,i)=>drawText(box.children[i],c,innerWidth,innerHeight));
+  const box=$('overlay'), p=paidNow(), items=p?[...screenCfg,paidItem(p)].filter(Boolean):screenCfg;
+  while(box.children.length<items.length) box.append(mk('div','ov-text'));
+  while(box.children.length>items.length) box.lastChild.remove();
+  items.forEach((c,i)=>drawText(box.children[i],c,innerWidth,innerHeight));
+  drawLive.paid=p&&p.id;
 }
 addEventListener('resize',()=>{ drawLive(); drawEditor&&drawEditor(); });
 
@@ -1979,6 +2251,8 @@ api.watchScreen(v=>{
   c.forEach((x,i)=>{ if(before[i]!==x.text){ const el=$('overlay').children[i]; el.classList.remove('in'); void el.offsetWidth; el.classList.add('in'); } });
   syncScreenTab();
 });
+api.watchScreenQueue(l=>{ screenLine=l; drawLive(); if(current.id==='s-store') drawStore(); if(current.id==='s-orders') drawOrders(); });
+setInterval(()=>{ const p=paidNow(); if((p&&p.id)!==drawLive.paid) drawLive(); },30e3); // the next message's turn
 const isAdminCode=v=>v.trim().toLowerCase()===ADMIN_CODE; // only used to keep "admin" from being made into a code
 
 /* ---------- 1. code ---------- */
@@ -2038,10 +2312,12 @@ const APPS = [
   { id:'chat',     name:'Chat',     for:'user',  open:()=>openChat() },
   { id:'ticket',   name:'Ticket',   for:'user',  open:()=>openTicket() },
   { id:'camera',   name:'Camera',   for:'user',  open:()=>openCamera() },
+  { id:'store',    name:'Store',    for:'user',  open:()=>openStore() },
   { id:'settings', name:'Settings', for:'user',  open:()=>openSettings() },
   { id:'admin',    name:'Admin',    for:'admin', open:()=>openAdmin() },
   { id:'door',     name:'Door',     for:['admin','door'], open:()=>openDoor() },
   { id:'photos',   name:'Photos',   for:'admin', open:()=>openPhotos() },
+  { id:'orders',   name:'Store',    for:'admin', open:()=>openOrders() },
 ];
 (()=>{ const r=document.documentElement.style;
   r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
@@ -2095,11 +2371,13 @@ function tickClock(){
   const t=countdownParts().join(':');
   document.querySelectorAll('.sb-time').forEach(el=>{ if(el.textContent!==t) el.textContent=t; });
   const lk=$('lk-clock'); if(lk&&lk.textContent!==t) lk.textContent=t;
-  if(current.id==='s-ticket') $('pass-clock').textContent='Live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const live='Live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(current.id==='s-ticket') $('pass-clock').textContent=live;
+  if(current.id==='s-store'&&!$('st-pass').hidden) $('mpass-clock').textContent=live;
   const d=new Date(countdownTarget), when=d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
   if($('lk-date').textContent!==when) $('lk-date').textContent=when;
 }
-setInterval(()=>{ if(['s-home','chat','s-code','s-user','s-settings','s-ticket','s-door','s-photos'].includes(current.id)) tickClock(); },1000);
+setInterval(()=>{ if(['s-home','chat','s-code','s-user','s-settings','s-ticket','s-door','s-photos','s-store','s-orders'].includes(current.id)) tickClock(); },1000);
 document.body.classList.toggle('chat-ios6',CHAT_STYLE==='ios6');
 document.body.classList.toggle('lock-ios6',LOCK_STYLE==='ios6');
 document.body.classList.toggle('user-ios6',USER_STYLE==='ios6');
@@ -2358,7 +2636,7 @@ function logOutUser(){
   // stop listening first: once the membership is gone the database refuses these reads
   unwatchMe&&unwatchMe(); unwatchMe=null; dmUnsub&&dmUnsub(); dmUnsub=null; closePM();
   unwatch&&unwatch(); unwatch=null; lastList=[]; seenMsgs.clear(); firstRender=true; stopSocial();
-  stopTicket(); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[];
+  stopTicket(); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[]; filterUnsub&&filterUnsub(); filterUnsub=null; stopStore(true);
   if(me.code&&me.kind!=='admin') api.leave();
   store.del('playlist-code'); setMe(null,null); resetUserStep();
 }
@@ -2664,11 +2942,11 @@ function syncLab(){
 
 /* rare code designer (free codes only) */
 const RD_DEFAULT={texture:null,strength:.6,tint:'#FFD166',ink:'#111111',weight:400,radius:23,zoom:1,px:50,py:50,gloss:.4,glow:0,shimmer:false};
-const rd={...RD_DEFAULT}; let rdCode=null;
+const rd={...RD_DEFAULT}; let rdCode=null, rdOrder=null; // rdOrder: a member designing the bubble they bought
 function drawRare(){
   const box=$('rare-preview'); box.replaceChildren();
   const look=rareLookFrom(rd);
-  [['This is the rare look',null],['Only one person gets it',null]].forEach(([t])=>{ const b=mk('div','bubble glass tinted',t); paint(b,look,'rare'); box.append(b); });
+  (rdOrder?[['This is your bubble'],['Everyone sees it in the chat']]:[['This is the rare look'],['Only one person gets it']]).forEach(([t])=>{ const b=mk('div','bubble glass tinted',t); paint(b,look,'rare'); box.append(b); });
   $('rare-strength').value=Math.round(rd.strength*100); $('rare-strength-v').textContent=rd.texture?Math.round(rd.strength*100)+'%':'No image';
   $('rare-strength').disabled=!rd.texture; $('rare-noimg').disabled=!rd.texture;
   const wi=WEIGHTS.findIndex(w=>w[0]===rd.weight); $('rare-weight').value=wi; $('rare-weight-v').textContent=WEIGHTS[wi][1];
@@ -2691,7 +2969,8 @@ function openRare(code){
   $('rare-title').textContent=`Code ${code}`; $('rare-remove').hidden=!(c&&c.kind==='rare');
   drawRare(); $('rare-wrap').hidden=false;
 }
-function closeRare(){ rdCode=null; $('rare-wrap').hidden=true; $('rare-file').value=''; }
+function closeRare(){ rdCode=null; rdOrder=null; $('rare-wrap').hidden=true; $('rare-file').value=''; $('rare-save').textContent='Save rare code'; $('rare-wrap').querySelector('.rare-badge').textContent='Rare';
+  $('rare-sub').textContent='Whoever claims this code gets this look. It can only be changed while the code is free.'; }
 $('rare-close').addEventListener('click',closeRare);
 $('rare-wrap').addEventListener('click',e=>{ if(e.target===$('rare-wrap')) closeRare(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('rare-wrap').hidden) closeRare(); });
@@ -2740,6 +3019,13 @@ $('rare-save').addEventListener('click',async()=>{
   const r2=v=>Math.round(v*100)/100;
   const st={texture:rd.texture||null,strength:r2(rd.strength),tint:rd.tint,ink:rd.ink,weight:rd.weight,radius:rd.radius,
     zoom:r2(rd.zoom),px:Math.round(rd.px),py:Math.round(rd.py),gloss:r2(rd.gloss),glow:r2(rd.glow),shimmer:!!rd.shimmer};
+  if(rdOrder){ // a member's bought bubble: saved once, for good
+    const oid=rdOrder;
+    if(!await confirmBox('Save your bubble?','This is your look from now on. Changing it later means buying a new bubble.','Save')) return;
+    try{ await api.useBubble(code,oid,st); styles={...styles,[code]:{...st,order:oid}}; me.kind='rare'; me.hasShade=true; applyMyShade(me.shade); closeRare(); toast('Your new bubble is ready. Say hi in the chat!'); }
+    catch(err){ fail('save your bubble')(err); }
+    return;
+  }
   try{ await api.setRare(code,st); closeRare(); toast(`Code ${code} is now a rare code.`); }
   catch(err){ fail('save the rare code')(err); }
 });
@@ -2843,7 +3129,9 @@ const navBtn=(label,fn)=>{ const b=mk('button','ios-navbtn',label); b.type='butt
 function leaveApp(from){
   if(from==='s-door') stopDoor();
   if(from==='s-camera'){ stopCam(); $('roll').hidden=true; }
-  if(from==='s-photos'){ photoUnsub&&photoUnsub(); photoUnsub=null; }
+  if(from==='s-photos'){ photoUnsub&&photoUnsub(); photoUnsub=null; adminFxUnsub&&adminFxUnsub(); adminFxUnsub=null; $('fx-admin').hidden=true; }
+  if(from==='s-store') stopStore();
+  if(from==='s-orders') stopOrders();
   closeViewer();
 }
 
@@ -2935,19 +3223,26 @@ function drawQR(canvas,text){
   for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(q.isDark(r,c)) g.fillRect((c+quiet)*px,(r+quiet)*px,px,px);
 }
 
-/* Door: scan tickets with the camera. One check-in per ticket; the database refuses a second. */
-let doorStream=null, doorTimer=0, doorBusy=false, lastScan={t:null,at:0}, doorCheckins=[], doorCodes=[], doorUnsubs=[];
+/* Door: scan entry tickets, and T-shirt tickets at the merch stand. Each works once; the database refuses a second scan. */
+let doorStream=null, doorTimer=0, doorBusy=false, lastScan={text:null,at:0}, doorCheckins=[], doorMerch=[], doorCodes=[], doorUnsubs=[], doorMode='door';
 const doorTop=appTop($('s-door'),'Door');
 const doorOut=navBtn('Log out',()=>doorLogout()); doorTop.right.append(doorOut);
 function openDoor(){
   go('s-door'); const asAdmin=homeMode==='admin';
-  doorOut.hidden=asAdmin; $('door-admin').hidden=!asAdmin; $('door-res').hidden=true; doorBusy=false;
+  doorOut.hidden=asAdmin; $('door-res').hidden=true; doorBusy=false;
   if(!doorUnsubs.length){
-    doorUnsubs.push(api.watchCheckins(onDoorCheckins));
+    doorUnsubs.push(api.watchCheckins(l=>{ doorCheckins=l; drawDoorLists(); }), api.watchMerch(l=>{ doorMerch=l; drawDoorLists(); }));
     if(asAdmin) doorUnsubs.push(api.watchCodes(l=>{ doorCodes=l; drawDoorSearch(); }));
   }
-  startDoorCam();
+  setDoorMode(doorMode); startDoorCam();
 }
+function setDoorMode(m){
+  doorMode=m; document.querySelectorAll('#door-mode button').forEach(b=>b.setAttribute('aria-checked',b.dataset.m===m));
+  $('door-in').placeholder=m==='merch'?'T-shirt ticket number':'Ticket number';
+  $('f-door').querySelector('button').textContent=m==='merch'?'Collect':'Check in';
+  $('door-admin').hidden=homeMode!=='admin'||m==='merch'; drawDoorLists();
+}
+document.querySelectorAll('#door-mode button').forEach(b=>b.addEventListener('click',()=>setDoorMode(b.dataset.m)));
 function stopDoor(){ doorUnsubs.forEach(u=>u&&u()); doorUnsubs=[]; stopDoorCam(); }
 function doorLogout(){
   stopDoor(); session.del('playlist-door'); api.doorLogout(); $('code').value=''; $('n-code').textContent='';
@@ -2986,28 +3281,33 @@ async function startDoorCam(){
 }
 function stopDoorCam(){ clearTimeout(doorTimer); if(doorStream){ doorStream.getTracks().forEach(t=>t.stop()); doorStream=null; } $('door-video').srcObject=null; }
 $('door-retry').addEventListener('click',startDoorCam);
-// what a scanned or typed code says: our QR is "PLAYLIST-TICKET:<token>"; a typed number may have dashes or spaces
-const tokenOf=x=>{ const t=String(x).trim().toUpperCase().replace(/^PLAYLIST-TICKET:/,'').replace(/[\s-]/g,''); return /^[A-Z2-9]{12}$/.test(t)?t:null; };
+// entry tickets say "PLAYLIST-TICKET:<token>", T-shirt tickets "PLAYLIST-MERCH:<token>"; typed numbers may have dashes or spaces
+const tokenOf=x=>{ const t=String(x).trim().toUpperCase().replace(/^PLAYLIST-(TICKET|MERCH):/,'').replace(/[\s-]/g,''); return /^[A-Z2-9]{12}$/.test(t)?t:null; };
+const scanKind=text=>/^PLAYLIST-MERCH:/i.test(String(text).trim())?'merch':'ticket';
 function onScanText(text){
-  const t=tokenOf(text), now=Date.now();
+  const now=Date.now();
   if(lastScan.text===text&&now-lastScan.at<5000) return; // the same pass is still held up to the camera
-  lastScan={text,at:now}; checkIn(t);
+  lastScan={text,at:now}; scan(scanKind(text),tokenOf(text));
 }
-async function checkIn(t){
+async function scan(what,t){
   if(doorBusy) return; doorBusy=true;
-  let r; try{ r=t?await api.scanTicket(t,homeMode==='admin'?'admin':'door'):{status:'invalid'}; }
+  const by=homeMode==='admin'?'admin':'door'; let r;
+  try{ r=t?await (what==='merch'?api.scanMerch(t,by):api.scanTicket(t,by)):{status:'invalid'}; }
   catch(err){ console.error(err); r={status:'error'}; }
-  showDoorResult(r);
+  showDoorResult(r,what);
 }
 const ICON_OK='<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="28" stroke-width="3.5"/><path d="M19 33l9 9 17-19"/></svg>';
 const ICON_BAD='<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"><circle cx="32" cy="32" r="28" stroke-width="3.5"/><path d="M22 22l20 20M42 22L22 42"/></svg>';
-function showDoorResult(r){
-  const box=$('door-res'), ok=r.status==='ok', named=r.status==='ok'||r.status==='already';
+function showDoorResult(r,what){
+  const box=$('door-res'), ok=r.status==='ok', named=r.status==='ok'||r.status==='already', merch=what==='merch';
   box.className='door-res '+(ok?'ok':'bad'); $('door-ic').innerHTML=ok?ICON_OK:ICON_BAD;
-  $('door-t').textContent={ok:'Welcome',already:'Already checked in',invalid:'Not a valid ticket',error:"Couldn't check"}[r.status];
+  $('door-t').textContent=(merch?{ok:'Hand over a T-shirt',already:'Already collected',invalid:'Not a T-shirt ticket',error:"Couldn't check"}
+    :{ok:'Welcome',already:'Already checked in',invalid:'Not a valid ticket',error:"Couldn't check"})[r.status];
   $('door-who').hidden=!named; $('door-name').textContent=named?r.name:'';
-  $('door-dot').style.background=r.kind==='rare'?'linear-gradient(120deg,#FFE9A8,#F7C6FF,#B9E6FF)':shadeOf(r.shade,r.kind).bg;
-  $('door-d').textContent=ok?'Checked in '+fmtTime(r.ts):r.status==='already'?'at '+fmtTime(r.ts)+'. Each ticket works once.':r.status==='invalid'?"This isn't a Playlist ticket.":'No connection. Try again.';
+  $('door-dot').style.background=merch?'#fff':r.kind==='rare'?'linear-gradient(120deg,#FFE9A8,#F7C6FF,#B9E6FF)':shadeOf(r.shade,r.kind).bg;
+  $('door-d').textContent=ok?(merch?`Size ${r.size||'?'}`:'Checked in '+fmtTime(r.ts))
+    :r.status==='already'?'at '+fmtTime(r.ts)+(merch?'. Each T-shirt ticket works once.':'. Each ticket works once.')
+    :r.status==='invalid'?(merch?"This isn't a Playlist T-shirt ticket.":"This isn't a Playlist ticket."):'No connection. Try again.';
   box.hidden=false; if(navigator.vibrate) navigator.vibrate(ok?90:[70,60,70]);
   const done=()=>{ clearTimeout(showDoorResult.t); box.hidden=true; doorBusy=false; };
   clearTimeout(showDoorResult.t); showDoorResult.t=setTimeout(done,ok?2200:3500); box.onclick=done;
@@ -3015,12 +3315,20 @@ function showDoorResult(r){
 $('f-door').addEventListener('submit',e=>{
   e.preventDefault(); const t=tokenOf($('door-in').value);
   if(!t){ toast('A ticket number has 12 letters and numbers.'); return shake($('f-door')); }
-  $('door-in').value=''; $('door-in').blur(); doorBusy=false; checkIn(t);
+  $('door-in').value=''; $('door-in').blur(); doorBusy=false; scan(doorMode==='merch'?'merch':'ticket',t);
 });
-function onDoorCheckins(list){
-  doorCheckins=list; countTo($('door-n'),list.length);
-  const box=$('door-list'); box.replaceChildren(); $('door-empty').hidden=list.length>0;
-  list.slice(0,40).forEach(c=>{
+function drawDoorLists(){
+  const box=$('door-list'); box.replaceChildren();
+  if(doorMode==='merch'){
+    const got=doorMerch.filter(m=>m.usedAt).sort((a,b)=>b.usedAt-a.usedAt);
+    countTo($('door-n'),got.length); $('door-n-lbl').textContent=`of ${doorMerch.length} T-shirt${doorMerch.length===1?'':'s'} collected`;
+    $('door-h-list').textContent='Collected'; $('door-empty').textContent='No T-shirts collected yet.'; $('door-empty').hidden=got.length>0;
+    got.slice(0,40).forEach(m=>{ const row=mk('div','door-row'); row.append(mk('span','dn',m.name||'—'),mk('span','dt',`${m.size||''} · ${fmtTime(m.usedAt)}`)); box.append(row); });
+    return;
+  }
+  countTo($('door-n'),doorCheckins.length); $('door-n-lbl').textContent='checked in';
+  $('door-h-list').textContent='Latest arrivals'; $('door-empty').textContent='No one has checked in yet.'; $('door-empty').hidden=doorCheckins.length>0;
+  doorCheckins.slice(0,40).forEach(c=>{
     const row=mk('div','door-row'); row.append(mk('span','dn',c.name||'—'),mk('span','dt',fmtTime(c.ts)));
     if(homeMode==='admin') row.append(twoStep(mk('button','door-btn grey','Undo'),()=>api.undoCheckin(c.id).then(()=>toast(`${c.name} is no longer checked in.`),fail('undo the check-in')),
       {title:`Undo ${c.name}'s check-in?`,text:'Their ticket can be scanned again.',ok:'Undo'}));
@@ -3039,21 +3347,130 @@ function drawDoorSearch(){
     row.append(mk('span','dn',c.username),mk('span','dt',ci?'In '+fmtTime(ci.ts):'Not in'));
     if(!ci){ const b=mk('button','door-btn green','Check in'); b.type='button';
       b.addEventListener('click',async()=>{ b.disabled=true;
-        try{ const t=c.ticket||await api.ensureTicket(c.code,{name:c.username,shade:c.kind==='rare'?undefined:c.shade,kind:c.kind}); doorBusy=false; await checkIn(t); }
+        try{ const t=c.ticket||await api.ensureTicket(c.code,{name:c.username,shade:c.kind==='rare'?undefined:c.shade,kind:c.kind}); doorBusy=false; await scan('ticket',t); }
         catch(err){ fail('check them in')(err); } finally{ b.disabled=false; } });
       row.append(b); }
     box.append(row);
   });
 }
 
-/* Camera: take a photo; it's saved (compressed) for you and the admin. Later it can be sent in the chat. */
-let camStream=null, camFacing='environment', camShot=null, myPhotos=[], myPhotoUnsub=null;
+/* Camera filters. Every filter is a colour look-up table (LUT) plus, optionally, an overlay image, a vignette and grain,
+   drawn with WebGL so the viewfinder shows the look live. The built-in ones are iOS 6-era looks made in code;
+   the admin adds more from .cube files (Photos → Filters). */
+const lum=c=>.299*c[0]+.587*c[1]+.114*c[2];
+const sat=(c,k)=>{ const l=lum(c); return c.map(x=>l+(x-l)*k); };
+const con=(c,k)=>c.map(x=>(x-.5)*k+.5);
+const lift=(c,a)=>c.map(x=>a+x*(1-a));
+const tint=(c,m)=>c.map((x,i)=>x*m[i]);
+const smooth=x=>x*x*(3-2*x);
+const BUILTIN_FILTERS = [
+  { id:'normal',  name:'Normal' },
+  { id:'vintage', name:'Vintage', vig:.45, grain:.05, fn:c=>con(lift(tint(sat(c,.72),[1.08,1,.84]),.07),1.05) },
+  { id:'instant', name:'Instant', vig:.28, grain:.035, fn:c=>{ const l=lum(c); c=[c[0]+.06*l,c[1]+.03*(1-l),c[2]+.08*(1-l)]; return sat(con(lift(c,.1),.92),.9); } },
+  { id:'chrome',  name:'Chrome',  vig:.12, fn:c=>sat(con(c,1.18),1.3) },
+  { id:'fade',    name:'Fade',    vig:.15, fn:c=>con(lift(tint(sat(c,.65),[.98,1,1.04]),.14),.9) },
+  { id:'process', name:'Process', vig:.3, grain:.03, fn:c=>lift(sat(tint(c,[1.1,.95,1.03]),1.15),.05) },
+  { id:'mono',    name:'Mono',    fn:c=>{ const l=lum(c); return con([l,l,l],1.08); } },
+  { id:'noir',    name:'Noir',    vig:.35, grain:.04, fn:c=>{ const l=smooth(smooth(lum(c))); return [l,l,l]; } },
+];
+const BLENDS=['normal','screen','multiply','overlay','soft'];
+function lutData(fn,n){ // n×n×n table packed as n*n wide, n high: x = r + b*n, y = g
+  const d=new Uint8Array(n*n*n*4);
+  for(let b=0;b<n;b++) for(let g=0;g<n;g++) for(let r=0;r<n;r++){
+    const c=fn([r/(n-1),g/(n-1),b/(n-1)]), i=(g*n*n+b*n+r)*4;
+    d[i]=Math.round(clamp(c[0],0,1)*255); d[i+1]=Math.round(clamp(c[1],0,1)*255); d[i+2]=Math.round(clamp(c[2],0,1)*255); d[i+3]=255;
+  }
+  return d;
+}
+const FX_VS='attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
+const FX_FS=`precision mediump float;varying vec2 v;
+uniform sampler2D src,lut,ov;uniform float lutN,useLut,useOv,ovA,blend,vig,grain,seed,mirror;uniform vec2 scale,off;
+vec3 look(vec3 c){float n=lutN;float b=c.b*(n-1.);float b0=floor(b);float b1=min(b0+1.,n-1.);
+  float x=c.r*(n-1.)+.5;float y=(c.g*(n-1.)+.5)/n;
+  vec3 a=texture2D(lut,vec2((x+b0*n)/(n*n),y)).rgb;vec3 d=texture2D(lut,vec2((x+b1*n)/(n*n),y)).rgb;return mix(a,d,b-b0);}
+float hash(vec2 q){return fract(sin(dot(q,vec2(12.9898,78.233))+seed)*43758.5453);}
+vec3 bl(vec3 a,vec3 o){
+  if(blend<.5)return o; if(blend<1.5)return 1.-(1.-a)*(1.-o); if(blend<2.5)return a*o;
+  if(blend<3.5)return mix(2.*a*o,1.-2.*(1.-a)*(1.-o),step(.5,a));
+  return mix(a-(1.-2.*o)*a*(1.-a),a+(2.*o-1.)*(sqrt(a)-a),step(.5,o));}
+void main(){vec2 uv=vec2(v.x,1.-v.y)*scale+off;if(mirror>.5)uv.x=1.-uv.x;
+  vec3 c=texture2D(src,uv).rgb;if(useLut>.5)c=look(c);
+  if(useOv>.5){vec4 o=texture2D(ov,vec2(v.x,1.-v.y));c=mix(c,bl(c,o.rgb),o.a*ovA);}
+  if(vig>0.){c*=1.-vig*smoothstep(.3,.95,length(v-.5)*1.25);}
+  if(grain>0.){c+=(hash(v*997.)-.5)*grain;}
+  gl_FragColor=vec4(clamp(c,0.,1.),1.);}`;
+// a small WebGL renderer: use(filter) picks the look, render() draws a video frame or image with it
+function makeFx(canvas){
+  let gl=null; try{ gl=canvas.getContext('webgl',{preserveDrawingBuffer:true,antialias:false}); }catch{}
+  if(!gl) return null;
+  try{
+    const sh=(t,src)=>{ const x=gl.createShader(t); gl.shaderSource(x,src); gl.compileShader(x); if(!gl.getShaderParameter(x,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); return x; };
+    const pr=gl.createProgram(); gl.attachShader(pr,sh(gl.VERTEX_SHADER,FX_VS)); gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FX_FS)); gl.linkProgram(pr);
+    if(!gl.getProgramParameter(pr,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+    const loc=gl.getAttribLocation(pr,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+    const U={}; ['src','lut','ov','lutN','useLut','useOv','ovA','blend','vig','grain','seed','mirror','scale','off'].forEach(n=>U[n]=gl.getUniformLocation(pr,n));
+    gl.uniform1i(U.src,0); gl.uniform1i(U.lut,1); gl.uniform1i(U.ov,2);
+    const tex=()=>{ const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR); return t; };
+    const blank=tex(); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,0,0]));
+    const srcT=tex();
+    const imgTex=url=>new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>{ const t=tex(); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im); res({t,h:im.naturalHeight}); }; im.onerror=()=>rej(new Error('image')); im.src=url; });
+    const cache=new Map(); let cur={lut:null,n:2,ov:null,ovA:0,blend:0,vig:0,grain:0}, want=null;
+    const load=f=>{
+      const key=f.id+(f.draft?':'+f.draft:''); if(cache.has(key)) return cache.get(key);
+      const p=(async()=>{ const o={lut:null,n:2,ov:null,ovA:numOr(f.opacity,.8,0,1),blend:Math.max(0,BLENDS.indexOf(f.blend||'normal')),vig:f.vig||0,grain:f.grain||0};
+        if(f.fn){ const n=17; o.lut=tex(); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,n*n,n,0,gl.RGBA,gl.UNSIGNED_BYTE,lutData(f.fn,n)); o.n=n; }
+        else if(f.lut){ const r=await imgTex(f.lut); o.lut=r.t; o.n=r.h; }
+        if(f.overlay) o.ov=(await imgTex(f.overlay)).t;
+        return o; })();
+      cache.set(key,p); p.catch(()=>cache.delete(key)); return p;
+    };
+    return { canvas,
+      async use(f){ want=f; try{ const o=await load(f); if(want===f) cur=o; }catch(err){ console.error(err); if(want===f) cur={lut:null,n:2,ov:null,ovA:0,blend:0,vig:0,grain:0}; } },
+      render(src,sw,sh,w,h,{crop=true,mirror=false}={}){
+        if(canvas.width!==w) canvas.width=w; if(canvas.height!==h) canvas.height=h; gl.viewport(0,0,w,h);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,srcT); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);
+        let sx=1, sy=1; if(crop){ const a=w/h, s=sw/sh; if(s>a) sx=a/s; else sy=s/a; }
+        gl.uniform2f(U.scale,sx,sy); gl.uniform2f(U.off,(1-sx)/2,(1-sy)/2);
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,cur.lut||blank); gl.uniform1f(U.useLut,cur.lut?1:0); gl.uniform1f(U.lutN,cur.n);
+        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,cur.ov||blank); gl.uniform1f(U.useOv,cur.ov?1:0); gl.uniform1f(U.ovA,cur.ovA); gl.uniform1f(U.blend,cur.blend);
+        gl.uniform1f(U.vig,cur.vig); gl.uniform1f(U.grain,cur.grain); gl.uniform1f(U.seed,Math.random()*100); gl.uniform1f(U.mirror,mirror?1:0);
+        gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+      },
+      // a full photo through the current filter (longest side PHOTO_MAX_PX), as a plain canvas
+      photo(src,sw,sh,opts={}){
+        const k=Math.min(1,PHOTO_MAX_PX/Math.max(sw,sh)), w=Math.round(sw*k), h=Math.round(sh*k);
+        this.render(src,sw,sh,w,h,{...opts,crop:false});
+        const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(canvas,0,0); return c;
+      } };
+  }catch(err){ console.error(err); return null; }
+}
+const SAMPLE=new Image(); SAMPLE.src=HOME_THEME.wallpaper; // shown in the filter strip when there's no camera, and in the admin's preview
+const sampleReady=new Promise(r=>{ if(SAMPLE.complete&&SAMPLE.naturalWidth) r(); else { SAMPLE.onload=r; SAMPLE.onerror=r; } });
+
+/* Camera: take a photo through a filter; it's saved (compressed) for you and the admin. Later it can be sent in the chat. */
+let camStream=null, camFacing='environment', camShot=null, myPhotos=[], myPhotoUnsub=null, camRaf=0, customFilters=[], filterUnsub=null;
+let camFilter=store.get('playlist-filter')||'normal';
+const fx=makeFx($('cam-gl'));            // null without WebGL: photos are then taken without filters
+const fxThumb=fx&&makeFx(document.createElement('canvas'));
+if(!fx) $('cam-fx').hidden=true;
+const allFilters=()=>[...BUILTIN_FILTERS,...customFilters];
+const currentFilter=()=>allFilters().find(f=>f.id===camFilter)||BUILTIN_FILTERS[0];
 function openCamera(){
   $('s-camera').dataset.mode='live'; go('s-camera'); startCam();
   if(!myPhotoUnsub) myPhotoUnsub=api.watchMyPhotos(me.code,l=>{
     myPhotos=l; const t=$('cam-thumb'); t.style.backgroundImage=l[0]?`url("${l[0].thumb}")`:''; t.classList.toggle('none',!l.length);
     if(!$('roll').hidden) drawRoll();
   });
+  if(fx&&!filterUnsub) filterUnsub=api.watchFilters(l=>{
+    customFilters=l.filter(f=>f.lut||f.overlay).map(f=>({...f,id:'c-'+f.id}));
+    if(current.id==='s-camera') fx.use(currentFilter());
+    if(!$('cam-strip').hidden) drawStrip();
+  });
+  if(fx) fx.use(currentFilter());
 }
 async function startCam(){
   stopCam(); const view=$('cam-view'); view.classList.remove('open'); $('cam-off').hidden=true;
@@ -3062,29 +3479,60 @@ async function startCam(){
   catch(err){ console.error(err); return camOff(err&&err.name==='NotAllowedError'?'Camera access is blocked. Allow it for this site, or choose a photo instead.':"Couldn't start the camera. You can still choose a photo."); }
   if(current.id!=='s-camera') return stopCam();
   const v=$('cam-video'); v.srcObject=camStream; v.play().catch(()=>{});
-  view.classList.toggle('mirror',camFacing==='user');
+  view.classList.toggle('mirror',camFacing==='user'); view.classList.toggle('gl',!!fx);
+  if(fx) loopCam();
   setTimeout(()=>view.classList.add('open'),120); // the iris opens
 }
-function stopCam(){ if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } $('cam-video').srcObject=null; }
-function camOff(msg){ $('cam-off-msg').textContent=msg; $('cam-off').hidden=false; $('cam-view').classList.add('open'); }
+// the live viewfinder, drawn through the filter
+function loopCam(){
+  cancelAnimationFrame(camRaf); const v=$('cam-video'), cv=$('cam-gl');
+  const step=()=>{ if(!camStream) return; camRaf=requestAnimationFrame(step);
+    if(v.readyState<2||!v.videoWidth||!cv.clientWidth) return;
+    const dpr=Math.min(devicePixelRatio||1,2);
+    fx.render(v,v.videoWidth,v.videoHeight,Math.round(cv.clientWidth*dpr),Math.round(cv.clientHeight*dpr),{mirror:camFacing==='user'}); };
+  step();
+}
+function stopCam(){ cancelAnimationFrame(camRaf); if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } $('cam-video').srcObject=null; $('cam-strip').hidden=true; $('cam-fx').setAttribute('aria-pressed','false'); }
+function camOff(msg){ $('cam-off-msg').textContent=msg; $('cam-off').hidden=false; $('cam-view').classList.remove('gl'); $('cam-view').classList.add('open'); }
 $('cam-home').addEventListener('click',goHome);
 $('cam-flip').addEventListener('click',()=>{ camFacing=camFacing==='environment'?'user':'environment'; startCam(); });
 $('cam-pick').addEventListener('click',()=>$('cam-file').click());
 $('cam-lib').addEventListener('click',()=>$('cam-libfile').click());
-$('cam-shoot').addEventListener('click',()=>{
+$('cam-shoot').addEventListener('click',async()=>{
   const v=$('cam-video'); if(!camStream||v.readyState<2||!v.videoWidth) return $('cam-file').click();
-  const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
-  const g=c.getContext('2d'); if(camFacing==='user'){ g.translate(c.width,0); g.scale(-1,1); } g.drawImage(v,0,0); // selfies look like the preview
+  let c;
+  if(fx){ await fx.use(currentFilter()); c=fx.photo(v,v.videoWidth,v.videoHeight,{mirror:camFacing==='user'}); }
+  else{ c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+    const g=c.getContext('2d'); if(camFacing==='user'){ g.translate(c.width,0); g.scale(-1,1); } g.drawImage(v,0,0); } // selfies look like the preview
   const view=$('cam-view'), f=$('cam-flash'); view.classList.remove('open'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
   setTimeout(()=>{ reviewShot(c); view.classList.add('open'); },200);
 });
 ['cam-file','cam-libfile'].forEach(id=>$(id).addEventListener('change',e=>{
   const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return;
   const img=new Image(), url=URL.createObjectURL(file);
-  img.onload=()=>{ reviewShot(img); URL.revokeObjectURL(url); };
+  img.onload=async()=>{ let src=img;
+    if(fx&&camFilter!=='normal'){ await fx.use(currentFilter()); src=fx.photo(img,img.naturalWidth,img.naturalHeight); }
+    reviewShot(src); URL.revokeObjectURL(url); };
   img.onerror=()=>{ URL.revokeObjectURL(url); toast("That file isn't a photo this browser can open."); };
   img.src=url;
 }));
+// filters: the strip of looks over the viewfinder
+$('cam-fx').addEventListener('click',()=>{ const s=$('cam-strip'); s.hidden=!s.hidden; $('cam-fx').setAttribute('aria-pressed',String(!s.hidden)); if(!s.hidden) drawStrip(); });
+async function drawStrip(){
+  const box=$('cam-strip'), list=allFilters(); box.replaceChildren();
+  const tiles=list.map(f=>{ const b=mk('button','fx-tile'), im=mk('img'); b.type='button'; b.setAttribute('role','option'); b.setAttribute('aria-selected',String(f.id===camFilter));
+    im.alt=''; b.append(im,mk('span',null,f.name)); b.addEventListener('click',()=>chooseFilter(f.id)); box.append(b); return im; });
+  if(!fxThumb) return;
+  const v=$('cam-video'), live=camStream&&v.videoWidth; if(!live) await sampleReady;
+  const src=live?v:SAMPLE, sw=live?v.videoWidth:SAMPLE.naturalWidth, sh=live?v.videoHeight:SAMPLE.naturalHeight;
+  if(!sw) return;
+  for(let i=0;i<list.length;i++){ await fxThumb.use(list[i]); fxThumb.render(src,sw,sh,128,128,{mirror:live&&camFacing==='user'}); tiles[i].src=fxThumb.canvas.toDataURL('image/jpeg',.8); }
+}
+function chooseFilter(id){
+  camFilter=id; store.set('playlist-filter',id); const f=currentFilter(); fx&&fx.use(f);
+  document.querySelectorAll('#cam-strip .fx-tile').forEach((b,i)=>b.setAttribute('aria-selected',String(allFilters()[i]&&allFilters()[i].id===id)));
+  const n=$('cam-fxname'); n.textContent=f.name; n.classList.add('on'); clearTimeout(chooseFilter.t); chooseFilter.t=setTimeout(()=>n.classList.remove('on'),1200);
+}
 // shrink to PHOTO_MAX_PX and lower the JPEG quality until it fits; plus a small preview for grids
 function encodePhoto(src){
   const sw=src.naturalWidth||src.width, sh=src.naturalHeight||src.height;
@@ -3100,7 +3548,7 @@ function encodePhoto(src){
   return {image:out.image,thumb:t.toDataURL('image/jpeg',.72),w:out.w,h:out.h};
 }
 function reviewShot(src){
-  try{ camShot=encodePhoto(src); }catch(err){ console.error(err); return toast("Couldn't read that photo."); }
+  try{ camShot={...encodePhoto(src),filter:fx&&camFilter!=='normal'?currentFilter().name:null}; }catch(err){ console.error(err); return toast("Couldn't read that photo."); }
   const img=$('cam-shot'); img.classList.remove('fly'); img.src=camShot.image;
   $('s-camera').dataset.mode='review'; $('cam-use').disabled=false; $('cam-use').textContent='Use Photo';
 }
@@ -3124,12 +3572,291 @@ function drawGrid(box,list,named){
     b.addEventListener('click',()=>openViewer(p,named)); box.append(b); });
 }
 
-/* Photos (admin): everyone's photos */
-let photoUnsub=null;
-appTop($('s-photos'),'Photos');
+/* Photos (admin): everyone's photos, and the camera filters */
+let photoUnsub=null, adminFxUnsub=null, adminFilters=[];
+const phTop=appTop($('s-photos'),'Photos');
+phTop.right.append(navBtn('Filters',()=>openFilterAdmin()));
 function openPhotos(){
   go('s-photos');
   if(!photoUnsub) photoUnsub=api.watchAllPhotos(l=>{ drawGrid($('ph-grid'),l,true); $('ph-empty').hidden=l.length>0; });
+}
+// the filter maker: a .cube colour table and/or an overlay image, previewed on a sample picture
+appTop($('fx-admin'),'Filters',{back:'Photos',onBack:()=>{ $('fx-admin').hidden=true; }});
+const fxDraft={lut:null,overlay:null,opacity:.8,blend:'normal',n:0};
+const fxPrev=makeFx($('fxa-prev'));
+function openFilterAdmin(){
+  $('fx-admin').hidden=false; drawFxPreview();
+  if(!adminFxUnsub) adminFxUnsub=api.watchFilters(l=>{ adminFilters=l; drawFilterList(); });
+  drawFilterList();
+}
+async function drawFxPreview(){
+  if(!fxPrev) return; await sampleReady; if(!SAMPLE.naturalWidth) return;
+  const f={id:'draft',draft:++drawFxPreview.n,lut:fxDraft.lut,overlay:fxDraft.overlay,opacity:fxDraft.opacity,blend:fxDraft.blend};
+  await fxPrev.use(f); fxPrev.render(SAMPLE,SAMPLE.naturalWidth,SAMPLE.naturalHeight,800,600);
+}
+drawFxPreview.n=0;
+// .cube → the packed PNG the renderer uses (at most 33 steps per colour, so it stays small)
+function parseCube(text){
+  let n=0, lo=[0,0,0], hi=[1,1,1]; const d=[];
+  for(const line of text.split(/\r?\n/)){
+    const s=line.trim(); if(!s||s[0]==='#') continue; const k=s.split(/\s+/);
+    if(k[0]==='LUT_3D_SIZE') n=+k[1];
+    else if(k[0]==='LUT_1D_SIZE') throw new Error('1D');
+    else if(k[0]==='DOMAIN_MIN') lo=k.slice(1,4).map(Number);
+    else if(k[0]==='DOMAIN_MAX') hi=k.slice(1,4).map(Number);
+    else if(/^[-+.\d]/.test(k[0])&&k.length>=3) d.push((+k[0]-lo[0])/(hi[0]-lo[0]),(+k[1]-lo[1])/(hi[1]-lo[1]),(+k[2]-lo[2])/(hi[2]-lo[2]));
+  }
+  if(n<2||d.length<n*n*n*3) throw new Error('size');
+  return {n,d};
+}
+function cubeToPng({n,d}){
+  const S=Math.min(n,33), at=(r,g,b,ch)=>d[(r+g*n+b*n*n)*3+ch];
+  const sample=(x,y,z,ch)=>{ // trilinear, when the table is resized
+    const f=v=>{ const p=v*(n-1), i=Math.min(Math.floor(p),n-2); return [i,p-i]; };
+    const [r,fr]=f(x),[g,fg]=f(y),[b,fb]=f(z); let s=0;
+    for(const [dr,wr] of [[0,1-fr],[1,fr]]) for(const [dg,wg] of [[0,1-fg],[1,fg]]) for(const [db,wb] of [[0,1-fb],[1,fb]]) s+=at(r+dr,g+dg,b+db,ch)*wr*wg*wb;
+    return s; };
+  const c=document.createElement('canvas'); c.width=S*S; c.height=S; const g=c.getContext('2d'), im=g.createImageData(S*S,S);
+  for(let b=0;b<S;b++) for(let gg=0;gg<S;gg++) for(let r=0;r<S;r++){
+    const i=(gg*S*S+b*S+r)*4;
+    for(let ch=0;ch<3;ch++){ const v=S===n?at(r,gg,b,ch):sample(r/(S-1),gg/(S-1),b/(S-1),ch); im.data[i+ch]=Math.round(clamp(v,0,1)*255); }
+    im.data[i+3]=255;
+  }
+  g.putImageData(im,0,0); return c.toDataURL('image/png');
+}
+$('fxa-lut').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  try{ const png=cubeToPng(parseCube(await f.text())); fxDraft.lut=png; $('fxa-lut-lbl').textContent=f.name;
+    if(!$('fxa-name').value.trim()) $('fxa-name').value=f.name.replace(/\.cube$/i,'').slice(0,24); drawFxPreview(); }
+  catch(err){ console.error(err); toast(err.message==='1D'?'That is a 1D LUT. Export a 3D .cube file instead.':"Couldn't read that .cube file."); }
+});
+// overlay: kept as PNG so see-through parts (frames, dust) stay see-through; shrunk until it fits the database
+$('fxa-ov').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  try{ const img=await createImageBitmap(f); let url=null;
+    for(const max of [1200,960,720,540]){ const k=Math.min(1,max/Math.max(img.width,img.height)), c=document.createElement('canvas');
+      c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      url=c.toDataURL('image/png'); if(url.length<600000) break; url=c.toDataURL('image/jpeg',.85); if(url.length<600000) break; }
+    fxDraft.overlay=url; $('fxa-ov-lbl').textContent=f.name; drawFxPreview(); }
+  catch(err){ console.error(err); toast("Couldn't read that image."); }
+});
+$('fxa-op').addEventListener('input',e=>{ fxDraft.opacity=+e.target.value/100; drawFxPreview(); });
+$('fxa-blend').addEventListener('change',e=>{ fxDraft.blend=e.target.value; drawFxPreview(); });
+$('fxa-save').addEventListener('click',async()=>{
+  const name=$('fxa-name').value.trim();
+  if(!name){ toast('Give the filter a name.'); return $('fxa-name').focus(); }
+  if(!fxDraft.lut&&!fxDraft.overlay) return toast('Add a .cube file, an overlay image, or both.');
+  const b=$('fxa-save'); b.disabled=true;
+  try{ await api.saveFilter({name,lut:fxDraft.lut,overlay:fxDraft.overlay,opacity:Math.round(fxDraft.opacity*100)/100,blend:fxDraft.blend});
+    Object.assign(fxDraft,{lut:null,overlay:null}); $('fxa-name').value=''; $('fxa-lut-lbl').textContent=$('fxa-ov-lbl').textContent='Choose…';
+    toast(`${name} is now in everyone's camera.`); drawFxPreview(); }
+  catch(err){ fail('save the filter')(err); } finally{ b.disabled=false; }
+});
+function drawFilterList(){
+  const box=$('fxa-list'); box.replaceChildren();
+  BUILTIN_FILTERS.forEach(f=>{ const c=mk('div','cell'); c.append(mk('span',null,f.name),mk('small',null,'Built in')); box.append(c); });
+  adminFilters.forEach(f=>{
+    const c=mk('div','cell'), r=mk('div','fxa-row'); c.append(mk('span','grow',f.name));
+    r.append(mk('small',null,[f.lut&&'Colors',f.overlay&&'Overlay'].filter(Boolean).join(' + ')));
+    const del=mk('button','mini-btn red','Delete'); del.type='button';
+    del.addEventListener('click',async()=>{ if(!await confirmBox(`Delete ${f.name}?`,'It disappears from everyone’s camera. Photos already taken keep their look.','Delete')) return;
+      try{ await api.deleteFilter(f.id); toast(`${f.name} deleted.`); }catch(err){ fail('delete the filter')(err); } });
+    r.append(del); c.append(r); box.append(c);
+  });
+}
+
+/* Store: buy with MobilePay; the admin confirms the payment, then it unlocks.
+   Items are in STORE_ITEMS (prices are fixed in firestore.rules too). */
+let storeCfg={}, myOrders=[], storeUnsubs=[], merchWatch=new Map(), buyArmed=null;
+api.watchStore(c=>{ storeCfg=c||{}; if(current.id==='s-store') drawStore(); if(current.id==='s-orders'&&document.activeElement!==$('mp-num')) $('mp-num').value=storeCfg.mobilepay||''; });
+appTop($('s-store'),'Store');
+appTop($('st-pass'),'T-shirt',{back:'Store',onBack:()=>{ $('st-pass').hidden=true; }});
+const ITEM_ICONS={
+  bubble:'<svg viewBox="0 0 34 34" fill="#fff"><path d="M17 5C9.3 5 3 10 3 16.3c0 3.6 2 6.8 5.2 8.9-.3 2-1.3 3.8-2.7 5.1 3 .1 5.8-1.1 7.7-3 1.2.3 2.5.4 3.8.4 7.7 0 14-5 14-11.4S24.7 5 17 5z"/></svg>',
+  tshirt:'<svg viewBox="0 0 34 34" fill="#fff"><path d="M12.5 5 5 8.5 3 15l5 2v12h18V17l5-2-2-6.5L21.5 5c-.6 2.2-2.4 3.5-4.5 3.5S13.1 7.2 12.5 5z"/></svg>',
+  screen:'<svg viewBox="0 0 34 34" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"><rect x="3" y="6" width="28" height="18" rx="2.5"/><path d="M12 29h10M17 24v5"/><path d="M9.5 19l3.5-9 3.5 9M10.8 16h4.4M19.5 19v-6.5a2.6 2.6 0 0 1 5.2 0V19" stroke-width="2" stroke-linecap="round"/></svg>',
+};
+const kr=n=>n+' kr';
+const newRef=()=>'PL-'+newToken().slice(0,4);
+function openStore(){
+  go('s-store'); $('st-pass').hidden=true; $('st-wrap').hidden=true; buyArmed=null; drawStore();
+  if(!storeUnsubs.length) storeUnsubs.push(api.watchMyOrders(me.code,l=>{ myOrders=l; watchMyMerch(); if(current.id==='s-store') drawStore(); }));
+}
+function stopStore(all){ if(!all) return; storeUnsubs.forEach(u=>u&&u()); storeUnsubs=[]; merchWatch.forEach(w=>w.unsub&&w.unsub()); merchWatch.clear(); myOrders=[]; }
+function watchMyMerch(){
+  myOrders.filter(o=>o.item==='tshirt'&&o.token).forEach(o=>{ if(merchWatch.has(o.token)) return;
+    const w={data:null}; w.unsub=api.watchMerchTicket(o.token,m=>{ w.data=m; if(current.id==='s-store') drawStore(); }); merchWatch.set(o.token,w); });
+}
+// the line of paid screen messages: how many are waiting, and when a new one would start
+function lineInfo(){
+  const now=Date.now(), live=screenLine.filter(q=>q.endAt>now), end=live.reduce((m,q)=>Math.max(m,q.endAt),now);
+  return {count:live.length, start:end, busy:live.length>0};
+}
+const fmtWhen=t=>{ const d=new Date(t), n=new Date(), tm=fmtTime(t);
+  if(d.toDateString()===n.toDateString()) return 'today at '+tm;
+  const tmr=new Date(n); tmr.setDate(n.getDate()+1); if(d.toDateString()===tmr.toDateString()) return 'tomorrow at '+tm;
+  return d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})+' at '+tm; };
+function drawStore(){
+  const open=!!storeCfg.mobilepay, list=$('st-items'); list.replaceChildren();
+  STORE_ITEMS.forEach(it=>{
+    const row=mk('div','st-item'), ic=mk('span','st-ic ic-'+it.id), tx=mk('div','st-txt'), pb=mk('button','st-price'+(buyArmed===it.id?' buy':''),buyArmed===it.id?'BUY':kr(it.price));
+    ic.innerHTML=ITEM_ICONS[it.id]; tx.append(mk('b',null,it.name),mk('small',null,it.sub)); if(it.tag) tx.append(mk('i',null,it.tag));
+    pb.type='button'; pb.disabled=!open; pb.setAttribute('aria-label',`Buy ${it.name} for ${kr(it.price)}`);
+    // like the App Store: the price turns into a green BUY, a second tap goes on
+    pb.addEventListener('click',()=>{ if(buyArmed!==it.id){ buyArmed=it.id; drawStore(); return; } buyArmed=null; drawStore(); openBuy(it); });
+    row.append(ic,tx,pb); list.append(row);
+  });
+  if(!open) list.append(Object.assign(mk('p','grp-foot','The store opens soon.'),{style:'margin:10px 16px 12px'}));
+  // your purchases
+  const mine=$('st-mine'); mine.replaceChildren(); const shown=myOrders.filter(o=>o.status!=='cancelled'||Date.now()-o.ts<86400e3);
+  $('st-mine-h').hidden=!shown.length;
+  shown.forEach(o=>{
+    const it=STORE_ITEMS.find(i=>i.id===o.item)||{name:o.item}, c=mk('div','cell'), lbl=mk('div','lbl');
+    lbl.append(mk('span',null,it.name)); const sub=mk('small'); lbl.append(sub); c.append(lbl);
+    const act=(t,cls,fn)=>{ const b=mk('button','mini-btn '+(cls||''),t); b.type='button'; b.addEventListener('click',fn); c.append(b); };
+    if(o.status==='pending'){ sub.textContent=`Waiting for payment · ${o.ref}`; act('How to pay','',()=>openPay(o)); }
+    else if(o.status==='cancelled'){ sub.textContent='Cancelled'; }
+    else if(o.item==='bubble'){ if(o.status==='used') sub.textContent='Designed. It is your bubble now.'; else { sub.textContent='Paid. Design it now.'; act('Design','green',()=>openMyBubble(o)); } }
+    else if(o.item==='tshirt'){ const m=o.token&&merchWatch.get(o.token), used=m&&m.data&&m.data.usedAt;
+      sub.textContent=used?`Collected ${fmtDay(used)}`:`Paid · size ${o.size}`; if(o.token) act(used?'Ticket':'Show ticket',used?'grey':'',()=>openMerchPass(o)); }
+    else if(o.item==='screen'){ const q=screenLine.find(x=>x.id===o.id), now=Date.now();
+      sub.textContent=q?(q.startAt<=now?`On the screen now, until ${fmtTime(q.endAt)}`:`Paid · on the screen ${fmtWhen(q.startAt)}`):'Paid · it has been shown'; }
+    mine.append(c);
+  });
+}
+// the buy sheet
+function sheet(build){ const s=$('st-sheet'); s.replaceChildren(); build(s); $('st-wrap').hidden=false; s.scrollTop=0; }
+function closeSheet(){ $('st-wrap').hidden=true; }
+$('st-wrap').addEventListener('click',e=>{ if(e.target===$('st-wrap')) closeSheet(); });
+const seg=(opts,val,on)=>{ const box=mk('div','st-seg'); box.setAttribute('role','radiogroup');
+  opts.forEach(([v,l])=>{ const b=mk('button',null,l); b.type='button'; b.setAttribute('role','radio'); b.setAttribute('aria-checked',String(v===val));
+    b.addEventListener('click',()=>{ box.querySelectorAll('button').forEach(x=>x.setAttribute('aria-checked',String(x===b))); on(v); }); box.append(b); });
+  return box; };
+const sbtn=(t,cls,fn)=>{ const b=mk('button','st-btn '+(cls||''),t); b.type='button'; b.addEventListener('click',fn); return b; };
+function openBuy(it){
+  if(!storeCfg.mobilepay) return toast('The store opens soon.');
+  sheet(s=>{
+    s.append(mk('h2',null,`${it.name} · ${kr(it.price)}`),mk('p','st-sub',it.sub));
+    const draft={item:it.id};
+    if(it.id==='tshirt'){
+      draft.size='M'; s.append(mk('p','st-lbl','Size'),seg(TSHIRT_SIZES.map(x=>[x,x]),'M',v=>draft.size=v));
+      s.append(mk('p','st-sub','The design isn’t ready yet. You pre-order now and collect it at the merch stand with your T-shirt ticket.'));
+    }
+    if(it.id==='screen'){
+      Object.assign(draft,{msg:{text:'',weight:700,tint:'#FFFFFF',size:'M'}}); const m=draft.msg;
+      const ta=mk('textarea'); ta.maxLength=60; ta.placeholder='Your message (up to 60 characters)'; ta.setAttribute('aria-label','Your message');
+      const prev=mk('div','st-prev'), pt=mk('div','ov-text'); prev.append(pt);
+      const draw=()=>{ const item=normItem({text:m.text||'Your message',x:.5,y:.5,size:SCREEN_SIZES[m.size],weight:m.weight,tint:m.tint,opacity:.85});
+        requestAnimationFrame(()=>drawText(pt,item,prev.clientWidth,prev.clientHeight)); };
+      ta.addEventListener('input',()=>{ m.text=ta.value.replace(/\s+/g,' ').trimStart(); draw(); });
+      const tints=mk('div','swatches');
+      ['#FFFFFF','#C9F5D6','#34C759','#A8DCFF','#DCCBFF','#FFD6B8'].forEach(c=>{ const b=mk('button','sw'); b.type='button'; b.style.background=c; b.setAttribute('aria-label','Color '+c); b.setAttribute('aria-pressed',String(c===m.tint));
+        b.addEventListener('click',()=>{ m.tint=c; tints.querySelectorAll('.sw').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); draw(); }); tints.append(b); });
+      s.append(mk('p','st-lbl','Message'),ta,
+        mk('p','st-lbl','Font'),seg([[100,'Thin'],[400,'Regular'],[700,'Bold'],[900,'Black']],700,v=>{ m.weight=v; draw(); }),
+        mk('p','st-lbl','Size'),seg([['S','Small'],['M','Medium'],['L','Large']],'M',v=>{ m.size=v; draw(); }),
+        mk('p','st-lbl','Color'),tints, mk('p','st-lbl','Preview'),prev);
+      const L=lineInfo(), info=mk('p','st-line');
+      if(L.busy){ info.append(L.count===1?'There is ':'There are ',mk('b',null,`${L.count} message${L.count===1?'':'s'}`),` in line right now. Yours would be on the screen `,mk('b',null,fmtWhen(L.start)),`, for ${SCREEN_MSG_HOURS} hours, once your payment is confirmed.`); }
+      else info.append('The screen is free. Your message goes up as soon as your payment is confirmed, for ',mk('b',null,`${SCREEN_MSG_HOURS} hours`),'.');
+      s.append(info); draw();
+      s.append(Object.assign(mk('div','st-btns'),{}));
+      s.lastChild.append(sbtn(L.busy?`Get in line · ${kr(it.price)}`:`Buy · ${kr(it.price)}`,'green',()=>{ if(!m.text.trim()){ toast('Write your message first.'); return ta.focus(); } m.text=m.text.trim(); placeOrder(it,draft); }),
+        sbtn('Go back','grey',closeSheet));
+      return;
+    }
+    const btns=mk('div','st-btns'); btns.append(sbtn(`Buy · ${kr(it.price)}`,'green',()=>placeOrder(it,draft)),sbtn('Go back','grey',closeSheet)); s.append(btns);
+  });
+}
+async function placeOrder(it,draft){
+  const o={code:me.code,name:me.username,item:it.id,price:it.price,ref:newRef(),...(draft.size?{size:draft.size}:{}),...(draft.msg?{msg:draft.msg}:{})};
+  try{ const id=await api.order(o); openPay({...o,id,status:'pending'}); }
+  catch(err){ console.error(err); toast("Couldn't place the order. Try again."); }
+}
+function openPay(o){
+  const it=STORE_ITEMS.find(i=>i.id===o.item)||{name:o.item};
+  sheet(s=>{
+    s.append(mk('h2',null,`Pay ${kr(o.price)} with MobilePay`),mk('p','st-sub',`${it.name}. Send the amount and write the order code in the comment, so we know it's you.`));
+    const mp=mk('div','st-mp'); mp.textContent='MobilePay'; s.append(mp);
+    const pay=mk('div','st-pay'), row=(l,v,copyTxt)=>{ const c=mk('div','cell'); c.append(mk('span',null,l)); const b=mk('b',null,v); c.append(b);
+      if(copyTxt){ const cb=mk('button','mini-btn','Copy'); cb.type='button'; cb.addEventListener('click',()=>copy(copyTxt,`Copied ${copyTxt}.`)); c.append(cb); } pay.append(c); };
+    row('Send to',storeCfg.mobilepay||'—',storeCfg.mobilepay); row('Amount',kr(o.price)); row('Comment',o.ref,o.ref); s.append(pay);
+    s.append(mk('p','st-sub','Your purchase unlocks when the payment is confirmed. You can close this; the order waits under Your purchases.'));
+    const btns=mk('div','st-btns'); btns.append(sbtn('Done','',closeSheet));
+    btns.append(sbtn('Cancel order','grey',async()=>{ if(!await confirmBox('Cancel this order?','Only cancel if you haven’t paid yet.','Cancel order')) return;
+      try{ await api.cancelOrder(o.id); closeSheet(); toast('Order cancelled.'); }catch(err){ fail('cancel the order')(err); } }));
+    s.append(btns);
+  });
+}
+// a bought bubble: the rare designer, for your own code, once
+function openMyBubble(o){
+  rdCode=me.code; rdOrder=o.id; Object.assign(rd,RD_DEFAULT,styles[me.code]||{});
+  if(me.kind!=='rare'){ const l=lookOf(me.code,me.shade,me.kind); if(/^#/.test(l.bg)) rd.tint=l.bg.toUpperCase(); }
+  $('rare-title').textContent='Your bubble'; $('rare-wrap').querySelector('.rare-badge').textContent='Store';
+  $('rare-remove').hidden=true; $('rare-save').textContent='Save my bubble';
+  $('rare-sub').textContent='Upload an image, pick colors and a font. Everyone sees this bubble when you chat. You can save it once.'; drawRare(); $('rare-wrap').hidden=false;
+}
+// the T-shirt ticket
+let mpassFor=null;
+async function openMerchPass(o){
+  const m=merchWatch.get(o.token), used=m&&m.data&&m.data.usedAt;
+  $('st-pass').hidden=false; $('mp-name').textContent=o.name; $('mp-size').textContent=o.size||'—'; $('mp-ref').textContent=o.ref;
+  $('mp-no').textContent=fmtToken(o.token); $('mpass').classList.toggle('in',!!used); $('mp-stamp').hidden=!used;
+  if(used) $('mp-stamp-time').textContent=fmtDay(used);
+  $('mp-note').textContent=used?'You have collected your T-shirt.':'Show this at the merch stand. It works once.';
+  tickClock();
+  if(mpassFor!==o.token){ mpassFor=o.token; try{ await loadScript(QR_LIB); drawQR($('mpass-qr'),'PLAYLIST-MERCH:'+o.token); }catch(err){ console.error(err); mpassFor=null; } }
+}
+
+/* Store (admin): MobilePay number, orders waiting for payment, the screen line */
+let allOrders=[], ordersUnsubs=[], adminMerch=new Map();
+appTop($('s-orders'),'Store');
+function openOrders(){
+  go('s-orders'); $('mp-num').value=storeCfg.mobilepay||'';
+  if(!ordersUnsubs.length) ordersUnsubs.push(api.watchOrders(l=>{ allOrders=l; drawOrders(); }),
+    api.watchMerch(l=>{ adminMerch=new Map(l.map(m=>[m.id,m])); drawOrders(); }));
+  drawOrders();
+}
+function stopOrders(){ ordersUnsubs.forEach(u=>u&&u()); ordersUnsubs=[]; }
+$('f-mp').addEventListener('submit',async e=>{
+  e.preventDefault(); const n=$('mp-num').value.trim();
+  if(n&&!/^[\d +]{4,20}$/.test(n)){ toast('Use digits and spaces only.'); return shake($('f-mp')); }
+  try{ await api.setMobilePay(n); $('mp-num').blur(); toast(n?'MobilePay number saved. The store is open.':'The store is closed.'); }catch(err){ fail('save the number')(err); }
+});
+function orderCell(o,actions){
+  const it=STORE_ITEMS.find(i=>i.id===o.item)||{name:o.item}, c=mk('div','ocell'), top=mk('div','top');
+  top.append(mk('span','ref',o.ref),mk('span','oname',o.name),mk('span','amt',kr(o.price))); c.append(top);
+  let what=it.name; if(o.item==='tshirt') what+=` · size ${o.size}`; if(o.item==='screen'&&o.msg) what+=` · “${o.msg.text}”`;
+  c.append(mk('div','what',what+' · '+fmtDay(o.ts)));
+  if(actions&&actions.length){ const a=mk('div','acts'); a.append(...actions); c.append(a); }
+  return c;
+}
+const mbtn=(t,cls,fn)=>{ const b=mk('button','mini-btn '+(cls||''),t); b.type='button'; b.addEventListener('click',fn); return b; };
+function drawOrders(){
+  if(current.id!=='s-orders') return;
+  const pend=allOrders.filter(o=>o.status==='pending'), paid=allOrders.filter(o=>o.status==='paid'||o.status==='used');
+  const pb=$('or-pending'); pb.replaceChildren(); $('or-pending-empty').hidden=pend.length>0;
+  pend.forEach(o=>pb.append(orderCell(o,[
+    mbtn('Cancel','grey',async()=>{ if(!await confirmBox(`Cancel ${o.ref}?`,`${o.name}'s order is cancelled. Only do this if they haven't paid.`,'Cancel order')) return;
+      try{ await api.cancelOrder(o.id); }catch(err){ fail('cancel the order')(err); } }),
+    mbtn(`Paid ${kr(o.price)}`,'green',async e=>{
+      if(!await confirmBox(`${o.ref}: payment received?`,`Only confirm when ${kr(o.price)} from ${o.name} with “${o.ref}” is in MobilePay.`,'Yes, paid')) return;
+      const L=lineInfo(), slot=o.item==='screen'?{start:L.start,end:L.start+SCREEN_MSG_HOURS*3600e3}:null;
+      try{ await api.markPaid(o,slot); toast(o.item==='screen'?`${o.name}'s message is on ${fmtWhen(slot.start)}.`:`${o.name}'s ${STORE_ITEMS.find(i=>i.id===o.item).name.toLowerCase()} is unlocked.`); }
+      catch(err){ fail('confirm the payment')(err); } }),
+  ])));
+  const sb=$('or-screen'); sb.replaceChildren(); const now=Date.now(); $('or-screen-empty').hidden=screenLine.length>0;
+  screenLine.forEach(q=>{ const c=mk('div','ocell'), top=mk('div','top');
+    top.append(mk('span','oname',q.name),mk('span','amt',q.startAt<=now?'On now':fmtTime(q.startAt))); c.append(top);
+    c.append(mk('div','what',`“${q.text}” · ${fmtDay(q.startAt)} – ${fmtTime(q.endAt)}`));
+    const a=mk('div','acts'); a.append(mbtn('Take down','red',async()=>{ if(!await confirmBox('Take this message down?',`“${q.text}” is removed from the screen. Messages after it keep their times.`,'Take down')) return;
+      try{ await api.takeDown(q.id); toast('Message taken down.'); }catch(err){ fail('take it down')(err); } })); c.append(a); sb.append(c); });
+  const db=$('or-paid'); db.replaceChildren(); $('or-paid-empty').hidden=paid.length>0;
+  paid.slice(0,80).forEach(o=>{ const c=orderCell(o); let st='Paid';
+    if(o.item==='bubble') st=o.status==='used'?'Bubble designed':'Paid · not designed yet';
+    if(o.item==='tshirt'){ const m=o.token&&adminMerch.get(o.token); st=m&&m.usedAt?`Collected ${fmtDay(m.usedAt)}`:'Paid · not collected'; }
+    if(o.item==='screen'){ const q=screenLine.find(x=>x.id===o.id); st=q?(q.startAt<=now?'On the screen now':`On ${fmtWhen(q.startAt)}`):'Shown'; }
+    c.querySelector('.what').append(' · ',mk('b',null,st)); db.append(c); });
 }
 
 /* the full-size viewer (your photos, and the admin's) */
