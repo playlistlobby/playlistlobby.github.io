@@ -555,6 +555,24 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // notifications: to one code (a like, a reply to your post, a private message, someone passing you in Flappy Bird)
+    // or to 'all' (sent by the admin). The text is made by the app from these fields, so nobody can write whatever they like.
+    match /notes/{id} {
+      allow read: if isAdmin() || (isMember() && (resource.data.to == myCode() || resource.data.to == 'all'));
+      allow create: if request.resource.data.keys().hasOnly(['to','kind','from','fromName','extra','ts'])
+        && request.resource.data.ts == request.time
+        && request.resource.data.get('extra', '') is string
+        && ((isAdmin() && request.resource.data.kind == 'admin' && request.resource.data.to == 'all'
+            && request.resource.data.extra.size() > 0 && request.resource.data.extra.size() <= 140)
+          || (isMember() && request.resource.data.kind in ['like', 'reply', 'dm', 'flappy']
+            && request.resource.data.from == myCode()
+            && request.resource.data.to is string && request.resource.data.to != myCode() && request.resource.data.to != 'all'
+            && exists(codePath(request.resource.data.to))
+            && request.resource.data.fromName == get(codePath(myCode())).data.username
+            && request.resource.data.get('extra', '').size() <= 80));
+      allow delete: if isAdmin() || (isMember() && resource.data.to == myCode());
+    }
+
     // public site settings: up to three texts on everyone's screen, the countdown target,
     // the MobilePay number, and the "log everyone out" time
     function inRange(d, k, lo, hi) { return !(k in d) || (d[k] is number && d[k] >= lo && d[k] <= hi); }
