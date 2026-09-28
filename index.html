@@ -383,6 +383,19 @@ body[data-screen=s-admin] .overlay{opacity:0}
 .ios-home.out{transform:scale(1.7)}                         /* opening an app zooms into its icon; closing zooms back */
 body[data-screen=s-home]{background:var(--home-wall-color,#264a66) var(--home-wall) center/cover no-repeat}
 body[data-screen=s-home] .bg{opacity:0}
+/* white home background: smooth white with a soft green vignette towards the edges */
+body.home-white[data-screen=s-home]{background:
+  radial-gradient(140% 110% at 50% 38%,#ffffff 0%,#fbfdfb 38%,#eef6f0 66%,#dcece1 88%,#cfe4d6 100%),#fff}
+body.home-white .sb-label{color:#2c3136;text-shadow:0 1px 0 rgba(255,255,255,.9)}
+body.home-white .sb-dots i{background:rgba(44,49,54,.55);box-shadow:none}
+body.home-white .sb-dots svg{opacity:.4;filter:none}
+body.home-white .sb-dots svg circle,body.home-white .sb-dots svg path{stroke:#2c3136}
+body.home-white .sb-shade{display:none}
+body.home-white .sb-shelf{background:linear-gradient(90deg,rgba(40,70,50,.05),rgba(40,70,50,.1) 50%,rgba(40,70,50,.05)),linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,.2));
+  box-shadow:none}
+body.home-white .sb-shelf::before{border-top-color:rgba(40,70,50,.18)}
+body.home-white .sb-shelf::after{border-top-color:rgba(40,70,50,.12)}
+body.home-white .sb-icon{box-shadow:0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(30,50,40,.28),0 calc(8 * var(--u)) calc(16 * var(--u)) calc(-6 * var(--u)) rgba(30,50,40,.25)}
 .bg{transition:opacity .5s ease,transform 1.2s cubic-bezier(.2,.8,.2,1)}
 .sb-status{position:absolute;z-index:3;top:0;left:0;right:0;height:calc(20px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 6px 0;
   display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.62),rgba(0,0,0,.46));
@@ -423,11 +436,11 @@ body[data-screen=s-home] .bg{opacity:0}
 /* wide screens: the iPad (iOS 6) layout. Icons start at the top left and run across the full width in 5 columns;
    the dock is a slim glass shelf in perspective (measured from the iPad reference: first icon ~12% in, 56px down) */
 @media (min-width:700px){
-  .ios-home{--u:1.26px}                                     /* 57px icons → 72px, like iPad */
-  .sb-grid{left:0;transform:none;width:100%;top:calc(20px + env(safe-area-inset-top) + 36px);
-    grid-template-columns:repeat(5,1fr);padding:0 3vw;row-gap:44px}
+  .ios-home{--u:1.26px;--stage:min(100vw,calc(100vh * 4 / 3))} /* 72px icons like iPad; apps and dock stay in a centred 4:3 area */
+  .sb-grid{left:50%;transform:translateX(-50%);width:var(--stage);top:calc(20px + env(safe-area-inset-top) + 36px);
+    grid-template-columns:repeat(5,1fr);padding:0 calc(var(--stage) * .03);row-gap:44px}
   .sb-dots{bottom:calc(34px + 74px + env(safe-area-inset-bottom))}
-  .sb-dock{height:calc(34px + env(safe-area-inset-bottom))}
+  .sb-dock{height:calc(34px + env(safe-area-inset-bottom));left:50%;right:auto;width:var(--stage);transform:translateX(-50%)}
   .sb-shelf{height:34px;
     clip-path:polygon(4% 0,96% 0,100% 72%,100% 100%,0 100%,0 72%);
     background:
@@ -451,6 +464,64 @@ body[data-screen=s-home] .bg{opacity:0}
 .home-glyph:focus-visible{outline:none}
 .home-glyph:focus-visible span{box-shadow:0 0 10px rgba(255,255,255,.8)}
 body.kb .home-glyph{opacity:0;pointer-events:none}
+/* ===================== CHAT, iOS 6 Messages style (modern, liquid glass) =====================
+   Active when CHAT_STYLE = 'ios6' (body.chat-ios6). With 'glass' the previous chat look is used unchanged. */
+.ios-top{display:none}
+body.chat-ios6 .ios-top{display:block;position:absolute;z-index:4;top:0;left:0;right:0}
+body.chat-ios6 #chat .chat-head, body.chat-ios6 .home-glyph{display:none!important}
+body.chat-ios6[data-screen=chat]{background:radial-gradient(120% 60% at 50% 0%,#eef2f8 0%,rgba(238,242,248,0) 70%),linear-gradient(#dde4ee,#c9d2df)}
+body.chat-ios6[data-screen=chat] .bg{opacity:0}
+.ios-top .sb-status{position:relative;background:linear-gradient(rgba(58,78,106,.92),rgba(70,92,122,.9))}
+.sb-time{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.ios-nav{position:relative;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;
+  background:linear-gradient(rgba(150,170,197,.8) 0%,rgba(112,135,166,.82) 50%,rgba(96,120,152,.86) 51%,rgba(86,110,143,.9) 100%);
+  -webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 .5px 0 rgba(20,35,60,.55),0 8px 20px -8px rgba(20,35,60,.35)}
+.ios-title{position:absolute;left:50%;transform:translateX(-50%);margin:0;font:700 20px/44px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;
+  text-shadow:0 -1px 0 rgba(20,35,60,.45);white-space:nowrap;pointer-events:none}
+.ios-back,.ios-navbtn{position:relative;height:30px;font:700 12px/30px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;text-shadow:0 -1px 0 rgba(20,35,60,.5);
+  transition:transform .45s var(--spring),filter .15s}
+.ios-back{width:62px;padding-left:10px;text-align:center}
+.ios-back-shape{position:absolute;inset:0;width:100%;height:100%;z-index:-1;filter:drop-shadow(0 1px 0 rgba(255,255,255,.25))}
+.ios-back span{position:relative}
+.ios-navbtn{padding:0 11px;border-radius:5px;
+  background:linear-gradient(rgba(255,255,255,.34),rgba(255,255,255,.1) 50%,rgba(0,0,0,.06) 52%,rgba(0,0,0,.12));
+  box-shadow:0 0 0 .8px rgba(20,35,60,.55),inset 0 1px 0 rgba(255,255,255,.4),0 1px 0 rgba(255,255,255,.25)}
+.ios-back:active,.ios-navbtn:active{filter:brightness(.8);transform:scale(.96)}
+.ios-nav-right{display:flex;gap:6px;align-items:center}
+.ios-navbtn .shade-dot{width:14px;height:14px;display:block;margin-top:8px}
+body.chat-ios6 .log{width:100%;max-width:620px;padding-left:12px;padding-right:12px;padding-bottom:calc(64px + env(safe-area-inset-bottom) + var(--kb,0px));gap:7px}
+body.chat-ios6 .stamp{color:#7d879a;font:700 12px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 1px 0 rgba(255,255,255,.75);margin:10px 0 2px}
+body.chat-ios6 .who{color:#7d879a;text-shadow:0 1px 0 rgba(255,255,255,.7);margin:8px 0 -3px 20px}
+/* glossy speech bubbles with tails, in each person's colour */
+body.chat-ios6 #log .bubble{border-radius:18px;padding:8px 14px;font-size:16px;line-height:21px;max-width:74%;
+  box-shadow:inset 0 0 0 .6px rgba(0,0,0,.26),inset 0 1px 1px rgba(255,255,255,.7),0 1px 2px rgba(20,35,60,.22),0 6px 14px -8px rgba(20,35,60,.3)}
+body.chat-ios6 #log .bubble.mine{margin-right:8px}
+body.chat-ios6 #log .bubble:not(.mine){margin-left:8px}
+body.chat-ios6 #log .glass.tinted:not(.rare){background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.2) 44%,rgba(255,255,255,.04) 58%,rgba(255,255,255,0) 100%),var(--tint)}
+body.chat-ios6 #log .bubble.glass::before{opacity:.35}
+body.chat-ios6 #log .bubble.glass::after{content:"";opacity:1;inset:auto;right:-7px;bottom:0;width:18px;height:17px;border-radius:0;
+  background:var(--tint);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") center/100% 100% no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") center/100% 100% no-repeat}
+body.chat-ios6 #log .bubble.glass:not(.mine)::after{right:auto;left:-7px;transform:scaleX(-1)}
+/* bottom bar: frosted toolbar, white field, glossy blue Send */
+body.chat-ios6 #chat #f-msg{left:0;right:0;transform:none;width:100%;bottom:var(--kb,0px);padding:7px 8px calc(7px + env(safe-area-inset-bottom));gap:8px;
+  background:linear-gradient(rgba(246,248,251,.84),rgba(222,228,236,.9));-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 -.5px 0 rgba(20,35,60,.3)}
+body.chat-ios6.kb #chat #f-msg{bottom:var(--kb,0px)}
+body.chat-ios6 .screen.enter #f-msg.staggerX{animation-name:rise} /* full-width bar: no centring shift in the entrance */
+body.chat-ios6 #f-msg .field.glass{height:34px;padding:0 15px;border-radius:17px;background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.2),0 0 0 .6px rgba(20,35,60,.35),0 1px 0 rgba(255,255,255,.85)}
+body.chat-ios6 #f-msg .field.glass:focus-within{transform:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.2),0 0 0 .6px rgba(20,35,60,.45),0 0 10px 1px rgba(255,255,255,.7)}
+body.chat-ios6 #f-msg .field input{font-size:16px}
+body.chat-ios6 #f-msg .field.glass::before, body.chat-ios6 #f-msg .send.glass::before{opacity:0}
+body.chat-ios6 #f-msg .send.glass.tinted{width:auto;height:32px;border-radius:16px;padding:0 16px;color:#fff;
+  background:linear-gradient(#86c0fa 0%,#4b95ee 48%,#2c7ae4 52%,#2a74dc 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 0 .6px rgba(10,50,120,.55),0 1px 1px rgba(20,35,60,.2);
+  -webkit-backdrop-filter:none;backdrop-filter:none;transition:opacity .2s,transform .45s var(--spring),filter .15s}
+body.chat-ios6 #f-msg:not(.has-text) .send.glass.tinted{opacity:.55}
+body.chat-ios6 #f-msg .send svg{display:none}
+.send-lbl{display:none}
+body.chat-ios6 .send-lbl{display:inline;font:700 15px/32px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 rgba(10,50,120,.4)}
 /* admin history: private messages */
 .hist .bubble.pm{outline:1.5px dashed rgba(0,0,0,.28);outline-offset:2px}
 .hist .bubble.pm.sent{align-self:flex-end}
@@ -626,6 +697,29 @@ body.kb .home-glyph{opacity:0;pointer-events:none}
 
 <!-- 3. CHAT -->
 <section class="screen out" id="chat" aria-label="Chat" hidden>
+  <!-- iOS 6 style top: status bar with the countdown, then the nav bar (only shown when CHAT_STYLE = 'ios6') -->
+  <div class="ios-top" id="ios-top">
+    <div class="sb-status" aria-hidden="true">
+      <span><span class="sb-bars"><i style="height:3px"></i><i style="height:4.5px"></i><i style="height:6px"></i><i style="height:7.5px"></i><i style="height:9px"></i></span>
+        Playlist
+        <svg width="13" height="10" viewBox="0 0 13 10"><path d="M6.5 2.2c1.9 0 3.6.7 4.9 1.9l1-1C10.8 1.6 8.8.8 6.5.8S2.2 1.6.6 3.1l1 1C2.9 2.9 4.6 2.2 6.5 2.2zm0 2.6c1.2 0 2.2.4 3 1.2l1-1C9.4 4 8 3.4 6.5 3.4S3.6 4 2.5 5l1 1c.8-.8 1.8-1.2 3-1.2zm0 2.6c-.5 0-.9.2-1.2.5L6.5 9.2l1.2-1.3c-.3-.3-.7-.5-1.2-.5z" fill="#fff"/></svg></span>
+      <span class="sb-time" title="Countdown">00:00:00:00</span>
+      <span>100% <svg width="23" height="11" viewBox="0 0 23 11"><rect x=".6" y=".6" width="19" height="9.8" rx="1.6" fill="none" stroke="#fff" stroke-width="1.2"/><rect x="2" y="2" width="16.2" height="7" rx=".6" fill="#fff"/><rect x="20.4" y="3.4" width="1.8" height="4.2" rx=".6" fill="#fff"/></svg></span>
+    </div>
+    <nav class="ios-nav">
+      <button class="ios-back" type="button" id="nav-home" aria-label="Back to the home screen">
+        <svg class="ios-back-shape" viewBox="0 0 62 30" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="bkg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".5" stop-color="#fff" stop-opacity=".1"/><stop offset=".52" stop-color="#000" stop-opacity=".06"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>
+          <path d="M12.5 1H57a4.5 4.5 0 0 1 4.5 4.5v19a4.5 4.5 0 0 1-4.5 4.5H12.5a3 3 0 0 1-2.3-1.1L1.6 16.6a2.5 2.5 0 0 1 0-3.2l8.6-11.3A3 3 0 0 1 12.5 1Z" fill="url(#bkg)" stroke="rgba(20,35,60,.55)" stroke-width=".8"/>
+          <path d="M13 2h44" stroke="rgba(255,255,255,.4)" stroke-width=".8"/></svg>
+        <span id="nav-home-lbl">Home</span></button>
+      <h1 class="ios-title">Playlist</h1>
+      <div class="ios-nav-right">
+        <button class="ios-navbtn" type="button" id="nav-color" aria-label="Your color" hidden><span class="shade-dot"></span></button>
+        <button class="ios-navbtn" type="button" id="nav-logout">Log out</button>
+      </div>
+    </nav>
+  </div>
   <header class="chat-head staggerX" style="--i:0" id="chat-head">
     <div class="count" role="timer" aria-label="Time left"><b id="c-time"><span class="u">00</span><span class="sep">:</span><span class="u">00</span><span class="sep">:</span><span class="u">00</span><span class="sep">:</span><span class="u">00</span></b></div>
     <div class="head-row">
@@ -641,6 +735,7 @@ body.kb .home-glyph{opacity:0;pointer-events:none}
     <label class="field glass pill"><input id="msg" placeholder="Message" aria-label="Message" maxlength="500"></label>
     <button class="circle glass live tinted send" type="submit" aria-label="Send">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+      <span class="send-lbl">Send</span>
     </button>
   </form>
   <button class="home-glyph" type="button" id="go-home" aria-label="Home screen" title="Home" hidden><span></span></button>
@@ -913,8 +1008,12 @@ const COUNTDOWN_TARGET = "2026-10-31T20:00:00+01:00"; // what the timer counts d
 // Home screen: after logging in, people land on an iOS 6-style home screen with their apps.
 // false = the old behaviour (straight into the chat / admin panel). Nothing of the old look was removed.
 const USE_HOME_SCREEN = true;
+// Chat look: 'ios6' = iOS 6 Messages, modern liquid-glass take; 'glass' = the previous chat look.
+const CHAT_STYLE = 'ios6';
 // The home screen's look (assets from the Figma "Legacy iOS UI Kit"). Swap these (and the CSS block) to restyle it.
 const HOME_THEME = {
+  // background: 'white' = smooth white with a soft green vignette; 'wallpaper' = the iOS 6 water photo below
+  background: "white",
   wallpaper: "assets/ios6/wallpaper.jpg", wallpaperColor: "#264a66",
   gloss: "assets/ios6/icon-gloss.png",
   icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png" },
@@ -1263,7 +1362,7 @@ function closeShadePop(){
 $('me-color').addEventListener('click',()=>{
   if(me.kind==='admin') return $('me-pop').hidden?openMePop():closeMePop();
   const p=$('shade-pop'); if(!p.hidden) return closeShadePop();
-  const h=$('chat-head'); p.style.top=(h.offsetTop+h.offsetHeight+8)+'px';
+  p.style.top=headerBottom()+8+'px';
   $('shade-chat').value=me.shade; p.hidden=false;
 });
 document.addEventListener('pointerdown',e=>{ if(!e.target.closest('#shade-pop,#me-color')) closeShadePop(); });
@@ -1282,7 +1381,7 @@ function drawMePop(){
   $('me-tint').value=meDraft.toLowerCase();
 }
 function openMePop(){
-  const p=$('me-pop'), h=$('chat-head'); p.style.top=(h.offsetTop+h.offsetHeight+8)+'px';
+  const p=$('me-pop'); p.style.top=headerBottom()+8+'px';
   $('me-name').value=me.username||''; meDraft=me.tint||'#8E8E93'; drawMePop(); p.hidden=false;
   setTimeout(()=>$('me-name').focus(),60);
 }
@@ -1303,12 +1402,18 @@ document.addEventListener('pointerdown',e=>{ if(!$('me-pop').hidden && !e.target
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMePop(); });
 
 /* ---------- chat layout: the conversation starts under the clock header, whatever its size ---------- */
+// bottom of the chat's header (iOS 6 nav bar, or the big glass clock), in layout position (unaffected by animations)
+function headerBottom(){
+  if(document.body.classList.contains('chat-ios6')) return $('ios-top').offsetHeight;
+  const h=$('chat-head'); return h.offsetTop+h.offsetHeight;
+}
 function layoutChat(){
   document.body.dataset.screen=current.id;
-  const h=$('chat-head'), below=h.offsetTop+h.offsetHeight; // layout position, unaffected by the entrance animation
+  const below=headerBottom();
   if(current.id==='chat'&&below) $('log').style.paddingTop=(below+14)+'px';
 }
 new ResizeObserver(layoutChat).observe($('chat-head'));
+new ResizeObserver(layoutChat).observe($('ios-top'));
 
 /* ---------- text the admin places on everyone's screen ----------
    position x/y: 0..1 of the screen (centre of the text); size: fraction of the screen's shorter side,
@@ -1432,6 +1537,7 @@ const APPS = [
 (()=>{ const r=document.documentElement.style;
   r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
   r.setProperty('--home-gloss',`url("${HOME_THEME.gloss}")`);
+  document.body.classList.toggle('home-white',HOME_THEME.background==='white');
   if(USE_HOME_SCREEN) document.documentElement.style.setProperty('--homeglyph','26px');
   $('go-home').hidden=!USE_HOME_SCREEN; $('a-home').hidden=!USE_HOME_SCREEN;
 })();
@@ -1471,9 +1577,14 @@ function openHome(opts={}){
   }
   renderHome(); tickClock(); go('s-home');
 }
-// status bar clock
-function tickClock(){ $('sb-time').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
-setInterval(()=>{ if(current.id==='s-home') tickClock(); },15000);
+// status bars show the countdown where iOS shows the time
+function tickClock(){ const t=countdownParts().join(':'); document.querySelectorAll('.sb-time').forEach(el=>{ if(el.textContent!==t) el.textContent=t; }); }
+setInterval(()=>{ if(current.id==='s-home'||current.id==='chat') tickClock(); },1000);
+document.body.classList.toggle('chat-ios6',CHAT_STYLE==='ios6');
+// nav bar buttons reuse the chat's existing controls
+$('nav-home').addEventListener('click',()=>$('go-home').click());
+$('nav-logout').addEventListener('click',()=>$('logout').click());
+$('nav-color').addEventListener('click',()=>$('me-color').click());
 // red badge on Chat: messages from others since you last had the chat open
 const seenKey=()=>'playlist-seen-'+me.code;
 function updateBadge(){
@@ -1495,6 +1606,7 @@ let unwatch=null, unwatchMe=null;
 function openChat(){
   go('chat'); startCountdown(); applyMyShade(me.shade);
   const asAdmin=me.kind==='admin'; $('me-color').hidden=me.hasShade&&!asAdmin; $('to-admin').hidden=USE_HOME_SCREEN||!asAdmin;
+  $('nav-color').hidden=$('me-color').hidden; $('nav-home-lbl').textContent=asAdmin?'Admin':'Home'; $('nav-home').hidden=!USE_HOME_SCREEN&&!asAdmin; tickClock();
   $('me-color').title=asAdmin?'Your name and color':'Pick your color';
   startSocial(); countLikes();
   if(!unwatch) unwatch=api.watch(render); else render(lastList); // re-render so "mine" matches the account that just logged in
