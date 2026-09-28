@@ -6,7 +6,7 @@
 <title>Playlist</title>
 <style>
 :root{
-  --home-wall:url("assets/ios6/wallpaper-drops.jpg");--home-wall-color:#cdd9dc;--home-wall-pos:center top;
+  --home-wall:url("assets/ios6/wallpaper-real.jpg");--home-wall-color:#c9d6d8;--home-wall-pos:center top;--home-wall-size:cover;
   --ground:#D9D9D9;
   --ink:#111;
   --muted:#6E6E73;
@@ -382,7 +382,7 @@ body[data-screen=s-admin] .overlay{opacity:0}
 .ios-home{padding:0;justify-content:flex-start;--w:min(100vw,400px);--u:calc(min(100vw,400px) / 320); /* one design pixel */
   transform-origin:var(--ox,50%) var(--oy,40%);transition:opacity .38s ease,transform .45s cubic-bezier(.3,.8,.3,1)}
 .ios-home.out{transform:scale(1.7)}                         /* opening an app zooms into its icon; closing zooms back */
-body[data-screen=s-home]{background:var(--home-wall-color,#264a66) var(--home-wall) var(--home-wall-pos,center)/cover no-repeat}
+body[data-screen=s-home]{background:var(--home-wall-color,#264a66) var(--home-wall) var(--home-wall-pos,center)/var(--home-wall-size,cover) no-repeat}
 body[data-screen=s-home] .bg{opacity:0}
 /* white home background: smooth white with a soft green vignette towards the edges */
 body.home-white[data-screen=s-home]{background:
@@ -529,7 +529,7 @@ body.chat-ios6 .send-lbl{display:inline;font:700 15px/32px "Helvetica Neue",Helv
    232×52 track holding the knob and the (here) "member code" text, a small icon on the right. */
 .lk-status,.lk-head,.lk-icon,.lk-hint{display:none}
 .lk-foot{display:contents}
-body.lock-ios6[data-screen=s-code]{background:var(--home-wall-color,#264a66) var(--home-wall) var(--home-wall-pos,center)/cover no-repeat}
+body.lock-ios6[data-screen=s-code]{background:var(--home-wall-color,#264a66) var(--home-wall) var(--home-wall-pos,center)/var(--home-wall-size,cover) no-repeat}
 body.lock-ios6[data-screen=s-code] .bg{opacity:0}
 body.lock-ios6 #s-code{padding:0;justify-content:flex-start;--lw:min(100vw,420px)}
 body.lock-ios6 #s-code .logo-wrap{display:none}
@@ -1198,6 +1198,46 @@ button.orb,.fm-name{cursor:pointer}
 .fm-blocked{margin:10px 16px;padding:8px 12px;border-radius:8px;background:rgba(200,60,40,.12);color:#8a2a18;font:600 14px "Helvetica Neue",Helvetica,Arial,sans-serif}
 /* profile pop-up: block button */
 .pm-block{margin-left:4px}
+
+/* no Log out in the chat (it's an app on the home screen now) */
+#nav-logout{display:none}
+/* lock screen: "Remember me" sits inside the bottom band, centred under the code bar */
+body.lock-ios6 .lk-foot{height:calc(124px + env(safe-area-inset-bottom));align-items:flex-start;padding-top:18px}
+body.lock-ios6 .remember{bottom:calc(env(safe-area-inset-bottom) + 12px);padding:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:0;
+  font-size:13px;color:rgba(255,255,255,.9)}
+body.lock-ios6 .remember .ios-switch{transform:scale(.86);transform-origin:left center;margin-right:-10px}
+body.lock-ios6.kb .remember{display:none}
+/* lock screen: reload everything (for in-app browsers that get stuck) */
+.lk-reload{display:none}
+body.lock-ios6 .lk-reload{display:grid;place-items:center;position:absolute;z-index:3;top:calc(20px + env(safe-area-inset-top) + 8px);right:8px;width:30px;height:30px;border-radius:50%;
+  color:#fff;opacity:.75;background:rgba(0,0,0,.25);box-shadow:inset 0 0 0 .6px rgba(255,255,255,.35)}
+body.lock-ios6 .lk-reload svg{width:16px;height:16px}
+body.lock-ios6 .lk-reload:active{opacity:1;transform:rotate(-90deg);transition:transform .3s}
+@media (min-width:700px){ body.lock-ios6 .lk-reload{display:none} }
+/* keyboard open: every screen shrinks to the part of the window you can see, instead of the page sliding up */
+body.kb .screen{top:var(--vvtop,0px);bottom:auto;height:var(--vvh,100%)}
+html,body{overscroll-behavior:none}
+/* Store: likes */
+.st-bal{display:flex;align-items:center;gap:8px;margin:0 12px 8px;font:700 15px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#4c566a;text-shadow:0 1px 0 rgba(255,255,255,.85)}
+.st-bal .heart{color:#e0342c}
+.st-bal b{color:#111;font-size:17px}
+.st-price.likes{color:#c42a24}
+.st-price.likes.buy{color:#fff}
+.st-ic.ic-avatar{background:linear-gradient(135deg,#7ad0ff,#4a7bff 60%,#8a5cff)}
+.st-ic.ic-background{background:linear-gradient(#9fd9e6,#5aa4b8 60%,#2f6c7f)}
+.st-avprev{display:block;width:140px;height:140px;margin:6px auto 12px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 3px #fff,0 6px 18px rgba(0,0,0,.3)}
+.st-bgprev{display:block;width:100%;aspect-ratio:9/16;max-height:44vh;object-fit:cover;border-radius:12px;margin:6px 0 12px;box-shadow:0 0 0 .6px rgba(0,0,0,.3)}
+/* profile pictures */
+.avatar.pic{color:transparent!important}
+.pm-dot-pic{width:26px!important;height:26px!important;background-size:cover!important;background-position:center!important}
+/* admin: wallpaper editor */
+.wp-previews{display:flex;gap:12px;align-items:flex-end;justify-content:center;flex-wrap:wrap}
+.wp-frame{border-radius:10px;background-color:#c9d6d8;background-repeat:no-repeat;box-shadow:0 0 0 .6px rgba(0,0,0,.35),0 4px 12px rgba(0,0,0,.15);position:relative;cursor:pointer;flex:none}
+.wp-frame.phone{width:96px;height:208px}
+.wp-frame.desk{width:224px;height:140px}
+.wp-frame.on{box-shadow:0 0 0 2.5px #0a84ff,0 4px 12px rgba(0,0,0,.2)}
+.wp-frame span{position:absolute;left:6px;bottom:5px;padding:1px 6px;border-radius:5px;background:rgba(0,0,0,.45);color:#fff;font-size:11px;font-weight:600}
+.hist-buy{display:flex;gap:10px;align-items:center}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
@@ -1207,6 +1247,7 @@ button.orb,.fm-name{cursor:pointer}
 /* LOOK SWITCHES. They run before anything is drawn, so the old screens never flash while the database connects.
    'ios6' = iOS 6 style; 'glass' = the previous liquid-glass look (kept so it can be switched back). */
 window.PLAYLIST_LOOK = { lock: 'ios6', user: 'ios6', chat: 'ios6' };
+try{ const w=JSON.parse(localStorage.getItem('playlist-wall')||'null'); if(w&&w.css) for(const k in w.css) document.documentElement.style.setProperty(k,w.css[k]); }catch(e){}
 document.body.classList.toggle('lock-ios6', PLAYLIST_LOOK.lock === 'ios6');
 document.body.classList.toggle('user-ios6', PLAYLIST_LOOK.user === 'ios6');
 document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
@@ -1247,6 +1288,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
     <span class="lk-icon"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M9 18.2V6.4l11-2.2v11.4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><ellipse cx="6.6" cy="18.3" rx="2.9" ry="2.3" fill="#fff"/><ellipse cx="17.6" cy="15.7" rx="2.9" ry="2.3" fill="#fff"/></svg></span>
   </div>
   <p class="note stagger" style="--i:2" id="n-code" role="status"></p>
+  <button class="lk-reload" type="button" id="lk-reload" aria-label="Reload and forget this phone" title="Reload"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M12.2 1.6v3h-3"/></svg></button>
   <label class="remember stagger" style="--i:2"><span>Remember me</span><input type="checkbox" id="remember" checked>
     <span class="ios-switch" aria-hidden="true"><b><span class="on">ON</span><span class="off">OFF</span><i></i></b></span></label>
 </section>
@@ -1485,6 +1527,9 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 <section class="screen out app" id="s-store" aria-label="Store" hidden>
   <div class="app-body"><div class="app-col">
     <div class="st-hero"><b>Playlist Store</b><span>Pay with MobilePay. Your purchase unlocks as soon as the payment is confirmed.</span></div>
+    <p class="st-bal" id="st-bal"></p>
+    <div class="st-list" id="st-likes"></div>
+    <p class="grp-title">With MobilePay</p>
     <div class="st-list" id="st-items"></div>
     <p class="grp-title" id="st-mine-h" hidden>Your purchases</p>
     <div class="grp st-mine" id="st-mine"></div>
@@ -1517,6 +1562,15 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
       <button class="cell btn blue" type="submit">Save number</button>
     </form>
     <p class="grp-foot">Buyers see this number, the price, and an order code to write in the MobilePay comment.</p>
+    <p class="grp-title">Prices</p>
+    <form class="grp" id="f-prices" autocomplete="off">
+      <label class="cell"><span>Profile picture <small>likes</small></span><input id="pr-avatar" type="number" min="0" max="999" inputmode="numeric"></label>
+      <label class="cell"><span>Custom bubble <small>likes</small></span><input id="pr-bubble" type="number" min="0" max="999" inputmode="numeric"></label>
+      <label class="cell"><span>Background <small>likes</small></span><input id="pr-background" type="number" min="0" max="999" inputmode="numeric"></label>
+      <label class="cell"><span>T-shirt <small>kr</small></span><input id="pr-tshirt" type="number" min="0" max="99999" inputmode="numeric"></label>
+      <label class="cell"><span>Screen message <small>kr</small></span><input id="pr-screen" type="number" min="0" max="99999" inputmode="numeric"></label>
+      <button class="cell btn blue" type="submit">Save prices</button>
+    </form>
     <p class="grp-title">Waiting for payment</p>
     <div class="grp" id="or-pending"></div><p class="grp-foot" id="or-pending-empty">No orders are waiting.</p>
     <p class="grp-title">Screen messages</p>
@@ -1709,6 +1763,22 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
           </div>
         </div>
         <div class="glass card a-stack lab">
+          <div><span class="lab-badge">Experimental</span><h3>Wallpaper</h3></div>
+          <p class="a-muted">The lock screen and home screen background for everyone (people who bought their own keep theirs). Tap Phone or Computer, then move and zoom the picture for it.</p>
+          <div class="wp-previews">
+            <div class="wp-frame phone on" id="wp-phone" role="button" tabindex="0" aria-label="Edit for phones"><span>Phone</span></div>
+            <div class="wp-frame desk" id="wp-desk" role="button" tabindex="0" aria-label="Edit for computers"><span>Computer</span></div>
+          </div>
+          <div class="ed-row"><span class="ed-lbl">Across</span><input class="ed-range" id="wp-x" type="range" min="0" max="100" aria-label="Left to right"><span class="ed-val" id="wp-x-v"></span></div>
+          <div class="ed-row"><span class="ed-lbl">Up/down</span><input class="ed-range" id="wp-y" type="range" min="0" max="100" aria-label="Top to bottom"><span class="ed-val" id="wp-y-v"></span></div>
+          <div class="ed-row"><span class="ed-lbl">Zoom</span><input class="ed-range" id="wp-z" type="range" min="100" max="300" aria-label="Zoom"><span class="ed-val" id="wp-z-v"></span></div>
+          <div class="a-row wrap">
+            <label class="a-btn sm glass live file-btn">Upload picture<input type="file" id="wp-file" accept="image/*" hidden></label>
+            <button class="a-btn sm glass live" type="button" id="wp-default">Use the default</button>
+            <button class="a-btn glass green live" type="button" id="wp-save">Save wallpaper</button>
+          </div>
+        </div>
+        <div class="glass card a-stack lab">
           <div><span class="lab-badge">Experimental</span><h3>The ___ app</h3></div>
           <p class="a-muted">A black, mysterious app. When this is on, everyone can download it for free in the Store and it appears on their home screen. Turn it off and it disappears again.</p>
           <div class="a-row">
@@ -1868,7 +1938,8 @@ const CHAT_STYLE = window.PLAYLIST_LOOK.chat, LOCK_STYLE = window.PLAYLIST_LOOK.
 const HOME_THEME = {
   // background: 'wallpaper' = the image below; 'white' = smooth white with a soft green vignette
   background: "wallpaper",
-  wallpaper: "assets/ios6/wallpaper-drops.jpg", wallpaperColor: "#cdd9dc", wallpaperPosition: "center top",
+  wallpaper: "assets/ios6/wallpaper-real.jpg", wallpaperColor: "#c9d6d8", wallpaperPosition: "center top",
+  // previous wallpaper: wallpaper: "assets/ios6/wallpaper-drops.jpg", wallpaperColor: "#cdd9dc"
   // earlier wallpaper (iOS 6 water): wallpaper: "assets/ios6/wallpaper.jpg", wallpaperColor: "#264a66", wallpaperPosition: "center", light: false
   light: true,   // light background → dark icon labels, grey page dots, light dock
   gloss: "assets/ios6/icon-gloss.png",
@@ -1884,8 +1955,14 @@ const JSQR_LIB = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
 // photos: longest side in pixels, and the largest saved size (the free database allows 1 MB per document)
 const PHOTO_MAX_PX = 1600, PHOTO_MAX_CHARS = 700000;
 // the Store. Prices in kroner (they are also fixed in firestore.rules, so change both together).
+// bought with likes (the likes other people gave you). Default prices; the admin can change them in the Store app.
+const LIKE_ITEMS = [
+  { id:'avatar', name:'Profile picture', price:3, sub:'Upload a picture of you. It shows in the Forum, in Settings and when people tap your name.' },
+  { id:'bubble', name:'Custom chat bubble', price:5, sub:'Design your own bubble once: image, colors, font, gloss. Yours for good.' },
+  { id:'background', name:'Your background', price:5, sub:'Upload a picture for your home screen.' },
+];
+// bought with real money (MobilePay)
 const STORE_ITEMS = [
-  { id:'bubble', name:'Custom chat bubble', price:20, sub:'Design your own bubble once: image, colors, font, gloss. Yours for good.' },
   { id:'tshirt', name:'Playlist T-shirt', price:200, sub:'Pre-order. You get a T-shirt ticket to show at the merch stand.', tag:'Design coming soon' },
   { id:'screen', name:'Your message on the screen', price:50, sub:'Shown on everyone’s screen for 6 hours. Messages take turns.' },
 ];
@@ -2059,6 +2136,27 @@ async function firebaseApi(cfg){
     watchAllPhotos(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"photos"),fs.orderBy("ts","desc"),fs.limit(300)),s=>cb(s.docs.map(msgOut)),lost); },
     async photoFull(id){ const s=await fs.getDoc(fs.doc(db,"photoData",id)); return s.exists()?s.data().image:null; },
     async deletePhoto(id){ const b=fs.writeBatch(db); b.delete(fs.doc(db,"photos",id)); b.delete(fs.doc(db,"photoData",id)); await b.commit(); },
+    // likes to spend, profile pictures, backgrounds, prices, the admin's wallpaper
+    watchWallet(code,cb){ return fs.onSnapshot(fs.doc(db,"wallets",code),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
+    watchWallets(cb){ return fs.onSnapshot(fs.collection(db,"wallets"),s=>{ const o={}; s.docs.forEach(d=>o[d.id]=d.data()); cb(o); },e=>console.error(e)); },
+    async addBonus(code,n){ return fs.runTransaction(db,async tx=>{ const r=fs.doc(db,"wallets",code), w=await tx.get(r), d=w.exists()?w.data():{};
+      tx.set(r,{bonus:(d.bonus||0)+n,spent:d.spent||0,...(d.last?{last:d.last}:{})}); }); },
+    // one write: the order (paid), the wallet's "spent", and (for a picture) the picture itself
+    async buyWithLikes(code,name,item,price,extra={}){
+      const wr=fs.doc(db,"wallets",code), w=await fs.getDoc(wr), d=w.exists()?w.data():{}, oref=fs.doc(fs.collection(db,"orders")), b=fs.writeBatch(db);
+      b.set(oref,{code,name,item,price,currency:'likes',ref:'LIKES',status:'paid',ts:fs.serverTimestamp()});
+      b.set(wr,{bonus:d.bonus||0,spent:(d.spent||0)+price,last:oref.id});
+      if(extra.avatar) b.set(fs.doc(db,"avatars",code),{image:extra.avatar,order:oref.id,ts:fs.serverTimestamp()});
+      if(extra.background) b.set(fs.doc(db,"backgrounds",code),{image:extra.background,order:oref.id,ts:fs.serverTimestamp()});
+      await b.commit(); return oref.id; },
+    watchAvatars(cb){ return fs.onSnapshot(fs.collection(db,"avatars"),s=>{ const o={}; s.docs.forEach(d=>o[d.id]=d.data().image); cb(o); },e=>console.error(e)); },
+    watchBackground(code,cb){ return fs.onSnapshot(fs.doc(db,"backgrounds",code),s=>cb(s.exists()?s.data().image:null),e=>console.error(e)); },
+    removeBackground(code){ return fs.deleteDoc(fs.doc(db,"backgrounds",code)); },
+    watchPrices(cb){ return fs.onSnapshot(fs.doc(db,"site","prices"),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
+    setPrices(p){ return fs.setDoc(fs.doc(db,"site","prices"),{...p,ts:fs.serverTimestamp()}); },
+    watchWallpaper(cb){ return fs.onSnapshot(fs.doc(db,"site","wallpaper"),s=>cb(s.exists()?s.data():null),e=>console.error(e)); },
+    setWallpaper(w){ return fs.setDoc(fs.doc(db,"site","wallpaper"),{...w,ts:fs.serverTimestamp()}); },
+    watchUserOrders(code,cb){ return fs.onSnapshot(fs.query(fs.collection(db,"orders"),fs.where("code","==",code)),s=>cb(s.docs.map(msgOut)),e=>console.error(e)); },
     // camera filters (admin-made)
     watchFilters(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"filters"),fs.orderBy("ts","asc")),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>console.error(e)); },
     saveFilter(f){ return fs.addDoc(fs.collection(db,"filters"),{...f,ts:fs.serverTimestamp()}); },
@@ -2236,7 +2334,8 @@ function localApi(){
     d.msgs=d.msgs||[]; d.screen=d.screen||""; d.shades=d.shades||{}; d.kinds=d.kinds||{}; d.styles=d.styles||{}; d.dms=d.dms||[]; d.likes=d.likes||{}; d.tints=d.tints||{};
     d.claimed=d.claimed||{}; d.ticketOf=d.ticketOf||{}; d.tickets=d.tickets||{}; d.checkins=d.checkins||{}; d.photos=d.photos||[];
     d.filters=d.filters||[]; d.store=d.store||{}; d.orders=d.orders||[]; d.merch=d.merch||{}; d.queue=d.queue||[];
-    d.doorChat=d.doorChat||[]; d.posts=d.posts||[]; d.comments=d.comments||[]; d.muted=d.muted||{}; d.blocks=d.blocks||{}; return d; };
+    d.doorChat=d.doorChat||[]; d.posts=d.posts||[]; d.comments=d.comments||[]; d.muted=d.muted||{}; d.blocks=d.blocks||{};
+    d.wallets=d.wallets||{}; d.avatars=d.avatars||{}; d.bgs=d.bgs||{}; d.prices=d.prices||{}; return d; };
   const subs=new Set(), emit=()=>{const d=load(); subs.forEach(f=>f(d));};
   const save=d=>{store.set(K,JSON.stringify(d)); ch&&ch.postMessage(1); emit();};
   const sub=f=>{subs.add(f); f(load()); return ()=>subs.delete(f);};
@@ -2296,6 +2395,21 @@ function localApi(){
       if(m.usedAt) return {status:'already',name:m.name,size:m.size,ts:m.usedAt};
       m.usedAt=Date.now(); m.by=by; if(who) m.who=who; return {status:'ok',name:m.name,size:m.size,ts:m.usedAt}; }); },
     watchDoorChat:cb=>sub(d=>cb(d.doorChat.slice(-150))),
+    watchWallet:(c,cb)=>sub(d=>cb(d.wallets[c]||{})),
+    watchWallets:cb=>sub(d=>cb(d.wallets)),
+    async addBonus(c,n){ mut(d=>{ const w=d.wallets[c]||{}; d.wallets[c]={...w,bonus:(w.bonus||0)+n,spent:w.spent||0}; }); },
+    async buyWithLikes(c,name,item,price,extra={}){ return mut(d=>{ const id='or'+Date.now(), w=d.wallets[c]||{};
+      d.orders.push({id,code:c,name,item,price,currency:'likes',ref:'LIKES',status:'paid',ts:Date.now()});
+      d.wallets[c]={bonus:w.bonus||0,spent:(w.spent||0)+price,last:id};
+      if(extra.avatar) d.avatars[c]=extra.avatar; if(extra.background) d.bgs[c]=extra.background; return id; }); },
+    watchAvatars:cb=>sub(d=>cb(d.avatars)),
+    watchBackground:(c,cb)=>sub(d=>cb(d.bgs[c]||null)),
+    async removeBackground(c){ mut(d=>{ delete d.bgs[c]; }); },
+    watchPrices:cb=>sub(d=>cb(d.prices)),
+    async setPrices(p){ mut(d=>{ d.prices=p; }); },
+    watchWallpaper:cb=>sub(d=>cb(d.wallpaper||null)),
+    async setWallpaper(w){ mut(d=>{ d.wallpaper=w; }); },
+    watchUserOrders:(c,cb)=>sub(d=>cb(d.orders.filter(o=>o.code===c))),
     async sendDoorChat(m){ mut(d=>{ d.doorChat.push({id:'dc'+Date.now()+Math.random(),...m,ts:Date.now()}); }); },
     // demo forum: pictures under their own keys (they can be large)
     watchPosts:(all,cb)=>sub(d=>cb(d.posts.filter(p=>all||Date.now()-p.ts<POST_HOURS*3600e3).map(p=>({...p,image:p.image?store.get('playlist-demo-post-'+p.id):undefined})).reverse())),
@@ -2532,18 +2646,22 @@ addEventListener('resize',()=>{ drawLive(); drawEditor&&drawEditor(); });
 
 /* on-screen keyboard (iOS keeps fixed bars behind it): lift the message bar above it */
 if(window.visualViewport){
+  // With the keyboard open, each screen is sized and placed to the visible part of the window,
+  // so only the text box moves up (instead of the whole page sliding up, as on iPhones).
   const vv=visualViewport, fit=()=>{
-    const kb=Math.max(0,Math.round(innerHeight-vv.height-vv.offsetTop));
-    document.documentElement.style.setProperty('--kb',kb+'px');
-    document.body.classList.toggle('kb',kb>80);
-    if(kb>80 && current.id==='chat') $('log').scrollTop=$('log').scrollHeight;
+    const r=document.documentElement.style, open=innerHeight-vv.height>80;
+    r.setProperty('--vvh',Math.round(vv.height)+'px'); r.setProperty('--vvtop',Math.round(vv.offsetTop)+'px'); r.setProperty('--kb','0px');
+    document.body.classList.toggle('kb',open);
+    if(open && current.id==='chat') $('log').scrollTop=$('log').scrollHeight;
   };
   vv.addEventListener('resize',fit); vv.addEventListener('scroll',fit);
+  // iOS sometimes scrolls the page itself behind the fixed screens; put it back
+  addEventListener('scroll',()=>{ if(scrollY) scrollTo(0,0); },{passive:true});
 }
 // styles and likes are only readable while logged in (code or admin), so they're watched per login
 let socialUnsubs=[];
 function startSocial(){ if(socialUnsubs.length) return; socialUnsubs=[api.watchStyles(onStyles),api.watchLikes(onLikes),
-  api.watchMuted(s=>{ mutedSet=s; if(current.id==='s-forum') drawForum(); syncHistMute(); })]; }
+  api.watchMuted(s=>{ mutedSet=s; if(current.id==='s-forum') drawForum(); syncHistMute(); }), api.watchAvatars(o=>onAvatars(o))]; }
 function stopSocial(){ socialUnsubs.forEach(u=>u&&u()); socialUnsubs=[]; }
 function onStyles(o){
   styles=o||{};
@@ -2613,6 +2731,52 @@ const mysteryInstalled=()=>!!features.mystery&&!!me.code&&store.get(mysKey())===
 function openMystery(){ go('s-mystery'); }
 $('mys-home').addEventListener('click',()=>goHome());
 
+/* ---------- lock screen: reload everything and forget this phone ---------- */
+$('lk-reload').addEventListener('click',async()=>{
+  if(!await confirmBox('Reload Playlist?','This forgets your login on this phone and starts fresh. Use it if the page seems stuck.','Reload')) return;
+  try{ for(const st of [localStorage,sessionStorage]) Object.keys(st).filter(k=>k.startsWith('playlist')).forEach(k=>st.removeItem(k)); }catch{}
+  try{ indexedDB.deleteDatabase('firebaseLocalStorageDb'); }catch{}
+  const q=new URLSearchParams(location.search); q.set('r',Date.now().toString(36));
+  location.replace(location.pathname+'?'+q.toString());
+});
+
+/* ---------- likes to spend, profile pictures, backgrounds, prices ---------- */
+let wallet={}, walletUnsub=null, avatarOf={}, myBg=null, bgUnsub=null, prices={}, wallets={};
+const priceOf=it=>Number.isFinite(+prices[it.id])&&prices[it.id]!==''&&prices[it.id]!=null?+prices[it.id]:it.price;
+const itemOf=id=>LIKE_ITEMS.find(i=>i.id===id)||STORE_ITEMS.find(i=>i.id===id)||{id,name:id,price:0};
+const balanceOf=(code,w)=>(likeCount[code]||0)+((w&&w.bonus)||0)-((w&&w.spent)||0);
+const myBalance=()=>balanceOf(me.code,wallet);
+api.watchPrices(p=>{ prices=p||{}; if(current.id==='s-store') drawStore(); if(current.id==='s-orders') fillPrices(); });
+function watchMine(){ // per member login: my likes wallet and my background
+  walletUnsub&&walletUnsub(); bgUnsub&&bgUnsub();
+  walletUnsub=api.watchWallet(me.code,w=>{ wallet=w||{}; if(current.id==='s-store') drawStore(); if(current.id==='s-settings') renderSettings(); });
+  bgUnsub=api.watchBackground(me.code,img=>{ myBg=img; applyWall(); if(current.id==='s-store') drawStore(); });
+}
+function stopMine(){ walletUnsub&&walletUnsub(); bgUnsub&&bgUnsub(); walletUnsub=bgUnsub=null; wallet={}; myBg=null; applyWall(); }
+function onAvatars(o){ avatarOf=o||{}; if(current.id==='s-forum') drawForum(); if(current.id==='s-settings') renderSettings(); if(pmTo) paintPmDot(); }
+const avatarCss=code=>avatarOf[code]?`url("${avatarOf[code]}") center/cover`:null;
+
+/* ---------- wallpaper: the admin's default (with separate phone / computer framing), or your own ---------- */
+let wall=null; const wallDims={};
+// size, and how bright the picture is (dark wallpapers get white icon labels)
+function imgDims(url){ return wallDims[url]||(wallDims[url]=new Promise(res=>{ const im=new Image(); im.onload=()=>{ let lum=.7;
+  try{ const c=document.createElement('canvas'); c.width=c.height=16; const g=c.getContext('2d'); g.drawImage(im,0,0,16,16); const d=g.getImageData(0,0,16,16).data; let t=0;
+    for(let i=0;i<d.length;i+=4) t+=(.299*d[i]+.587*d[i+1]+.114*d[i+2])/255; lum=t/(d.length/4); }catch{}
+  res({w:im.naturalWidth,h:im.naturalHeight,lum}); }; im.onerror=()=>res(null); im.src=url; })); }
+const WALL_DEFAULT={phone:{x:50,y:0,z:1},desktop:{x:50,y:0,z:1}};
+// cover the box, then zoom; x/y move the picture inside it
+function wallCss(d,W,H,f){ if(!d) return {size:'cover',pos:'center top'};
+  const k=Math.max(W/d.w,H/d.h)*(f.z||1); return {size:`${Math.round(d.w*k)}px ${Math.round(d.h*k)}px`,pos:`${f.x??50}% ${f.y??0}%`}; }
+async function applyWall(){
+  const url=myBg||(wall&&wall.image)||HOME_THEME.wallpaper, own=!!myBg, set=own?{x:50,y:50,z:1}:(((wall&&wall[innerWidth<700?'phone':'desktop']))||WALL_DEFAULT[innerWidth<700?'phone':'desktop']);
+  const dims=await imgDims(url), c=wallCss(dims,innerWidth,innerHeight,set), r=document.documentElement.style, css={'--home-wall':`url("${url}")`,'--home-wall-size':c.size,'--home-wall-pos':c.pos};
+  for(const k in css) r.setProperty(k,css[k]);
+  if(dims) document.body.classList.toggle('home-light',dims.lum>.5);
+  if(!own) try{ store.set('playlist-wall',JSON.stringify({css})); }catch{}
+}
+api.watchWallpaper(w=>{ wall=w; applyWall(); if(adminOn) wpLoad(); });
+addEventListener('resize',()=>{ clearTimeout(applyWall.t); applyWall.t=setTimeout(applyWall,150); });
+
 /* ---------- iOS 6 alert with a text field ---------- */
 function promptBox({title,text='',placeholder='',ok='OK',value=''}){
   return new Promise(res=>{
@@ -2626,8 +2790,9 @@ function promptBox({title,text='',placeholder='',ok='OK',value=''}){
 
 /* ---------- blocking, and who is muted in the forum ---------- */
 let blocked=new Map(), blockUnsub=null, mutedSet=new Set();
-function watchBlocks(){ blockUnsub&&blockUnsub(); blockUnsub=me.code&&me.kind!=='admin'?api.watchBlocks(me.code,l=>{ blocked=new Map(l.map(b=>[b.to,b.toName])); onBlocksChanged(); }):null; }
-function stopBlocks(){ blockUnsub&&blockUnsub(); blockUnsub=null; blocked=new Map(); }
+function watchBlocks(){ blockUnsub&&blockUnsub(); blockUnsub=me.code&&me.kind!=='admin'?api.watchBlocks(me.code,l=>{ blocked=new Map(l.map(b=>[b.to,b.toName])); onBlocksChanged(); }):null;
+  if(me.code&&me.kind!=='admin') watchMine(); }
+function stopBlocks(){ blockUnsub&&blockUnsub(); blockUnsub=null; blocked=new Map(); stopMine(); }
 function onBlocksChanged(){
   if(current.id==='chat') render(lastList);
   if(current.id==='s-settings') renderSettings();
@@ -2715,11 +2880,12 @@ const APPS = [
   { id:'logout',   name:'Log Out',  for:['user','admin','door'], open:()=>logOutApp(), dock:true },
 ];
 (()=>{ const r=document.documentElement.style;
-  r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
+  const cachedWall=!!store.get('playlist-wall');
+  if(!cachedWall) r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
   r.setProperty('--home-gloss',`url("${HOME_THEME.gloss}")`);
   document.body.classList.toggle('home-white',HOME_THEME.background==='white');
   document.body.classList.toggle('home-light',HOME_THEME.background==='white'||!!HOME_THEME.light);
-  r.setProperty('--home-wall-pos',HOME_THEME.wallpaperPosition||'center');
+  if(!cachedWall) r.setProperty('--home-wall-pos',HOME_THEME.wallpaperPosition||'center');
   if(USE_HOME_SCREEN) document.documentElement.style.setProperty('--homeglyph','26px');
   $('go-home').hidden=!USE_HOME_SCREEN; $('a-home').hidden=!USE_HOME_SCREEN;
 })();
@@ -2914,6 +3080,7 @@ function onLikes(list){
   if(adminOn) renderCodes(codeList);
   if(pmTo) syncLike();
   if(current.id==='s-settings') renderSettings();
+  if(current.id==='s-store') drawStore();
 }
 
 /* ---------- tap someone else's bubble: like them, or send a private message ---------- */
@@ -2923,7 +3090,7 @@ $('log').addEventListener('click',e=>{
 });
 function openPM(to,r){
   pmTo=to; const p=$('pm-pop');
-  $('pm-name').textContent=to.name; $('pm-dot').style.background=lookOf(to.code,to.shade,to.kind,to.tint).bg;
+  $('pm-name').textContent=to.name; paintPmDot();
   $('pm-text').value=''; syncLike(); p.hidden=false;
   const w=p.offsetWidth, h=p.offsetHeight, left=Math.min(innerWidth-w-12,Math.max(12,r.left));
   const top=r.bottom+8+h<innerHeight-90 ? r.bottom+8 : Math.max(12,r.top-h-8);
@@ -2931,6 +3098,8 @@ function openPM(to,r){
   setTimeout(()=>$('pm-text').focus(),50);
 }
 function closePM(){ pmTo=null; $('pm-pop').hidden=true; }
+function paintPmDot(){ if(!pmTo) return; const d=$('pm-dot'), pic=avatarCss(pmTo.code);
+  d.classList.toggle('pm-dot-pic',!!pic); d.style.background=pic||lookOf(pmTo.code,pmTo.shade,pmTo.kind,pmTo.tint).bg; }
 function syncLike(){
   if(!pmTo) return;
   $('pm-block').hidden=!me.code||me.kind==='admin'; $('pm-block').textContent=blocked.has(pmTo.code)?'Unblock':'Block'; const on=myLikes.has(pmTo.code), btn_=$('pm-like');
@@ -2991,7 +3160,7 @@ $('f-count').addEventListener('submit',e=>{
   if(!Number.isFinite(ms)) return shake($('f-count'));
   api.setCountdown(ms).then(()=>toast('Countdown updated for everyone.'),fail('update the countdown'));
 });
-const countdownParts=()=>{ const s=secondsLeft(), p=n=>String(n).padStart(2,'0');
+const countdownParts=()=>{ const s=Number.isFinite(secondsLeft())?secondsLeft():0, p=n=>String(n).padStart(2,'0');
   return [Math.floor(s/86400),Math.floor(s%86400/3600),Math.floor(s%3600/60),s%60].map(p); };
 function startCountdown(){
   clearInterval(tick);
@@ -3045,6 +3214,8 @@ function openAdmin(){
   adminUnsubs.push(api.watchAll(renderAdminMsgs), api.watchCodes(l=>{ renderCodes(l); drawAdminDoor(); }),
     api.watchCheckins(l=>{ adminCheckins=new Map(l.map(x=>[x.id,x])); adminArrivals=l; renderCodes(codeList); drawAdminDoor(); }));
   ensureAdminDoorFeed();
+  adminUnsubs.push(api.watchWallets(o=>{ wallets=o||{}; renderCodes(codeList); }));
+  wpLoad();
 }
 function adminLogout(){
   closeHistory(); closeRare();
@@ -3076,6 +3247,25 @@ function drawAdminDoor(){
   const cb=$('dd-chat'), atEnd=cb.scrollHeight-cb.scrollTop-cb.clientHeight<60; cb.replaceChildren(...doorChat.map(chatRow));
   if(!doorChat.length) cb.append(mk('p','a-muted','No messages yet.')); if(atEnd) cb.scrollTop=cb.scrollHeight;
 }
+// wallpaper editor (Experimental tab)
+let wpDraft=null, wpWhich='phone';
+function wpLoad(){ if(wpDraft&&wpDraft.dirty) return; wpDraft={image:wall&&wall.image||null,phone:{...WALL_DEFAULT.phone,...(wall&&wall.phone||{})},desktop:{...WALL_DEFAULT.desktop,...(wall&&wall.desktop||{})}}; wpDraw(); }
+async function wpDraw(){
+  if(!wpDraft) return; const url=wpDraft.image||HOME_THEME.wallpaper, d=await imgDims(url);
+  [['wp-phone','phone',96,208],['wp-desk','desktop',224,140]].forEach(([id,k,W,H])=>{ const c=wallCss(d,W,H,wpDraft[k]), el=$(id);
+    el.style.backgroundImage=`url("${url}")`; el.style.backgroundSize=c.size; el.style.backgroundPosition=c.pos; el.classList.toggle('on',k===wpWhich); });
+  const f=wpDraft[wpWhich]; $('wp-x').value=f.x; $('wp-y').value=f.y; $('wp-z').value=Math.round(f.z*100);
+  $('wp-x-v').textContent=f.x+'%'; $('wp-y-v').textContent=f.y+'%'; $('wp-z-v').textContent=Math.round(f.z*100)+'%';
+}
+[['wp-phone','phone'],['wp-desk','desktop']].forEach(([id,k])=>{ $(id).addEventListener('click',()=>{ wpWhich=k; wpDraw(); }); $(id).addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); wpWhich=k; wpDraw(); } }); });
+[['wp-x','x',1],['wp-y','y',1],['wp-z','z',100]].forEach(([id,k,div])=>$(id).addEventListener('input',e=>{ if(!wpDraft) wpLoad(); wpDraft[wpWhich][k]=+e.target.value/div; wpDraft.dirty=true; wpDraw(); }));
+$('wp-file').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const img=await createImageBitmap(f); if(!wpDraft) wpLoad(); wpDraft.image=fitJpeg(img,2560,900000); wpDraft.dirty=true; wpDraw(); }catch(err){ console.error(err); toast("Couldn't read that picture."); } });
+$('wp-default').addEventListener('click',()=>{ wpDraft={image:null,phone:{...WALL_DEFAULT.phone},desktop:{...WALL_DEFAULT.desktop},dirty:true}; wpDraw(); });
+$('wp-save').addEventListener('click',async()=>{ if(!wpDraft) return;
+  const r=v=>Math.round(v*100)/100, pack=f=>({x:Math.round(f.x),y:Math.round(f.y),z:r(f.z)});
+  try{ await api.setWallpaper({image:wpDraft.image||null,phone:pack(wpDraft.phone),desktop:pack(wpDraft.desktop)}); wpDraft.dirty=false; toast('Wallpaper saved for everyone.'); }
+  catch(err){ fail('save the wallpaper')(err); } });
 $('f-ddchat').addEventListener('submit',e=>{ e.preventDefault(); sendDoorChat($('dd-msg')); });
 $('f-doorkey').addEventListener('submit',async e=>{
   e.preventDefault(); const k=$('a-doorkey').value.trim();
@@ -3282,11 +3472,14 @@ function codeRow(code){
     if(e.key==='Escape'){ inp.value=cur||''; dirty(); inp.blur(); } });
   const mid=mk('div','acct-mid'), acts=mk('div','acct-acts');
   const hist=btn('History','',()=>openHistory(code,cur));
+  const likesB=btn('Likes','',async()=>{ const n=await promptBox({title:`Likes for ${cur||code}`,text:`${Math.max(0,balanceOf(code,wallets[code]))} to spend now. Give likes (e.g. 5) or take them (e.g. -3).`,placeholder:'e.g. 5 or -3',ok:'Apply'});
+    if(n==null) return; const v=parseInt(n,10); if(!Number.isFinite(v)||!v) return toast('Type a number like 5 or -3.');
+    try{ await api.addBonus(code,v); toast(v>0?`Gave ${v} like${v===1?'':'s'} to ${cur||code}.`:`Took ${-v} like${v===-1?'':'s'} from ${cur||code}.`); }catch(err){ fail('change the likes')(err); } });
   const rareB=btn('Make rare','',()=>openRare(code)); // only for free codes
   let tkn=null; // a new ticket for a leaked pass (the old QR stops working); not after they're in
   const newTk=twoStep(btn('New ticket'),()=>api.resetTicket(code,tkn).then(()=>toast(`${cur||code} gets a new ticket next time they open Ticket.`),fail('reset the ticket')),
     ()=>({title:`New ticket for ${cur||code}?`,text:'Their current QR code stops working. They get a fresh one the next time they open the Ticket app.',ok:'New ticket'}));
-  mid.append(inp,when); acts.append(rareB,hist,newTk,save,reset,del); el.append(chip,mid,acts);
+  mid.append(inp,when); acts.append(rareB,hist,likesB,newTk,save,reset,del); el.append(chip,mid,acts);
   return { el, update(c){
     cur=c.username; if(document.activeElement!==inp) inp.value=cur||'';
     el.classList.toggle('free',!cur); el.classList.toggle('fresh',fresh_.has(code));
@@ -3295,7 +3488,8 @@ function codeRow(code){
     rareB.hidden=!!cur; rareB.textContent=c.kind==='rare'?'Edit rare':'Make rare';
     const dot=mk('span','dot'); if(cur||c.kind==='rare') dot.style.background=lookOf(code,c.shade,c.kind).bg;
     const lk=likeCount[code]||0, ci=c.ticket&&adminCheckins.get(c.ticket); tkn=c.ticket; newTk.hidden=!c.ticket||!!ci;
-    when.replaceChildren(dot, (cur ? (c.claimedAt?'Claimed '+fmtDay(c.claimedAt):'Claimed') : 'Not claimed yet')+(lk?` · ${lk} like${lk===1?'':'s'}`:''));
+    const spend=balanceOf(code,wallets[code]); likesB.hidden=!cur;
+    when.replaceChildren(dot, (cur ? (c.claimedAt?'Claimed '+fmtDay(c.claimedAt):'Claimed') : 'Not claimed yet')+(lk?` · ${lk} like${lk===1?'':'s'}`:'')+(cur&&spend!==lk?` · ${Math.max(0,spend)} to spend`:''));
     if(ci) when.append(mk('span','tag in-tag','In '+fmtTime(ci.ts)));
     reset.disabled=!cur; dirty(); } };
 }
@@ -3461,14 +3655,14 @@ function openHistory(code,name){
   closeHistory();
   $('hist-title').textContent=name||`Code ${code}`; $('hist-sub').textContent='Loading…';
   $('hist-list').replaceChildren(); $('hist-wrap').hidden=false;
-  let msgs=[], dms=[], posts=[], comments=[]; histCode=code; histName=name; syncHistMute();
+  let msgs=[], dms=[], posts=[], comments=[], buys=[]; histCode=code; histName=name; syncHistMute();
   const draw=()=>{
-    const list=[...msgs.map(m=>({...m,t:'msg'})),...dms.map(d=>({...d,t:'dm'})),...posts.map(p=>({...p,t:'post'})),...comments.map(c=>({...c,t:'comment'}))].sort((a,b)=>a.ts-b.ts);
+    const list=[...msgs.map(m=>({...m,t:'msg'})),...dms.map(d=>({...d,t:'dm'})),...posts.map(p=>({...p,t:'post'})),...comments.map(c=>({...c,t:'comment'})),...buys.map(o=>({...o,t:'buy'}))].sort((a,b)=>a.ts-b.ts);
     const box=$('hist-list'), cutoff=Date.now()-TTL, atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
     const latest=msgs.length?msgs[msgs.length-1]:null, c0=codeList.find(x=>x.code===code);
     $('hist-dot').style.background=lookOf(code,latest?latest.shade:c0&&c0.shade,(latest&&latest.kind)||(c0&&c0.kind),c0&&c0.tint).bg;
     const names=[...new Set(msgs.map(m=>m.username))], lk=likeCount[code]||0;
-    $('hist-sub').textContent=`Code ${code} · ${msgs.length} message${msgs.length===1?'':'s'} · ${dms.length} private · ${posts.length} forum post${posts.length===1?'':'s'} · ${comments.length} comment${comments.length===1?'':'s'}`+
+    $('hist-sub').textContent=`Code ${code} · ${msgs.length} message${msgs.length===1?'':'s'} · ${dms.length} private · ${posts.length} forum post${posts.length===1?'':'s'} · ${comments.length} comment${comments.length===1?'':'s'} · ${buys.length} purchase${buys.length===1?'':'s'} · ${Math.max(0,balanceOf(code,wallets[code]))} likes to spend`+
       (msgs.length?` · ${msgs.filter(m=>m.ts>cutoff).length} still visible in the chat`:'')+` · ${lk} like${lk===1?'':'s'}`+
       (names.length>1?` · also posted as ${names.filter(n=>n!==name).join(', ')}`:'');
     box.replaceChildren();
@@ -3476,6 +3670,12 @@ function openHistory(code,name){
     let prev=null;
     for(const m of list){
       if(!prev || new Date(m.ts).toDateString()!==new Date(prev.ts).toDateString()) box.append(mk('div','stamp',new Date(m.ts).toDateString()===new Date().toDateString()?'Today':new Date(m.ts).toLocaleDateString([], {weekday:'short',day:'numeric',month:'short'})));
+      if(m.t==='buy'){ // a purchase (likes or MobilePay)
+        const card=mk('div','hist-forum glass card hist-buy'), it=itemOf(m.item);
+        const g=mk('div','grow'); g.append(mk('b',null,it.name+(m.size?` · size ${m.size}`:'')),mk('div','a-muted',`${m.currency==='likes'?m.price+' likes':kr(m.price)} · ${fmtTime(m.ts)} · ${m.status==='pending'?'waiting for payment':m.status==='cancelled'?'cancelled':m.status==='used'?'used':'paid'}${m.ref&&m.ref!=='LIKES'?' · '+m.ref:''}`));
+        if(m.msg) g.append(mk('p',null,`“${m.msg.text}”`)); card.append(mk('span','dd-ic',m.currency==='likes'?'♥':'kr'),g);
+        card.firstChild.style.background=m.currency==='likes'?'#e0342c':'#1f5fd6'; box.append(card); prev=m; continue;
+      }
       if(m.t==='post'||m.t==='comment'){ // forum
         const card=mk('div','hist-forum glass card');
         card.append(mk('div','a-muted',(m.t==='post'?'Forum post':'Comment')+' · '+fmtTime(m.ts)+(Date.now()-m.ts>POST_HOURS*3600e3?' · gone for users':'')));
@@ -3506,7 +3706,8 @@ function openHistory(code,name){
   };
   const u1=api.watchUser(code,l=>{ msgs=l; draw(); }), u2=api.watchUserDMs(code,l=>{ dms=l; draw(); });
   const u3=api.watchUserPosts(code,l=>{ posts=l; draw(); }), u4=api.watchUserComments(code,l=>{ comments=l; draw(); });
-  histUnsub=()=>{ u1(); u2(); u3(); u4(); };
+  const u5=api.watchUserOrders(code,l=>{ buys=l; draw(); });
+  histUnsub=()=>{ u1(); u2(); u3(); u4(); u5(); };
 }
 let histCode=null, histName=null;
 function syncHistMute(){ const b=$('hist-mute'); if(!b) return; const on=!!histCode&&mutedSet.has(histCode);
@@ -3582,6 +3783,7 @@ const SETTINGS_ROWS = [
     {label:'Color', value:()=>colorValue()},
     {label:'Member since', value:()=>acct.claimedAt?new Date(acct.claimedAt).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'}):'—'} ],
   [ {label:'Likes', value:()=>String(likeCount[me.code]||0)},
+    {label:'Likes to spend', value:()=>String(Math.max(0,myBalance()))},
     {label:'Ticket', value:()=>tk.checkin?`Checked in ${fmtTime(tk.checkin.ts)}`:tk.token?'Not used yet':'—'} ],
 ];
 function colorValue(){
@@ -3599,7 +3801,8 @@ function renderSettings(){
   if(!me.code) return;
   const look=lookOf(me.code,me.shade,me.kind,me.tint), av=$('set-avatar');
   av.textContent=(me.username||'?').slice(0,1).toUpperCase(); av.style.color=look.ink;
-  av.style.background=look.texture?`url("${look.texture}") center/cover, ${look.bg}`:`radial-gradient(circle at 35% 25%,rgba(255,255,255,.55),rgba(255,255,255,0) 60%),${look.bg}`;
+  const pic=avatarCss(me.code); av.classList.toggle('pic',!!pic);
+  av.style.background=pic||(look.texture?`url("${look.texture}") center/cover, ${look.bg}`:`radial-gradient(circle at 35% 25%,rgba(255,255,255,.55),rgba(255,255,255,0) 60%),${look.bg}`);
   $('set-name').textContent=me.username||'';
   const box=$('set-groups'); box.replaceChildren();
   SETTINGS_ROWS.forEach(g=>{ const grp=mk('div','grp');
@@ -4180,7 +4383,19 @@ const fmtWhen=t=>{ const d=new Date(t), n=new Date(), tm=fmtTime(t);
   return d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})+' at '+tm; };
 function drawStore(){
   const open=!!storeCfg.mobilepay, list=$('st-items'); list.replaceChildren();
-  STORE_ITEMS.forEach(it=>{
+  // spend likes
+  const bal=Math.max(0,myBalance()), lk=$('st-likes'); lk.replaceChildren();
+  $('st-bal').replaceChildren(mk('span','heart','♥'),'You have ',mk('b',null,String(bal)),` like${bal===1?'':'s'} to spend`);
+  LIKE_ITEMS.forEach(it=>{
+    const cost=priceOf(it), row=mk('div','st-item'), ic=mk('span','st-ic ic-'+it.id), tx=mk('div','st-txt'), armed=buyArmed===it.id;
+    const pb=mk('button','st-price likes'+(armed?' buy':''),armed?'BUY':`${cost} ♥`); pb.type='button'; pb.disabled=bal<cost;
+    ic.innerHTML=ITEM_ICONS[it.id]; tx.append(mk('b',null,it.name),mk('small',null,it.sub));
+    if(bal<cost) tx.append(mk('i',null,`Needs ${cost-bal} more like${cost-bal===1?'':'s'}`));
+    pb.setAttribute('aria-label',`Get ${it.name} for ${cost} likes`);
+    pb.addEventListener('click',()=>{ if(!armed){ buyArmed=it.id; drawStore(); return; } buyArmed=null; drawStore(); buyLikeItem(it); });
+    row.append(ic,tx,pb); lk.append(row);
+  });
+  STORE_ITEMS.forEach(it0=>{ const it={...it0,price:priceOf(it0)};
     const row=mk('div','st-item'), ic=mk('span','st-ic ic-'+it.id), tx=mk('div','st-txt'), pb=mk('button','st-price'+(buyArmed===it.id?' buy':''),buyArmed===it.id?'BUY':kr(it.price));
     ic.innerHTML=ITEM_ICONS[it.id]; tx.append(mk('b',null,it.name),mk('small',null,it.sub)); if(it.tag) tx.append(mk('i',null,it.tag));
     pb.type='button'; pb.disabled=!open; pb.setAttribute('aria-label',`Buy ${it.name} for ${kr(it.price)}`);
@@ -4206,10 +4421,12 @@ function drawStore(){
   const mine=$('st-mine'); mine.replaceChildren(); const shown=myOrders.filter(o=>o.status!=='cancelled'||Date.now()-o.ts<86400e3);
   $('st-mine-h').hidden=!shown.length;
   shown.forEach(o=>{
-    const it=STORE_ITEMS.find(i=>i.id===o.item)||{name:o.item}, c=mk('div','cell'), lbl=mk('div','lbl');
+    const it=itemOf(o.item), c=mk('div','cell'), lbl=mk('div','lbl');
     lbl.append(mk('span',null,it.name)); const sub=mk('small'); lbl.append(sub); c.append(lbl);
     const act=(t,cls,fn)=>{ const b=mk('button','mini-btn '+(cls||''),t); b.type='button'; b.addEventListener('click',fn); c.append(b); };
-    if(o.status==='pending'){ sub.textContent=`Waiting for payment · ${o.ref}`; act('How to pay','',()=>openPay(o)); }
+    if(o.item==='avatar'){ sub.textContent=`${o.price} ♥ · ${fmtDay(o.ts)}`; }
+    else if(o.item==='background'){ sub.textContent=`${o.price} ♥ · ${fmtDay(o.ts)}`; if(myBg&&o.id===myOrders.find(x=>x.item==='background')?.id) act('Use default','grey',async()=>{ try{ await api.removeBackground(me.code); toast('Back to the default background.'); }catch(err){ fail('change it')(err); } }); }
+    else if(o.status==='pending'){ sub.textContent=`Waiting for payment · ${o.ref}`; act('How to pay','',()=>openPay(o)); }
     else if(o.status==='cancelled'){ sub.textContent='Cancelled'; }
     else if(o.item==='bubble'){ if(o.status==='used') sub.textContent='Designed. It is your bubble now.'; else { sub.textContent='Paid. Design it now.'; act('Design','green',()=>openMyBubble(o)); } }
     else if(o.item==='tshirt'){ const m=o.token&&merchWatch.get(o.token), used=m&&m.data&&m.data.usedAt;
@@ -4230,6 +4447,7 @@ const seg=(opts,val,on)=>{ const box=mk('div','st-seg'); box.setAttribute('role'
 const sbtn=(t,cls,fn)=>{ const b=mk('button','st-btn '+(cls||''),t); b.type='button'; b.addEventListener('click',fn); return b; };
 function openBuy(it){
   if(!storeCfg.mobilepay) return toast('The store opens soon.');
+  it={...it,price:priceOf(it)};
   sheet(s=>{
     s.append(mk('h2',null,`${it.name} · ${kr(it.price)}`),mk('p','st-sub',it.sub));
     const draft={item:it.id};
@@ -4269,7 +4487,7 @@ async function placeOrder(it,draft){
   catch(err){ console.error(err); toast("Couldn't place the order. Try again."); }
 }
 function openPay(o){
-  const it=STORE_ITEMS.find(i=>i.id===o.item)||{name:o.item};
+  const it=itemOf(o.item);
   sheet(s=>{
     s.append(mk('h2',null,`Pay ${kr(o.price)} with MobilePay`),mk('p','st-sub',`${it.name}. Send the amount and write the order code in the comment, so we know it's you.`));
     const mp=mk('div','st-mp'); mp.textContent='MobilePay'; s.append(mp);
@@ -4280,6 +4498,40 @@ function openPay(o){
     const btns=mk('div','st-btns'); btns.append(sbtn('Done','',closeSheet));
     btns.append(sbtn('Cancel order','grey',async()=>{ if(!await confirmBox('Cancel this order?','Only cancel if you haven’t paid yet.','Cancel order')) return;
       try{ await api.cancelOrder(o.id); closeSheet(); toast('Order cancelled.'); }catch(err){ fail('cancel the order')(err); } }));
+    s.append(btns);
+  });
+}
+// buying with likes: a bubble opens the designer; a picture is chosen first, then paid for and saved in one go
+const ITEM_ICONS_EXTRA={
+  avatar:'<svg viewBox="0 0 34 34" fill="#fff"><circle cx="17" cy="13" r="6.5"/><path d="M5 30c1.5-6.5 6.3-10 12-10s10.5 3.5 12 10z"/></svg>',
+  background:'<svg viewBox="0 0 34 34" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"><rect x="8" y="3" width="18" height="28" rx="3"/><path d="M8 23l6-6 5 5 3-3 4 4"/><circle cx="21" cy="10" r="2" fill="#fff"/></svg>' };
+Object.assign(ITEM_ICONS,ITEM_ICONS_EXTRA);
+function pickImage(){ return new Promise(res=>{ const i=document.createElement('input'); i.type='file'; i.accept='image/*';
+  i.onchange=async()=>{ const f=i.files&&i.files[0]; if(!f) return res(null); try{ res(await createImageBitmap(f)); }catch{ toast("Couldn't read that picture."); res(null); } }; i.click(); }); }
+function squareJpeg(img,size){ const k=Math.min(img.width,img.height), c=document.createElement('canvas'); c.width=c.height=size;
+  c.getContext('2d').drawImage(img,(img.width-k)/2,(img.height-k)/2,k,k,0,0,size,size); return c.toDataURL('image/jpeg',.82); }
+function fitJpeg(img,max,limit){ let url=null; for(const m of [max,max*.8,max*.6,max*.45]){ const k=Math.min(1,m/Math.max(img.width,img.height)), c=document.createElement('canvas');
+  c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  for(let q=.85;q>=.55;q-=.1){ url=c.toDataURL('image/jpeg',q); if(url.length<limit) return url; } } return url; }
+async function buyLikeItem(it){
+  const cost=priceOf(it);
+  if(myBalance()<cost) return toast(`You need ${cost} likes for this.`);
+  if(it.id==='bubble'){
+    if(!await confirmBox(`Use ${cost} likes?`,'You get one go in the bubble designer. What you save is your chat bubble for good.',`Use ${cost} ♥`)) return;
+    try{ const id=await api.buyWithLikes(me.code,me.username,'bubble',cost); openMyBubble({id,item:'bubble',status:'paid'}); }
+    catch(err){ console.error(err); toast("Couldn't use your likes. Try again."); }
+    return;
+  }
+  const img=await pickImage(); if(!img) return;
+  const url=it.id==='avatar'?squareJpeg(img,200):fitJpeg(img,1600,850000);
+  sheet(s=>{
+    s.append(mk('h2',null,it.id==='avatar'?'Your profile picture':'Your background'),mk('p','st-sub',it.id==='avatar'?'This is how people see you in the Forum and when they tap your name.':'This goes behind your home screen apps.'));
+    const im=mk('img',it.id==='avatar'?'st-avprev':'st-bgprev'); im.src=url; im.alt=''; s.append(im);
+    const btns=mk('div','st-btns');
+    btns.append(sbtn(`Use for ${cost} ♥`,'green',async()=>{ btns.querySelectorAll('button').forEach(b=>b.disabled=true);
+      try{ await api.buyWithLikes(me.code,me.username,it.id,cost,{[it.id]:url}); closeSheet(); toast(it.id==='avatar'?'New profile picture saved.':'Your new background is on.'); }
+      catch(err){ console.error(err); toast("Couldn't save it. Try again."); btns.querySelectorAll('button').forEach(b=>b.disabled=false); } }),
+      sbtn('Pick another','grey',()=>{ closeSheet(); buyLikeItem(it); }), sbtn('Cancel','grey',closeSheet));
     s.append(btns);
   });
 }
@@ -4306,8 +4558,14 @@ async function openMerchPass(o){
 /* Store (admin): MobilePay number, orders waiting for payment, the screen line */
 let allOrders=[], ordersUnsubs=[], adminMerch=new Map();
 appTop($('s-orders'),'Store');
+function fillPrices(){ [...LIKE_ITEMS,...STORE_ITEMS].forEach(it=>{ const i=$('pr-'+it.id); if(i&&document.activeElement!==i) i.value=priceOf(it); }); }
+$('f-prices').addEventListener('submit',async e=>{
+  e.preventDefault(); const p={};
+  for(const it of [...LIKE_ITEMS,...STORE_ITEMS]){ const v=Math.round(+$('pr-'+it.id).value); if(!Number.isFinite(v)||v<0){ toast(`Check the price for ${it.name}.`); return shake($('f-prices')); } p[it.id]=v; }
+  try{ await api.setPrices(p); document.activeElement.blur(); toast('Prices saved.'); }catch(err){ fail('save the prices')(err); }
+});
 function openOrders(){
-  go('s-orders'); $('mp-num').value=storeCfg.mobilepay||'';
+  go('s-orders'); $('mp-num').value=storeCfg.mobilepay||''; fillPrices();
   if(!ordersUnsubs.length) ordersUnsubs.push(api.watchOrders(l=>{ allOrders=l; drawOrders(); }),
     api.watchMerch(l=>{ adminMerch=new Map(l.map(m=>[m.id,m])); drawOrders(); }));
   drawOrders();
@@ -4319,8 +4577,8 @@ $('f-mp').addEventListener('submit',async e=>{
   try{ await api.setMobilePay(n); $('mp-num').blur(); toast(n?'MobilePay number saved. The store is open.':'The store is closed.'); }catch(err){ fail('save the number')(err); }
 });
 function orderCell(o,actions){
-  const it=STORE_ITEMS.find(i=>i.id===o.item)||{name:o.item}, c=mk('div','ocell'), top=mk('div','top');
-  top.append(mk('span','ref',o.ref),mk('span','oname',o.name),mk('span','amt',kr(o.price))); c.append(top);
+  const it=itemOf(o.item), c=mk('div','ocell'), top=mk('div','top');
+  top.append(mk('span','ref',o.ref),mk('span','oname',o.name),mk('span','amt',o.currency==='likes'?`${o.price} ♥`:kr(o.price))); c.append(top);
   let what=it.name; if(o.item==='tshirt') what+=` · size ${o.size}`; if(o.item==='screen'&&o.msg) what+=` · “${o.msg.text}”`;
   c.append(mk('div','what',what+' · '+fmtDay(o.ts)));
   if(actions&&actions.length){ const a=mk('div','acts'); a.append(...actions); c.append(a); }
@@ -4337,7 +4595,7 @@ function drawOrders(){
     mbtn(`Paid ${kr(o.price)}`,'green',async e=>{
       if(!await confirmBox(`${o.ref}: payment received?`,`Only confirm when ${kr(o.price)} from ${o.name} with “${o.ref}” is in MobilePay.`,'Yes, paid')) return;
       const L=lineInfo(), slot=o.item==='screen'?{start:L.start,end:L.start+SCREEN_MSG_HOURS*3600e3}:null;
-      try{ await api.markPaid(o,slot); toast(o.item==='screen'?`${o.name}'s message is on ${fmtWhen(slot.start)}.`:`${o.name}'s ${STORE_ITEMS.find(i=>i.id===o.item).name.toLowerCase()} is unlocked.`); }
+      try{ await api.markPaid(o,slot); toast(o.item==='screen'?`${o.name}'s message is on ${fmtWhen(slot.start)}.`:`${o.name}'s ${itemOf(o.item).name.toLowerCase()} is unlocked.`); }
       catch(err){ fail('confirm the payment')(err); } }),
   ])));
   const sb=$('or-screen'); sb.replaceChildren(); const now=Date.now(); $('or-screen-empty').hidden=screenLine.length>0;
@@ -4384,7 +4642,8 @@ const fmBlockBtn=navBtn('Block',()=>{ if(fmThread) toggleBlock(fmThread.code,fmT
 const fmAdmin=()=>homeMode==='admin';
 const fmVisible=p=>fmAdmin()||(Date.now()-p.ts<POST_HOURS*3600e3&&!blocked.has(p.code));
 const fmLook=p=>p.kind==='admin'?adminLook(p.tint):lookOf(p.code,p.shade,p.kind);
-function orbEl(p,tag='span'){ const o=mk(tag,'orb'); const l=fmLook(p); o.style.setProperty('--c',l.texture?`url("${l.texture}") center/cover, ${l.bg}`:l.bg); return o; }
+function orbEl(p,tag='span'){ const o=mk(tag,'orb'), l=fmLook(p), pic=avatarCss(p.code);
+  o.style.setProperty('--c',pic?pic:l.texture?`url("${l.texture}") center/cover, ${l.bg}`:l.bg); return o; }
 const ago=t=>{ const m=Math.round((Date.now()-t)/60e3); return m<1?'now':m<60?m+' min':m<1440?Math.floor(m/60)+' h':fmtDay(t); };
 function openForum(){
   go('s-forum'); $('s-forum').classList.toggle('admin',fmAdmin()); fmPlus.hidden=fmAdmin();
