@@ -522,6 +522,60 @@ body.chat-ios6 #f-msg:not(.has-text) .send.glass.tinted{opacity:.55}
 body.chat-ios6 #f-msg .send svg{display:none}
 .send-lbl{display:none}
 body.chat-ios6 .send-lbl{display:inline;font:700 15px/32px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 rgba(10,50,120,.4)}
+/* ===================== LOCK SCREEN (iOS 6) for the code step =====================
+   Active when LOCK_STYLE = 'ios6' (body.lock-ios6); 'glass' shows the previous code screen.
+   From the Legacy iOS UI Kit "Lock Screen": clock band 96px under the status bar, footer band 96px with a
+   232×52 track holding the knob and the (here) "member code" text, a small icon on the right. */
+.lk-status,.lk-head,.lk-icon,.lk-hint{display:none}
+.lk-foot{display:contents}
+body.lock-ios6[data-screen=s-code]{background:var(--home-wall-color,#264a66) var(--home-wall) var(--home-wall-pos,center)/cover no-repeat}
+body.lock-ios6[data-screen=s-code] .bg{opacity:0}
+body.lock-ios6 #s-code{padding:0;justify-content:flex-start;--lw:min(100vw,420px)}
+body.lock-ios6 #s-code .logo-wrap{display:none}
+body.lock-ios6 .lk-status{display:flex}
+.sb-time-lock{position:absolute;left:50%;transform:translateX(-50%);display:flex}
+/* dark glass bands with the iOS 6 gloss on their top half */
+body.lock-ios6 .lk-head, body.lock-ios6 .lk-foot{position:absolute;left:0;right:0;z-index:2;
+  background:linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.05) 50%,rgba(255,255,255,0) 50%),linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.55));
+  -webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4)}
+body.lock-ios6 .lk-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  top:calc(20px + env(safe-area-inset-top));height:96px;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 .5px 0 rgba(0,0,0,.5)}
+.lk-clock{font:300 min(60px,14.5vw)/1 "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+  text-shadow:0 -1px 0 rgba(0,0,0,.45),0 2px 10px rgba(0,0,0,.25)}
+.lk-date{font:700 13px/18px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.5)}
+body.lock-ios6 .lk-foot{display:flex;align-items:center;justify-content:center;gap:calc(var(--lw) * .062);
+  bottom:var(--kb,0px);height:calc(96px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 -.5px 0 rgba(0,0,0,.5)}
+body.lock-ios6 .lk-icon{display:grid;place-items:center;width:28px;opacity:.9;filter:drop-shadow(0 -1px 0 rgba(0,0,0,.5))}
+/* the track: an inset groove holding the knob and the code field */
+body.lock-ios6 #f-code{width:calc(var(--lw) * .725);height:52px;padding:4px;gap:0;border-radius:12px;
+  background:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.34));
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.65),inset 0 0 0 .5px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.2)}
+body.lock-ios6 #f-code .circle.glass{order:-1;width:58px;height:44px;border-radius:9px;flex:none;
+  background:linear-gradient(#fdfdfd 0%,#e6e6e6 48%,#cfcfcf 52%,#dcdcdc 100%);-webkit-backdrop-filter:none;backdrop-filter:none;
+  box-shadow:inset 0 1px 0 #fff,0 0 0 .5px rgba(0,0,0,.55),0 2px 4px rgba(0,0,0,.45);transition:transform .35s cubic-bezier(.3,.8,.3,1)}
+body.lock-ios6 #f-code .circle.glass::before{opacity:0}
+body.lock-ios6 #f-code .circle svg{width:26px;height:26px;stroke:#8a8a8a;filter:drop-shadow(0 1px 0 #fff)}
+body.lock-ios6 #f-code.unlock .circle.glass{transform:translateX(var(--kx,160px))}
+body.lock-ios6 #f-code .field.glass{position:relative;height:44px;padding:0 10px 0 14px;background:none;box-shadow:none;border-radius:0;
+  -webkit-backdrop-filter:none;backdrop-filter:none;transform:none}
+body.lock-ios6 #f-code .field.glass::before, body.lock-ios6 #f-code .field.glass::after{display:none}
+body.lock-ios6 #f-code .field input{color:#fff;font:400 20px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.04em;caret-color:#fff}
+body.lock-ios6 #f-code .field input::placeholder{color:transparent}
+/* "member code" with the iOS 6 slide-to-unlock shimmer; hidden once you type */
+body.lock-ios6 .lk-hint{display:block;position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;white-space:nowrap;
+  font:400 21px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;color:transparent;
+  background:linear-gradient(90deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,.38) 42%,#fff 50%,rgba(255,255,255,.38) 58%,rgba(255,255,255,.38) 100%);
+  background-size:300% 100%;-webkit-background-clip:text;background-clip:text;animation:lkshine 2.8s linear infinite}
+@keyframes lkshine{from{background-position:100% 0}to{background-position:-50% 0}}
+body.lock-ios6 #f-code.typed .lk-hint{display:none}
+/* status message under the clock band */
+body.lock-ios6 #n-code{position:absolute;z-index:2;left:50%;transform:translateX(-50%);top:calc(20px + env(safe-area-inset-top) + 96px + 14px);margin:0;
+  padding:0 14px;border-radius:999px;color:#fff;font-weight:600;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  line-height:28px;min-height:0;white-space:nowrap}
+body.lock-ios6 #n-code:empty{display:none}
+body.lock-ios6 #n-code.err{color:#ffd0d0}
+@media (min-width:700px){ body.lock-ios6 .lk-head{height:120px} .lk-clock{font-size:72px} body.lock-ios6 #n-code{top:calc(20px + 120px + 16px)} }
 /* admin history: private messages */
 .hist .bubble.pm{outline:1.5px dashed rgba(0,0,0,.28);outline-offset:2px}
 .hist .bubble.pm.sent{align-self:flex-end}
@@ -651,6 +705,16 @@ body.chat-ios6 .send-lbl{display:inline;font:700 15px/32px "Helvetica Neue",Helv
 
 <!-- 1. CODE -->
 <section class="screen enter" id="s-code" aria-label="Enter code">
+  <!-- iOS 6 lock screen parts (shown when LOCK_STYLE = 'ios6'): status bar, clock band -->
+  <div class="sb-status lk-status" aria-hidden="true">
+    <span><span class="sb-bars"><i style="height:3px"></i><i style="height:4.5px"></i><i style="height:6px"></i><i style="height:7.5px"></i><i style="height:9px"></i></span> Playlist</span>
+    <span class="sb-time-lock"><svg width="9" height="12" viewBox="0 0 9 12" aria-hidden="true"><path d="M2 5V3.6a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="#fff" stroke-width="1.5"/><rect x=".5" y="5" width="8" height="6.5" rx="1.3" fill="#fff"/></svg></span>
+    <span>100% <svg width="23" height="11" viewBox="0 0 23 11"><rect x=".6" y=".6" width="19" height="9.8" rx="1.6" fill="none" stroke="#fff" stroke-width="1.2"/><rect x="2" y="2" width="16.2" height="7" rx=".6" fill="#fff"/><rect x="20.4" y="3.4" width="1.8" height="4.2" rx=".6" fill="#fff"/></svg></span>
+  </div>
+  <div class="lk-head stagger" style="--i:0" role="timer" aria-label="Time until the drop">
+    <div class="lk-clock" id="lk-clock">00:00:00:00</div>
+    <div class="lk-date" id="lk-date"></div>
+  </div>
   <div class="logo-wrap stagger" style="--i:0"><div class="logo-float"><svg class="logo" id="logo" viewBox="0 0 180 180" aria-hidden="true">
     <defs>
       <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
@@ -662,12 +726,15 @@ body.chat-ios6 .send-lbl{display:inline;font:700 15px/32px "Helvetica Neue",Helv
     <rect x="1.5" y="1.5" width="177" height="177" rx="38.5" fill="none" stroke="rgba(255,255,255,.9)"/>
     <path d="M 152.32 19.18 Q 152.21 18.36 151.41 18.15 Q 150.62 17.93 149.04 17.50 Q 147.45 17.07 109.22 24.12 Q 70.99 31.18 69.43 32.10 Q 67.87 33.02 67.16 33.44 Q 66.45 33.85 66.21 34.64 Q 65.97 35.43 65.14 38.09 Q 64.32 40.75 64.15 77.90 Q 63.98 115.06 62.29 117.16 Q 60.59 119.27 48.91 122.41 Q 37.23 125.55 32.99 128.75 Q 28.76 131.94 27.18 135.03 Q 25.61 138.11 25.25 141.92 Q 24.90 145.73 25.99 149.22 Q 27.07 152.72 29.37 155.39 Q 31.67 158.07 36.66 160.42 Q 41.66 162.78 47.42 162.46 Q 53.18 162.14 58.33 159.61 Q 63.47 157.07 67.39 152.38 Q 71.30 147.68 73.06 141.09 Q 74.83 134.51 74.87 104.66 Q 74.92 74.82 75.73 72.70 Q 76.55 70.59 76.84 69.82 Q 77.14 69.05 77.86 68.66 Q 78.59 68.27 80.55 67.23 Q 82.51 66.18 109.22 60.99 Q 135.93 55.80 137.46 56.09 Q 138.99 56.39 139.80 56.54 Q 140.60 56.70 141.04 57.40 Q 141.47 58.10 142.54 59.82 Q 143.61 61.54 143.42 79.24 Q 143.23 96.94 143.22 97.76 Q 143.22 98.59 142.63 99.16 Q 142.04 99.74 140.53 101.23 Q 139.01 102.71 125.39 106.98 Q 111.76 111.24 108.76 115.10 Q 105.75 118.97 105.05 124.06 Q 104.36 129.16 106.65 134.14 Q 108.94 139.13 114.82 142.32 Q 120.69 145.52 128.16 144.84 Q 135.62 144.17 141.06 140.42 Q 146.51 136.66 149.95 130.13 Q 153.39 123.60 153.86 78.78 Q 154.34 33.96 153.38 26.98 Q 152.43 20.00 152.32 19.18 Z" fill="none" stroke="rgba(0,0,0,.16)" stroke-width="1"/>
   </svg></div></div>
-  <form class="bar stagger" style="--i:1" id="f-code" autocomplete="off">
-    <label class="field glass pill"><input id="code" inputmode="text" placeholder="code" aria-label="Access code" maxlength="24" autofocus></label>
-    <button class="circle glass live" type="submit" aria-label="Enter">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </button>
-  </form>
+  <div class="lk-foot">
+    <form class="bar stagger" style="--i:1" id="f-code" autocomplete="off">
+      <label class="field glass pill"><input id="code" inputmode="text" placeholder="code" aria-label="Member code" maxlength="24" autofocus><span class="lk-hint" aria-hidden="true">member code</span></label>
+      <button class="circle glass live" type="submit" aria-label="Enter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+    <span class="lk-icon"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M9 18.2V6.4l11-2.2v11.4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><ellipse cx="6.6" cy="18.3" rx="2.9" ry="2.3" fill="#fff"/><ellipse cx="17.6" cy="15.7" rx="2.9" ry="2.3" fill="#fff"/></svg></span>
+  </div>
   <p class="note stagger" style="--i:2" id="n-code" role="status"></p>
 </section>
 
@@ -1010,11 +1077,13 @@ const COUNTDOWN_TARGET = "2026-10-31T20:00:00+01:00"; // what the timer counts d
 const USE_HOME_SCREEN = true;
 // Chat look: 'ios6' = iOS 6 Messages, modern liquid-glass take; 'glass' = the previous chat look.
 const CHAT_STYLE = 'ios6';
+// Code screen look: 'ios6' = iOS 6 lock screen with a "member code" track; 'glass' = the previous code screen.
+const LOCK_STYLE = 'ios6';
 // The home screen's look (assets from the Figma "Legacy iOS UI Kit"). Swap these (and the CSS block) to restyle it.
 const HOME_THEME = {
   // background: 'wallpaper' = the image below; 'white' = smooth white with a soft green vignette
   background: "wallpaper",
-  wallpaper: "assets/ios6/wallpaper-drops.webp", wallpaperColor: "#cdd9dc", wallpaperPosition: "center top",
+  wallpaper: "assets/ios6/wallpaper-drops.jpg", wallpaperColor: "#cdd9dc", wallpaperPosition: "center top",
   // earlier wallpaper (iOS 6 water): wallpaper: "assets/ios6/wallpaper.jpg", wallpaperColor: "#264a66", wallpaperPosition: "center", light: false
   light: true,   // light background → dark icon labels, grey page dots, light dock
   gloss: "assets/ios6/icon-gloss.png",
@@ -1493,11 +1562,11 @@ $('f-code').addEventListener('submit',async e=>{
     const r=await api.joinCode(code);
     if(!r.valid){
       // not a code: maybe it's the admin password (checked by the database, not by this page)
-      if(await api.adminLogin(code)){ $('code').value=''; note.textContent=''; return openHome({admin:true}); }
+      if(await api.adminLogin(code)){ slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
       note.className='note err'; note.textContent="That code doesn't work."; shake($('f-code')); $('code').select(); return;
     }
     session.del('playlist-admin'); api.adminLogout(); // a code login ends any admin session
-    setMe(code,r.username,r.shade,r.kind); store.set('playlist-code',code); note.textContent='';
+    setMe(code,r.username,r.shade,r.kind); store.set('playlist-code',code); note.textContent=''; slideUnlock();
     if(r.username) openHome();
     else { $('shade-user').value=me.shade; go('s-user'); setTimeout(()=>$('uname').focus(),360); }
   }catch(err){ console.error(err); note.className='note err'; note.textContent="Couldn't check the code. Try again."; }
@@ -1582,9 +1651,24 @@ function openHome(opts={}){
   renderHome(); tickClock(); go('s-home');
 }
 // status bars show the countdown where iOS shows the time
-function tickClock(){ const t=countdownParts().join(':'); document.querySelectorAll('.sb-time').forEach(el=>{ if(el.textContent!==t) el.textContent=t; }); }
-setInterval(()=>{ if(current.id==='s-home'||current.id==='chat') tickClock(); },1000);
+function tickClock(){
+  const t=countdownParts().join(':');
+  document.querySelectorAll('.sb-time').forEach(el=>{ if(el.textContent!==t) el.textContent=t; });
+  const lk=$('lk-clock'); if(lk&&lk.textContent!==t) lk.textContent=t;
+  const d=new Date(countdownTarget), when=d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  if($('lk-date').textContent!==when) $('lk-date').textContent=when;
+}
+setInterval(()=>{ if(current.id==='s-home'||current.id==='chat'||current.id==='s-code') tickClock(); },1000);
 document.body.classList.toggle('chat-ios6',CHAT_STYLE==='ios6');
+document.body.classList.toggle('lock-ios6',LOCK_STYLE==='ios6');
+// lock screen: hide the shimmering "member code" once something is typed
+$('code').addEventListener('input',()=>$('f-code').classList.toggle('typed',!!$('code').value));
+// on a valid code the knob slides across the track, like unlocking
+function slideUnlock(){
+  const f=$('f-code'), k=f.querySelector('.circle'); if(LOCK_STYLE!=='ios6') return;
+  f.style.setProperty('--kx',(f.clientWidth-k.offsetWidth-8)+'px'); f.classList.add('unlock');
+  setTimeout(()=>{ f.classList.remove('unlock','typed'); },900);
+}
 // nav bar buttons reuse the chat's existing controls
 $('nav-home').addEventListener('click',()=>$('go-home').click());
 $('nav-logout').addEventListener('click',()=>$('logout').click());
