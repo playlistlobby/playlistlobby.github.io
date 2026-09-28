@@ -1238,6 +1238,62 @@ html,body{overscroll-behavior:none}
 .wp-frame.on{box-shadow:0 0 0 2.5px #0a84ff,0 4px 12px rgba(0,0,0,.2)}
 .wp-frame span{position:absolute;left:6px;bottom:5px;padding:1px 6px;border-radius:5px;background:rgba(0,0,0,.45);color:#fff;font-size:11px;font-weight:600}
 .hist-buy{display:flex;gap:10px;align-items:center}
+
+/* ===================== iTunes (iOS 6): black glossy bars, light list for music, dark grid for videos ===================== */
+body[data-screen=s-itunes]{background:#e9e9ea}
+body[data-screen=s-itunes] .bg,body[data-screen=s-itunes] .overlay{opacity:0}
+#s-itunes{background:linear-gradient(#f4f4f5,#e3e3e5)}
+#s-itunes.dark{background:#1b1b1d}
+#s-itunes .app-top .sb-status{background:#000}
+#s-itunes .ios-nav{background:linear-gradient(#5b5b5f 0%,#3a3a3d 49%,#26262a 50%,#131315 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #000,0 3px 8px rgba(0,0,0,.35)}
+#s-itunes .ios-back-shape path:first-child{stroke:rgba(0,0,0,.9)}
+#s-itunes .ios-navbtn{box-shadow:0 0 0 .8px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.25)}
+#s-itunes .app-body{bottom:calc(49px + env(safe-area-inset-bottom));padding:0 0 16px}
+.it-h{display:flex;align-items:baseline;justify-content:space-between;margin:16px 12px 8px;font:700 18px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#555}
+.it-h small{font:400 13px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8a8a8e}
+#s-itunes.dark .it-h{color:#e6e6e8}
+.it-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.35)}
+.it-row:first-of-type{border-top:0}
+.it-art{width:56px;height:56px;flex:none;border-radius:3px;background:linear-gradient(135deg,#b26bff,#5b2bd6) center/cover;display:grid;place-items:center;color:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 0 0 .6px rgba(0,0,0,.2)}
+.it-art svg{width:26px;height:26px;opacity:.9}
+.it-txt{flex:1;min-width:0}
+.it-txt b{display:block;font:700 15px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it-txt small{display:block;font:400 12px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#777}
+.it-bar{height:4px;margin-top:5px;border-radius:2px;background:rgba(0,0,0,.12);overflow:hidden}
+.it-bar i{display:block;height:100%;width:0;background:linear-gradient(#6fb1ff,#1f6fe0);transition:width .2s}
+.it-btn{flex:none;min-width:58px;height:26px;padding:0 10px;border-radius:5px;font:700 12px "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.02em;color:#56606c;
+  background:linear-gradient(#fdfdfd,#e2e4e8);box-shadow:0 0 0 1px #a8adb5,inset 0 1px 0 #fff}
+.it-btn.play{color:#1f6fe0}
+.it-btn.buy{color:#fff;background:linear-gradient(#78d971,#3aa233 50%,#2f9a2a 52%,#37a431);box-shadow:0 0 0 1px #2c7f27,inset 0 1px 0 rgba(255,255,255,.45)}
+.it-btn:disabled{opacity:.45;cursor:default}
+.it-soon{opacity:.55}
+.it-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:0 12px}
+.it-card{display:flex;flex-direction:column;gap:6px;min-width:0}
+.it-card .it-art{width:100%;height:auto;aspect-ratio:16/9;border-radius:4px;background:linear-gradient(135deg,#333,#111) center/cover}
+.it-card b{font:700 13px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#eee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it-card small{font:400 11px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#999}
+.it-card .it-foot{display:flex;align-items:center;gap:8px}
+#s-itunes.dark .it-row{background:rgba(255,255,255,.04);border-top-color:rgba(255,255,255,.08)}
+#s-itunes.dark .it-txt b{color:#eee}
+.it-empty{margin:40px 20px;text-align:center;font:400 15px/21px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8a8a8e}
+.it-tag{display:inline-block;margin-left:6px;padding:0 5px;border-radius:4px;font:700 10px/15px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;background:#8e8e93;vertical-align:1px}
+.it-tag.red{background:#d93a30}
+.it-admin{margin:12px;padding:12px;border-radius:10px;background:#fff;box-shadow:0 0 0 .6px rgba(0,0,0,.2),0 3px 10px -4px rgba(0,0,0,.3)}
+#s-itunes.dark .it-admin{background:#2a2a2d;color:#eee}
+.it-admin h3{margin:0 0 8px;font:700 16px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.it-admin .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.it-admin input[type=text]{flex:1;min-width:140px;height:34px;border-radius:8px;padding:0 10px;background:#f2f2f4;color:#111;box-shadow:inset 0 0 0 .6px rgba(0,0,0,.2)}
+.it-admin .muted{font:400 12px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8a8a8e}
+.it-acts{display:flex;gap:6px;flex-wrap:wrap}
+/* player */
+.it-player{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;
+  background:radial-gradient(120% 70% at 50% 20%,#3b3b40,#0b0b0c 70%);color:#fff;animation:fadein .25s ease}
+.it-player video{width:100%;max-height:78vh;background:#000;border-radius:6px}
+.it-player .cover{width:min(280px,70vw);aspect-ratio:1;border-radius:4px;background:linear-gradient(135deg,#b26bff,#5b2bd6) center/cover;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.it-player h2{margin:0;font:700 18px "Helvetica Neue",Helvetica,Arial,sans-serif;text-align:center}
+.it-player audio{width:min(420px,100%)}
+.it-close{position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
@@ -1612,6 +1668,35 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
   </div>
 </section>
 
+<section class="screen out app" id="s-itunes" aria-label="iTunes" hidden>
+  <div class="app-body" id="it-body">
+    <div class="it-admin" id="it-admin" hidden>
+      <h3>Upload</h3>
+      <div class="row"><input type="text" id="it-title" maxlength="60" placeholder="Title" aria-label="Title"></div>
+      <div class="row">
+        <label class="mini-btn file-btn">Choose video or song<input type="file" id="it-file" accept="video/*,audio/*" hidden></label>
+        <label class="mini-btn grey file-btn">Cover (optional)<input type="file" id="it-cover" accept="image/*" hidden></label>
+        <span class="muted" id="it-file-lbl">No file yet</span>
+      </div>
+      <div class="row">
+        <div class="st-seg" id="it-status" style="width:170px"><button type="button" data-v="free" aria-checked="true">Free</button><button type="button" data-v="soon" aria-checked="false">Soon</button></div>
+        <button class="mini-btn green" type="button" id="it-upload">Upload</button>
+      </div>
+      <div class="it-bar" id="it-upbar" hidden><i></i></div>
+      <p class="muted" id="it-usage"></p>
+    </div>
+    <div id="it-list"></div>
+  </div>
+  <nav class="fm-tabs" role="tablist">
+    <button type="button" role="tab" data-t="music" aria-selected="true"><svg viewBox="0 0 26 24" fill="currentColor"><path d="M10 18.5V5.5l12-2.5v13"/><path d="M10 18.5a3.5 3 0 1 1-2-2.7V5.5L22 3v13a3.5 3 0 1 1-2-2.7V7.3L12 9v9.5z"/></svg>Music</button>
+    <button type="button" role="tab" data-t="video" aria-selected="false"><svg viewBox="0 0 26 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="18" height="18" rx="1.5"/><path d="M8 3v18M18 3v18M4 8h4M4 12h4M4 16h4M18 8h4M18 12h4M18 16h4"/></svg>Videos</button>
+  </nav>
+</section>
+<div class="it-player" id="it-player" hidden role="dialog" aria-label="Player">
+  <button class="cam-pill it-close" type="button" id="it-close">Done</button>
+  <div id="it-stage"></div>
+</div>
+
 <div class="viewer" id="viewer" role="dialog" aria-label="Photo" hidden>
   <div class="vw-bar"><button class="cam-pill" type="button" id="vw-close">Done</button><span class="vw-cap" id="vw-cap"></span><a class="cam-pill" id="vw-save" download="playlist-photo.jpg" href="#">Save</a></div>
   <img id="vw-img" alt="">
@@ -1945,7 +2030,7 @@ const HOME_THEME = {
   gloss: "assets/ios6/icon-gloss.png",
   icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png", settings: "assets/ios6/icon-settings.png",
            ticket: "assets/ios6/icon-ticket.png", camera: "assets/ios6/icon-camera.png", door: "assets/ios6/icon-door.png", photos: "assets/ios6/icon-photos.png",
-           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png", logout: "assets/ios6/icon-logout.svg", mystery: "assets/ios6/icon-mystery.svg", forum: "assets/ios6/icon-forum.png" },
+           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png", logout: "assets/ios6/icon-logout.svg", mystery: "assets/ios6/icon-mystery.svg", forum: "assets/ios6/icon-forum.png", itunes: "assets/ios6/icon-itunes.png" },
 };
 const LOCAL_CODES = ["1","2","3","4","5"]; // only used in offline demo mode (no Firebase)
 const DOOR_CODE = "door";                     // demo mode only: the real door password is set by the admin (config/door)
@@ -1967,7 +2052,9 @@ const STORE_ITEMS = [
   { id:'screen', name:'Your message on the screen', price:50, sub:'Shown on everyone’s screen for 6 hours. Messages take turns.' },
 ];
 const SCREEN_MSG_HOURS = 6;
-const POST_HOURS = 24;                         // forum posts disappear for users after this (the admin keeps seeing them)
+const POST_HOURS = 24;
+// iTunes uploads: the file is stored in the database in pieces (the free plan has no file storage), so keep files small
+const MEDIA_MAX_MB = 40, MEDIA_CHUNK = 900000;                         // forum posts disappear for users after this (the admin keeps seeing them)
 const SCREEN_SIZES = { S:.06, M:.09, L:.13 };   // share of the screen, like the admin's text tool
 const TSHIRT_SIZES = ['XS','S','M','L','XL','XXL'];
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
@@ -1980,6 +2067,10 @@ const TTL = MESSAGE_TTL_HOURS*3600e3;
 const NAME_RE = /^[\p{L}\p{N}_.\- ]{2,20}$/u;
 
 const $ = id => document.getElementById(id);
+const idb=(()=>{ let dbp=null;
+  const open=()=>dbp||(dbp=new Promise((res,rej)=>{ const r=indexedDB.open('playlist-media',1); r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onsuccess=()=>res(r.result); r.onerror=()=>{ dbp=null; rej(r.error); }; }));
+  const tx=async(mode,fn)=>{ const d=await open(); return new Promise((res,rej)=>{ const t=d.transaction('kv',mode), q=fn(t.objectStore('kv')); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); };
+  return { get:k=>tx('readonly',s=>s.get(k)), set:(k,v)=>tx('readwrite',s=>s.put(v,k)), del:k=>tx('readwrite',s=>s.delete(k)), keys:()=>tx('readonly',s=>s.getAllKeys()) }; })();
 // a ticket token: 12 characters that are easy to read out (no 0/O, 1/I)
 const newToken = ()=>{ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return [...crypto.getRandomValues(new Uint32Array(12))].map(x=>A[x%A.length]).join(''); };
 const session = { get:k=>{try{return sessionStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch{}}, del:k=>{try{sessionStorage.removeItem(k)}catch{}} };
@@ -2136,6 +2227,20 @@ async function firebaseApi(cfg){
     watchAllPhotos(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"photos"),fs.orderBy("ts","desc"),fs.limit(300)),s=>cb(s.docs.map(msgOut)),lost); },
     async photoFull(id){ const s=await fs.getDoc(fs.doc(db,"photoData",id)); return s.exists()?s.data().image:null; },
     async deletePhoto(id){ const b=fs.writeBatch(db); b.delete(fs.doc(db,"photos",id)); b.delete(fs.doc(db,"photoData",id)); await b.commit(); },
+    // iTunes
+    watchMedia(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"media"),fs.orderBy("ts","desc")),s=>cb(s.docs.map(msgOut),!s.metadata.fromCache),e=>console.error(e)); },
+    async uploadMedia(meta,bytes,onProgress){
+      const ref=fs.doc(fs.collection(db,"media")), n=Math.ceil(bytes.length/MEDIA_CHUNK);
+      for(let i=0;i<n;i+=6){ const b=fs.writeBatch(db);
+        for(let j=i;j<Math.min(n,i+6);j++) b.set(fs.doc(db,"mediaChunks",ref.id+"_"+j),{media:ref.id,i:j,data:fs.Bytes.fromUint8Array(bytes.subarray(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK))});
+        await b.commit(); onProgress&&onProgress(Math.min(n,i+6)/n); }
+      await fs.setDoc(ref,{...meta,chunks:n,ts:fs.serverTimestamp()}); // listed only once every piece is in
+      return ref.id; },
+    async mediaChunk(id,i){ const s=await fs.getDoc(fs.doc(db,"mediaChunks",id+"_"+i)); if(!s.exists()) throw new Error('missing'); return s.data().data.toUint8Array(); },
+    setMediaStatus(id,status){ return fs.updateDoc(fs.doc(db,"media",id),{status}); },
+    async wipeMedia(id,chunks){ for(let i=0;i<chunks;i+=400){ const b=fs.writeBatch(db);
+        for(let j=i;j<Math.min(chunks,i+400);j++) b.delete(fs.doc(db,"mediaChunks",id+"_"+j)); await b.commit(); }
+      await fs.deleteDoc(fs.doc(db,"media",id)); },
     // likes to spend, profile pictures, backgrounds, prices, the admin's wallpaper
     watchWallet(code,cb){ return fs.onSnapshot(fs.doc(db,"wallets",code),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
     watchWallets(cb){ return fs.onSnapshot(fs.collection(db,"wallets"),s=>{ const o={}; s.docs.forEach(d=>o[d.id]=d.data()); cb(o); },e=>console.error(e)); },
@@ -2395,6 +2500,13 @@ function localApi(){
       if(m.usedAt) return {status:'already',name:m.name,size:m.size,ts:m.usedAt};
       m.usedAt=Date.now(); m.by=by; if(who) m.who=who; return {status:'ok',name:m.name,size:m.size,ts:m.usedAt}; }); },
     watchDoorChat:cb=>sub(d=>cb(d.doorChat.slice(-150))),
+    watchMedia:cb=>sub(d=>cb((d.media||[]).slice().reverse(),true)),
+    async uploadMedia(meta,bytes,onProgress){ const id='md'+Date.now(), n=Math.ceil(bytes.length/MEDIA_CHUNK);
+      for(let j=0;j<n;j++){ await idb.set('demo-chunk:'+id+'_'+j,bytes.slice(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK)); onProgress&&onProgress((j+1)/n); }
+      mut(d=>{ d.media=d.media||[]; d.media.push({id,...meta,chunks:n,ts:Date.now()}); }); return id; },
+    async mediaChunk(id,i){ const m=(load().media||[]).find(x=>x.id===id); if(!m||m.status!=='free') throw new Error('not free'); const v=await idb.get('demo-chunk:'+id+'_'+i); if(!v) throw new Error('missing'); return v; },
+    async setMediaStatus(id,status){ mut(d=>{ const m=(d.media||[]).find(x=>x.id===id); if(m) m.status=status; }); },
+    async wipeMedia(id,chunks){ for(let j=0;j<chunks;j++) await idb.del('demo-chunk:'+id+'_'+j); mut(d=>{ d.media=(d.media||[]).filter(x=>x.id!==id); }); },
     watchWallet:(c,cb)=>sub(d=>cb(d.wallets[c]||{})),
     watchWallets:cb=>sub(d=>cb(d.wallets)),
     async addBonus(c,n){ mut(d=>{ const w=d.wallets[c]||{}; d.wallets[c]={...w,bonus:(w.bonus||0)+n,spent:w.spent||0}; }); },
@@ -2776,7 +2888,9 @@ function wallCss(d,W,H,f){ if(!d) return {size:'cover',pos:'center top'};
   const k=Math.max(W/d.w,H/d.h)*(f.z||1); return {size:`${Math.round(d.w*k)}px ${Math.round(d.h*k)}px`,pos:`${f.x??50}% ${f.y??0}%`}; }
 async function applyWall(){
   const url=myBg||(wall&&wall.image)||HOME_THEME.wallpaper, own=!!myBg, set=own?{x:50,y:50,z:1}:(((wall&&wall[innerWidth<700?'phone':'desktop']))||WALL_DEFAULT[innerWidth<700?'phone':'desktop']);
-  const dims=await imgDims(url), c=wallCss(dims,innerWidth,innerHeight,set), r=document.documentElement.style, css={'--home-wall':`url("${url}")`,'--home-wall-size':c.size,'--home-wall-pos':c.pos};
+  // the size is worked out by the browser from the whole window (100vw / 100vh), never from the space left above a keyboard
+  const dims=await imgDims(url), z=set.z||1, ratio=dims?dims.w/dims.h:16/9, r=document.documentElement.style,
+    css={'--home-wall':`url("${url}")`,'--home-wall-size':`max(calc(100vw * ${z}), calc(100vh * ${(ratio*z).toFixed(4)})) auto`,'--home-wall-pos':`${set.x??50}% ${set.y??0}%`};
   for(const k in css) r.setProperty(k,css[k]);
   if(dims) document.body.classList.toggle('home-light',dims.lum>.5);
   if(!own) try{ store.set('playlist-wall',JSON.stringify({css})); }catch{}
@@ -2877,6 +2991,7 @@ const APPS = [
   { id:'ticket',   name:'Ticket',   for:'user',  open:()=>openTicket(), dock:true },
   { id:'camera',   name:'Camera',   for:'user',  open:()=>openCamera() },
   { id:'forum',    name:'Forum',    for:['user','admin'], open:()=>openForum() },
+  { id:'itunes',   name:'iTunes',   for:['user','admin'], open:()=>openItunes() },
   { id:'store',    name:'Store',    for:'user',  open:()=>openStore() },
   { id:'settings', name:'Settings', for:'user',  open:()=>openSettings() },
   { id:'admin',    name:'Admin',    for:'admin', open:()=>openAdmin() },
@@ -3779,6 +3894,7 @@ function leaveApp(from){
   if(from==='s-photos'){ photoUnsub&&photoUnsub(); photoUnsub=null; adminFxUnsub&&adminFxUnsub(); adminFxUnsub=null; $('fx-admin').hidden=true; }
   if(from==='s-store') stopStore();
   if(from==='s-forum'){ fmOpen=null; fmThread=null; if(homeMode==='admin') stopForum(true); }
+  if(from==='s-itunes'){ closePlayer(); itUnsub&&itUnsub(); itUnsub=null; }
   if(from==='s-orders') stopOrders();
   closeViewer();
 }
@@ -4785,6 +4901,133 @@ $('f-fmdm').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('fm-dm-in').value.trim(); if(!text||!fmThread) return;
   try{ await api.sendDM({from:me.code,fromName:me.username,to:fmThread.code,toName:fmThread.name,text}); $('fm-dm-in').value=''; }
   catch(err){ console.error(err); toast(`Not sent. ${fmThread.name} may have blocked you, or the connection dropped.`); }
+});
+
+/* iTunes: videos and music from the admin. "FREE" downloads the file onto this phone (IndexedDB), so it plays forever, offline too.
+   "SOON" is shown greyed out. The admin can remove an item from the store (people keep their copy) or wipe it (gone everywhere). */
+let itMedia=[], itUnsub=null, itTab='music', itLib=new Map(), itBusy=new Map(), itFile=null, itCover=null, itStatus='free', itPlayUrl=null;
+const itTop=appTop($('s-itunes'),'iTunes');
+const libKey=id=>'lib:'+(me.code||'admin')+':'+id;
+const NOTE_SVG='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17.5V5l11-2v12"/><path d="M9 17.5a3 2.6 0 1 1-2-2.4V5.3L20 3v12a3 2.6 0 1 1-2-2.4V6.5L11 7.8v9.7z"/></svg>';
+async function loadLib(){ // what's on this phone for this account
+  itLib=new Map();
+  try{ const keys=await idb.keys(); for(const k of keys){ if(typeof k!=='string'||!k.startsWith('lib:'+(me.code||'admin')+':')) continue; const v=await idb.get(k); if(v) itLib.set(v.id,v); } }catch(err){ console.error(err); }
+}
+async function openItunes(){
+  go('s-itunes'); const admin=homeMode==='admin'; $('it-admin').hidden=!admin; itTop.back.querySelector('span').textContent='Home';
+  await loadLib(); setItTab(itTab);
+  if(!itUnsub) itUnsub=api.watchMedia(async(l,fromServer)=>{
+    itMedia=l;
+    // wiped by the admin: remove it from this phone too
+    if(fromServer&&!admin){ const ids=new Set(l.map(m=>m.id)); for(const id of [...itLib.keys()]) if(!ids.has(id)){ itLib.delete(id); idb.del(libKey(id)).catch(()=>{}); } }
+    drawItunes(); drawUsage();
+  });
+}
+function setItTab(t){ itTab=t; document.querySelectorAll('#s-itunes .fm-tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===t)));
+  $('s-itunes').classList.toggle('dark',t==='video'); drawItunes(); }
+document.querySelectorAll('#s-itunes .fm-tabs button').forEach(b=>b.addEventListener('click',()=>setItTab(b.dataset.t)));
+const fmtSize=b=>b>1e6?(b/1e6).toFixed(1)+' MB':Math.max(1,Math.round(b/1e3))+' kB';
+const fmtDur=s=>!s?'':Math.floor(s/60)+':'+String(Math.round(s%60)).padStart(2,'0');
+function itButton(m){
+  const have=itLib.has(m.id), busy=itBusy.get(m.id), b=mk('button','it-btn'); b.type='button';
+  if(homeMode==='admin'){ b.textContent='PLAY'; b.classList.add('play'); b.addEventListener('click',()=>playMedia(m)); return b; }
+  if(have){ b.textContent='PLAY'; b.classList.add('play'); b.addEventListener('click',()=>playMedia(m)); }
+  else if(busy!=null){ b.textContent=Math.round(busy*100)+'%'; b.disabled=true; }
+  else if(m.status==='soon'){ b.textContent='SOON'; b.disabled=true; }
+  else if(m.status==='free'){ b.textContent='FREE'; b.addEventListener('click',()=>{ if(b.classList.contains('buy')) return download(m); b.classList.add('buy'); b.textContent='GET'; }); }
+  else { b.textContent='GONE'; b.disabled=true; }
+  return b;
+}
+function adminActs(m){
+  const a=mk('div','it-acts'), t=(label,cls,fn)=>{ const x=mk('button','mini-btn '+cls,label); x.type='button'; x.addEventListener('click',fn); a.append(x); };
+  if(m.status==='removed') t('Put back','',()=>api.setMediaStatus(m.id,'free').catch(fail('put it back')));
+  else t(m.status==='free'?'Make soon':'Make free','grey',()=>api.setMediaStatus(m.id,m.status==='free'?'soon':'free').catch(fail('change it')));
+  if(m.status!=='removed') t('Remove','grey',async()=>{ if(!await confirmBox(`Remove “${m.title}”?`,'It disappears from the store. People who already downloaded it keep it.','Remove')) return; api.setMediaStatus(m.id,'removed').then(()=>toast('Removed from the store.'),fail('remove it')); });
+  t('Wipe','red',async()=>{ if(!await confirmBox(`Wipe “${m.title}”?`,'It is deleted for good, and disappears from everyone’s phone too.','Wipe')) return; api.wipeMedia(m.id,m.chunks).then(()=>toast('Wiped.'),fail('wipe it')); });
+  return a;
+}
+function drawItunes(){
+  if(current.id!=='s-itunes') return;
+  const admin=homeMode==='admin', kind=itTab, box=$('it-list'); box.replaceChildren();
+  const inStore=itMedia.filter(m=>m.kind===kind&&(admin||m.status!=='removed'));
+  const kept=[...itLib.values()].filter(v=>v.kind===kind&&!inStore.some(m=>m.id===v.id)); // downloaded, no longer in the store
+  const head=(t,sub)=>{ const h=mk('div','it-h'); h.append(t); if(sub) h.append(mk('small',null,sub)); box.append(h); };
+  const art=(m,cls)=>{ const a=mk('div','it-art'+(cls?' '+cls:'')); if(m.cover) a.style.backgroundImage=`url("${m.cover}")`; else a.innerHTML=m.kind==='video'?'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>':NOTE_SVG; return a; };
+  const meta=m=>[m.kind==='video'?'Video':'Song',fmtDur(m.dur),m.size?fmtSize(m.size):''].filter(Boolean).join(' · ');
+  head(kind==='video'?'Videos':'Songs',inStore.length?String(inStore.length):'');
+  if(!inStore.length) box.append(mk('p','it-empty',admin?`No ${kind==='video'?'videos':'songs'} yet. Upload one above.`:`No ${kind==='video'?'videos':'songs'} yet. Check back soon.`));
+  if(kind==='video'){
+    const g=mk('div','it-grid');
+    inStore.forEach(m=>{ const c=mk('div','it-card'+(m.status==='soon'&&!admin?' it-soon':'')), a=art(m), t=mk('b',null,m.title);
+      if(admin&&m.status!=='free') t.append(mk('span','it-tag'+(m.status==='removed'?' red':''),m.status==='soon'?'SOON':'REMOVED'));
+      const f=mk('div','it-foot'); f.append(mk('small',null,meta(m)),itButton(m)); c.append(a,t,f);
+      const bar=itBusy.has(m.id)?mk('div','it-bar'):null; if(bar){ bar.append(mk('i')); bar.firstChild.style.width=(itBusy.get(m.id)*100)+'%'; c.append(bar); }
+      if(admin) c.append(adminActs(m)); g.append(c); });
+    box.append(g);
+  } else inStore.forEach(m=>{ const r=mk('div','it-row'+(m.status==='soon'&&!admin?' it-soon':'')), tx=mk('div','it-txt'), t=mk('b',null,m.title);
+      if(admin&&m.status!=='free') t.append(mk('span','it-tag'+(m.status==='removed'?' red':''),m.status==='soon'?'SOON':'REMOVED'));
+      tx.append(t,mk('small',null,meta(m)));
+      if(itBusy.has(m.id)){ const bar=mk('div','it-bar'), i=mk('i'); i.style.width=(itBusy.get(m.id)*100)+'%'; bar.append(i); tx.append(bar); }
+      if(admin){ const acts=adminActs(m); acts.style.marginTop='6px'; tx.append(acts); }
+      r.append(art(m),tx,itButton(m)); box.append(r); });
+  if(kept.length&&!admin){ head('On this phone','Removed from the store');
+    kept.forEach(v=>{ const r=mk('div','it-row'), tx=mk('div','it-txt'); tx.append(mk('b',null,v.title),mk('small',null,meta(v)));
+      const b=mk('button','it-btn play','PLAY'); b.type='button'; b.addEventListener('click',()=>playMedia(v)); r.append(art(v),tx,b); box.append(r); }); }
+}
+// FREE: fetch every piece, keep the file on this phone
+async function download(m){
+  if(itBusy.has(m.id)) return; itBusy.set(m.id,0); drawItunes();
+  try{
+    navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{});
+    const parts=[]; for(let i=0;i<m.chunks;i++){ parts.push(await api.mediaChunk(m.id,i)); itBusy.set(m.id,(i+1)/m.chunks); drawItunes(); }
+    const blob=new Blob(parts,{type:m.mime||(m.kind==='video'?'video/mp4':'audio/mpeg')});
+    const item={id:m.id,title:m.title,kind:m.kind,mime:blob.type,size:m.size,dur:m.dur||0,cover:m.cover||null,blob,ts:Date.now()};
+    await idb.set(libKey(m.id),item); itLib.set(m.id,item); toast(`“${m.title}” is saved on this phone.`);
+  }catch(err){ console.error(err); toast(m.status==='free'?"Couldn't download it. Try again.":'This isn’t available any more.'); }
+  finally{ itBusy.delete(m.id); drawItunes(); }
+}
+// play: from this phone, or (admin) straight from the pieces
+async function playMedia(m){
+  let item=itLib.get(m.id)||m, blob=item.blob;
+  if(!blob){ try{ toast('Loading…'); const parts=[]; for(let i=0;i<m.chunks;i++) parts.push(await api.mediaChunk(m.id,i)); blob=new Blob(parts,{type:m.mime}); }catch(err){ return fail('load it')(err); } }
+  closePlayer(); itPlayUrl=URL.createObjectURL(blob);
+  const st=$('it-stage'); st.replaceChildren();
+  if(item.kind==='video'){ const v=mk('video'); v.src=itPlayUrl; v.controls=true; v.autoplay=true; v.playsInline=true; v.setAttribute('playsinline',''); st.append(v,mk('h2',null,item.title)); }
+  else { const c=mk('div','cover'); if(item.cover) c.style.backgroundImage=`url("${item.cover}")`; const a=mk('audio'); a.src=itPlayUrl; a.controls=true; a.autoplay=true; st.append(c,mk('h2',null,item.title),a); }
+  $('it-player').hidden=false;
+}
+function closePlayer(){ const st=$('it-stage'); st.querySelectorAll('video,audio').forEach(x=>{ x.pause(); x.removeAttribute('src'); x.load(); }); st.replaceChildren();
+  $('it-player').hidden=true; if(itPlayUrl){ URL.revokeObjectURL(itPlayUrl); itPlayUrl=null; } }
+$('it-close').addEventListener('click',closePlayer);
+// admin: upload
+function drawUsage(){ const total=itMedia.reduce((t,m)=>t+(m.size||0),0); $('it-usage').textContent=`${itMedia.length} item${itMedia.length===1?'':'s'} · ${fmtSize(total)} of the free database's 1 GB. Up to ${MEDIA_MAX_MB} MB per file.`; }
+document.querySelectorAll('#it-status button').forEach(b=>b.addEventListener('click',()=>{ itStatus=b.dataset.v; document.querySelectorAll('#it-status button').forEach(x=>x.setAttribute('aria-checked',String(x===b))); }));
+function mediaInfo(file){ // length, and a frame for the cover of a video
+  return new Promise(res=>{ const url=URL.createObjectURL(file), video=file.type.startsWith('video'), el=document.createElement(video?'video':'audio');
+    el.preload='metadata'; el.muted=true; el.playsInline=true; el.src=url; let done=false;
+    const finish=(cover)=>{ if(done) return; done=true; const dur=Number.isFinite(el.duration)?Math.round(el.duration):0; URL.revokeObjectURL(url); res({dur,cover}); };
+    el.onloadedmetadata=()=>{ if(!video) return finish(null); el.currentTime=Math.min(1,(el.duration||2)/3); };
+    el.onseeked=()=>{ try{ const w=480, h=Math.round(w*(el.videoHeight||9)/(el.videoWidth||16)), c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(el,0,0,w,h); finish(c.toDataURL('image/jpeg',.72)); }catch{ finish(null); } };
+    el.onerror=()=>finish(null); setTimeout(()=>finish(null),8000); });
+}
+$('it-file').addEventListener('change',e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  if(!/^(video|audio)\//.test(f.type)) return toast('Pick a video or a sound file.');
+  if(f.size>MEDIA_MAX_MB*1e6) return toast(`That file is ${fmtSize(f.size)}. The limit is ${MEDIA_MAX_MB} MB: compress it first.`);
+  itFile=f; $('it-file-lbl').textContent=`${f.name} · ${fmtSize(f.size)}`; if(!$('it-title').value.trim()) $('it-title').value=f.name.replace(/\.[^.]+$/,'').slice(0,60); });
+$('it-cover').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ itCover=squareJpeg(await createImageBitmap(f),300); toast('Cover added.'); }catch{ toast("Couldn't read that picture."); } });
+$('it-upload').addEventListener('click',async()=>{
+  const title=$('it-title').value.trim(); if(!itFile) return toast('Choose a video or a song first.'); if(!title) return toast('Give it a title.');
+  const b=$('it-upload'), bar=$('it-upbar'); b.disabled=true; bar.hidden=false; bar.firstChild.style.width='0%';
+  try{
+    const info=await mediaInfo(itFile), bytes=new Uint8Array(await itFile.arrayBuffer()), kind=itFile.type.startsWith('video')?'video':'music';
+    await api.uploadMedia({title,kind:itFile.type.startsWith('video')?'video':'music',status:itStatus,mime:itFile.type,size:itFile.size,cover:itCover||info.cover||null,dur:info.dur},bytes,
+      f=>{ bar.firstChild.style.width=Math.round(f*100)+'%'; });
+    toast(`“${title}” is up.`); itFile=null; itCover=null; $('it-title').value=''; $('it-file-lbl').textContent='No file yet';
+    setItTab(kind);
+  }catch(err){ fail('upload it')(err); }
+  finally{ b.disabled=false; setTimeout(()=>{ bar.hidden=true; },800); }
 });
 
 /* ---------- resume session ---------- */
