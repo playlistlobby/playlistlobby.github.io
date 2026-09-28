@@ -1036,6 +1036,26 @@ body[data-screen=s-orders]{background:radial-gradient(120% 50% at 50% 0%,rgba(25
 .ocell .amt{flex:none;font-weight:700}
 .ocell .what{color:#555c66;font-size:14px;overflow-wrap:anywhere}
 .ocell .acts{display:flex;gap:8px;justify-content:flex-end}
+
+/* "Remember me" with an iOS 6 switch (ON blue / OFF white, round knob) */
+.remember{display:flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap;width:max-content;margin-left:auto;margin-right:auto;margin-top:14px;cursor:pointer;
+  font:700 14px "Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--muted);-webkit-user-select:none;user-select:none}
+.remember input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.ios-switch{position:relative;display:block;width:77px;height:27px;flex:none;border-radius:14px;overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.25)}
+.ios-switch b{position:absolute;top:0;left:0;display:flex;width:127px;height:27px;transform:translateX(-50px);transition:transform .25s cubic-bezier(.3,.8,.3,1)}
+.ios-switch b span{flex:none;width:63.5px;display:grid;place-items:center;font:700 15px/27px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.ios-switch .on{padding-right:13px;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.35);background:linear-gradient(#1a5cc8,#3f86f0 55%,#5b9bf5)}
+.ios-switch .off{padding-left:13px;color:#7c7c7c;text-shadow:0 1px 0 #fff;background:linear-gradient(#dcdcdc,#f7f7f7 55%,#fff)}
+.ios-switch i{position:absolute;top:0;left:50px;width:27px;height:27px;border-radius:50%;
+  background:radial-gradient(circle at 50% 30%,#fff,#ececec 60%,#d3d3d3);box-shadow:0 0 0 1px rgba(0,0,0,.35),inset 0 1px 0 #fff,0 1px 2px rgba(0,0,0,.35)}
+.remember input:checked + .ios-switch b{transform:translateX(0)}
+.remember input:focus-visible + .ios-switch{box-shadow:inset 0 1px 3px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.4),0 0 10px 2px rgba(255,255,255,.55)}
+/* on the iOS 6 lock screen it floats just above the bottom band */
+body.lock-ios6 .remember{position:absolute;z-index:2;left:50%;transform:translateX(-50%);margin:0;
+  bottom:calc(96px + env(safe-area-inset-bottom) + 14px + var(--kb,0px));padding:6px 8px 6px 14px;border-radius:20px;color:#fff;
+  text-shadow:0 -1px 0 rgba(0,0,0,.5);background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+body.lock-ios6.kb .remember{display:none}
 </style>
 </head>
 <body data-screen="s-code">
@@ -1083,6 +1103,8 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
     <span class="lk-icon"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M9 18.2V6.4l11-2.2v11.4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><ellipse cx="6.6" cy="18.3" rx="2.9" ry="2.3" fill="#fff"/><ellipse cx="17.6" cy="15.7" rx="2.9" ry="2.3" fill="#fff"/></svg></span>
   </div>
   <p class="note stagger" style="--i:2" id="n-code" role="status"></p>
+  <label class="remember stagger" style="--i:2"><span>Remember me</span><input type="checkbox" id="remember" checked>
+    <span class="ios-switch" aria-hidden="true"><b><span class="on">ON</span><span class="off">OFF</span><i></i></b></span></label>
 </section>
 
 <!-- 2. USERNAME -->
@@ -1488,6 +1510,14 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
             <button class="a-btn sm glass live" type="button" id="lab-copy">Copy free blue codes</button>
           </div>
         </div>
+        <div class="glass card a-stack lab">
+          <div><span class="lab-badge">Debug</span><h3>Log everyone out</h3></div>
+          <p class="a-muted">Everyone logged in with a code, and door staff, goes back to the lock screen and has to type their code again. "Remember me" is forgotten. You stay logged in as admin.</p>
+          <div class="a-row">
+            <span class="a-muted" id="lab-epoch"></span>
+            <button class="a-btn glass live danger" type="button" id="lab-logout">Log everyone out</button>
+          </div>
+        </div>
       </div>
       <div class="a-panel" id="t-msgs" role="tabpanel" hidden>
         <div class="a-row">
@@ -1629,7 +1659,7 @@ const HOME_THEME = {
   gloss: "assets/ios6/icon-gloss.png",
   icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png", settings: "assets/ios6/icon-settings.png",
            ticket: "assets/ios6/icon-ticket.png", camera: "assets/ios6/icon-camera.png", door: "assets/ios6/icon-door.png", photos: "assets/ios6/icon-photos.png",
-           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png" },
+           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png", logout: "assets/ios6/icon-logout.svg" },
 };
 const LOCAL_CODES = ["1","2","3","4","5"]; // only used in offline demo mode (no Firebase)
 const DOOR_CODE = "door";                     // demo mode only: the real door password is set by the admin (config/door)
@@ -1661,6 +1691,10 @@ const $ = id => document.getElementById(id);
 const newToken = ()=>{ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return [...crypto.getRandomValues(new Uint32Array(12))].map(x=>A[x%A.length]).join(''); };
 const session = { get:k=>{try{return sessionStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch{}}, del:k=>{try{sessionStorage.removeItem(k)}catch{}} };
 const store = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}, del:k=>{try{localStorage.removeItem(k)}catch{}} };
+// logins: kept in localStorage when "Remember me" is on, otherwise only for this tab (sessionStorage)
+const keep = { get:k=>session.get(k)??store.get(k),
+  set:(k,v,remember)=>{ (remember?store:session).set(k,v); (remember?session:store).del(k); },
+  del:k=>{ session.del(k); store.del(k); } };
 const toast = t => { const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,3200); };
 
 
@@ -1814,6 +1848,9 @@ async function firebaseApi(cfg){
     saveFilter(f){ return fs.addDoc(fs.collection(db,"filters"),{...f,ts:fs.serverTimestamp()}); },
     deleteFilter(id){ return fs.deleteDoc(fs.doc(db,"filters",id)); },
     // store
+    // "Log everyone out": a time; logins from before it stop working (the rules check it too)
+    watchSession(cb){ return fs.onSnapshot(fs.doc(db,"site","session"),s=>{ const e=s.exists()&&s.data({serverTimestamps:'estimate'}).epoch; cb(e?e.toMillis():0); },e=>console.error(e)); },
+    logoutEveryone(){ return fs.setDoc(fs.doc(db,"site","session"),{epoch:fs.serverTimestamp(),ts:fs.serverTimestamp()}); },
     watchStore(cb){ return fs.onSnapshot(fs.doc(db,"site","store"),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
     setMobilePay(n){ return fs.setDoc(fs.doc(db,"site","store"),{mobilepay:n,ts:fs.serverTimestamp()}); },
     async order(o){ const r=await fs.addDoc(fs.collection(db,"orders"),{...o,status:'pending',ts:fs.serverTimestamp()}); return r.id; },
@@ -1992,6 +2029,8 @@ function localApi(){
       mut(d=>{ d.filters.push({id,name:f.name,opacity:f.opacity,blend:f.blend,lut:!!f.lut,overlay:!!f.overlay,ts:Date.now()}); }); },
     async deleteFilter(id){ store.del('playlist-demo-fx-'+id+'-lut'); store.del('playlist-demo-fx-'+id+'-ov'); mut(d=>{ d.filters=d.filters.filter(f=>f.id!==id); }); },
     watchStore:cb=>sub(d=>cb(d.store)),
+    watchSession:cb=>sub(d=>cb(d.epoch||0)),
+    async logoutEveryone(){ mut(d=>{ d.epoch=Date.now(); }); },
     async setMobilePay(n){ mut(d=>{ d.store={mobilepay:n}; }); },
     async order(o){ return mut(d=>{ const id='or'+Date.now()+Math.floor(Math.random()*1e4); d.orders.push({id,...o,status:'pending',ts:Date.now()}); return id; }); },
     watchMyOrders:(c,cb)=>sub(d=>cb(d.orders.filter(o=>o.code===c).slice().reverse())),
@@ -2255,6 +2294,39 @@ api.watchScreenQueue(l=>{ screenLine=l; drawLive(); if(current.id==='s-store') d
 setInterval(()=>{ const p=paidNow(); if((p&&p.id)!==drawLive.paid) drawLive(); },30e3); // the next message's turn
 const isAdminCode=v=>v.trim().toLowerCase()===ADMIN_CODE; // only used to keep "admin" from being made into a code
 
+/* ---------- remember me, and "log everyone out" ---------- */
+// the switch on the lock screen; its last position is remembered on this browser
+$('remember').checked=store.get('playlist-remember')!=='0';
+$('remember').addEventListener('change',()=>store.set('playlist-remember',$('remember').checked?'1':'0'));
+const remembered=()=>$('remember').checked;
+function keepLogin(k){ if(!keep.get(k)) keep.set(k,'1',remembered()); }
+// the admin's "Log everyone out" sets a time (site/session). A login from before it no longer counts:
+// open phones go back to the lock screen right away, and remembered logins aren't resumed.
+let siteEpoch=null, loginEpoch=null;
+function markLogin(){ loginEpoch=siteEpoch||0; keep.set('playlist-epoch',String(loginEpoch),remembered()); }
+const epochReady=new Promise(res=>{
+  api.watchSession(ep=>{ const first=siteEpoch===null; siteEpoch=ep||0; drawEpoch(); if(first) res(); else kickIfOld(); });
+  setTimeout(res,4000); // don't hold up a resume if the connection is slow
+});
+function kickIfOld(){
+  if(loginEpoch===null||siteEpoch<=loginEpoch) return;
+  if(keep.get('playlist-door')) doorLogout();
+  else if(me.code&&me.kind!=='admin') backToCode();
+  else return;
+  setTimeout(()=>toast('Everyone was logged out. Enter your code again.'),60);
+}
+function drawEpoch(){ const el=$('lab-epoch'); if(el) el.textContent=siteEpoch?'Last done '+new Date(siteEpoch).toLocaleString([], {weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Never done'; }
+$('lab-logout').addEventListener('click',async()=>{
+  if(!await confirmBox('Log everyone out?','Every phone logged in with a code, and door staff, goes back to the lock screen. They have to type their code again. You stay logged in.','Log everyone out')) return;
+  try{ await api.logoutEveryone(); toast('Everyone was logged out.'); }catch(err){ fail('log everyone out')(err); }
+});
+// the Log Out app on every home screen
+async function logOutApp(){
+  const who=homeMode==='user'?'your code':'the password';
+  if(!await confirmBox('Log out?',`You need ${who} to get back in.`,'Log Out')) return;
+  if(homeMode==='admin') adminLogout(); else if(homeMode==='door') doorLogout(); else backToCode();
+}
+
 /* ---------- 1. code ---------- */
 $('f-code').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -2265,13 +2337,13 @@ $('f-code').addEventListener('submit',async e=>{
     const r=await api.joinCode(code);
     if(!r.valid){
       // not a code: maybe it's the admin password (checked by the database, not by this page)
-      if(await api.adminLogin(code)){ session.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
+      if(await api.adminLogin(code)){ keep.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
       // or the door password: opens only the Door scanner
-      if(await api.doorLogin(code)){ slideUnlock(); $('code').value=''; note.textContent=''; return openHome({door:true}); }
+      if(await api.doorLogin(code)){ markLogin(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({door:true}); }
       note.className='note err'; note.textContent="That code doesn't work."; shake($('f-code')); $('code').select(); return;
     }
-    session.del('playlist-admin'); api.adminLogout(); session.del('playlist-door'); api.doorLogout(); // a code login ends any admin or door session
-    setMe(code,r.username,r.shade,r.kind); store.set('playlist-code',code); note.textContent=''; slideUnlock();
+    keep.del('playlist-admin'); api.adminLogout(); keep.del('playlist-door'); api.doorLogout(); // a code login ends any admin or door session
+    setMe(code,r.username,r.shade,r.kind); keep.set('playlist-code',code,remembered()); markLogin(); note.textContent=''; slideUnlock();
     if(r.username) openHome();
     else { $('shade-user').value=me.shade; go('s-user'); setTimeout(()=>$('uname').focus(),360); }
   }catch(err){ console.error(err); note.className='note err'; note.textContent="Couldn't check the code. Try again."; }
@@ -2318,6 +2390,7 @@ const APPS = [
   { id:'door',     name:'Door',     for:['admin','door'], open:()=>openDoor() },
   { id:'photos',   name:'Photos',   for:'admin', open:()=>openPhotos() },
   { id:'orders',   name:'Store',    for:'admin', open:()=>openOrders() },
+  { id:'logout',   name:'Log Out',  for:['user','admin','door'], open:()=>logOutApp() },
 ];
 (()=>{ const r=document.documentElement.style;
   r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
@@ -2356,8 +2429,8 @@ function openHome(opts={}){
   if(door) homeMode='door';
   if(!USE_HOME_SCREEN) return admin?openAdmin():door?openDoor():openChat();
   homeMode=admin?'admin':door?'door':'user';
-  if(admin){ if(me.code) logOutUser(); session.set('playlist-admin','1'); startSocial(); }
-  else if(door){ if(me.code) logOutUser(); session.set('playlist-door','1'); }
+  if(admin){ if(me.code) logOutUser(); keepLogin('playlist-admin'); startSocial(); }
+  else if(door){ if(me.code) logOutUser(); keepLogin('playlist-door'); }
   else { // same per-login listeners the chat uses, so private messages and account changes work from here too
     applyMyShade(me.shade); startSocial(); countLikes();
     if(!unwatch) unwatch=api.watch(render);
@@ -2441,7 +2514,7 @@ function onMyCode(name){
   if(me.kind==='admin'){ if(name!==undefined) me.username=name; return; } // the admin's own chat account
   if(name===undefined){
     unwatchMe&&unwatchMe(); unwatchMe=null;
-    store.del('playlist-code'); setMe(null,null); resetUserStep();
+    keep.del('playlist-code'); setMe(null,null); resetUserStep();
     if(current.id!=='s-admin'){ go('s-code'); toast('Your code no longer works.'); }
     return;
   }
@@ -2638,10 +2711,10 @@ function logOutUser(){
   unwatch&&unwatch(); unwatch=null; lastList=[]; seenMsgs.clear(); firstRender=true; stopSocial();
   stopTicket(); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[]; filterUnsub&&filterUnsub(); filterUnsub=null; stopStore(true);
   if(me.code&&me.kind!=='admin') api.leave();
-  store.del('playlist-code'); setMe(null,null); resetUserStep();
+  keep.del('playlist-code'); keep.del('playlist-epoch'); loginEpoch=null; setMe(null,null); resetUserStep();
 }
 function openAdmin(){
-  logOutUser(); session.set('playlist-admin','1'); startSocial();
+  logOutUser(); keepLogin('playlist-admin'); startSocial();
   go('s-admin'); setTimeout(()=>document.querySelectorAll('.tabs,.seg').forEach(moveInd),60);
   if(adminOn) return;
   adminOn=true; $('a-who').textContent=''; syncScreenTab(true);
@@ -2652,7 +2725,7 @@ function adminLogout(){
   closeHistory(); closeRare();
   adminOn=false; adminUnsubs.forEach(u=>u&&u()); adminUnsubs=[];
   codeRows.clear(); $('a-codes').replaceChildren(); $('a-msgs').replaceChildren();
-  logOutUser(); stopSocial(); session.del('playlist-admin'); api.adminLogout(); $('code').value='';
+  logOutUser(); stopSocial(); keep.del('playlist-admin'); api.adminLogout(); $('code').value='';
   go('s-code'); toast('Logged out of admin.');
 }
 $('a-exit').addEventListener('click',adminLogout);
@@ -3245,7 +3318,7 @@ function setDoorMode(m){
 document.querySelectorAll('#door-mode button').forEach(b=>b.addEventListener('click',()=>setDoorMode(b.dataset.m)));
 function stopDoor(){ doorUnsubs.forEach(u=>u&&u()); doorUnsubs=[]; stopDoorCam(); }
 function doorLogout(){
-  stopDoor(); session.del('playlist-door'); api.doorLogout(); $('code').value=''; $('n-code').textContent='';
+  stopDoor(); keep.del('playlist-door'); keep.del('playlist-epoch'); loginEpoch=null; api.doorLogout(); $('code').value=''; $('n-code').textContent='';
   go('s-code'); toast('Logged out of the door.');
 }
 function doorCamOff(msg){ $('door-off').hidden=false; $('door-off-msg').textContent=msg; }
@@ -3876,17 +3949,21 @@ $('vw-close').addEventListener('click',closeViewer);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('viewer').hidden&&$('cf-wrap').hidden) closeViewer(); });
 
 /* ---------- resume session ---------- */
-const saved=store.get('playlist-code');
-function resumeCode(){
-  if(!saved) return;
+const saved=keep.get('playlist-code');
+// a remembered login that is older than the admin's "Log everyone out" is forgotten instead of resumed
+async function stillValid(){ await epochReady; const at=+keep.get('playlist-epoch')||0;
+  if(siteEpoch>at){ keep.del('playlist-code'); keep.del('playlist-door'); keep.del('playlist-epoch'); return false; }
+  loginEpoch=at; return true; }
+async function resumeCode(){
+  if(!saved||!await stillValid()) return;
   api.joinCode(saved).then(r=>{
-    if(!r.valid){ store.del('playlist-code'); return; }
+    if(!r.valid){ keep.del('playlist-code'); return; }
     setMe(saved,r.username,r.shade,r.kind);
     if(r.username) openHome(); else go('s-user');
   }).catch(()=>{});
 }
-if(session.get('playlist-admin')==='1') api.adminActive().then(ok=>{ if(ok) openHome({admin:true}); else { session.del('playlist-admin'); resumeCode(); } });
-else if(session.get('playlist-door')==='1') api.doorActive().then(ok=>{ if(ok) openHome({door:true}); else { session.del('playlist-door'); resumeCode(); } });
+if(keep.get('playlist-admin')==='1') api.adminActive().then(ok=>{ if(ok) openHome({admin:true}); else { keep.del('playlist-admin'); resumeCode(); } });
+else if(keep.get('playlist-door')==='1') stillValid().then(v=>v?api.doorActive():false).then(ok=>{ if(ok) openHome({door:true}); else { keep.del('playlist-door'); resumeCode(); } });
 else resumeCode();
 tickClock();
 </script>
