@@ -1076,7 +1076,131 @@ body[data-screen=s-mystery] .bg,body[data-screen=s-mystery] .overlay{opacity:0}
 .st-ic.ic-mystery{background:#000;box-shadow:0 1px 3px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px rgba(255,255,255,.06)}
 .st-ic.ic-mystery svg{width:40px;height:10px;filter:none}
 .st-price.free{min-width:66px}
+
+/* iOS 6 alert with a text field (door staff name, blocking by name) */
+.ios-alert-wrap{position:fixed;inset:0;z-index:12;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.45);animation:fadein .2s ease}
+.ios-alert{width:min(284px,100%);padding:16px 14px 12px;border-radius:10px;text-align:center;color:#fff;
+  background:radial-gradient(140% 90% at 50% 0%,rgba(70,90,140,.96),rgba(10,24,62,.96) 70%);
+  box-shadow:0 0 0 2px rgba(255,255,255,.75),0 10px 30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.4);animation:alertin .35s cubic-bezier(.3,1.4,.5,1)}
+@keyframes alertin{from{transform:scale(.7);opacity:0}}
+.ios-alert h2{margin:0 0 6px;font:700 17px/21px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 rgba(0,0,0,.6)}
+.ios-alert p{margin:0 0 10px;font:400 15px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 rgba(0,0,0,.6)}
+.ios-alert input{width:100%;height:32px;border-radius:5px;padding:0 8px;margin-bottom:12px;background:#fff;color:#000;font:400 16px "Helvetica Neue",Helvetica,Arial,sans-serif;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
+.al-btns{display:flex;gap:8px}
+.al-btns button{flex:1;height:42px;border-radius:6px;color:#fff;font:700 17px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 rgba(0,0,0,.5);
+  background:linear-gradient(rgba(255,255,255,.3),rgba(255,255,255,.08) 50%,rgba(0,0,0,.05) 51%,rgba(255,255,255,.08));box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.35)}
+.al-btns #al-ok{background:linear-gradient(rgba(255,255,255,.45),rgba(255,255,255,.18) 50%,rgba(255,255,255,.1) 51%,rgba(255,255,255,.2))}
+.al-btns button:active{filter:brightness(.8)}
+
+/* Door chat (door staff and admin) */
+.dchat{display:flex;flex-direction:column;gap:6px;padding:12px}
+.dmsg{max-width:80%;align-self:flex-start;padding:7px 12px;border-radius:16px;background:#fff;color:#111;font:400 15px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;box-shadow:0 1px 2px rgba(0,0,0,.25);overflow-wrap:anywhere}
+.dmsg.mine{align-self:flex-end;background:linear-gradient(#6fb1ff,#2f7ae5);color:#fff}
+.dmsg.admin:not(.mine){background:linear-gradient(#ffe38a,#ffc93d)}
+.dmsg small{display:block;font:700 11px/14px "Helvetica Neue",Helvetica,Arial,sans-serif;opacity:.65;margin-bottom:1px}
+.dchat-form{position:sticky;bottom:0;display:flex;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(#e6e9ee,#c9ced6);box-shadow:0 -1px 0 rgba(0,0,0,.25)}
+.dchat-form input{flex:1;min-width:0;height:34px;border-radius:17px;padding:0 14px;background:#fff;font:400 16px "Helvetica Neue",Helvetica,Arial,sans-serif;box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+#door-chat{background:#dfe4ea;display:flex;flex-direction:column}
+#door-chat .app-body{position:relative;inset:auto;flex:1;min-height:0;padding:0;margin-top:calc(64px + env(safe-area-inset-top))}
+/* admin: Door tab */
+.dd-h{margin:0;font-size:17px;font-weight:700}
+.live-dot{width:9px;height:9px;border-radius:50%;background:#34c759;box-shadow:0 0 0 3px rgba(52,199,89,.25);animation:livepulse 1.4s ease-in-out infinite;margin-left:6px}
+.dd-feed{display:flex;flex-direction:column;max-height:360px;overflow-y:auto}
+.dd-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-top:1px solid rgba(0,0,0,.07);font-size:15px}
+.dd-row:first-child{border-top:0}
+.dd-row .grow{flex:1;min-width:0}
+.dd-row b{font-weight:700}
+.dd-row small{display:block;color:var(--muted);font-size:13px}
+.dd-row .t{color:var(--muted);font-variant-numeric:tabular-nums;font-size:14px}
+.dd-row.new{animation:ddnew 1.6s ease}
+@keyframes ddnew{0%{background:rgba(52,199,89,.35)}100%{background:transparent}}
+.dd-ic{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px}
+.dd-chat{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;padding:4px 2px}
+@media (max-width:480px){ .tabs.four button{font-size:11px} }
+
+/* ===================== Forum: the iOS 6 Notes app (brown leather bar, yellow legal pad, handwriting) ===================== */
+body[data-screen=s-forum]{background:#f5e98f}
+body[data-screen=s-forum] .bg,body[data-screen=s-forum] .overlay{opacity:0}
+#s-forum{--line:#d9c97c;--pen:#6d2f0c;background:#f5e98f}
+#s-forum .app-top .sb-status{background:#000}
+#s-forum .ios-nav{background:linear-gradient(#91603f 0%,#77482b 48%,#643a20 50%,#512c16 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 0 #2d1608,0 4px 10px rgba(40,20,5,.35)}
+#s-forum .ios-nav::after{content:"";position:absolute;left:0;right:0;bottom:3px;border-bottom:1px dashed rgba(255,230,190,.35)} /* stitching */
+#s-forum .ios-title{text-shadow:0 -1px 0 rgba(40,15,0,.7)}
+#s-forum .ios-back-shape path:first-child{stroke:rgba(40,18,4,.85)}
+#s-forum .ios-navbtn{box-shadow:0 0 0 .8px rgba(40,18,4,.85),inset 0 1px 0 rgba(255,255,255,.35),0 1px 0 rgba(255,255,255,.18)}
+#s-forum .ios-navbtn.plus{font-size:22px;line-height:28px;padding:0 10px}
+.paper{background:linear-gradient(transparent 0 35px,var(--line) 35px 36px) 0 0/100% 36px,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .35 0 0 0 0 .1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),#f7ec98}
+.paper.margin{background:linear-gradient(90deg,transparent 0 26px,rgba(200,70,50,.45) 26px 27px,transparent 27px 30px,rgba(200,70,50,.45) 30px 31px,transparent 31px),
+  linear-gradient(transparent 0 35px,var(--line) 35px 36px) 0 0/100% 36px,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .35 0 0 0 0 .1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),#f7ec98}
+#s-forum .app-body{bottom:calc(49px + env(safe-area-inset-bottom));padding:0}
+#s-forum.admin .app-body{bottom:0}
+.fm-list{min-height:100%}
+.fm-post{padding:12px 16px 12px;border-bottom:1px solid var(--line);cursor:pointer;animation:appin .35s ease both}
+.fm-post:active{background:rgba(120,70,20,.06)}
+.fm-head{display:flex;align-items:center;gap:9px}
+.orb{width:30px;height:30px;border-radius:50%;flex:none;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.85),rgba(255,255,255,0) 42%),var(--c,#8e8e93) center/cover;
+  box-shadow:inset 0 -3px 5px rgba(0,0,0,.18),0 1px 2px rgba(60,30,0,.35),0 0 0 1px rgba(255,255,255,.5)}
+button.orb,.fm-name{cursor:pointer}
+.fm-name{font:700 15px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#5b2a0b;background:none;padding:0}
+.fm-time{margin-left:auto;font:400 13px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8b6a3e;white-space:nowrap}
+.fm-title{margin:6px 0 4px;font:700 23px/1.25 "Noteworthy","Marker Felt","Kalam",cursive;color:var(--pen);overflow-wrap:anywhere}
+.fm-img{display:block;max-width:100%;max-height:70vh;margin:8px auto 6px;border:5px solid #fff;border-bottom-width:14px;box-shadow:0 3px 8px rgba(60,30,0,.3);transform:rotate(-.8deg)}
+.fm-post:nth-child(even) .fm-img{transform:rotate(.7deg)}
+.fm-text{margin:2px 0 0;font:400 20px/1.35 "Noteworthy","Marker Felt","Kalam",cursive;color:#4d2206;white-space:pre-wrap;overflow-wrap:anywhere}
+.fm-foot{display:flex;align-items:center;gap:18px;margin-top:8px}
+.fm-act{display:flex;align-items:center;gap:6px;font:700 14px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8b5a2b;background:none;padding:4px 0}
+.fm-act svg{width:21px;height:21px}
+.fm-act.liked{color:#d0312d}
+.fm-act.liked svg{animation:boing .45s var(--spring)}
+.fm-tag{margin-left:auto;padding:1px 7px;border-radius:5px;font:700 11px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;background:#b9762f}
+.fm-empty{margin:40px 24px;text-align:center;font:400 22px/1.4 "Noteworthy","Marker Felt","Kalam",cursive;color:#8b6a3e}
+/* bottom tab bar (iOS 6) */
+.fm-tabs{position:absolute;z-index:4;left:0;right:0;bottom:0;height:calc(49px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:flex;
+  background:linear-gradient(#3b3b3b 0%,#242424 50%,#121212 51%,#0a0a0a 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 -1px 0 #000}
+#s-forum.admin .fm-tabs{display:none}
+.fm-tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin:3px;border-radius:4px;color:#8f8f8f;font:700 10px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.fm-tabs button svg{width:26px;height:24px}
+.fm-tabs button[aria-selected=true]{color:#fff;background:rgba(255,255,255,.12);box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+.fm-tabs button[aria-selected=true] svg{color:#35a5ff;filter:drop-shadow(0 0 3px rgba(80,170,255,.8))}
+.fm-tabs .n{position:absolute;margin:-18px 0 0 24px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e0141a;color:#fff;font:700 11px/18px "Helvetica Neue",Helvetica,Arial,sans-serif;box-shadow:0 0 0 1.5px #fff}
+/* full-screen sheets inside the Forum (a post, a new post, a conversation) */
+.fm-sheet{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;animation:rollup .38s cubic-bezier(.2,.9,.25,1)}
+.fm-sheet .app-body{position:relative!important;inset:auto!important;flex:1;min-height:0;margin-top:calc(64px + env(safe-area-inset-top));padding:0!important}
+.fm-comments{padding:4px 16px 16px 40px}
+.fm-c{padding:8px 0;border-bottom:1px solid var(--line)}
+.fm-c .fm-head .orb{width:22px;height:22px}
+.fm-c .fm-name{font-size:13px}
+.fm-c p{margin:3px 0 0;font:400 19px/1.3 "Noteworthy","Marker Felt","Kalam",cursive;color:#4d2206;overflow-wrap:anywhere}
+.fm-c .del{margin-left:8px}
+.fm-form{display:flex;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(#7d5234,#5a331a);box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.fm-form input{flex:1;min-width:0;height:36px;border-radius:18px;padding:0 14px;background:#fbf4c0;color:#4d2206;font:400 18px "Noteworthy","Marker Felt","Kalam",cursive;box-shadow:inset 0 1px 3px rgba(0,0,0,.45)}
+.fm-form button{height:36px;padding:0 14px;border-radius:8px;color:#fff;font:700 15px "Helvetica Neue",Helvetica,Arial,sans-serif;background:linear-gradient(#b98552,#8a5429 50%,#7a4720 52%,#86502a);box-shadow:0 0 0 .8px rgba(30,12,0,.8),inset 0 1px 0 rgba(255,255,255,.35)}
+.fm-form button:disabled{opacity:.5}
+/* new post */
+.fm-new{padding:6px 16px 20px 44px}
+.fm-new input,.fm-new textarea{display:block;width:100%;border:0;outline:none;background:none;color:var(--pen);resize:none;font-family:"Noteworthy","Marker Felt","Kalam",cursive}
+.fm-new input{height:36px;font-size:24px;font-weight:700;line-height:36px}
+.fm-new textarea{min-height:108px;font-size:21px;line-height:36px;padding:0}
+.fm-count{text-align:right;font:400 12px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8b6a3e;height:36px;line-height:36px}
+.fm-photo{display:flex;align-items:center;gap:10px;min-height:36px}
+.fm-photo img{max-width:60%;border:4px solid #fff;border-bottom-width:12px;box-shadow:0 2px 6px rgba(60,30,0,.3);transform:rotate(-1deg)}
+.fm-pbtn{height:32px;padding:0 12px;border-radius:7px;color:#5b2a0b;font:700 14px "Helvetica Neue",Helvetica,Arial,sans-serif;background:linear-gradient(#fff8d2,#efe0a0);box-shadow:0 0 0 .8px rgba(90,50,10,.5),inset 0 1px 0 #fff}
+/* conversations */
+.fm-conv{display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;min-height:72px;border-bottom:1px solid var(--line);cursor:pointer}
+.fm-conv .grow{flex:1;min-width:0}
+.fm-conv b{display:block;font:700 22px/1.2 "Noteworthy","Marker Felt","Kalam",cursive;color:var(--pen);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fm-conv small{display:block;font:400 14px/18px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8b6a3e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fm-conv .chev{color:#a07a4a;font:700 18px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.fm-thread{display:flex;flex-direction:column;gap:8px;padding:14px 12px 14px 40px}
+.fm-dm{max-width:78%;align-self:flex-start;padding:6px 12px;border-radius:14px;background:#fffbe0;color:#4d2206;font:400 19px/1.3 "Noteworthy","Marker Felt","Kalam",cursive;box-shadow:0 1px 2px rgba(60,30,0,.3);overflow-wrap:anywhere}
+.fm-dm.mine{align-self:flex-end;background:#e9c98f}
+.fm-dm small{display:block;font:400 11px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8b6a3e;margin-top:2px}
+.fm-blocked{margin:10px 16px;padding:8px 12px;border-radius:8px;background:rgba(200,60,40,.12);color:#8a2a18;font:600 14px "Helvetica Neue",Helvetica,Arial,sans-serif}
+/* profile pop-up: block button */
+.pm-block{margin-left:4px}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body data-screen="s-code">
 <script>
@@ -1294,6 +1418,10 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
     <div class="door-rows" id="door-list"></div>
     <p class="door-empty" id="door-empty">No one has checked in yet.</p>
   </div></div>
+  <div class="fm-sheet" id="door-chat" hidden>
+    <div class="app-body"><div class="dchat" id="door-chat-list"></div></div>
+    <form class="dchat-form" id="f-doorchat" autocomplete="off"><input id="door-chat-in" placeholder="Message the door team" maxlength="300" aria-label="Message"><button class="door-btn" type="submit">Send</button></form>
+  </div>
 </section>
 
 <section class="screen out app" id="s-camera" aria-label="Camera" data-mode="live" hidden>
@@ -1403,6 +1531,33 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
   <button class="mys-home" type="button" id="mys-home" aria-label="Home screen"><span></span></button>
 </section>
 
+<section class="screen out app" id="s-forum" aria-label="Forum" hidden>
+  <div class="app-body paper" id="fm-feed"><div class="fm-list" id="fm-list"></div><p class="fm-empty" id="fm-empty" hidden></p></div>
+  <div class="app-body paper" id="fm-inbox" hidden><div id="fm-convs"></div><p class="fm-empty" id="fm-convs-empty">No private messages yet. Tap someone’s name to write to them.</p></div>
+  <nav class="fm-tabs" role="tablist">
+    <button type="button" role="tab" data-t="feed" aria-selected="true"><svg viewBox="0 0 26 24" fill="currentColor"><path d="M4 2h14l4 4v16H4z" opacity=".9"/><path d="M8 9h10M8 13h10M8 17h6" stroke="#222" stroke-width="1.6"/></svg>Timeline</button>
+    <button type="button" role="tab" data-t="inbox" aria-selected="false"><svg viewBox="0 0 26 24" fill="currentColor"><path d="M13 3C7 3 2 6.9 2 11.6c0 2.7 1.6 5.1 4.2 6.7-.3 1.5-1 2.9-2.2 3.9 2.4 0 4.5-.9 6-2.4 1 .2 2 .3 3 .3 6 0 11-3.9 11-8.5S19 3 13 3z"/></svg>Messages<span class="n" id="fm-unread" hidden></span></button>
+  </nav>
+  <div class="fm-sheet paper margin" id="fm-post" hidden>
+    <div class="app-body"><div id="fm-post-body"></div><div class="fm-comments" id="fm-comments"></div></div>
+    <form class="fm-form" id="f-comment" autocomplete="off"><input id="fm-c-in" placeholder="Write a comment" maxlength="200" aria-label="Comment"><button type="submit">Post</button></form>
+  </div>
+  <div class="fm-sheet paper margin" id="fm-new" hidden>
+    <div class="app-body"><div class="fm-new">
+      <input id="fm-title" maxlength="18" placeholder="Title" aria-label="Title (up to 18 characters)">
+      <textarea id="fm-text" maxlength="128" rows="3" placeholder="Write something (optional)" aria-label="Text (optional, up to 128 characters)"></textarea>
+      <div class="fm-count" id="fm-count">0 / 128</div>
+      <div class="fm-photo"><button class="fm-pbtn" type="button" id="fm-addpic">Add photo</button><img id="fm-pic" alt="" hidden><button class="fm-pbtn" type="button" id="fm-rmpic" hidden>Remove</button></div>
+      <input type="file" id="fm-file" accept="image/*" hidden>
+      <p class="fm-count" style="text-align:left">Posts disappear after 24 hours.</p>
+    </div></div>
+  </div>
+  <div class="fm-sheet paper margin" id="fm-dm" hidden>
+    <div class="app-body"><p class="fm-blocked" id="fm-dm-blocked" hidden></p><div class="fm-thread" id="fm-thread"></div></div>
+    <form class="fm-form" id="f-fmdm" autocomplete="off"><input id="fm-dm-in" placeholder="Private message" maxlength="300" aria-label="Private message"><button type="submit">Send</button></form>
+  </div>
+</section>
+
 <div class="viewer" id="viewer" role="dialog" aria-label="Photo" hidden>
   <div class="vw-bar"><button class="cam-pill" type="button" id="vw-close">Done</button><span class="vw-cap" id="vw-cap"></span><a class="cam-pill" id="vw-save" download="playlist-photo.jpg" href="#">Save</a></div>
   <img id="vw-img" alt="">
@@ -1425,6 +1580,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
         <button type="button" role="tab" data-tab="t-screen">Screen</button>
         <button type="button" role="tab" data-tab="t-accounts">Accounts</button>
         <button type="button" role="tab" data-tab="t-msgs">Messages</button>
+        <button type="button" role="tab" data-tab="t-gate">Door</button>
         <button type="button" role="tab" data-tab="t-lab">Experimental</button>
       </div>
       <div class="a-panel" id="t-screen" role="tabpanel">
@@ -1516,6 +1672,22 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
         <div class="a-list" id="a-codes"></div>
         <p class="a-muted a-empty" id="a-codes-empty" hidden></p>
       </div>
+      <div class="a-panel" id="t-gate" role="tabpanel" hidden>
+        <div class="stats">
+          <div class="stat glass"><b id="dd-in">0</b><span>Checked in</span></div>
+          <div class="stat glass"><b id="dd-tickets">0</b><span>Tickets out</span></div>
+          <div class="stat glass"><b id="dd-shirts">0</b><span>T-shirts given</span></div>
+        </div>
+        <div class="glass card a-stack">
+          <div class="a-row"><h3 class="dd-h">Live arrivals</h3><span class="live-dot" aria-hidden="true"></span></div>
+          <div class="dd-feed" id="dd-feed" aria-live="polite"></div>
+        </div>
+        <div class="glass card a-stack">
+          <h3 class="dd-h">Door chat</h3>
+          <div class="dd-chat" id="dd-chat"></div>
+          <form class="gen-row" id="f-ddchat" autocomplete="off"><input class="a-in" id="dd-msg" placeholder="Message the door team" maxlength="300" aria-label="Message the door team"><button class="a-btn glass green live" type="submit">Send</button></form>
+        </div>
+      </div>
       <div class="a-panel" id="t-lab" role="tabpanel" hidden>
         <div class="glass card a-stack lab">
           <div><span class="lab-badge">Experimental</span><h3>Blue codes</h3></div>
@@ -1567,6 +1739,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 <div class="pm-pop glass" id="pm-pop" hidden>
   <div class="pm-head"><span class="dot" id="pm-dot"></span><b id="pm-name"></b>
     <button class="a-btn sm glass live like-btn" type="button" id="pm-like" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.5 1.1 5.3 3 1.8-1.9 3.2-3 5.3-3 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg><span id="pm-like-n">0</span></button></div>
+  <button class="a-btn sm glass live pm-block" type="button" id="pm-block">Block</button>
   <form class="pm-form" id="pm-form" autocomplete="off">
     <label class="field glass pill"><input id="pm-text" placeholder="Private message" maxlength="300" aria-label="Private message"></label>
     <button class="circle glass live tinted send" type="submit" aria-label="Send privately"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
@@ -1624,10 +1797,18 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 <div class="sheet-wrap" id="hist-wrap" hidden>
   <div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="hist-title">
     <div class="sheet-head"><span class="dot" id="hist-dot"></span><h2 id="hist-title">History</h2>
+      <button class="a-btn sm glass live" type="button" id="hist-mute" aria-pressed="false">Mute</button>
       <button class="circle glass live mini" type="button" id="hist-close" aria-label="Close"><svg viewBox="0 0 12 12" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button></div>
     <p class="a-muted sheet-sub" id="hist-sub"></p>
     <div class="hist" id="hist-list"></div>
   </div>
+</div>
+<div class="ios-alert-wrap" id="al-wrap" hidden>
+  <form class="ios-alert" id="al-form" role="alertdialog" aria-modal="true" aria-labelledby="al-title" autocomplete="off">
+    <h2 id="al-title"></h2><p id="al-text"></p>
+    <input id="al-in" maxlength="20" aria-labelledby="al-title">
+    <div class="al-btns"><button type="button" id="al-no">Cancel</button><button type="submit" id="al-ok">OK</button></div>
+  </form>
 </div>
 <div class="sheet-wrap confirm-wrap" id="cf-wrap" hidden>
   <div class="sheet glass confirm" role="alertdialog" aria-modal="true" aria-labelledby="cf-title" aria-describedby="cf-text">
@@ -1693,7 +1874,7 @@ const HOME_THEME = {
   gloss: "assets/ios6/icon-gloss.png",
   icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png", settings: "assets/ios6/icon-settings.png",
            ticket: "assets/ios6/icon-ticket.png", camera: "assets/ios6/icon-camera.png", door: "assets/ios6/icon-door.png", photos: "assets/ios6/icon-photos.png",
-           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png", logout: "assets/ios6/icon-logout.svg", mystery: "assets/ios6/icon-mystery.svg" },
+           store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png", logout: "assets/ios6/icon-logout.svg", mystery: "assets/ios6/icon-mystery.svg", forum: "assets/ios6/icon-forum.png" },
 };
 const LOCAL_CODES = ["1","2","3","4","5"]; // only used in offline demo mode (no Firebase)
 const DOOR_CODE = "door";                     // demo mode only: the real door password is set by the admin (config/door)
@@ -1709,6 +1890,7 @@ const STORE_ITEMS = [
   { id:'screen', name:'Your message on the screen', price:50, sub:'Shown on everyone’s screen for 6 hours. Messages take turns.' },
 ];
 const SCREEN_MSG_HOURS = 6;
+const POST_HOURS = 24;                         // forum posts disappear for users after this (the admin keeps seeing them)
 const SCREEN_SIZES = { S:.06, M:.09, L:.13 };   // share of the screen, like the admin's text tool
 const TSHIRT_SIZES = ['XS','S','M','L','XL','XXL'];
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
@@ -1829,7 +2011,7 @@ async function firebaseApi(cfg){
     async adminLogout(){ await fs.deleteDoc(fs.doc(db,"adminSessions",uid())).catch(()=>{}); },
     async adminActive(){ try{ const s=await fs.getDoc(fs.doc(db,"adminSessions",uid())); return s.exists()&&s.data().ts&&Date.now()-s.data().ts.toMillis()<12*3600e3; }catch{ return false; } },
     // door staff: the same idea as the admin, checked against config/door
-    async doorLogin(key){ try{ await fs.setDoc(fs.doc(db,"doorSessions",uid()),{key,ts:fs.serverTimestamp()}); return true; }catch{ return false; } },
+    async doorLogin(key,name){ try{ await fs.setDoc(fs.doc(db,"doorSessions",uid()),{key,ts:fs.serverTimestamp(),...(name?{name}:{})}); return true; }catch{ return false; } },
     async doorLogout(){ await fs.deleteDoc(fs.doc(db,"doorSessions",uid())).catch(()=>{}); },
     async doorActive(){ try{ const s=await fs.getDoc(fs.doc(db,"doorSessions",uid())); return s.exists()&&s.data().ts&&Date.now()-s.data().ts.toMillis()<12*3600e3; }catch{ return false; } },
     setDoorKey(key){ return fs.setDoc(fs.doc(db,"config","door"),{key}); },
@@ -1851,7 +2033,7 @@ async function firebaseApi(cfg){
     watchCheckin(t,cb){ return fs.onSnapshot(fs.doc(db,"checkins",t),s=>cb(s.exists()?{...s.data(),ts:s.data().ts?s.data().ts.toMillis():Date.now()}:null),e=>console.error(e)); },
     watchCheckins(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"checkins"),fs.orderBy("ts","desc")),s=>cb(s.docs.map(msgOut)),lost); },
     // scanning a ticket: the first scan checks it in; the rules refuse a second one
-    async scanTicket(t,by){
+    async scanTicket(t,by,who){
       if(!/^[A-Z2-9]{12}$/.test(t)) return {status:'invalid'};
       const tk=await fs.getDoc(fs.doc(db,"tickets",t)); if(!tk.exists()) return {status:'invalid'};
       const info=tk.data(), cRef=fs.doc(db,"checkins",t), when=s=>s.data().ts?s.data().ts.toMillis():Date.now();
@@ -1859,7 +2041,7 @@ async function firebaseApi(cfg){
         return await fs.runTransaction(db,async tx=>{
           const c=await tx.get(cRef);
           if(c.exists()) return {status:'already',...info,ts:when(c)};
-          tx.set(cRef,{ts:fs.serverTimestamp(),by,name:info.name});
+          tx.set(cRef,{ts:fs.serverTimestamp(),by,name:info.name,...(who?{who}:{})});
           return {status:'ok',...info,ts:Date.now()};
         });
       }catch(err){ const c=await fs.getDoc(cRef); if(c.exists()) return {status:'already',...info,ts:when(c)}; throw err; }
@@ -1914,8 +2096,34 @@ async function firebaseApi(cfg){
     },
     // T-shirt tickets
     watchMerchTicket(t,cb){ return fs.onSnapshot(fs.doc(db,"merch",t),s=>cb(s.exists()?{...s.data(),usedAt:s.data().usedAt?s.data().usedAt.toMillis():null}:null),e=>console.error(e)); },
-    watchMerch(cb){ return fs.onSnapshot(fs.collection(db,"merch"),s=>cb(s.docs.map(d=>{ const m=d.data(); return {id:d.id,name:m.name,size:m.size,usedAt:m.usedAt?m.usedAt.toMillis():null}; })),e=>console.error(e)); },
-    async scanMerch(t,by){
+    watchMerch(cb){ return fs.onSnapshot(fs.collection(db,"merch"),s=>cb(s.docs.map(d=>{ const m=d.data(); return {id:d.id,name:m.name,size:m.size,who:m.who||null,usedAt:m.usedAt?m.usedAt.toMillis():null}; })),e=>console.error(e)); },
+    // door chat
+    watchDoorChat(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"doorChat"),fs.orderBy("ts","desc"),fs.limit(150)),s=>cb(s.docs.map(msgOut).reverse()),e=>console.error(e)); },
+    sendDoorChat(m){ return fs.addDoc(fs.collection(db,"doorChat"),{...m,ts:fs.serverTimestamp()}); },
+    // forum
+    watchPosts(all,cb){ const q=all?fs.query(fs.collection(db,"posts"),fs.orderBy("ts","desc"),fs.limit(400))
+        :fs.query(fs.collection(db,"posts"),fs.where("ts",">",fs.Timestamp.fromMillis(Date.now()-POST_HOURS*3600e3)),fs.orderBy("ts","desc"));
+      return fs.onSnapshot(q,s=>cb(s.docs.map(msgOut)),e=>console.error(e)); },
+    watchComments(all,cb){ const q=all?fs.query(fs.collection(db,"comments"),fs.orderBy("ts","desc"),fs.limit(2000))
+        :fs.query(fs.collection(db,"comments"),fs.where("ts",">",fs.Timestamp.fromMillis(Date.now()-POST_HOURS*3600e3)));
+      return fs.onSnapshot(q,s=>cb(s.docs.map(msgOut).sort((a,b)=>a.ts-b.ts)),e=>console.error(e)); },
+    addPost(p){ return fs.addDoc(fs.collection(db,"posts"),{...p,likedBy:[],ts:fs.serverTimestamp()}); },
+    likePost(id,code,on){ return fs.updateDoc(fs.doc(db,"posts",id),{likedBy:on?fs.arrayUnion(code):fs.arrayRemove(code)}); },
+    async deletePost(id){ // the post and its comments
+      const cs=await fs.getDocs(fs.query(fs.collection(db,"comments"),fs.where("post","==",id))).catch(()=>null);
+      const b=fs.writeBatch(db); b.delete(fs.doc(db,"posts",id)); if(cs) cs.docs.forEach(d=>b.delete(d.ref)); await b.commit(); },
+    addComment(c){ return fs.addDoc(fs.collection(db,"comments"),{...c,ts:fs.serverTimestamp()}); },
+    deleteComment(id){ return fs.deleteDoc(fs.doc(db,"comments",id)); },
+    watchUserPosts(code,cb){ return fs.onSnapshot(fs.query(fs.collection(db,"posts"),fs.where("code","==",code)),s=>cb(s.docs.map(msgOut)),e=>console.error(e)); },
+    watchUserComments(code,cb){ return fs.onSnapshot(fs.query(fs.collection(db,"comments"),fs.where("code","==",code)),s=>cb(s.docs.map(msgOut)),e=>console.error(e)); },
+    watchMuted(cb){ return fs.onSnapshot(fs.collection(db,"muted"),s=>cb(new Set(s.docs.map(d=>d.id))),e=>console.error(e)); },
+    setMuted(code,on){ return on?fs.setDoc(fs.doc(db,"muted",code),{ts:fs.serverTimestamp()}):fs.deleteDoc(fs.doc(db,"muted",code)); },
+    // blocking
+    watchBlocks(code,cb){ return fs.onSnapshot(fs.query(fs.collection(db,"blocks"),fs.where("from","==",code)),s=>cb(s.docs.map(d=>d.data())),e=>console.error(e)); },
+    block(from,to,toName){ return fs.setDoc(fs.doc(db,"blocks",from+"_"+to),{from,to,toName,ts:fs.serverTimestamp()}); },
+    unblock(from,to){ return fs.deleteDoc(fs.doc(db,"blocks",from+"_"+to)); },
+    async codeOfName(name){ const s=await fs.getDoc(nameRef(name)); return s.exists()?s.data().code:null; },
+    async scanMerch(t,by,who){
       if(!/^[A-Z2-9]{12}$/.test(t)) return {status:'invalid'};
       const ref=fs.doc(db,"merch",t);
       const read=async()=>{ const m=await fs.getDoc(ref); return m.exists()?m.data():null; };
@@ -1923,7 +2131,7 @@ async function firebaseApi(cfg){
         return await fs.runTransaction(db,async tx=>{
           const m=await tx.get(ref); if(!m.exists()) return {status:'invalid'};
           const d=m.data(); if(d.usedAt) return {status:'already',name:d.name,size:d.size,ts:d.usedAt.toMillis()};
-          tx.update(ref,{usedAt:fs.serverTimestamp(),by}); return {status:'ok',name:d.name,size:d.size,ts:Date.now()};
+          tx.update(ref,{usedAt:fs.serverTimestamp(),by,...(who?{who}:{})}); return {status:'ok',name:d.name,size:d.size,ts:Date.now()};
         });
       }catch(err){ const d=await read().catch(()=>null); if(d&&d.usedAt) return {status:'already',name:d.name,size:d.size,ts:d.usedAt.toMillis()}; throw err; }
     },
@@ -2027,7 +2235,8 @@ function localApi(){
     if(!d.v){ d.codes={...Object.fromEntries(LOCAL_CODES.map(c=>[c,null])),...d.codes}; d.v=2; } // seed the demo codes once
     d.msgs=d.msgs||[]; d.screen=d.screen||""; d.shades=d.shades||{}; d.kinds=d.kinds||{}; d.styles=d.styles||{}; d.dms=d.dms||[]; d.likes=d.likes||{}; d.tints=d.tints||{};
     d.claimed=d.claimed||{}; d.ticketOf=d.ticketOf||{}; d.tickets=d.tickets||{}; d.checkins=d.checkins||{}; d.photos=d.photos||[];
-    d.filters=d.filters||[]; d.store=d.store||{}; d.orders=d.orders||[]; d.merch=d.merch||{}; d.queue=d.queue||[]; return d; };
+    d.filters=d.filters||[]; d.store=d.store||{}; d.orders=d.orders||[]; d.merch=d.merch||{}; d.queue=d.queue||[];
+    d.doorChat=d.doorChat||[]; d.posts=d.posts||[]; d.comments=d.comments||[]; d.muted=d.muted||{}; d.blocks=d.blocks||{}; return d; };
   const subs=new Set(), emit=()=>{const d=load(); subs.forEach(f=>f(d));};
   const save=d=>{store.set(K,JSON.stringify(d)); ch&&ch.postMessage(1); emit();};
   const sub=f=>{subs.add(f); f(load()); return ()=>subs.delete(f);};
@@ -2048,9 +2257,9 @@ function localApi(){
       d.tickets[t]={name:info.name,...(Number.isFinite(info.shade)?{shade:info.shade}:{}),...(info.kind==='blue'||info.kind==='rare'?{kind:info.kind}:{})}; return t; }); },
     watchCheckin:(t,cb)=>sub(d=>cb(d.checkins[t]||null)),
     watchCheckins:cb=>sub(d=>cb(Object.entries(d.checkins).map(([id,x])=>({id,...x})).sort((a,b)=>b.ts-a.ts))),
-    async scanTicket(t,by){ return mut(d=>{ const info=d.tickets[t]; if(!info) return {status:'invalid'};
+    async scanTicket(t,by,who){ return mut(d=>{ const info=d.tickets[t]; if(!info) return {status:'invalid'};
       const c=d.checkins[t]; if(c) return {status:'already',...info,ts:c.ts};
-      d.checkins[t]={ts:Date.now(),by,name:info.name}; return {status:'ok',...info,ts:Date.now()}; }); },
+      d.checkins[t]={ts:Date.now(),by,name:info.name,...(who?{who}:{})}; return {status:'ok',...info,ts:Date.now()}; }); },
     async undoCheckin(t){ mut(d=>{ delete d.checkins[t]; }); },
     async resetTicket(c,t){ mut(d=>{ delete d.ticketOf[c]; delete d.tickets[t]; }); },
     // demo photos: the preview in the shared demo data, the full picture under its own key
@@ -2083,16 +2292,35 @@ function localApi(){
     async useBubble(code,orderId,st){ mut(d=>{ d.styles[code]={...st,order:orderId}; d.kinds[code]='rare'; const o=d.orders.find(x=>x.id===orderId); if(o) o.status='used'; }); },
     watchMerchTicket:(t,cb)=>sub(d=>cb(d.merch[t]||null)),
     watchMerch:cb=>sub(d=>cb(Object.entries(d.merch).map(([id,m])=>({id,name:m.name,size:m.size,usedAt:m.usedAt||null})))),
-    async scanMerch(t,by){ return mut(d=>{ const m=d.merch[t]; if(!m) return {status:'invalid'};
+    async scanMerch(t,by,who){ return mut(d=>{ const m=d.merch[t]; if(!m) return {status:'invalid'};
       if(m.usedAt) return {status:'already',name:m.name,size:m.size,ts:m.usedAt};
-      m.usedAt=Date.now(); m.by=by; return {status:'ok',name:m.name,size:m.size,ts:m.usedAt}; }); },
+      m.usedAt=Date.now(); m.by=by; if(who) m.who=who; return {status:'ok',name:m.name,size:m.size,ts:m.usedAt}; }); },
+    watchDoorChat:cb=>sub(d=>cb(d.doorChat.slice(-150))),
+    async sendDoorChat(m){ mut(d=>{ d.doorChat.push({id:'dc'+Date.now()+Math.random(),...m,ts:Date.now()}); }); },
+    // demo forum: pictures under their own keys (they can be large)
+    watchPosts:(all,cb)=>sub(d=>cb(d.posts.filter(p=>all||Date.now()-p.ts<POST_HOURS*3600e3).map(p=>({...p,image:p.image?store.get('playlist-demo-post-'+p.id):undefined})).reverse())),
+    watchComments:(all,cb)=>sub(d=>cb(d.comments.filter(c=>all||Date.now()-c.ts<POST_HOURS*3600e3))),
+    async addPost(p){ const id='po'+Date.now()+Math.floor(Math.random()*1e4); if(p.image) store.set('playlist-demo-post-'+id,p.image);
+      mut(d=>{ d.posts.push({...p,id,image:p.image?1:undefined,likedBy:[],ts:Date.now()}); }); },
+    async likePost(id,code,on){ mut(d=>{ const p=d.posts.find(x=>x.id===id); if(!p) return; p.likedBy=p.likedBy.filter(c=>c!==code); if(on) p.likedBy.push(code); }); },
+    async deletePost(id){ store.del('playlist-demo-post-'+id); mut(d=>{ d.posts=d.posts.filter(p=>p.id!==id); d.comments=d.comments.filter(c=>c.post!==id); }); },
+    async addComment(c){ mut(d=>{ d.comments.push({...c,id:'cm'+Date.now()+Math.random(),ts:Date.now()}); }); },
+    async deleteComment(id){ mut(d=>{ d.comments=d.comments.filter(c=>c.id!==id); }); },
+    watchUserPosts:(code,cb)=>sub(d=>cb(d.posts.filter(p=>p.code===code).map(p=>({...p,image:p.image?store.get('playlist-demo-post-'+p.id):undefined})))),
+    watchUserComments:(code,cb)=>sub(d=>cb(d.comments.filter(c=>c.code===code))),
+    watchMuted:cb=>sub(d=>cb(new Set(Object.keys(d.muted)))),
+    async setMuted(code,on){ mut(d=>{ if(on) d.muted[code]=1; else delete d.muted[code]; }); },
+    watchBlocks:(code,cb)=>sub(d=>cb(Object.values(d.blocks).filter(b=>b.from===code))),
+    async block(from,to,toName){ mut(d=>{ d.blocks[from+'_'+to]={from,to,toName,ts:Date.now()}; }); },
+    async unblock(from,to){ mut(d=>{ delete d.blocks[from+'_'+to]; }); },
+    async codeOfName(name){ const d=load(); const e=Object.entries(d.codes).find(([c,n])=>n&&n.toLowerCase()===name.toLowerCase()); return e?e[0]:null; },
     async send(code,username,text,shade,kind,tint){ mut(d=>{ d.msgs.push({id:Date.now()+""+Math.random(),code,username,text,...(Number.isFinite(shade)?{shade}:{}),...(kind==='blue'||kind==='rare'?{kind}:{}),...(kind==='admin'?{kind,tint}:{}),ts:Date.now()}); }); },
     async ensureAdmin(){ return mut(d=>{ if(!(ADMIN_ID in d.codes)){ d.codes[ADMIN_ID]=null; d.kinds[ADMIN_ID]='admin'; } return {username:d.codes[ADMIN_ID],tint:d.tints[ADMIN_ID]||null}; }); },
     async setAdminTint(t){ mut(d=>{ d.tints[ADMIN_ID]=t; }); },
     watchStyles:cb=>sub(d=>cb(d.styles)),
     async setRare(c,st){ mut(d=>{ d.styles[c]=st; d.kinds[c]='rare'; }); },
     async clearRare(c){ mut(d=>{ delete d.styles[c]; delete d.kinds[c]; }); },
-    async sendDM(o){ mut(d=>{ d.dms.push({...o,id:'dm'+Date.now()+Math.random(),ts:Date.now()}); }); },
+    async sendDM(o){ if(load().blocks[o.to+'_'+o.from]) throw new Error('blocked'); mut(d=>{ d.dms.push({...o,id:'dm'+Date.now()+Math.random(),ts:Date.now()}); }); },
     watchDMs:(code,cb)=>sub(d=>cb(d.dms.filter(x=>x.to===code))),
     watchUserDMs:(code,cb)=>sub(d=>cb(d.dms.filter(x=>x.to===code||x.from===code))),
     async deleteDM(id){ mut(d=>{ d.dms=d.dms.filter(x=>x.id!==id); }); },
@@ -2314,7 +2542,8 @@ if(window.visualViewport){
 }
 // styles and likes are only readable while logged in (code or admin), so they're watched per login
 let socialUnsubs=[];
-function startSocial(){ if(socialUnsubs.length) return; socialUnsubs=[api.watchStyles(onStyles),api.watchLikes(onLikes)]; }
+function startSocial(){ if(socialUnsubs.length) return; socialUnsubs=[api.watchStyles(onStyles),api.watchLikes(onLikes),
+  api.watchMuted(s=>{ mutedSet=s; if(current.id==='s-forum') drawForum(); syncHistMute(); })]; }
 function stopSocial(){ socialUnsubs.forEach(u=>u&&u()); socialUnsubs=[]; }
 function onStyles(o){
   styles=o||{};
@@ -2384,6 +2613,34 @@ const mysteryInstalled=()=>!!features.mystery&&!!me.code&&store.get(mysKey())===
 function openMystery(){ go('s-mystery'); }
 $('mys-home').addEventListener('click',()=>goHome());
 
+/* ---------- iOS 6 alert with a text field ---------- */
+function promptBox({title,text='',placeholder='',ok='OK',value=''}){
+  return new Promise(res=>{
+    $('al-title').textContent=title; $('al-text').textContent=text; $('al-in').placeholder=placeholder; $('al-in').value=value; $('al-ok').textContent=ok;
+    $('al-wrap').hidden=false; setTimeout(()=>$('al-in').focus(),60);
+    const done=v=>{ $('al-wrap').hidden=true; $('al-form').onsubmit=$('al-no').onclick=null; res(v); };
+    $('al-form').onsubmit=e=>{ e.preventDefault(); const v=$('al-in').value.trim().replace(/\s+/g,' '); if(!v) return shake($('al-form')); done(v.slice(0,20)); };
+    $('al-no').onclick=()=>done(null);
+  });
+}
+
+/* ---------- blocking, and who is muted in the forum ---------- */
+let blocked=new Map(), blockUnsub=null, mutedSet=new Set();
+function watchBlocks(){ blockUnsub&&blockUnsub(); blockUnsub=me.code&&me.kind!=='admin'?api.watchBlocks(me.code,l=>{ blocked=new Map(l.map(b=>[b.to,b.toName])); onBlocksChanged(); }):null; }
+function stopBlocks(){ blockUnsub&&blockUnsub(); blockUnsub=null; blocked=new Map(); }
+function onBlocksChanged(){
+  if(current.id==='chat') render(lastList);
+  if(current.id==='s-settings') renderSettings();
+  if(current.id==='s-forum') drawForum();
+  if(pmTo) syncLike();
+}
+async function toggleBlock(code,name){
+  if(!me.code||code===me.code) return;
+  if(blocked.has(code)){ try{ await api.unblock(me.code,code); toast(`${name} is unblocked.`); }catch(err){ fail('unblock')(err); } return; }
+  if(!await confirmBox(`Block ${name}?`,'They can’t send you private messages, and you won’t see their chat messages or forum posts. You can unblock them in Settings.','Block')) return;
+  try{ await api.block(me.code,code,name); toast(`${name} is blocked.`); }catch(err){ fail('block')(err); }
+}
+
 /* ---------- 1. code ---------- */
 $('f-code').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -2396,7 +2653,12 @@ $('f-code').addEventListener('submit',async e=>{
       // not a code: maybe it's the admin password (checked by the database, not by this page)
       if(await api.adminLogin(code)){ keep.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
       // or the door password: opens only the Door scanner
-      if(await api.doorLogin(code)){ markLogin(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({door:true}); }
+      if(await api.doorLogin(code)){
+        note.textContent='';
+        const name=await promptBox({title:'Door staff',text:'What’s your name? The team sees it in the door chat and next to each check-in.',placeholder:'Your name',ok:'Sign In'});
+        if(!name){ api.doorLogout(); $('code').value=''; return; }
+        await api.doorLogin(code,name); keep.set('playlist-door-name',name,remembered());
+        markLogin(); slideUnlock(); $('code').value=''; return openHome({door:true}); }
       note.className='note err'; note.textContent="That code doesn't work."; shake($('f-code')); $('code').select(); return;
     }
     keep.del('playlist-admin'); api.adminLogout(); keep.del('playlist-door'); api.doorLogout(); // a code login ends any admin or door session
@@ -2442,6 +2704,7 @@ const APPS = [
   { id:'chat',     name:'Chat',     for:'user',  open:()=>openChat() },
   { id:'ticket',   name:'Ticket',   for:'user',  open:()=>openTicket(), dock:true },
   { id:'camera',   name:'Camera',   for:'user',  open:()=>openCamera() },
+  { id:'forum',    name:'Forum',    for:['user','admin'], open:()=>openForum() },
   { id:'store',    name:'Store',    for:'user',  open:()=>openStore() },
   { id:'settings', name:'Settings', for:'user',  open:()=>openSettings() },
   { id:'admin',    name:'Admin',    for:'admin', open:()=>openAdmin() },
@@ -2491,7 +2754,7 @@ function openHome(opts={}){
   if(admin){ if(me.code) logOutUser(); keepLogin('playlist-admin'); startSocial(); }
   else if(door){ if(me.code) logOutUser(); keepLogin('playlist-door'); }
   else { // same per-login listeners the chat uses, so private messages and account changes work from here too
-    applyMyShade(me.shade); startSocial(); countLikes();
+    applyMyShade(me.shade); startSocial(); countLikes(); if(!blockUnsub) watchBlocks();
     if(!unwatch) unwatch=api.watch(render);
     if(!unwatchMe) unwatchMe=api.watchCode(me.code,onMyCode);
     watchMyDMs();
@@ -2549,7 +2812,7 @@ function openChat(){
   const asAdmin=me.kind==='admin'; $('me-color').hidden=me.hasShade&&!asAdmin; $('to-admin').hidden=USE_HOME_SCREEN||!asAdmin;
   $('nav-color').hidden=$('me-color').hidden; $('nav-home-lbl').textContent=asAdmin?'Admin':'Home'; $('nav-home').hidden=!USE_HOME_SCREEN&&!asAdmin; tickClock();
   $('me-color').title=asAdmin?'Your name and color':'Pick your color';
-  startSocial(); countLikes();
+  startSocial(); countLikes(); if(!blockUnsub&&me.kind!=='admin') watchBlocks();
   if(!unwatch) unwatch=api.watch(render); else render(lastList); // re-render so "mine" matches the account that just logged in
   if(!unwatchMe) unwatchMe=api.watchCode(me.code,onMyCode);
   watchMyDMs(); updateBadge();
@@ -2598,7 +2861,7 @@ const seenMsgs=new Set(); let firstRender=true;
 // blue bubbles float out of step with each other
 const floatDelay=id=>{ let h=0; for(const ch of String(id)) h=(h*31+ch.charCodeAt(0))|0; return (-(Math.abs(h)%6000)/1000)+'s'; };
 function render(all){
-  lastList=all; const list=fresh(all); shownCount=list.length;
+  lastList=all; const list=fresh(all).filter(m=>!blocked.has(m.code)); shownCount=list.length;
   const latest={}; for(const m of all) if(Number.isFinite(m.shade)) latest[m.code]=m.shade; // a person's newest colour applies to all their bubbles
   const kindOf={}, tintOf={}; for(const m of all){ if(m.kind) kindOf[m.code]=m.kind; if(m.tint) tintOf[m.code]=m.tint; }
   const log=$('log'); const atBottom=log.scrollHeight-log.scrollTop-log.clientHeight<60;
@@ -2669,10 +2932,12 @@ function openPM(to,r){
 }
 function closePM(){ pmTo=null; $('pm-pop').hidden=true; }
 function syncLike(){
-  if(!pmTo) return; const on=myLikes.has(pmTo.code), btn_=$('pm-like');
+  if(!pmTo) return;
+  $('pm-block').hidden=!me.code||me.kind==='admin'; $('pm-block').textContent=blocked.has(pmTo.code)?'Unblock':'Block'; const on=myLikes.has(pmTo.code), btn_=$('pm-like');
   btn_.setAttribute('aria-pressed',on); btn_.setAttribute('aria-label',on?`Unlike ${pmTo.name}`:`Like ${pmTo.name}`);
   $('pm-like-n').textContent=likeCount[pmTo.code]||0;
 }
+$('pm-block').addEventListener('click',()=>{ if(!pmTo) return; const t=pmTo; closePM(); toggleBlock(t.code,t.name); });
 $('pm-like').addEventListener('click',async()=>{
   if(!pmTo||!me.code) return; const to=pmTo.code, on=myLikes.has(to), b=$('pm-like');
   b.classList.remove('pop'); void b.offsetWidth; if(!on) b.classList.add('pop');
@@ -2683,9 +2948,9 @@ $('pm-form').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('pm-text').value.trim(); if(!text||!pmTo) return;
   const to=pmTo;
   try{ await api.sendDM({from:me.code,fromName:me.username,to:to.code,toName:to.name,text}); closePM(); toast(`Sent privately to ${to.name}.`); }
-  catch(err){ console.error(err); toast("Private message not sent. Try again."); }
+  catch(err){ console.error(err); toast(`Private message not sent. ${to.name} may have blocked you, or the connection dropped.`); }
 });
-document.addEventListener('pointerdown',e=>{ if(!$('pm-pop').hidden && !e.target.closest('#pm-pop,.bubble.other')) closePM(); });
+document.addEventListener('pointerdown',e=>{ if(!$('pm-pop').hidden && !e.target.closest('#pm-pop,.bubble.other,.who-tap')) closePM(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePM(); });
 
 /* ---------- incoming private messages: float in, go after 10 s or when tapped ---------- */
@@ -2695,7 +2960,7 @@ function watchMyDMs(){
   dmUnsub&&dmUnsub();
   let seen; try{ seen=new Set(JSON.parse(store.get(dmSeenKey())||'[]')); }catch{ seen=new Set(); }
   dmUnsub=api.watchDMs(me.code,list=>{
-    const fresh_=list.filter(d=>!seen.has(d.id)&&Date.now()-d.ts<24*3600e3).sort((a,b)=>a.ts-b.ts);
+    const fresh_=list.filter(d=>!seen.has(d.id)&&!blocked.has(d.from)&&Date.now()-d.ts<24*3600e3).sort((a,b)=>a.ts-b.ts);
     fresh_.forEach((d,i)=>{ seen.add(d.id); setTimeout(()=>showDM(d),i*400); });
     if(fresh_.length) store.set(dmSeenKey(),JSON.stringify([...seen].slice(-300)));
   });
@@ -2768,7 +3033,7 @@ function logOutUser(){
   // stop listening first: once the membership is gone the database refuses these reads
   unwatchMe&&unwatchMe(); unwatchMe=null; dmUnsub&&dmUnsub(); dmUnsub=null; closePM();
   unwatch&&unwatch(); unwatch=null; lastList=[]; seenMsgs.clear(); firstRender=true; stopSocial();
-  stopTicket(); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[]; filterUnsub&&filterUnsub(); filterUnsub=null; stopStore(true);
+  stopTicket(); stopBlocks(); stopForum(true); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[]; filterUnsub&&filterUnsub(); filterUnsub=null; stopStore(true);
   if(me.code&&me.kind!=='admin') api.leave();
   keep.del('playlist-code'); keep.del('playlist-epoch'); loginEpoch=null; setMe(null,null); resetUserStep();
 }
@@ -2777,18 +3042,41 @@ function openAdmin(){
   go('s-admin'); setTimeout(()=>document.querySelectorAll('.tabs,.seg').forEach(moveInd),60);
   if(adminOn) return;
   adminOn=true; $('a-who').textContent=''; syncScreenTab(true);
-  adminUnsubs.push(api.watchAll(renderAdminMsgs), api.watchCodes(renderCodes),
-    api.watchCheckins(l=>{ adminCheckins=new Map(l.map(x=>[x.id,x])); renderCodes(codeList); }));
+  adminUnsubs.push(api.watchAll(renderAdminMsgs), api.watchCodes(l=>{ renderCodes(l); drawAdminDoor(); }),
+    api.watchCheckins(l=>{ adminCheckins=new Map(l.map(x=>[x.id,x])); adminArrivals=l; renderCodes(codeList); drawAdminDoor(); }));
+  ensureAdminDoorFeed();
 }
 function adminLogout(){
   closeHistory(); closeRare();
-  adminOn=false; adminUnsubs.forEach(u=>u&&u()); adminUnsubs=[];
+  adminOn=false; adminUnsubs.forEach(u=>u&&u()); adminUnsubs=[]; stopAdminDoorFeed(); stopForum(true);
   codeRows.clear(); $('a-codes').replaceChildren(); $('a-msgs').replaceChildren();
   logOutUser(); stopSocial(); keep.del('playlist-admin'); api.adminLogout(); $('code').value='';
   go('s-code'); toast('Logged out of admin.');
 }
 $('a-exit').addEventListener('click',adminLogout);
 let adminCheckins=new Map(); // ticket token → check-in
+let adminArrivals=[], adminMerchList=[], adminDoorUnsubs=[], ddSeen=null;
+// the Door tab: a live feed of arrivals (and T-shirts handed out), and the chat with the door team
+function ensureAdminDoorFeed(){
+  if(adminDoorUnsubs.length) return;
+  adminDoorUnsubs.push(api.watchMerch(l=>{ adminMerchList=l; drawAdminDoor(); }), api.watchDoorChat(onDoorChat));
+}
+function stopAdminDoorFeed(){ adminDoorUnsubs.forEach(u=>u&&u()); adminDoorUnsubs=[]; ddSeen=null; }
+function drawAdminDoor(){
+  if(!adminOn&&!adminDoorUnsubs.length) return;
+  countTo($('dd-in'),adminArrivals.length); countTo($('dd-tickets'),codeList.filter(c=>c.ticket).length);
+  countTo($('dd-shirts'),adminMerchList.filter(m=>m.usedAt).length);
+  const feed=[...adminArrivals.map(c=>({k:'in',id:'in'+c.id,name:c.name,who:c.who||(c.by==='admin'?'Admin':'Door'),ts:c.ts})),
+    ...adminMerchList.filter(m=>m.usedAt).map(m=>({k:'shirt',id:'sh'+m.id,name:m.name,size:m.size,who:m.who||'Door',ts:m.usedAt}))].sort((a,b)=>b.ts-a.ts).slice(0,80);
+  const box=$('dd-feed'), first=ddSeen===null; ddSeen=ddSeen||new Set(); box.replaceChildren();
+  if(!feed.length) box.append(mk('p','a-muted','No one has arrived yet. Arrivals show up here the moment they’re scanned.'));
+  feed.forEach(f=>{ const row=mk('div','dd-row'+(!first&&!ddSeen.has(f.id)?' new':'')), ic=mk('span','dd-ic',f.k==='in'?'IN':'T');
+    ic.style.background=f.k==='in'?'#34c759':'#1f5fd6'; const g=mk('div','grow'); g.append(mk('b',null,f.name));
+    g.append(mk('small',null,f.k==='in'?`Checked in by ${f.who}`:`T-shirt ${f.size||''} from ${f.who}`)); row.append(ic,g,mk('span','t',fmtTime(f.ts))); box.append(row); ddSeen.add(f.id); });
+  const cb=$('dd-chat'), atEnd=cb.scrollHeight-cb.scrollTop-cb.clientHeight<60; cb.replaceChildren(...doorChat.map(chatRow));
+  if(!doorChat.length) cb.append(mk('p','a-muted','No messages yet.')); if(atEnd) cb.scrollTop=cb.scrollHeight;
+}
+$('f-ddchat').addEventListener('submit',e=>{ e.preventDefault(); sendDoorChat($('dd-msg')); });
 $('f-doorkey').addEventListener('submit',async e=>{
   e.preventDefault(); const k=$('a-doorkey').value.trim();
   if(k.length<4) { toast('Use at least 4 characters.'); return shake($('f-doorkey')); }
@@ -3173,14 +3461,14 @@ function openHistory(code,name){
   closeHistory();
   $('hist-title').textContent=name||`Code ${code}`; $('hist-sub').textContent='Loading…';
   $('hist-list').replaceChildren(); $('hist-wrap').hidden=false;
-  let msgs=[], dms=[];
+  let msgs=[], dms=[], posts=[], comments=[]; histCode=code; histName=name; syncHistMute();
   const draw=()=>{
-    const list=[...msgs.map(m=>({...m,t:'msg'})),...dms.map(d=>({...d,t:'dm'}))].sort((a,b)=>a.ts-b.ts);
+    const list=[...msgs.map(m=>({...m,t:'msg'})),...dms.map(d=>({...d,t:'dm'})),...posts.map(p=>({...p,t:'post'})),...comments.map(c=>({...c,t:'comment'}))].sort((a,b)=>a.ts-b.ts);
     const box=$('hist-list'), cutoff=Date.now()-TTL, atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
     const latest=msgs.length?msgs[msgs.length-1]:null, c0=codeList.find(x=>x.code===code);
     $('hist-dot').style.background=lookOf(code,latest?latest.shade:c0&&c0.shade,(latest&&latest.kind)||(c0&&c0.kind),c0&&c0.tint).bg;
     const names=[...new Set(msgs.map(m=>m.username))], lk=likeCount[code]||0;
-    $('hist-sub').textContent=`Code ${code} · ${msgs.length} message${msgs.length===1?'':'s'} · ${dms.length} private`+
+    $('hist-sub').textContent=`Code ${code} · ${msgs.length} message${msgs.length===1?'':'s'} · ${dms.length} private · ${posts.length} forum post${posts.length===1?'':'s'} · ${comments.length} comment${comments.length===1?'':'s'}`+
       (msgs.length?` · ${msgs.filter(m=>m.ts>cutoff).length} still visible in the chat`:'')+` · ${lk} like${lk===1?'':'s'}`+
       (names.length>1?` · also posted as ${names.filter(n=>n!==name).join(', ')}`:'');
     box.replaceChildren();
@@ -3188,6 +3476,15 @@ function openHistory(code,name){
     let prev=null;
     for(const m of list){
       if(!prev || new Date(m.ts).toDateString()!==new Date(prev.ts).toDateString()) box.append(mk('div','stamp',new Date(m.ts).toDateString()===new Date().toDateString()?'Today':new Date(m.ts).toLocaleDateString([], {weekday:'short',day:'numeric',month:'short'})));
+      if(m.t==='post'||m.t==='comment'){ // forum
+        const card=mk('div','hist-forum glass card');
+        card.append(mk('div','a-muted',(m.t==='post'?'Forum post':'Comment')+' · '+fmtTime(m.ts)+(Date.now()-m.ts>POST_HOURS*3600e3?' · gone for users':'')));
+        if(m.t==='post'){ card.append(mk('b',null,m.title)); if(m.image){ const im=mk('img'); im.src=m.image; im.alt=''; im.style.cssText='display:block;max-width:180px;border-radius:6px;margin:6px 0'; card.append(im); } if(m.text) card.append(mk('p',null,m.text)); }
+        else card.append(mk('p',null,m.text));
+        card.append(twoStep(btn('Delete','danger'),()=>(m.t==='post'?api.deletePost(m.id):api.deleteComment(m.id)).then(()=>toast(m.t==='post'?'Post deleted.':'Comment deleted.'),fail('delete it')),
+          {title:m.t==='post'?'Delete this post?':'Delete this comment?',text:'It’s removed for everyone.'}));
+        box.append(card); prev=m; continue;
+      }
       if(m.t==='dm'){ // private message, sent by this account (right) or to it (left)
         const sent=m.from===code, other=sent?m.to:m.from, oc=codeList.find(x=>x.code===other);
         const b=mk('div','bubble glass tinted pm'+(sent?' sent':''),m.text);
@@ -3208,7 +3505,17 @@ function openHistory(code,name){
     if(atBottom||box.dataset.first!=='0'){ box.scrollTop=box.scrollHeight; box.dataset.first='0'; }
   };
   const u1=api.watchUser(code,l=>{ msgs=l; draw(); }), u2=api.watchUserDMs(code,l=>{ dms=l; draw(); });
-  histUnsub=()=>{ u1(); u2(); };
+  const u3=api.watchUserPosts(code,l=>{ posts=l; draw(); }), u4=api.watchUserComments(code,l=>{ comments=l; draw(); });
+  histUnsub=()=>{ u1(); u2(); u3(); u4(); };
+}
+let histCode=null, histName=null;
+function syncHistMute(){ const b=$('hist-mute'); if(!b) return; const on=!!histCode&&mutedSet.has(histCode);
+  b.hidden=!histCode||histCode===ADMIN_ID; b.textContent=on?'Unmute':'Mute'; b.setAttribute('aria-pressed',String(on)); b.title=on?'Muted in the forum':'Mute in the forum'; }
+$('hist-mute').addEventListener('click',()=>{ if(histCode) toggleMute(histCode,histName); });
+async function toggleMute(code,name){
+  const on=!mutedSet.has(code);
+  if(on&&!await confirmBox(`Mute ${name||'this account'}?`,'They can still read the forum, but can’t post or comment until you unmute them.','Mute')) return;
+  try{ await api.setMuted(code,on); toast(on?`${name||'They'} can’t post in the forum now.`:`${name||'They'} can post again.`); }catch(err){ fail('change that')(err); }
 }
 function closeHistory(){ histUnsub&&histUnsub(); histUnsub=null; $('hist-wrap').hidden=true; $('hist-list').dataset.first='1'; }
 $('hist-close').addEventListener('click',closeHistory);
@@ -3263,6 +3570,7 @@ function leaveApp(from){
   if(from==='s-camera'){ stopCam(); $('roll').hidden=true; }
   if(from==='s-photos'){ photoUnsub&&photoUnsub(); photoUnsub=null; adminFxUnsub&&adminFxUnsub(); adminFxUnsub=null; $('fx-admin').hidden=true; }
   if(from==='s-store') stopStore();
+  if(from==='s-forum'){ fmOpen=null; fmThread=null; if(homeMode==='admin') stopForum(true); }
   if(from==='s-orders') stopOrders();
   closeViewer();
 }
@@ -3297,6 +3605,15 @@ function renderSettings(){
   SETTINGS_ROWS.forEach(g=>{ const grp=mk('div','grp');
     g.forEach(r=>{ const c=mk('div','cell'), v=mk('span','val'), x=r.value(); v.append(x); c.append(mk('span',null,r.label),v); grp.append(c); });
     box.append(grp); });
+  // blocked members, and blocking someone by name
+  box.append(mk('p','grp-title','Blocked'));
+  const bg=mk('div','grp');
+  blocked.forEach((name,code)=>{ const c=mk('div','cell'), ub=mk('button','mini-btn grey','Unblock'); ub.type='button';
+    ub.addEventListener('click',()=>toggleBlock(code,name)); c.append(mk('span',null,name),ub); bg.append(c); });
+  const add=mk('button','cell btn blue','Block someone…'); add.type='button';
+  add.addEventListener('click',async()=>{ const n=await promptBox({title:'Block someone',text:'Type their username.',placeholder:'Username',ok:'Next'}); if(!n) return;
+    try{ const code=await api.codeOfName(n); if(!code) return toast(`No one is called ${n}.`); if(code===me.code) return toast('That’s you.'); toggleBlock(code,n); }catch(err){ fail('find them')(err); } });
+  bg.append(add); box.append(bg);
   box.append(mk('p','grp-foot','More settings are coming soon.'));
   const g=mk('div','grp'), out=mk('button','cell btn','Log Out'); out.type='button'; out.addEventListener('click',backToCode); g.append(out); box.append(g);
 }
@@ -3358,12 +3675,37 @@ function drawQR(canvas,text){
 /* Door: scan entry tickets, and T-shirt tickets at the merch stand. Each works once; the database refuses a second scan. */
 let doorStream=null, doorTimer=0, doorBusy=false, lastScan={text:null,at:0}, doorCheckins=[], doorMerch=[], doorCodes=[], doorUnsubs=[], doorMode='door';
 const doorTop=appTop($('s-door'),'Door');
-const doorOut=navBtn('Log out',()=>doorLogout()); doorTop.right.append(doorOut);
+// door staff and the admin talk in the door chat (door staff log out with the Log Out app)
+const doorChatBtn=navBtn('Chat',()=>openDoorChat()); doorTop.right.append(doorChatBtn);
+const doorName=()=>homeMode==='admin'?'Admin':(keep.get('playlist-door-name')||'Door');
+appTop($('door-chat'),'Door chat',{back:'Door',onBack:()=>{ $('door-chat').hidden=true; }});
+let doorChat=[], doorChatSince=0;
+function onDoorChat(l){
+  const fresh__=l.filter(m=>m.ts>doorChatSince&&m.name!==doorName());
+  doorChat=l; drawDoorChat(); drawAdminDoor();
+  if(doorChatSince&&fresh__.length&&((current.id==='s-door'&&$('door-chat').hidden)||(current.id==='s-admin'&&$('t-gate').hidden))){
+    const m=fresh__[fresh__.length-1]; toast(`${m.name}: ${m.text}`); if(navigator.vibrate) navigator.vibrate(40); }
+  doorChatSince=Math.max(doorChatSince,Date.now()-2000);
+}
+function chatRow(m){ const b=mk('div','dmsg'+(m.name===doorName()?' mine':'')+(m.role==='admin'?' admin':'')); b.append(mk('small',null,`${m.name} · ${fmtTime(m.ts)}`),m.text); return b; }
+function drawDoorChat(){
+  const box=$('door-chat-list'); if($('door-chat').hidden) return; const sc=box.parentElement, atEnd=sc.scrollHeight-sc.scrollTop-sc.clientHeight<60;
+  box.replaceChildren(...doorChat.map(chatRow)); if(!doorChat.length) box.append(mk('p','door-empty','No messages yet.'));
+  if(atEnd) sc.scrollTop=sc.scrollHeight;
+}
+function openDoorChat(){ $('door-chat').hidden=false; drawDoorChat(); const sc=$('door-chat-list').parentElement; sc.scrollTop=sc.scrollHeight; }
+async function sendDoorChat(input){
+  const text=input.value.trim(); if(!text) return;
+  try{ await api.sendDoorChat({name:doorName(),text,role:homeMode==='admin'?'admin':'door'}); input.value=''; }catch(err){ fail('send the message')(err); }
+}
+$('f-doorchat').addEventListener('submit',e=>{ e.preventDefault(); sendDoorChat($('door-chat-in')); });
+const doorOut={hidden:false}; // (the old nav button is gone; kept so older code can still set it)
 function openDoor(){
-  go('s-door'); const asAdmin=homeMode==='admin';
+  go('s-door'); const asAdmin=homeMode==='admin'; if(asAdmin) ensureAdminDoorFeed();
   doorOut.hidden=asAdmin; $('door-res').hidden=true; doorBusy=false;
   if(!doorUnsubs.length){
     doorUnsubs.push(api.watchCheckins(l=>{ doorCheckins=l; drawDoorLists(); }), api.watchMerch(l=>{ doorMerch=l; drawDoorLists(); }));
+    if(homeMode!=='admin') doorUnsubs.push(api.watchDoorChat(onDoorChat)); // the admin already follows it from the panel
     if(asAdmin) doorUnsubs.push(api.watchCodes(l=>{ doorCodes=l; drawDoorSearch(); }));
   }
   setDoorMode(doorMode); startDoorCam();
@@ -3375,7 +3717,7 @@ function setDoorMode(m){
   $('door-admin').hidden=homeMode!=='admin'||m==='merch'; drawDoorLists();
 }
 document.querySelectorAll('#door-mode button').forEach(b=>b.addEventListener('click',()=>setDoorMode(b.dataset.m)));
-function stopDoor(){ doorUnsubs.forEach(u=>u&&u()); doorUnsubs=[]; stopDoorCam(); }
+function stopDoor(){ doorUnsubs.forEach(u=>u&&u()); doorUnsubs=[]; stopDoorCam(); $('door-chat').hidden=true; }
 function doorLogout(){
   stopDoor(); keep.del('playlist-door'); keep.del('playlist-epoch'); loginEpoch=null; api.doorLogout(); $('code').value=''; $('n-code').textContent='';
   go('s-code'); toast('Logged out of the door.');
@@ -3419,12 +3761,15 @@ const scanKind=text=>/^PLAYLIST-MERCH:/i.test(String(text).trim())?'merch':'tick
 function onScanText(text){
   const now=Date.now();
   if(lastScan.text===text&&now-lastScan.at<5000) return; // the same pass is still held up to the camera
-  lastScan={text,at:now}; scan(scanKind(text),tokenOf(text));
+  lastScan={text,at:now};
+  const kind=scanKind(text), want=doorMode==='merch'?'merch':'ticket';
+  if(kind!==want&&tokenOf(text)) return showDoorResult({status:'wrong'},want); // a T-shirt ticket at the door, or an entry ticket at the merch stand
+  scan(kind,tokenOf(text));
 }
 async function scan(what,t){
   if(doorBusy) return; doorBusy=true;
   const by=homeMode==='admin'?'admin':'door'; let r;
-  try{ r=t?await (what==='merch'?api.scanMerch(t,by):api.scanTicket(t,by)):{status:'invalid'}; }
+  try{ r=t?await (what==='merch'?api.scanMerch(t,by,doorName()):api.scanTicket(t,by,doorName())):{status:'invalid'}; }
   catch(err){ console.error(err); r={status:'error'}; }
   showDoorResult(r,what);
 }
@@ -3433,6 +3778,11 @@ const ICON_BAD='<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width=
 function showDoorResult(r,what){
   const box=$('door-res'), ok=r.status==='ok', named=r.status==='ok'||r.status==='already', merch=what==='merch';
   box.className='door-res '+(ok?'ok':'bad'); $('door-ic').innerHTML=ok?ICON_OK:ICON_BAD;
+  if(r.status==='wrong'){ $('door-t').textContent=merch?'That’s an entry ticket':'That’s a T-shirt ticket'; $('door-who').hidden=true;
+    $('door-d').textContent=merch?'Switch to Entry to check people in.':'T-shirts are handed out at the merch stand (Merch).';
+    box.hidden=false; if(navigator.vibrate) navigator.vibrate([70,60,70]);
+    const done=()=>{ clearTimeout(showDoorResult.t); box.hidden=true; doorBusy=false; };
+    clearTimeout(showDoorResult.t); showDoorResult.t=setTimeout(done,3000); box.onclick=done; return; }
   $('door-t').textContent=(merch?{ok:'Hand over a T-shirt',already:'Already collected',invalid:'Not a T-shirt ticket',error:"Couldn't check"}
     :{ok:'Welcome',already:'Already checked in',invalid:'Not a valid ticket',error:"Couldn't check"})[r.status];
   $('door-who').hidden=!named; $('door-name').textContent=named?r.name:'';
@@ -3461,7 +3811,7 @@ function drawDoorLists(){
   countTo($('door-n'),doorCheckins.length); $('door-n-lbl').textContent='checked in';
   $('door-h-list').textContent='Latest arrivals'; $('door-empty').textContent='No one has checked in yet.'; $('door-empty').hidden=doorCheckins.length>0;
   doorCheckins.slice(0,40).forEach(c=>{
-    const row=mk('div','door-row'); row.append(mk('span','dn',c.name||'—'),mk('span','dt',fmtTime(c.ts)));
+    const row=mk('div','door-row'); row.append(mk('span','dn',c.name||'—'),mk('span','dt',(c.who?c.who+' · ':'')+fmtTime(c.ts)));
     if(homeMode==='admin') row.append(twoStep(mk('button','door-btn grey','Undo'),()=>api.undoCheckin(c.id).then(()=>toast(`${c.name} is no longer checked in.`),fail('undo the check-in')),
       {title:`Undo ${c.name}'s check-in?`,text:'Their ticket can be scanned again.',ok:'Undo'}));
     box.append(row);
@@ -4019,6 +4369,157 @@ async function openViewer(p,named){
 function closeViewer(){ viewing=null; $('viewer').hidden=true; $('vw-img').removeAttribute('src'); }
 $('vw-close').addEventListener('click',closeViewer);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('viewer').hidden&&$('cf-wrap').hidden) closeViewer(); });
+
+/* Forum: an imageboard in the style of the iOS 6 Notes app. Posts (title, optional text and picture) stay for 24 hours;
+   likes here are per post (not the profile likes); tapping a name opens the like / private message pop-up.
+   The Messages tab holds your private conversations, which never disappear. The admin sees every post, deletes, and mutes. */
+let fmPosts=[], fmComments=[], fmDMs=[], fmUnsubs=[], fmTab='feed', fmOpen=null, fmThread=null, fmPic=null;
+const fmTop=appTop($('s-forum'),'Forum');
+const fmPlus=navBtn('+',()=>openComposer()); fmPlus.classList.add('plus'); fmPlus.setAttribute('aria-label','New post'); fmTop.right.append(fmPlus);
+const fmPostTop=appTop($('fm-post'),'Post',{back:'Forum',onBack:()=>closeFmPost()});
+const fmNewTop=appTop($('fm-new'),'New Post',{back:'Cancel',onBack:()=>{ $('fm-new').hidden=true; }});
+const fmSend=navBtn('Post',()=>submitPost()); fmNewTop.right.append(fmSend);
+const fmDmTop=appTop($('fm-dm'),'Messages',{back:'Messages',onBack:()=>{ $('fm-dm').hidden=true; fmThread=null; }});
+const fmBlockBtn=navBtn('Block',()=>{ if(fmThread) toggleBlock(fmThread.code,fmThread.name); }); fmDmTop.right.append(fmBlockBtn);
+const fmAdmin=()=>homeMode==='admin';
+const fmVisible=p=>fmAdmin()||(Date.now()-p.ts<POST_HOURS*3600e3&&!blocked.has(p.code));
+const fmLook=p=>p.kind==='admin'?adminLook(p.tint):lookOf(p.code,p.shade,p.kind);
+function orbEl(p,tag='span'){ const o=mk(tag,'orb'); const l=fmLook(p); o.style.setProperty('--c',l.texture?`url("${l.texture}") center/cover, ${l.bg}`:l.bg); return o; }
+const ago=t=>{ const m=Math.round((Date.now()-t)/60e3); return m<1?'now':m<60?m+' min':m<1440?Math.floor(m/60)+' h':fmtDay(t); };
+function openForum(){
+  go('s-forum'); $('s-forum').classList.toggle('admin',fmAdmin()); fmPlus.hidden=fmAdmin();
+  ['fm-post','fm-new','fm-dm'].forEach(id=>$(id).hidden=true); setFmTab(fmAdmin()?'feed':fmTab);
+  if(!fmUnsubs.length){
+    fmUnsubs.push(api.watchPosts(fmAdmin(),l=>{ fmPosts=l; drawForum(); }), api.watchComments(fmAdmin(),l=>{ fmComments=l; drawForum(); if(fmOpen) drawFmComments(); }));
+    if(!fmAdmin()) fmUnsubs.push(api.watchUserDMs(me.code,l=>{ fmDMs=l.sort((a,b)=>a.ts-b.ts); drawInbox(); if(fmThread) drawThread(); }));
+  }
+  drawForum();
+}
+function stopForum(all){ if(!all) return; fmUnsubs.forEach(u=>u&&u()); fmUnsubs=[]; fmPosts=[]; fmComments=[]; fmDMs=[]; }
+setInterval(()=>{ if(current.id==='s-forum') drawForum(); },60e3); // posts fade out after 24 hours
+function setFmTab(t){ fmTab=t; document.querySelectorAll('.fm-tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===t)));
+  $('fm-feed').hidden=t!=='feed'; $('fm-inbox').hidden=t!=='inbox'; fmTop.right.hidden=t!=='feed';
+  $('s-forum').querySelector('.app-top .ios-title').textContent=t==='feed'?'Forum':'Messages'; if(t==='inbox') drawInbox(); }
+document.querySelectorAll('.fm-tabs button').forEach(b=>b.addEventListener('click',()=>setFmTab(b.dataset.t)));
+const HEART='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.5 1.1 5.3 3 1.8-1.9 3.2-3 5.3-3 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>';
+const BUBBLE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4C6.8 4 3 7.2 3 11c0 2.2 1.3 4.2 3.4 5.5-.2 1.2-.8 2.3-1.8 3.2 1.9 0 3.6-.7 4.8-1.9.8.2 1.7.3 2.6.3 5.2 0 9-3.2 9-7.1S17.2 4 12 4z"/></svg>';
+// tapping someone's orb or name: the like / private message pop-up from the chat
+function whoTap(el,p){ el.classList.add('who-tap'); el.addEventListener('click',e=>{ e.stopPropagation();
+  if(fmAdmin()) return openHistory(p.code,p.name); if(!me.code||p.code===me.code) return;
+  openPM({code:p.code,name:p.name,kind:p.kind||null,shade:Number.isFinite(p.shade)?p.shade:null,tint:p.tint||null},el.getBoundingClientRect()); }); }
+function postEl(p,full){
+  const el=mk('article','fm-post'), head=mk('div','fm-head'), orb=orbEl(p,'button'), nm=mk('button','fm-name',p.name);
+  orb.type=nm.type='button'; orb.setAttribute('aria-label',p.name); whoTap(orb,p); whoTap(nm,p);
+  head.append(orb,nm,mk('span','fm-time',ago(p.ts)));
+  if(fmAdmin()){ if(Date.now()-p.ts>POST_HOURS*3600e3) head.append(mk('span','fm-tag','Gone for users')); if(mutedSet.has(p.code)) head.append(mk('span','fm-tag','Muted')); }
+  el.append(head,mk('div','fm-title',p.title));
+  if(p.image){ const im=mk('img','fm-img'); im.src=p.image; im.alt=p.title; im.loading='lazy'; el.append(im); }
+  if(p.text) el.append(mk('p','fm-text',p.text));
+  const foot=mk('div','fm-foot'), liked=!!me.code&&(p.likedBy||[]).includes(me.code), n=(p.likedBy||[]).length;
+  const lb=mk('button','fm-act'+(liked?' liked':'')); lb.type='button'; lb.innerHTML=HEART; lb.append(String(n)); lb.setAttribute('aria-label',(liked?'Unlike':'Like')+` · ${n}`);
+  lb.addEventListener('click',async e=>{ e.stopPropagation(); if(fmAdmin()||!me.code) return;
+    try{ await api.likePost(p.id,me.code,!liked); }catch(err){ fail('save the like')(err); } });
+  const cn=fmComments.filter(c=>c.post===p.id&&!blocked.has(c.code)).length, cb=mk('button','fm-act'); cb.type='button'; cb.innerHTML=BUBBLE; cb.append(String(cn));
+  cb.setAttribute('aria-label',`${cn} comment${cn===1?'':'s'}`); foot.append(lb,cb);
+  if(fmAdmin()||p.code===me.code){ const d=mk('button','mini-btn red','Delete'); d.type='button'; d.style.marginLeft='auto';
+    d.addEventListener('click',async e=>{ e.stopPropagation(); if(!await confirmBox('Delete this post?',`“${p.title}” and its comments are removed for everyone.`,'Delete')) return;
+      try{ await api.deletePost(p.id); if(fmOpen===p.id) closeFmPost(); toast('Post deleted.'); }catch(err){ fail('delete the post')(err); } }); foot.append(d); }
+  if(fmAdmin()&&p.code!==ADMIN_ID){ const mb=mk('button','mini-btn grey',mutedSet.has(p.code)?'Unmute':'Mute'); mb.type='button'; if(!(fmAdmin()||p.code===me.code)) mb.style.marginLeft='auto';
+    mb.addEventListener('click',e=>{ e.stopPropagation(); toggleMute(p.code,p.name); }); foot.append(mb); }
+  el.append(foot);
+  if(!full) el.addEventListener('click',()=>openFmPost(p.id));
+  return el;
+}
+function drawForum(){
+  if(current.id!=='s-forum') return;
+  const list=fmPosts.filter(fmVisible), box=$('fm-list'); box.replaceChildren(...list.map(p=>postEl(p,false)));
+  const e=$('fm-empty'); e.hidden=list.length>0; e.textContent=fmAdmin()?'No one has posted yet.':'Nothing here yet. Tap + to post something. Posts stay for 24 hours.';
+  if(fmOpen){ const p=fmPosts.find(x=>x.id===fmOpen); if(p&&fmVisible(p)) $('fm-post-body').replaceChildren(postEl(p,true)); else closeFmPost(); }
+  $('f-comment').hidden=fmAdmin(); fmBlockBtn.textContent=fmThread&&blocked.has(fmThread.code)?'Unblock':'Block';
+  drawInbox();
+}
+// one post with its comments
+function openFmPost(id){ fmOpen=id; const p=fmPosts.find(x=>x.id===id); if(!p) return;
+  $('fm-post').hidden=false; $('fm-post').querySelector('.ios-title').textContent=p.title; $('fm-post-body').replaceChildren(postEl(p,true)); drawFmComments(); $('fm-c-in').value=''; }
+function closeFmPost(){ fmOpen=null; $('fm-post').hidden=true; }
+function drawFmComments(){
+  const box=$('fm-comments'); box.replaceChildren();
+  const list=fmComments.filter(c=>c.post===fmOpen&&(fmAdmin()||!blocked.has(c.code)));
+  if(!list.length) box.append(mk('p','fm-text',fmAdmin()?'No comments.':'No comments yet.'));
+  list.forEach(c=>{ const el=mk('div','fm-c'), head=mk('div','fm-head'), orb=orbEl(c,'button'), nm=mk('button','fm-name',c.name); orb.type=nm.type='button';
+    whoTap(orb,c); whoTap(nm,c); head.append(orb,nm,mk('span','fm-time',ago(c.ts)));
+    if(fmAdmin()||c.code===me.code){ const d=mk('button','mini-btn red del','Delete'); d.type='button';
+      d.addEventListener('click',async()=>{ if(!await confirmBox('Delete this comment?','It’s removed for everyone.','Delete')) return; try{ await api.deleteComment(c.id); }catch(err){ fail('delete the comment')(err); } }); head.append(d); }
+    el.append(head,mk('p',null,c.text)); box.append(el); });
+}
+$('f-comment').addEventListener('submit',async e=>{
+  e.preventDefault(); const text=$('fm-c-in').value.trim(); if(!text||!fmOpen) return;
+  if(mutedSet.has(me.code)) return toast('You are muted in the forum.');
+  try{ await api.addComment({post:fmOpen,code:me.code,name:me.username,...(me.kind==='rare'?{}:{shade:me.shade}),...(me.kind==='blue'||me.kind==='rare'?{kind:me.kind}:{}),text});
+    $('fm-c-in').value=''; const sc=$('fm-post').querySelector('.app-body'); setTimeout(()=>sc.scrollTop=sc.scrollHeight,200); }
+  catch(err){ console.error(err); toast('Comment not posted. Try again.'); }
+});
+// a new post
+function openComposer(){
+  if(mutedSet.has(me.code)) return toast('You are muted in the forum.');
+  $('fm-title').value=''; $('fm-text').value=''; fmPic=null; $('fm-pic').hidden=true; $('fm-rmpic').hidden=true; $('fm-count').textContent='0 / 128';
+  $('fm-new').hidden=false; setTimeout(()=>$('fm-title').focus(),350);
+}
+$('fm-text').addEventListener('input',()=>$('fm-count').textContent=`${$('fm-text').value.length} / 128`);
+$('fm-addpic').addEventListener('click',()=>$('fm-file').click());
+$('fm-rmpic').addEventListener('click',()=>{ fmPic=null; $('fm-pic').hidden=true; $('fm-rmpic').hidden=true; });
+$('fm-file').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const img=await createImageBitmap(f); let url=null;
+    for(const max of [1000,800,640,480]){ const k=Math.min(1,max/Math.max(img.width,img.height)), c=document.createElement('canvas');
+      c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      url=c.toDataURL('image/jpeg',.8); if(url.length<250000) break; }
+    fmPic=url; $('fm-pic').src=url; $('fm-pic').hidden=false; $('fm-rmpic').hidden=false; }
+  catch(err){ console.error(err); toast("Couldn't read that picture."); }
+});
+async function submitPost(){
+  const title=$('fm-title').value.trim(), text=$('fm-text').value.trim();
+  if(!title){ toast('Give your post a title.'); return $('fm-title').focus(); }
+  fmSend.disabled=true;
+  try{ await api.addPost({code:me.code,name:me.username,title:title.slice(0,18),...(text?{text:text.slice(0,128)}:{}),...(fmPic?{image:fmPic}:{}),
+      ...(me.kind==='rare'?{}:{shade:me.shade}),...(me.kind==='blue'||me.kind==='rare'?{kind:me.kind}:{})});
+    $('fm-new').hidden=true; setFmTab('feed'); $('fm-feed').scrollTop=0; toast('Posted. It stays up for 24 hours.'); }
+  catch(err){ console.error(err); toast(mutedSet.has(me.code)?'You are muted in the forum.':'Post not sent. Try again.'); }
+  finally{ fmSend.disabled=false; }
+}
+// Messages: your private conversations
+const readKey=()=>'playlist-dm-read-'+me.code;
+function readMap(){ try{ return JSON.parse(store.get(readKey())||'{}'); }catch{ return {}; } }
+function convs(){
+  const by=new Map();
+  fmDMs.forEach(d=>{ const other=d.from===me.code?d.to:d.from, name=d.from===me.code?d.toName:d.fromName;
+    const c=by.get(other)||{code:other,name,msgs:[]}; c.name=name; c.msgs.push(d); by.set(other,c); });
+  return [...by.values()].sort((a,b)=>b.msgs[b.msgs.length-1].ts-a.msgs[a.msgs.length-1].ts);
+}
+function drawInbox(){
+  if(fmAdmin()) return; const list=convs(), read=readMap(), box=$('fm-convs'); box.replaceChildren(); let unread=0;
+  list.forEach(c=>{ const last=c.msgs[c.msgs.length-1], un=c.msgs.filter(m=>m.to===me.code&&m.ts>(read[c.code]||0)).length; if(!blocked.has(c.code)) unread+=un;
+    const row=mk('div','fm-conv'), g=mk('div','grow'); g.append(mk('b',null,c.name+(blocked.has(c.code)?' (blocked)':'')));
+    g.append(mk('small',null,(last.from===me.code?'You: ':'')+last.text)); row.append(g,mk('span','fm-time',ago(last.ts)));
+    if(un&&!blocked.has(c.code)){ const n=mk('span','fm-tag',String(un)); n.style.background='#e0141a'; row.append(n); }
+    row.append(mk('span','chev','›')); row.addEventListener('click',()=>openThread(c.code,c.name)); box.append(row); });
+  $('fm-convs-empty').hidden=list.length>0; const b=$('fm-unread'); b.hidden=!unread; b.textContent=unread;
+}
+function openThread(code,name){ fmThread={code,name}; $('fm-dm').hidden=false; $('fm-dm').querySelector('.ios-title').textContent=name; drawThread();
+  const sc=$('fm-dm').querySelector('.app-body'); sc.scrollTop=sc.scrollHeight; }
+function drawThread(){
+  if(!fmThread) return; const box=$('fm-thread'), msgs=fmDMs.filter(d=>d.from===fmThread.code||d.to===fmThread.code);
+  box.replaceChildren(...msgs.map(d=>{ const b=mk('div','fm-dm'+(d.from===me.code?' mine':''),d.text); b.append(mk('small',null,fmtDay(d.ts))); return b; }));
+  const isB=blocked.has(fmThread.code); $('fm-dm-blocked').hidden=!isB; $('fm-dm-blocked').textContent=`You blocked ${fmThread.name}. They can’t message you.`;
+  fmBlockBtn.textContent=isB?'Unblock':'Block'; $('f-fmdm').hidden=isB;
+  const r=readMap(); r[fmThread.code]=Date.now(); store.set(readKey(),JSON.stringify(r)); drawInbox();
+  const sc=$('fm-dm').querySelector('.app-body'); if(sc.scrollHeight-sc.scrollTop-sc.clientHeight<120) sc.scrollTop=sc.scrollHeight;
+}
+$('f-fmdm').addEventListener('submit',async e=>{
+  e.preventDefault(); const text=$('fm-dm-in').value.trim(); if(!text||!fmThread) return;
+  try{ await api.sendDM({from:me.code,fromName:me.username,to:fmThread.code,toName:fmThread.name,text}); $('fm-dm-in').value=''; }
+  catch(err){ console.error(err); toast(`Not sent. ${fmThread.name} may have blocked you, or the connection dropped.`); }
+});
 
 /* ---------- resume session ---------- */
 const saved=keep.get('playlist-code');
