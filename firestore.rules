@@ -282,10 +282,18 @@ service cloud.firestore {
         && request.resource.data.ts == request.time;
     }
 
-    // the store: a member orders (pending), pays with MobilePay, and the admin marks it paid.
-    // Prices are fixed here, so nobody can order something cheaper.
+    // the store. Real money: a member orders (pending), pays with MobilePay, and the admin marks it paid.
+    // Likes: paid at once from the member's likes (the wallet's "spent" goes up by the price in the same write).
+    // Prices come from site/prices (the admin sets them); these defaults apply until then.
+    function pricesPath() { return /databases/$(database)/documents/site/prices; }
+    function priceOf(item, def) { return exists(pricesPath()) ? get(pricesPath()).data.get(item, def) : def; }
+    function walletPath(c) { return /databases/$(database)/documents/wallets/$(c); }
     function okPrice(d) {
-      return (d.item == 'bubble' && d.price == 20) || (d.item == 'tshirt' && d.price == 200) || (d.item == 'screen' && d.price == 50);
+      return (d.item == 'tshirt' && d.price == priceOf('tshirt', 200)) || (d.item == 'screen' && d.price == priceOf('screen', 50));
+    }
+    function okLikePrice(d) {
+      return (d.item == 'bubble' && d.price == priceOf('bubble', 5)) || (d.item == 'avatar' && d.price == priceOf('avatar', 3))
+        || (d.item == 'background' && d.price == priceOf('background', 5));
     }
     function okMsg(m) {
       return m.keys().hasOnly(['text','weight','tint','size'])
@@ -295,14 +303,18 @@ service cloud.firestore {
     match /orders/{id} {
       allow read: if isAdmin() || (isMember() && resource.data.code == myCode());
       allow create: if isMember() && request.resource.data.code == myCode()
-        && request.resource.data.keys().hasOnly(['code','name','item','price','ref','status','ts','size','msg'])
         && request.resource.data.name == get(codePath(myCode())).data.username
-        && okPrice(request.resource.data)
-        && request.resource.data.status == 'pending'
         && request.resource.data.ref is string && request.resource.data.ref.size() <= 12
         && request.resource.data.ts == request.time
-        && (request.resource.data.item != 'tshirt' || request.resource.data.get('size', '') in ['XS', 'S', 'M', 'L', 'XL', 'XXL'])
-        && (request.resource.data.item != 'screen' || okMsg(request.resource.data.get('msg', {})));
+        && ((request.resource.data.keys().hasOnly(['code','name','item','price','ref','status','ts','size','msg'])
+            && okPrice(request.resource.data)
+            && request.resource.data.status == 'pending'
+            && (request.resource.data.item != 'tshirt' || request.resource.data.get('size', '') in ['XS', 'S', 'M', 'L', 'XL', 'XXL'])
+            && (request.resource.data.item != 'screen' || okMsg(request.resource.data.get('msg', {}))))
+          || (request.resource.data.keys().hasOnly(['code','name','item','price','ref','status','ts','currency'])
+            && request.resource.data.currency == 'likes' && request.resource.data.status == 'paid'
+            && okLikePrice(request.resource.data)
+            && getAfter(walletPath(myCode())).data.get('last', null) == id));
       allow update: if isAdmin()
         || (isMember() && resource.data.code == myCode()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
@@ -310,6 +322,45 @@ service cloud.firestore {
             || (resource.data.item == 'bubble' && resource.data.status == 'paid' && request.resource.data.status == 'used'
               && getAfter(stylePath(myCode())).data.get('order', null) == id)));
       allow delete: if isAdmin();
+    }
+
+    // likes to spend = likes received + bonus (the admin gives or takes) - spent (the store)
+    match /wallets/{code} {
+      allow read: if isAdmin() || (isMember() && myCode() == code);
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['bonus','spent','last'])
+        && request.resource.data.get('bonus', 0) is int && request.resource.data.get('spent', 0) is int;
+      // a member only ever adds the price of the order they create in the same write
+      allow create, update: if isMember() && myCode() == code
+        && request.resource.data.keys().hasOnly(['bonus','spent','last'])
+        && request.resource.data.get('bonus', 0) == (resource == null ? 0 : resource.data.get('bonus', 0))
+        && request.resource.data.last is string
+        && !exists(orderPath(request.resource.data.last))
+        && getAfter(orderPath(request.resource.data.last)).data.code == code
+        && getAfter(orderPath(request.resource.data.last)).data.currency == 'likes'
+        && request.resource.data.spent == (resource == null ? 0 : resource.data.get('spent', 0)) + getAfter(orderPath(request.resource.data.last)).data.price;
+    }
+    // profile pictures (everyone logged in sees them) and personal backgrounds (only the owner), bought with likes
+    function boughtWith(code, item, d) {
+      return isMember() && myCode() == code && d.order is string
+        && !exists(orderPath(d.order))
+        && getAfter(orderPath(d.order)).data.code == code && getAfter(orderPath(d.order)).data.item == item;
+    }
+    match /avatars/{code} {
+      allow read: if isMember() || isAdmin();
+      allow create, update: if boughtWith(code, 'avatar', request.resource.data)
+        && request.resource.data.keys().hasOnly(['image','order','ts'])
+        && request.resource.data.image is string && request.resource.data.image.size() < 80000
+        && request.resource.data.ts == request.time;
+      allow delete: if isAdmin() || (isMember() && myCode() == code);
+    }
+    match /backgrounds/{code} {
+      allow read: if isAdmin() || (isMember() && myCode() == code);
+      allow create, update: if boughtWith(code, 'background', request.resource.data)
+        && request.resource.data.keys().hasOnly(['image','order','ts'])
+        && request.resource.data.image is string && request.resource.data.image.size() < 900000
+        && request.resource.data.ts == request.time;
+      allow delete: if isAdmin() || (isMember() && myCode() == code);
     }
 
     // T-shirt tickets (made by the admin when a T-shirt is paid), scanned once at the merch stand
@@ -405,6 +456,12 @@ service cloud.firestore {
           || (doc == 'countdown'
             && request.resource.data.keys().hasOnly(['target','ts'])
             && request.resource.data.target is timestamp)
+          || (doc == 'prices'
+            && request.resource.data.keys().hasOnly(['bubble','avatar','background','tshirt','screen','ts']))
+          || (doc == 'wallpaper'
+            && request.resource.data.keys().hasOnly(['image','phone','desktop','ts'])
+            && (request.resource.data.get('image', null) == null
+              || (request.resource.data.image is string && request.resource.data.image.size() < 950000)))
           || (doc == 'features'
             && request.resource.data.keys().hasOnly(['mystery','ts'])
             && request.resource.data.get('mystery', false) is bool)
