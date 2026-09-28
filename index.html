@@ -2205,6 +2205,32 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 </div>
 <div class="toast glass pill" id="toast" hidden></div>
 
+<script>
+/* Runs before the database connects. The lock screen clock ticks and the reload button works straight away,
+   even if the rest of Playlist is slow or stuck (it happened in some phone and in-app browsers). */
+(function(){
+  var T=+(function(){ try{ return localStorage.getItem('playlist-countdown'); }catch(e){ return 0; } })()||Date.parse('2026-10-31T20:00:00+01:00');
+  function p(n){ return (n<10?'0':'')+n; }
+  function tick(){
+    if(window.__playlistReady) return;
+    var el=document.getElementById('lk-clock'); if(!el) return;
+    var s=Math.max(0,Math.floor((T-Date.now())/1000));
+    el.textContent=p(Math.floor(s/86400))+':'+p(Math.floor(s%86400/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60);
+  }
+  tick(); var iv=setInterval(function(){ if(window.__playlistReady) return clearInterval(iv); tick(); },1000);
+  // still not connected after 10 seconds: say so, and point to the reload button
+  setTimeout(function(){ if(window.__playlistReady) return; var n=document.getElementById('n-code');
+    if(n){ n.className='note'; n.textContent='Still connecting… If nothing happens, tap ↻ at the top right.'; } },10000);
+  // the reload button, before the rest has loaded: forget this phone's Playlist data and start fresh
+  document.addEventListener('click',function(e){
+    if(window.__playlistReady||!e.target.closest||!e.target.closest('#lk-reload')) return;
+    try{ [localStorage,sessionStorage].forEach(function(st){ Object.keys(st).forEach(function(k){ if(k.indexOf('playlist')===0) st.removeItem(k); }); }); }catch(err){}
+    try{ indexedDB.deleteDatabase('firebaseLocalStorageDb'); }catch(err){}
+    try{ navigator.serviceWorker&&navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); }); }catch(err){}
+    setTimeout(function(){ location.replace(location.pathname+'?r='+Date.now().toString(36)+(location.search.indexOf('demo')>=0?'&demo':'')); },150);
+  },true);
+})();
+</script>
 <script type="module">
 /* ============ SETTINGS — edit these ============ */
 const FIREBASE_CONFIG = { // public web config for the "Playlist Lobby" Firebase project (safe to publish; access is controlled by the security rules)
@@ -2362,12 +2388,16 @@ async function firebaseApi(cfg){
   const V="10.12.2";
   const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
   const fs = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
-  const app = initializeApp(cfg), db = fs.getFirestore(app);
+  let app = initializeApp(cfg), db = fs.getFirestore(app);
   // every visitor gets an invisible anonymous login; the security rules tie it to the code they enter
   const A = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
-  const auth = A.getAuth(app);
-  await new Promise(r=>{ const u=A.onAuthStateChanged(auth,()=>{ u(); r(); }); });
-  if(!auth.currentUser) await A.signInAnonymously(auth);
+  let auth = A.getAuth(app);
+  const within=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(()=>r('timeout'),ms))]);
+  const ready = await within(new Promise(r=>{ const u=A.onAuthStateChanged(auth,()=>{ u(); r('ok'); }); }),6000);
+  // some phones (and in-app browsers) get stuck opening the stored login: start a fresh one kept in memory only
+  if(ready==='timeout'){ console.warn('Stored login is stuck; using a fresh one');
+    app=initializeApp(cfg,'fresh'+Date.now()); db=fs.getFirestore(app); auth=A.initializeAuth(app,{persistence:A.inMemoryPersistence}); }
+  if(!auth.currentUser && await within(A.signInAnonymously(auth),12000)==='timeout') throw new Error('sign-in timed out');
   const uid = ()=>auth.currentUser.uid;
   const msgOut = d=>{const m=d.data();return {id:d.id,...m,ts:m.ts?m.ts.toMillis():Date.now()}};
   const lost = e=>{console.error(e);toast("Connection lost. Reload the page.");};
@@ -2854,7 +2884,8 @@ function localApi(){
 
 let api;
 try{ api = FIREBASE_CONFIG && !DEMO ? await firebaseApi(FIREBASE_CONFIG) : localApi(); }
-catch(e){ console.error(e); api = localApi(); toast("Couldn't reach the server. Running in demo mode."); }
+catch(e){ console.error(e); api = localApi(); window.__playlistOffline=true; }
+window.__playlistReady=true; // the early script (clock, reload button) hands over to this one
 
 /* ---------- navigation ---------- */
 let current=$('s-code');
@@ -3200,6 +3231,7 @@ $('lk-reload').addEventListener('click',async()=>{
   if(!await confirmBox('Reload Playlist?','This forgets your login on this phone and starts fresh. Use it if the page seems stuck.','Reload')) return;
   try{ for(const st of [localStorage,sessionStorage]) Object.keys(st).filter(k=>k.startsWith('playlist')).forEach(k=>st.removeItem(k)); }catch{}
   try{ indexedDB.deleteDatabase('firebaseLocalStorageDb'); }catch{}
+  try{ (await navigator.serviceWorker?.getRegistrations()||[]).forEach(r=>r.unregister()); }catch{}
   const q=new URLSearchParams(location.search); q.set('r',Date.now().toString(36));
   location.replace(location.pathname+'?'+q.toString());
 });
@@ -3292,6 +3324,7 @@ async function toggleBlock(code,name){
 $('f-code').addEventListener('submit',async e=>{
   e.preventDefault();
   const code=$('code').value.trim(); const note=$('n-code');
+  if(window.__playlistOffline){ note.className='note err'; note.textContent='No connection to Playlist. Tap ↻ at the top right to try again.'; return shake($('f-code')); }
   if(!code) return shake($('f-code'));
   note.className='note'; note.textContent='Checking…';
   try{
@@ -3641,7 +3674,7 @@ let countdownTarget=new Date(COUNTDOWN_TARGET).getTime();
 const secondsLeft=()=>Math.max(0,Math.floor((countdownTarget-Date.now())/1000));
 const toLocalInput=ms=>{ const d=new Date(ms), p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
 api.watchCountdown(ms=>{
-  if(Number.isFinite(ms)) countdownTarget=ms;
+  if(Number.isFinite(ms)){ countdownTarget=ms; store.set('playlist-countdown',String(ms)); } // the early clock uses it next time
   if(current.id==='chat') startCountdown();
   if(document.activeElement!==$('cd-date')) $('cd-date').value=toLocalInput(countdownTarget);
 });
