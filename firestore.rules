@@ -5,6 +5,8 @@ rules_version = '2';
 //   post as themselves, and read only their own private messages.
 // - Admin: logging in writes adminSessions/{uid} with the password; it must equal config/admin.key,
 //   which nobody can read (change it in the Firebase console). A session lasts 12 hours.
+// - Door staff: the same, with doorSessions/{uid} and config/door (the admin sets that password in the panel).
+//   Door staff can only look up tickets and check people in.
 // Paste into Firebase console → Firestore Database → Rules → Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -18,6 +20,16 @@ service cloud.firestore {
       return signedIn() && exists(sessionPath())
         && get(sessionPath()).data.ts > request.time - duration.value(12, 'h');
     }
+    function doorPath() { return /databases/$(database)/documents/doorSessions/$(request.auth.uid); }
+    function isDoor() {
+      return signedIn() && exists(doorPath())
+        && get(doorPath()).data.ts > request.time - duration.value(12, 'h');
+    }
+    function canDoor() { return isAdmin() || isDoor(); }
+    function ticketPath(t) { return /databases/$(database)/documents/tickets/$(t); }
+    function isToken(v) { return v is string && v.matches('^[A-Z2-9]{12}$'); }
+    // the ticket token saved on the member's own code
+    function ownsTicket(t) { return isMember() && get(codePath(myCode())).data.get('ticket', null) == t; }
     function isHex(v) { return v is string && v.matches('^#[0-9A-Fa-f]{6}$'); }
     // profile colour: 0 = whitish … 100 = vibrant
     function okShade(d) { return !('shade' in d) || (d.shade is number && d.shade >= 0 && d.shade <= 100); }
@@ -33,11 +45,23 @@ service cloud.firestore {
     }
 
     // the admin password (create once; after that only the Firebase console can change it)
+    // and the door password (set and changed by the admin). Nobody can read either.
+    function okKey(d) { return d.keys().hasOnly(['key']) && d.key is string && d.key.size() >= 4 && d.key.size() <= 64; }
     match /config/{doc} {
       allow read: if false;
-      allow create: if doc == 'admin' && request.resource.data.keys().hasOnly(['key'])
-        && request.resource.data.key is string && request.resource.data.key.size() >= 4;
-      allow update, delete: if false;
+      allow create: if (doc == 'admin' && okKey(request.resource.data))
+        || (doc == 'door' && isAdmin() && okKey(request.resource.data));
+      allow update: if doc == 'door' && isAdmin() && okKey(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /doorSessions/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['key','ts'])
+        && request.resource.data.ts == request.time
+        && request.resource.data.key == get(/databases/$(database)/documents/config/door).data.key;
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
 
     match /adminSessions/{uid} {
@@ -74,7 +98,13 @@ service cloud.firestore {
           || (isMember() && myCode() == code
             && (resource.data.username == null || request.resource.data.username == resource.data.username)
             && request.resource.data.get('tint', null) == resource.data.get('tint', null)))
-        && request.resource.data.keys().hasOnly(['username','claimedAt','shade','kind','tint'])
+        && request.resource.data.keys().hasOnly(['username','claimedAt','shade','kind','tint','ticket'])
+        // the entry ticket: a member sets it once; the admin may issue or clear it
+        && (request.resource.data.get('ticket', null) == resource.data.get('ticket', null)
+          || (isAdmin() && (request.resource.data.get('ticket', null) == null || isToken(request.resource.data.ticket)))
+          || (isMember() && myCode() == code && resource.data.get('ticket', null) == null
+            && isToken(request.resource.data.get('ticket', null))
+            && existsAfter(ticketPath(request.resource.data.ticket))))
         && okKind(request.resource.data, code)
         && (request.resource.data.get('kind', 'green') == resource.data.get('kind', 'green')
           || (isAdmin() && resource.data.username == null && request.resource.data.username == null))
@@ -164,6 +194,59 @@ service cloud.firestore {
         && request.resource.data.ts == request.time;
       allow update: if false;
       allow delete: if isAdmin() || (isMember() && resource.data.from == myCode());
+    }
+
+    // entry tickets: the id is a random token (never the login code), shown as a QR on the member's phone.
+    // The doc holds only the name and colour, so door staff never see login codes.
+    match /tickets/{t} {
+      allow get: if canDoor() || ownsTicket(t);
+      allow list: if isAdmin();
+      allow create, update: if request.resource.data.keys().hasOnly(['name','shade','kind','ts'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 20
+        && okShade(request.resource.data)
+        && (!('kind' in request.resource.data) || request.resource.data.kind in ['blue', 'rare'])
+        && request.resource.data.ts == request.time
+        && (isAdmin()
+          || (isMember() && getAfter(codePath(myCode())).data.get('ticket', null) == t
+            && request.resource.data.name == get(codePath(myCode())).data.username));
+      allow delete: if isAdmin();
+    }
+
+    // check-ins at the door: one per ticket, never changed; only the admin can undo one
+    match /checkins/{t} {
+      allow get: if canDoor() || ownsTicket(t);
+      allow list: if canDoor();
+      allow create: if canDoor() && exists(ticketPath(t))
+        && request.resource.data.keys().hasOnly(['ts','by','name'])
+        && request.resource.data.ts == request.time
+        && request.resource.data.by in ['door', 'admin']
+        && request.resource.data.name == get(ticketPath(t)).data.name;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // photos from the Camera app: a small preview (photos) and the full picture (photoData), saved together.
+    // Only the person who took it and the admin can see them.
+    match /photos/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.code == myCode());
+      allow create: if isMember() && request.resource.data.code == myCode()
+        && request.resource.data.keys().hasOnly(['code','username','thumb','w','h','ts'])
+        && request.resource.data.username == get(codePath(myCode())).data.username
+        && request.resource.data.thumb is string && request.resource.data.thumb.size() < 60000
+        && request.resource.data.w is number && request.resource.data.h is number
+        && request.resource.data.ts == request.time
+        && existsAfter(/databases/$(database)/documents/photoData/$(id));
+      allow update: if false;
+      allow delete: if isAdmin() || (isMember() && resource.data.code == myCode());
+    }
+    match /photoData/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.code == myCode());
+      allow create: if isMember() && request.resource.data.code == myCode()
+        && request.resource.data.keys().hasOnly(['code','image'])
+        && request.resource.data.image is string && request.resource.data.image.size() < 1000000
+        && existsAfter(/databases/$(database)/documents/photos/$(id));
+      allow update: if false;
+      allow delete: if isAdmin() || (isMember() && resource.data.code == myCode());
     }
 
     // public site settings: up to three texts on everyone's screen, and the countdown target

@@ -666,6 +666,7 @@ body.user-ios6 #rare-note span{color:#111;font-weight:700}
 .seg{display:flex;gap:2px;padding:3px;height:36px;flex:none}
 .seg button{padding:0 12px;border-radius:999px;font-size:13px;font-weight:500;color:var(--muted);transition:color .25s}
 .a-row .seg + .a-btn{margin-left:auto}
+.a-row:has(> #a-filter){flex-wrap:wrap;row-gap:8px} /* five filters + copy button: wrap on phones */
 .a-empty{text-align:center;padding:12px 0}
 .acct{display:flex;align-items:center;gap:12px;padding:12px 14px;flex-wrap:wrap}
 .acct.glass.fresh{box-shadow:0 0 0 2px rgba(52,199,89,.55),0 8px 18px -4px rgba(0,0,0,.14)}
@@ -706,6 +707,7 @@ body.user-ios6 #rare-note span{color:#111;font-weight:700}
 }
 .amsg-meta .grow{flex:1;min-width:0}
 .tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;background:rgba(0,0,0,.07);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.in-tag{margin-left:6px;background:rgba(52,199,89,.18);color:#1d7a36} /* checked in at the door */
 .amsg-text{white-space:pre-wrap;overflow-wrap:anywhere}
 .dot{transition:background .3s}
 .amsg-meta{flex-wrap:wrap}
@@ -728,6 +730,192 @@ body.user-ios6 #rare-note span{color:#111;font-weight:700}
   .glass:hover::after{opacity:0}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ===================== APPS: Settings, Ticket, Camera (members) · Door, Photos (admin / door staff) =====================
+   iOS 6 layouts with a modern, glassy finish. Each app is a .screen.app; its status bar + nav bar are added by appTop(). */
+.app{padding:0;justify-content:flex-start;align-items:stretch}
+.app.out{transform:scale(.94)}
+body[data-screen=s-settings] .bg,body[data-screen=s-ticket] .bg,body[data-screen=s-camera] .bg,body[data-screen=s-door] .bg,body[data-screen=s-photos] .bg{opacity:0}
+body[data-screen=s-settings] .overlay,body[data-screen=s-ticket] .overlay,body[data-screen=s-camera] .overlay,body[data-screen=s-door] .overlay,body[data-screen=s-photos] .overlay{opacity:0}
+.app-top{position:absolute;z-index:4;top:0;left:0;right:0}
+.app-top .sb-status{position:relative;background:linear-gradient(rgba(58,78,106,.92),rgba(70,92,122,.9))}
+.app-top .ios-back{width:auto;min-width:62px;padding:0 10px 0 16px}
+.app-body{position:absolute;top:calc(64px + env(safe-area-inset-top));left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:20px 0 calc(30px + env(safe-area-inset-bottom))}
+.app-body.flush{padding:0 0 env(safe-area-inset-bottom)}
+.app-col{width:min(440px,calc(100% - 20px));margin:0 auto}
+
+/* Settings: the iOS 6 grouped table on pinstripes */
+body[data-screen=s-settings]{background:radial-gradient(120% 50% at 50% 0%,rgba(255,255,255,.55),rgba(255,255,255,0) 70%),
+  repeating-linear-gradient(90deg,#cfd5dc 0 5px,#d7dce2 5px 9px)}
+.grp-head{display:flex;align-items:center;gap:14px;padding:2px 10px 20px}
+.avatar{width:64px;height:64px;flex:none;border-radius:50%;display:grid;place-items:center;font:700 28px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:#8E8E93 center/cover;box-shadow:inset 0 0 0 .6px rgba(0,0,0,.25),inset 0 2px 2px rgba(255,255,255,.55),0 5px 12px -3px rgba(20,35,60,.35)}
+.grp-name{font:700 22px/27px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#2b3440;text-shadow:0 1px 0 rgba(255,255,255,.85);overflow-wrap:anywhere}
+.grp-sub{font:400 14px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#4c566a;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.grp{background:#fff;border-radius:10px;margin:0 0 20px;overflow:hidden;
+  box-shadow:0 0 0 .6px rgba(0,0,0,.3),0 1px 0 rgba(255,255,255,.8),0 6px 14px -8px rgba(20,35,60,.3)}
+.cell{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;padding:0 14px;font:700 17px/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;color:#000}
+.cell + .cell{border-top:1px solid #e1e1e1}
+.cell .val{font-weight:400;color:#385487;display:flex;align-items:center;gap:8px;text-align:right;min-width:0;overflow-wrap:anywhere}
+.cell .set-dot{width:16px;height:16px;border-radius:50%;flex:none;background-size:cover;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.25),inset 0 2px 2px rgba(255,255,255,.55)}
+.cell.btn{justify-content:center;color:#c9151b;cursor:pointer;width:100%;background:none}
+.cell.btn:active{background:linear-gradient(#058cf5,#015ee6);color:#fff}
+.grp-foot{font:400 14px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#4c566a;text-align:center;text-shadow:0 1px 0 rgba(255,255,255,.8);margin:-8px 16px 22px}
+
+/* Ticket: a Passbook pass on dark linen */
+body[data-screen=s-ticket]{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),radial-gradient(130% 70% at 50% 0%,#50555d 0%,#33363b 55%,#232528 100%)}
+.pass{--p-bg:#34C759;--p-ink:#fff;position:relative;width:min(340px,calc(100% - 32px));margin:4px auto 0;border-radius:14px;overflow:hidden;color:var(--p-ink);
+  background:linear-gradient(180deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,.06) 38%,rgba(0,0,0,.06) 100%),var(--p-tex,none) center/cover,var(--p-bg);
+  box-shadow:0 0 0 .6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.55),0 22px 44px -14px rgba(0,0,0,.75),0 4px 10px rgba(0,0,0,.35);
+  animation:passin .85s cubic-bezier(.2,.9,.25,1.04) both}
+@keyframes passin{from{transform:translateY(70vh);opacity:.5}}
+/* a slow light sweep and a ticking clock: a screenshot of the pass looks frozen */
+.pass::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(112deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.34) 50%,rgba(255,255,255,0) 62%);background-size:260% 100%;
+  animation:passshine 5s ease-in-out infinite}
+@keyframes passshine{from{background-position:130% 0}to{background-position:-30% 0}}
+.pass-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 18px 0}
+.pass-logo{display:flex;align-items:center;gap:8px;font:800 19px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.16em;padding-top:4px}
+.pass-logo svg{width:20px;height:20px}
+.pf{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pf small{font:700 10px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;opacity:.72}
+.pf b{font:500 17px/1.15 "Helvetica Neue",Helvetica,Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf.big b{font:300 30px/1.12 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:-.01em}
+.pf.r{text-align:right;align-items:flex-end}
+.pass-cut{position:relative;height:20px;margin-top:14px}
+.pass-cut::before,.pass-cut::after{content:"";position:absolute;top:0;width:20px;height:20px;border-radius:50%;background:#2c2f33;box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
+.pass-cut::before{left:-10px}.pass-cut::after{right:-10px}
+.pass-cut i{position:absolute;left:16px;right:16px;top:9px;border-top:1.5px dashed currentColor;opacity:.35}
+.pass-qr{position:relative;margin:4px 18px 0;background:#fff;border-radius:10px;padding:14px 14px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  box-shadow:inset 0 0 0 .6px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.15)}
+.pass-qr canvas{width:min(210px,58vw);aspect-ratio:1;height:auto;display:block;image-rendering:pixelated;transition:opacity .5s}
+.pass-no{font:600 15px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.14em;color:#26292e;font-variant-numeric:tabular-nums}
+.pass-live{display:flex;justify-content:center;align-items:center;gap:7px;padding:12px 16px 15px;font:600 13px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums;opacity:.9}
+.pass-live i{width:7px;height:7px;border-radius:50%;background:currentColor;animation:livepulse 1.2s ease-in-out infinite}
+@keyframes livepulse{50%{opacity:.25;transform:scale(.7)}}
+.pass-stamp{position:absolute;z-index:2;left:50%;top:66%;transform:translate(-50%,-50%) rotate(-9deg);padding:10px 18px 9px;border:3px solid #1d9a43;border-radius:12px;
+  color:#1d9a43;background:rgba(255,255,255,.93);font:800 21px/1.1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.08em;text-align:center;white-space:nowrap;box-shadow:0 8px 22px rgba(0,0,0,.3)}
+.pass-stamp small{display:block;margin-top:3px;font:700 14px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.02em}
+.pass.in .pass-stamp{animation:stamp .55s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes stamp{from{transform:translate(-50%,-50%) rotate(-9deg) scale(2.6);opacity:0}}
+.pass.in .pass-qr canvas{opacity:.15}
+.tk-note{text-align:center;color:rgba(255,255,255,.72);font:400 14px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;margin:16px 24px 0;text-shadow:0 -1px 0 rgba(0,0,0,.6)}
+
+/* Door: a scanner on dark linen */
+body[data-screen=s-door]{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),radial-gradient(130% 70% at 50% 0%,#40444b 0%,#26282c 60%,#18191b 100%)}
+.door-cam{position:relative;width:100%;aspect-ratio:1;max-height:56vh;margin:0 auto;border-radius:20px;overflow:hidden;background:#000;
+  box-shadow:0 0 0 .6px rgba(255,255,255,.14),0 18px 40px -16px #000}
+.door-cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.door-frame{position:absolute;inset:17%;border-radius:22px;box-shadow:0 0 0 999px rgba(0,0,0,.32),inset 0 0 0 2px rgba(255,255,255,.75),0 0 18px rgba(255,255,255,.25);pointer-events:none}
+.door-line{position:absolute;left:8%;right:8%;top:10%;height:2px;border-radius:2px;background:linear-gradient(90deg,rgba(52,199,89,0),#4cd964,rgba(52,199,89,0));
+  box-shadow:0 0 12px #4cd964;animation:scanline 2.2s ease-in-out infinite alternate}
+@keyframes scanline{to{top:90%}}
+.door-off,.door-res{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:#fff;padding:24px}
+.door-off{background:rgba(20,21,23,.92);font:400 15px/21px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.door-off p{margin:0 0 6px;opacity:.85}
+.door-res{z-index:2;cursor:pointer;animation:resin .4s var(--spring)}
+@keyframes resin{from{opacity:0;transform:scale(.85)}}
+.door-res.ok{background:radial-gradient(120% 90% at 50% 20%,#62e584 0%,#27b04e 55%,#178a3a 100%)}
+.door-res.bad{background:radial-gradient(120% 90% at 50% 20%,#ff7a7a 0%,#e0262c 55%,#a8141a 100%)}
+.door-res h2{margin:4px 0 0;font:800 30px/1.1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:-.01em;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.door-res p{margin:0;font:500 17px/22px "Helvetica Neue",Helvetica,Arial,sans-serif;opacity:.95}
+.door-who{display:flex;align-items:center;gap:8px;font-size:24px!important;font-weight:700!important}
+.door-who i{width:16px;height:16px;border-radius:50%;box-shadow:0 0 0 2px #fff}
+.door-ic svg{width:64px;height:64px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25))}
+.door-count{display:flex;align-items:baseline;justify-content:center;gap:8px;color:#fff;margin:18px 0 12px;font:500 16px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 rgba(0,0,0,.6)}
+.door-count b{font:800 44px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.door-type{display:flex;gap:8px;align-items:center;height:48px;padding:0 5px 0 16px;border-radius:12px;background:rgba(255,255,255,.1);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.5),inset 0 0 0 .6px rgba(255,255,255,.14),0 1px 0 rgba(255,255,255,.08);margin-bottom:10px}
+.door-type input{flex:1;height:100%;color:#fff;font:500 16px "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.06em;caret-color:#fff}
+.door-type input::placeholder{color:rgba(255,255,255,.45);letter-spacing:0}
+.door-btn{height:38px;padding:0 16px;border-radius:9px;color:#fff;font:700 15px "Helvetica Neue",Helvetica,Arial,sans-serif;white-space:nowrap;flex:none;
+  background:linear-gradient(#7aaef5 0%,#3f7fe4 50%,#2b6ad8 52%,#2d6fdb 100%);box-shadow:0 0 0 .8px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.4)}
+.door-btn:active{filter:brightness(.85)}
+.door-btn.green{background:linear-gradient(#7fe39a 0%,#34c759 50%,#26a947 52%,#2cb54e 100%)}
+.door-btn.grey{background:linear-gradient(#8a8d93 0%,#5f6268 50%,#4d5056 52%,#55585e 100%)}
+.door-h{margin:18px 4px 8px;color:rgba(255,255,255,.6);font:700 13px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 -1px 0 rgba(0,0,0,.6)}
+.door-rows{border-radius:12px;overflow:hidden;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 .6px rgba(255,255,255,.12)}
+.door-rows:empty{display:none}
+.door-row{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 8px 0 14px;color:#fff;font:600 16px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.door-row + .door-row{border-top:1px solid rgba(255,255,255,.08)}
+.door-row .dn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.door-row .dt{color:rgba(255,255,255,.55);font-weight:400;font-size:14px;font-variant-numeric:tabular-nums}
+.door-row .door-btn{height:32px;font-size:13px;padding:0 12px}
+.door-empty{margin:4px;color:rgba(255,255,255,.45);font:400 14px "Helvetica Neue",Helvetica,Arial,sans-serif}
+
+/* Camera: the iOS 6 camera, black with an aluminium bar and a silver shutter */
+body[data-screen=s-camera]{background:#000}
+#s-camera{background:#000}
+.cam-top{position:absolute;z-index:3;top:0;left:0;right:0;height:calc(46px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0;
+  display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#232326,#0c0c0d);box-shadow:0 1px 0 rgba(255,255,255,.06)}
+.cam-pill{height:30px;min-width:30px;padding:0 12px;border-radius:15px;display:inline-grid;place-items:center;color:#fff;font:700 13px/30px "Helvetica Neue",Helvetica,Arial,sans-serif;text-decoration:none;
+  background:linear-gradient(rgba(255,255,255,.24),rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 52%,rgba(255,255,255,.08));
+  box-shadow:0 0 0 .7px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.28),0 1px 0 rgba(255,255,255,.08);text-shadow:0 -1px 0 rgba(0,0,0,.6)}
+.cam-pill:active{filter:brightness(.8)}
+.cam-pill svg{width:22px;height:16px;display:block}
+.cam-pill.danger{background:linear-gradient(#ff6d6d,#e0262c 50%,#c81b21 52%,#d4222a)}
+.cam-view{position:absolute;top:calc(46px + env(safe-area-inset-top));bottom:calc(96px + env(safe-area-inset-bottom));left:0;right:0;overflow:hidden;
+  background:radial-gradient(circle at 50% 50%,#2c2d31,#0a0a0b 70%)}
+/* the iris opens when the camera starts and blinks when a photo is taken */
+.cam-lens{position:absolute;inset:0;clip-path:circle(0% at 50% 50%);transition:clip-path .16s ease-in}
+.cam-view.open .cam-lens{clip-path:circle(75% at 50% 50%);transition:clip-path .55s cubic-bezier(.3,.8,.3,1)}
+.cam-lens video{width:100%;height:100%;object-fit:cover;display:block}
+.cam-view.mirror video{transform:scaleX(-1)}
+.cam-shot{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;display:none}
+#s-camera[data-mode=review] .cam-shot{display:block;z-index:1}
+#s-camera[data-mode=review] .cam-off{display:none}
+.cam-shot.fly{transition:transform .5s cubic-bezier(.5,0,.4,1),opacity .5s;transform:translate(calc(-50% + 40px),calc(50% + 40px)) scale(.08);opacity:.2}
+.cam-off{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;color:#fff;
+  font:400 15px/21px "Helvetica Neue",Helvetica,Arial,sans-serif;background:radial-gradient(circle at 50% 45%,#2c2d31,#0a0a0b 75%)}
+.cam-off p{margin:0;opacity:.8}
+.cam-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:2}
+.cam-flash.go{animation:camflash .5s ease-out}
+@keyframes camflash{0%{opacity:.95}100%{opacity:0}}
+.cam-bar{position:absolute;left:0;right:0;bottom:0;height:calc(96px + env(safe-area-inset-bottom));padding:0 20px env(safe-area-inset-bottom);
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(#6a6c71 0%,#46484c 2%,#34363a 40%,#232427 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 -1px 0 #000}
+.review-bar{display:none}
+#s-camera[data-mode=review] .review-bar{display:flex}
+#s-camera[data-mode=review] .live-bar{display:none}
+.cam-thumb{width:46px;height:46px;border-radius:5px;background:#1c1c1e center/cover no-repeat;box-shadow:0 0 0 2px rgba(255,255,255,.9),0 3px 8px rgba(0,0,0,.7);transition:transform .45s var(--spring)}
+.cam-thumb.none{background:linear-gradient(#3a3b3f,#1c1c1e);box-shadow:0 0 0 1.5px rgba(255,255,255,.25)}
+.cam-thumb.bump{animation:boing .5s var(--spring)}
+.shutter{width:110px;height:54px;border-radius:27px;display:grid;place-items:center;
+  background:linear-gradient(#ffffff 0%,#e6e7ea 45%,#cbcdd1 52%,#e3e4e7 100%);
+  box-shadow:0 0 0 1px rgba(0,0,0,.85),inset 0 1px 0 #fff,inset 0 -2px 3px rgba(0,0,0,.14),0 2px 5px rgba(0,0,0,.55),0 0 18px rgba(255,255,255,.08);
+  transition:transform .35s var(--spring)}
+.shutter:active{transform:scale(.95);background:linear-gradient(#d4d5d8,#b7b9bd)}
+.shutter svg{width:32px;height:26px;filter:drop-shadow(0 1px 0 rgba(255,255,255,.9))}
+.cam-side{width:46px;height:46px;display:grid;place-items:center;border-radius:10px;color:#e8e8ea}
+.cam-side svg{width:28px;height:24px}
+.cam-side:active{background:rgba(255,255,255,.1)}
+.cam-btn{height:38px;padding:0 18px;border-radius:9px;color:#fff;font:700 16px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 rgba(0,0,0,.5);
+  background:linear-gradient(#7a7c81 0%,#55575b 50%,#46484c 52%,#4d4f53 100%);box-shadow:0 0 0 .8px #000,inset 0 1px 0 rgba(255,255,255,.3)}
+.cam-btn.use{background:linear-gradient(#7aaef5 0%,#3f7fe4 50%,#2b6ad8 52%,#2d6fdb 100%)}
+.cam-btn:active{filter:brightness(.85)}
+.cam-btn:disabled{opacity:.6}
+/* your photos (from the camera's thumbnail) */
+.roll{position:absolute;inset:0;z-index:6;background:#fff;animation:rollup .42s cubic-bezier(.2,.9,.25,1)}
+@keyframes rollup{from{transform:translateY(100%)}}
+.roll .app-body{background:#fff}
+/* photo grids (your photos, and everyone's in the admin's Photos app) */
+body[data-screen=s-photos]{background:#fff}
+.ph-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:2px}
+@media (min-width:700px){.ph-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+.ph-grid button{position:relative;aspect-ratio:1;background:#e6e6ea center/cover no-repeat;animation:appin .4s ease both;animation-delay:calc(var(--i,0) * 18ms)}
+.ph-grid button span{position:absolute;left:0;right:0;bottom:0;padding:14px 5px 4px;color:#fff;font:700 11px/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;text-align:left;
+  background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.55));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph-empty{margin:40px 20px;text-align:center;color:#8e8e93;font:400 16px/22px "Helvetica Neue",Helvetica,Arial,sans-serif}
+/* full-size photo viewer */
+.viewer{position:fixed;inset:0;z-index:10;background:#000;display:flex;flex-direction:column;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0}}
+.vw-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 10px;height:48px;background:rgba(20,20,22,.9);color:#fff}
+.vw-bar:first-child{height:calc(48px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top)}
+.vw-bar:last-child{height:calc(52px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom)}
+.vw-cap{flex:1;min-width:0;text-align:center;font:600 14px/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.viewer img{flex:1;min-height:0;width:100%;object-fit:contain;transition:filter .3s}
+.viewer img.lo{filter:blur(6px)}
 </style>
 </head>
 <body data-screen="s-code">
@@ -886,6 +1074,103 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
   </div>
 </section>
 
+<!-- 6. APPS. Members: Settings, Ticket, Camera. Admin: Door, Photos. Door staff: Door. Top bars come from appTop() in the script -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="bkg-app" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".5" stop-color="#fff" stop-opacity=".1"/><stop offset=".52" stop-color="#000" stop-opacity=".06"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>
+</defs></svg>
+<section class="screen out app" id="s-settings" aria-label="Settings" hidden>
+  <div class="app-body"><div class="app-col">
+    <div class="grp-head"><span class="avatar" id="set-avatar" aria-hidden="true"></span><div><div class="grp-name" id="set-name"></div><div class="grp-sub">Playlist member</div></div></div>
+    <div id="set-groups"></div>
+  </div></div>
+</section>
+
+<section class="screen out app" id="s-ticket" aria-label="Ticket" hidden>
+  <div class="app-body">
+    <div class="pass" id="pass">
+      <div class="pass-row">
+        <span class="pass-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>PLAYLIST</span>
+        <div class="pf r"><small>Admit</small><b>One</b></div>
+      </div>
+      <div class="pass-row"><div class="pf big"><small>Guest</small><b id="pf-name"></b></div></div>
+      <div class="pass-row"><div class="pf"><small>Doors</small><b id="pf-doors"></b></div><div class="pf r"><small>Time</small><b id="pf-time"></b></div></div>
+      <div class="pass-cut" aria-hidden="true"><i></i></div>
+      <div class="pass-qr"><canvas id="pass-qr" width="1" height="1" role="img" aria-label="Ticket QR code"></canvas><span class="pass-no" id="pf-no">············</span></div>
+      <div class="pass-live"><i></i><span id="pass-clock"></span></div>
+      <div class="pass-stamp" id="pass-stamp" hidden>CHECKED IN<small id="stamp-time"></small></div>
+    </div>
+    <p class="tk-note" id="tk-note"></p>
+  </div>
+</section>
+
+<section class="screen out app" id="s-door" aria-label="Door" hidden>
+  <div class="app-body"><div class="app-col">
+    <div class="door-cam">
+      <video id="door-video" playsinline muted autoplay></video>
+      <div class="door-frame" aria-hidden="true"><i class="door-line"></i></div>
+      <div class="door-off" id="door-off" hidden><p id="door-off-msg"></p><button class="door-btn" type="button" id="door-retry">Start camera</button></div>
+      <div class="door-res" id="door-res" role="status" aria-live="assertive" hidden>
+        <span class="door-ic" id="door-ic"></span><h2 id="door-t"></h2>
+        <p class="door-who" id="door-who"><i id="door-dot"></i><span id="door-name"></span></p><p id="door-d"></p>
+      </div>
+    </div>
+    <div class="door-count"><b id="door-n">0</b><span>checked in</span></div>
+    <form class="door-type" id="f-door" autocomplete="off">
+      <input id="door-in" placeholder="Ticket number" aria-label="Ticket number" maxlength="24" autocapitalize="characters" spellcheck="false">
+      <button type="submit" class="door-btn">Check in</button>
+    </form>
+    <div id="door-admin" hidden>
+      <p class="door-h">Find a guest</p>
+      <label class="door-type"><input id="door-q" type="search" placeholder="Name or code" aria-label="Find a guest by name or code" autocomplete="off"></label>
+      <div class="door-rows" id="door-found"></div>
+    </div>
+    <p class="door-h">Latest arrivals</p>
+    <div class="door-rows" id="door-list"></div>
+    <p class="door-empty" id="door-empty">No one has checked in yet.</p>
+  </div></div>
+</section>
+
+<section class="screen out app" id="s-camera" aria-label="Camera" data-mode="live" hidden>
+  <div class="cam-top">
+    <button class="cam-pill" type="button" id="cam-home">Home</button>
+    <button class="cam-pill" type="button" id="cam-flip" aria-label="Switch between front and back camera" title="Switch camera">
+      <svg viewBox="0 0 22 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h8l1.3 2H19a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 19 14.5H3A1.5 1.5 0 0 1 1.5 13V7A1.5 1.5 0 0 1 3 5.5h2.7z"/><path d="M8 9.5a3 3 0 0 1 5.3-1.8M14 10a3 3 0 0 1-5.3 1.8"/><path d="M13.6 6.2v1.6H12M8.4 13.4v-1.6H10"/></svg>
+    </button>
+  </div>
+  <div class="cam-view" id="cam-view">
+    <div class="cam-lens"><video id="cam-video" playsinline muted autoplay></video></div>
+    <img class="cam-shot" id="cam-shot" alt="The photo you just took">
+    <div class="cam-off" id="cam-off" hidden><p id="cam-off-msg">The camera isn't available here. You can still choose a photo.</p><button class="cam-btn use" type="button" id="cam-pick">Choose photo</button></div>
+    <div class="cam-flash" id="cam-flash"></div>
+  </div>
+  <div class="cam-bar live-bar">
+    <button class="cam-thumb none" type="button" id="cam-thumb" aria-label="Your photos"></button>
+    <button class="shutter" type="button" id="cam-shoot" aria-label="Take photo"><svg viewBox="0 0 32 26" aria-hidden="true"><path d="M11 2.5h10l2 3.5h5a3 3 0 0 1 3 3v12.5a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5z" fill="#4a4c51"/><circle cx="16" cy="15" r="6.2" fill="#e9eaec"/><circle cx="16" cy="15" r="4.2" fill="#4a4c51"/></svg></button>
+    <button class="cam-side" type="button" id="cam-lib" aria-label="Choose a photo from your phone" title="Choose a photo">
+      <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="1.5" y="3.5" width="25" height="18" rx="2.5"/><path d="M1.5 17l7-6.5 6 5.5 4-3.5 8 6.5"/><circle cx="19.5" cy="9" r="2"/></svg>
+    </button>
+  </div>
+  <div class="cam-bar review-bar">
+    <button class="cam-btn" type="button" id="cam-retake">Retake</button>
+    <button class="cam-btn use" type="button" id="cam-use">Use Photo</button>
+  </div>
+  <input type="file" id="cam-file" accept="image/*" capture="environment" hidden>
+  <input type="file" id="cam-libfile" accept="image/*" hidden>
+  <div class="roll" id="roll" hidden>
+    <div class="app-body flush"><div class="ph-grid" id="roll-grid"></div><p class="ph-empty" id="roll-empty">No photos yet. Take one with the camera.</p></div>
+  </div>
+</section>
+
+<section class="screen out app" id="s-photos" aria-label="Photos" hidden>
+  <div class="app-body flush"><div class="ph-grid" id="ph-grid"></div><p class="ph-empty" id="ph-empty">No one has taken a photo yet.</p></div>
+</section>
+
+<div class="viewer" id="viewer" role="dialog" aria-label="Photo" hidden>
+  <div class="vw-bar"><button class="cam-pill" type="button" id="vw-close">Done</button><span class="vw-cap" id="vw-cap"></span><a class="cam-pill" id="vw-save" download="playlist-photo.jpg" href="#">Save</a></div>
+  <img id="vw-img" alt="">
+  <div class="vw-bar"><span></span><button class="cam-pill danger" type="button" id="vw-del">Delete</button></div>
+</div>
+
 <!-- 4. ADMIN (opened by typing the admin code) -->
 <section class="screen out" id="s-admin" aria-label="Admin" hidden>
   <div class="admin">
@@ -970,6 +1255,14 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
             <button class="a-btn glass live" type="submit">Add</button>
           </form>
         </div>
+        <form class="glass card a-stack" id="f-doorkey" autocomplete="off">
+          <div class="gen-row">
+            <span class="gen-label">Door login</span>
+            <input class="a-in" id="a-doorkey" type="text" placeholder="New door password" maxlength="64" aria-label="Door password" autocomplete="off" spellcheck="false">
+            <button class="a-btn glass green live" type="submit">Save</button>
+          </div>
+          <span class="a-muted">Door staff type this on the lock screen. It only opens the Door scanner, never the admin panel.</span>
+        </form>
         <div class="a-row">
           <div class="seg glass pill" id="a-filter" role="radiogroup" aria-label="Show">
             <span class="ind" aria-hidden="true"></span>
@@ -977,6 +1270,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
             <button type="button" data-f="claimed" aria-checked="false" role="radio">Claimed</button>
             <button type="button" data-f="free" aria-checked="false" role="radio">Free</button>
             <button type="button" data-f="rare" aria-checked="false" role="radio">Rare</button>
+            <button type="button" data-f="in" aria-checked="false" role="radio">In</button>
           </div>
           <button class="a-btn sm glass live" type="button" id="a-copyfree">Copy free codes</button>
         </div>
@@ -1143,9 +1437,16 @@ const HOME_THEME = {
   // earlier wallpaper (iOS 6 water): wallpaper: "assets/ios6/wallpaper.jpg", wallpaperColor: "#264a66", wallpaperPosition: "center", light: false
   light: true,   // light background → dark icon labels, grey page dots, light dock
   gloss: "assets/ios6/icon-gloss.png",
-  icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png" },
+  icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png", settings: "assets/ios6/icon-settings.png",
+           ticket: "assets/ios6/icon-ticket.png", camera: "assets/ios6/icon-camera.png", door: "assets/ios6/icon-door.png", photos: "assets/ios6/icon-photos.png" },
 };
 const LOCAL_CODES = ["1","2","3","4","5"]; // only used in offline demo mode (no Firebase)
+const DOOR_CODE = "door";                     // demo mode only: the real door password is set by the admin (config/door)
+// small libraries for the Ticket (draws the QR) and Door (reads it) apps, loaded only when those apps open
+const QR_LIB = "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js";
+const JSQR_LIB = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+// photos: longest side in pixels, and the largest saved size (the free database allows 1 MB per document)
+const PHOTO_MAX_PX = 1600, PHOTO_MAX_CHARS = 700000;
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
 const ADMIN_CODE = "admin"; // demo mode only: the real admin password lives in the database (config/admin), not in this file                  // typing this in the code box logs in as admin (for this browser session only)
 const MESSAGE_TTL_HOURS = 4;                  // users only see messages newer than this; the admin sees all
@@ -1156,6 +1457,8 @@ const TTL = MESSAGE_TTL_HOURS*3600e3;
 const NAME_RE = /^[\p{L}\p{N}_.\- ]{2,20}$/u;
 
 const $ = id => document.getElementById(id);
+// a ticket token: 12 characters that are easy to read out (no 0/O, 1/I)
+const newToken = ()=>{ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return [...crypto.getRandomValues(new Uint32Array(12))].map(x=>A[x%A.length]).join(''); };
 const session = { get:k=>{try{return sessionStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch{}}, del:k=>{try{sessionStorage.removeItem(k)}catch{}} };
 const store = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}, del:k=>{try{localStorage.removeItem(k)}catch{}} };
 const toast = t => { const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,3200); };
@@ -1257,6 +1560,55 @@ async function firebaseApi(cfg){
     async adminLogin(key){ try{ await fs.setDoc(fs.doc(db,"adminSessions",uid()),{key,ts:fs.serverTimestamp()}); return true; }catch{ return false; } },
     async adminLogout(){ await fs.deleteDoc(fs.doc(db,"adminSessions",uid())).catch(()=>{}); },
     async adminActive(){ try{ const s=await fs.getDoc(fs.doc(db,"adminSessions",uid())); return s.exists()&&s.data().ts&&Date.now()-s.data().ts.toMillis()<12*3600e3; }catch{ return false; } },
+    // door staff: the same idea as the admin, checked against config/door
+    async doorLogin(key){ try{ await fs.setDoc(fs.doc(db,"doorSessions",uid()),{key,ts:fs.serverTimestamp()}); return true; }catch{ return false; } },
+    async doorLogout(){ await fs.deleteDoc(fs.doc(db,"doorSessions",uid())).catch(()=>{}); },
+    async doorActive(){ try{ const s=await fs.getDoc(fs.doc(db,"doorSessions",uid())); return s.exists()&&s.data().ts&&Date.now()-s.data().ts.toMillis()<12*3600e3; }catch{ return false; } },
+    setDoorKey(key){ return fs.setDoc(fs.doc(db,"config","door"),{key}); },
+    async getCode(code){ const s=await fs.getDoc(codeRef(code)); if(!s.exists()) return null; const c=s.data();
+      return {claimedAt:c.claimedAt?c.claimedAt.toMillis():null, ticket:c.ticket||null}; },
+    // the entry ticket: made once per code, then its name and colour are kept up to date
+    async ensureTicket(code,info){
+      for(let attempt=0;;attempt++){
+        const c=await fs.getDoc(codeRef(code)); if(!c.exists()) throw new Error("code");
+        let t=c.data().ticket||null; const b=fs.writeBatch(db);
+        if(!t){ t=newToken(); b.update(codeRef(code),{ticket:t}); }
+        const d={name:info.name,ts:fs.serverTimestamp()};
+        if(Number.isFinite(info.shade)) d.shade=info.shade;
+        if(info.kind==='blue'||info.kind==='rare') d.kind=info.kind;
+        b.set(fs.doc(db,"tickets",t),d);
+        try{ await b.commit(); return t; }catch(err){ if(attempt) throw err; } // another phone made it at the same moment: read it again
+      }
+    },
+    watchCheckin(t,cb){ return fs.onSnapshot(fs.doc(db,"checkins",t),s=>cb(s.exists()?{...s.data(),ts:s.data().ts?s.data().ts.toMillis():Date.now()}:null),e=>console.error(e)); },
+    watchCheckins(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"checkins"),fs.orderBy("ts","desc")),s=>cb(s.docs.map(msgOut)),lost); },
+    // scanning a ticket: the first scan checks it in; the rules refuse a second one
+    async scanTicket(t,by){
+      if(!/^[A-Z2-9]{12}$/.test(t)) return {status:'invalid'};
+      const tk=await fs.getDoc(fs.doc(db,"tickets",t)); if(!tk.exists()) return {status:'invalid'};
+      const info=tk.data(), cRef=fs.doc(db,"checkins",t), when=s=>s.data().ts?s.data().ts.toMillis():Date.now();
+      try{
+        return await fs.runTransaction(db,async tx=>{
+          const c=await tx.get(cRef);
+          if(c.exists()) return {status:'already',...info,ts:when(c)};
+          tx.set(cRef,{ts:fs.serverTimestamp(),by,name:info.name});
+          return {status:'ok',...info,ts:Date.now()};
+        });
+      }catch(err){ const c=await fs.getDoc(cRef); if(c.exists()) return {status:'already',...info,ts:when(c)}; throw err; }
+    },
+    undoCheckin(t){ return fs.deleteDoc(fs.doc(db,"checkins",t)); },
+    async resetTicket(code,t){ const b=fs.writeBatch(db); b.update(codeRef(code),{ticket:fs.deleteField()}); b.delete(fs.doc(db,"tickets",t)); await b.commit(); },
+    // photos: a small preview for grids, and the full picture in its own document (loaded only when opened)
+    async savePhoto(p){
+      const ref=fs.doc(fs.collection(db,"photos")), b=fs.writeBatch(db);
+      b.set(ref,{code:p.code,username:p.username,thumb:p.thumb,w:p.w,h:p.h,ts:fs.serverTimestamp()});
+      b.set(fs.doc(db,"photoData",ref.id),{code:p.code,image:p.image});
+      await b.commit(); return ref.id;
+    },
+    watchMyPhotos(code,cb){ return fs.onSnapshot(fs.query(fs.collection(db,"photos"),fs.where("code","==",code)),s=>cb(s.docs.map(msgOut).sort((a,b)=>b.ts-a.ts)),e=>console.error(e)); },
+    watchAllPhotos(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"photos"),fs.orderBy("ts","desc"),fs.limit(300)),s=>cb(s.docs.map(msgOut)),lost); },
+    async photoFull(id){ const s=await fs.getDoc(fs.doc(db,"photoData",id)); return s.exists()?s.data().image:null; },
+    async deletePhoto(id){ const b=fs.writeBatch(db); b.delete(fs.doc(db,"photos",id)); b.delete(fs.doc(db,"photoData",id)); await b.commit(); },
     async claim(code,name,shade){
       const lower=name.toLowerCase();
       return fs.runTransaction(db, async tx=>{
@@ -1297,7 +1649,7 @@ async function firebaseApi(cfg){
     },
     watchCodes(cb){
       return fs.onSnapshot(fs.collection(db,"codes"),s=>cb(s.docs.map(d=>{const c=d.data();
-        return {code:d.id,username:c.username||null,shade:c.shade,kind:c.kind||null,tint:c.tint||null,claimedAt:c.claimedAt?c.claimedAt.toMillis():null};})),lost);
+        return {code:d.id,username:c.username||null,shade:c.shade,kind:c.kind||null,tint:c.tint||null,claimedAt:c.claimedAt?c.claimedAt.toMillis():null,ticket:c.ticket||null};})),lost);
     },
     createCode(code,kind){ return fs.runTransaction(db,async tx=>{
       if((await tx.get(codeRef(code))).exists()) return false;
@@ -1355,7 +1707,8 @@ function localApi(){
   const load=()=>{ let d=null; try{d=JSON.parse(store.get(K))}catch{}
     d=d||{codes:{},msgs:[]};
     if(!d.v){ d.codes={...Object.fromEntries(LOCAL_CODES.map(c=>[c,null])),...d.codes}; d.v=2; } // seed the demo codes once
-    d.msgs=d.msgs||[]; d.screen=d.screen||""; d.shades=d.shades||{}; d.kinds=d.kinds||{}; d.styles=d.styles||{}; d.dms=d.dms||[]; d.likes=d.likes||{}; d.tints=d.tints||{}; return d; };
+    d.msgs=d.msgs||[]; d.screen=d.screen||""; d.shades=d.shades||{}; d.kinds=d.kinds||{}; d.styles=d.styles||{}; d.dms=d.dms||[]; d.likes=d.likes||{}; d.tints=d.tints||{};
+    d.claimed=d.claimed||{}; d.ticketOf=d.ticketOf||{}; d.tickets=d.tickets||{}; d.checkins=d.checkins||{}; d.photos=d.photos||[]; return d; };
   const subs=new Set(), emit=()=>{const d=load(); subs.forEach(f=>f(d));};
   const save=d=>{store.set(K,JSON.stringify(d)); ch&&ch.postMessage(1); emit();};
   const sub=f=>{subs.add(f); f(load()); return ()=>subs.delete(f);};
@@ -1368,7 +1721,26 @@ function localApi(){
     async claim(c,name,shade){ return mut(d=>{ d.shades[c]=shade; if(!(c in d.codes)) throw new Error("code");
       if(d.codes[c]) return {ok:false,existing:d.codes[c]};
       if(taken(d,name,c)) return {ok:false,taken:true};
-      d.codes[c]=name; return {ok:true}; }); },
+      d.codes[c]=name; d.claimed[c]=Date.now(); return {ok:true}; }); },
+    async doorLogin(k){ const d=load(); return k.trim()===(d.doorKey||DOOR_CODE); }, async doorLogout(){}, async doorActive(){ return true; },
+    async setDoorKey(k){ mut(d=>{ d.doorKey=k; }); },
+    async getCode(c){ const d=load(); return (c in d.codes)?{claimedAt:d.claimed[c]||null,ticket:d.ticketOf[c]||null}:null; },
+    async ensureTicket(c,info){ return mut(d=>{ let t=d.ticketOf[c]; if(!t){ t=newToken(); d.ticketOf[c]=t; }
+      d.tickets[t]={name:info.name,...(Number.isFinite(info.shade)?{shade:info.shade}:{}),...(info.kind==='blue'||info.kind==='rare'?{kind:info.kind}:{})}; return t; }); },
+    watchCheckin:(t,cb)=>sub(d=>cb(d.checkins[t]||null)),
+    watchCheckins:cb=>sub(d=>cb(Object.entries(d.checkins).map(([id,x])=>({id,...x})).sort((a,b)=>b.ts-a.ts))),
+    async scanTicket(t,by){ return mut(d=>{ const info=d.tickets[t]; if(!info) return {status:'invalid'};
+      const c=d.checkins[t]; if(c) return {status:'already',...info,ts:c.ts};
+      d.checkins[t]={ts:Date.now(),by,name:info.name}; return {status:'ok',...info,ts:Date.now()}; }); },
+    async undoCheckin(t){ mut(d=>{ delete d.checkins[t]; }); },
+    async resetTicket(c,t){ mut(d=>{ delete d.ticketOf[c]; delete d.tickets[t]; }); },
+    // demo photos: the preview in the shared demo data, the full picture under its own key
+    async savePhoto(p){ const id='ph'+Date.now()+Math.floor(Math.random()*1e6); store.set('playlist-demo-photo-'+id,p.image);
+      mut(d=>{ d.photos.push({id,code:p.code,username:p.username,thumb:p.thumb,w:p.w,h:p.h,ts:Date.now()}); }); return id; },
+    watchMyPhotos:(c,cb)=>sub(d=>cb(d.photos.filter(x=>x.code===c).reverse())),
+    watchAllPhotos:cb=>sub(d=>cb(d.photos.slice().reverse())),
+    async photoFull(id){ return store.get('playlist-demo-photo-'+id); },
+    async deletePhoto(id){ store.del('playlist-demo-photo-'+id); mut(d=>{ d.photos=d.photos.filter(x=>x.id!==id); }); },
     async send(code,username,text,shade,kind,tint){ mut(d=>{ d.msgs.push({id:Date.now()+""+Math.random(),code,username,text,...(Number.isFinite(shade)?{shade}:{}),...(kind==='blue'||kind==='rare'?{kind}:{}),...(kind==='admin'?{kind,tint}:{}),ts:Date.now()}); }); },
     async ensureAdmin(){ return mut(d=>{ if(!(ADMIN_ID in d.codes)){ d.codes[ADMIN_ID]=null; d.kinds[ADMIN_ID]='admin'; } return {username:d.codes[ADMIN_ID],tint:d.tints[ADMIN_ID]||null}; }); },
     async setAdminTint(t){ mut(d=>{ d.tints[ADMIN_ID]=t; }); },
@@ -1389,7 +1761,7 @@ function localApi(){
     watchScreen:cb=>sub(d=>cb(d.screen)),
     watchAll:cb=>sub(d=>cb(d.msgs.slice().reverse())),
     watchUser:(code,cb)=>sub(d=>cb(d.msgs.filter(m=>m.code===code))),
-    watchCodes:cb=>sub(d=>cb(Object.entries(d.codes).map(([code,username])=>({code,username,shade:d.shades[code],kind:d.kinds[code]||null,tint:d.tints[code]||null,claimedAt:null})))),
+    watchCodes:cb=>sub(d=>cb(Object.entries(d.codes).map(([code,username])=>({code,username,shade:d.shades[code],kind:d.kinds[code]||null,tint:d.tints[code]||null,claimedAt:d.claimed[code]||null,ticket:d.ticketOf[code]||null})))),
     async createCode(c,kind){ return mut(d=>{ if(c in d.codes) return false; d.codes[c]=null; if(kind==='blue') d.kinds[c]=kind; return true; }); },
     async resetCode(c){ mut(d=>{ if(c in d.codes) d.codes[c]=null; delete d.shades[c]; }); },
     async deleteCode(c){ mut(d=>{ delete d.codes[c]; delete d.shades[c]; delete d.kinds[c]; }); },
@@ -1409,6 +1781,7 @@ catch(e){ console.error(e); api = localApi(); toast("Couldn't reach the server. 
 let current=$('s-code');
 function go(id){
   const next=$(id); if(next===current) return;
+  leaveApp(current.id); // stop cameras and listeners of the app being left
   current.classList.add('out'); const prev=current;
   setTimeout(()=>{prev.hidden=true;},350);
   next.hidden=false; next.classList.remove('enter'); void next.offsetWidth; next.classList.add('enter'); // replay the staggered entrance
@@ -1618,10 +1991,12 @@ $('f-code').addEventListener('submit',async e=>{
     const r=await api.joinCode(code);
     if(!r.valid){
       // not a code: maybe it's the admin password (checked by the database, not by this page)
-      if(await api.adminLogin(code)){ slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
+      if(await api.adminLogin(code)){ session.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
+      // or the door password: opens only the Door scanner
+      if(await api.doorLogin(code)){ slideUnlock(); $('code').value=''; note.textContent=''; return openHome({door:true}); }
       note.className='note err'; note.textContent="That code doesn't work."; shake($('f-code')); $('code').select(); return;
     }
-    session.del('playlist-admin'); api.adminLogout(); // a code login ends any admin session
+    session.del('playlist-admin'); api.adminLogout(); session.del('playlist-door'); api.doorLogout(); // a code login ends any admin or door session
     setMe(code,r.username,r.shade,r.kind); store.set('playlist-code',code); note.textContent=''; slideUnlock();
     if(r.username) openHome();
     else { $('shade-user').value=me.shade; go('s-user'); setTimeout(()=>$('uname').focus(),360); }
@@ -1658,9 +2033,15 @@ function resetUserStep(){
 
 /* ---------- home screen (iOS 6) ---------- */
 // Apps on the home screen: one entry per app. "for" decides who sees it (a code account, or the admin).
+// "for" is 'user' (a code account), 'admin', 'door' (door staff), or a list of them. Icons are in HOME_THEME.icons.
 const APPS = [
-  { id:'chat',  name:'Chat',  for:'user',  open:()=>openChat() },
-  { id:'admin', name:'Admin', for:'admin', open:()=>openAdmin() },
+  { id:'chat',     name:'Chat',     for:'user',  open:()=>openChat() },
+  { id:'ticket',   name:'Ticket',   for:'user',  open:()=>openTicket() },
+  { id:'camera',   name:'Camera',   for:'user',  open:()=>openCamera() },
+  { id:'settings', name:'Settings', for:'user',  open:()=>openSettings() },
+  { id:'admin',    name:'Admin',    for:'admin', open:()=>openAdmin() },
+  { id:'door',     name:'Door',     for:['admin','door'], open:()=>openDoor() },
+  { id:'photos',   name:'Photos',   for:'admin', open:()=>openPhotos() },
 ];
 (()=>{ const r=document.documentElement.style;
   r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
@@ -1674,7 +2055,7 @@ const APPS = [
 let homeMode='user';
 function renderHome(){
   const grid=$('sb-grid'); grid.replaceChildren();
-  APPS.filter(a=>a.for===homeMode).forEach((a,i)=>{
+  APPS.filter(a=>[].concat(a.for).includes(homeMode)).forEach((a,i)=>{
     const b=document.createElement('button'); b.type='button'; b.className='sb-app'; b.style.setProperty('--i',i); b.setAttribute('role','listitem');
     b.setAttribute('aria-label',a.name);
     const ic=document.createElement('span'); ic.className='sb-icon'; ic.style.backgroundImage=`url("${HOME_THEME.icons[a.id]}")`;
@@ -1695,10 +2076,12 @@ function launchApp(app,btn){
   app.open();
 }
 function openHome(opts={}){
-  const admin=!!opts.admin;
-  if(!USE_HOME_SCREEN) return admin?openAdmin():openChat();
-  homeMode=admin?'admin':'user';
+  const admin=!!opts.admin, door=!!opts.door;
+  if(door) homeMode='door';
+  if(!USE_HOME_SCREEN) return admin?openAdmin():door?openDoor():openChat();
+  homeMode=admin?'admin':door?'door':'user';
   if(admin){ if(me.code) logOutUser(); session.set('playlist-admin','1'); startSocial(); }
+  else if(door){ if(me.code) logOutUser(); session.set('playlist-door','1'); }
   else { // same per-login listeners the chat uses, so private messages and account changes work from here too
     applyMyShade(me.shade); startSocial(); countLikes();
     if(!unwatch) unwatch=api.watch(render);
@@ -1712,10 +2095,11 @@ function tickClock(){
   const t=countdownParts().join(':');
   document.querySelectorAll('.sb-time').forEach(el=>{ if(el.textContent!==t) el.textContent=t; });
   const lk=$('lk-clock'); if(lk&&lk.textContent!==t) lk.textContent=t;
+  if(current.id==='s-ticket') $('pass-clock').textContent='Live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
   const d=new Date(countdownTarget), when=d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
   if($('lk-date').textContent!==when) $('lk-date').textContent=when;
 }
-setInterval(()=>{ if(['s-home','chat','s-code','s-user'].includes(current.id)) tickClock(); },1000);
+setInterval(()=>{ if(['s-home','chat','s-code','s-user','s-settings','s-ticket','s-door','s-photos'].includes(current.id)) tickClock(); },1000);
 document.body.classList.toggle('chat-ios6',CHAT_STYLE==='ios6');
 document.body.classList.toggle('lock-ios6',LOCK_STYLE==='ios6');
 document.body.classList.toggle('user-ios6',USER_STYLE==='ios6');
@@ -1856,6 +2240,7 @@ function onLikes(list){
   if(current.id==='chat') render(lastList);
   if(adminOn) renderCodes(codeList);
   if(pmTo) syncLike();
+  if(current.id==='s-settings') renderSettings();
 }
 
 /* ---------- tap someone else's bubble: like them, or send a private message ---------- */
@@ -1973,6 +2358,7 @@ function logOutUser(){
   // stop listening first: once the membership is gone the database refuses these reads
   unwatchMe&&unwatchMe(); unwatchMe=null; dmUnsub&&dmUnsub(); dmUnsub=null; closePM();
   unwatch&&unwatch(); unwatch=null; lastList=[]; seenMsgs.clear(); firstRender=true; stopSocial();
+  stopTicket(); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[];
   if(me.code&&me.kind!=='admin') api.leave();
   store.del('playlist-code'); setMe(null,null); resetUserStep();
 }
@@ -1981,7 +2367,8 @@ function openAdmin(){
   go('s-admin'); setTimeout(()=>document.querySelectorAll('.tabs,.seg').forEach(moveInd),60);
   if(adminOn) return;
   adminOn=true; $('a-who').textContent=''; syncScreenTab(true);
-  adminUnsubs.push(api.watchAll(renderAdminMsgs), api.watchCodes(renderCodes));
+  adminUnsubs.push(api.watchAll(renderAdminMsgs), api.watchCodes(renderCodes),
+    api.watchCheckins(l=>{ adminCheckins=new Map(l.map(x=>[x.id,x])); renderCodes(codeList); }));
 }
 function adminLogout(){
   closeHistory(); closeRare();
@@ -1991,6 +2378,13 @@ function adminLogout(){
   go('s-code'); toast('Logged out of admin.');
 }
 $('a-exit').addEventListener('click',adminLogout);
+let adminCheckins=new Map(); // ticket token → check-in
+$('f-doorkey').addEventListener('submit',async e=>{
+  e.preventDefault(); const k=$('a-doorkey').value.trim();
+  if(k.length<4) { toast('Use at least 4 characters.'); return shake($('f-doorkey')); }
+  if(k.toLowerCase()===ADMIN_CODE) { toast("Pick something other than the admin password."); return shake($('f-doorkey')); }
+  try{ await api.setDoorKey(k); $('a-doorkey').value=''; toast('Door password saved.'); }catch(err){ fail('save the door password')(err); }
+});
 // post in the chat as the admin, with a free name and colour
 $('a-chat').addEventListener('click',async()=>{
   let a; try{ a=await api.ensureAdmin(); }catch(err){ return fail('open the chat')(err); }
@@ -2191,7 +2585,10 @@ function codeRow(code){
   const mid=mk('div','acct-mid'), acts=mk('div','acct-acts');
   const hist=btn('History','',()=>openHistory(code,cur));
   const rareB=btn('Make rare','',()=>openRare(code)); // only for free codes
-  mid.append(inp,when); acts.append(rareB,hist,save,reset,del); el.append(chip,mid,acts);
+  let tkn=null; // a new ticket for a leaked pass (the old QR stops working); not after they're in
+  const newTk=twoStep(btn('New ticket'),()=>api.resetTicket(code,tkn).then(()=>toast(`${cur||code} gets a new ticket next time they open Ticket.`),fail('reset the ticket')),
+    ()=>({title:`New ticket for ${cur||code}?`,text:'Their current QR code stops working. They get a fresh one the next time they open the Ticket app.',ok:'New ticket'}));
+  mid.append(inp,when); acts.append(rareB,hist,newTk,save,reset,del); el.append(chip,mid,acts);
   return { el, update(c){
     cur=c.username; if(document.activeElement!==inp) inp.value=cur||'';
     el.classList.toggle('free',!cur); el.classList.toggle('fresh',fresh_.has(code));
@@ -2199,8 +2596,9 @@ function codeRow(code){
     chip.title=c.kind==='blue'?'Blue code (experimental) · copy':c.kind==='rare'?'Rare code · copy':'Copy code';
     rareB.hidden=!!cur; rareB.textContent=c.kind==='rare'?'Edit rare':'Make rare';
     const dot=mk('span','dot'); if(cur||c.kind==='rare') dot.style.background=lookOf(code,c.shade,c.kind).bg;
-    const lk=likeCount[code]||0;
+    const lk=likeCount[code]||0, ci=c.ticket&&adminCheckins.get(c.ticket); tkn=c.ticket; newTk.hidden=!c.ticket||!!ci;
     when.replaceChildren(dot, (cur ? (c.claimedAt?'Claimed '+fmtDay(c.claimedAt):'Claimed') : 'Not claimed yet')+(lk?` · ${lk} like${lk===1?'':'s'}`:''));
+    if(ci) when.append(mk('span','tag in-tag','In '+fmtTime(ci.ts)));
     reset.disabled=!cur; dirty(); } };
 }
 function countTo(el,to){ // numbers roll to their new value
@@ -2215,10 +2613,11 @@ function renderCodes(all){
   list.sort((a,b)=>a.code.localeCompare(b.code,undefined,{numeric:true}));
   const box=$('a-codes'), seen=new Set(), claimed=list.filter(c=>c.username).length;
   countTo($('st-total'),list.length); countTo($('st-claimed'),claimed); countTo($('st-free'),list.length-claimed);
-  const visible=c=>(codeFilter==='all' || (codeFilter==='rare' ? c.kind==='rare' : (codeFilter==='claimed')===!!c.username)) && matchesQuery(c);
+  const isIn=c=>!!(c.ticket&&adminCheckins.has(c.ticket));
+  const visible=c=>(codeFilter==='all' || (codeFilter==='rare' ? c.kind==='rare' : codeFilter==='in' ? isIn(c) : (codeFilter==='claimed')===!!c.username)) && matchesQuery(c);
   const shown=list.filter(visible).length;
   const empty=$('a-codes-empty'); empty.hidden=shown>0;
-  empty.textContent = !list.length ? 'No codes yet. Generate some above.' : codeQuery ? `Nothing matches “${codeQuery}”.` : codeFilter==='rare' ? 'No rare codes yet. Use "Make rare" on a free code.' : codeFilter==='claimed' ? 'No codes are claimed yet.' : 'Every code is claimed. Generate more above.';
+  empty.textContent = !list.length ? 'No codes yet. Generate some above.' : codeQuery ? `Nothing matches “${codeQuery}”.` : codeFilter==='in' ? 'No one has checked in at the door yet.' : codeFilter==='rare' ? 'No rare codes yet. Use "Make rare" on a free code.' : codeFilter==='claimed' ? 'No codes are claimed yet.' : 'Every code is claimed. Generate more above.';
   list.forEach((c,i)=>{
     seen.add(c.code); let r=codeRows.get(c.code);
     if(!r){ r=codeRow(c.code); codeRows.set(c.code,r); }
@@ -2426,6 +2825,329 @@ function renderAdminMsgs(list){
   }
 }
 
+/* ---------- apps: Settings, Ticket, Camera (members) · Door, Photos (admin) · Door (door staff) ---------- */
+const loadScript=(()=>{ const got={}; return src=>got[src]||(got[src]=new Promise((res,rej)=>{
+  const el=document.createElement('script'); el.src=src; el.async=true; el.crossOrigin='anonymous';
+  el.onload=res; el.onerror=()=>{ delete got[src]; el.remove(); rej(new Error('Could not load '+src)); }; document.head.append(el); })); })();
+const BACK_SVG='<svg class="ios-back-shape" viewBox="0 0 62 30" preserveAspectRatio="none" aria-hidden="true"><path d="M12.5 1H57a4.5 4.5 0 0 1 4.5 4.5v19a4.5 4.5 0 0 1-4.5 4.5H12.5a3 3 0 0 1-2.3-1.1L1.6 16.6a2.5 2.5 0 0 1 0-3.2l8.6-11.3A3 3 0 0 1 12.5 1Z" fill="url(#bkg-app)" stroke="rgba(20,35,60,.55)" stroke-width=".8"/><path d="M13 2h44" stroke="rgba(255,255,255,.4)" stroke-width=".8"/></svg>';
+// the iOS 6 status bar (with the countdown) and nav bar on top of an app
+function appTop(el,title,{back='Home',onBack=goHome}={}){
+  const top=mk('div','app-top'); top.append($('ios-top').querySelector('.sb-status').cloneNode(true));
+  const nav=mk('nav','ios-nav'), b=mk('button','ios-back'); b.type='button';
+  b.innerHTML=BACK_SVG; b.append(mk('span',null,back)); b.setAttribute('aria-label','Back to '+back); b.addEventListener('click',onBack);
+  const right=mk('div','ios-nav-right'); nav.append(b,mk('h1','ios-title',title),right); top.append(nav); el.prepend(top);
+  return {back:b,right};
+}
+function goHome(){ openHome({admin:homeMode==='admin',door:homeMode==='door'}); }
+const navBtn=(label,fn)=>{ const b=mk('button','ios-navbtn',label); b.type='button'; b.addEventListener('click',fn); return b; };
+function leaveApp(from){
+  if(from==='s-door') stopDoor();
+  if(from==='s-camera'){ stopCam(); $('roll').hidden=true; }
+  if(from==='s-photos'){ photoUnsub&&photoUnsub(); photoUnsub=null; }
+  closeViewer();
+}
+
+/* Settings: your account. Add rows to SETTINGS_ROWS (each inner list is one white group). */
+let acct={claimedAt:null};
+const SETTINGS_ROWS = [
+  [ {label:'Username', value:()=>me.username||'—'},
+    {label:'Color', value:()=>colorValue()},
+    {label:'Member since', value:()=>acct.claimedAt?new Date(acct.claimedAt).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'}):'—'} ],
+  [ {label:'Likes', value:()=>String(likeCount[me.code]||0)},
+    {label:'Ticket', value:()=>tk.checkin?`Checked in ${fmtTime(tk.checkin.ts)}`:tk.token?'Not used yet':'—'} ],
+];
+function colorValue(){
+  const f=document.createDocumentFragment(), dot=mk('i','set-dot'), look=lookOf(me.code,me.shade,me.kind,me.tint);
+  dot.style.background=look.texture?`url("${look.texture}") center/cover, ${look.bg}`:look.bg;
+  f.append(dot, me.kind==='rare'?'Rare':me.kind==='blue'?'Blue':'Green'); return f;
+}
+const setTop=appTop($('s-settings'),'Settings');
+function openSettings(){
+  go('s-settings'); renderSettings();
+  api.getCode(me.code).then(c=>{ if(c){ acct=c; renderSettings(); } }).catch(err=>console.error(err));
+  ensureMyTicket().catch(()=>{});
+}
+function renderSettings(){
+  if(!me.code) return;
+  const look=lookOf(me.code,me.shade,me.kind,me.tint), av=$('set-avatar');
+  av.textContent=(me.username||'?').slice(0,1).toUpperCase(); av.style.color=look.ink;
+  av.style.background=look.texture?`url("${look.texture}") center/cover, ${look.bg}`:`radial-gradient(circle at 35% 25%,rgba(255,255,255,.55),rgba(255,255,255,0) 60%),${look.bg}`;
+  $('set-name').textContent=me.username||'';
+  const box=$('set-groups'); box.replaceChildren();
+  SETTINGS_ROWS.forEach(g=>{ const grp=mk('div','grp');
+    g.forEach(r=>{ const c=mk('div','cell'), v=mk('span','val'), x=r.value(); v.append(x); c.append(mk('span',null,r.label),v); grp.append(c); });
+    box.append(grp); });
+  box.append(mk('p','grp-foot','More settings are coming soon.'));
+  const g=mk('div','grp'), out=mk('button','cell btn','Log Out'); out.type='button'; out.addEventListener('click',backToCode); g.append(out); box.append(g);
+}
+
+/* Ticket: your pass for the door. The QR holds a random ticket token, never your login code. */
+let tk={token:null,checkin:null,code:null,unsub:null};
+function stopTicket(){ tk.unsub&&tk.unsub(); tk={token:null,checkin:null,code:null,unsub:null}; }
+function setTicket(t){
+  if(tk.token===t&&tk.code===me.code) return;
+  stopTicket(); tk.token=t; tk.code=me.code;
+  tk.unsub=api.watchCheckin(t,c=>{
+    const was=tk.checkin; tk.checkin=c;
+    if(c&&!was&&current.id==='s-ticket'&&navigator.vibrate) navigator.vibrate(90);
+    if(current.id==='s-ticket') drawPass(); if(current.id==='s-settings') renderSettings();
+  });
+}
+async function ensureMyTicket(){
+  if(!me.code||!me.username||me.kind==='admin') return null;
+  const key='playlist-ticket-'+me.code, cached=store.get(key);
+  if(cached&&/^[A-Z2-9]{12}$/.test(cached)) setTicket(cached); // shows right away, even with a bad connection at the door
+  const t=await api.ensureTicket(me.code,{name:me.username,shade:me.hasShade&&me.kind!=='rare'?me.shade:undefined,kind:me.kind});
+  store.set(key,t); setTicket(t); return t;
+}
+const tkTop=appTop($('s-ticket'),'Ticket');
+async function openTicket(){
+  go('s-ticket'); const p=$('pass'); p.style.animation='none'; void p.offsetWidth; p.style.animation=''; // slide the pass in again
+  drawPass(); tickClock();
+  try{ await ensureMyTicket(); }
+  catch(err){ console.error(err); if(!tk.token) $('tk-note').textContent="Couldn't load your ticket. Check your connection and open it again."; return; }
+  drawPass();
+}
+const fmtToken=t=>t.replace(/(.{4})(?=.)/g,'$1-');
+let qrFor=null;
+async function drawPass(){
+  const p=$('pass'), look=lookOf(me.code,me.shade,me.kind,me.tint);
+  p.style.setProperty('--p-bg',look.bg); p.style.setProperty('--p-ink',look.ink);
+  p.style.setProperty('--p-tex',look.texture?`url("${look.texture}")`:'none');
+  $('pf-name').textContent=me.username||'';
+  const d=new Date(countdownTarget);
+  $('pf-doors').textContent=d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+  $('pf-time').textContent=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  $('pf-no').textContent=tk.token?fmtToken(tk.token):'············';
+  const inn=!!tk.checkin; p.classList.toggle('in',inn); $('pass-stamp').hidden=!inn;
+  if(inn) $('stamp-time').textContent=fmtTime(tk.checkin.ts);
+  $('tk-note').textContent=inn?'You are in. Enjoy the night!':tk.token?'Show this at the door. Turn your screen brightness up.':'Getting your ticket…';
+  if(tk.token&&qrFor!==tk.token){
+    qrFor=tk.token;
+    try{ await loadScript(QR_LIB); drawQR($('pass-qr'),'PLAYLIST-TICKET:'+tk.token); }
+    catch(err){ console.error(err); qrFor=null; $('tk-note').textContent="Couldn't draw the QR code. The ticket number under it works too."; }
+  }
+}
+function drawQR(canvas,text){
+  const q=qrcode(0,'M'); q.addData(text); q.make();
+  const n=q.getModuleCount(), quiet=3, px=8, size=(n+quiet*2)*px, g=canvas.getContext('2d');
+  canvas.width=canvas.height=size; g.fillStyle='#fff'; g.fillRect(0,0,size,size); g.fillStyle='#111';
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(q.isDark(r,c)) g.fillRect((c+quiet)*px,(r+quiet)*px,px,px);
+}
+
+/* Door: scan tickets with the camera. One check-in per ticket; the database refuses a second. */
+let doorStream=null, doorTimer=0, doorBusy=false, lastScan={t:null,at:0}, doorCheckins=[], doorCodes=[], doorUnsubs=[];
+const doorTop=appTop($('s-door'),'Door');
+const doorOut=navBtn('Log out',()=>doorLogout()); doorTop.right.append(doorOut);
+function openDoor(){
+  go('s-door'); const asAdmin=homeMode==='admin';
+  doorOut.hidden=asAdmin; $('door-admin').hidden=!asAdmin; $('door-res').hidden=true; doorBusy=false;
+  if(!doorUnsubs.length){
+    doorUnsubs.push(api.watchCheckins(onDoorCheckins));
+    if(asAdmin) doorUnsubs.push(api.watchCodes(l=>{ doorCodes=l; drawDoorSearch(); }));
+  }
+  startDoorCam();
+}
+function stopDoor(){ doorUnsubs.forEach(u=>u&&u()); doorUnsubs=[]; stopDoorCam(); }
+function doorLogout(){
+  stopDoor(); session.del('playlist-door'); api.doorLogout(); $('code').value=''; $('n-code').textContent='';
+  go('s-code'); toast('Logged out of the door.');
+}
+function doorCamOff(msg){ $('door-off').hidden=false; $('door-off-msg').textContent=msg; }
+async function qrReader(){
+  try{ if('BarcodeDetector' in window && (await BarcodeDetector.getSupportedFormats()).includes('qr_code')) return {native:new BarcodeDetector({formats:['qr_code']})}; }catch{}
+  await loadScript(JSQR_LIB); return {native:null};
+}
+async function startDoorCam(){
+  stopDoorCam(); $('door-off').hidden=true;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return doorCamOff("This browser can't use the camera. Type the ticket number below instead.");
+  let reader;
+  try{
+    [doorStream,reader]=await Promise.all([navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false}),qrReader()]);
+  }catch(err){ console.error(err); stopDoorCam();
+    return doorCamOff(err&&err.name==='NotAllowedError'?'Camera access is blocked. Allow it for this site, then try again. You can also type the ticket number below.':"Couldn't start the camera. You can type the ticket number below."); }
+  if(current.id!=='s-door') return stopDoorCam();
+  const v=$('door-video'); v.srcObject=doorStream; v.play().catch(()=>{});
+  const cv=document.createElement('canvas'), g=cv.getContext('2d',{willReadFrequently:true}), stream=doorStream;
+  const step=async()=>{
+    if(doorStream!==stream) return;
+    if(!doorBusy&&v.readyState>=2&&v.videoWidth){
+      let text=null;
+      try{
+        if(reader.native){ const r=await reader.native.detect(v); text=r[0]?r[0].rawValue:null; }
+        else{ const w=Math.min(640,v.videoWidth), h=Math.round(v.videoHeight*w/v.videoWidth); cv.width=w; cv.height=h; g.drawImage(v,0,0,w,h);
+          const r=jsQR(g.getImageData(0,0,w,h).data,w,h,{inversionAttempts:'dontInvert'}); text=r?r.data:null; }
+      }catch{}
+      if(text) onScanText(text);
+    }
+    doorTimer=setTimeout(step,150);
+  };
+  step();
+}
+function stopDoorCam(){ clearTimeout(doorTimer); if(doorStream){ doorStream.getTracks().forEach(t=>t.stop()); doorStream=null; } $('door-video').srcObject=null; }
+$('door-retry').addEventListener('click',startDoorCam);
+// what a scanned or typed code says: our QR is "PLAYLIST-TICKET:<token>"; a typed number may have dashes or spaces
+const tokenOf=x=>{ const t=String(x).trim().toUpperCase().replace(/^PLAYLIST-TICKET:/,'').replace(/[\s-]/g,''); return /^[A-Z2-9]{12}$/.test(t)?t:null; };
+function onScanText(text){
+  const t=tokenOf(text), now=Date.now();
+  if(lastScan.text===text&&now-lastScan.at<5000) return; // the same pass is still held up to the camera
+  lastScan={text,at:now}; checkIn(t);
+}
+async function checkIn(t){
+  if(doorBusy) return; doorBusy=true;
+  let r; try{ r=t?await api.scanTicket(t,homeMode==='admin'?'admin':'door'):{status:'invalid'}; }
+  catch(err){ console.error(err); r={status:'error'}; }
+  showDoorResult(r);
+}
+const ICON_OK='<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="28" stroke-width="3.5"/><path d="M19 33l9 9 17-19"/></svg>';
+const ICON_BAD='<svg viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"><circle cx="32" cy="32" r="28" stroke-width="3.5"/><path d="M22 22l20 20M42 22L22 42"/></svg>';
+function showDoorResult(r){
+  const box=$('door-res'), ok=r.status==='ok', named=r.status==='ok'||r.status==='already';
+  box.className='door-res '+(ok?'ok':'bad'); $('door-ic').innerHTML=ok?ICON_OK:ICON_BAD;
+  $('door-t').textContent={ok:'Welcome',already:'Already checked in',invalid:'Not a valid ticket',error:"Couldn't check"}[r.status];
+  $('door-who').hidden=!named; $('door-name').textContent=named?r.name:'';
+  $('door-dot').style.background=r.kind==='rare'?'linear-gradient(120deg,#FFE9A8,#F7C6FF,#B9E6FF)':shadeOf(r.shade,r.kind).bg;
+  $('door-d').textContent=ok?'Checked in '+fmtTime(r.ts):r.status==='already'?'at '+fmtTime(r.ts)+'. Each ticket works once.':r.status==='invalid'?"This isn't a Playlist ticket.":'No connection. Try again.';
+  box.hidden=false; if(navigator.vibrate) navigator.vibrate(ok?90:[70,60,70]);
+  const done=()=>{ clearTimeout(showDoorResult.t); box.hidden=true; doorBusy=false; };
+  clearTimeout(showDoorResult.t); showDoorResult.t=setTimeout(done,ok?2200:3500); box.onclick=done;
+}
+$('f-door').addEventListener('submit',e=>{
+  e.preventDefault(); const t=tokenOf($('door-in').value);
+  if(!t){ toast('A ticket number has 12 letters and numbers.'); return shake($('f-door')); }
+  $('door-in').value=''; $('door-in').blur(); doorBusy=false; checkIn(t);
+});
+function onDoorCheckins(list){
+  doorCheckins=list; countTo($('door-n'),list.length);
+  const box=$('door-list'); box.replaceChildren(); $('door-empty').hidden=list.length>0;
+  list.slice(0,40).forEach(c=>{
+    const row=mk('div','door-row'); row.append(mk('span','dn',c.name||'—'),mk('span','dt',fmtTime(c.ts)));
+    if(homeMode==='admin') row.append(twoStep(mk('button','door-btn grey','Undo'),()=>api.undoCheckin(c.id).then(()=>toast(`${c.name} is no longer checked in.`),fail('undo the check-in')),
+      {title:`Undo ${c.name}'s check-in?`,text:'Their ticket can be scanned again.',ok:'Undo'}));
+    box.append(row);
+  });
+  drawDoorSearch();
+}
+$('door-q').addEventListener('input',drawDoorSearch);
+function drawDoorSearch(){
+  const q=$('door-q').value.trim().toLowerCase(), box=$('door-found'); box.replaceChildren(); if(!q||homeMode!=='admin') return;
+  const inMap=new Map(doorCheckins.map(c=>[c.id,c]));
+  const hits=doorCodes.filter(c=>c.code!==ADMIN_ID&&c.username&&(c.username.toLowerCase().includes(q)||c.code.toLowerCase().includes(q))).slice(0,8);
+  if(!hits.length) return box.append(mk('div','door-row',`No one matches “${q}”.`));
+  hits.forEach(c=>{
+    const row=mk('div','door-row'), ci=c.ticket&&inMap.get(c.ticket);
+    row.append(mk('span','dn',c.username),mk('span','dt',ci?'In '+fmtTime(ci.ts):'Not in'));
+    if(!ci){ const b=mk('button','door-btn green','Check in'); b.type='button';
+      b.addEventListener('click',async()=>{ b.disabled=true;
+        try{ const t=c.ticket||await api.ensureTicket(c.code,{name:c.username,shade:c.kind==='rare'?undefined:c.shade,kind:c.kind}); doorBusy=false; await checkIn(t); }
+        catch(err){ fail('check them in')(err); } finally{ b.disabled=false; } });
+      row.append(b); }
+    box.append(row);
+  });
+}
+
+/* Camera: take a photo; it's saved (compressed) for you and the admin. Later it can be sent in the chat. */
+let camStream=null, camFacing='environment', camShot=null, myPhotos=[], myPhotoUnsub=null;
+function openCamera(){
+  $('s-camera').dataset.mode='live'; go('s-camera'); startCam();
+  if(!myPhotoUnsub) myPhotoUnsub=api.watchMyPhotos(me.code,l=>{
+    myPhotos=l; const t=$('cam-thumb'); t.style.backgroundImage=l[0]?`url("${l[0].thumb}")`:''; t.classList.toggle('none',!l.length);
+    if(!$('roll').hidden) drawRoll();
+  });
+}
+async function startCam(){
+  stopCam(); const view=$('cam-view'); view.classList.remove('open'); $('cam-off').hidden=true;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return camOff("This browser can't use the camera. You can still choose a photo.");
+  try{ camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:camFacing},width:{ideal:1920},height:{ideal:1440}},audio:false}); }
+  catch(err){ console.error(err); return camOff(err&&err.name==='NotAllowedError'?'Camera access is blocked. Allow it for this site, or choose a photo instead.':"Couldn't start the camera. You can still choose a photo."); }
+  if(current.id!=='s-camera') return stopCam();
+  const v=$('cam-video'); v.srcObject=camStream; v.play().catch(()=>{});
+  view.classList.toggle('mirror',camFacing==='user');
+  setTimeout(()=>view.classList.add('open'),120); // the iris opens
+}
+function stopCam(){ if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } $('cam-video').srcObject=null; }
+function camOff(msg){ $('cam-off-msg').textContent=msg; $('cam-off').hidden=false; $('cam-view').classList.add('open'); }
+$('cam-home').addEventListener('click',goHome);
+$('cam-flip').addEventListener('click',()=>{ camFacing=camFacing==='environment'?'user':'environment'; startCam(); });
+$('cam-pick').addEventListener('click',()=>$('cam-file').click());
+$('cam-lib').addEventListener('click',()=>$('cam-libfile').click());
+$('cam-shoot').addEventListener('click',()=>{
+  const v=$('cam-video'); if(!camStream||v.readyState<2||!v.videoWidth) return $('cam-file').click();
+  const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+  const g=c.getContext('2d'); if(camFacing==='user'){ g.translate(c.width,0); g.scale(-1,1); } g.drawImage(v,0,0); // selfies look like the preview
+  const view=$('cam-view'), f=$('cam-flash'); view.classList.remove('open'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  setTimeout(()=>{ reviewShot(c); view.classList.add('open'); },200);
+});
+['cam-file','cam-libfile'].forEach(id=>$(id).addEventListener('change',e=>{
+  const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return;
+  const img=new Image(), url=URL.createObjectURL(file);
+  img.onload=()=>{ reviewShot(img); URL.revokeObjectURL(url); };
+  img.onerror=()=>{ URL.revokeObjectURL(url); toast("That file isn't a photo this browser can open."); };
+  img.src=url;
+}));
+// shrink to PHOTO_MAX_PX and lower the JPEG quality until it fits; plus a small preview for grids
+function encodePhoto(src){
+  const sw=src.naturalWidth||src.width, sh=src.naturalHeight||src.height;
+  let out=null;
+  for(const max of [PHOTO_MAX_PX,1280,1024,800]){
+    const k=Math.min(1,max/Math.max(sw,sh)), w=Math.round(sw*k), h=Math.round(sh*k), c=document.createElement('canvas');
+    c.width=w; c.height=h; c.getContext('2d').drawImage(src,0,0,w,h);
+    for(let q=.86;q>=.5;q-=.08){ const image=c.toDataURL('image/jpeg',q); out={image,w,h,c}; if(image.length<=PHOTO_MAX_CHARS) break; }
+    if(out.image.length<=PHOTO_MAX_CHARS) break;
+  }
+  const k=Math.min(1,240/Math.max(out.w,out.h)), t=document.createElement('canvas');
+  t.width=Math.max(1,Math.round(out.w*k)); t.height=Math.max(1,Math.round(out.h*k)); t.getContext('2d').drawImage(out.c,0,0,t.width,t.height);
+  return {image:out.image,thumb:t.toDataURL('image/jpeg',.72),w:out.w,h:out.h};
+}
+function reviewShot(src){
+  try{ camShot=encodePhoto(src); }catch(err){ console.error(err); return toast("Couldn't read that photo."); }
+  const img=$('cam-shot'); img.classList.remove('fly'); img.src=camShot.image;
+  $('s-camera').dataset.mode='review'; $('cam-use').disabled=false; $('cam-use').textContent='Use Photo';
+}
+$('cam-retake').addEventListener('click',()=>{ camShot=null; $('s-camera').dataset.mode='live'; });
+$('cam-use').addEventListener('click',async()=>{
+  if(!camShot) return; const b=$('cam-use'); b.disabled=true; b.textContent='Saving…';
+  try{
+    await api.savePhoto({code:me.code,username:me.username,...camShot});
+    camShot=null; const img=$('cam-shot'); img.classList.add('fly'); // the photo drops into the thumbnail
+    setTimeout(()=>{ $('s-camera').dataset.mode='live'; img.classList.remove('fly'); const t=$('cam-thumb'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); },480);
+  }catch(err){ console.error(err); b.disabled=false; b.textContent='Use Photo'; toast("Couldn't save the photo. Try again."); }
+});
+// your photos
+appTop($('roll'),'Your Photos',{back:'Camera',onBack:()=>{ $('roll').hidden=true; }});
+$('cam-thumb').addEventListener('click',()=>{ $('roll').hidden=false; drawRoll(); });
+function drawRoll(){ drawGrid($('roll-grid'),myPhotos,false); $('roll-empty').hidden=myPhotos.length>0; }
+function drawGrid(box,list,named){
+  box.replaceChildren();
+  list.forEach((p,i)=>{ const b=mk('button'); b.type='button'; b.style.backgroundImage=`url("${p.thumb}")`; b.style.setProperty('--i',Math.min(i,40));
+    b.setAttribute('aria-label',(named?p.username+', ':'')+fmtDay(p.ts)); if(named) b.append(mk('span',null,p.username));
+    b.addEventListener('click',()=>openViewer(p,named)); box.append(b); });
+}
+
+/* Photos (admin): everyone's photos */
+let photoUnsub=null;
+appTop($('s-photos'),'Photos');
+function openPhotos(){
+  go('s-photos');
+  if(!photoUnsub) photoUnsub=api.watchAllPhotos(l=>{ drawGrid($('ph-grid'),l,true); $('ph-empty').hidden=l.length>0; });
+}
+
+/* the full-size viewer (your photos, and the admin's) */
+let viewing=null;
+async function openViewer(p,named){
+  viewing=p.id; const img=$('vw-img'); img.src=p.thumb; img.classList.add('lo'); img.alt='Photo by '+(p.username||'you');
+  $('vw-cap').textContent=(named?p.username+' · ':'')+fmtDay(p.ts); $('vw-save').removeAttribute('href'); $('viewer').hidden=false;
+  $('vw-del').onclick=async()=>{
+    if(!await confirmBox('Delete this photo?',named?`${p.username}'s photo is removed for good.`:'It is removed for good.','Delete')) return;
+    try{ await api.deletePhoto(p.id); closeViewer(); toast('Photo deleted.'); }catch(err){ fail('delete the photo')(err); }
+  };
+  try{ const full=await api.photoFull(p.id); if(full&&viewing===p.id){ img.src=full; img.classList.remove('lo'); $('vw-save').href=full; } }
+  catch(err){ console.error(err); }
+}
+function closeViewer(){ viewing=null; $('viewer').hidden=true; $('vw-img').removeAttribute('src'); }
+$('vw-close').addEventListener('click',closeViewer);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('viewer').hidden&&$('cf-wrap').hidden) closeViewer(); });
+
 /* ---------- resume session ---------- */
 const saved=store.get('playlist-code');
 function resumeCode(){
@@ -2437,6 +3159,7 @@ function resumeCode(){
   }).catch(()=>{});
 }
 if(session.get('playlist-admin')==='1') api.adminActive().then(ok=>{ if(ok) openHome({admin:true}); else { session.del('playlist-admin'); resumeCode(); } });
+else if(session.get('playlist-door')==='1') api.doorActive().then(ok=>{ if(ok) openHome({door:true}); else { session.del('playlist-door'); resumeCode(); } });
 else resumeCode();
 tickClock();
 </script>
