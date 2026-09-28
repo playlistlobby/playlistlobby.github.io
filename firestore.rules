@@ -14,7 +14,10 @@ service cloud.firestore {
     function memberPath() { return /databases/$(database)/documents/members/$(request.auth.uid); }
     function sessionPath() { return /databases/$(database)/documents/adminSessions/$(request.auth.uid); }
     function signedIn() { return request.auth != null; }
-    function isMember() { return signedIn() && exists(memberPath()); }
+    // "Log everyone out" (admin): logins from before site/session.epoch no longer count
+    function epochPath() { return /databases/$(database)/documents/site/session; }
+    function fresh(ts) { return !exists(epochPath()) || ts > get(epochPath()).data.epoch; }
+    function isMember() { return signedIn() && exists(memberPath()) && fresh(get(memberPath()).data.ts); }
     function myCode() { return get(memberPath()).data.code; }
     function isAdmin() {
       return signedIn() && exists(sessionPath())
@@ -23,7 +26,8 @@ service cloud.firestore {
     function doorPath() { return /databases/$(database)/documents/doorSessions/$(request.auth.uid); }
     function isDoor() {
       return signedIn() && exists(doorPath())
-        && get(doorPath()).data.ts > request.time - duration.value(12, 'h');
+        && get(doorPath()).data.ts > request.time - duration.value(12, 'h')
+        && fresh(get(doorPath()).data.ts);
     }
     function canDoor() { return isAdmin() || isDoor(); }
     function ticketPath(t) { return /databases/$(database)/documents/tickets/$(t); }
@@ -323,7 +327,8 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // public site settings: up to three texts on everyone's screen, and the countdown target
+    // public site settings: up to three texts on everyone's screen, the countdown target,
+    // the MobilePay number, and the "log everyone out" time
     function inRange(d, k, lo, hi) { return !(k in d) || (d[k] is number && d[k] >= lo && d[k] <= hi); }
     match /site/{doc} {
       allow read: if true;
@@ -334,6 +339,9 @@ service cloud.firestore {
           || (doc == 'countdown'
             && request.resource.data.keys().hasOnly(['target','ts'])
             && request.resource.data.target is timestamp)
+          || (doc == 'session'
+            && request.resource.data.keys().hasOnly(['epoch','ts'])
+            && request.resource.data.epoch == request.time)
           || (doc == 'store'
             && request.resource.data.keys().hasOnly(['mobilepay','ts'])
             && request.resource.data.mobilepay is string && request.resource.data.mobilepay.size() <= 20));
