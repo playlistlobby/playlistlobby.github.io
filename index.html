@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Playlist</title>
+<!-- "Add to Home Screen": full screen with its own icon, like an app -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/app-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Playlist">
+<meta name="theme-color" content="#000000">
 <style>
 :root{
   --home-wall:url("assets/ios6/wallpaper-real.jpg");--home-wall-color:#c9d6d8;--home-wall-pos:center top;--home-wall-size:cover;
@@ -1383,6 +1392,57 @@ body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
 .acct.open .acct-more{display:flex}
 .acct-stats{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .acct-stats b{color:var(--ink);font-weight:700}
+
+/* tapping the top bar opens the Notification Center */
+.sb-status{cursor:pointer}
+.sb-status.has-new::before{content:"";position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 2px);margin-left:-3px;width:6px;height:6px;border-radius:50%;
+  background:#ff3b30;box-shadow:0 0 0 1px rgba(0,0,0,.4);pointer-events:none}
+/* the Notification Center: iOS 6 dark linen, pulled down from the top */
+.nc{position:fixed;inset:0;z-index:11;display:flex;flex-direction:column;color:#fff;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),linear-gradient(#2e3035,#23252a);box-shadow:0 10px 30px rgba(0,0,0,.6);animation:ncdown .38s cubic-bezier(.2,.9,.25,1)}
+@keyframes ncdown{from{transform:translateY(-100%)}}
+.nc.closing{animation:ncup .28s ease-in forwards}
+@keyframes ncup{to{transform:translateY(-100%)}}
+.nc-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  font:700 17px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 #000;border-bottom:1px solid rgba(0,0,0,.6);box-shadow:0 1px 0 rgba(255,255,255,.06)}
+.nc-body{flex:1;min-height:0;overflow-y:auto;padding:6px 0 20px}
+.nc-sec{margin-top:6px}
+.nc-sec-h{display:flex;align-items:center;gap:8px;padding:8px 14px 6px;font:700 14px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#d8d9dd;text-shadow:0 -1px 0 #000}
+.nc-sec-h .ic{width:22px;height:22px;border-radius:5px;background:#555 center/cover;box-shadow:0 1px 2px rgba(0,0,0,.6)}
+.nc-sec-h .x{margin-left:auto;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 12px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#bbb;
+  background:linear-gradient(#4a4c52,#2e3035);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 0 0 1px rgba(0,0,0,.5)}
+.nc-item{display:block;width:100%;text-align:left;padding:9px 14px 10px 44px;border-top:1px solid rgba(0,0,0,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  color:#fff;font:400 14px/19px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 #000}
+.nc-item b{display:block;font-weight:700}
+.nc-item small{display:block;color:#9fa2a8;font-size:12px}
+.nc-item.new{background:rgba(255,255,255,.05)}
+.nc-empty{margin:50px 20px;text-align:center;color:#9fa2a8;font:400 15px/21px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 -1px 0 #000}
+.nc-grab{flex:none;height:calc(26px + env(safe-area-inset-bottom));display:grid;place-items:start center;padding-top:8px;cursor:pointer;
+  background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.3));border-top:1px solid rgba(0,0,0,.6)}
+.nc-grab i{width:36px;height:5px;border-radius:3px;background:rgba(255,255,255,.45)}
+.nc-send{display:flex;flex-direction:column;gap:8px;margin:8px 12px 4px;padding:10px;border-radius:10px;background:rgba(0,0,0,.25);box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
+.nc-send textarea{width:100%;min-height:54px;border-radius:8px;padding:8px 10px;resize:none;background:#fff;color:#111;font:400 15px/20px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.nc-send .row{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:12px;color:#aaa}
+/* the banner that drops in when something new arrives */
+.nc-banner{position:fixed;z-index:12;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;cursor:pointer;
+  background:linear-gradient(rgba(20,20,22,.96),rgba(0,0,0,.94));color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.5);animation:bannerin .35s cubic-bezier(.2,.9,.25,1)}
+@keyframes bannerin{from{transform:translateY(-100%)}}
+.nc-banner.out{animation:bannerout .3s ease-in forwards}
+@keyframes bannerout{to{transform:translateY(-100%)}}
+.nc-banner .ic{width:28px;height:28px;border-radius:6px;background:#555 center/cover;flex:none}
+.nc-banner .t{min-width:0;font:400 14px/18px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.nc-banner .t b{display:block;font-weight:700}
+.nc-banner .t span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Settings: add to home screen (phones only) */
+.a2h{padding:12px 14px;font:400 15px/21px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#222}
+.a2h ol{margin:6px 0 0;padding-left:22px}
+.a2h li{margin:6px 0}
+.a2h .ico-inline{display:inline-block;vertical-align:-4px;width:20px;height:20px}
+.a2h-btn{display:block;width:100%;margin-top:10px;height:42px;border-radius:9px;color:#fff;font:700 16px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:linear-gradient(#7aaef5 0%,#3f7fe4 50%,#2b6ad8 52%,#2d6fdb 100%);box-shadow:0 0 0 .8px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.4)}
+.a2h-btn.grey{color:#333;background:linear-gradient(#fff,#dfe2e6);box-shadow:0 0 0 .8px rgba(0,0,0,.3),inset 0 1px 0 #fff}
+.a2h-ok{display:flex;align-items:center;gap:10px}
+.a2h-ok img{width:44px;height:44px;border-radius:10px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
@@ -2089,6 +2149,12 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
     <div class="al-btns"><button type="button" id="al-no">Cancel</button><button type="submit" id="al-ok">OK</button></div>
   </form>
 </div>
+<div class="nc" id="nc" hidden role="dialog" aria-label="Notifications">
+  <div class="nc-head"><span>Notifications</span><button class="cam-pill" type="button" id="nc-alerts" hidden>Allow alerts</button></div>
+  <div class="nc-body" id="nc-body"></div>
+  <div class="nc-grab" id="nc-grab" role="button" aria-label="Close notifications" tabindex="0"><i></i></div>
+</div>
+<div class="nc-banner" id="nc-banner" hidden role="status" aria-live="polite"><span class="ic" id="ncb-ic"></span><span class="t"><b id="ncb-t"></b><span id="ncb-d"></span></span></div>
 <div class="sheet-wrap confirm-wrap" id="cf-wrap" hidden>
   <div class="sheet glass confirm" role="alertdialog" aria-modal="true" aria-labelledby="cf-title" aria-describedby="cf-text">
     <h2 id="cf-title"></h2>
@@ -2355,6 +2421,14 @@ async function firebaseApi(cfg){
     watchAllPhotos(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"photos"),fs.orderBy("ts","desc"),fs.limit(300)),s=>cb(s.docs.map(msgOut)),lost); },
     async photoFull(id){ const s=await fs.getDoc(fs.doc(db,"photoData",id)); return s.exists()?s.data().image:null; },
     async deletePhoto(id){ const b=fs.writeBatch(db); b.delete(fs.doc(db,"photos",id)); b.delete(fs.doc(db,"photoData",id)); await b.commit(); },
+    // notifications
+    watchNotes(code,cb){
+      let a=[],b=[]; const emit=()=>cb([...a,...b]), map=s=>s.docs.map(msgOut);
+      const u1=code?fs.onSnapshot(fs.query(fs.collection(db,"notes"),fs.where("to","==",code)),s=>{ a=map(s); emit(); },e=>console.error(e)):null;
+      const u2=fs.onSnapshot(fs.query(fs.collection(db,"notes"),fs.where("to","==","all")),s=>{ b=map(s); emit(); },e=>console.error(e));
+      return ()=>{ u1&&u1(); u2(); }; },
+    notify(n){ return fs.addDoc(fs.collection(db,"notes"),{...n,ts:fs.serverTimestamp()}); },
+    deleteNote(id){ return fs.deleteDoc(fs.doc(db,"notes",id)); },
     // apps in the Store (admin-made pages, Song Wars, Flappy Bird)
     watchApps(cb){ return fs.onSnapshot(fs.collection(db,"apps"),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>console.error(e)); },
     saveApp(id,a){ const r=id?fs.doc(db,"apps",id):fs.doc(fs.collection(db,"apps")); return fs.setDoc(r,{...a,ts:fs.serverTimestamp()}).then(()=>r.id); },
@@ -2668,6 +2742,9 @@ function localApi(){
       if(m.usedAt) return {status:'already',name:m.name,size:m.size,ts:m.usedAt};
       m.usedAt=Date.now(); m.by=by; if(who) m.who=who; return {status:'ok',name:m.name,size:m.size,ts:m.usedAt}; }); },
     watchDoorChat:cb=>sub(d=>cb(d.doorChat.slice(-150))),
+    watchNotes:(code,cb)=>sub(d=>cb((d.notes||[]).filter(n=>n.to==='all'||(code&&n.to===code)))),
+    async notify(n){ mut(d=>{ d.notes=d.notes||[]; d.notes.push({id:'nt'+Date.now()+Math.random(),...n,ts:Date.now()}); }); },
+    async deleteNote(id){ mut(d=>{ d.notes=(d.notes||[]).filter(n=>n.id!==id); }); },
     watchApps:cb=>sub(d=>cb(Object.entries(d.apps||{}).map(([id,a])=>({id,...a})))),
     async saveApp(id,a){ id=id||('ap'+Date.now()); mut(d=>{ d.apps=d.apps||{}; d.apps[id]={...a}; }); return id; },
     async deleteApp(id){ mut(d=>{ delete (d.apps||{})[id]; }); },
@@ -2969,9 +3046,9 @@ if(window.visualViewport){
 }
 // styles and likes are only readable while logged in (code or admin), so they're watched per login
 let socialUnsubs=[];
-function startSocial(){ if(socialUnsubs.length) return; socialUnsubs=[api.watchStyles(onStyles),api.watchLikes(onLikes),
+function startSocial(){ if(socialUnsubs.length) return; setTimeout(()=>{ if(!notesUnsub) startNotes(); },0); socialUnsubs=[api.watchStyles(onStyles),api.watchLikes(onLikes),
   api.watchMuted(s=>{ mutedSet=s; if(current.id==='s-forum') drawForum(); syncHistMute(); }), api.watchAvatars(o=>onAvatars(o)), api.watchApps(onApps)]; }
-function stopSocial(){ socialUnsubs.forEach(u=>u&&u()); socialUnsubs=[]; }
+function stopSocial(){ socialUnsubs.forEach(u=>u&&u()); socialUnsubs=[]; stopNotes(); }
 function onStyles(o){
   styles=o||{};
   applyMyShade(me.shade);
@@ -3509,14 +3586,14 @@ $('pm-block').addEventListener('click',()=>{ if(!pmTo) return; const t=pmTo; clo
 $('pm-like').addEventListener('click',async()=>{
   if(!pmTo||!me.code) return; const to=pmTo.code, on=myLikes.has(to), b=$('pm-like');
   b.classList.remove('pop'); void b.offsetWidth; if(!on) b.classList.add('pop');
-  try{ on ? await api.unlike(me.code,to) : await api.like(me.code,to); }
+  try{ if(on) await api.unlike(me.code,to); else { await api.like(me.code,to); sendNote(to,'like'); } }
   catch(err){ console.error(err); toast("Couldn't save the like. Try again."); }
 });
 $('pm-form').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('pm-text').value.trim(); if(!text||!pmTo) return;
   if(me.kind!=='admin'&&!spamOk()) return;
   const to=pmTo;
-  try{ await api.sendDM({from:me.code,fromName:me.username,to:to.code,toName:to.name,text}); closePM(); toast(`Sent privately to ${to.name}.`); }
+  try{ await api.sendDM({from:me.code,fromName:me.username,to:to.code,toName:to.name,text}); sendNote(to.code,'dm',text); closePM(); toast(`Sent privately to ${to.name}.`); }
   catch(err){ console.error(err); toast(`Private message not sent. ${to.name} may have blocked you, or the connection dropped.`); }
 });
 document.addEventListener('pointerdown',e=>{ if(!$('pm-pop').hidden && !e.target.closest('#pm-pop,.bubble.other,.who-tap')) closePM(); });
@@ -4286,6 +4363,7 @@ function renderSettings(){
   add.addEventListener('click',async()=>{ const n=await promptBox({title:'Block someone',text:'Type their username.',placeholder:'Username',ok:'Next'}); if(!n) return;
     try{ const code=await api.codeOfName(n); if(!code) return toast(`No one is called ${n}.`); if(code===me.code) return toast('That’s you.'); toggleBlock(code,n); }catch(err){ fail('find them')(err); } });
   bg.append(add); box.append(bg);
+  if(isPhone()){ box.append(mk('p','grp-title','Playlist on your home screen')); box.append(homeScreenCard()); }
   box.append(mk('p','grp-foot','More settings are coming soon.'));
   const g=mk('div','grp'), out=mk('button','cell btn','Log Out'); out.type='button'; out.addEventListener('click',backToCode); g.append(out); box.append(g);
 }
@@ -5196,6 +5274,7 @@ $('f-comment').addEventListener('submit',async e=>{
   if(mutedSet.has(me.code)) return toast('You are muted in the forum.');
   if(!spamOk()) return;
   try{ await api.addComment({post:fmOpen,code:me.code,name:me.username,...(me.kind==='rare'?{}:{shade:me.shade}),...(me.kind==='blue'||me.kind==='rare'?{kind:me.kind}:{}),text});
+    { const post=fmPosts.find(x=>x.id===fmOpen); if(post&&post.code!==me.code) sendNote(post.code,'reply',post.title); }
     $('fm-c-in').value=''; const sc=$('fm-post').querySelector('.app-body'); setTimeout(()=>sc.scrollTop=sc.scrollHeight,200); }
   catch(err){ console.error(err); toast('Comment not posted. Try again.'); }
 });
@@ -5258,7 +5337,7 @@ function drawThread(){
 $('f-fmdm').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('fm-dm-in').value.trim(); if(!text||!fmThread) return;
   if(!spamOk()) return;
-  try{ await api.sendDM({from:me.code,fromName:me.username,to:fmThread.code,toName:fmThread.name,text}); $('fm-dm-in').value=''; }
+  try{ await api.sendDM({from:me.code,fromName:me.username,to:fmThread.code,toName:fmThread.name,text}); sendNote(fmThread.code,'dm',text); $('fm-dm-in').value=''; }
   catch(err){ console.error(err); toast(`Not sent. ${fmThread.name} may have blocked you, or the connection dropped.`); }
 });
 
@@ -5504,7 +5583,11 @@ function fbOver(){
   // your best on the leaderboard (members; the rules only take a higher score)
   const mineNow=fbScores.find(x=>x.code===me.code);
   if(me.code&&homeMode==='user'&&fb.score>0&&(!mineNow||fb.score>mineNow.best))
-    api.saveFlappy(me.code,me.username,fb.score,fbTop).then(()=>{ if(!fbTop||fb.score>(fbTop.best??-1)) toast('New number 1! You get 10 likes every day while you stay on top.'); },err=>console.error(err));
+    api.saveFlappy(me.code,me.username,fb.score,fbTop).then(()=>{
+      if(!fbTop||fb.score>(fbTop.best??-1)) toast('New number 1! You get 10 likes every day while you stay on top.');
+      // everyone you just passed on the leaderboard hears about it
+      const was=mineNow?mineNow.best:-1; fbScores.filter(x=>x.code!==me.code&&x.best>was&&x.best<fb.score).slice(0,10).forEach(x=>sendNote(x.code,'flappy',String(fb.score)));
+    },err=>console.error(err));
 }
 function fbDigits(g,n,cx,y,h){ const s=String(n), w=[...s].map(c=>(fbImg[c].naturalWidth||24)*h/36), total=w.reduce((a,b)=>a+b,0)+(s.length-1)*2; let x=cx-total/2;
   [...s].forEach((c,i)=>{ g.drawImage(fbImg[c],x,y,w[i],h); x+=w[i]+2; }); }
@@ -5555,6 +5638,117 @@ function tryDaily(){
   store.set('playlist-daily-'+me.code,String(Date.now())); // once a day on this phone too (the database checks it as well)
   tryDaily.busy=true;
   api.claimDaily(me.code).then(()=>toast(`🏆 You’re number 1 in Flappy Bird: +${FLAPPY_DAILY_LIKES} likes today!`),err=>console.error(err)).finally(()=>{ setTimeout(()=>tryDaily.busy=false,5000); });
+}
+
+/* ---------- "Add to Home Screen": Playlist as an app (Settings, phones only) ----------
+   iPhones don't let a site add itself: it's done from Safari's Share menu, so we explain it (with a button that opens the Share menu).
+   Android can do it in one tap once the browser offers it (beforeinstallprompt). */
+let installPrompt=null;
+addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installPrompt=e; if(current.id==='s-settings') renderSettings(); });
+addEventListener('appinstalled',()=>{ installPrompt=null; toast('Playlist is on your home screen.'); if(current.id==='s-settings') renderSettings(); });
+if('serviceWorker' in navigator&&location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+const UA=navigator.userAgent||'';
+const isIOS=/iPhone|iPad|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isAndroid=/Android/.test(UA);
+const inAppBrowser=/Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat|Line\//.test(UA);
+const isStandalone=()=>navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
+const isPhone=()=>(isIOS||isAndroid||matchMedia('(pointer:coarse)').matches)&&Math.min(screen.width,screen.height)<700;
+const SHARE_SVG='<svg class="ico-inline" viewBox="0 0 20 20" fill="none" stroke="#1f6fe0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v11M6 6l4-4 4 4"/><path d="M6 9H4.5A1.5 1.5 0 0 0 3 10.5v6A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 15.5 9H14"/></svg>';
+const ADD_SVG='<svg class="ico-inline" viewBox="0 0 20 20" fill="none" stroke="#333" stroke-width="1.6" stroke-linecap="round"><rect x="2.5" y="2.5" width="15" height="15" rx="3.5"/><path d="M10 6.5v7M6.5 10h7"/></svg>';
+function homeScreenCard(){
+  const g=mk('div','grp'), c=mk('div','a2h'); g.append(c);
+  const b=(t,cls,fn)=>{ const x=mk('button','a2h-btn '+(cls||''),t); x.type='button'; x.addEventListener('click',fn); c.append(x); return x; };
+  if(isStandalone()){ const ok=mk('div','a2h-ok'), im=mk('img'); im.src='assets/apple-touch-icon.png'; im.alt=''; ok.append(im,mk('span',null,'Playlist is on your home screen. You’re using it as an app.')); c.append(ok); return g; }
+  if(inAppBrowser){ // Instagram, Facebook, TikTok…: open the page in Safari / Chrome first
+    c.append(mk('b',null,'First, open Playlist in '+(isIOS?'Safari':'your browser')));
+    const ol=mk('ol'); ol.innerHTML=`<li>Tap <b>•••</b> (top right)</li><li>Choose <b>${isIOS?'Open in external browser':'Open in browser'}</b></li><li>Then come back to Settings for the last step</li>`; c.append(ol);
+    b('Copy the Playlist link','grey',()=>copy(location.origin+location.pathname,'Link copied. Paste it in '+(isIOS?'Safari':'your browser')+'.')); return g; }
+  if(isIOS){
+    c.append(mk('b',null,'Add Playlist to your home screen'));
+    const ol=mk('ol'); ol.innerHTML=`<li>Tap the Share button ${SHARE_SVG} in Safari’s bar</li><li>Scroll down and tap <b>Add to Home Screen</b> ${ADD_SVG}</li><li>Tap <b>Add</b>. Playlist opens full screen from its own icon.</li>`; c.append(ol);
+    if(navigator.share) b('Open the Share menu','',()=>navigator.share({title:'Playlist',url:location.origin+location.pathname}).catch(()=>{}));
+    c.append(mk('small',null,'Don’t see “Add to Home Screen” in that menu? Use Safari’s own Share button at the bottom of the screen.')); return g; }
+  if(installPrompt){ c.append(mk('b',null,'Get Playlist as an app')); c.append(mk('p',null,'One tap and it’s on your home screen, full screen, with its own icon.'));
+    b('Install Playlist','',async()=>{ const p=installPrompt; installPrompt=null; p.prompt(); try{ await p.userChoice; }catch{} renderSettings(); }); return g; }
+  c.append(mk('b',null,'Add Playlist to your home screen'));
+  const ol=mk('ol'); ol.innerHTML=`<li>Tap the menu <b>⋮</b> in your browser</li><li>Tap <b>Add to Home screen</b> or <b>Install app</b></li><li>Tap <b>Add</b></li>`; c.append(ol);
+  return g;
+}
+
+/* ---------- Notification Center: tap the top bar. Likes, replies to your posts, private messages,
+   someone passing you in Flappy Bird, and messages from the admin to everyone. New ones drop in as a banner. ---------- */
+let notes=[], notesUnsub=null, notesSince=Date.now();
+const NOTE_KIND={
+  like:{app:'Likes',icon:()=>'assets/ios6/icon-likes.svg',title:n=>n.fromName,text:()=>'liked you ♥'},
+  reply:{app:'Forum',icon:()=>HOME_THEME.icons.forum,title:n=>n.fromName,text:n=>`commented on “${n.extra}”`},
+  dm:{app:'Messages',icon:()=>HOME_THEME.icons.chat,title:n=>n.fromName,text:n=>n.extra},
+  flappy:{app:'Flappy Bird',icon:()=>APP_ICONS.flappy,title:n=>n.fromName,text:n=>`passed you on the leaderboard with ${n.extra}`},
+  admin:{app:'Playlist',icon:()=>'assets/apple-touch-icon.png',title:()=>'Playlist',text:n=>n.extra},
+};
+const ncKey=k=>`playlist-nc-${k}-${me.code||'admin'}`;
+const ncSeen=()=>+store.get(ncKey('seen'))||0;
+const ncHidden=()=>{ try{ return new Set(JSON.parse(store.get(ncKey('hide'))||'[]')); }catch{ return new Set(); } };
+function sendNote(to,kind,extra){ if(!me.code||me.kind==='admin'||!to||to===me.code) return;
+  api.notify({to,kind,from:me.code,fromName:me.username,...(extra!=null?{extra:String(extra).slice(0,80)}:{})}).catch(err=>console.error(err)); }
+function startNotes(){
+  stopNotes(); notesSince=Date.now();
+  notesUnsub=api.watchNotes(homeMode==='admin'?null:me.code,l=>{
+    const hide=ncHidden(), list=l.filter(n=>!hide.has(n.id)&&!(n.from&&blocked.has(n.from))).sort((a,b)=>b.ts-a.ts);
+    const fresh=list.filter(n=>n.ts>notesSince&&n.ts>ncSeen()&&!notes.some(o=>o.id===n.id));
+    notes=list; markNew(); if(!$('nc').hidden) drawNC();
+    if(fresh.length&&$('nc').hidden) showBanner(fresh[0]);
+  });
+}
+function stopNotes(){ notesUnsub&&notesUnsub(); notesUnsub=null; notes=[]; markNew(); }
+function markNew(){ const n=notes.filter(x=>x.ts>ncSeen()).length; document.querySelectorAll('.sb-status').forEach(el=>el.classList.toggle('has-new',n>0)); }
+function showBanner(n){
+  const k=NOTE_KIND[n.kind]; if(!k) return; const b=$('nc-banner');
+  $('ncb-ic').style.backgroundImage=`url("${k.icon()}")`; $('ncb-t').textContent=k.title(n); $('ncb-d').textContent=k.text(n);
+  b.classList.remove('out'); b.hidden=false; if(navigator.vibrate) navigator.vibrate(30);
+  clearTimeout(showBanner.t); showBanner.t=setTimeout(()=>{ b.classList.add('out'); setTimeout(()=>b.hidden=true,300); },4500);
+  // with Playlist in the background (and alerts allowed), the phone shows it too
+  if(document.hidden&&'Notification' in window&&Notification.permission==='granted') navigator.serviceWorker?.ready.then(r=>r.showNotification(k.title(n),{body:k.text(n),icon:'assets/app-icon-192.png',tag:n.id})).catch(()=>{});
+}
+$('nc-banner').addEventListener('click',()=>{ $('nc-banner').hidden=true; openNC(); });
+// tap the top bar (anywhere it shows) to pull down the Notification Center
+document.addEventListener('click',e=>{ if(!e.target.closest('.sb-status')) return; if(!me.code&&homeMode!=='admin') return; if(current.id==='s-code') return; openNC(); });
+function openNC(){ if(!notesUnsub) startNotes(); $('nc').classList.remove('closing'); $('nc').hidden=false; drawNC(); store.set(ncKey('seen'),String(Date.now())); setTimeout(markNew,50);
+  $('nc-alerts').hidden=!('Notification' in window)||Notification.permission!=='default'; }
+function closeNC(){ const n=$('nc'); n.classList.add('closing'); setTimeout(()=>{ n.hidden=true; n.classList.remove('closing'); },260); }
+$('nc-grab').addEventListener('click',closeNC);
+$('nc-grab').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') closeNC(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('nc').hidden) closeNC(); });
+$('nc-alerts').addEventListener('click',async()=>{ try{ const r=await Notification.requestPermission(); toast(r==='granted'?'Alerts on. You’ll see them while Playlist is open in the background.':'Alerts stay off.'); }catch{} $('nc-alerts').hidden=true; });
+function drawNC(){
+  const box=$('nc-body'), seen=+store.get(ncKey('seen'))||0; box.replaceChildren();
+  // the admin writes to everyone from here
+  if(homeMode==='admin'){ const f=mk('div','nc-send'), ta=mk('textarea'); ta.maxLength=140; ta.placeholder='Send a notification to everyone'; ta.setAttribute('aria-label','Notification to everyone');
+    const row=mk('div','row'), cnt=mk('span',null,'0 / 140'), sb=mk('button','mini-btn green','Send to everyone'); sb.type='button';
+    ta.oninput=()=>cnt.textContent=`${ta.value.length} / 140`;
+    sb.onclick=async()=>{ const t=ta.value.trim(); if(!t) return toast('Write the notification first.');
+      if(!await confirmBox('Send to everyone?',`“${t}” shows up for everyone who is logged in.`,'Send')) return;
+      try{ await api.notify({to:'all',kind:'admin',extra:t}); ta.value=''; cnt.textContent='0 / 140'; toast('Sent to everyone.'); }catch(err){ fail('send it')(err); } };
+    row.append(cnt,sb); f.append(ta,row); box.append(f); }
+  if(!notes.length){ box.append(mk('p','nc-empty',homeMode==='admin'?'Nothing sent yet.':'No notifications yet. Likes, replies, private messages and news show up here.')); return; }
+  const groups=new Map(); notes.forEach(n=>{ const k=NOTE_KIND[n.kind]; if(!k) return; if(!groups.has(k.app)) groups.set(k.app,{k,list:[]}); groups.get(k.app).list.push(n); });
+  groups.forEach(({k,list},app)=>{
+    const sec=mk('div','nc-sec'), h=mk('div','nc-sec-h'), ic=mk('span','ic'); ic.style.backgroundImage=`url("${k.icon()}")`;
+    const x=mk('button','x','✕'); x.type='button'; x.setAttribute('aria-label','Clear '+app);
+    x.onclick=()=>clearNotes(list); h.append(ic,app,x); sec.append(h);
+    list.slice(0,20).forEach(n=>{ const it=mk('button','nc-item'+(n.ts>seen?' new':'')); it.type='button';
+      it.append(mk('b',null,k.title(n)),k.text(n),mk('small',null,fmtDay(n.ts))); it.onclick=()=>openNote(n); sec.append(it); });
+    box.append(sec); });
+}
+// clear: your own are deleted; the admin's to-everyone ones are hidden on this phone (the admin deletes them for real)
+async function clearNotes(list){
+  const hide=ncHidden();
+  for(const n of list){ if(n.to==='all'&&homeMode!=='admin') hide.add(n.id); else api.deleteNote(n.id).catch(()=>{}); }
+  store.set(ncKey('hide'),JSON.stringify([...hide].slice(-300))); notes=notes.filter(n=>!list.includes(n)); drawNC(); markNew();
+}
+function openNote(n){ closeNC();
+  if(n.kind==='dm'&&me.code){ openForum(); setTimeout(()=>{ setFmTab('inbox'); openThread(n.from,n.fromName); },420); }
+  if(n.kind==='reply'&&me.code){ openForum(); const p=fmPosts.find(x=>x.title===n.extra); if(p) setTimeout(()=>openFmPost(p.id),420); }
+  if(n.kind==='flappy'){ const a=storeApps.find(x=>x.type==='flappy'); if(a&&(homeMode==='admin'||appInstalled(a))) openStoreApp(a); }
 }
 
 /* ---------- resume session ---------- */
