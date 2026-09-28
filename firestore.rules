@@ -444,6 +444,30 @@ service cloud.firestore {
       allow delete: if isAdmin() || (isMember() && resource.data.from == myCode());
     }
 
+    // iTunes: videos and music the admin uploads. The file itself is split into pieces of up to 1 MB (mediaChunks/<id>_<n>).
+    // status: 'free' (anyone logged in can download), 'soon' (listed, greyed out), 'removed' (gone from the store; people keep their copy)
+    match /media/{id} {
+      allow read: if isMember() || isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['title','kind','status','mime','size','chunks','cover','dur','ts'])
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 60
+        && request.resource.data.kind in ['music', 'video']
+        && request.resource.data.status in ['free', 'soon', 'removed']
+        && request.resource.data.chunks is int && request.resource.data.chunks > 0 && request.resource.data.chunks <= 60
+        && (request.resource.data.get('cover', null) == null
+          || (request.resource.data.cover is string && request.resource.data.cover.size() < 150000));
+      allow delete: if isAdmin();
+    }
+    match /mediaChunks/{id} {
+      allow get: if isAdmin()
+        || (isMember() && get(/databases/$(database)/documents/media/$(resource.data.media)).data.status == 'free');
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['media','i','data'])
+        && request.resource.data.data is bytes && request.resource.data.data.size() <= 1000000;
+      allow delete: if isAdmin();
+    }
+
     // public site settings: up to three texts on everyone's screen, the countdown target,
     // the MobilePay number, and the "log everyone out" time
     function inRange(d, k, lo, hi) { return !(k in d) || (d[k] is number && d[k] >= lo && d[k] <= hi); }
