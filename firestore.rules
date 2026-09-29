@@ -80,13 +80,36 @@ service cloud.firestore {
       allow delete: if signedIn() && request.auth.uid == uid;
     }
 
+    function adminGrantPath(uid) { return /databases/$(database)/documents/adminGrants/$(uid); }
     match /adminSessions/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
+      // become admin either by knowing the real secret (bootstrap) OR because this device has been approved (a lasting grant)
       allow create, update: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['key','ts'])
         && request.resource.data.ts == request.time
-        && request.resource.data.key == get(/databases/$(database)/documents/config/admin).data.key;
+        && (request.resource.data.key == get(/databases/$(database)/documents/config/admin).data.key
+          || exists(adminGrantPath(uid)));
       allow delete: if signedIn() && request.auth.uid == uid;
+    }
+    // a device asking to become admin ("euroadmin"). The owner approves it from a device that is already admin.
+    match /adminReq/{uid} {
+      allow get: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow list: if isAdmin();
+      // the asking device writes its own request; it can never mark itself approved
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name','ts','approved'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && request.resource.data.approved == false && request.resource.data.ts == request.time;
+      allow update: if isAdmin(); // an admin approves it
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+    }
+    // a lasting "this device is trusted" grant. Only an existing admin can hand it out; the admin can revoke it.
+    match /adminGrants/{uid} {
+      allow get: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['name','ts']) && request.resource.data.ts == request.time;
+      allow delete: if isAdmin();
     }
 
     // entering a code: only codes that exist, and never the admin's chat account
