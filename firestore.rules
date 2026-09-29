@@ -288,6 +288,7 @@ service cloud.firestore {
     function pricesPath() { return /databases/$(database)/documents/site/prices; }
     function priceOf(item, def) { return exists(pricesPath()) ? get(pricesPath()).data.get(item, def) : def; }
     function walletPath(c) { return /databases/$(database)/documents/wallets/$(c); }
+    function flipPath(id) { return /databases/$(database)/documents/flips/$(id); }
     function okPrice(d) {
       return (d.item == 'tshirt' && d.price == priceOf('tshirt', 200)) || (d.item == 'screen' && d.price == priceOf('screen', 50));
     }
@@ -337,7 +338,9 @@ service cloud.firestore {
       function now(k) { return request.resource.data.get(k, 0); }
       function same(k) { return request.resource.data.get(k, null) == (resource == null ? null : resource.data.get(k, null)); }
       function lastOrder() { return getAfter(orderPath(request.resource.data.last)).data; }
-      function okKeys() { return request.resource.data.keys().hasOnly(['bonus','spent','last','credit','creditSpent','dailyAt']); }
+      function okKeys() { return request.resource.data.keys().hasOnly(['bonus','spent','last','credit','creditSpent','dailyAt','storeDailyAt','flip']); }
+      function flipBefore() { return get(flipPath(request.resource.data.flip)).data; }
+      function flipAfter() { return getAfter(flipPath(request.resource.data.flip)).data; }
       allow read: if isAdmin() || (isMember() && myCode() == code);
       allow create, update: if isAdmin() && okKeys()
         && now('bonus') is int && now('spent') is int && now('credit') is int && now('creditSpent') is int;
@@ -345,17 +348,73 @@ service cloud.firestore {
       allow create, update: if isMember() && myCode() == code && okKeys()
         && request.resource.data.last is string && !exists(orderPath(request.resource.data.last))
         && lastOrder().code == code
-        && now('bonus') == was('bonus') && now('credit') == was('credit') && same('dailyAt')
+        && now('bonus') == was('bonus') && now('credit') == was('credit') && same('dailyAt') && same('storeDailyAt') && same('flip')
         && ((lastOrder().currency == 'likes' && now('spent') == was('spent') + lastOrder().price && now('creditSpent') == was('creditSpent'))
           || (lastOrder().currency == 'credit' && now('creditSpent') == was('creditSpent') + lastOrder().price
             && now('spent') == was('spent') && now('creditSpent') <= now('credit')));
       // number 1 on the Flappy Bird leaderboard: 10 likes, once a day
       allow create, update: if isMember() && myCode() == code && okKeys()
         && now('bonus') == was('bonus') + 10 && now('spent') == was('spent')
-        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last')
+        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('storeDailyAt') && same('flip')
         && request.resource.data.dailyAt == request.time
         && (resource == null || resource.data.get('dailyAt', null) == null || resource.data.dailyAt < request.time - duration.value(20, 'h'))
         && get(/databases/$(database)/documents/site/flappyTop).data.get('code', '') == code;
+      // the Store's daily bonus (the admin sets how many likes in site/prices.daily; 0 = off)
+      allow create, update: if isMember() && myCode() == code && okKeys()
+        && priceOf('daily', 2) is int && priceOf('daily', 2) > 0
+        && now('bonus') == was('bonus') + priceOf('daily', 2) && now('spent') == was('spent')
+        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('dailyAt') && same('flip')
+        && request.resource.data.storeDailyAt == request.time
+        && (resource == null || resource.data.get('storeDailyAt', null) == null || resource.data.storeDailyAt < request.time - duration.value(20, 'h'));
+      // Coin Flip: the stake goes in together with the flip (post one, take one, or play the bot);
+      // winnings and taken-back flips come back as bonus. The flip's own rules check who may do what.
+      allow create, update: if isMember() && myCode() == code && okKeys()
+        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('dailyAt') && same('storeDailyAt')
+        && request.resource.data.flip is string
+        && ((!exists(flipPath(request.resource.data.flip)) && flipAfter().code == code
+              && now('spent') == was('spent') + flipAfter().stake && now('bonus') == was('bonus'))
+          || (exists(flipPath(request.resource.data.flip))
+            && ((flipBefore().status == 'open' && flipAfter().status == 'done' && flipAfter().opp == code
+                  && now('spent') == was('spent') + flipBefore().stake && now('bonus') == was('bonus'))
+              || (flipBefore().status == 'done' && flipBefore().paid == false && flipAfter().paid == true
+                  && now('bonus') == was('bonus') + 2 * flipBefore().stake && now('spent') == was('spent'))
+              || (flipBefore().status == 'open' && flipBefore().code == code && flipAfter().status == 'cancelled'
+                  && now('bonus') == was('bonus') + flipBefore().stake && now('spent') == was('spent')))));
+    }
+
+    // Coin Flip: a member puts likes on heads or tails. Someone takes the flip (or the bot does at once). The coin is the
+    // server's clock at that moment (an even millisecond is heads), so nobody picks the result. The winner collects both stakes.
+    function flipWinner(d) { return ((d.doneAt.toMillis() % 2 == 0) == (d.side == 'heads')) ? d.code : d.opp; }
+    match /flips/{id} {
+      allow read: if isMember() || isAdmin();
+      allow create: if isMember() && appOn('coinflip')
+        && request.resource.data.keys().hasOnly(['code','name','stake','side','vsBot','status','paid','ts','opp','oppName','doneAt'])
+        && request.resource.data.code == myCode() && request.resource.data.name == get(codePath(myCode())).data.username
+        && request.resource.data.stake is int && request.resource.data.stake >= 1 && request.resource.data.stake <= priceOf('flipMax', 20)
+        && request.resource.data.side in ['heads', 'tails'] && request.resource.data.paid == false
+        && request.resource.data.ts == request.time
+        && getAfter(walletPath(myCode())).data.get('flip', '') == id
+        && ((request.resource.data.vsBot == false && request.resource.data.status == 'open'
+              && !('opp' in request.resource.data) && !('doneAt' in request.resource.data))
+          || (request.resource.data.vsBot == true && request.resource.data.status == 'done'
+              && request.resource.data.opp == '_bot' && request.resource.data.oppName == 'Bot' && request.resource.data.doneAt == request.time));
+      // take someone else's open flip
+      allow update: if isMember() && appOn('coinflip') && resource.data.status == 'open' && resource.data.code != myCode()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','opp','oppName','doneAt'])
+        && request.resource.data.status == 'done' && request.resource.data.opp == myCode()
+        && request.resource.data.oppName == get(codePath(myCode())).data.username
+        && request.resource.data.doneAt == request.time
+        && getAfter(walletPath(myCode())).data.get('flip', '') == id;
+      // the winner collects (once)
+      allow update: if isMember() && resource.data.status == 'done' && resource.data.paid == false && flipWinner(resource.data) == myCode()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid']) && request.resource.data.paid == true
+        && getAfter(walletPath(myCode())).data.get('flip', '') == id;
+      // take back your own open flip
+      allow update: if isMember() && resource.data.status == 'open' && resource.data.code == myCode()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','doneAt'])
+        && request.resource.data.status == 'cancelled' && request.resource.data.doneAt == request.time
+        && getAfter(walletPath(myCode())).data.get('flip', '') == id;
+      allow update, delete: if isAdmin();
     }
     // profile pictures (everyone logged in sees them) and personal backgrounds (only the owner), bought with likes
     function boughtWith(code, item, d) {
@@ -419,7 +478,7 @@ service cloud.firestore {
       allow read: if isMember() || isAdmin();
       allow write: if isAdmin()
         && request.resource.data.keys().hasOnly(['type','name','icon','on','gen','text','image','bg','fg','pickBy','order','ts'])
-        && request.resource.data.type in ['page', 'songwars', 'flappy']
+        && request.resource.data.type in ['page', 'songwars', 'flappy', 'coinflip']
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 24
         && request.resource.data.on is bool && request.resource.data.gen is int
         && (request.resource.data.get('icon', null) == null || (request.resource.data.icon is string && request.resource.data.icon.size() < 80000))
@@ -564,7 +623,7 @@ service cloud.firestore {
         && request.resource.data.get('extra', '') is string
         && ((isAdmin() && request.resource.data.kind == 'admin' && request.resource.data.to == 'all'
             && request.resource.data.extra.size() > 0 && request.resource.data.extra.size() <= 140)
-          || (isMember() && request.resource.data.kind in ['like', 'reply', 'dm', 'flappy']
+          || (isMember() && request.resource.data.kind in ['like', 'reply', 'dm', 'flappy', 'flip']
             && request.resource.data.from == myCode()
             && request.resource.data.to is string && request.resource.data.to != myCode() && request.resource.data.to != 'all'
             && exists(codePath(request.resource.data.to))
@@ -604,7 +663,8 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly(['target','ts'])
             && request.resource.data.target is timestamp)
           || (doc == 'prices'
-            && request.resource.data.keys().hasOnly(['bubble','avatar','background','tshirt','screen','ts']))
+            && request.resource.data.keys().hasOnly(['bubble','avatar','background','tshirt','screen','daily','flipMax','ts'])
+            && inRange(request.resource.data, 'daily', 0, 100) && inRange(request.resource.data, 'flipMax', 1, 500))
           || (doc == 'wallpaper'
             && request.resource.data.keys().hasOnly(['image','phone','desktop','ts'])
             && (request.resource.data.get('image', null) == null
