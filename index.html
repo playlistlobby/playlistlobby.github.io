@@ -331,6 +331,8 @@ body[data-screen=s-admin] .overlay{opacity:0}
 /* experimental tab */
 .lab-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#0A5BC4;background:rgba(10,132,255,.14);padding:3px 9px;border-radius:999px}
 .lab h3{margin:6px 0 0;font-size:20px;line-height:26px;font-weight:700}
+.lab-badge.nuke{color:#fff;background:#d9262c}
+.nuke-card{box-shadow:0 0 0 1.5px rgba(217,38,44,.55),0 0 26px rgba(217,38,44,.18)}
 .a-muted.wrap,.a-row .a-muted.wrap{white-space:normal}
 .lim-row{display:flex;align-items:center;gap:8px;font-size:15px}
 .lim-row>span:first-child{flex:1;min-width:0}
@@ -2297,6 +2299,13 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
             <button class="a-btn glass live danger" type="button" id="lab-logout">Log everyone out</button>
           </div>
         </div>
+        <div class="glass card a-stack lab nuke-card">
+          <div><span class="lab-badge nuke">Danger</span><h3>Nuke: delete all accounts</h3></div>
+          <p class="a-muted wrap">Deletes every account and everything people made: names, colours, likes, chat messages, private messages, forum posts, photos, songs,
+            Flappy Bird scores, coin flips, wallets and store credit, orders, tickets and check-ins, notifications and blocks. Everyone is logged out.</p>
+          <p class="a-muted wrap">Kept: the invite codes (free to use again), your passwords, the apps, prices, wallpaper, countdown, iTunes media and camera filters. <b>This can’t be undone.</b></p>
+          <div class="a-row"><span class="a-muted" id="nuke-state"></span><button class="a-btn glass live danger" type="button" id="lab-nuke">Nuke everything</button></div>
+        </div>
       </div>
       <div class="a-panel" id="t-msgs" role="tabpanel" hidden>
         <div class="glass card a-stack lab">
@@ -2895,6 +2904,37 @@ async function firebaseApi(cfg){
     saveFeatures(patch){ return fs.setDoc(fs.doc(db,"site","features"),{...features,...patch,ts:fs.serverTimestamp()}); },
     watchSession(cb){ return fs.onSnapshot(fs.doc(db,"site","session"),s=>{ const e=s.exists()&&s.data({serverTimestamps:'estimate'}).epoch; cb(e?e.toMillis():0); },e=>console.error(e)); },
     logoutEveryone(){ return fs.setDoc(fs.doc(db,"site","session"),{epoch:fs.serverTimestamp(),ts:fs.serverTimestamp()}); },
+    /* The nuke: every account and everything people made is deleted. The invite codes stay (free again, keeping the
+       blue / rare type the admin gave them), and so do the admin's own things: passwords, apps, prices, wallpaper, countdown,
+       iTunes media and camera filters. Everyone is logged out first, so nobody writes while it runs. */
+    async nukeAll(step){
+      step=step||(()=>{}); let n=0;
+      const run=async ops=>{ for(let i=0;i<ops.length;i+=400){ const b=fs.writeBatch(db); ops.slice(i,i+400).forEach(f=>f(b)); await b.commit(); n+=Math.min(400,ops.length-i); step(`${n} changes…`); } };
+      const all=async name=>(await fs.getDocs(fs.collection(db,name))).docs;
+      step('Logging everyone out…'); await fs.setDoc(fs.doc(db,"site","session"),{epoch:fs.serverTimestamp(),ts:fs.serverTimestamp()});
+      step('Reading…');
+      const [codes,orders,photos,songs]=await Promise.all(['codes','orders','photos','songs'].map(all));
+      const boughtRare=new Set(orders.map(d=>d.data()).filter(o=>o.item==='bubble').map(o=>o.code));
+      // everything people made
+      const gone=['messages','dms','likes','tickets','checkins','orders','wallets','flips','avatars','backgrounds','merch','screenQueue',
+        'flappy','posts','comments','muted','blocks','notes','doorChat'];
+      for(const name of gone){ step(`Deleting ${name}…`); const docs=name==='orders'?orders:await all(name); await run(docs.map(d=>b=>b.delete(d.ref))); }
+      step('Deleting photos…'); await run(photos.flatMap(d=>[b=>b.delete(d.ref),b=>b.delete(fs.doc(db,"photoData",d.id))]));
+      step('Deleting songs…'); await run(songs.flatMap(d=>{ const k=d.data().chunks||0; return [b=>b.delete(d.ref),...Array.from({length:k},(_,i)=>b=>b.delete(fs.doc(db,"songChunks",d.id+"_"+i)))]; }));
+      // the codes: free again. First the name goes (same type), then bought rare looks go back to normal
+      step('Freeing the codes…');
+      const kept=c=>{ const k=c.data().kind; return k==='blue'||k==='rare'?{kind:k}:{}; };
+      await run(codes.filter(c=>c.id!=='_admin').flatMap(c=>{ const x=c.data(), ops=[b=>b.set(c.ref,{username:null,...kept(c)})];
+        if(x.username) ops.push(b=>b.delete(fs.doc(db,"usernames",String(x.username).toLowerCase()))); return ops; }));
+      const rare=codes.filter(c=>boughtRare.has(c.id)&&c.data().kind==='rare');
+      await run(rare.flatMap(c=>[b=>b.set(c.ref,{username:null}),b=>b.delete(fs.doc(db,"styles",c.id))]));
+      // the top of the chat, the Flappy Bird record, and the Store apps (everyone downloads again)
+      step('Resetting the rest…');
+      const apps=await all('apps');
+      await run([b=>b.set(fs.doc(db,"chatTop","board"),{announce:'',announceTs:null,pins:[],ts:fs.serverTimestamp()}),
+        b=>b.set(fs.doc(db,"site","flappyTop"),{code:'',name:'',best:-1,ts:fs.serverTimestamp()}),
+        ...apps.map(a=>b=>b.update(a.ref,{gen:(a.data().gen||0)+1,ts:fs.serverTimestamp()}))]);
+      return n; },
     watchStore(cb){ return fs.onSnapshot(fs.doc(db,"site","store"),s=>cb(s.exists()?s.data():{}),e=>console.error(e)); },
     setMobilePay(n){ return fs.setDoc(fs.doc(db,"site","store"),{mobilepay:n,ts:fs.serverTimestamp()}); },
     async order(o){ const r=await fs.addDoc(fs.collection(db,"orders"),{...o,status:'pending',ts:fs.serverTimestamp()}); return r.id; },
@@ -3106,6 +3146,13 @@ function localApi(){
     async setFeature(k,v){ mut(d=>{ d.features={...(d.features||{}),[k]:v}; }); },
     async saveFeatures(patch){ mut(d=>{ d.features={...(d.features||{}),...patch}; }); },
     async logoutEveryone(){ mut(d=>{ d.epoch=Date.now(); }); },
+    async nukeAll(step){ (step||(()=>{}))('Deleting…'); let n=0; mut(d=>{
+      const bought=new Set((d.orders||[]).filter(o=>o.item==='bubble').map(o=>o.code));
+      Object.keys(d.codes).forEach(c=>{ if(d.codes[c]) n++; d.codes[c]=null; if(bought.has(c)&&d.kinds[c]==='rare'){ delete d.kinds[c]; delete d.styles[c]; } });
+      Object.assign(d,{msgs:[],dms:[],likes:{},shades:{},tints:{},claimed:{},ticketOf:{},tickets:{},checkins:{},photos:[],orders:[],merch:{},queue:[],doorChat:[],
+        posts:[],comments:[],muted:{},blocks:{},wallets:{},avatars:{},bgs:{},notes:[],flips:[],songs:{},flappy:{},flappyTop:{code:'',name:'',best:-1},
+        board:{announce:'',announceTs:null,pins:[]},epoch:Date.now()});
+      Object.values(d.apps||{}).forEach(a=>a.gen=(a.gen||0)+1); }); return n; },
     async setMobilePay(n){ mut(d=>{ d.store={mobilepay:n}; }); },
     async order(o){ return mut(d=>{ const id='or'+Date.now()+Math.floor(Math.random()*1e4); d.orders.push({id,...o,status:'pending',ts:Date.now()}); return id; }); },
     watchMyOrders:(c,cb)=>sub(d=>cb(d.orders.filter(o=>o.code===c).slice().reverse())),
@@ -3501,6 +3548,17 @@ function drawEpoch(){ const el=$('lab-epoch'); if(el) el.textContent=siteEpoch?'
 $('lab-logout').addEventListener('click',async()=>{
   if(!await confirmBox('Log everyone out?','Every phone logged in with a code, and door staff, goes back to the lock screen. They have to type their code again. You stay logged in.','Log everyone out')) return;
   try{ await api.logoutEveryone(); toast('Everyone was logged out.'); }catch(err){ fail('log everyone out')(err); }
+});
+// the nuke: asked twice, and you type NUKE
+$('lab-nuke').addEventListener('click',async()=>{
+  const b=$('lab-nuke'), st=$('nuke-state'); if(b.disabled) return;
+  if(!await confirmBox('Delete all accounts?','Every account and everything people made is deleted, and everyone is logged out. The codes stay, free to use again. This can’t be undone.','Continue')) return;
+  const typed=await promptBox({title:'Type NUKE to confirm',text:'This deletes all accounts for good.',placeholder:'NUKE',ok:'Nuke'});
+  if((typed||'').trim()!=='NUKE') return toast('Nothing was deleted.');
+  b.disabled=true; st.textContent='Starting…';
+  try{ const n=await api.nukeAll(t=>{ st.textContent=t; }); st.textContent='Done.'; toast(`Nuked. All accounts are gone (${n} changes). The codes are free again.`); }
+  catch(err){ console.error(err); st.textContent='Stopped: '+(err&&err.message||err); toast('The nuke stopped partway. Press it again to finish.'); }
+  finally{ b.disabled=false; }
 });
 // the Log Out app on every home screen
 async function logOutApp(){
