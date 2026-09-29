@@ -682,7 +682,8 @@ service cloud.firestore {
             && (request.resource.data.get('image', null) == null
               || (request.resource.data.image is string && request.resource.data.image.size() < 950000)))
           || (doc == 'features'
-            && request.resource.data.keys().hasOnly(['mystery','mysName','mysIcon','mysText','mysImage','mysBg','mysFg','ts'])
+            && request.resource.data.keys().hasOnly(['mystery','mysName','mysIcon','mysText','mysImage','mysBg','mysFg','dockShade','ts'])
+            && inRange(request.resource.data, 'dockShade', 0, 100)
             && request.resource.data.get('mystery', false) is bool
             && request.resource.data.get('mysName', '') is string && request.resource.data.get('mysName', '').size() <= 20
             && request.resource.data.get('mysText', '') is string && request.resource.data.get('mysText', '').size() <= 500

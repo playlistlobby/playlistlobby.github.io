@@ -338,6 +338,16 @@ body[data-screen=s-admin] .overlay{opacity:0}
 /* experimental tab */
 .lab-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#0A5BC4;background:rgba(10,132,255,.14);padding:3px 9px;border-radius:999px}
 .lab h3{margin:6px 0 0;font-size:20px;line-height:26px;font-weight:700}
+/* admin terminal: quick commands */
+.term{border-radius:14px;background:#101412;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.08),0 1px 0 rgba(255,255,255,.5);color:#c9f7d2;
+  font:13px/18px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden}
+.term-log{max-height:220px;overflow:auto;padding:10px 12px 0;white-space:pre-wrap;word-break:break-word}
+.term-log:empty{display:none}
+.term-log .cmd{color:#fff}
+.term-log .err{color:#ff8a80}
+.term-row{display:flex;align-items:center;gap:8px;padding:8px 12px 10px}
+.term-row span{color:#5fe07a}
+.term-row input{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font:16px/22px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;caret-color:#5fe07a}
 #fb-lb-sub{white-space:pre-line}
 .a-in.ae-info{height:auto;min-height:90px;padding:10px 14px;border-radius:16px;resize:vertical;font:inherit;line-height:20px;white-space:pre-wrap}
 .lab-badge.nuke{color:#fff;background:#d9262c}
@@ -489,7 +499,7 @@ body.home-light .sb-icon{box-shadow:0 calc(2 * var(--u)) calc(4 * var(--u)) rgba
   background:var(--home-dock) center top/100% calc(45 * var(--u)) no-repeat,linear-gradient(rgba(255,255,255,0) calc(45 * var(--u)),rgba(255,255,255,.1) 0);
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .sb-dock::after{content:"";position:absolute;left:0;right:0;bottom:0;height:env(safe-area-inset-bottom);background:rgba(255,255,255,.12)}
-.sb-shade{position:absolute;z-index:0;left:0;right:0;bottom:0;height:calc(220 * var(--u));pointer-events:none;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.8))}
+.sb-shade{position:absolute;z-index:0;left:0;right:0;bottom:0;height:calc(220 * var(--u));pointer-events:none;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,var(--dock-shade,.8)))}
 /* wide screens: the iPad (iOS 6) layout. Icons start at the top left and run across the full width in 5 columns;
    the dock is a slim glass shelf in perspective (measured from the iPad reference: first icon ~12% in, 56px down) */
 @media (min-width:700px){
@@ -2313,6 +2323,15 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
       </div>
       <div class="a-panel" id="t-lab" role="tabpanel" hidden>
         <div class="glass card a-stack lab">
+          <div><span class="lab-badge">Experimental</span><h3>Terminal</h3></div>
+          <p class="a-muted">Quick commands. Type <b>help</b> to see them all.</p>
+          <div class="term">
+            <div class="term-log" id="term-log" aria-live="polite"></div>
+            <form class="term-row" id="f-term" autocomplete="off"><span aria-hidden="true">$</span>
+              <input id="term-in" placeholder="help" aria-label="Command" enterkeyhint="send" autocapitalize="off" autocorrect="off" spellcheck="false"></form>
+          </div>
+        </div>
+        <div class="glass card a-stack lab">
           <div><span class="lab-badge">Experimental</span><h3>Blue codes</h3></div>
           <p class="a-muted">People who join with a blue code pick a blue color instead of a green one. Their messages use a thinner font, look clearer and float gently.</p>
           <div class="lab-preview" id="lab-preview" aria-hidden="true"></div>
@@ -3705,7 +3724,8 @@ let features={};
    Each app has "gen": it goes up whenever the admin switches the app off, so a phone's download (which remembers the gen)
    no longer counts, and the app has to be downloaded again when it comes back. */
 let storeApps=[], appsLoaded=false, editingApp=null, appDraft={}, openAppId=null;
-api.watchFeatures(f=>{ features=f||{}; migrateMystery(); });
+const dockShade=()=>Number.isFinite(features.dockShade)?features.dockShade:80; // % darkness of the fade behind the home screen dock
+api.watchFeatures(f=>{ features=f||{}; migrateMystery(); document.documentElement.style.setProperty('--dock-shade',dockShade()/100); });
 // listened to per login (a visitor on the lock screen may not read it): see startSocial
 function onApps(l){ storeApps=(l||[]).sort((a,b)=>(a.order??0)-(b.order??0)||String(a.name).localeCompare(b.name)); appsLoaded=true;
   if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore(); if(adminOn){ drawAppsAdmin(); seedApps(); migrateMystery(); }
@@ -4705,6 +4725,32 @@ function renderCodes(all){
   });
   for(const [k,r] of codeRows) if(!seen.has(k)){ r.el.remove(); codeRows.delete(k); }
 }
+
+/* experimental tab: the terminal. Add a command by adding an entry here: args (shown in help), about, and run(args) → text to print */
+const TERM={
+  help:{about:'list the commands',run:()=>Object.entries(TERM).map(([k,c])=>`${(k+' '+(c.args||'')).padEnd(14)} ${c.about}`).join('\n')},
+  shade:{args:'[0-100]',about:'darkness of the fade behind the home screen dock, for everyone (default 80)',run:async a=>{
+    if(!a.length) return `shade is ${dockShade()}`;
+    const v=Math.round(Number(a[0])); if(a[0]===''||!Number.isFinite(v)||v<0||v>100) throw new Error('give a number from 0 to 100');
+    await api.setFeature('dockShade',v); return `shade set to ${v}`; }},
+  clear:{about:'empty this screen',run:()=>{ $('term-log').replaceChildren(); }},
+};
+const termHist=[]; let termAt=0;
+function termPrint(text,cls){ const log=$('term-log'), l=document.createElement('div'); if(cls) l.className=cls; l.textContent=text; log.append(l);
+  while(log.childElementCount>200) log.firstChild.remove(); log.scrollTop=log.scrollHeight; }
+$('f-term').addEventListener('submit',async e=>{
+  e.preventDefault(); const inp=$('term-in'), line=inp.value.trim(); inp.value=''; if(!line) return;
+  termHist.push(line); termAt=termHist.length;
+  const [name,...args]=line.split(/\s+/), c=TERM[name.toLowerCase()];
+  termPrint('$ '+line,'cmd');
+  if(!c) return termPrint(`${name}: no such command (type help)`,'err');
+  try{ const out=await c.run(args); if(out) termPrint(out); }
+  catch(err){ termPrint(err.message||String(err),'err'); }
+});
+$('term-in').addEventListener('keydown',e=>{ // ↑ / ↓ bring back earlier commands
+  if(e.key!=='ArrowUp'&&e.key!=='ArrowDown') return; e.preventDefault();
+  termAt=Math.max(0,Math.min(termHist.length,termAt+(e.key==='ArrowUp'?-1:1))); e.target.value=termHist[termAt]||'';
+});
 
 /* experimental tab: blue codes */
 function stepper(minus,input,plus){
