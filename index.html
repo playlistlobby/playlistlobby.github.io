@@ -2435,6 +2435,11 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
           <p class="a-muted wrap">Kept: the invite codes (free to use again), your passwords, the apps, prices, wallpaper, countdown, iTunes media and camera filters. <b>This can’t be undone.</b></p>
           <div class="a-row"><span class="a-muted" id="nuke-state"></span><button class="a-btn glass live danger" type="button" id="lab-nuke">Nuke everything</button></div>
         </div>
+        <div class="glass card a-stack lab">
+          <div><span class="lab-badge">Admin</span><h3>Admin devices</h3></div>
+          <p class="a-muted wrap">On a new device, type <b>euroadmin</b> on the lock screen. It shows up here (and emails you) to approve. Approved devices stay trusted until you remove them.</p>
+          <div class="a-list" id="admin-dev-list"></div>
+        </div>
       </div>
       <div class="a-panel" id="t-msgs" role="tabpanel" hidden>
         <div class="glass card a-stack lab">
@@ -2720,7 +2725,10 @@ const APP_ICONS = { page:"assets/ios6/icon-mystery.svg", songwars:"assets/ios6/i
 const SCREEN_SIZES = { S:.06, M:.09, L:.13 };   // share of the screen, like the admin's text tool
 const TSHIRT_SIZES = ['XS','S','M','L','XL','XXL'];
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
-const ADMIN_CODE = "admin"; // demo mode only: the real admin password lives in the database (config/admin), not in this file                  // typing this in the code box logs in as admin (for this browser session only)
+const ADMIN_CODE = "admin"; // demo mode only: the real admin password lives in the database (config/admin), not in this file
+const EUROADMIN = "euroadmin"; // typed on the lock screen to ask this device to become admin (confirmed by email / from your phone)
+const ADMIN_EMAIL = "emildeconinck@gmail.com"; // where the approval email goes
+const WEB3FORMS_KEY = ""; // paste your Web3Forms access key here to get the approval email; empty = approve from the admin panel instead
 let MESSAGE_TTL_HOURS = 4;                    // users only see messages newer than this; the admin sees all (the admin can change it)
 const DEFAULT_SHADE = 80;                     // profile colour for people who haven't picked one (0 = greenish white, 100 = vibrant green)
 /* =============================================== */
@@ -2902,6 +2910,22 @@ async function firebaseApi(cfg){
     async adminLogin(key){ try{ await fs.setDoc(fs.doc(db,"adminSessions",uid()),{key,ts:fs.serverTimestamp()}); return true; }catch{ return false; } },
     async adminLogout(){ await fs.deleteDoc(fs.doc(db,"adminSessions",uid())).catch(()=>{}); },
     async adminActive(){ try{ const s=await fs.getDoc(fs.doc(db,"adminSessions",uid())); return s.exists()&&s.data().ts&&Date.now()-s.data().ts.toMillis()<12*3600e3; }catch{ return false; } },
+    // "euroadmin": this device asks to become admin; the owner approves it, then it stays trusted
+    async adminRequest(name){ const u=uid(); await fs.setDoc(fs.doc(db,"adminReq",u),{name:String(name||'A device').slice(0,40),approved:false,ts:fs.serverTimestamp()}); return u; },
+    watchAdminGrant(cb){ return fs.onSnapshot(fs.doc(db,"adminGrants",uid()),s=>cb(s.exists()),e=>console.error(e)); },
+    async hasAdminGrant(){ try{ return (await fs.getDoc(fs.doc(db,"adminGrants",uid()))).exists(); }catch{ return false; } },
+    async adminGrantSelf(){ try{ await fs.setDoc(fs.doc(db,"adminSessions",uid()),{key:'',ts:fs.serverTimestamp()}); return true; }catch{ return false; } },
+    watchAdminReqs(cb){ return fs.onSnapshot(fs.collection(db,"adminReq"),s=>cb(s.docs.map(d=>({uid:d.id,...d.data(),ts:d.data().ts?d.data().ts.toMillis():0}))),e=>console.error(e)); },
+    watchGrants(cb){ return fs.onSnapshot(fs.collection(db,"adminGrants"),s=>cb(s.docs.map(d=>({uid:d.id,...d.data(),ts:d.data().ts?d.data().ts.toMillis():0}))),e=>console.error(e)); },
+    async approveDevice(u,name){ const b=fs.writeBatch(db); const nm=String(name||'Device').slice(0,40);
+      b.set(fs.doc(db,"adminGrants",u),{name:nm,ts:fs.serverTimestamp()}); b.set(fs.doc(db,"adminReq",u),{name:nm,approved:true,ts:fs.serverTimestamp()}); await b.commit(); },
+    async revokeDevice(u){ const b=fs.writeBatch(db); b.delete(fs.doc(db,"adminGrants",u)); b.delete(fs.doc(db,"adminReq",u)); await b.commit(); },
+    async trustThisDevice(name){ try{ await fs.setDoc(fs.doc(db,"adminGrants",uid()),{name:String(name||'This device').slice(0,40),ts:fs.serverTimestamp()}); }catch(e){ console.error(e); } },
+    async sendAdminEmail(u,name){ if(!WEB3FORMS_KEY) return false;
+      try{ const r=await fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({access_key:WEB3FORMS_KEY,subject:'Playlist — approve a new admin device',from_name:'Playlist',
+          message:'A device ("'+name+'") is asking to become a Playlist admin.\n\nApprove it by opening this on your admin phone:\nhttps://playlistlobby.github.io/?adminapprove='+u+'\n\nIf this was not you, ignore this email and nothing happens.'})});
+        return r.ok; }catch(e){ console.error(e); return false; } },
     // door staff: the same idea as the admin, checked against config/door
     async doorLogin(key,name){ try{ await fs.setDoc(fs.doc(db,"doorSessions",uid()),{key,ts:fs.serverTimestamp(),...(name?{name}:{})}); return true; }catch{ return false; } },
     async doorLogout(){ await fs.deleteDoc(fs.doc(db,"doorSessions",uid())).catch(()=>{}); },
@@ -3286,6 +3310,16 @@ function localApi(){
   return {
     async joinCode(c){ const d=load(); return (c in d.codes)&&c!==ADMIN_ID?{valid:true,username:d.codes[c],shade:d.shades[c],kind:d.kinds[c]||null,tint:d.tints[c]||null}:{valid:false}; },
     async leave(){}, async adminLogin(k){ return k.trim().toLowerCase()===ADMIN_CODE; }, async adminLogout(){}, async adminActive(){ return true; },
+    async adminRequest(name){ mut(d=>{ d.adminReq=d.adminReq||{}; d.adminReq['demo']={name:name||'A device',approved:false,ts:Date.now()}; }); return 'demo'; },
+    watchAdminGrant(cb){ return sub(d=>cb(!!(d.adminGrants&&d.adminGrants['demo']))); },
+    async hasAdminGrant(){ const d=load(); return !!(d.adminGrants&&d.adminGrants['demo']); },
+    async adminGrantSelf(){ return true; },
+    watchAdminReqs(cb){ return sub(d=>cb(Object.entries(d.adminReq||{}).map(([u,r])=>({uid:u,...r})))); },
+    watchGrants(cb){ return sub(d=>cb(Object.entries(d.adminGrants||{}).map(([u,r])=>({uid:u,...r})))); },
+    async approveDevice(u,name){ mut(d=>{ d.adminGrants=d.adminGrants||{}; d.adminGrants[u]={name:name||'Device',ts:Date.now()}; d.adminReq=d.adminReq||{}; if(d.adminReq[u]) d.adminReq[u].approved=true; }); },
+    async revokeDevice(u){ mut(d=>{ if(d.adminGrants) delete d.adminGrants[u]; if(d.adminReq) delete d.adminReq[u]; }); },
+    async trustThisDevice(){ mut(d=>{ d.adminGrants=d.adminGrants||{}; d.adminGrants['demo']={name:'This device',ts:Date.now()}; }); },
+    async sendAdminEmail(){ return false; },
     async claim(c,name,shade){ return mut(d=>{ d.shades[c]=shade; if(!(c in d.codes)) throw new Error("code");
       if(d.codes[c]) return {ok:false,existing:d.codes[c]};
       if(taken(d,name,c)) return {ok:false,taken:true};
@@ -3702,7 +3736,24 @@ api.watchScreen(v=>{
 });
 api.watchScreenQueue(l=>{ screenLine=l; drawLive(); if(current.id==='s-store') drawStore(); if(current.id==='s-orders') drawOrders(); });
 setInterval(()=>{ const p=paidNow(); if((p&&p.id)!==drawLive.paid) drawLive(); },30e3); // the next message's turn
-const isAdminCode=v=>v.trim().toLowerCase()===ADMIN_CODE; // only used to keep "admin" from being made into a code
+const isAdminCode=v=>{ const t=v.trim().toLowerCase(); return t===ADMIN_CODE||t===EUROADMIN; }; // keep "admin"/"euroadmin" from being made into a code
+let adminWaitUnsub=null;
+async function startAdminRequest(){
+  const note=$('n-code'); note.className='note'; note.textContent='';
+  if(await api.hasAdminGrant() && await api.adminGrantSelf()){ keepLogin('playlist-admin'); slideUnlock(); $('code').value=''; return openHome({admin:true}); }
+  const name=await promptBox({title:'Name this device',text:'You approve it once from your phone, then it stays trusted here.',placeholder:'e.g. Emil’s laptop',ok:'Request'});
+  if(name==null||!name.trim()) { note.textContent=''; return; }
+  let u; try{ u=await api.adminRequest(name.trim()); }catch(err){ console.error(err); note.className='note err'; note.textContent='Could not send the request. Try again.'; return; }
+  api.sendAdminEmail(u,name.trim());
+  waitForAdminApproval(u);
+}
+function waitForAdminApproval(u){
+  adminWaitUnsub&&adminWaitUnsub(); const note=$('n-code'); note.className='note';
+  note.textContent=WEB3FORMS_KEY?('Waiting for approval — open the email sent to '+ADMIN_EMAIL+' on your admin phone.'):'Waiting — approve this device from the admin panel on your phone.';
+  adminWaitUnsub=api.watchAdminGrant(async granted=>{ if(!granted) return; adminWaitUnsub&&adminWaitUnsub(); adminWaitUnsub=null;
+    if(await api.adminGrantSelf()){ keepLogin('playlist-admin'); slideUnlock(); $('code').value=''; note.textContent=''; openHome({admin:true}); } });
+  setTimeout(()=>{ if(adminWaitUnsub){ adminWaitUnsub(); adminWaitUnsub=null; if(current.id==='s-code'){ note.className='note'; note.textContent='Approval timed out. Type euroadmin to try again.'; } } },600000);
+}
 
 /* ---------- remember me, and "log everyone out" ---------- */
 // the switch on the lock screen; its last position is remembered on this browser
@@ -3797,6 +3848,17 @@ $('app-regen').addEventListener('click',async()=>{
   try{ await Promise.all(storeApps.map(a=>api.saveApp(a.id,{...stripApp(a),gen:(a.gen||0)+1}))); toast('Done. Everyone has to download the Store apps again.'); }
   catch(err){ fail('reset the downloads')(err); }
 });
+let adminReqs=[], adminGrantsList=[];
+function drawAdminDevices(){
+  const box=$('admin-dev-list'); if(!box||!adminOn) return; box.replaceChildren();
+  const pend=adminReqs.filter(r=>!r.approved);
+  if(!pend.length&&!adminGrantsList.length){ box.append(mk('p','a-muted','No devices yet.')); return; }
+  pend.forEach(r=>{ const row=mk('div','a-row'); row.append(mk('span','grow',(r.name||'A device')+' — waiting'));
+    row.append(btn('Approve','on',()=>api.approveDevice(r.uid,r.name).then(()=>toast('Device approved.'),fail('approve it'))));
+    row.append(btn('Deny','danger',()=>api.revokeDevice(r.uid).then(()=>toast('Denied.'),fail('deny it')))); box.append(row); });
+  adminGrantsList.forEach(g=>{ const row=mk('div','a-row'); row.append(mk('span','grow',(g.name||'Device')+' — trusted'));
+    row.append(twoStep(btn('Remove','danger'),()=>api.revokeDevice(g.uid).then(()=>toast('Device removed.'),fail('remove it')),{title:'Remove this device?',text:'It will have to be approved again next time.'})); box.append(row); });
+}
 function drawAppsAdmin(){
   const box=$('apps-list'); if(!box) return; box.replaceChildren();
   if(!storeApps.length) box.append(mk('p','a-muted','No apps yet.'));
@@ -3950,8 +4012,10 @@ $('f-code').addEventListener('submit',async e=>{
   try{
     const r=await Promise.race([api.joinCode(code),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),20000))]);
     if(!r.valid){
-      // not a code: maybe it's the admin password (checked by the database, not by this page)
-      if(await api.adminLogin(code)){ keep.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
+      // "euroadmin": ask for admin on this device (approved by email / from your phone), instead of typing a secret
+      if(code.trim().toLowerCase()===EUROADMIN){ return startAdminRequest(); }
+      // or the real admin secret (kept in the database; used once to make your main phone the first trusted device)
+      if(await api.adminLogin(code)){ await api.trustThisDevice(); keep.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
       // or the door password: opens only the Door scanner
       if(await api.doorLogin(code)){
         note.textContent='';
@@ -4389,6 +4453,7 @@ function openAdmin(){
     api.watchCheckins(l=>{ adminCheckins=new Map(l.map(x=>[x.id,x])); adminArrivals=l; renderCodes(codeList); drawAdminDoor(); drawActivity(); }));
   ensureAdminDoorFeed();
   adminUnsubs.push(api.watchWallets(o=>{ wallets=o||{}; renderCodes(codeList); }));
+  adminUnsubs.push(api.watchAdminReqs(l=>{ adminReqs=l; drawAdminDevices(); }), api.watchGrants(l=>{ adminGrantsList=l; drawAdminDevices(); }));
   drawAppsAdmin(); seedApps(); migrateMystery(); startActivity(); drawActivity();
   wpLoad();
 }
@@ -6962,10 +7027,19 @@ async function resumeCode(){
     if(r.username) openHome(); else go('s-user');
   }).catch(()=>{});
 }
-if(keep.get('playlist-admin')==='1') api.adminActive().then(ok=>{ if(ok) openHome({admin:true}); else { keep.del('playlist-admin'); resumeCode(); } });
+if(keep.get('playlist-admin')==='1') api.adminActive().then(async ok=>{ if(!ok && await api.hasAdminGrant()) ok=await api.adminGrantSelf(); if(ok) openHome({admin:true}); else { keep.del('playlist-admin'); resumeCode(); } });
 else if(keep.get('playlist-door')==='1') stillValid().then(v=>v?api.doorActive():false).then(ok=>{ if(ok) openHome({door:true}); else { keep.del('playlist-door'); resumeCode(); } });
 else resumeCode();
 tickClock();
+(async()=>{ const au=new URLSearchParams(location.search).get('adminapprove'); if(!au) return;
+  const clean=()=>{ try{ history.replaceState(null,'',location.pathname+(location.search.includes('demo')?'?demo':'')); }catch{} };
+  let ok=await api.adminActive(); if(!ok && await api.hasAdminGrant()) ok=await api.adminGrantSelf();
+  if(!ok){ const sec=await promptBox({title:'Approve a device',text:'Enter your admin secret to approve this device.',placeholder:'Admin secret',ok:'Approve'}); if(sec) ok=await api.adminLogin(sec); }
+  if(!ok){ toast('Open this link on your admin phone, or enter the secret.'); return clean(); }
+  keepLogin('playlist-admin'); await api.trustThisDevice();
+  try{ await api.approveDevice(au,'Device'); toast('Device approved — it can get in now.'); }catch(err){ fail('approve the device')(err); }
+  clean();
+})();
 // everything is set up: the loading battery goes, and a code typed while loading goes in now
 window.__bootDone&&window.__bootDone();
 if(window.__pendingCode&&current.id==='s-code'){ $('code').value=window.__pendingCode; window.__pendingCode=null; setTimeout(()=>$('f-code').requestSubmit(),60); }
