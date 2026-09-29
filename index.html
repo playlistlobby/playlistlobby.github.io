@@ -1173,6 +1173,8 @@ body[data-screen=s-photos]{background:#fff}
 .mini-btn.grey{background:linear-gradient(#a6a9ae 0%,#7d8086 50%,#6b6e74 52%,#74777d 100%)}
 .mini-btn:active{filter:brightness(.85)}
 .mini-btn:disabled{opacity:.5}
+.mini-btn.gold{margin-right:auto;color:#4a3000;text-shadow:0 1px 0 rgba(255,255,255,.5);background:linear-gradient(#ffe98a,#f5c518 50%,#e0a800 52%,#f2c230)}
+.mini-btn.gold.ready{box-shadow:0 0 0 .8px rgba(120,80,0,.6),inset 0 1px 0 rgba(255,255,255,.6),0 0 12px rgba(255,200,40,.9)}
 
 /* Door: entry or merch */
 .door-mode{display:flex;margin:0 auto 12px;width:min(260px,100%);height:32px;border-radius:7px;overflow:hidden;box-shadow:0 0 0 .8px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.1)}
@@ -6436,7 +6438,9 @@ const fbImg={}; ['background','base','pipe','message','gameover','restart','bird
 function loadFbSprites(){ if(loadFbSprites.done) return; loadFbSprites.done=true; Object.entries(fbImg).forEach(([n,i])=>{ i.src=`assets/flappy/${n}.png`; }); } // only when the game opens
 let fb=null, fbRaf=0, fbScores=[], fbTop=null, fbUnsubs=[], fbK=1;
 const fbTop_=appTop($('s-flappy'),'Flappy Bird');
-const fbDailyBtn=navBtn('',()=>claimFbDaily()); fbDailyBtn.classList.add('gift'); fbDailyBtn.hidden=true; fbTop_.right.append(fbDailyBtn);
+// the number 1 bonus sits in the Leaderboard pop-up (the top bar only has Leaderboard)
+const fbDailyBtn=mk('button','mini-btn gold'); fbDailyBtn.type='button'; fbDailyBtn.hidden=true; fbDailyBtn.addEventListener('click',()=>claimFbDaily());
+$('fb-lb-close').parentElement.prepend(fbDailyBtn);
 fbTop_.right.append(navBtn('Leaderboard',()=>{ $('fb-board').hidden=false; drawBoard(); sfx('swoosh'); }));
 /* ---------- Coin Flip: in the style of iOS 6 Game Center. Put likes on heads or tails and post it for someone to take,
    or flip the bot. The coin is the database's clock at the moment the flip is taken (an even millisecond is heads),
