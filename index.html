@@ -6441,7 +6441,8 @@ const fbTop_=appTop($('s-flappy'),'Flappy Bird');
 // the number 1 bonus sits in the Leaderboard pop-up (the top bar only has Leaderboard)
 const fbDailyBtn=mk('button','mini-btn gold'); fbDailyBtn.type='button'; fbDailyBtn.hidden=true; fbDailyBtn.addEventListener('click',()=>claimFbDaily());
 $('fb-lb-close').parentElement.prepend(fbDailyBtn);
-fbTop_.right.append(navBtn('Leaderboard',()=>{ $('fb-board').hidden=false; drawBoard(); sfx('swoosh'); }));
+const fbLbBtn=navBtn('Leaderboard',()=>{ $('fb-board').hidden=false; drawBoard(); sfx('swoosh'); }); fbLbBtn.classList.add('gift'); // glows gold while the bonus waits
+fbTop_.right.append(fbLbBtn);
 /* ---------- Coin Flip: in the style of iOS 6 Game Center. Put likes on heads or tails and post it for someone to take,
    or flip the bot. The coin is the database's clock at the moment the flip is taken (an even millisecond is heads),
    so nobody can pick the result; the database checks every step. The winner collects both stakes. ---------- */
@@ -6733,7 +6734,7 @@ api.watchFlappyTop(t=>{ fbTop=t; tryDaily(); });
 const fbDailyLeft=()=>Math.max(0,Math.max(tsMs(wallet.dailyAt),+store.get('playlist-daily-'+me.code)||0)+20*3600e3-Date.now());
 function tryDaily(){ // (redraws the button; called when the wallet or number 1 changes)
   const b=fbDailyBtn; if(!b) return; const top=!!me.code&&homeMode==='user'&&!!fbTop&&fbTop.code===me.code;
-  b.hidden=!top; if(!top) return;
+  b.hidden=!top; fbLbBtn.classList.toggle('ready',top&&fbDailyLeft()<=0&&!claimFbDaily.busy); if(!top) return;
   const left=fbDailyLeft(), ready=left<=0&&!claimFbDaily.busy; b.disabled=!ready; b.classList.toggle('ready',ready);
   b.textContent=ready?`🏆 +${FLAPPY_DAILY_LIKES} ♥`:`🏆 ${fmtLeft(left)}`;
   b.setAttribute('aria-label',ready?`You’re number 1: collect ${FLAPPY_DAILY_LIKES} likes`:`Number 1 bonus: next in ${fmtLeft(left)}`);
