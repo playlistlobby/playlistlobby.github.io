@@ -384,7 +384,8 @@ body[data-screen=s-admin] .overlay{opacity:0}
 .pm-pop{position:fixed;z-index:8;width:min(320px,calc(100% - 24px));border-radius:22px;padding:12px;display:flex;flex-direction:column;gap:10px;animation:popin .4s var(--spring);transform-origin:50% 0}
 .pm-head{display:flex;align-items:center;gap:8px;padding:0 2px}
 .pm-head b{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pm-head .dot{width:10px;height:10px;margin:0}
+.pm-head .dot{width:38px;height:38px;margin:0;flex:none;border-radius:50%;display:grid;place-items:center;font:700 16px/1 "Helvetica Neue",Helvetica,Arial,sans-serif;
+  background-size:cover;background-position:center;box-shadow:0 0 0 2px #fff,0 2px 8px rgba(0,0,0,.25)}
 .like-btn{display:inline-flex;align-items:center;gap:6px}
 .like-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;transition:transform .45s var(--spring)}
 .like-btn[aria-pressed=true]{color:#E0245E}
@@ -543,6 +544,8 @@ body.chat-ios6[data-screen=chat] .bg{opacity:0}
   box-shadow:0 0 0 .8px rgba(20,35,60,.55),inset 0 1px 0 rgba(255,255,255,.4),0 1px 0 rgba(255,255,255,.25)}
 .ios-back:active,.ios-navbtn:active{filter:brightness(.8);transform:scale(.96)}
 .ios-nav-right{display:flex;gap:6px;align-items:center}
+#al-text{white-space:pre-line}
+.ios-navbtn.info{width:30px;padding:0;border-radius:50%;font:italic 700 17px/30px Georgia,"Times New Roman",serif;text-align:center}
 .ios-navbtn .shade-dot{width:14px;height:14px;display:block;margin-top:8px}
 body.chat-ios6 .log{width:100%;max-width:620px;padding-left:12px;padding-right:12px;padding-bottom:calc(64px + env(safe-area-inset-bottom) + var(--kb,0px));gap:7px}
 body.chat-ios6 .stamp{color:#7d879a;font:700 12px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 1px 0 rgba(255,255,255,.75);margin:10px 0 2px}
@@ -881,6 +884,20 @@ body[data-screen=s-coin] .bg,body[data-screen=s-coin] .overlay{opacity:0}
 .cf-res.win{color:#f6f29a;text-shadow:0 0 18px rgba(255,248,170,.8),0 2px 0 rgba(0,0,0,.35);animation:popin .5s var(--spring)}
 .cf-res-sub{margin:4px 0 0;min-height:20px;font:400 15px/20px Georgia,serif;color:rgba(255,255,255,.88)}
 /* the Store's daily bonus */
+.st-daily{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 14px;padding:10px 12px;border-radius:14px;text-align:left;color:#1d2330;
+  background:linear-gradient(#fff,#f1f3f7);box-shadow:0 0 0 .5px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.12),inset 0 1px 0 #fff;transition:transform .15s}
+.st-daily:active{transform:scale(.98)}
+.st-daily.ready{box-shadow:0 0 0 .5px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.12),0 0 18px rgba(255,120,160,.45),inset 0 1px 0 #fff}
+.st-daily-ic{width:40px;height:40px;flex:none;border-radius:10px;display:grid;place-items:center;color:#fff;font-size:22px;
+  background:linear-gradient(#ff7a9a,#e0245e);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.25)}
+.st-daily:disabled .st-daily-ic{filter:grayscale(.55) opacity(.8)}
+.st-daily-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.st-daily-t b{font:700 15px/19px "Helvetica Neue",Helvetica,Arial,sans-serif}
+.st-daily-t small{font:400 12px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#6b7486}
+.st-daily-go{flex:none;min-width:58px;padding:0 10px;height:26px;border-radius:13px;display:grid;place-items:center;font:700 12px/26px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  color:#fff;background:linear-gradient(#5aa0f0,#2a6fd8);box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.st-daily:disabled{cursor:default}
+.st-daily:disabled .st-daily-go{color:#6b7486;background:rgba(0,0,0,.06);box-shadow:none;font-weight:600}
 .st-gift{position:fixed;z-index:9;left:50%;top:38%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 26px 16px;border-radius:24px;
   background:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.7));-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);
   box-shadow:inset 0 1px 0 #fff,0 0 0 .5px rgba(0,0,0,.12),0 18px 40px -12px rgba(0,0,0,.45),0 0 40px rgba(255,255,255,.7);color:#1d2330;
@@ -1291,6 +1308,10 @@ body[data-screen=s-forum] .bg,body[data-screen=s-forum] .overlay{opacity:0}
 .orb{width:30px;height:30px;border-radius:50%;flex:none;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.85),rgba(255,255,255,0) 42%),var(--c,#8e8e93) center/cover;
   box-shadow:inset 0 -3px 5px rgba(0,0,0,.18),0 1px 2px rgba(60,30,0,.35),0 0 0 1px rgba(255,255,255,.5)}
 button.orb,.fm-name{cursor:pointer}
+.orb.pic{box-shadow:0 1px 3px rgba(60,30,0,.35),0 0 0 1.5px #fff}
+.fm-conv .orb{width:36px;height:36px;margin-right:10px}
+.fm-dm-head{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 14px;font:700 16px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#4a3b22}
+.fm-dm-head .orb.big{width:64px;height:64px}
 .fm-name{font:700 15px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#5b2a0b;background:none;padding:0}
 .fm-time{margin-left:auto;font:400 13px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8b6a3e;white-space:nowrap}
 .fm-title{margin:6px 0 4px;font:700 23px/1.25 "Noteworthy","Marker Felt","Kalam",cursive;color:var(--pen);overflow-wrap:anywhere}
@@ -1379,7 +1400,7 @@ html,body{overscroll-behavior:none}
 .st-bgprev{display:block;width:100%;aspect-ratio:9/16;max-height:44vh;object-fit:cover;border-radius:12px;margin:6px 0 12px;box-shadow:0 0 0 .6px rgba(0,0,0,.3)}
 /* profile pictures */
 .avatar.pic{color:transparent!important}
-.pm-dot-pic{width:26px!important;height:26px!important;background-size:cover!important;background-position:center!important}
+.pm-dot-pic{background-size:cover!important;background-position:center!important}
 /* admin: wallpaper editor */
 .wp-previews{display:flex;gap:12px;align-items:flex-end;justify-content:center;flex-wrap:wrap}
 .wp-frame{border-radius:10px;background-color:#c9d6d8;background-repeat:no-repeat;box-shadow:0 0 0 .6px rgba(0,0,0,.35),0 4px 12px rgba(0,0,0,.15);position:relative;cursor:pointer;flex:none}
@@ -1902,6 +1923,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
   <div class="app-body"><div class="app-col">
     <div class="st-hero"><b>Playlist Store</b><span>Pay with MobilePay. Your purchase unlocks as soon as the payment is confirmed.</span></div>
     <p class="st-bal" id="st-bal"></p>
+    <button class="st-daily" type="button" id="st-daily" hidden></button>
     <div class="st-list" id="st-likes"></div>
     <p class="grp-title">With MobilePay</p>
     <div class="st-list" id="st-items"></div>
@@ -2019,7 +2041,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 <section class="screen out app gc" id="s-coin" aria-label="Coin Flip" hidden>
   <div class="app-body gc-body" id="cf-body">
     <div class="gc-hero">
-      <div class="gc-hero-txt"><h2 class="gc-title" id="cf-title">COIN FLIP</h2><p id="cf-sub">Put your likes on heads or tails. The winner takes both stakes.</p></div>
+      <div class="gc-hero-txt"><h2 class="gc-title" id="coin-title">COIN FLIP</h2><p id="coin-sub">Put your likes on heads or tails. The winner takes both stakes.</p></div>
       <div class="cf-mini-toss" aria-hidden="true"><div class="cf-coin sm spin"><i class="h"><b>♥</b></i><i class="t"><b>★</b></i></div></div>
     </div>
     <div class="gc-tabs" role="tablist" id="cf-tabs">
@@ -3589,7 +3611,7 @@ function watchMine(){ // per member login: my likes wallet and my background
   bgUnsub=api.watchBackground(me.code,img=>{ myBg=img; applyWall(); if(current.id==='s-store') drawStore(); });
 }
 function stopMine(){ walletUnsub&&walletUnsub(); bgUnsub&&bgUnsub(); walletUnsub=bgUnsub=null; wallet={}; myBg=null; applyWall(); }
-function onAvatars(o){ avatarOf=o||{}; if(current.id==='s-forum') drawForum(); if(current.id==='s-settings') renderSettings(); if(pmTo) paintPmDot(); }
+function onAvatars(o){ avatarOf=o||{}; if(current.id==='s-forum'){ drawForum(); if(fmThread) drawThread(); } if(current.id==='s-settings') renderSettings(); if(pmTo) paintPmDot(); }
 const avatarCss=code=>avatarOf[code]?`url("${avatarOf[code]}") center/cover`:null;
 
 /* ---------- wallpaper: the admin's default (with separate phone / computer framing), or your own ---------- */
@@ -3965,8 +3987,9 @@ function openPM(to,r){
   setTimeout(()=>$('pm-text').focus(),50);
 }
 function closePM(){ pmTo=null; $('pm-pop').hidden=true; }
-function paintPmDot(){ if(!pmTo) return; const d=$('pm-dot'), pic=avatarCss(pmTo.code);
-  d.classList.toggle('pm-dot-pic',!!pic); d.style.background=pic||lookOf(pmTo.code,pmTo.shade,pmTo.kind,pmTo.tint).bg; }
+function paintPmDot(){ if(!pmTo) return; const d=$('pm-dot'), pic=avatarCss(pmTo.code), look=lookOf(pmTo.code,pmTo.shade,pmTo.kind,pmTo.tint);
+  d.classList.toggle('pm-dot-pic',!!pic); d.style.background=pic||(look.texture?`url("${look.texture}") center/cover, ${look.bg}`:look.bg);
+  d.textContent=pic?'':(pmTo.name||'?').slice(0,1).toUpperCase(); d.style.color=look.ink||'#fff'; }
 function syncLike(){
   if(!pmTo) return;
   $('pm-block').hidden=!me.code||me.kind==='admin'; $('pm-block').textContent=blocked.has(pmTo.code)?'Unblock':'Block'; const on=myLikes.has(pmTo.code), btn_=$('pm-like');
@@ -5460,7 +5483,7 @@ const ITEM_ICONS={
 const kr=n=>n+' kr';
 const newRef=()=>'PL-'+newToken().slice(0,4);
 function openStore(){
-  go('s-store'); $('st-pass').hidden=true; $('st-wrap').hidden=true; buyArmed=null; drawStore(); setTimeout(tryStoreDaily,450);
+  go('s-store'); $('st-pass').hidden=true; $('st-wrap').hidden=true; buyArmed=null; drawStore();
   if(!storeUnsubs.length) storeUnsubs.push(api.watchMyOrders(me.code,l=>{ myOrders=l; watchMyMerch(); if(current.id==='s-store') drawStore(); }));
 }
 function stopStore(all){ if(!all) return; storeUnsubs.forEach(u=>u&&u()); storeUnsubs=[]; merchWatch.forEach(w=>w.unsub&&w.unsub()); merchWatch.clear(); myOrders=[]; }
@@ -5478,7 +5501,7 @@ const fmtWhen=t=>{ const d=new Date(t), n=new Date(), tm=fmtTime(t);
   const tmr=new Date(n); tmr.setDate(n.getDate()+1); if(d.toDateString()===tmr.toDateString()) return 'tomorrow at '+tm;
   return d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})+' at '+tm; };
 function drawStore(){
-  const open=!!storeCfg.mobilepay, list=$('st-items'); list.replaceChildren();
+  const open=!!storeCfg.mobilepay, list=$('st-items'); list.replaceChildren(); drawDaily();
   // spend likes
   const bal=Math.max(0,myBalance()), lk=$('st-likes'); lk.replaceChildren();
   $('st-bal').replaceChildren(mk('span','heart','♥'),'You have ',mk('b',null,String(bal)),` like${bal===1?'':'s'} to spend`);
@@ -5754,8 +5777,11 @@ const fmBlockBtn=navBtn('Block',()=>{ if(fmThread) toggleBlock(fmThread.code,fmT
 const fmAdmin=()=>homeMode==='admin';
 const fmVisible=p=>fmAdmin()||(Date.now()-p.ts<POST_HOURS*3600e3&&!blocked.has(p.code));
 const fmLook=p=>p.kind==='admin'?adminLook(p.tint):lookOf(p.code,p.shade,p.kind);
-function orbEl(p,tag='span'){ const o=mk(tag,'orb'), l=fmLook(p), pic=avatarCss(p.code);
-  o.style.setProperty('--c',pic?pic:l.texture?`url("${l.texture}") center/cover, ${l.bg}`:l.bg); return o; }
+const ORB_GLOSS='radial-gradient(circle at 34% 28%,rgba(255,255,255,.85),rgba(255,255,255,0) 42%)';
+function orbEl(p,tag='span'){ const o=mk(tag,'orb'), l=fmLook(p), pic=p.code?avatarCss(p.code):null;
+  o.style.background=pic?`radial-gradient(circle at 34% 24%,rgba(255,255,255,.35),rgba(255,255,255,0) 40%), ${pic}`
+    :l.texture?`${ORB_GLOSS}, url("${l.texture}") center/cover, ${l.bg}`:`${ORB_GLOSS}, ${l.bg}`;
+  o.classList.toggle('pic',!!pic); return o; }
 const ago=t=>{ const m=Math.round((Date.now()-t)/60e3); return m<1?'now':m<60?m+' min':m<1440?Math.floor(m/60)+' h':fmtDay(t); };
 function openForum(){
   go('s-forum'); $('s-forum').classList.toggle('admin',fmAdmin()); fmPlus.hidden=fmAdmin();
@@ -5872,7 +5898,7 @@ function convs(){
 function drawInbox(){
   if(fmAdmin()) return; const list=convs(), read=readMap(), box=$('fm-convs'); box.replaceChildren(); let unread=0;
   list.forEach(c=>{ const last=c.msgs[c.msgs.length-1], un=c.msgs.filter(m=>m.to===me.code&&m.ts>(read[c.code]||0)).length; if(!blocked.has(c.code)) unread+=un;
-    const row=mk('div','fm-conv'), g=mk('div','grow'); g.append(mk('b',null,c.name+(blocked.has(c.code)?' (blocked)':'')));
+    const row=mk('div','fm-conv'), g=mk('div','grow'); row.append(orbEl({code:c.code,name:c.name})); g.append(mk('b',null,c.name+(blocked.has(c.code)?' (blocked)':'')));
     g.append(mk('small',null,(last.from===me.code?'You: ':'')+last.text)); row.append(g,mk('span','fm-time',ago(last.ts)));
     if(un&&!blocked.has(c.code)){ const n=mk('span','fm-tag',String(un)); n.style.background='#e0141a'; row.append(n); }
     row.append(mk('span','chev','›')); row.addEventListener('click',()=>openThread(c.code,c.name)); box.append(row); });
@@ -5882,7 +5908,8 @@ function openThread(code,name){ fmThread={code,name}; $('fm-dm').hidden=false; $
   const sc=$('fm-dm').querySelector('.app-body'); sc.scrollTop=sc.scrollHeight; }
 function drawThread(){
   if(!fmThread) return; const box=$('fm-thread'), msgs=fmDMs.filter(d=>d.from===fmThread.code||d.to===fmThread.code);
-  box.replaceChildren(...msgs.map(d=>{ const b=mk('div','fm-dm'+(d.from===me.code?' mine':''),d.text); b.append(mk('small',null,fmtDay(d.ts))); return b; }));
+  const head=mk('div','fm-dm-head'), big=orbEl({code:fmThread.code,name:fmThread.name}); big.classList.add('big'); head.append(big,mk('b',null,fmThread.name));
+  box.replaceChildren(head,...msgs.map(d=>{ const b=mk('div','fm-dm'+(d.from===me.code?' mine':''),d.text); b.append(mk('small',null,fmtDay(d.ts))); return b; }));
   const isB=blocked.has(fmThread.code); $('fm-dm-blocked').hidden=!isB; $('fm-dm-blocked').textContent=`You blocked ${fmThread.name}. They can’t message you.`;
   fmBlockBtn.textContent=isB?'Unblock':'Block'; $('f-fmdm').hidden=isB;
   const r=readMap(); r[fmThread.code]=Date.now(); store.set(readKey(),JSON.stringify(r)); drawInbox();
@@ -6025,9 +6052,10 @@ $('it-upload').addEventListener('click',async()=>{
 /* ---------- Song Wars: one song each (1-3 min, title and cover), likes, ranking, the admin picks the winner ---------- */
 let swApp=null, songs=[], swUnsub=null, swSort='likes', swDraft={title:'',cover:null,file:null,dur:0}, swBusy=false;
 const swTop=appTop($('s-songs'),'Song Wars');
+{ const ib=navBtn('i',()=>alertBox('🏆 Win a live show',`Upload one song (1 to 3 minutes) with a title and a cover. Everyone can like songs.\n\nThe winner will be picked by ${((swApp&&swApp.pickBy)||'').trim()||'the admin'} to perform their song live at the event.`));
+  ib.classList.add('info'); ib.setAttribute('aria-label','About Song Wars'); swTop.right.prepend(ib); }
 function openSongs(a){ swApp=a; go('s-songs'); swTop.back.querySelector('span').textContent='Home'; $('s-songs').querySelector('.ios-title').textContent=a.name;
-  if(!swUnsub) swUnsub=api.watchSongs(l=>{ songs=l; drawSongs(); }); drawSongs();
-  alertBox('🏆 '+a.name,`Winner will be picked by ${(a.pickBy||'').trim()||'the admin'} to perform their song live at the event.`); }
+  if(!swUnsub) swUnsub=api.watchSongs(l=>{ songs=l; drawSongs(); }); drawSongs(); }
 function alertBox(title,text){ return new Promise(res=>{ $('al-title').textContent=title; $('al-text').textContent=text; $('al-in').hidden=true; $('al-no').hidden=true; $('al-ok').textContent='OK';
   $('al-wrap').hidden=false; setTimeout(()=>$('al-ok').focus(),60);
   $('al-form').onsubmit=e=>{ e.preventDefault(); $('al-wrap').hidden=true; $('al-in').hidden=false; $('al-no').hidden=false; $('al-form').onsubmit=null; res(); }; }); }
@@ -6043,7 +6071,7 @@ function drawSongs(){
   if(current.id!=='s-songs') return;
   const box=$('sw-body'), admin=homeMode==='admin', mine=songs.find(x=>x.code===me.code), a=swApp||{};
   box.replaceChildren();
-  const ban=mk('div','sw-banner'); ban.append(mk('b',null,'🏆 Win a live show'),`Winner will be picked by ${(a.pickBy||'').trim()||'the admin'} to perform their song live at the event.`); box.append(ban);
+
   const win=songs.find(x=>x.winner);
   if(win){ const w=mk('div','sw-win'), c=mk('div','it-art'); c.style.backgroundImage=`url("${win.cover}")`; const t=mk('div','it-txt');
     t.append(mk('small',null,'👑 WINNER'),mk('b',null,win.title),mk('small',null,win.name)); const pb=mk('button','it-btn play','PLAY'); pb.type='button'; pb.onclick=()=>playSong(win);
@@ -6244,14 +6272,26 @@ function tossFail(){ cfSpin&&cfSpin.cancel(); cfSpin=null; $('cf-stage').hidden=
 $('cf-done').addEventListener('click',()=>{ $('cf-stage').hidden=true; $('cf-coin').getAnimations().forEach(x=>x.cancel()); setCfTab('mine'); });
 
 /* ---------- the Store's daily bonus (the admin sets how many likes; 0 turns it off) ---------- */
-function tryStoreDaily(){
-  const amt=storeDaily(); if(!me.code||homeMode!=='user'||!amt||tryStoreDaily.busy||!walletUnsub||current.id!=='s-store') return;
-  const last=Math.max(tsMs(wallet.storeDailyAt),+store.get('playlist-sdaily-'+me.code)||0);
-  if(Date.now()-last<20*3600e3) return;
-  tryStoreDaily.busy=true;
-  api.claimStoreDaily(me.code,amt).then(()=>{ store.set('playlist-sdaily-'+me.code,String(Date.now())); showGift(amt); },err=>console.error(err))
-    .finally(()=>setTimeout(()=>tryStoreDaily.busy=false,4000));
+const DAILY_MS=20*3600e3;
+const dailyLeft=()=>Math.max(0,Math.max(tsMs(wallet.storeDailyAt),+store.get('playlist-sdaily-'+me.code)||0)+DAILY_MS-Date.now());
+const fmtLeft=ms=>{ const m=Math.max(1,Math.ceil(ms/60e3)); return m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`; };
+function drawDaily(){
+  const b=$('st-daily'), amt=storeDaily(); b.hidden=!amt||homeMode!=='user'||!me.code; if(b.hidden) return;
+  const left=dailyLeft(), ready=left<=0&&!tryStoreDaily.busy; b.disabled=!ready; b.classList.toggle('ready',ready);
+  const t=mk('span','st-daily-t'); t.append(mk('b',null,'Daily bonus'),mk('small',null,ready?`Collect ${amt} free like${amt===1?'':'s'} today`:`Come back for ${amt} more like${amt===1?'':'s'}`));
+  b.replaceChildren(mk('span','st-daily-ic','♥'),t,mk('span','st-daily-go',ready?'GET':`in ${fmtLeft(left)}`));
+  b.setAttribute('aria-label',ready?`Collect your daily bonus of ${amt} likes`:`Daily bonus: next in ${fmtLeft(left)}`);
 }
+function tryStoreDaily(){
+  const amt=storeDaily(); if(!me.code||homeMode!=='user'||!amt||tryStoreDaily.busy||!walletUnsub) return;
+  if(dailyLeft()>0){ drawDaily(); return toast(`Your next daily bonus is in ${fmtLeft(dailyLeft())}.`); }
+  tryStoreDaily.busy=true; drawDaily();
+  api.claimStoreDaily(me.code,amt).then(()=>{ store.set('playlist-sdaily-'+me.code,String(Date.now())); showGift(amt); },
+    err=>{ console.error(err); toast('Couldn’t collect it. Try again in a moment.'); })
+    .finally(()=>{ tryStoreDaily.busy=false; drawDaily(); });
+}
+$('st-daily').addEventListener('click',tryStoreDaily);
+setInterval(()=>{ if(current.id==='s-store') drawDaily(); },20e3);
 function showGift(n){
   document.querySelectorAll('.st-gift').forEach(x=>x.remove());
   const g=mk('div','st-gift'); g.append(mk('span',null,'Daily bonus'),mk('b',null,`+${n} ♥`),mk('span',null,'Come back tomorrow for more')); document.body.append(g);
