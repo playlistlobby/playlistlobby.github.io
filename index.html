@@ -343,6 +343,8 @@ body[data-screen=s-admin] .overlay{opacity:0}
 .sw-lbl input:checked + .ios-switch b{transform:translateX(0)}
 .sw-lbl input:focus-visible + .ios-switch{box-shadow:0 0 0 3px rgba(10,132,255,.4)}
 .sw-lbl .ios-switch{transform:scale(.86);transform-origin:right center;margin-left:-10px}
+.grp .cell.sw-lbl{justify-content:space-between;font-size:inherit}
+.grp .cell.sw-lbl .ios-switch{transform:scale(.9)}
 .amsg-meta .a-btn.on{--tint:rgba(217,38,44,.14);color:#b3141b}
 .lab-preview{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;background:radial-gradient(60% 80% at 20% 10%,rgba(255,255,255,.9),rgba(255,255,255,0) 70%),radial-gradient(60% 80% at 90% 100%,hsla(212,70%,75%,.5),rgba(255,255,255,0) 70%),var(--ground);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12)}
 .lab-preview .bubble{max-width:85%}
@@ -2401,6 +2403,62 @@ const store = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, 
 const keep = { get:k=>session.get(k)??store.get(k),
   set:(k,v,remember)=>{ (remember?store:session).set(k,v); (remember?session:store).del(k); },
   del:k=>{ session.del(k); store.del(k); } };
+/* ---------- sounds: the iOS 6 system sounds (assets/sounds) and the Flappy Bird effects.
+   Played with Web Audio so they're instant and can overlap. Phones only allow sound after a tap, so nothing plays
+   before that (a remembered login stays quiet). Settings → Sounds turns them off on this phone. ---------- */
+const SFX = { unlock:'unlock', lock:'lock', alert:'sms-received1', like:'Tink', post:'tweet_sent', sent:'SentMessage', received:'ReceivedMessage',
+  key:'Tock', doorOk:'SIMToolkitPositiveACK', doorNo:'SIMToolkitNegativeACK', shutter:'photoShutter',
+  wing:'flappy/sfx_wing', point:'flappy/sfx_point', hit:'flappy/sfx_hit', die:'flappy/sfx_die', swoosh:'flappy/sfx_swooshing' };
+const SFX_VOL = { key:.3, like:.9, received:.75, sent:.8, alert:.85, wing:.55, point:.6, hit:.7, die:.6, swoosh:.5, doorOk:.9, doorNo:.9, shutter:.9 };
+const soundOn=()=>store.get('playlist-sound')!=='0', keysOn=()=>store.get('playlist-keys')!=='0';
+let actx=null; const sfxBuf={}, sfxLoad={};
+function audioCtx(){
+  if(actx) return actx; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+  // iPhone: mix with the music that's playing (don't stop it), and follow the silent switch
+  try{ if(navigator.audioSession) navigator.audioSession.type='ambient'; }catch{}
+  actx=new C(); return actx;
+}
+function loadSfx(n){
+  if(sfxBuf[n]) return Promise.resolve(sfxBuf[n]); const a=audioCtx(); if(!a||!SFX[n]) return Promise.reject(new Error('no audio'));
+  return sfxLoad[n]||(sfxLoad[n]=fetch(`assets/sounds/${SFX[n]}.wav`).then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then(b=>new Promise((res,rej)=>a.decodeAudioData(b,res,rej))).then(b=>sfxBuf[n]=b).catch(e=>{ delete sfxLoad[n]; throw e; }));
+}
+// the first tap wakes the audio, and fetches the everyday sounds
+let sfxWoken=false;
+function wakeAudio(){ const a=audioCtx(); if(!a) return; if(a.state!=='running') a.resume().catch(()=>{});
+  if(!sfxWoken){ sfxWoken=true; try{ const b=a.createBuffer(1,1,22050), s=a.createBufferSource(); s.buffer=b; s.connect(a.destination); s.start(0); }catch{}
+    ['unlock','lock','alert','like','post','sent','received','key'].forEach(n=>loadSfx(n).catch(()=>{})); } }
+['pointerdown','touchend','keydown'].forEach(t=>addEventListener(t,wakeAudio,{capture:true,passive:true}));
+const canPlay=()=>{ const a=actx; if(!a) return false; if(a.state==='running') return true;
+  // right after a tap the audio may still be waking up; without a recent tap, stay quiet
+  return !!(navigator.userActivation&&navigator.userActivation.isActive); };
+function sfx(n,vol){
+  if(!soundOn()||!canPlay()) return; const asked=performance.now();
+  const go=b=>{ const a=actx; if(!a) return; const src=a.createBufferSource(), g=a.createGain(); g.gain.value=vol??SFX_VOL[n]??.8;
+    src.buffer=b; src.connect(g).connect(a.destination); src.start(); };
+  if(sfxBuf[n]) return go(sfxBuf[n]);
+  loadSfx(n).then(b=>{ if(performance.now()-asked<700) go(b); }).catch(()=>{}); // too late is worse than silent
+}
+// ka-ching: the drawer's clunk, the bell, and a little coin rattle (made on the spot, there's no iOS 6 sound for it)
+function cashSound(){
+  if(!soundOn()||!canPlay()) return; const a=actx, t=a.currentTime+.01, out=a.createGain(); out.gain.value=.55; out.connect(a.destination);
+  const noise=(at,len,f,q,v,type='bandpass')=>{ const n=Math.floor(a.sampleRate*len), b=a.createBuffer(1,n,a.sampleRate), ch=b.getChannelData(0);
+    for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.5);
+    const s=a.createBufferSource(), fl=a.createBiquadFilter(), g=a.createGain(); fl.type=type; fl.frequency.value=f; fl.Q.value=q; g.gain.value=v;
+    s.buffer=b; s.connect(fl).connect(g).connect(out); s.start(at); };
+  noise(t,.05,1800,.8,1.1); noise(t,.12,160,1,1.4,'lowpass');                      // "ka": the lever and the drawer
+  const bell=(f,d,v)=>{ const o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t+.09); g.gain.linearRampToValueAtTime(v,t+.095); g.gain.exponentialRampToValueAtTime(.0001,t+.09+d);
+    o.connect(g).connect(out); o.start(t+.09); o.stop(t+.12+d); };
+  [[2093,1.3,.32],[2637,1.1,.2],[3136,.95,.16],[4186,.6,.1],[5588,.4,.06],[6272,.3,.04]].forEach(([f,d,v])=>bell(f,d,v)); // "ching"
+  [.16,.2,.23,.27,.3,.35].forEach(d=>noise(t+d+Math.random()*.02,.02,6500+Math.random()*2000,3,.35));                   // coins
+}
+// keyboard clicks while typing (Settings → Keyboard Clicks)
+document.addEventListener('keydown',e=>{
+  if(!keysOn()||e.repeat||e.ctrlKey||e.metaKey||e.altKey) return; const el=e.target;
+  if(!el||!(el.tagName==='TEXTAREA'||(el.tagName==='INPUT'&&/^(text|search|password|number|tel|email|url|)$/.test(el.type||'')))) return;
+  const k=e.key||''; if(k.length===1||k==='Backspace'||k==='Enter') sfx('key');
+},true);
 const toast = t => { const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,3200); };
 
 
@@ -3570,7 +3628,7 @@ function syncNext(){ $('su-next').classList.toggle('on',locked||NAME_RE.test($('
 $('uname').addEventListener('input',syncNext);
 // lock screen: the shimmering "member code" hides once something is typed
 $('code').addEventListener('input',()=>$('f-code').classList.toggle('typed',!!$('code').value));
-function slideUnlock(){ $('f-code').classList.remove('typed'); }
+function slideUnlock(){ $('f-code').classList.remove('typed'); sfx('unlock'); } // a login from the lock screen
 // nav bar buttons reuse the chat's existing controls
 $('nav-home').addEventListener('click',()=>$('go-home').click());
 $('nav-logout').addEventListener('click',()=>$('logout').click());
@@ -3606,7 +3664,7 @@ function openChat(){
 }
 // log out: forget the code on this browser. Logging back in with the same code keeps the username.
 function backToCode(){
-  logOutUser();
+  logOutUser(); sfx('lock');
   $('code').value=''; $('n-code').textContent='';
   go('s-code'); setTimeout(()=>$('code').focus(),360);
 }
@@ -3653,7 +3711,7 @@ function render(all){
   const log=$('log'); const atBottom=log.scrollHeight-log.scrollTop-log.clientHeight<60;
   log.replaceChildren(Object.assign(document.createElement('div'),{className:'spacer'}));
   if(!list.length){ log.append(Object.assign(document.createElement('p'),{className:'empty',textContent:'No messages yet. Say hi.'})); return; }
-  let prev=null;
+  let prev=null, heard=0;
   for(const m of list){
     if(!prev || m.ts-prev.ts>15*60e3) log.append(Object.assign(document.createElement('div'),{className:'stamp',textContent:fmtDay(m.ts)}));
     const mine=m.code===me.code;
@@ -3665,6 +3723,7 @@ function render(all){
     }
     const b=document.createElement('div');
     b.className='bubble glass tinted'+(mine?' mine':' other')+(!firstRender&&!seenMsgs.has(m.id)?' new':'');
+    if(!firstRender&&!mine&&!seenMsgs.has(m.id)) heard++;
     paint(b,c,kind,m.id);
     if(!mine){ b.dataset.code=m.code; b.dataset.name=m.username; b.dataset.kind=kind||''; b.dataset.shade=latest[m.code]??''; b.dataset.tint=tintOf[m.code]||''; b.title='Tap to like or message privately'; }
     else b.title=fmtTime(m.ts);
@@ -3672,7 +3731,7 @@ function render(all){
     log.append(b); prev=m; seenMsgs.add(m.id);
     if(pinIds().has(m.id)) log.append(mk('div','pin-note'+(mine?' mine':''),'Pinned'));
   }
-  firstRender=false;
+  firstRender=false; if(heard&&current.id==='chat') sfx('received');
   if(atBottom||list.length<14) log.scrollTop=log.scrollHeight;
   updateBadge();
 }
@@ -3683,7 +3742,7 @@ $('f-msg').addEventListener('submit',async e=>{
   if(me.kind!=='admin'&&!spamOk(document.querySelector('#f-msg .send'))) return;
   sending=true;
   const sb=document.querySelector('#f-msg .send'); sb.classList.remove('launch'); void sb.offsetWidth; sb.classList.add('launch');
-  try{ await api.send(me.code,me.username,t,me.kind==='rare'||me.kind==='admin'?undefined:me.shade,me.kind,me.tint); $('msg').value=''; $('f-msg').classList.remove('has-text'); $('log').scrollTop=$('log').scrollHeight; }
+  try{ await api.send(me.code,me.username,t,me.kind==='rare'||me.kind==='admin'?undefined:me.shade,me.kind,me.tint); sfx('sent'); $('msg').value=''; $('f-msg').classList.remove('has-text'); $('log').scrollTop=$('log').scrollHeight; }
   catch(err){ console.error(err); toast("Message not sent. Try again."); }
   finally{ sending=false; }
 });
@@ -3736,6 +3795,7 @@ $('pm-pin').addEventListener('click',()=>{ if(!pmTo||!pmTo.msg) return; const id
 $('pm-like').addEventListener('click',async()=>{
   if(!pmTo||!me.code) return; const to=pmTo.code, on=myLikes.has(to), b=$('pm-like');
   b.classList.remove('pop'); void b.offsetWidth; if(!on) b.classList.add('pop');
+  if(!on) sfx('like');
   try{ if(on) await api.unlike(me.code,to); else { await api.like(me.code,to); sendNote(to,'like'); } }
   catch(err){ console.error(err); toast("Couldn't save the like. Try again."); }
 });
@@ -3743,7 +3803,7 @@ $('pm-form').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('pm-text').value.trim(); if(!text||!pmTo) return;
   if(me.kind!=='admin'&&!spamOk()) return;
   const to=pmTo;
-  try{ await api.sendDM({from:me.code,fromName:me.username,to:to.code,toName:to.name,text}); sendNote(to.code,'dm',text); closePM(); toast(`Sent privately to ${to.name}.`); }
+  try{ await api.sendDM({from:me.code,fromName:me.username,to:to.code,toName:to.name,text}); sendNote(to.code,'dm',text); sfx('sent'); closePM(); toast(`Sent privately to ${to.name}.`); }
   catch(err){ console.error(err); toast(`Private message not sent. ${to.name} may have blocked you, or the connection dropped.`); }
 });
 document.addEventListener('pointerdown',e=>{ if(!$('pm-pop').hidden && !e.target.closest('#pm-pop,.bubble.other,.who-tap')) closePM(); });
@@ -3846,7 +3906,7 @@ function openAdmin(){
   wpLoad();
 }
 function adminLogout(){
-  closeHistory(); closeRare();
+  closeHistory(); closeRare(); sfx('lock');
   adminOn=false; adminUnsubs.forEach(u=>u&&u()); adminUnsubs=[]; stopAdminDoorFeed(); stopForum(true); actSeen=null; seedApps.done=false;
   codeRows.clear(); $('a-codes').replaceChildren(); $('a-msgs').replaceChildren();
   logOutUser(); stopSocial(); keep.del('playlist-admin'); api.adminLogout(); $('code').value='';
@@ -4607,6 +4667,15 @@ function renderSettings(){
   SETTINGS_ROWS.forEach(g=>{ const grp=mk('div','grp');
     g.forEach(r=>{ const c=mk('div','cell'), v=mk('span','val'), x=r.value(); v.append(x); c.append(mk('span',null,r.label),v); grp.append(c); });
     box.append(grp); });
+  // sounds, for this phone
+  box.append(mk('p','grp-title','Sounds'));
+  const sg=mk('div','grp');
+  [['Sounds','playlist-sound'],['Keyboard Clicks','playlist-keys']].forEach(([label,key])=>{
+    const c=mk('label','cell sw-lbl'), i=document.createElement('input'), sw=mk('span','ios-switch');
+    i.type='checkbox'; i.checked=store.get(key)!=='0'; sw.setAttribute('aria-hidden','true'); sw.innerHTML='<b><span class="on">ON</span><span class="off">OFF</span><i></i></b>';
+    i.addEventListener('change',()=>{ store.set(key,i.checked?'1':'0'); if(i.checked) sfx(key==='playlist-keys'?'key':'like'); });
+    c.append(mk('span',null,label),i,sw); sg.append(c); });
+  box.append(sg);
   // blocked members, and blocking someone by name
   box.append(mk('p','grp-title','Blocked'));
   const bg=mk('div','grp');
@@ -4703,7 +4772,7 @@ async function sendDoorChat(input){
 }
 $('f-doorchat').addEventListener('submit',e=>{ e.preventDefault(); sendDoorChat($('door-chat-in')); });
 const doorOut={hidden:false}; // (the old nav button is gone; kept so older code can still set it)
-function openDoor(){
+function openDoor(){ ['doorOk','doorNo'].forEach(n=>loadSfx(n).catch(()=>{}));
   go('s-door'); const asAdmin=homeMode==='admin'; if(asAdmin) ensureAdminDoorFeed();
   doorOut.hidden=asAdmin; $('door-res').hidden=true; doorBusy=false;
   if(!doorUnsubs.length){
@@ -4722,7 +4791,7 @@ function setDoorMode(m){
 document.querySelectorAll('#door-mode button').forEach(b=>b.addEventListener('click',()=>setDoorMode(b.dataset.m)));
 function stopDoor(){ doorUnsubs.forEach(u=>u&&u()); doorUnsubs=[]; stopDoorCam(); $('door-chat').hidden=true; }
 function doorLogout(){
-  stopDoor(); keep.del('playlist-door'); keep.del('playlist-epoch'); loginEpoch=null; api.doorLogout(); $('code').value=''; $('n-code').textContent='';
+  stopDoor(); sfx('lock'); keep.del('playlist-door'); keep.del('playlist-epoch'); loginEpoch=null; api.doorLogout(); $('code').value=''; $('n-code').textContent='';
   go('s-code'); toast('Logged out of the door.');
 }
 function doorCamOff(msg){ $('door-off').hidden=false; $('door-off-msg').textContent=msg; }
@@ -4783,7 +4852,7 @@ function showDoorResult(r,what){
   box.className='door-res '+(ok?'ok':'bad'); $('door-ic').innerHTML=ok?ICON_OK:ICON_BAD;
   if(r.status==='wrong'){ $('door-t').textContent=merch?'That’s an entry ticket':'That’s a T-shirt ticket'; $('door-who').hidden=true;
     $('door-d').textContent=merch?'Switch to Entry to check people in.':'T-shirts are handed out at the merch stand (Merch).';
-    box.hidden=false; if(navigator.vibrate) navigator.vibrate([70,60,70]);
+    box.hidden=false; if(navigator.vibrate) navigator.vibrate([70,60,70]); sfx('doorNo');
     const done=()=>{ clearTimeout(showDoorResult.t); box.hidden=true; doorBusy=false; };
     clearTimeout(showDoorResult.t); showDoorResult.t=setTimeout(done,3000); box.onclick=done; return; }
   $('door-t').textContent=(merch?{ok:'Hand over a T-shirt',already:'Already collected',invalid:'Not a T-shirt ticket',error:"Couldn't check"}
@@ -4793,7 +4862,7 @@ function showDoorResult(r,what){
   $('door-d').textContent=ok?(merch?`Size ${r.size||'?'}`:'Checked in '+fmtTime(r.ts))
     :r.status==='already'?'at '+fmtTime(r.ts)+(merch?'. Each T-shirt ticket works once.':'. Each ticket works once.')
     :r.status==='invalid'?(merch?"This isn't a Playlist T-shirt ticket.":"This isn't a Playlist ticket."):'No connection. Try again.';
-  box.hidden=false; if(navigator.vibrate) navigator.vibrate(ok?90:[70,60,70]);
+  box.hidden=false; if(navigator.vibrate) navigator.vibrate(ok?90:[70,60,70]); sfx(ok?'doorOk':'doorNo');
   const done=()=>{ clearTimeout(showDoorResult.t); box.hidden=true; doorBusy=false; };
   clearTimeout(showDoorResult.t); showDoorResult.t=setTimeout(done,ok?2200:3500); box.onclick=done;
 }
@@ -4944,7 +5013,7 @@ const fxThumb=fx&&makeFx(document.createElement('canvas'));
 if(!fx) $('cam-fx').hidden=true;
 const allFilters=()=>[...BUILTIN_FILTERS,...customFilters];
 const currentFilter=()=>allFilters().find(f=>f.id===camFilter)||BUILTIN_FILTERS[0];
-function openCamera(){
+function openCamera(){ loadSfx('shutter').catch(()=>{});
   $('s-camera').dataset.mode='live'; go('s-camera'); startCam();
   if(!myPhotoUnsub) myPhotoUnsub=api.watchMyPhotos(me.code,l=>{
     myPhotos=l; const t=$('cam-thumb'); t.style.backgroundImage=l[0]?`url("${l[0].thumb}")`:''; t.classList.toggle('none',!l.length);
@@ -5012,13 +5081,8 @@ function drawIris(t){
 function iris(to,ms){ cancelAnimationFrame(irisRaf); const from=irisT, t0=performance.now();
   return new Promise(res=>{ const step=now=>{ const k=ms?Math.min(1,(now-t0)/ms):1, e=to>from?1-Math.pow(1-k,3):k*k;
       irisT=from+(to-from)*e; drawIris(irisT); if(k<1) irisRaf=requestAnimationFrame(step); else res(); }; irisRaf=requestAnimationFrame(step); }); }
-// the shutter's mechanical click (made on the spot, no sound file)
-let camAudio=null;
-function shutterClick(){ try{ camAudio=camAudio||new (window.AudioContext||window.webkitAudioContext)();
-  const ac=camAudio, t=ac.currentTime; [0,.09].forEach((d,i)=>{ const len=Math.floor(ac.sampleRate*.035), buf=ac.createBuffer(1,len,ac.sampleRate), ch=buf.getChannelData(0);
-    for(let j=0;j<len;j++) ch[j]=(Math.random()*2-1)*Math.pow(1-j/len,3);
-    const src=ac.createBufferSource(), f=ac.createBiquadFilter(), gn=ac.createGain(); f.type='bandpass'; f.frequency.value=i?2400:3400; f.Q.value=.9; gn.gain.value=i?.35:.5;
-    src.buffer=buf; src.connect(f).connect(gn).connect(ac.destination); src.start(t+d); }); }catch{} }
+// the shutter: the iOS 6 camera sound
+function shutterClick(){ sfx('shutter'); }
 $('cam-home').addEventListener('click',goHome);
 $('cam-flip').addEventListener('click',()=>{ camFacing=camFacing==='environment'?'user':'environment'; startCam(); });
 $('cam-pick').addEventListener('click',()=>$('cam-file').click());
@@ -5328,13 +5392,13 @@ function openBuy(it){
 async function payWithCredit(it,draft){
   const o={code:me.code,name:me.username,item:it.id,price:it.price,ref:newRef(),...(draft.size?{size:draft.size}:{}),...(draft.msg?{msg:draft.msg}:{})};
   if(!await confirmBox(`Pay ${kr(it.price)} with store credit?`,`You have ${kr(creditOf(wallet))} of credit.`,'Pay')) return;
-  try{ const L=lineInfo(); await api.buyWithCredit(o,{start:L.start}); closeSheet();
+  try{ const L=lineInfo(); await api.buyWithCredit(o,{start:L.start}); cashSound(); closeSheet();
     toast(it.id==='tshirt'?'Paid! Your T-shirt ticket is under Your purchases.':'Paid! Your message is in line.'); }
   catch(err){ console.error(err); toast("Couldn't pay with credit. Try again."); }
 }
 async function placeOrder(it,draft){
   const o={code:me.code,name:me.username,item:it.id,price:it.price,ref:newRef(),...(draft.size?{size:draft.size}:{}),...(draft.msg?{msg:draft.msg}:{})};
-  try{ const id=await api.order(o); openPay({...o,id,status:'pending'}); }
+  try{ const id=await api.order(o); cashSound(); openPay({...o,id,status:'pending'}); }
   catch(err){ console.error(err); toast("Couldn't place the order. Try again."); }
 }
 function openPay(o){
@@ -5369,7 +5433,7 @@ async function buyLikeItem(it){
   if(myBalance()<cost) return toast(`You need ${cost} likes for this.`);
   if(it.id==='bubble'){
     if(!await confirmBox(`Use ${cost} likes?`,'You get one go in the bubble designer. What you save is your chat bubble for good.',`Use ${cost} ♥`)) return;
-    try{ const id=await api.buyWithLikes(me.code,me.username,'bubble',cost); openMyBubble({id,item:'bubble',status:'paid'}); }
+    try{ const id=await api.buyWithLikes(me.code,me.username,'bubble',cost); cashSound(); openMyBubble({id,item:'bubble',status:'paid'}); }
     catch(err){ console.error(err); toast("Couldn't use your likes. Try again."); }
     return;
   }
@@ -5380,7 +5444,7 @@ async function buyLikeItem(it){
     const im=mk('img',it.id==='avatar'?'st-avprev':'st-bgprev'); im.src=url; im.alt=''; s.append(im);
     const btns=mk('div','st-btns');
     btns.append(sbtn(`Use for ${cost} ♥`,'green',async()=>{ btns.querySelectorAll('button').forEach(b=>b.disabled=true);
-      try{ await api.buyWithLikes(me.code,me.username,it.id,cost,{[it.id]:url}); closeSheet(); toast(it.id==='avatar'?'New profile picture saved.':'Your new background is on.'); }
+      try{ await api.buyWithLikes(me.code,me.username,it.id,cost,{[it.id]:url}); cashSound(); closeSheet(); toast(it.id==='avatar'?'New profile picture saved.':'Your new background is on.'); }
       catch(err){ console.error(err); toast("Couldn't save it. Try again."); btns.querySelectorAll('button').forEach(b=>b.disabled=false); } }),
       sbtn('Pick another','grey',()=>{ closeSheet(); buyLikeItem(it); }), sbtn('Cancel','grey',closeSheet));
     s.append(btns);
@@ -5528,7 +5592,7 @@ function postEl(p,full){
   const foot=mk('div','fm-foot'), liked=!!me.code&&(p.likedBy||[]).includes(me.code), n=(p.likedBy||[]).length;
   const lb=mk('button','fm-act'+(liked?' liked':'')); lb.type='button'; lb.innerHTML=HEART; lb.append(String(n)); lb.setAttribute('aria-label',(liked?'Unlike':'Like')+` · ${n}`);
   lb.addEventListener('click',async e=>{ e.stopPropagation(); if(fmAdmin()||!me.code) return;
-    try{ await api.likePost(p.id,me.code,!liked); }catch(err){ fail('save the like')(err); } });
+    if(!liked) sfx('like'); try{ await api.likePost(p.id,me.code,!liked); }catch(err){ fail('save the like')(err); } });
   const cn=fmComments.filter(c=>c.post===p.id&&!blocked.has(c.code)).length, cb=mk('button','fm-act'); cb.type='button'; cb.innerHTML=BUBBLE; cb.append(String(cn));
   cb.setAttribute('aria-label',`${cn} comment${cn===1?'':'s'}`); foot.append(lb,cb);
   if(fmAdmin()||p.code===me.code){ const d=mk('button','mini-btn red','Delete'); d.type='button'; d.style.marginLeft='auto';
@@ -5567,7 +5631,7 @@ $('f-comment').addEventListener('submit',async e=>{
   if(mutedSet.has(me.code)) return toast('You are muted in the forum.');
   if(!spamOk()) return;
   try{ await api.addComment({post:fmOpen,code:me.code,name:me.username,...(me.kind==='rare'?{}:{shade:me.shade}),...(me.kind==='blue'||me.kind==='rare'?{kind:me.kind}:{}),text});
-    { const post=fmPosts.find(x=>x.id===fmOpen); if(post&&post.code!==me.code) sendNote(post.code,'reply',post.title); }
+    sfx('post'); { const post=fmPosts.find(x=>x.id===fmOpen); if(post&&post.code!==me.code) sendNote(post.code,'reply',post.title); }
     $('fm-c-in').value=''; const sc=$('fm-post').querySelector('.app-body'); setTimeout(()=>sc.scrollTop=sc.scrollHeight,200); }
   catch(err){ console.error(err); toast('Comment not posted. Try again.'); }
 });
@@ -5595,7 +5659,7 @@ async function submitPost(){
   fmSend.disabled=true;
   try{ await api.addPost({code:me.code,name:me.username,title:title.slice(0,18),...(text?{text:text.slice(0,128)}:{}),...(fmPic?{image:fmPic}:{}),
       ...(me.kind==='rare'?{}:{shade:me.shade}),...(me.kind==='blue'||me.kind==='rare'?{kind:me.kind}:{})});
-    $('fm-new').hidden=true; setFmTab('feed'); $('fm-feed').scrollTop=0; toast(`Posted. It stays up for ${hoursTxt(POST_HOURS)}.`); }
+    sfx('post'); $('fm-new').hidden=true; setFmTab('feed'); $('fm-feed').scrollTop=0; toast(`Posted. It stays up for ${hoursTxt(POST_HOURS)}.`); }
   catch(err){ console.error(err); toast(mutedSet.has(me.code)?'You are muted in the forum.':'Post not sent. Try again.'); }
   finally{ fmSend.disabled=false; }
 }
@@ -5630,7 +5694,7 @@ function drawThread(){
 $('f-fmdm').addEventListener('submit',async e=>{
   e.preventDefault(); const text=$('fm-dm-in').value.trim(); if(!text||!fmThread) return;
   if(!spamOk()) return;
-  try{ await api.sendDM({from:me.code,fromName:me.username,to:fmThread.code,toName:fmThread.name,text}); sendNote(fmThread.code,'dm',text); $('fm-dm-in').value=''; }
+  try{ await api.sendDM({from:me.code,fromName:me.username,to:fmThread.code,toName:fmThread.name,text}); sendNote(fmThread.code,'dm',text); sfx('sent'); $('fm-dm-in').value=''; }
   catch(err){ console.error(err); toast(`Not sent. ${fmThread.name} may have blocked you, or the connection dropped.`); }
 });
 
@@ -5827,7 +5891,7 @@ function drawSongs(){
     const nm=mk('button','sw-name',sg.name); nm.type='button'; nm.onclick=e=>{ e.stopPropagation(); if(admin) return openHistory(sg.code,sg.name); if(sg.code!==me.code) openPM({code:sg.code,name:sg.name},nm.getBoundingClientRect()); };
     t.append(title,nm,mk('small',null,fmtDur(sg.dur)));
     const liked=!!me.code&&(sg.likedBy||[]).includes(me.code), lb=mk('button','it-btn sw-like'+(liked?' on':''),`♥ ${(sg.likedBy||[]).length}`); lb.type='button';
-    lb.disabled=admin||sg.code===me.code; lb.onclick=()=>api.likeSong(sg.code,me.code,!liked).catch(fail('save the like'));
+    lb.disabled=admin||sg.code===me.code; lb.onclick=()=>{ if(!liked) sfx('like'); api.likeSong(sg.code,me.code,!liked).catch(fail('save the like')); };
     const pb=mk('button','it-btn play','▶'); pb.type='button'; pb.onclick=()=>playSong(sg); pb.setAttribute('aria-label','Play '+sg.title);
     r.append(mk('span','sw-rank',swSort==='likes'?String(i+1):''),c,t,lb,pb);
     if(!admin&&sg.code!==me.code){ const sv=mk('button','it-btn','SAVE'); sv.type='button'; sv.onclick=()=>saveSong(sg); sv.setAttribute('aria-label','Save to iTunes'); r.append(sv); }
@@ -5846,8 +5910,8 @@ const FB={W:288,H:512,GROUND:400,GAP:104,SPEED:2,GRAV:.25,FLAP:-4.6,PIPE_W:52,SP
 const fbImg={}; ['background','base','pipe','message','gameover','restart','bird-0','bird-1','bird-2',...'0123456789'].forEach(n=>{ const i=new Image(); i.src=`assets/flappy/${n}.png`; fbImg[n]=i; });
 let fb=null, fbRaf=0, fbScores=[], fbTop=null, fbUnsubs=[], fbK=1;
 const fbTop_=appTop($('s-flappy'),'Flappy Bird');
-fbTop_.right.append(navBtn('Leaderboard',()=>{ $('fb-board').hidden=false; drawBoard(); }));
-function openFlappy(a){ go('s-flappy'); $('s-flappy').querySelector('.ios-title').textContent=a.name||'Flappy Bird';
+fbTop_.right.append(navBtn('Leaderboard',()=>{ $('fb-board').hidden=false; drawBoard(); sfx('swoosh'); }));
+function openFlappy(a){ ['wing','point','hit','die','swoosh'].forEach(n=>loadSfx(n).catch(()=>{})); go('s-flappy'); $('s-flappy').querySelector('.ios-title').textContent=a.name||'Flappy Bird';
   requestAnimationFrame(()=>{ fitFlappy(); fbReset(); });
   cancelAnimationFrame(fbRaf); let last=performance.now();
   const loop=t=>{ const dt=Math.max(0,Math.min(3,(t-last)/16.67)); last=t; fbRaf=requestAnimationFrame(loop); fbStep(dt); fbDraw(); }; fbRaf=requestAnimationFrame(loop);
@@ -5859,8 +5923,8 @@ function fbGapY(){ return 90+Math.random()*(FB.GROUND-FB.GAP-150); }
 function fbFlap(){
   if(!fb) return;
   if(fb.state==='ready'){ fb.state='play'; fb.pipes=[]; for(let x=FB.W+40;x<FB.W+40+FB.SPACING*Math.ceil((FB.W+FB.PIPE_W)/FB.SPACING+1);x+=FB.SPACING) fb.pipes.push({x,gap:fbGapY(),passed:false}); }
-  if(fb.state==='play'){ fb.v=FB.FLAP; return; }
-  if(fb.state==='over'&&fb.t>30) fbReset();
+  if(fb.state==='play'){ fb.v=FB.FLAP; sfx('wing'); return; }
+  if(fb.state==='over'&&fb.t>30){ fbReset(); sfx('swoosh'); }
 }
 function fbStep(dt){
   if(!fb) return; fb.t+=dt;
@@ -5871,7 +5935,7 @@ function fbStep(dt){
   const span=FB.SPACING*fb.pipes.length;
   for(const p of fb.pipes){ p.x-=FB.SPEED*dt;
     if(p.x+FB.PIPE_W<0){ p.x+=span; p.gap=fbGapY(); p.passed=false; }
-    if(!p.passed&&p.x+FB.PIPE_W<FB.BX){ p.passed=true; fb.score++; } }
+    if(!p.passed&&p.x+FB.PIPE_W<FB.BX){ p.passed=true; fb.score++; sfx('point'); } }
   // hit a pipe, the ground or fly off the top
   const bx=FB.BX+4, by=fb.y-12+4, bw=34-8, bh=24-8;
   const hit=fb.y+12>=FB.GROUND||fb.y<-30||fb.pipes.some(p=>bx+bw>p.x&&bx<p.x+FB.PIPE_W&&(by<p.gap||by+bh>p.gap+FB.GAP));
@@ -5879,6 +5943,7 @@ function fbStep(dt){
 }
 function fbOver(){
   fb.state='over'; fb.t=0; fb.flash=1; if(navigator.vibrate) navigator.vibrate(60);
+  sfx('hit'); if(fb.y+12<FB.GROUND) setTimeout(()=>sfx('die'),300); // hit a pipe: the fall
   if(fb.score>fb.best){ fb.best=fb.score; fb.newBest=fb.score>0; store.set(fbBestKey(),String(fb.best)); }
   // your best on the leaderboard (members; the rules only take a higher score)
   const mineNow=fbScores.find(x=>x.code===me.code);
@@ -5938,7 +6003,7 @@ function fitFlappy(){
 addEventListener('resize',()=>{ if(current.id==='s-flappy') fitFlappy(); });
 $('fb-canvas').addEventListener('pointerdown',e=>{ e.preventDefault(); fbFlap(); });
 document.addEventListener('keydown',e=>{ if(current.id==='s-flappy'&&$('fb-board').hidden&&(e.code==='Space'||e.key===' '||e.key==='ArrowUp')){ e.preventDefault(); fbFlap(); } });
-$('fb-lb-close').addEventListener('click',()=>{ $('fb-board').hidden=true; });
+$('fb-lb-close').addEventListener('click',()=>{ $('fb-board').hidden=true; sfx('swoosh'); });
 $('fb-board').addEventListener('pointerdown',e=>{ if(e.target===$('fb-board')) $('fb-board').hidden=true; });
 function drawBoard(){
   const box=$('fb-lb-list'), admin=homeMode==='admin', list=fbScores.slice().sort((a,b)=>b.best-a.best||a.ts-b.ts); box.replaceChildren();
@@ -6026,7 +6091,7 @@ function markNew(){ const n=notes.filter(x=>x.ts>ncSeen()).length; document.quer
 function showBanner(n){
   const k=NOTE_KIND[n.kind]; if(!k) return; const b=$('nc-banner');
   $('ncb-ic').style.backgroundImage=`url("${k.icon()}")`; $('ncb-t').textContent=k.title(n); $('ncb-d').textContent=k.text(n);
-  b.classList.remove('out'); b.hidden=false; if(navigator.vibrate) navigator.vibrate(30);
+  b.classList.remove('out'); b.hidden=false; if(navigator.vibrate) navigator.vibrate(30); sfx('alert');
   clearTimeout(showBanner.t); showBanner.t=setTimeout(()=>{ b.classList.add('out'); setTimeout(()=>b.hidden=true,300); },4500);
   // with Playlist in the background (and alerts allowed), the phone shows it too
   if(document.hidden&&'Notification' in window&&Notification.permission==='granted') navigator.serviceWorker?.ready.then(r=>r.showNotification(k.title(n),{body:k.text(n),icon:'assets/app-icon-192.png',tag:n.id})).catch(()=>{});
