@@ -1420,6 +1420,13 @@ button.orb,.fm-name{cursor:pointer}
 .fm-new textarea{min-height:108px;font-size:21px;line-height:36px;padding:0}
 .fm-count{text-align:right;font:400 12px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8b6a3e;height:36px;line-height:36px}
 .fm-photo{display:flex;align-items:center;gap:10px;min-height:36px}
+/* forum pictures come from your own Camera photos */
+.fm-pick{margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,248,210,.7);box-shadow:0 0 0 .8px rgba(90,50,10,.35),inset 0 1px 0 #fff}
+.fm-pick-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font:700 15px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#5b2a0b}
+.fm-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-height:240px;overflow-y:auto}
+.fm-pick-grid button{aspect-ratio:1;border-radius:4px;background:#ddd center/cover no-repeat;box-shadow:0 1px 3px rgba(60,30,0,.35)}
+.fm-pick-grid button:active{transform:scale(.95)}
+.fm-pick-grid button.busy{opacity:.5}
 .fm-photo img{max-width:60%;border:4px solid #fff;border-bottom-width:12px;box-shadow:0 2px 6px rgba(60,30,0,.3);transform:rotate(-1deg)}
 .fm-pbtn{height:32px;padding:0 12px;border-radius:7px;color:#5b2a0b;font:700 14px "Helvetica Neue",Helvetica,Arial,sans-serif;background:linear-gradient(#fff8d2,#efe0a0);box-shadow:0 0 0 .8px rgba(90,50,10,.5),inset 0 1px 0 #fff}
 /* conversations */
@@ -2115,7 +2122,10 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
       <textarea id="fm-text" maxlength="128" rows="3" placeholder="Write something (optional)" aria-label="Text (optional, up to 128 characters)"></textarea>
       <div class="fm-count" id="fm-count">0 / 128</div>
       <div class="fm-photo"><button class="fm-pbtn" type="button" id="fm-addpic">Add photo</button><img id="fm-pic" alt="" hidden><button class="fm-pbtn" type="button" id="fm-rmpic" hidden>Remove</button></div>
-      <input type="file" id="fm-file" accept="image/*" hidden>
+      <div class="fm-pick" id="fm-pick" hidden>
+        <div class="fm-pick-top"><button class="fm-pbtn" type="button" id="fm-pick-x">Cancel</button><b>Your photos</b><button class="fm-pbtn" type="button" id="fm-pick-cam">Camera</button></div>
+        <div class="fm-pick-grid" id="fm-pick-grid"></div>
+      </div>
       <p class="fm-count" style="text-align:left" id="fm-life">Posts disappear after 24 hours.</p>
     </div></div>
   </div>
@@ -4366,7 +4376,7 @@ function logOutUser(){
   // stop listening first: once the membership is gone the database refuses these reads
   unwatchMe&&unwatchMe(); unwatchMe=null; dmUnsub&&dmUnsub(); dmUnsub=null; closePM();
   unwatch&&unwatch(); unwatch=null; lastList=[]; seenMsgs.clear(); firstRender=true; stopSocial(); stopFlips();
-  stopTicket(); stopBlocks(); stopForum(true); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[]; filterUnsub&&filterUnsub(); filterUnsub=null; stopStore(true);
+  stopTicket(); stopBlocks(); stopForum(true); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[]; myPhotosLoaded=false; fmFromCamera=null; filterUnsub&&filterUnsub(); filterUnsub=null; stopStore(true);
   if(me.code&&me.kind!=='admin') api.leave();
   keep.del('playlist-code'); keep.del('playlist-epoch'); loginEpoch=null; setMe(null,null); resetUserStep();
 }
@@ -5516,6 +5526,7 @@ const SAMPLE=new Image(); SAMPLE.src=HOME_THEME.wallpaper; // shown in the filte
 const sampleReady=new Promise(r=>{ if(SAMPLE.complete&&SAMPLE.naturalWidth) r(); else { SAMPLE.onload=r; SAMPLE.onerror=r; } });
 
 /* Camera: take a photo through a filter; it's saved (compressed) for you and the admin. Later it can be sent in the chat. */
+let myPhotosLoaded=false;
 let camStream=null, camFacing='environment', camShot=null, myPhotos=[], myPhotoUnsub=null, camRaf=0, customFilters=[], filterUnsub=null;
 let camFilter=store.get('playlist-filter')||'normal';
 const fx=makeFx($('cam-gl'));            // null without WebGL: photos are then taken without filters
@@ -5526,7 +5537,7 @@ const currentFilter=()=>allFilters().find(f=>f.id===camFilter)||BUILTIN_FILTERS[
 function openCamera(){ loadSfx('shutter').catch(()=>{});
   $('s-camera').dataset.mode='live'; go('s-camera'); startCam();
   if(!myPhotoUnsub) myPhotoUnsub=api.watchMyPhotos(me.code,l=>{
-    myPhotos=l; const t=$('cam-thumb'); t.style.backgroundImage=l[0]?`url("${l[0].thumb}")`:''; t.classList.toggle('none',!l.length);
+    myPhotos=l; myPhotosLoaded=true; const t=$('cam-thumb'); t.style.backgroundImage=l[0]?`url("${l[0].thumb}")`:''; t.classList.toggle('none',!l.length);
     if(!$('roll').hidden) drawRoll();
   });
   if(fx&&!filterUnsub) filterUnsub=api.watchFilters(l=>{
@@ -5660,7 +5671,10 @@ $('cam-use').addEventListener('click',async()=>{
   if(!camShot) return; const b=$('cam-use'); b.disabled=true; b.textContent='Saving…';
   try{
     await api.savePhoto({code:me.code,username:me.username,...camShot});
-    camShot=null; const img=$('cam-shot'); img.classList.add('fly'); // the photo drops into the thumbnail
+    const shot=camShot.image; camShot=null; const img=$('cam-shot'); img.classList.add('fly'); // the photo drops into the thumbnail
+    if(fmFromCamera){ const draft=fmFromCamera; fmFromCamera=null;
+      setTimeout(async()=>{ openForum(); openComposer(); $('fm-title').value=draft.title; $('fm-text').value=draft.text;
+        $('fm-count').textContent=`${draft.text.length} / 128`; try{ fmSetPic(await fmShrink(shot)); }catch(err){ console.error(err); } },650); }
     setTimeout(()=>{ $('s-camera').dataset.mode='live'; img.classList.remove('fly'); const t=$('cam-thumb'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); },480);
   }catch(err){ console.error(err); b.disabled=false; b.textContent='Use Photo'; toast("Couldn't save the photo. Try again."); }
 });
@@ -6162,21 +6176,49 @@ $('f-comment').addEventListener('submit',async e=>{
 // a new post
 function openComposer(){
   if(mutedSet.has(me.code)) return toast('You are muted in the forum.');
-  $('fm-title').value=''; $('fm-text').value=''; fmPic=null; $('fm-pic').hidden=true; $('fm-rmpic').hidden=true; $('fm-count').textContent='0 / 128';
+  $('fm-title').value=''; $('fm-text').value=''; fmPic=null; $('fm-pic').hidden=true; $('fm-rmpic').hidden=true; $('fm-count').textContent='0 / 128'; $('fm-pick').hidden=true;
   $('fm-new').hidden=false; setTimeout(()=>$('fm-title').focus(),350);
 }
 $('fm-text').addEventListener('input',()=>$('fm-count').textContent=`${$('fm-text').value.length} / 128`);
-$('fm-addpic').addEventListener('click',()=>$('fm-file').click());
-$('fm-rmpic').addEventListener('click',()=>{ fmPic=null; $('fm-pic').hidden=true; $('fm-rmpic').hidden=true; });
-$('fm-file').addEventListener('change',async e=>{
-  const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
-  try{ const img=await createImageBitmap(f); let url=null;
-    for(const max of [1000,800,640,480]){ const k=Math.min(1,max/Math.max(img.width,img.height)), c=document.createElement('canvas');
-      c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      url=c.toDataURL('image/jpeg',.8); if(url.length<250000) break; }
-    fmPic=url; $('fm-pic').src=url; $('fm-pic').hidden=false; $('fm-rmpic').hidden=false; }
-  catch(err){ console.error(err); toast("Couldn't read that picture."); }
+/* pictures in the forum come from your own Camera photos. No photos yet: open the Camera; after you save one,
+   you're back in your post with that photo already in it. */
+let fmFromCamera=null; // the post being written while you went to take a photo
+function fmSetPic(url){ fmPic=url; $('fm-pic').src=url; $('fm-pic').hidden=false; $('fm-rmpic').hidden=false; }
+async function fmShrink(src){ // a camera photo, small enough for a post
+  const img=await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=src; }); let url=null;
+  for(const max of [1000,800,640,480]){ const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), c=document.createElement('canvas');
+    c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    url=c.toDataURL('image/jpeg',.8); if(url.length<250000) break; }
+  return url;
+}
+function myPhotosNow(){ // your photos (the same list the Camera shows); resolves once they've loaded
+  return new Promise(res=>{ if(myPhotoUnsub&&myPhotosLoaded) return res(myPhotos);
+    let done=false; const fin=()=>{ if(!done){ done=true; res(myPhotos); } };
+    if(!myPhotoUnsub) myPhotoUnsub=api.watchMyPhotos(me.code,l=>{ myPhotos=l; myPhotosLoaded=true; const t=$('cam-thumb'); t.style.backgroundImage=l[0]?`url("${l[0].thumb}")`:''; t.classList.toggle('none',!l.length);
+      if(!$('roll').hidden) drawRoll(); fin(); });
+    const iv=setInterval(()=>{ if(myPhotosLoaded){ clearInterval(iv); fin(); } },100); setTimeout(()=>{ clearInterval(iv); fin(); },6000); });
+}
+function fmToCamera(){
+  fmFromCamera={title:$('fm-title').value,text:$('fm-text').value};
+  $('fm-pick').hidden=true; openCamera(); toast('Take a photo and tap Use Photo: it goes straight into your post.');
+}
+$('fm-addpic').addEventListener('click',async()=>{
+  const b=$('fm-addpic'); b.disabled=true;
+  const list=await myPhotosNow(); b.disabled=false;
+  if(!list.length){
+    if(await confirmBox('No photos yet','Pictures in the Forum come from the Camera. Take a photo first, and it goes straight into your post.','Open Camera')) fmToCamera();
+    return; }
+  const g=$('fm-pick-grid'); g.replaceChildren(...list.map(ph=>{ const t=mk('button'); t.type='button'; t.style.backgroundImage=`url("${ph.thumb}")`; t.setAttribute('aria-label','Photo from '+fmtDay(ph.ts));
+    t.addEventListener('click',async()=>{ if(t.classList.contains('busy')) return; t.classList.add('busy');
+      try{ const full=await api.photoFull(ph.id); if(!full) throw new Error('gone'); fmSetPic(await fmShrink(full)); $('fm-pick').hidden=true; }
+      catch(err){ console.error(err); toast("Couldn't load that photo. Try again."); }
+      finally{ t.classList.remove('busy'); } });
+    return t; }));
+  $('fm-pick').hidden=false;
 });
+$('fm-pick-x').addEventListener('click',()=>{ $('fm-pick').hidden=true; });
+$('fm-pick-cam').addEventListener('click',()=>fmToCamera());
+$('fm-rmpic').addEventListener('click',()=>{ fmPic=null; $('fm-pic').hidden=true; $('fm-rmpic').hidden=true; });
 async function submitPost(){
   const title=$('fm-title').value.trim(), text=$('fm-text').value.trim();
   if(!title){ toast('Give your post a title.'); return $('fm-title').focus(); }
