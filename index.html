@@ -2828,6 +2828,9 @@ async function firebaseApi(cfg){
       b.set(fs.doc(db,"flappy",code),{name,best,ts:fs.serverTimestamp()});
       if(!top||best>(top.best??-1)) b.set(fs.doc(db,"site","flappyTop"),{code,name,best,ts:fs.serverTimestamp()});
       await b.commit(); },
+    // Flappy Bird milestones: 50 gives 2 likes, 100 gives 10 likes (once each; the database checks the saved best score)
+    async flappyMilestone(code,m){ const r=fs.doc(db,"wallets",code), w=await fs.getDocFromServer(r).catch(()=>fs.getDoc(r)), d=w.exists()?w.data():{};
+      if(d['fb'+m]) return false; await fs.setDoc(r,{...d,bonus:(d.bonus||0)+FB_MILESTONES[m],['fb'+m]:true}); return true; },
     async wipeFlappy(){ const docs=(await fs.getDocs(fs.collection(db,"flappy"))).docs;
       for(let i=0;i<docs.length;i+=400){ const b=fs.writeBatch(db); docs.slice(i,i+400).forEach(d=>b.delete(d.ref)); await b.commit(); }
       await fs.setDoc(fs.doc(db,"site","flappyTop"),{code:'',name:'',best:-1,ts:fs.serverTimestamp()}); return docs.length; },
@@ -3202,6 +3205,8 @@ function localApi(){
     watchFlappy:cb=>sub(d=>cb(Object.entries(d.flappy||{}).map(([code,f])=>({code,...f})))),
     watchFlappyTop:cb=>sub(d=>cb(d.flappyTop||null)),
     async saveFlappy(code,name,best,top){ mut(d=>{ d.flappy=d.flappy||{}; d.flappy[code]={name,best,ts:Date.now()}; if(!top||best>(top.best??-1)) d.flappyTop={code,name,best}; }); },
+    async flappyMilestone(code,m){ let ok=false; mut(d=>{ const w=d.wallets[code]||{}; if(w['fb'+m]) return; if(!((d.flappy||{})[code]&&d.flappy[code].best>=m)) throw new Error('not yet');
+      d.wallets[code]={...w,bonus:(w.bonus||0)+FB_MILESTONES[m],['fb'+m]:true}; ok=true; }); return ok; },
     async wipeFlappy(){ let n=0; mut(d=>{ n=Object.keys(d.flappy||{}).length; d.flappy={}; d.flappyTop={code:'',name:'',best:-1}; }); return n; },
     async removeFlappy(code,next){ mut(d=>{ delete (d.flappy||{})[code]; d.flappyTop=next?{code:next.code,name:next.name,best:next.best}:{code:'',name:'',best:-1}; }); },
     async addCredit(c,n){ mut(d=>{ const w=d.wallets[c]||{}; d.wallets[c]={...w,credit:Math.max(w.creditSpent||0,(w.credit||0)+n)}; }); },
@@ -6239,6 +6244,7 @@ function drawSongs(){
 /* ---------- Flappy Bird: the playable one from the Figma file, with a leaderboard ----------
    The world is 512 units high; its width follows the screen (the sky, city and ground repeat sideways),
    and it's drawn at the screen's full resolution so the pixel art stays sharp. */
+const FB_MILESTONES={50:2,100:10}; // Flappy Bird: reach 50 for 2 likes, 100 for 10 likes (once per account)
 const FB={W:288,H:512,GROUND:400,GAP:100,SPEED:2,GRAV:.25,FLAP:-4.6,PIPE_W:52,SPACING:144,BX:60}; // the original's numbers: 100 px gap, pipes 144 px apart
 const fbImg={}; ['background','base','pipe','message','gameover','restart','bird-0','bird-1','bird-2',...'0123456789'].forEach(n=>{ const i=new Image(); i.src=`assets/flappy/${n}.png`; fbImg[n]=i; });
 let fb=null, fbRaf=0, fbScores=[], fbTop=null, fbUnsubs=[], fbK=1;
@@ -6414,7 +6420,15 @@ function openFlappy(a){ setTimeout(tryDaily,0); ['wing','point','hit','die','swo
   if(!fbUnsubs.length) fbUnsubs.push(api.watchFlappy(l=>{ fbScores=l;
     if(me.code&&homeMode==='user'){ const mine=l.find(x=>x.code===me.code), b=mine?mine.best:0;
       if((+store.get(fbBestKey())||0)!==b){ store.set(fbBestKey(),String(b)); if(fb) fb.best=b; } }
-    if(!$('fb-board').hidden) drawBoard(); })); }
+    checkFbMilestones(); if(!$('fb-board').hidden) drawBoard(); })); }
+function checkFbMilestones(score){
+  if(!me.code||homeMode!=='user'||checkFbMilestones.busy||!walletUnsub) return;
+  const mine=fbScores.find(x=>x.code===me.code), best=Math.max(score||0,mine?mine.best:0);
+  const due=Object.keys(FB_MILESTONES).map(Number).filter(m=>best>=m&&!wallet['fb'+m]); if(!due.length) return;
+  checkFbMilestones.busy=true;
+  (async()=>{ for(const m of due){ try{ if(await api.flappyMilestone(me.code,m)){ cashSound(); toast(`🏅 You reached ${m} in Flappy Bird: +${FB_MILESTONES[m]} likes!`); await new Promise(r=>setTimeout(r,1800)); } }catch(err){ console.error(err); } }
+    checkFbMilestones.busy=false; })();
+}
 function stopFlappy(){ cancelAnimationFrame(fbRaf); fbRaf=0; fbUnsubs.forEach(u=>u&&u()); fbUnsubs=[]; $('fb-board').hidden=true; }
 const fbBestKey=()=>'playlist-flappy-best-'+(me.code||'admin');
 function fbReset(){ fb={state:'ready',y:240,v:0,t:0,score:0,best:+store.get(fbBestKey())||0,groundX:0,pipes:[],flash:0,newBest:false}; }
@@ -6446,9 +6460,9 @@ function fbOver(){
   sfx('hit'); if(fb.y+12<FB.GROUND) setTimeout(()=>sfx('die'),300); // hit a pipe: the fall
   if(fb.score>fb.best){ fb.best=fb.score; fb.newBest=fb.score>0; store.set(fbBestKey(),String(fb.best)); }
   // your best on the leaderboard (members; the rules only take a higher score)
-  const mineNow=fbScores.find(x=>x.code===me.code);
+  const mineNow=fbScores.find(x=>x.code===me.code), sc=fb.score;
   if(me.code&&homeMode==='user'&&fb.score>0&&(!mineNow||fb.score>mineNow.best))
-    api.saveFlappy(me.code,me.username,fb.score,fbTop).then(()=>{
+    api.saveFlappy(me.code,me.username,fb.score,fbTop).then(()=>{ checkFbMilestones(sc);
       if(!fbTop||fb.score>(fbTop.best??-1)) toast('New number 1! You get 10 likes every day while you stay on top.');
       // everyone you just passed on the leaderboard hears about it
       const was=mineNow?mineNow.best:-1; fbScores.filter(x=>x.code!==me.code&&x.best>was&&x.best<fb.score).slice(0,10).forEach(x=>sendNote(x.code,'flappy',String(fb.score)));
@@ -6512,7 +6526,7 @@ $('fb-lb-wipe').addEventListener('click',async()=>{
 function drawBoard(){
   const box=$('fb-lb-list'), admin=homeMode==='admin', list=fbScores.slice().sort((a,b)=>b.best-a.best||a.ts-b.ts); box.replaceChildren();
   $('fb-lb-wipe').hidden=!admin||!list.length;
-  $('fb-lb-sub').textContent=`Number 1 gets ${FLAPPY_DAILY_LIKES} likes every day. Your best on this phone: ${fb?fb.best:0}.`;
+  $('fb-lb-sub').textContent=`Number 1 gets ${FLAPPY_DAILY_LIKES} likes every day. Reach 50 for 2 likes and 100 for 10 likes. Your best: ${fb?fb.best:0}.`;
   if(!list.length) box.append(mk('p',null,'No scores yet. Be the first!'));
   list.slice(0,50).forEach((x,i)=>{ const r=mk('div','fb-row'+(x.code===me.code?' me':'')); r.append(mk('span','n',i===0?'👑':String(i+1)),mk('span','grow',x.name),mk('b',null,String(x.best)));
     if(admin){ const d=mk('button','mini-btn red','Remove'); d.type='button';
