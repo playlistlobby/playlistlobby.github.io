@@ -1636,25 +1636,33 @@ body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
 .a2h-btn.grey{color:#333;background:linear-gradient(#fff,#dfe2e6);box-shadow:0 0 0 .8px rgba(0,0,0,.3),inset 0 1px 0 #fff}
 .a2h-ok{display:flex;align-items:center;gap:10px}
 .a2h-ok img{width:44px;height:44px;border-radius:10px}
-/* the loading screen: the iOS 6 charging battery. It fades in only if loading takes a moment. */
-.boot{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
-  background:radial-gradient(circle at 50% 42%,rgba(38,42,50,.86),rgba(0,0,0,.94));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  color:#fff;font:600 15px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.6);opacity:0;visibility:hidden;animation:bootin .35s ease .45s forwards}
+/* the loading screen: the iOS 6 charging battery (black glass tube, chrome ends, glowing green charge, reflection). It fades in only if loading takes a moment. */
+.boot{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;background:#000;
+  color:#fff;font:600 15px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;opacity:0;visibility:hidden;animation:bootin .35s ease .45s forwards}
 @keyframes bootin{from{opacity:0;visibility:visible}to{opacity:1;visibility:visible}}
 .boot.gone{display:none}
-.boot-bat{position:relative;width:176px;height:80px;padding:6px;border-radius:15px;
-  background:linear-gradient(#fbfcfd,#b4bac1 42%,#7c838b 58%,#d5d9de);box-shadow:0 3px 14px rgba(0,0,0,.7),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.25);
-  -webkit-box-reflect:below 10px linear-gradient(transparent 50%,rgba(255,255,255,.2))}
-.boot-in{position:relative;height:100%;border-radius:10px;overflow:hidden;background:linear-gradient(#15171a,#2b2f35);box-shadow:inset 0 2px 7px rgba(0,0,0,.85)}
-.boot-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:9px 3px 3px 9px;
-  background:linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.14) 47%,rgba(255,255,255,0) 53%),linear-gradient(#a6f766,#4fc723 55%,#2c960f);
-  box-shadow:inset -1px 0 0 rgba(0,0,0,.3),0 0 16px rgba(120,255,80,.5)}
-.boot-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.5),rgba(255,255,255,0)) no-repeat;
-  background-size:56px 100%;animation:bootshine 1.5s linear infinite}
-@keyframes bootshine{from{background-position:-56px 0}to{background-position:calc(100% + 56px) 0}}
-.boot-nub{position:absolute;right:-11px;top:50%;width:11px;height:26px;margin-top:-13px;border-radius:0 6px 6px 0;background:linear-gradient(#eef0f2,#8a9199 50%,#c3c8cd);box-shadow:0 2px 6px rgba(0,0,0,.5)}
-.boot-msg{margin:44px 0 0;letter-spacing:.02em}
-.boot-msg b{font-variant-numeric:tabular-nums;color:#b4f38a}
+.boot-bat{--bw:min(74vw,300px);position:relative;width:var(--bw);height:calc(var(--bw) * .5);margin-right:calc(var(--bw) * .05);
+  -webkit-box-reflect:below 3px linear-gradient(transparent 52%,rgba(255,255,255,.3))}
+.bb-tube{position:absolute;inset:0;border-radius:calc(var(--bw) * .02);overflow:hidden;
+  background:linear-gradient(#0c0c0c 0%,#2e2e2e 7%,#1c1c1c 18%,#0e0e0e 40%,#000 52%,#060606 60%,#121212 82%,#2a2a2a 93%,#0b0b0b 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.18),0 0 0 1px #1a1a1a}
+.bb-inner{position:absolute;left:calc(var(--bw) * .035);right:calc(var(--bw) * .035);top:calc(var(--bw) * .012);bottom:calc(var(--bw) * .012)}
+.boot-fill{position:absolute;left:0;top:0;bottom:0;width:0;
+  background:linear-gradient(#138513 0%,#2fd52f 6%,#58ff58 16%,#44f944 34%,#3aee3a 47%,#27c927 51%,#35e635 55%,#3cf23c 72%,#2cd42c 86%,#1a961a 96%,#0e5f0e 100%);
+  box-shadow:0 0 calc(var(--bw) * .1) rgba(70,255,70,.45),inset -1px 0 0 rgba(0,60,0,.55)}
+/* the glass: a bright line near the top, a soft band below it, darker in the middle (a cylinder) */
+.bb-glass{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(255,255,255,.22) 0,rgba(255,255,255,.1) 5%,rgba(255,255,255,0) 9%,rgba(255,255,255,.07) 13%,rgba(255,255,255,.1) 22%,rgba(255,255,255,0) 38%,
+    rgba(255,255,255,0) 62%,rgba(255,255,255,.04) 80%,rgba(255,255,255,.1) 94%,rgba(255,255,255,.04) 100%)}
+.bb-cap{position:absolute;top:calc(var(--bw) * -.006);bottom:calc(var(--bw) * -.006);width:calc(var(--bw) * .036);border-radius:calc(var(--bw) * .012);
+  background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,0) 12%,rgba(0,0,0,0) 88%,rgba(0,0,0,.6)),
+    linear-gradient(90deg,#1c1c1c 0%,#6d6d6d 18%,#f2f2f2 42%,#bdbdbd 58%,#5a5a5a 80%,#161616 100%)}
+.bb-cap.l{left:calc(var(--bw) * -.006)}
+.bb-cap.r{right:calc(var(--bw) * -.006)}
+.bb-nub{position:absolute;right:calc(var(--bw) * -.052);top:32%;bottom:32%;width:calc(var(--bw) * .048);border-radius:0 calc(var(--bw) * .014) calc(var(--bw) * .014) 0;
+  background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,0) 20%,rgba(0,0,0,0) 80%,rgba(0,0,0,.65)),linear-gradient(90deg,#141414,#3c3c3c 30%,#d9d9d9 55%,#7b7b7b 75%,#1b1b1b)}
+.boot-msg{margin:calc(min(74vw,300px) * .36) 0 0;letter-spacing:.02em;color:rgba(255,255,255,.55);font-size:13px}
+.boot-msg b{font-variant-numeric:tabular-nums;color:#6dff6d;font-weight:600}
 .boot-retry{margin-top:16px;padding:0 18px;height:34px;border-radius:17px;color:#fff;font:700 14px/34px "Helvetica Neue",Helvetica,Arial,sans-serif;
   background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.08) 50%,rgba(255,255,255,.02) 52%,rgba(255,255,255,.1));box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3)}
 </style>
@@ -1663,7 +1671,10 @@ body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
 </head>
 <body data-screen="s-code">
 <div class="boot" id="boot" role="status" aria-live="polite">
-  <div class="boot-bat" aria-hidden="true"><div class="boot-in"><div class="boot-fill" id="boot-fill"></div></div><span class="boot-nub"></span></div>
+  <div class="boot-bat" aria-hidden="true">
+    <div class="bb-tube"><div class="bb-inner"><div class="boot-fill" id="boot-fill"></div></div><div class="bb-glass"></div></div>
+    <span class="bb-cap l"></span><span class="bb-cap r"></span><span class="bb-nub"></span>
+  </div>
   <p class="boot-msg"><span id="boot-msg">Loading</span> <b id="boot-pct">0%</b></p>
   <button class="boot-retry" id="boot-retry" type="button" hidden>Reload</button>
 </div>
@@ -3842,7 +3853,6 @@ $('f-code').addEventListener('submit',async e=>{
   if(window.__playlistOffline){ note.className='note err'; note.textContent='No connection to Playlist. Tap ↻ at the top right to try again.'; return shake($('f-code')); }
   if(!code) return shake($('f-code'));
   note.className='note'; note.textContent='Checking…';
-  window.__bootShow&&window.__bootShow('Checking your code');
   try{
     const r=await Promise.race([api.joinCode(code),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),20000))]);
     if(!r.valid){
@@ -3862,7 +3872,7 @@ $('f-code').addEventListener('submit',async e=>{
     if(r.username) openHome();
     else { $('shade-user').value=me.shade; go('s-user'); setTimeout(()=>$('uname').focus(),360); }
   }catch(err){ console.error(err); note.className='note err'; note.textContent=err&&err.message==='slow'?'The connection is very slow right now. Try again in a moment.':"Couldn't check the code. Try again."; }
-  finally{ window.__bootDone&&window.__bootDone(); }
+
 });
 
 /* ---------- 2. username (lock → next) ---------- */
