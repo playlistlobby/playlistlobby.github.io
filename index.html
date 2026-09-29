@@ -2096,7 +2096,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 <section class="screen out app" id="s-flappy" aria-label="Flappy Bird" hidden>
   <div class="fb-frame" id="fb-frame"><div class="fb-stage" id="fb-stage"><canvas id="fb-canvas" aria-label="Flappy Bird. Tap or press space to flap."></canvas></div></div>
   <div class="fb-board" id="fb-board" hidden><div class="fb-card" role="dialog" aria-label="Leaderboard"><h2>Leaderboard</h2><p id="fb-lb-sub"></p><div id="fb-lb-list"></div>
-    <div class="a-row" style="justify-content:flex-end;margin-top:10px"><button class="mini-btn" type="button" id="fb-lb-close">Close</button></div></div></div>
+    <div class="a-row" style="justify-content:flex-end;margin-top:10px"><button class="mini-btn red" type="button" id="fb-lb-wipe" hidden>Wipe leaderboard</button><button class="mini-btn" type="button" id="fb-lb-close">Close</button></div></div></div>
 </section>
 <div class="it-player" id="it-player" hidden role="dialog" aria-label="Player">
   <button class="cam-pill it-close" type="button" id="it-close">Done</button>
@@ -2828,6 +2828,9 @@ async function firebaseApi(cfg){
       b.set(fs.doc(db,"flappy",code),{name,best,ts:fs.serverTimestamp()});
       if(!top||best>(top.best??-1)) b.set(fs.doc(db,"site","flappyTop"),{code,name,best,ts:fs.serverTimestamp()});
       await b.commit(); },
+    async wipeFlappy(){ const docs=(await fs.getDocs(fs.collection(db,"flappy"))).docs;
+      for(let i=0;i<docs.length;i+=400){ const b=fs.writeBatch(db); docs.slice(i,i+400).forEach(d=>b.delete(d.ref)); await b.commit(); }
+      await fs.setDoc(fs.doc(db,"site","flappyTop"),{code:'',name:'',best:-1,ts:fs.serverTimestamp()}); return docs.length; },
     async removeFlappy(code,next){ await fs.deleteDoc(fs.doc(db,"flappy",code));
       await fs.setDoc(fs.doc(db,"site","flappyTop"),next?{code:next.code,name:next.name,best:next.best,ts:fs.serverTimestamp()}:{code:'',name:'',best:-1,ts:fs.serverTimestamp()}); },
     async addCredit(code,n){ return fs.runTransaction(db,async tx=>{ const r=fs.doc(db,"wallets",code), w=await tx.get(r), d=w.exists()?w.data():{};
@@ -3199,6 +3202,7 @@ function localApi(){
     watchFlappy:cb=>sub(d=>cb(Object.entries(d.flappy||{}).map(([code,f])=>({code,...f})))),
     watchFlappyTop:cb=>sub(d=>cb(d.flappyTop||null)),
     async saveFlappy(code,name,best,top){ mut(d=>{ d.flappy=d.flappy||{}; d.flappy[code]={name,best,ts:Date.now()}; if(!top||best>(top.best??-1)) d.flappyTop={code,name,best}; }); },
+    async wipeFlappy(){ let n=0; mut(d=>{ n=Object.keys(d.flappy||{}).length; d.flappy={}; d.flappyTop={code:'',name:'',best:-1}; }); return n; },
     async removeFlappy(code,next){ mut(d=>{ delete (d.flappy||{})[code]; d.flappyTop=next?{code:next.code,name:next.name,best:next.best}:{code:'',name:'',best:-1}; }); },
     async addCredit(c,n){ mut(d=>{ const w=d.wallets[c]||{}; d.wallets[c]={...w,credit:Math.max(w.creditSpent||0,(w.credit||0)+n)}; }); },
     async buyWithCredit(o,slot){ return mut(d=>{ const id='or'+Date.now(), w=d.wallets[o.code]||{}, token=o.item==='tshirt'?newToken():null;
@@ -4125,7 +4129,8 @@ function watchMyDMs(){
   let seen; try{ seen=new Set(JSON.parse(store.get(dmSeenKey())||'[]')); }catch{ seen=new Set(); }
   dmUnsub=api.watchDMs(me.code,list=>{
     const fresh_=list.filter(d=>!seen.has(d.id)&&!blocked.has(d.from)&&Date.now()-d.ts<24*3600e3).sort((a,b)=>a.ts-b.ts);
-    fresh_.forEach((d,i)=>{ seen.add(d.id); setTimeout(()=>showDM(d),i*400); });
+    // the sender's notification already shows the iOS 6 banner; only the admin's messages (which have no notification) show it from here
+    fresh_.forEach((d,i)=>{ seen.add(d.id); if(d.from===ADMIN_ID) setTimeout(()=>showBanner({kind:'dm',from:d.from,fromName:d.fromName,extra:String(d.text||'').slice(0,80),ts:d.ts}),i*400); });
     if(fresh_.length) store.set(dmSeenKey(),JSON.stringify([...seen].slice(-300)));
   });
 }
@@ -6406,7 +6411,10 @@ function openFlappy(a){ setTimeout(tryDaily,0); ['wing','point','hit','die','swo
   requestAnimationFrame(()=>{ fitFlappy(); fbReset(); });
   cancelAnimationFrame(fbRaf); let last=performance.now();
   const loop=t=>{ const dt=Math.max(0,Math.min(3,(t-last)/16.67)); last=t; fbRaf=requestAnimationFrame(loop); fbStep(dt); fbDraw(); }; fbRaf=requestAnimationFrame(loop);
-  if(!fbUnsubs.length) fbUnsubs.push(api.watchFlappy(l=>{ fbScores=l; if(!$('fb-board').hidden) drawBoard(); })); }
+  if(!fbUnsubs.length) fbUnsubs.push(api.watchFlappy(l=>{ fbScores=l;
+    if(me.code&&homeMode==='user'){ const mine=l.find(x=>x.code===me.code), b=mine?mine.best:0;
+      if((+store.get(fbBestKey())||0)!==b){ store.set(fbBestKey(),String(b)); if(fb) fb.best=b; } }
+    if(!$('fb-board').hidden) drawBoard(); })); }
 function stopFlappy(){ cancelAnimationFrame(fbRaf); fbRaf=0; fbUnsubs.forEach(u=>u&&u()); fbUnsubs=[]; $('fb-board').hidden=true; }
 const fbBestKey=()=>'playlist-flappy-best-'+(me.code||'admin');
 function fbReset(){ fb={state:'ready',y:240,v:0,t:0,score:0,best:+store.get(fbBestKey())||0,groundX:0,pipes:[],flash:0,newBest:false}; }
@@ -6497,8 +6505,13 @@ $('fb-canvas').addEventListener('pointerdown',e=>{ e.preventDefault(); fbFlap();
 document.addEventListener('keydown',e=>{ if(current.id==='s-flappy'&&$('fb-board').hidden&&(e.code==='Space'||e.key===' '||e.key==='ArrowUp')){ e.preventDefault(); fbFlap(); } });
 $('fb-lb-close').addEventListener('click',()=>{ $('fb-board').hidden=true; sfx('swoosh'); });
 $('fb-board').addEventListener('pointerdown',e=>{ if(e.target===$('fb-board')) $('fb-board').hidden=true; });
+$('fb-lb-wipe').addEventListener('click',async()=>{
+  if(!await confirmBox('Wipe the leaderboard?','Every Flappy Bird score is deleted and nobody is number 1. Everyone starts again from 0.','Wipe')) return;
+  try{ const n=await api.wipeFlappy(); toast(`Leaderboard wiped (${n} score${n===1?'':'s'}).`); }catch(err){ fail('wipe the leaderboard')(err); }
+});
 function drawBoard(){
   const box=$('fb-lb-list'), admin=homeMode==='admin', list=fbScores.slice().sort((a,b)=>b.best-a.best||a.ts-b.ts); box.replaceChildren();
+  $('fb-lb-wipe').hidden=!admin||!list.length;
   $('fb-lb-sub').textContent=`Number 1 gets ${FLAPPY_DAILY_LIKES} likes every day. Your best on this phone: ${fb?fb.best:0}.`;
   if(!list.length) box.append(mk('p',null,'No scores yet. Be the first!'));
   list.slice(0,50).forEach((x,i)=>{ const r=mk('div','fb-row'+(x.code===me.code?' me':'')); r.append(mk('span','n',i===0?'👑':String(i+1)),mk('span','grow',x.name),mk('b',null,String(x.best)));
