@@ -1636,11 +1636,37 @@ body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
 .a2h-btn.grey{color:#333;background:linear-gradient(#fff,#dfe2e6);box-shadow:0 0 0 .8px rgba(0,0,0,.3),inset 0 1px 0 #fff}
 .a2h-ok{display:flex;align-items:center;gap:10px}
 .a2h-ok img{width:44px;height:44px;border-radius:10px}
+/* the loading screen: the iOS 6 charging battery. It fades in only if loading takes a moment. */
+.boot{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  background:radial-gradient(circle at 50% 42%,rgba(38,42,50,.86),rgba(0,0,0,.94));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  color:#fff;font:600 15px/20px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.6);opacity:0;visibility:hidden;animation:bootin .35s ease .45s forwards}
+@keyframes bootin{from{opacity:0;visibility:visible}to{opacity:1;visibility:visible}}
+.boot.gone{display:none}
+.boot-bat{position:relative;width:176px;height:80px;padding:6px;border-radius:15px;
+  background:linear-gradient(#fbfcfd,#b4bac1 42%,#7c838b 58%,#d5d9de);box-shadow:0 3px 14px rgba(0,0,0,.7),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.25);
+  -webkit-box-reflect:below 10px linear-gradient(transparent 50%,rgba(255,255,255,.2))}
+.boot-in{position:relative;height:100%;border-radius:10px;overflow:hidden;background:linear-gradient(#15171a,#2b2f35);box-shadow:inset 0 2px 7px rgba(0,0,0,.85)}
+.boot-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:9px 3px 3px 9px;
+  background:linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.14) 47%,rgba(255,255,255,0) 53%),linear-gradient(#a6f766,#4fc723 55%,#2c960f);
+  box-shadow:inset -1px 0 0 rgba(0,0,0,.3),0 0 16px rgba(120,255,80,.5)}
+.boot-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.5),rgba(255,255,255,0)) no-repeat;
+  background-size:56px 100%;animation:bootshine 1.5s linear infinite}
+@keyframes bootshine{from{background-position:-56px 0}to{background-position:calc(100% + 56px) 0}}
+.boot-nub{position:absolute;right:-11px;top:50%;width:11px;height:26px;margin-top:-13px;border-radius:0 6px 6px 0;background:linear-gradient(#eef0f2,#8a9199 50%,#c3c8cd);box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.boot-msg{margin:44px 0 0;letter-spacing:.02em}
+.boot-msg b{font-variant-numeric:tabular-nums;color:#b4f38a}
+.boot-retry{margin-top:16px;padding:0 18px;height:34px;border-radius:17px;color:#fff;font:700 14px/34px "Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.08) 50%,rgba(255,255,255,.02) 52%,rgba(255,255,255,.1));box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3)}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body data-screen="s-code">
+<div class="boot" id="boot" role="status" aria-live="polite">
+  <div class="boot-bat" aria-hidden="true"><div class="boot-in"><div class="boot-fill" id="boot-fill"></div></div><span class="boot-nub"></span></div>
+  <p class="boot-msg"><span id="boot-msg">Loading</span> <b id="boot-pct">0%</b></p>
+  <button class="boot-retry" id="boot-retry" type="button" hidden>Reload</button>
+</div>
 <script>
 /* LOOK SWITCHES. They run before anything is drawn, so the old screens never flash while the database connects.
    'ios6' = iOS 6 style; 'glass' = the previous liquid-glass look (kept so it can be switched back). */
@@ -2496,6 +2522,34 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
   // still not connected after 10 seconds: say so, and point to the reload button
   setTimeout(function(){ if(window.__playlistReady) return; var n=document.getElementById('n-code');
     if(n){ n.className='note'; n.textContent='Still connecting… If nothing happens, tap ↻ at the top right.'; } },10000);
+  /* the charging battery. __boot(p) says how far loading is (0-100); __bootDone() fills it and fades it out;
+     __bootShow(text) brings it back (logging in). It creeps forward on its own so it never looks frozen. */
+  var boot=document.getElementById('boot'), fill=document.getElementById('boot-fill'), pct=document.getElementById('boot-pct'), msg=document.getElementById('boot-msg');
+  var target=12, shown=0, running=false, stuck=null, showing=true;
+  function frame(){ if(!showing){ running=false; return; }
+    if(target<92) target+=0.04; // slow creep while waiting
+    shown+=(target-shown)*0.09; if(target>=100&&shown>99.4) shown=100;
+    fill.style.width=shown.toFixed(1)+'%'; pct.textContent=Math.round(shown)+'%'; requestAnimationFrame(frame); }
+  function start(){ if(!running){ running=true; requestAnimationFrame(frame); } }
+  function arm(){ clearTimeout(stuck); stuck=setTimeout(function(){ if(!showing||target>=100) return; msg.textContent='Still connecting…'; document.getElementById('boot-retry').hidden=false; },12000); }
+  window.__boot=function(p){ target=Math.max(target,p); };
+  window.__bootDone=function(){ if(!showing) return; target=100; clearTimeout(stuck);
+    var vis=parseFloat(getComputedStyle(boot).opacity)||0;
+    if(vis<0.05){ showing=false; boot.classList.add('gone'); return; } // it never appeared: just go
+    setTimeout(function(){ boot.style.animation='none'; boot.style.visibility='visible'; boot.style.opacity='1'; void boot.offsetWidth;
+      boot.style.transition='opacity .35s ease'; boot.style.opacity='0';
+      setTimeout(function(){ showing=false; boot.classList.add('gone'); },380); },420); };
+  window.__bootShow=function(text){ clearTimeout(stuck); showing=true; target=18; shown=0; msg.textContent=text||'Loading'; document.getElementById('boot-retry').hidden=true;
+    boot.classList.remove('gone'); boot.style.transition=''; boot.style.opacity=''; boot.style.visibility=''; boot.style.animation='none'; void boot.offsetWidth; boot.style.animation='';
+    start(); arm(); };
+  start(); arm();
+  document.getElementById('boot-retry').addEventListener('click',function(){
+    if(!window.__playlistReady) return document.getElementById('lk-reload').click();
+    location.reload(); });
+  // a code typed before the site is ready: keep it (instead of the page reloading and losing it), it goes in once ready
+  document.addEventListener('submit',function(e){ if(window.__playlistReady) return; e.preventDefault(); e.stopImmediatePropagation();
+    if(e.target&&e.target.id==='f-code'){ var v=(document.getElementById('code').value||'').trim(); if(!v) return;
+      window.__pendingCode=v; var n=document.getElementById('n-code'); if(n){ n.className='note'; n.textContent='One moment… your code goes in as soon as everything has loaded.'; } } },true);
   // the reload button, before the rest has loaded: forget this phone's Playlist data and start fresh
   document.addEventListener('click',function(e){
     if(window.__playlistReady||!e.target.closest||!e.target.closest('#lk-reload')) return;
@@ -2726,12 +2780,12 @@ document.querySelectorAll('.field,.count,.circle').forEach(refract);
 
 /* ---------- data layer ---------- */
 async function firebaseApi(cfg){
-  const V="10.12.2";
-  const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
-  const fs = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+  const V="10.12.2", step=p=>window.__boot&&window.__boot(p);
+  step(30); const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+  step(45); const fs = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`); step(62);
   let app = initializeApp(cfg), db = fs.getFirestore(app);
   // every visitor gets an invisible anonymous login; the security rules tie it to the code they enter
-  const A = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+  const A = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`); step(75);
   let auth = A.getAuth(app);
   const within=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(()=>r('timeout'),ms))]);
   const ready = await within(new Promise(r=>{ const u=A.onAuthStateChanged(auth,()=>{ u(); r('ok'); }); }),6000);
@@ -3788,8 +3842,9 @@ $('f-code').addEventListener('submit',async e=>{
   if(window.__playlistOffline){ note.className='note err'; note.textContent='No connection to Playlist. Tap ↻ at the top right to try again.'; return shake($('f-code')); }
   if(!code) return shake($('f-code'));
   note.className='note'; note.textContent='Checking…';
+  window.__bootShow&&window.__bootShow('Checking your code');
   try{
-    const r=await api.joinCode(code);
+    const r=await Promise.race([api.joinCode(code),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),20000))]);
     if(!r.valid){
       // not a code: maybe it's the admin password (checked by the database, not by this page)
       if(await api.adminLogin(code)){ keep.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
@@ -3806,7 +3861,8 @@ $('f-code').addEventListener('submit',async e=>{
     setMe(code,r.username,r.shade,r.kind); keep.set('playlist-code',code,remembered()); markLogin(); note.textContent=''; slideUnlock();
     if(r.username) openHome();
     else { $('shade-user').value=me.shade; go('s-user'); setTimeout(()=>$('uname').focus(),360); }
-  }catch(err){ console.error(err); note.className='note err'; note.textContent="Couldn't check the code. Try again."; }
+  }catch(err){ console.error(err); note.className='note err'; note.textContent=err&&err.message==='slow'?'The connection is very slow right now. Try again in a moment.':"Couldn't check the code. Try again."; }
+  finally{ window.__bootDone&&window.__bootDone(); }
 });
 
 /* ---------- 2. username (lock → next) ---------- */
@@ -6695,6 +6751,9 @@ if(keep.get('playlist-admin')==='1') api.adminActive().then(ok=>{ if(ok) openHom
 else if(keep.get('playlist-door')==='1') stillValid().then(v=>v?api.doorActive():false).then(ok=>{ if(ok) openHome({door:true}); else { keep.del('playlist-door'); resumeCode(); } });
 else resumeCode();
 tickClock();
+// everything is set up: the loading battery goes, and a code typed while loading goes in now
+window.__bootDone&&window.__bootDone();
+if(window.__pendingCode&&current.id==='s-code'){ $('code').value=window.__pendingCode; window.__pendingCode=null; setTimeout(()=>$('f-code').requestSubmit(),60); }
 api.watchLimits(onLimits); // message life and the spam filter (the admin's settings)
 </script>
 </body>
