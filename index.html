@@ -1056,6 +1056,7 @@ body[data-screen=s-camera]{background:#000}
 #s-camera[data-mode=review] .review-bar{display:flex}
 #s-camera[data-mode=review] .live-bar{display:none}
 .cam-thumb{width:46px;height:46px;border-radius:5px;background:#1c1c1e center/cover no-repeat;box-shadow:0 0 0 2px rgba(255,255,255,.9),0 3px 8px rgba(0,0,0,.7);transition:transform .45s var(--spring)}
+#cam-thumb{visibility:hidden;pointer-events:none} /* photos aren't shown in the app (they're kept in the database) */
 .cam-thumb.none{background:linear-gradient(#3a3b3f,#1c1c1e);box-shadow:0 0 0 1.5px rgba(255,255,255,.25)}
 .cam-thumb.bump{animation:boing .5s var(--spring)}
 .shutter{width:110px;height:54px;border-radius:27px;display:grid;place-items:center;
@@ -1915,7 +1916,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 </section>
 
 <section class="screen out app" id="s-photos" aria-label="Photos" hidden>
-  <div class="app-body flush"><div class="ph-grid" id="ph-grid"></div><p class="ph-empty" id="ph-empty">No one has taken a photo yet.</p></div>
+  <div class="app-body flush"><div class="ph-grid" id="ph-grid" hidden></div><p class="ph-empty" id="ph-empty">Photos taken with the Camera are saved to the database only (Firebase → Firestore → <b>photos</b> for the small version, <b>photoData</b> for the full photo). They aren’t shown in the app. Tap Filters to make camera filters.</p></div>
   <div class="roll fxa-bg" id="fx-admin" hidden>
     <div class="app-body fxa-bg"><div class="app-col">
       <canvas class="fxa-prev" id="fxa-prev" aria-label="Preview of the filter"></canvas>
@@ -2558,8 +2559,16 @@ const STORE_ITEMS = [
 const SCREEN_MSG_HOURS = 6;
 let POST_HOURS = 24;                           // forum posts disappear for users after this; the admin can change it (site/limits)
 // iTunes uploads: the file is stored in the database in pieces (the free plan has no file storage), so keep files small
-const MEDIA_MAX_MB = 40, MEDIA_CHUNK = 900000;
-const SONG_MIN_S = 60, SONG_MAX_S = 180, SONG_MAX_MB = 10;   // Song Wars uploads
+const MEDIA_MAX_MB = 150, MEDIA_CHUNK = 1000000;           // iTunes: up to 150 MB, stored in 1 MB pieces (the most one database piece can hold)
+const SONG_MIN_S = 60, SONG_MAX_S = 180, SONG_MAX_MB = 25;   // Song Wars uploads
+// many pieces at once: downloads fetch 8 pieces side by side, uploads send 3 groups of 5 side by side
+const PIECES_AT_ONCE = 8, UPLOADS_AT_ONCE = 3, PIECES_PER_WRITE = 5;
+async function getPieces(n,get,onEach){ const out=new Array(n); let next=0, done=0;
+  const worker=async()=>{ while(next<n){ const i=next++; out[i]=await get(i); done++; onEach&&onEach(done/n); } };
+  await Promise.all(Array.from({length:Math.min(PIECES_AT_ONCE,n)},worker)); return out; }
+async function putPieces(n,write,onProgress){ const groups=[]; for(let i=0;i<n;i+=PIECES_PER_WRITE) groups.push([i,Math.min(n,i+PIECES_PER_WRITE)]);
+  let next=0, done=0; const worker=async()=>{ while(next<groups.length){ const [a,b]=groups[next++]; await write(a,b); done+=b-a; onProgress&&onProgress(done/n); } };
+  await Promise.all(Array.from({length:Math.min(UPLOADS_AT_ONCE,groups.length)},worker)); }
 const FLAPPY_DAILY_LIKES = 10;                                // number 1 on the Flappy Bird leaderboard, once a day
 // default icons of the apps the admin can switch on
 const APP_ICONS = { page:"assets/ios6/icon-mystery.svg", songwars:"assets/ios6/icon-songwars.svg", flappy:"assets/ios6/icon-flappy.svg", coinflip:"assets/ios6/icon-coinflip.svg" };                         // forum posts disappear for users after this (the admin keeps seeing them)
@@ -2813,12 +2822,12 @@ async function firebaseApi(cfg){
     watchSongs(cb){ return fs.onSnapshot(fs.collection(db,"songs"),s=>cb(s.docs.map(msgOut)),e=>console.error(e)); },
     async uploadSong(code,meta,bytes,onProgress){
       const n=Math.ceil(bytes.length/MEDIA_CHUNK);
-      for(let i=0;i<n;i+=5){ const b=fs.writeBatch(db);
-        for(let j=i;j<Math.min(n,i+5);j++) b.set(fs.doc(db,"songChunks",code+"_"+j),{code,i:j,data:fs.Bytes.fromUint8Array(bytes.subarray(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK))});
-        await b.commit(); onProgress&&onProgress(Math.min(n,i+5)/n); }
+      await putPieces(n,async(a,z)=>{ const b=fs.writeBatch(db);
+        for(let j=a;j<z;j++) b.set(fs.doc(db,"songChunks",code+"_"+j),{code,i:j,data:fs.Bytes.fromUint8Array(bytes.subarray(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK))});
+        await b.commit(); },onProgress);
       await fs.setDoc(fs.doc(db,"songs",code),{...meta,code,chunks:n,likedBy:[],ts:fs.serverTimestamp()}); },
     async songChunk(code,i){ const s=await fs.getDoc(fs.doc(db,"songChunks",code+"_"+i)); if(!s.exists()) throw new Error('missing'); return s.data().data.toUint8Array(); },
-    async deleteSong(code,chunks){ const b=fs.writeBatch(db); for(let j=0;j<Math.max(chunks||0,12);j++) b.delete(fs.doc(db,"songChunks",code+"_"+j)); b.delete(fs.doc(db,"songs",code)); await b.commit(); },
+    async deleteSong(code,chunks){ const b=fs.writeBatch(db); for(let j=0;j<Math.max(chunks||0,26);j++) b.delete(fs.doc(db,"songChunks",code+"_"+j)); b.delete(fs.doc(db,"songs",code)); await b.commit(); },
     likeSong(code,me_,on){ return fs.updateDoc(fs.doc(db,"songs",code),{likedBy:on?fs.arrayUnion(me_):fs.arrayRemove(me_)}); },
     async pickWinner(code,all){ const b=fs.writeBatch(db); all.forEach(s=>{ if(!!s.winner!==(s.code===code)) b.update(fs.doc(db,"songs",s.code),{winner:s.code===code}); }); await b.commit(); },
     // Flappy Bird
@@ -2875,9 +2884,9 @@ async function firebaseApi(cfg){
     watchMedia(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"media"),fs.orderBy("ts","desc")),s=>cb(s.docs.map(msgOut),!s.metadata.fromCache),e=>console.error(e)); },
     async uploadMedia(meta,bytes,onProgress){
       const ref=fs.doc(fs.collection(db,"media")), n=Math.ceil(bytes.length/MEDIA_CHUNK);
-      for(let i=0;i<n;i+=6){ const b=fs.writeBatch(db);
-        for(let j=i;j<Math.min(n,i+6);j++) b.set(fs.doc(db,"mediaChunks",ref.id+"_"+j),{media:ref.id,i:j,data:fs.Bytes.fromUint8Array(bytes.subarray(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK))});
-        await b.commit(); onProgress&&onProgress(Math.min(n,i+6)/n); }
+      await putPieces(n,async(a,z)=>{ const b=fs.writeBatch(db);
+        for(let j=a;j<z;j++) b.set(fs.doc(db,"mediaChunks",ref.id+"_"+j),{media:ref.id,i:j,data:fs.Bytes.fromUint8Array(bytes.subarray(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK))});
+        await b.commit(); },onProgress);
       await fs.setDoc(ref,{...meta,chunks:n,ts:fs.serverTimestamp()}); // listed only once every piece is in
       return ref.id; },
     async mediaChunk(id,i){ const s=await fs.getDoc(fs.doc(db,"mediaChunks",id+"_"+i)); if(!s.exists()) throw new Error('missing'); return s.data().data.toUint8Array(); },
@@ -5337,10 +5346,7 @@ const allFilters=()=>[...BUILTIN_FILTERS,...customFilters];
 const currentFilter=()=>allFilters().find(f=>f.id===camFilter)||BUILTIN_FILTERS[0];
 function openCamera(){ loadSfx('shutter').catch(()=>{});
   $('s-camera').dataset.mode='live'; go('s-camera'); startCam();
-  if(!myPhotoUnsub) myPhotoUnsub=api.watchMyPhotos(me.code,l=>{
-    myPhotos=l; const t=$('cam-thumb'); t.style.backgroundImage=l[0]?`url("${l[0].thumb}")`:''; t.classList.toggle('none',!l.length);
-    if(!$('roll').hidden) drawRoll();
-  });
+  // (photos are saved to the database only; the app doesn't show them)
   if(fx&&!filterUnsub) filterUnsub=api.watchFilters(l=>{
     customFilters=l.filter(f=>f.lut||f.overlay).map(f=>({...f,id:'c-'+f.id}));
     if(current.id==='s-camera') fx.use(currentFilter());
@@ -5472,13 +5478,13 @@ $('cam-use').addEventListener('click',async()=>{
   if(!camShot) return; const b=$('cam-use'); b.disabled=true; b.textContent='Saving…';
   try{
     await api.savePhoto({code:me.code,username:me.username,...camShot});
-    camShot=null; const img=$('cam-shot'); img.classList.add('fly'); // the photo drops into the thumbnail
-    setTimeout(()=>{ $('s-camera').dataset.mode='live'; img.classList.remove('fly'); const t=$('cam-thumb'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); },480);
+    camShot=null; const img=$('cam-shot'); img.classList.add('fly'); toast('Photo saved.');
+    setTimeout(()=>{ $('s-camera').dataset.mode='live'; img.classList.remove('fly'); },480);
   }catch(err){ console.error(err); b.disabled=false; b.textContent='Use Photo'; toast("Couldn't save the photo. Try again."); }
 });
 // your photos
 appTop($('roll'),'Your Photos',{back:'Camera',onBack:()=>{ $('roll').hidden=true; }});
-$('cam-thumb').addEventListener('click',()=>{ $('roll').hidden=false; drawRoll(); });
+
 function drawRoll(){ drawGrid($('roll-grid'),myPhotos,false); $('roll-empty').hidden=myPhotos.length>0; }
 function drawGrid(box,list,named){
   box.replaceChildren();
@@ -5491,10 +5497,7 @@ function drawGrid(box,list,named){
 let photoUnsub=null, adminFxUnsub=null, adminFilters=[];
 const phTop=appTop($('s-photos'),'Photos');
 phTop.right.append(navBtn('Filters',()=>openFilterAdmin()));
-function openPhotos(){
-  go('s-photos');
-  if(!photoUnsub) photoUnsub=api.watchAllPhotos(l=>{ drawGrid($('ph-grid'),l,true); $('ph-empty').hidden=l.length>0; });
-}
+function openPhotos(){ go('s-photos'); } // camera photos live only in the database now; this app keeps the filters
 // the filter maker: a .cube colour table and/or an overlay image, previewed on a sample picture
 appTop($('fx-admin'),'Filters',{back:'Photos',onBack:()=>{ $('fx-admin').hidden=true; }});
 const fxDraft={lut:null,overlay:null,opacity:.8,blend:'normal',n:0};
@@ -6111,7 +6114,7 @@ async function download(m){
   if(itBusy.has(m.id)) return; itBusy.set(m.id,0); drawItunes();
   try{
     navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{});
-    const parts=[]; for(let i=0;i<m.chunks;i++){ parts.push(await api.mediaChunk(m.id,i)); itBusy.set(m.id,(i+1)/m.chunks); drawItunes(); }
+    const parts=await getPieces(m.chunks,i=>api.mediaChunk(m.id,i),f=>{ itBusy.set(m.id,f); drawItunes(); });
     const blob=new Blob(parts,{type:m.mime||(m.kind==='video'?'video/mp4':'audio/mpeg')});
     const item={id:m.id,title:m.title,kind:m.kind,mime:blob.type,size:m.size,dur:m.dur||0,cover:m.cover||null,blob,ts:Date.now()};
     await idb.set(libKey(m.id),item); itLib.set(m.id,item); toast(`“${m.title}” is saved on this phone.`);
@@ -6121,7 +6124,7 @@ async function download(m){
 // play: from this phone, or (admin) straight from the pieces
 async function playMedia(m){
   let item=itLib.get(m.id)||m, blob=item.blob;
-  if(!blob){ try{ toast('Loading…'); const parts=[]; for(let i=0;i<m.chunks;i++) parts.push(await api.mediaChunk(m.id,i)); blob=new Blob(parts,{type:m.mime}); }catch(err){ return fail('load it')(err); } }
+  if(!blob){ try{ toast('Loading…'); const parts=await getPieces(m.chunks,i=>api.mediaChunk(m.id,i)); blob=new Blob(parts,{type:m.mime}); }catch(err){ return fail('load it')(err); } }
   closePlayer(); itPlayUrl=URL.createObjectURL(blob);
   const st=$('it-stage'); st.replaceChildren();
   if(item.kind==='video'){ const v=mk('video'); v.src=itPlayUrl; v.controls=true; v.autoplay=true; v.playsInline=true; v.setAttribute('playsinline',''); st.append(v,mk('h2',null,item.title)); }
@@ -6172,7 +6175,7 @@ function openSongs(a){ swApp=a; go('s-songs'); swTop.back.querySelector('span').
 function alertBox(title,text){ return new Promise(res=>{ $('al-title').textContent=title; $('al-text').textContent=text; $('al-in').hidden=true; $('al-no').hidden=true; $('al-ok').textContent='OK';
   $('al-wrap').hidden=false; setTimeout(()=>$('al-ok').focus(),60);
   $('al-form').onsubmit=e=>{ e.preventDefault(); $('al-wrap').hidden=true; $('al-in').hidden=false; $('al-no').hidden=false; $('al-form').onsubmit=null; res(); }; }); }
-async function songBlob(s){ const parts=[]; for(let i=0;i<s.chunks;i++) parts.push(await api.songChunk(s.code,i)); return new Blob(parts,{type:s.mime||'audio/mpeg'}); }
+async function songBlob(s){ const parts=await getPieces(s.chunks,i=>api.songChunk(s.code,i)); return new Blob(parts,{type:s.mime||'audio/mpeg'}); }
 async function playSong(s){ try{ toast('Loading…'); const blob=await songBlob(s); await playMedia({id:'song-'+s.code,kind:'music',title:`${s.title} · ${s.name}`,cover:s.cover,blob}); }catch(err){ fail('play it')(err); } }
 async function saveSong(s){
   try{ toast('Saving to iTunes…'); const blob=await songBlob(s), id='song-'+s.code+'-'+s.ts;
