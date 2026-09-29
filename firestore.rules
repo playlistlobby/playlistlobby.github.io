@@ -338,7 +338,10 @@ service cloud.firestore {
       function now(k) { return request.resource.data.get(k, 0); }
       function same(k) { return request.resource.data.get(k, null) == (resource == null ? null : resource.data.get(k, null)); }
       function lastOrder() { return getAfter(orderPath(request.resource.data.last)).data; }
-      function okKeys() { return request.resource.data.keys().hasOnly(['bonus','spent','last','credit','creditSpent','dailyAt','storeDailyAt','flip']); }
+      function okKeys() { return request.resource.data.keys().hasOnly(['bonus','spent','last','credit','creditSpent','dailyAt','storeDailyAt','flip','fb50','fb100']); }
+      function sameFb() { return same('fb50') && same('fb100'); }
+      function flappyBest() { return exists(/databases/$(database)/documents/flappy/$(code)) ? get(/databases/$(database)/documents/flappy/$(code)).data.best : 0; }
+      function firstTime(k) { return request.resource.data.get(k, false) == true && (resource == null || resource.data.get(k, false) == false); }
       function flipBefore() { return get(flipPath(request.resource.data.flip)).data; }
       function flipAfter() { return getAfter(flipPath(request.resource.data.flip)).data; }
       allow read: if isAdmin() || (isMember() && myCode() == code);
@@ -349,14 +352,14 @@ service cloud.firestore {
       allow create, update: if isMember() && myCode() == code && okKeys()
         && request.resource.data.last is string && !exists(orderPath(request.resource.data.last))
         && lastOrder().code == code
-        && now('bonus') == was('bonus') && now('credit') == was('credit') && same('dailyAt') && same('storeDailyAt') && same('flip')
+        && now('bonus') == was('bonus') && now('credit') == was('credit') && same('dailyAt') && same('storeDailyAt') && same('flip') && sameFb()
         && ((lastOrder().currency == 'likes' && now('spent') == was('spent') + lastOrder().price && now('creditSpent') == was('creditSpent'))
           || (lastOrder().currency == 'credit' && now('creditSpent') == was('creditSpent') + lastOrder().price
             && now('spent') == was('spent') && now('creditSpent') <= now('credit')));
       // number 1 on the Flappy Bird leaderboard: 10 likes, once a day
       allow create, update: if isMember() && myCode() == code && okKeys()
         && now('bonus') == was('bonus') + 10 && now('spent') == was('spent')
-        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('storeDailyAt') && same('flip')
+        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('storeDailyAt') && same('flip') && sameFb()
         && request.resource.data.dailyAt == request.time
         && (resource == null || resource.data.get('dailyAt', null) == null || resource.data.dailyAt < request.time - duration.value(20, 'h'))
         && get(/databases/$(database)/documents/site/flappyTop).data.get('code', '') == code;
@@ -364,13 +367,13 @@ service cloud.firestore {
       allow create, update: if isMember() && myCode() == code && okKeys()
         && priceOf('daily', 2) is int && priceOf('daily', 2) > 0
         && now('bonus') == was('bonus') + priceOf('daily', 2) && now('spent') == was('spent')
-        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('dailyAt') && same('flip')
+        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('dailyAt') && same('flip') && sameFb()
         && request.resource.data.storeDailyAt == request.time
         && (resource == null || resource.data.get('storeDailyAt', null) == null || resource.data.storeDailyAt < request.time - duration.value(20, 'h'));
       // Coin Flip: the stake goes in together with the flip (post one, take one, or play the bot);
       // winnings and taken-back flips come back as bonus. The flip's own rules check who may do what.
       allow create, update: if isMember() && myCode() == code && okKeys()
-        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('dailyAt') && same('storeDailyAt')
+        && now('credit') == was('credit') && now('creditSpent') == was('creditSpent') && same('last') && same('dailyAt') && same('storeDailyAt') && sameFb()
         && request.resource.data.flip is string
         && ((!exists(flipPath(request.resource.data.flip)) && flipAfter().code == code
               && now('spent') == was('spent') + flipAfter().stake && now('bonus') == was('bonus'))
@@ -381,8 +384,15 @@ service cloud.firestore {
                   && now('bonus') == was('bonus') + 2 * flipBefore().stake && now('spent') == was('spent'))
               || (flipBefore().status == 'open' && flipBefore().code == code && flipAfter().status == 'cancelled'
                   && now('bonus') == was('bonus') + flipBefore().stake && now('spent') == was('spent')))));
+      // Flappy Bird milestones, once each: 2 likes for reaching 50, 10 likes for reaching 100 (the saved best score must be there)
+      allow create, update: if isMember() && myCode() == code && okKeys()
+        && now('spent') == was('spent') && now('credit') == was('credit') && now('creditSpent') == was('creditSpent')
+        && same('last') && same('dailyAt') && same('storeDailyAt') && same('flip')
+        && ((firstTime('fb50') && same('fb100') && now('bonus') == was('bonus') + 2 && flappyBest() >= 50)
+          || (firstTime('fb100') && same('fb50') && now('bonus') == was('bonus') + 10 && flappyBest() >= 100));
     }
 
+    // (see the wallet: Flappy Bird milestones below the flips)
     // Coin Flip: a member puts likes on heads or tails. Someone takes the flip (or the bot does at once). The coin is the
     // server's clock at that moment (an even millisecond is heads), so nobody picks the result. The winner collects both stakes.
     function flipWinner(d) { return ((d.doneAt.toMillis() % 2 == 0) == (d.side == 'heads')) ? d.code : d.opp; }
