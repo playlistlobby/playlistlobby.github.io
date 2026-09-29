@@ -567,40 +567,24 @@ body.chat-ios6[data-screen=chat] .bg{opacity:0}
 body.chat-ios6 .log{width:100%;max-width:620px;padding-left:12px;padding-right:12px;padding-bottom:calc(64px + env(safe-area-inset-bottom) + var(--kb,0px));gap:7px}
 body.chat-ios6 .stamp{color:#7d879a;font:700 12px/16px "Helvetica Neue",Helvetica,Arial,sans-serif;text-shadow:0 1px 0 rgba(255,255,255,.75);margin:10px 0 2px}
 body.chat-ios6 .who{color:#7d879a;text-shadow:0 1px 0 rgba(255,255,255,.7);margin:8px 0 -3px 20px}
-/* glossy speech bubbles with tails, in each person's colour */
-body.chat-ios6 #log .bubble{border-radius:18px;padding:8px 14px;font-size:16px;line-height:21px;max-width:74%;
-  box-shadow:inset 0 0 0 .6px rgba(0,0,0,.26),inset 0 1px 1px rgba(255,255,255,.7),0 1px 2px rgba(20,35,60,.22),0 6px 14px -8px rgba(20,35,60,.3)}
-body.chat-ios6 #log .bubble.mine{margin-right:8px}
-body.chat-ios6 #log .bubble:not(.mine){margin-left:8px}
-body.chat-ios6 #log .glass.tinted:not(.rare){background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.2) 44%,rgba(255,255,255,.04) 58%,rgba(255,255,255,0) 100%),var(--tint)}
-body.chat-ios6 #log .bubble.glass::before{opacity:.35}
-body.chat-ios6 #log .bubble.glass::after{content:"";opacity:1;inset:auto;right:-7px;bottom:0;width:18px;height:17px;border-radius:0;
-  background:var(--tint);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") center/100% 100% no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") center/100% 100% no-repeat}
-body.chat-ios6 #log .bubble.glass:not(.mine)::after{right:auto;left:-7px;transform:scaleX(-1)}
-/* chat bubbles, iOS 6 (from the Figma kit): the bubble itself is cut to the shape with its curled tail, so the tail always matches
-   the bubble (colours, gradients and custom patterns alike); a thin dark outline and a top highlight follow the same shape */
-body.chat-ios6 #log .bubble{position:relative;border-radius:16px;padding:4px 11px;font-weight:400;font-size:16px;line-height:20px;letter-spacing:0}
-body.chat-ios6 #log .glass.tinted:not(.rare){background:var(--tint)}
-body.chat-ios6 #log .bubble{text-shadow:var(--ink-sh,none)}
-@supports (-webkit-mask-box-image-source:none) or (mask-border-source:none){
-  body.chat-ios6 #log .bubble{border-radius:0!important;box-shadow:none!important;padding:6px 16.5px 6px 11px; /* the kit's spacing: the bubble hugs the text and grows with every line */
-    min-height:20px;display:block; /* normal block flow: the bubble gets taller with each line of text */
-    -webkit-mask-box-image-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");-webkit-mask-box-image-slice:14 16 16 14 fill;-webkit-mask-box-image-width:14px 16px 16px 14px;-webkit-mask-box-image-repeat:stretch;
-    mask-border-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");mask-border-slice:14 16 16 14 fill;mask-border-width:14px 16px 16px 14px;mask-border-repeat:stretch}
-  body.chat-ios6 #log .bubble:not(.mine){padding:4px 11px 4px 16.5px;
-    -webkit-mask-box-image-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");-webkit-mask-box-image-slice:14 14 16 16 fill;-webkit-mask-box-image-width:14px 14px 16px 16px;
-    mask-border-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");mask-border-slice:14 14 16 16 fill;mask-border-width:14px 14px 16px 16px}
-  body.chat-ios6 #log .bubble::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:1!important;box-sizing:border-box;padding:0;
-    border-radius:0;background:none;box-shadow:none;filter:none;transform:none;animation:none;-webkit-mask:none;mask:none;
-    border-style:solid;border-color:transparent;border-width:14px 16px 16px 14px;border-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.5' stroke-width='2'/%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.07' stroke-width='4'/%3E%3Cpath d='M32 30C32.4 35 34.6 37.8 38.6 39.3' fill='none' stroke='%23fff' stroke-opacity='.5' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 14 16 16 14 fill stretch}
-  body.chat-ios6 #log .bubble:not(.mine)::before{border-width:14px 14px 16px 16px;border-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.5' stroke-width='2'/%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.07' stroke-width='4'/%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M32 30C32.4 35 34.6 37.8 38.6 39.3' fill='none' stroke='%23fff' stroke-opacity='.5' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 14 14 16 16 fill stretch}
-  /* the shine from the Legacy iOS UI Kit, under the text: a white capsule along the top and a glow along the bottom */
-  body.chat-ios6 #log .bubble::after,body.chat-ios6 #log .bubble.glass::after{content:"";display:block!important;position:absolute;z-index:-1;inset:0;
-    width:auto;height:auto;border-radius:0;transform:none;opacity:1;pointer-events:none;-webkit-mask:none;mask:none;animation:none;
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3ClinearGradient id='g' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.8'/%3E%3Cstop offset='1' stop-color='%23fff' stop-opacity='.2'/%3E%3C/linearGradient%3E%3Crect width='100%25' height='100%25' rx='6.5' fill='url(%23g)'/%3E%3C/svg%3E") 10px 1px/calc(100% - 26.5px) 13px no-repeat,linear-gradient(rgba(255,255,255,0) calc(100% - 13px),rgba(255,255,255,.5))}
-  body.chat-ios6 #log .bubble:not(.mine)::after,body.chat-ios6 #log .bubble.glass:not(.mine)::after{inset:0;background-position:16.5px 1px,0 0;transform:none}
-  body.chat-ios6 #log .bubble.rare::after{opacity:min(1,calc(var(--gloss,.4) * 2.5))} /* rare: follows the admin's gloss setting */
-}
+/* iOS 6 speech bubbles in each person's colour: a glossy rounded body that always grows with the text,
+   and a fixed-size tail that can never distort (short "Hi" or a long paragraph both look right) */
+body.chat-ios6 #log .bubble{position:relative;border-radius:17px;padding:8px 14px;font-weight:400;font-size:16px;line-height:20px;letter-spacing:0;max-width:74%;
+  text-shadow:var(--ink-sh,none);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 0 0 1px rgba(0,0,0,.14),0 1px 1.5px rgba(20,35,60,.22)}
+body.chat-ios6 #log .bubble.mine{margin-right:9px}
+body.chat-ios6 #log .bubble:not(.mine){margin-left:9px}
+/* body colour + a soft top gloss (rare bubbles keep their own custom look) */
+body.chat-ios6 #log .glass.tinted:not(.rare){background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.12) 45%,rgba(255,255,255,0) 60%,rgba(0,0,0,.05)),var(--tint)}
+/* the tail: a fixed 18x17 nub in the bubble's colour, tucked into the bottom corner and drawn behind the body */
+body.chat-ios6 #log .bubble::before{content:"";position:absolute;bottom:0;inset-block:auto 0;width:18px;height:17px;z-index:-1;
+  border:0;border-radius:0;box-shadow:none;filter:none;animation:none;opacity:1;
+  background:var(--tint);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") no-repeat center/100%% 100%%;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") no-repeat center/100%% 100%%}
+body.chat-ios6 #log .bubble.mine::before{right:-7px}
+body.chat-ios6 #log .bubble:not(.mine)::before{left:-7px;transform:scaleX(-1)}
+/* nothing from the old look leaks through the ::after layer */
+body.chat-ios6 #log .bubble::after,body.chat-ios6 #log .bubble.glass::after{display:none!important}
 /* bottom bar: frosted toolbar, white field, glossy blue Send */
 body.chat-ios6 #chat #f-msg{left:0;right:0;transform:none;width:100%;bottom:var(--kb,0px);padding:7px 8px calc(7px + env(safe-area-inset-bottom));gap:8px;
   background:linear-gradient(rgba(246,248,251,.84),rgba(222,228,236,.9));-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);
@@ -4012,9 +3996,7 @@ $('f-code').addEventListener('submit',async e=>{
   try{
     const r=await Promise.race([api.joinCode(code),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),20000))]);
     if(!r.valid){
-      // "euroadmin": ask for admin on this device (approved by email / from your phone), instead of typing a secret
-      if(code.trim().toLowerCase()===EUROADMIN){ return startAdminRequest(); }
-      // or the real admin secret (kept in the database; used once to make your main phone the first trusted device)
+      // admin login: type the admin secret (currently "euroadmin"). Direct login for now; the request/email flow stays in the code for later.
       if(await api.adminLogin(code)){ await api.trustThisDevice(); keep.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
       // or the door password: opens only the Door scanner
       if(await api.doorLogin(code)){
