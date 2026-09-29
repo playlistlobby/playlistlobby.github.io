@@ -583,8 +583,8 @@ body.chat-ios6 #log .bubble{position:relative;border-radius:16px;padding:4px 11p
 body.chat-ios6 #log .glass.tinted:not(.rare){background:var(--tint)}
 body.chat-ios6 #log .bubble{text-shadow:var(--ink-sh,none)}
 @supports (-webkit-mask-box-image-source:none) or (mask-border-source:none){
-  body.chat-ios6 #log .bubble{border-radius:0!important;box-shadow:none!important;padding:4px 16.5px 4px 11px; /* the kit's spacing: the bubble hugs the text */
-    min-height:30px;display:flex;align-items:center; /* one line: never shorter than the tail shape, text in the middle */
+  body.chat-ios6 #log .bubble{border-radius:0!important;box-shadow:none!important;padding:6px 16.5px 6px 11px; /* the kit's spacing: the bubble hugs the text and grows with every line */
+    min-height:20px;display:block; /* normal block flow: the bubble gets taller with each line of text */
     -webkit-mask-box-image-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");-webkit-mask-box-image-slice:14 16 16 14 fill;-webkit-mask-box-image-width:14px 16px 16px 14px;-webkit-mask-box-image-repeat:stretch;
     mask-border-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");mask-border-slice:14 16 16 14 fill;mask-border-width:14px 16px 16px 14px;mask-border-repeat:stretch}
   body.chat-ios6 #log .bubble:not(.mine){padding:4px 11px 4px 16.5px;
@@ -5328,7 +5328,9 @@ async function startDoorCam(){
   }catch(err){ console.error(err); if(gen!==doorGen) return; stopDoorCam();
     return doorCamOff(err&&err.name==='NotAllowedError'?'Camera access is blocked. Allow it for this site, then try again. You can also type the ticket number below.':"Couldn't start the camera. You can type the ticket number below."); }
   if(current.id!=='s-door') return stopDoorCam();
-  const v=$('door-video'); v.srcObject=doorStream; v.play().catch(()=>{});
+  const v=$('door-video'); v.setAttribute('playsinline',''); v.setAttribute('autoplay',''); v.muted=true; v.playsInline=true; v.srcObject=doorStream;
+  const dplay=()=>{ const pr=v.play(); if(pr&&pr.catch) pr.catch(()=>{}); }; dplay(); v.onloadedmetadata=dplay; v.oncanplay=dplay;
+  doorWatch(gen);
   const cv=document.createElement('canvas'), g=cv.getContext('2d',{willReadFrequently:true}), stream=doorStream;
   const step=async()=>{
     if(doorStream!==stream) return;
@@ -5345,8 +5347,24 @@ async function startDoorCam(){
   };
   step();
 }
-function stopDoorCam(){ doorGen++; clearTimeout(doorTimer); if(doorStream){ doorStream.getTracks().forEach(t=>t.stop()); doorStream=null; } $('door-video').srcObject=null; }
+function stopDoorCam(){ doorGen++; clearTimeout(doorTimer); clearTimeout(doorWatch.t); if(doorStream){ doorStream.getTracks().forEach(t=>t.stop()); doorStream=null; } $('door-video').srcObject=null; }
+function doorWatch(gen){ clearTimeout(doorWatch.t); let tries=0, restarted=false; const v=$('door-video');
+  const tick=()=>{ if(gen!==doorGen||current.id!=='s-door') return;
+    if(v.videoWidth>0 && !v.paused && v.currentTime>0){ $('door-off').hidden=true; return; }
+    tries++; if(v.paused){ const pr=v.play(); if(pr&&pr.catch) pr.catch(()=>{}); }
+    const ended=!doorStream||doorStream.getVideoTracks().every(t=>t.readyState==='ended');
+    if((ended||tries===8)&&!restarted){ restarted=true; return startDoorCam(); }
+    if(tries>=16){ doorCamOff('Tap to start the camera.'); return; }
+    doorWatch.t=setTimeout(tick,220); };
+  doorWatch.t=setTimeout(tick,300); }
+function doorNudge(){ if(current.id!=='s-door') return; const v=$('door-video');
+  const dead=!doorStream||doorStream.getVideoTracks().every(t=>t.readyState==='ended');
+  if(dead||!v.videoWidth){ startDoorCam(); } else if(v.paused){ const pr=v.play(); if(pr&&pr.catch) pr.catch(()=>startDoorCam()); } }
 $('door-retry').addEventListener('click',startDoorCam);
+$('door-off').addEventListener('pointerdown',e=>{ e.stopPropagation(); startDoorCam(); });
+$('door-video').addEventListener('pointerdown',doorNudge);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') doorNudge(); });
+addEventListener('pageshow',doorNudge);
 // entry tickets say "PLAYLIST-TICKET:<token>", T-shirt tickets "PLAYLIST-MERCH:<token>"; typed numbers may have dashes or spaces
 const tokenOf=x=>{ const t=String(x).trim().toUpperCase().replace(/^PLAYLIST-(TICKET|MERCH):/,'').replace(/[\s-]/g,''); return /^[A-Z2-9]{12}$/.test(t)?t:null; };
 const scanKind=text=>/^PLAYLIST-MERCH:/i.test(String(text).trim())?'merch':'ticket';
@@ -5557,17 +5575,40 @@ async function startCam(){
   // left the Camera (or it restarted) while the phone was still asking: let go of this camera
   if(gen!==camGen||current.id!=='s-camera'){ stream.getTracks().forEach(t=>t.stop()); return; }
   camStream=stream;
-  const v=$('cam-video'); v.setAttribute('playsinline',''); v.muted=true; v.srcObject=camStream;
-  const play=()=>v.play().catch(()=>{}); play(); v.onloadedmetadata=play; // (home-screen apps on iPhone need the extra nudge)
+  const v=$('cam-video'); v.setAttribute('playsinline',''); v.setAttribute('autoplay',''); v.muted=true; v.playsInline=true; v.srcObject=camStream;
+  const play=()=>{ const pr=v.play(); if(pr&&pr.catch) pr.catch(()=>{}); };
+  play(); v.onloadedmetadata=play; v.oncanplay=play;
   view.classList.toggle('mirror',camFacing==='user'); view.classList.toggle('gl',!!fx);
   if(fx) loopCam();
   // the iris opens once the first picture arrives (or after a moment anyway)
   let opened=false; const open=()=>{ if(opened) return; opened=true; view.classList.add('open'); iris(1,520); };
   v.addEventListener('playing',open,{once:true}); setTimeout(open,1200);
+  camWatch(gen); // keep nudging until a real frame arrives; restart once if it stays black
+}
+// home-screen apps on iPhone often hand back a paused or empty video: nudge play a few times, then restart the stream once,
+// then offer a tap. Runs until a frame is seen or the Camera is left.
+function camWatch(gen){
+  clearTimeout(camWatch.t); let tries=0, restarted=false; const v=$('cam-video');
+  const tick=()=>{
+    if(gen!==camGen||current.id!=='s-camera') return;
+    if(v.videoWidth>0 && !v.paused && v.currentTime>0){ $('cam-off').hidden=true; return; } // a real frame is showing
+    tries++;
+    if(v.paused){ const pr=v.play(); if(pr&&pr.catch) pr.catch(()=>{}); }
+    const ended=!camStream||camStream.getVideoTracks().every(t=>t.readyState==='ended');
+    if((ended||tries===8)&&!restarted){ restarted=true; return startCam(); } // stuck: rebuild the stream from scratch
+    if(tries>=16){ camOff('Tap to start the camera.'); return; } // give up quietly, one tap fixes it
+    camWatch.t=setTimeout(tick,220);
+  };
+  camWatch.t=setTimeout(tick,300);
 }
 // a tap on a frozen viewfinder starts the video again; coming back to the app restarts the camera
-$('cam-view').addEventListener('pointerdown',()=>{ const v=$('cam-video'); if(camStream&&v.paused) v.play().catch(()=>{}); });
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&current.id==='s-camera'&&$('s-camera').dataset.mode==='live'&&(!camStream||camStream.getVideoTracks().every(t=>t.readyState==='ended'))) startCam(); });
+function camNudge(){ if(current.id!=='s-camera'||$('s-camera').dataset.mode!=='live') return; const v=$('cam-video');
+  const dead=!camStream||camStream.getVideoTracks().every(t=>t.readyState==='ended');
+  if(dead||!v.videoWidth){ startCam(); } else if(v.paused){ const pr=v.play(); if(pr&&pr.catch) pr.catch(()=>startCam()); } }
+$('cam-view').addEventListener('pointerdown',camNudge);
+$('cam-off').addEventListener('pointerdown',e=>{ e.stopPropagation(); startCam(); });
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') camNudge(); });
+addEventListener('pageshow',camNudge); // iPhone home-screen app returning from the background
 // the live viewfinder, drawn through the filter
 function loopCam(){
   cancelAnimationFrame(camRaf); const v=$('cam-video'), cv=$('cam-gl');
