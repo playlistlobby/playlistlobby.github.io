@@ -3891,10 +3891,29 @@ function openHome(opts={}){
     if(!unwatchMe) unwatchMe=api.watchCode(me.code,onMyCode);
     watchMyDMs(); startFlips();
   }
+  loadBattery();
   renderHome(); tickClock(); go('s-home');
 }
+/* the battery in the status bar drains: 100% when you made your account, 0% when the countdown ends (red at 20%, like an iPhone).
+   Before login, and for the admin and door staff, it stays full. */
+let batteryFrom=null;
+function loadBattery(){ batteryFrom=null; paintBattery();
+  if(homeMode==='user'&&me.code) api.getCode(me.code).then(c=>{ batteryFrom=(c&&c.claimedAt)||null; paintBattery(); }).catch(()=>{}); }
+function batteryPct(){
+  if(homeMode!=='user'||!me.code||!batteryFrom||!Number.isFinite(countdownTarget)) return 100;
+  const span=countdownTarget-batteryFrom; if(span<=0) return 0;
+  return Math.max(0,Math.min(100,Math.ceil(100*(countdownTarget-Date.now())/span)));
+}
+function paintBattery(){
+  const pct=batteryPct(), txt=pct+'% ', w=(16.2*pct/100).toFixed(2), col=pct<=20?'#ff3b30':'#fff';
+  document.querySelectorAll('.sb-status > span:last-child').forEach(sp=>{ const t=sp.firstChild, r=sp.querySelectorAll('svg rect')[1];
+    if(t&&t.nodeType===3&&t.nodeValue!==txt) t.nodeValue=txt;
+    if(r&&(r.getAttribute('width')!==w||r.getAttribute('fill')!==col)){ r.setAttribute('width',w); r.setAttribute('fill',col); } });
+}
+setInterval(paintBattery,30e3);
 // status bars show the countdown where iOS shows the time
 function tickClock(){
+  paintBattery();
   const t=countdownParts().join(':');
   document.querySelectorAll('.sb-time').forEach(el=>{ if(el.textContent!==t) el.textContent=t; });
   const lk=$('lk-clock'); if(lk&&lk.textContent!==t) lk.textContent=t;
