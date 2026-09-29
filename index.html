@@ -6234,7 +6234,7 @@ function drawSongs(){
 /* ---------- Flappy Bird: the playable one from the Figma file, with a leaderboard ----------
    The world is 512 units high; its width follows the screen (the sky, city and ground repeat sideways),
    and it's drawn at the screen's full resolution so the pixel art stays sharp. */
-const FB={W:288,H:512,GROUND:400,GAP:104,SPEED:2,GRAV:.25,FLAP:-4.6,PIPE_W:52,SPACING:170,BX:60};
+const FB={W:288,H:512,GROUND:400,GAP:100,SPEED:2,GRAV:.25,FLAP:-4.6,PIPE_W:52,SPACING:144,BX:60}; // the original's numbers: 100 px gap, pipes 144 px apart
 const fbImg={}; ['background','base','pipe','message','gameover','restart','bird-0','bird-1','bird-2',...'0123456789'].forEach(n=>{ const i=new Image(); i.src=`assets/flappy/${n}.png`; fbImg[n]=i; });
 let fb=null, fbRaf=0, fbScores=[], fbTop=null, fbUnsubs=[], fbK=1;
 const fbTop_=appTop($('s-flappy'),'Flappy Bird');
@@ -6410,11 +6410,11 @@ function openFlappy(a){ setTimeout(tryDaily,0); ['wing','point','hit','die','swo
 function stopFlappy(){ cancelAnimationFrame(fbRaf); fbRaf=0; fbUnsubs.forEach(u=>u&&u()); fbUnsubs=[]; $('fb-board').hidden=true; }
 const fbBestKey=()=>'playlist-flappy-best-'+(me.code||'admin');
 function fbReset(){ fb={state:'ready',y:240,v:0,t:0,score:0,best:+store.get(fbBestKey())||0,groundX:0,pipes:[],flash:0,newBest:false}; }
-function fbGapY(){ return 90+Math.random()*(FB.GROUND-FB.GAP-150); }
+function fbGapY(){ return Math.round(FB.GROUND*.2+Math.random()*(FB.GROUND*.6-FB.GAP)); }
 function fbFlap(){
   if(!fb) return;
   if(fb.state==='ready'){ fb.state='play'; fb.pipes=[]; for(let x=FB.W+40;x<FB.W+40+FB.SPACING*Math.ceil((FB.W+FB.PIPE_W)/FB.SPACING+1);x+=FB.SPACING) fb.pipes.push({x,gap:fbGapY(),passed:false}); }
-  if(fb.state==='play'){ fb.v=FB.FLAP; sfx('wing'); return; }
+  if(fb.state==='play'){ if(fb.y>-48){ fb.v=FB.FLAP; sfx('wing'); } return; }
   if(fb.state==='over'&&fb.t>30){ fbReset(); sfx('swoosh'); }
 }
 function fbStep(dt){
@@ -6426,10 +6426,11 @@ function fbStep(dt){
   const span=FB.SPACING*fb.pipes.length;
   for(const p of fb.pipes){ p.x-=FB.SPEED*dt;
     if(p.x+FB.PIPE_W<0){ p.x+=span; p.gap=fbGapY(); p.passed=false; }
-    if(!p.passed&&p.x+FB.PIPE_W<FB.BX){ p.passed=true; fb.score++; sfx('point'); } }
-  // hit a pipe, the ground or fly off the top
-  const bx=FB.BX+4, by=fb.y-12+4, bw=34-8, bh=24-8;
-  const hit=fb.y+12>=FB.GROUND||fb.y<-30||fb.pipes.some(p=>bx+bw>p.x&&bx<p.x+FB.PIPE_W&&(by<p.gap||by+bh>p.gap+FB.GAP));
+    if(!p.passed&&p.x+FB.PIPE_W/2<=FB.BX+17){ p.passed=true; fb.score++; sfx('point'); } }
+  // hit a pipe or the ground: the bird is an oval (16 x 11.5 from its middle), pipes reach up past the top of the screen
+  const cx=FB.BX+17, cy=fb.y, rx=16, ry=11.5;
+  const touches=(x0,y0,x1,y1)=>{ const nx=Math.max(x0,Math.min(cx,x1)), ny=Math.max(y0,Math.min(cy,y1)); return ((cx-nx)/rx)**2+((cy-ny)/ry)**2<=1; };
+  const hit=fb.y+12>=FB.GROUND||fb.pipes.some(p=>touches(p.x,-1e4,p.x+FB.PIPE_W,p.gap)||touches(p.x,p.gap+FB.GAP,p.x+FB.PIPE_W,1e4));
   if(hit) fbOver();
 }
 function fbOver(){
