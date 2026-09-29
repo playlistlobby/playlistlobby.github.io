@@ -342,6 +342,7 @@ service cloud.firestore {
       function flipBefore() { return get(flipPath(request.resource.data.flip)).data; }
       function flipAfter() { return getAfter(flipPath(request.resource.data.flip)).data; }
       allow read: if isAdmin() || (isMember() && myCode() == code);
+      allow delete: if isAdmin(); // the admin's nuke
       allow create, update: if isAdmin() && okKeys()
         && now('bonus') is int && now('spent') is int && now('credit') is int && now('creditSpent') is int;
       // a member pays for the order they create in the same write: with likes, or with store credit (never more credit than they have)
