@@ -576,6 +576,17 @@ service cloud.firestore {
     // public site settings: up to three texts on everyone's screen, the countdown target,
     // the MobilePay number, and the "log everyone out" time
     function inRange(d, k, lo, hi) { return !(k in d) || (d[k] is number && d[k] >= lo && d[k] <= hi); }
+    // the top of the chat: the admin's announcement and pinned messages (members only)
+    match /chatTop/{doc} {
+      allow read: if isMember() || isAdmin();
+      allow write: if isAdmin() && doc == 'board'
+        && request.resource.data.keys().hasOnly(['announce','announceTs','pins','ts'])
+        && request.resource.data.announce is string && request.resource.data.announce.size() <= 300
+        && (request.resource.data.announceTs == null || request.resource.data.announceTs is number)
+        && request.resource.data.pins is list && request.resource.data.pins.size() <= 5
+        && request.resource.data.ts == request.time;
+    }
+
     match /site/{doc} {
       allow read: if true;
       // a new Flappy Bird record: only with the score saved on your own leaderboard entry, and only if it beats the record
@@ -610,6 +621,12 @@ service cloud.firestore {
             && request.resource.data.epoch == request.time)
           || (doc == 'flappyTop'
             && request.resource.data.keys().hasOnly(['code','name','best','ts']))
+          || (doc == 'limits'
+            && request.resource.data.keys().hasOnly(['chatHours','postHours','spamOn','spamRow','spamGap','spamWait','ts'])
+            && request.resource.data.get('spamOn', true) is bool
+            && inRange(request.resource.data, 'chatHours', 0.25, 720) && inRange(request.resource.data, 'postHours', 1, 720)
+            && inRange(request.resource.data, 'spamRow', 2, 50) && inRange(request.resource.data, 'spamGap', 1, 600)
+            && inRange(request.resource.data, 'spamWait', 1, 3600))
           || (doc == 'store'
             && request.resource.data.keys().hasOnly(['mobilepay','ts'])
             && request.resource.data.mobilepay is string && request.resource.data.mobilepay.size() <= 20));
