@@ -13,6 +13,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Playlist">
 <meta name="theme-color" content="#000000">
+<!-- speed: the database code starts downloading right away, all at once, and the connections are opened early -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js" crossorigin>
 <style>
 :root{
   --home-wall:url("assets/ios6/wallpaper-real.jpg");--home-wall-color:#c9d6d8;--home-wall-pos:center top;--home-wall-size:cover;
@@ -1667,7 +1674,7 @@ body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
   background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.08) 50%,rgba(255,255,255,.02) 52%,rgba(255,255,255,.1));box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3)}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 </head>
 <body data-screen="s-code">
 <div class="boot" id="boot" role="status" aria-live="polite">
@@ -1675,7 +1682,7 @@ body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
     <div class="bb-tube"><div class="bb-inner"><div class="boot-fill" id="boot-fill"></div></div><div class="bb-glass"></div></div>
     <span class="bb-cap l"></span><span class="bb-cap r"></span><span class="bb-nub"></span>
   </div>
-  <p class="boot-msg"><span id="boot-msg">Loading</span> <b id="boot-pct">0%</b></p>
+  <p class="boot-msg"><span id="boot-msg"></span><b id="boot-pct" hidden></b></p>
   <button class="boot-retry" id="boot-retry" type="button" hidden>Reload</button>
 </div>
 <script>
@@ -2540,7 +2547,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
   function frame(){ if(!showing){ running=false; return; }
     if(target<92) target+=0.04; // slow creep while waiting
     shown+=(target-shown)*0.09; if(target>=100&&shown>99.4) shown=100;
-    fill.style.width=shown.toFixed(1)+'%'; pct.textContent=Math.round(shown)+'%'; requestAnimationFrame(frame); }
+    fill.style.width=shown.toFixed(1)+'%'; requestAnimationFrame(frame); }
   function start(){ if(!running){ running=true; requestAnimationFrame(frame); } }
   function arm(){ clearTimeout(stuck); stuck=setTimeout(function(){ if(!showing||target>=100) return; msg.textContent='Still connecting…'; document.getElementById('boot-retry').hidden=false; },12000); }
   window.__boot=function(p){ target=Math.max(target,p); };
@@ -2550,7 +2557,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
     setTimeout(function(){ boot.style.animation='none'; boot.style.visibility='visible'; boot.style.opacity='1'; void boot.offsetWidth;
       boot.style.transition='opacity .35s ease'; boot.style.opacity='0';
       setTimeout(function(){ showing=false; boot.classList.add('gone'); },380); },420); };
-  window.__bootShow=function(text){ clearTimeout(stuck); showing=true; target=18; shown=0; msg.textContent=text||'Loading'; document.getElementById('boot-retry').hidden=true;
+  window.__bootShow=function(text){ clearTimeout(stuck); showing=true; target=18; shown=0; msg.textContent=text||''; document.getElementById('boot-retry').hidden=true;
     boot.classList.remove('gone'); boot.style.transition=''; boot.style.opacity=''; boot.style.visibility=''; boot.style.animation='none'; void boot.offsetWidth; boot.style.animation='';
     start(); arm(); };
   start(); arm();
@@ -2792,11 +2799,11 @@ document.querySelectorAll('.field,.count,.circle').forEach(refract);
 /* ---------- data layer ---------- */
 async function firebaseApi(cfg){
   const V="10.12.2", step=p=>window.__boot&&window.__boot(p);
-  step(30); const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
-  step(45); const fs = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`); step(62);
+  step(30); let got=0; const part=u=>import(u).then(m=>{ step(40+(++got)*12); return m; });
+  const [{ initializeApp }, fs, A] = await Promise.all([part(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`),
+    part(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`), part(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`)]);
   let app = initializeApp(cfg), db = fs.getFirestore(app);
   // every visitor gets an invisible anonymous login; the security rules tie it to the code they enter
-  const A = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`); step(75);
   let auth = A.getAuth(app);
   const within=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(()=>r('timeout'),ms))]);
   const ready = await within(new Promise(r=>{ const u=A.onAuthStateChanged(auth,()=>{ u(); r('ok'); }); }),6000);
@@ -6322,7 +6329,8 @@ function drawSongs(){
    and it's drawn at the screen's full resolution so the pixel art stays sharp. */
 const FB_MILESTONES={50:2,100:10}; // Flappy Bird: reach 50 for 2 likes, 100 for 10 likes (once per account)
 const FB={W:288,H:512,GROUND:400,GAP:100,SPEED:2,GRAV:.25,FLAP:-4.6,PIPE_W:52,SPACING:144,BX:60}; // the original's numbers: 100 px gap, pipes 144 px apart
-const fbImg={}; ['background','base','pipe','message','gameover','restart','bird-0','bird-1','bird-2',...'0123456789'].forEach(n=>{ const i=new Image(); i.src=`assets/flappy/${n}.png`; fbImg[n]=i; });
+const fbImg={}; ['background','base','pipe','message','gameover','restart','bird-0','bird-1','bird-2',...'0123456789'].forEach(n=>{ fbImg[n]=new Image(); });
+function loadFbSprites(){ if(loadFbSprites.done) return; loadFbSprites.done=true; Object.entries(fbImg).forEach(([n,i])=>{ i.src=`assets/flappy/${n}.png`; }); } // only when the game opens
 let fb=null, fbRaf=0, fbScores=[], fbTop=null, fbUnsubs=[], fbK=1;
 const fbTop_=appTop($('s-flappy'),'Flappy Bird');
 const fbDailyBtn=navBtn('',()=>claimFbDaily()); fbDailyBtn.classList.add('gift'); fbDailyBtn.hidden=true; fbTop_.right.append(fbDailyBtn);
@@ -6489,7 +6497,7 @@ function showGift(n){
   cashSound(); if(navigator.vibrate) navigator.vibrate(40);
   setTimeout(()=>{ g.classList.add('out'); setTimeout(()=>g.remove(),450); },2400);
 }
-function openFlappy(a){ setTimeout(tryDaily,0); ['wing','point','hit','die','swoosh'].forEach(n=>loadSfx(n).catch(()=>{})); go('s-flappy'); $('s-flappy').querySelector('.ios-title').textContent=a.name||'Flappy Bird';
+function openFlappy(a){ loadFbSprites(); setTimeout(tryDaily,0); ['wing','point','hit','die','swoosh'].forEach(n=>loadSfx(n).catch(()=>{})); go('s-flappy'); $('s-flappy').querySelector('.ios-title').textContent=a.name||'Flappy Bird';
   requestAnimationFrame(()=>{ fitFlappy(); fbReset(); });
   cancelAnimationFrame(fbRaf); let last=performance.now();
   const loop=t=>{ const dt=Math.max(0,Math.min(3,(t-last)/16.67)); last=t; fbRaf=requestAnimationFrame(loop); fbStep(dt); fbDraw(); }; fbRaf=requestAnimationFrame(loop);
