@@ -1056,7 +1056,6 @@ body[data-screen=s-camera]{background:#000}
 #s-camera[data-mode=review] .review-bar{display:flex}
 #s-camera[data-mode=review] .live-bar{display:none}
 .cam-thumb{width:46px;height:46px;border-radius:5px;background:#1c1c1e center/cover no-repeat;box-shadow:0 0 0 2px rgba(255,255,255,.9),0 3px 8px rgba(0,0,0,.7);transition:transform .45s var(--spring)}
-#cam-thumb{visibility:hidden;pointer-events:none} /* photos aren't shown in the app (they're kept in the database) */
 .cam-thumb.none{background:linear-gradient(#3a3b3f,#1c1c1e);box-shadow:0 0 0 1.5px rgba(255,255,255,.25)}
 .cam-thumb.bump{animation:boing .5s var(--spring)}
 .shutter{width:110px;height:54px;border-radius:27px;display:grid;place-items:center;
@@ -1916,7 +1915,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 </section>
 
 <section class="screen out app" id="s-photos" aria-label="Photos" hidden>
-  <div class="app-body flush"><div class="ph-grid" id="ph-grid" hidden></div><p class="ph-empty" id="ph-empty">Photos taken with the Camera are saved to the database only (Firebase → Firestore → <b>photos</b> for the small version, <b>photoData</b> for the full photo). They aren’t shown in the app. Tap Filters to make camera filters.</p></div>
+  <div class="app-body flush"><div class="ph-grid" id="ph-grid"></div><p class="ph-empty" id="ph-empty">No one has taken a photo yet.</p></div>
   <div class="roll fxa-bg" id="fx-admin" hidden>
     <div class="app-body fxa-bg"><div class="app-col">
       <canvas class="fxa-prev" id="fxa-prev" aria-label="Preview of the filter"></canvas>
@@ -5346,7 +5345,10 @@ const allFilters=()=>[...BUILTIN_FILTERS,...customFilters];
 const currentFilter=()=>allFilters().find(f=>f.id===camFilter)||BUILTIN_FILTERS[0];
 function openCamera(){ loadSfx('shutter').catch(()=>{});
   $('s-camera').dataset.mode='live'; go('s-camera'); startCam();
-  // (photos are saved to the database only; the app doesn't show them)
+  if(!myPhotoUnsub) myPhotoUnsub=api.watchMyPhotos(me.code,l=>{
+    myPhotos=l; const t=$('cam-thumb'); t.style.backgroundImage=l[0]?`url("${l[0].thumb}")`:''; t.classList.toggle('none',!l.length);
+    if(!$('roll').hidden) drawRoll();
+  });
   if(fx&&!filterUnsub) filterUnsub=api.watchFilters(l=>{
     customFilters=l.filter(f=>f.lut||f.overlay).map(f=>({...f,id:'c-'+f.id}));
     if(current.id==='s-camera') fx.use(currentFilter());
@@ -5478,13 +5480,13 @@ $('cam-use').addEventListener('click',async()=>{
   if(!camShot) return; const b=$('cam-use'); b.disabled=true; b.textContent='Saving…';
   try{
     await api.savePhoto({code:me.code,username:me.username,...camShot});
-    camShot=null; const img=$('cam-shot'); img.classList.add('fly'); toast('Photo saved.');
-    setTimeout(()=>{ $('s-camera').dataset.mode='live'; img.classList.remove('fly'); },480);
+    camShot=null; const img=$('cam-shot'); img.classList.add('fly'); // the photo drops into the thumbnail
+    setTimeout(()=>{ $('s-camera').dataset.mode='live'; img.classList.remove('fly'); const t=$('cam-thumb'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); },480);
   }catch(err){ console.error(err); b.disabled=false; b.textContent='Use Photo'; toast("Couldn't save the photo. Try again."); }
 });
 // your photos
 appTop($('roll'),'Your Photos',{back:'Camera',onBack:()=>{ $('roll').hidden=true; }});
-
+$('cam-thumb').addEventListener('click',()=>{ $('roll').hidden=false; drawRoll(); });
 function drawRoll(){ drawGrid($('roll-grid'),myPhotos,false); $('roll-empty').hidden=myPhotos.length>0; }
 function drawGrid(box,list,named){
   box.replaceChildren();
@@ -5497,7 +5499,10 @@ function drawGrid(box,list,named){
 let photoUnsub=null, adminFxUnsub=null, adminFilters=[];
 const phTop=appTop($('s-photos'),'Photos');
 phTop.right.append(navBtn('Filters',()=>openFilterAdmin()));
-function openPhotos(){ go('s-photos'); } // camera photos live only in the database now; this app keeps the filters
+function openPhotos(){
+  go('s-photos');
+  if(!photoUnsub) photoUnsub=api.watchAllPhotos(l=>{ drawGrid($('ph-grid'),l,true); $('ph-empty').hidden=l.length>0; });
+}
 // the filter maker: a .cube colour table and/or an overlay image, previewed on a sample picture
 appTop($('fx-admin'),'Filters',{back:'Photos',onBack:()=>{ $('fx-admin').hidden=true; }});
 const fxDraft={lut:null,overlay:null,opacity:.8,blend:'normal',n:0};
