@@ -3214,9 +3214,11 @@ window.__playlistReady=true; // the early script (clock, reload button) hands ov
 
 /* ---------- navigation ---------- */
 let current=$('s-code');
+let lastGo=0;
 function go(id){
   const next=$(id); if(next===current) return;
-  leaveApp(current.id); // stop cameras and listeners of the app being left
+  lastGo=performance.now();
+  try{ leaveApp(current.id); }catch(err){ console.error(err); } // stop cameras and listeners of the app being left (a failure here must never block the switch)
   current.classList.add('out'); const prev=current;
   setTimeout(()=>{ if(prev!==current) prev.hidden=true; },350); // (tapping fast: never hide the screen that's showing again)
   next.hidden=false; next.classList.remove('enter'); void next.offsetWidth; next.classList.add('enter'); // replay the staggered entrance
@@ -3225,6 +3227,16 @@ function go(id){
   if(id==='s-user') prepUserScreen();
 }
 const shake=el=>{el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');};
+function healScreens(){
+  if(performance.now()-lastGo<900) return; // a switch is still animating
+  if(current.hidden) current.hidden=false;
+  if(current.classList.contains('out')) current.classList.remove('out');
+  document.querySelectorAll('section.screen').forEach(sc=>{ if(sc!==current&&!sc.hidden){ sc.classList.add('out'); sc.hidden=true; } });
+  if(document.body.dataset.screen!==current.id) layoutChat();
+}
+setInterval(healScreens,700);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(healScreens,50); });
+addEventListener('pageshow',()=>setTimeout(healScreens,50)); // coming back to a home-screen app
 
 let me={code:null,username:null,shade:DEFAULT_SHADE};
 let adminOn=false;
@@ -3757,6 +3769,7 @@ function renderHome(){
 }
 // the app zooms open from its icon, and the home screen zooms back into it when you return
 function launchApp(app,btn){
+  if(current.id!=='s-home'||performance.now()-lastGo<450) return; // one app at a time: ignore taps while the screen is switching
   const r=btn.querySelector('.sb-icon').getBoundingClientRect(), h=$('s-home');
   h.style.setProperty('--ox',(r.left+r.width/2)+'px'); h.style.setProperty('--oy',(r.top+r.height/2)+'px');
   app.open();
@@ -4971,13 +4984,16 @@ async function qrReader(){
   try{ if('BarcodeDetector' in window && (await BarcodeDetector.getSupportedFormats()).includes('qr_code')) return {native:new BarcodeDetector({formats:['qr_code']})}; }catch{}
   await loadScript(JSQR_LIB); return {native:null};
 }
+let doorGen=0;
 async function startDoorCam(){
-  stopDoorCam(); $('door-off').hidden=true;
+  stopDoorCam(); const gen=++doorGen; $('door-off').hidden=true;
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return doorCamOff("This browser can't use the camera. Type the ticket number below instead.");
   let reader;
   try{
-    [doorStream,reader]=await Promise.all([navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false}),qrReader()]);
-  }catch(err){ console.error(err); stopDoorCam();
+    const [st,rd]=await Promise.all([navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false}),qrReader()]);
+    if(gen!==doorGen||current.id!=='s-door'){ st.getTracks().forEach(t=>t.stop()); return; } // left the Door while it was starting
+    doorStream=st; reader=rd;
+  }catch(err){ console.error(err); if(gen!==doorGen) return; stopDoorCam();
     return doorCamOff(err&&err.name==='NotAllowedError'?'Camera access is blocked. Allow it for this site, then try again. You can also type the ticket number below.':"Couldn't start the camera. You can type the ticket number below."); }
   if(current.id!=='s-door') return stopDoorCam();
   const v=$('door-video'); v.srcObject=doorStream; v.play().catch(()=>{});
@@ -4997,7 +5013,7 @@ async function startDoorCam(){
   };
   step();
 }
-function stopDoorCam(){ clearTimeout(doorTimer); if(doorStream){ doorStream.getTracks().forEach(t=>t.stop()); doorStream=null; } $('door-video').srcObject=null; }
+function stopDoorCam(){ doorGen++; clearTimeout(doorTimer); if(doorStream){ doorStream.getTracks().forEach(t=>t.stop()); doorStream=null; } $('door-video').srcObject=null; }
 $('door-retry').addEventListener('click',startDoorCam);
 // entry tickets say "PLAYLIST-TICKET:<token>", T-shirt tickets "PLAYLIST-MERCH:<token>"; typed numbers may have dashes or spaces
 const tokenOf=x=>{ const t=String(x).trim().toUpperCase().replace(/^PLAYLIST-(TICKET|MERCH):/,'').replace(/[\s-]/g,''); return /^[A-Z2-9]{12}$/.test(t)?t:null; };
@@ -5198,12 +5214,16 @@ function openCamera(){ loadSfx('shutter').catch(()=>{});
   });
   if(fx) fx.use(currentFilter());
 }
+let camGen=0;
 async function startCam(){
-  stopCam(); const view=$('cam-view'); view.classList.remove('open','live'); $('cam-off').hidden=true; iris(0,0);
+  stopCam(); const gen=++camGen, view=$('cam-view'); view.classList.remove('open','live'); $('cam-off').hidden=true; iris(0,0);
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return camOff("This browser can't use the camera. You can still choose a photo.");
-  try{ camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:camFacing},width:{ideal:1920},height:{ideal:1440}},audio:false}); }
-  catch(err){ console.error(err); return camOff(err&&err.name==='NotAllowedError'?'Camera access is blocked. Allow it for this site, or choose a photo instead.':"Couldn't start the camera. You can still choose a photo."); }
-  if(current.id!=='s-camera') return stopCam();
+  let stream;
+  try{ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:camFacing},width:{ideal:1920},height:{ideal:1440}},audio:false}); }
+  catch(err){ console.error(err); if(gen!==camGen) return; return camOff(err&&err.name==='NotAllowedError'?'Camera access is blocked. Allow it for this site, or choose a photo instead.':"Couldn't start the camera. You can still choose a photo."); }
+  // left the Camera (or it restarted) while the phone was still asking: let go of this camera
+  if(gen!==camGen||current.id!=='s-camera'){ stream.getTracks().forEach(t=>t.stop()); return; }
+  camStream=stream;
   const v=$('cam-video'); v.setAttribute('playsinline',''); v.muted=true; v.srcObject=camStream;
   const play=()=>v.play().catch(()=>{}); play(); v.onloadedmetadata=play; // (home-screen apps on iPhone need the extra nudge)
   view.classList.toggle('mirror',camFacing==='user'); view.classList.toggle('gl',!!fx);
@@ -5226,7 +5246,7 @@ function loopCam(){
   step();
 }
 addEventListener('resize',()=>{ if(current.id==='s-camera') drawIris(irisT); });
-function stopCam(){ cancelAnimationFrame(camRaf); if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } $('cam-video').srcObject=null; $('cam-strip').hidden=true; $('cam-fx').setAttribute('aria-pressed','false'); }
+function stopCam(){ camGen++; cancelAnimationFrame(camRaf); if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } $('cam-video').srcObject=null; $('cam-strip').hidden=true; $('cam-fx').setAttribute('aria-pressed','false'); }
 function camOff(msg){ $('cam-off-msg').textContent=msg; $('cam-off').hidden=false; $('cam-view').classList.remove('gl'); $('cam-view').classList.add('open'); iris(1,0); }
 /* The iOS 6 camera iris: six metal blades around a hexagon that shrinks to nothing (closed) and grows past the edges (open). */
 let irisT=1, irisRaf=0;
@@ -6107,8 +6127,8 @@ function collectWins(){
   if(homeMode!=='user'||!me.code) return;
   cfFlips.filter(f=>f.status==='done'&&!f.paid&&flipWinner(f)===me.code&&!cfClaiming.has(f.id)).forEach(f=>{
     cfClaiming.add(f.id);
-    api.claimFlip(f,me.code).then(()=>{ if(f.code===me.code&&!f.vsBot&&!cfStageOpen()) toast(`🪙 ${f.oppName} took your flip and you won ♥${f.stake*2}!`); })
-      .catch(err=>{ console.error(err); setTimeout(()=>cfClaiming.delete(f.id),8000); });
+    api.claimFlip(f,me.code).then(()=>{ if(f.code===me.code&&!f.vsBot&&!cfStageOpen()) toast(`🪙 ${f.oppName} took your flip and you won ♥${f.stake*2}!`); },err=>console.error(err))
+      .finally(()=>setTimeout(()=>{ cfClaiming.delete(f.id); collectWins(); },12000)); // still unpaid later? try again (it can only be paid once)
   });
 }
 const cfStageOpen=()=>!$('cf-stage').hidden;
