@@ -1276,6 +1276,8 @@ body.lock-ios6.kb .remember{display:none}
 .sb-shelf{bottom:0;height:calc(45 * var(--u) + env(safe-area-inset-bottom));
   clip-path:polygon(calc(10 * var(--u)) 0,calc(100% - 10 * var(--u)) 0,100% calc(41 * var(--u)),100% 100%,0 100%,0 calc(41 * var(--u)))}
 .sb-dock::after{display:none}
+/* terminal "black": the strip under the dock (where the swipe bar sits) is solid black */
+body.dock-black .sb-dock::after{display:block;z-index:1;background:#000}
 @media (min-width:700px){ .sb-shelf{height:calc(34px + env(safe-area-inset-bottom));clip-path:polygon(4% 0,96% 0,100% 24.5px,100% 100%,0 100%,0 24.5px);
   background:linear-gradient(rgba(255,255,255,0) 24.5px,rgba(255,255,255,.14) 24.5px,rgba(255,255,255,.06)),
     linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.26) 50%,rgba(255,255,255,.1)),
@@ -3725,7 +3727,8 @@ let features={};
    no longer counts, and the app has to be downloaded again when it comes back. */
 let storeApps=[], appsLoaded=false, editingApp=null, appDraft={}, openAppId=null;
 const dockShade=()=>Number.isFinite(features.dockShade)?features.dockShade:80; // % darkness of the fade behind the home screen dock
-api.watchFeatures(f=>{ features=f||{}; migrateMystery(); document.documentElement.style.setProperty('--dock-shade',dockShade()/100); });
+api.watchFeatures(f=>{ features=f||{}; migrateMystery(); document.documentElement.style.setProperty('--dock-shade',dockShade()/100);
+  document.body.classList.toggle('dock-black',!!features.dockBlack); });
 // listened to per login (a visitor on the lock screen may not read it): see startSocial
 function onApps(l){ storeApps=(l||[]).sort((a,b)=>(a.order??0)-(b.order??0)||String(a.name).localeCompare(b.name)); appsLoaded=true;
   if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore(); if(adminOn){ drawAppsAdmin(); seedApps(); migrateMystery(); }
@@ -4733,6 +4736,9 @@ const TERM={
     if(!a.length) return `shade is ${dockShade()}`;
     const v=Math.round(Number(a[0])); if(a[0]===''||!Number.isFinite(v)||v<0||v>100) throw new Error('give a number from 0 to 100');
     await api.setFeature('dockShade',v); return `shade set to ${v}`; }},
+  black:{args:'[on|off]',about:'solid black strip under the dock, for everyone (no word: switch it)',run:async a=>{
+    const w=(a[0]||'').toLowerCase(); if(w&&w!=='on'&&w!=='off') throw new Error('say on, off, or nothing to switch it');
+    const on=w?w==='on':!features.dockBlack; await api.setFeature('dockBlack',on); return `black strip ${on?'on':'off'}`; }},
   clear:{about:'empty this screen',run:()=>{ $('term-log').replaceChildren(); }},
 };
 const termHist=[]; let termAt=0;
