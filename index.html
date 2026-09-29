@@ -453,14 +453,6 @@ body[data-screen=s-home] .bg{opacity:0}
 body.home-white[data-screen=s-home]{background:
   radial-gradient(140% 110% at 50% 38%,#ffffff 0%,#fbfdfb 38%,#eef6f0 66%,#dcece1 88%,#cfe4d6 100%),#fff}
 body.home-light .sb-label{color:#2c3136;text-shadow:0 1px 0 rgba(255,255,255,.9)}
-body.home-light .sb-dots i{background:rgba(44,49,54,.55);box-shadow:none}
-body.home-light .sb-dots svg{opacity:.4;filter:none}
-body.home-light .sb-dots svg circle,body.home-light .sb-dots svg path{stroke:#2c3136}
-body.home-light .sb-shade{display:none}
-body.home-light .sb-shelf{background:linear-gradient(90deg,rgba(40,70,50,.05),rgba(40,70,50,.1) 50%,rgba(40,70,50,.05)),linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,.2));
-  box-shadow:none}
-body.home-light .sb-shelf::before{border-top-color:rgba(40,70,50,.18)}
-body.home-light .sb-shelf::after{border-top-color:rgba(40,70,50,.12)}
 body.home-light .sb-icon{box-shadow:0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(30,50,40,.28),0 calc(8 * var(--u)) calc(16 * var(--u)) calc(-6 * var(--u)) rgba(30,50,40,.25)}
 .bg{transition:opacity .5s ease,transform 1.2s cubic-bezier(.2,.8,.2,1)}
 .sb-status{position:absolute;z-index:3;top:0;left:0;right:0;height:calc(20px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 6px 0;
@@ -494,11 +486,10 @@ body.home-light .sb-icon{box-shadow:0 calc(2 * var(--u)) calc(4 * var(--u)) rgba
 .sb-dock{position:absolute;z-index:1;left:0;right:0;bottom:0;height:calc(45 * var(--u) + env(safe-area-inset-bottom));pointer-events:none}
 .sb-shelf{position:absolute;left:0;right:0;bottom:env(safe-area-inset-bottom);height:calc(45 * var(--u));
   clip-path:polygon(calc(10 * var(--u)) 0,calc(100% - 10 * var(--u)) 0,100% 91%,100% 100%,0 100%,0 91%);
-  background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,.34) 50%,rgba(255,255,255,.12)),linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.04));
+  background:var(--home-dock) center top/100% calc(45 * var(--u)) no-repeat,linear-gradient(rgba(255,255,255,0) calc(45 * var(--u)),rgba(255,255,255,.1) 0);
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.sb-shelf::before{content:"";position:absolute;inset:0;border-top:1px solid rgba(255,255,255,.35)}
 .sb-dock::after{content:"";position:absolute;left:0;right:0;bottom:0;height:env(safe-area-inset-bottom);background:rgba(255,255,255,.12)}
-.sb-shade{position:absolute;z-index:0;left:0;right:0;bottom:0;height:calc(220 * var(--u));pointer-events:none;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.35))}
+.sb-shade{position:absolute;z-index:0;left:0;right:0;bottom:0;height:calc(220 * var(--u));pointer-events:none;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.8))}
 /* wide screens: the iPad (iOS 6) layout. Icons start at the top left and run across the full width in 5 columns;
    the dock is a slim glass shelf in perspective (measured from the iPad reference: first icon ~12% in, 56px down) */
 @media (min-width:700px){
@@ -513,7 +504,7 @@ body.home-light .sb-icon{box-shadow:0 calc(2 * var(--u)) calc(4 * var(--u)) rgba
       linear-gradient(rgba(255,255,255,0) 72%,rgba(255,255,255,.14) 72%,rgba(255,255,255,.06)),           /* front lip */
       linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.26) 50%,rgba(255,255,255,.1)),           /* top face */
       linear-gradient(rgba(255,255,255,.14),rgba(255,255,255,.02) 72%,rgba(0,0,0,.08))}
-  .sb-shelf::before{border-top-color:rgba(255,255,255,.45)}
+  .sb-shelf::before{content:"";position:absolute;inset:0;border-top:1px solid rgba(255,255,255,.45)}
   .sb-shelf::after{content:"";position:absolute;left:0;right:0;top:72%;border-top:1px solid rgba(255,255,255,.28)}
   .sb-shade{height:34%}
 }
@@ -1262,10 +1253,13 @@ body.lock-ios6 .remember{position:absolute;z-index:2;left:50%;transform:translat
 body.lock-ios6.kb .remember{display:none}
 
 /* apps in the dock ("favorites"): icons stand on the glass shelf, labels on its front */
-.sb-dockapps{position:absolute;z-index:2;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 3 * var(--u));
+.sb-dockapps{position:absolute;z-index:2;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 19 * var(--u) - 13px);
   display:flex;justify-content:center;gap:calc(19 * var(--u));width:var(--w)}
 .sb-dockapps .sb-app{gap:calc(3 * var(--u))}
-body.home-light .sb-dockapps .sb-label{color:#1f2428}
+.sb-dockapps .sb-label,body.home-light .sb-dockapps .sb-label{position:relative;z-index:1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 1px rgba(0,0,0,.6)}
+/* each dock icon is mirrored in the glass under it (Legacy iOS UI Kit: 22pt deep, 20% strong) */
+.sb-refl{position:absolute;left:0;top:100%;width:100%;height:calc(22 * var(--u));background:center bottom/100% calc(57 * var(--u)) no-repeat;
+  border-radius:0 0 calc(10 * var(--u)) calc(10 * var(--u));transform:scaleY(-1);opacity:.2;pointer-events:none}
 @media (min-width:700px){ .sb-dockapps{width:var(--stage);gap:48px;bottom:calc(env(safe-area-inset-bottom) + 4px)} }
 .sb-dock{height:calc(45 * var(--u) + env(safe-area-inset-bottom))}
 /* home-screen app on iPhone: the dock's glass runs down to the bottom edge (under the swipe bar) instead of floating above a pale strip */
@@ -2637,6 +2631,7 @@ const HOME_THEME = {
   // earlier wallpaper (iOS 6 water): wallpaper: "assets/ios6/wallpaper.jpg", wallpaperColor: "#264a66", wallpaperPosition: "center", light: false
   light: true,   // light background → dark icon labels, grey page dots, light dock
   gloss: "assets/ios6/icon-gloss.png",
+  dock: "assets/ios6/dock-shelf.png", // the glass shelf under the favourites
   icons: { chat: "assets/ios6/icon-chat.png", admin: "assets/ios6/icon-admin.png", settings: "assets/ios6/icon-settings.png",
            ticket: "assets/ios6/icon-ticket.png", camera: "assets/ios6/icon-camera.png", door: "assets/ios6/icon-door.png", photos: "assets/ios6/icon-photos.png",
            store: "assets/ios6/icon-store.png", orders: "assets/ios6/icon-store.png", logout: "assets/ios6/icon-logout.svg", mystery: "assets/ios6/icon-mystery.svg", forum: "assets/ios6/icon-forum.png", itunes: "assets/ios6/icon-itunes.png" },
@@ -3971,7 +3966,7 @@ const APPS = [
 (()=>{ const r=document.documentElement.style;
   const cachedWall=!!store.get('playlist-wall');
   if(!cachedWall) r.setProperty('--home-wall',`url("${HOME_THEME.wallpaper}")`); r.setProperty('--home-wall-color',HOME_THEME.wallpaperColor);
-  r.setProperty('--home-gloss',`url("${HOME_THEME.gloss}")`);
+  r.setProperty('--home-gloss',`url("${HOME_THEME.gloss}")`); r.setProperty('--home-dock',`url("${HOME_THEME.dock}")`);
   document.body.classList.toggle('home-white',HOME_THEME.background==='white');
   document.body.classList.toggle('home-light',HOME_THEME.background==='white'||!!HOME_THEME.light);
   if(!cachedWall) r.setProperty('--home-wall-pos',HOME_THEME.wallpaperPosition||'center');
@@ -3991,6 +3986,7 @@ function renderHome(){
     const b=document.createElement('button'); b.type='button'; b.className='sb-app'; b.style.setProperty('--i',i); b.setAttribute('role','listitem');
     b.setAttribute('aria-label',a.name);
     const ic=document.createElement('span'); ic.className='sb-icon'; ic.style.backgroundImage=`url("${(a.icon&&a.icon())||HOME_THEME.icons[a.id]}")`;
+    if(a.dock){ const rf=document.createElement('span'); rf.className='sb-refl'; rf.setAttribute('aria-hidden','true'); rf.style.backgroundImage=ic.style.backgroundImage; ic.append(rf); }
     if(a.id==='chat'){ const bd=document.createElement('span'); bd.className='sb-badge'; bd.id='badge-chat'; bd.hidden=true; ic.append(bd); }
     const lb=document.createElement('span'); lb.className='sb-label'; lb.textContent=a.name;
     b.append(ic,lb);
