@@ -545,6 +545,11 @@ body.chat-ios6[data-screen=chat] .bg{opacity:0}
 .ios-back:active,.ios-navbtn:active{filter:brightness(.8);transform:scale(.96)}
 .ios-nav-right{display:flex;gap:6px;align-items:center}
 #al-text{white-space:pre-line}
+.ios-navbtn.gift{white-space:nowrap}
+.ios-navbtn.gift:disabled{opacity:.75;cursor:default}
+.ios-navbtn.gift.ready{color:#4a3000;text-shadow:0 1px 0 rgba(255,255,255,.5);background:linear-gradient(#ffe98a,#f5c518 50%,#e0a800 52%,#f2c230);
+  box-shadow:0 0 0 .8px rgba(120,80,0,.6),inset 0 1px 0 rgba(255,255,255,.6),0 0 12px rgba(255,220,90,.8);animation:giftpulse 1.6s ease-in-out infinite}
+@keyframes giftpulse{50%{box-shadow:0 0 0 .8px rgba(120,80,0,.6),inset 0 1px 0 rgba(255,255,255,.6),0 0 20px rgba(255,220,90,1)}}
 .ios-navbtn.info{width:30px;padding:0;border-radius:50%;font:italic 700 17px/30px Georgia,"Times New Roman",serif;text-align:center}
 .ios-navbtn .shade-dot{width:14px;height:14px;display:block;margin-top:8px}
 body.chat-ios6 .log{width:100%;max-width:620px;padding-left:12px;padding-right:12px;padding-bottom:calc(64px + env(safe-area-inset-bottom) + var(--kb,0px));gap:7px}
@@ -2264,7 +2269,8 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
           <div><span class="lab-badge">Experimental</span><h3>Apps in the Store</h3></div>
           <p class="a-muted">Apps you switch on can be downloaded free in the Store. Switching one off takes it off everyone’s home screen: if it comes back, people download it again.</p>
           <div class="apps-list" id="apps-list"></div>
-          <div class="a-row wrap"><button class="a-btn sm glass live" type="button" id="app-new">New app</button></div>
+          <div class="a-row wrap"><button class="a-btn sm glass live" type="button" id="app-new">New app</button>
+            <button class="a-btn sm glass live danger" type="button" id="app-regen">Everyone downloads again</button></div>
           <div class="app-edit mys-edit" id="app-edit" hidden>
             <div class="a-row wrap"><span class="mys-icon" id="mys-icon-prev" aria-hidden="true"></span>
               <input class="a-in" id="mys-name" maxlength="24" placeholder="App name" aria-label="App name">
@@ -3544,6 +3550,12 @@ function migrateMystery(){
     text:features.mysText||'test',image:features.mysImage||null,bg:features.mysBg||'#000000',fg:features.mysFg||'#ffffff',order:0}).catch(()=>{});
 }
 // admin: the list, switches, and the editor
+$('app-regen').addEventListener('click',async()=>{
+  if(!storeApps.length) return toast('There are no Store apps yet.');
+  if(!await confirmBox('Everyone downloads again?','All Store apps disappear from everyone’s home screen. People get them back by downloading them in the Store again.','Reset')) return;
+  try{ await Promise.all(storeApps.map(a=>api.saveApp(a.id,{...stripApp(a),gen:(a.gen||0)+1}))); toast('Done. Everyone has to download the Store apps again.'); }
+  catch(err){ fail('reset the downloads')(err); }
+});
 function drawAppsAdmin(){
   const box=$('apps-list'); if(!box) return; box.replaceChildren();
   if(!storeApps.length) box.append(mk('p','a-muted','No apps yet.'));
@@ -6135,6 +6147,7 @@ const FB={W:288,H:512,GROUND:400,GAP:104,SPEED:2,GRAV:.25,FLAP:-4.6,PIPE_W:52,SP
 const fbImg={}; ['background','base','pipe','message','gameover','restart','bird-0','bird-1','bird-2',...'0123456789'].forEach(n=>{ const i=new Image(); i.src=`assets/flappy/${n}.png`; fbImg[n]=i; });
 let fb=null, fbRaf=0, fbScores=[], fbTop=null, fbUnsubs=[], fbK=1;
 const fbTop_=appTop($('s-flappy'),'Flappy Bird');
+const fbDailyBtn=navBtn('',()=>claimFbDaily()); fbDailyBtn.classList.add('gift'); fbDailyBtn.hidden=true; fbTop_.right.append(fbDailyBtn);
 fbTop_.right.append(navBtn('Leaderboard',()=>{ $('fb-board').hidden=false; drawBoard(); sfx('swoosh'); }));
 /* ---------- Coin Flip: in the style of iOS 6 Game Center. Put likes on heads or tails and post it for someone to take,
    or flip the bot. The coin is the database's clock at the moment the flip is taken (an even millisecond is heads),
@@ -6298,7 +6311,7 @@ function showGift(n){
   cashSound(); if(navigator.vibrate) navigator.vibrate(40);
   setTimeout(()=>{ g.classList.add('out'); setTimeout(()=>g.remove(),450); },2400);
 }
-function openFlappy(a){ ['wing','point','hit','die','swoosh'].forEach(n=>loadSfx(n).catch(()=>{})); go('s-flappy'); $('s-flappy').querySelector('.ios-title').textContent=a.name||'Flappy Bird';
+function openFlappy(a){ setTimeout(tryDaily,0); ['wing','point','hit','die','swoosh'].forEach(n=>loadSfx(n).catch(()=>{})); go('s-flappy'); $('s-flappy').querySelector('.ios-title').textContent=a.name||'Flappy Bird';
   requestAnimationFrame(()=>{ fitFlappy(); fbReset(); });
   cancelAnimationFrame(fbRaf); let last=performance.now();
   const loop=t=>{ const dt=Math.max(0,Math.min(3,(t-last)/16.67)); last=t; fbRaf=requestAnimationFrame(loop); fbStep(dt); fbDraw(); }; fbRaf=requestAnimationFrame(loop);
@@ -6403,16 +6416,26 @@ function drawBoard(){
       r.append(d); }
     box.append(r); });
 }
-// number 1 on the leaderboard gets 10 likes a day, the first time they open the home screen that day
+// number 1 on the leaderboard collects 10 likes a day with a button in the Flappy Bird bar (only number 1 sees it)
 api.watchFlappyTop(t=>{ fbTop=t; tryDaily(); });
-function tryDaily(){
-  if(!me.code||homeMode!=='user'||!fbTop||fbTop.code!==me.code||tryDaily.busy||!walletUnsub) return;
-  const last=Math.max(wallet.dailyAt?(wallet.dailyAt.toMillis?wallet.dailyAt.toMillis():+wallet.dailyAt):0,+store.get('playlist-daily-'+me.code)||0);
-  if(Date.now()-last<20*3600e3) return;
-  store.set('playlist-daily-'+me.code,String(Date.now())); // once a day on this phone too (the database checks it as well)
-  tryDaily.busy=true;
-  api.claimDaily(me.code).then(()=>toast(`🏆 You’re number 1 in Flappy Bird: +${FLAPPY_DAILY_LIKES} likes today!`),err=>console.error(err)).finally(()=>{ setTimeout(()=>tryDaily.busy=false,5000); });
+const fbDailyLeft=()=>Math.max(0,Math.max(tsMs(wallet.dailyAt),+store.get('playlist-daily-'+me.code)||0)+20*3600e3-Date.now());
+function tryDaily(){ // (redraws the button; called when the wallet or number 1 changes)
+  const b=fbDailyBtn; if(!b) return; const top=!!me.code&&homeMode==='user'&&!!fbTop&&fbTop.code===me.code;
+  b.hidden=!top; if(!top) return;
+  const left=fbDailyLeft(), ready=left<=0&&!claimFbDaily.busy; b.disabled=!ready; b.classList.toggle('ready',ready);
+  b.textContent=ready?`🏆 +${FLAPPY_DAILY_LIKES} ♥`:`🏆 ${fmtLeft(left)}`;
+  b.setAttribute('aria-label',ready?`You’re number 1: collect ${FLAPPY_DAILY_LIKES} likes`:`Number 1 bonus: next in ${fmtLeft(left)}`);
 }
+function claimFbDaily(){
+  if(!me.code||homeMode!=='user'||!fbTop||fbTop.code!==me.code||claimFbDaily.busy||!walletUnsub) return;
+  if(fbDailyLeft()>0){ tryDaily(); return toast(`Your next number 1 bonus is in ${fmtLeft(fbDailyLeft())}.`); }
+  claimFbDaily.busy=true; tryDaily();
+  api.claimDaily(me.code).then(()=>{ store.set('playlist-daily-'+me.code,String(Date.now())); cashSound();
+      toast(`🏆 You’re number 1 in Flappy Bird: +${FLAPPY_DAILY_LIKES} likes!`); },
+    err=>{ console.error(err); toast('Couldn’t collect it. Try again in a moment.'); })
+    .finally(()=>{ claimFbDaily.busy=false; tryDaily(); });
+}
+setInterval(()=>{ if(current.id==='s-flappy') tryDaily(); },20e3);
 
 /* ---------- "Add to Home Screen": Playlist as an app (Settings, phones only) ----------
    iPhones don't let a site add itself: it's done from Safari's Share menu, so we explain it (with a button that opens the Share menu).
