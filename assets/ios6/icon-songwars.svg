@@ -1,12 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="114" height="114" viewBox="0 0 114 114">
-  <!-- Song Wars app icon, in the iOS 6 iTunes style (the home screen adds the rounded corners and gloss) -->
+  <!-- Song Wars app icon in the iOS 6 style: deep gradient, fine texture, a raised gold trophy and the glossy top reflection -->
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5a7a"/><stop offset=".55" stop-color="#c2185b"/><stop offset="1" stop-color="#5a0d4a"/></linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3a8"/><stop offset=".5" stop-color="#ffc83d"/><stop offset="1" stop-color="#d98b00"/></linearGradient>
+    <radialGradient id="bg" cx=".5" cy=".28" r=".85">
+      <stop offset="0" stop-color="#ff6f8e"/><stop offset=".45" stop-color="#d0205a"/><stop offset="1" stop-color="#4a0a3c"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff7c2"/><stop offset=".35" stop-color="#ffd24d"/><stop offset=".7" stop-color="#e09a0c"/><stop offset="1" stop-color="#b86f00"/>
+    </linearGradient>
+    <linearGradient id="goldSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000" stop-opacity=".25"/><stop offset=".35" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".62"/><stop offset="1" stop-color="#fff" stop-opacity=".08"/>
+    </linearGradient>
+    <linearGradient id="bevel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".12" stop-color="#fff" stop-opacity="0"/><stop offset=".88" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/>
+    </linearGradient>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .07 0"/>
+    </filter>
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.2" flood-color="#2a0020" flood-opacity=".6"/>
+    </filter>
   </defs>
   <rect width="114" height="114" fill="url(#bg)"/>
-  <path d="M30 34h54v10c0 15-11 26-27 26S30 59 30 44z" fill="url(#gold)" stroke="#8a4b00" stroke-width="1.5"/>
-  <path d="M30 38H20c0 10 6 16 12 16M84 38h10c0 10-6 16-12 16" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
-  <path d="M51 70h12v10H51zM40 82h34v8H40z" fill="url(#gold)" stroke="#8a4b00" stroke-width="1.5"/>
-  <path d="M52 44v14.5a4 3.4 0 1 1-2.5-3.1V42l12-3v4z" fill="#8a1540"/>
+  <rect width="114" height="114" filter="url(#grain)"/>
+  <!-- spotlight rays behind the trophy -->
+  <g opacity=".16" fill="#fff"><path d="M57 60 20 0h14zM57 60 80 0h14zM57 60 0 26v12zM57 60l57-34v12z"/></g>
+  <g filter="url(#drop)">
+    <path d="M34 36h46v9c0 15-10 25-23 25S34 60 34 45z" fill="url(#gold)" stroke="#7a4200" stroke-width="1.4"/>
+    <path d="M34 36h46v9c0 15-10 25-23 25S34 60 34 45z" fill="url(#goldSide)"/>
+    <path d="M34 40H25c0 10 5 16 11 17M80 40h9c0 10-5 16-11 17" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M34 40H25c0 10 5 16 11 17M80 40h9c0 10-5 16-11 17" fill="none" stroke="#7a4200" stroke-width="1" stroke-linecap="round" opacity=".6"/>
+    <path d="M52 70h10v9H52z" fill="url(#gold)" stroke="#7a4200" stroke-width="1.2"/>
+    <rect x="41" y="79" width="32" height="10" rx="2" fill="url(#gold)" stroke="#7a4200" stroke-width="1.2"/>
+    <rect x="41" y="79" width="32" height="10" rx="2" fill="url(#goldSide)"/>
+    <!-- a music note engraved in the cup -->
+    <path d="M55 45v13a3.6 3 0 1 1-2.4-2.8V43.5l10-2.3v4z" fill="#8a1540" opacity=".85"/>
+  </g>
+  <!-- the iOS 6 glossy reflection across the top, and the bevel -->
+  <path d="M0 0h114v50C92 60 22 60 0 50z" fill="url(#gloss)"/>
+  <rect width="114" height="114" fill="url(#bevel)"/>
 </svg>

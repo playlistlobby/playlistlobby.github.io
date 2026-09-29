@@ -867,15 +867,16 @@ body[data-screen=s-camera]{background:#000}
 .cam-view{position:absolute;top:calc(46px + env(safe-area-inset-top));bottom:calc(96px + env(safe-area-inset-bottom));left:0;right:0;overflow:hidden;
   background:radial-gradient(circle at 50% 50%,#2c2d31,#0a0a0b 70%)}
 /* the iris opens when the camera starts and blinks when a photo is taken */
-.cam-lens{position:absolute;inset:0;clip-path:circle(0% at 50% 50%);transition:clip-path .16s ease-in}
-.cam-view.open .cam-lens{clip-path:circle(75% at 50% 50%);transition:clip-path .55s cubic-bezier(.3,.8,.3,1)}
+.cam-lens{position:absolute;inset:0}
+/* the iOS 6 iris: metal blades that close and open (drawn on a canvas) */
+.cam-iris{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 .cam-lens video{width:100%;height:100%;object-fit:cover;display:block}
 .cam-view.mirror video{transform:scaleX(-1)}
 .cam-shot{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;display:none}
 #s-camera[data-mode=review] .cam-shot{display:block;z-index:1}
 #s-camera[data-mode=review] .cam-off{display:none}
 .cam-shot.fly{transition:transform .5s cubic-bezier(.5,0,.4,1),opacity .5s;transform:translate(calc(-50% + 40px),calc(50% + 40px)) scale(.08);opacity:.2}
-.cam-off{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;color:#fff;
+.cam-off{position:absolute;z-index:2;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;color:#fff;
   font:400 15px/21px "Helvetica Neue",Helvetica,Arial,sans-serif;background:radial-gradient(circle at 50% 45%,#2c2d31,#0a0a0b 75%)}
 .cam-off p{margin:0;opacity:.8}
 .cam-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:2}
@@ -938,9 +939,8 @@ body[data-screen=s-photos]{background:#fff}
 .cell small{font:400 13px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#8e8e93}
 
 /* Camera filters: the strip over the viewfinder */
-.cam-lens canvas{position:absolute;inset:0;width:100%;height:100%;display:none}
-.cam-view.gl .cam-lens canvas{display:block}
-.cam-view.gl .cam-lens video{opacity:0}
+.cam-lens canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+.cam-view.gl.live .cam-lens canvas{opacity:1}
 .cam-fx[aria-pressed=true]{background:linear-gradient(#ffd75e,#f0a90e 50%,#e29b05 52%,#eaa815);color:#2a1d00;text-shadow:none}
 .cam-fx svg{width:20px;height:16px}
 .cam-fxname{position:absolute;z-index:2;left:50%;top:14px;transform:translateX(-50%);padding:5px 12px;border-radius:12px;color:#fff;font:700 14px "Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -1701,6 +1701,7 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
     <div class="cam-off" id="cam-off" hidden><p id="cam-off-msg">The camera isn't available here. You can still choose a photo.</p><button class="cam-btn use" type="button" id="cam-pick">Choose photo</button></div>
     <span class="cam-fxname" id="cam-fxname" aria-live="polite"></span>
     <div class="cam-strip" id="cam-strip" role="listbox" aria-label="Filters" hidden></div>
+    <canvas class="cam-iris" id="cam-iris" aria-hidden="true"></canvas>
     <div class="cam-flash" id="cam-flash"></div>
   </div>
   <div class="cam-bar live-bar">
@@ -2287,7 +2288,7 @@ const MEDIA_MAX_MB = 40, MEDIA_CHUNK = 900000;
 const SONG_MIN_S = 60, SONG_MAX_S = 180, SONG_MAX_MB = 10;   // Song Wars uploads
 const FLAPPY_DAILY_LIKES = 10;                                // number 1 on the Flappy Bird leaderboard, once a day
 // default icons of the apps the admin can switch on
-const APP_ICONS = { page:"assets/ios6/icon-mystery.svg", songwars:"assets/ios6/icon-songwars.svg", flappy:"assets/ios6/icon-flappy.png" };                         // forum posts disappear for users after this (the admin keeps seeing them)
+const APP_ICONS = { page:"assets/ios6/icon-mystery.svg", songwars:"assets/ios6/icon-songwars.svg", flappy:"assets/ios6/icon-flappy.svg" };                         // forum posts disappear for users after this (the admin keeps seeing them)
 const SCREEN_SIZES = { S:.06, M:.09, L:.13 };   // share of the screen, like the admin's text tool
 const TSHIRT_SIZES = ['XS','S','M','L','XL','XXL'];
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
@@ -4751,27 +4752,67 @@ function openCamera(){
   if(fx) fx.use(currentFilter());
 }
 async function startCam(){
-  stopCam(); const view=$('cam-view'); view.classList.remove('open'); $('cam-off').hidden=true;
+  stopCam(); const view=$('cam-view'); view.classList.remove('open','live'); $('cam-off').hidden=true; iris(0,0);
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return camOff("This browser can't use the camera. You can still choose a photo.");
   try{ camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:camFacing},width:{ideal:1920},height:{ideal:1440}},audio:false}); }
   catch(err){ console.error(err); return camOff(err&&err.name==='NotAllowedError'?'Camera access is blocked. Allow it for this site, or choose a photo instead.':"Couldn't start the camera. You can still choose a photo."); }
   if(current.id!=='s-camera') return stopCam();
-  const v=$('cam-video'); v.srcObject=camStream; v.play().catch(()=>{});
+  const v=$('cam-video'); v.setAttribute('playsinline',''); v.muted=true; v.srcObject=camStream;
+  const play=()=>v.play().catch(()=>{}); play(); v.onloadedmetadata=play; // (home-screen apps on iPhone need the extra nudge)
   view.classList.toggle('mirror',camFacing==='user'); view.classList.toggle('gl',!!fx);
   if(fx) loopCam();
-  setTimeout(()=>view.classList.add('open'),120); // the iris opens
+  // the iris opens once the first picture arrives (or after a moment anyway)
+  let opened=false; const open=()=>{ if(opened) return; opened=true; view.classList.add('open'); iris(1,520); };
+  v.addEventListener('playing',open,{once:true}); setTimeout(open,1200);
 }
+// a tap on a frozen viewfinder starts the video again; coming back to the app restarts the camera
+$('cam-view').addEventListener('pointerdown',()=>{ const v=$('cam-video'); if(camStream&&v.paused) v.play().catch(()=>{}); });
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&current.id==='s-camera'&&$('s-camera').dataset.mode==='live'&&(!camStream||camStream.getVideoTracks().every(t=>t.readyState==='ended'))) startCam(); });
 // the live viewfinder, drawn through the filter
 function loopCam(){
   cancelAnimationFrame(camRaf); const v=$('cam-video'), cv=$('cam-gl');
   const step=()=>{ if(!camStream) return; camRaf=requestAnimationFrame(step);
     if(v.readyState<2||!v.videoWidth||!cv.clientWidth) return;
     const dpr=Math.min(devicePixelRatio||1,2);
-    fx.render(v,v.videoWidth,v.videoHeight,Math.round(cv.clientWidth*dpr),Math.round(cv.clientHeight*dpr),{mirror:camFacing==='user'}); };
+    fx.render(v,v.videoWidth,v.videoHeight,Math.round(cv.clientWidth*dpr),Math.round(cv.clientHeight*dpr),{mirror:camFacing==='user'});
+    $('cam-view').classList.add('live'); }; // the filtered picture covers the plain video from now on
   step();
 }
+addEventListener('resize',()=>{ if(current.id==='s-camera') drawIris(irisT); });
 function stopCam(){ cancelAnimationFrame(camRaf); if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } $('cam-video').srcObject=null; $('cam-strip').hidden=true; $('cam-fx').setAttribute('aria-pressed','false'); }
-function camOff(msg){ $('cam-off-msg').textContent=msg; $('cam-off').hidden=false; $('cam-view').classList.remove('gl'); $('cam-view').classList.add('open'); }
+function camOff(msg){ $('cam-off-msg').textContent=msg; $('cam-off').hidden=false; $('cam-view').classList.remove('gl'); $('cam-view').classList.add('open'); iris(1,0); }
+/* The iOS 6 camera iris: six metal blades around a hexagon that shrinks to nothing (closed) and grows past the edges (open). */
+let irisT=1, irisRaf=0;
+function drawIris(t){
+  const c=$('cam-iris'), dpr=Math.min(devicePixelRatio||1,2), w=c.clientWidth, h=c.clientHeight; if(!w||!h) return;
+  if(c.width!==Math.round(w*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); }
+  const g=c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h); if(t>=1) return;
+  const cx=w/2, cy=h/2, R=Math.hypot(w,h)/2+30, r=R*t, n=6, L=R*3, twist=(1-t)*0.9, side=Math.tan(Math.PI/n);
+  for(let i=0;i<n;i++){
+    const a=i*2*Math.PI/n+twist, ux=Math.cos(a), uy=Math.sin(a), dx=-uy, dy=ux;
+    const ax=cx+ux*r-dx*r*side*1.04, ay=cy+uy*r-dy*r*side*1.04;         // where this blade's edge starts (a corner of the hexagon)
+    const bx=ax+dx*L, by=ay+dy*L;
+    g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by); g.lineTo(bx+ux*L,by+uy*L); g.lineTo(ax+ux*L,ay+uy*L); g.closePath();
+    const gr=g.createLinearGradient(ax,ay,ax+ux*R*.8,ay+uy*R*.8);
+    gr.addColorStop(0,'#5d6067'); gr.addColorStop(.25,'#3b3d42'); gr.addColorStop(1,'#1c1d20');
+    g.fillStyle=gr; g.fill();
+    g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by); g.lineWidth=1.4; g.strokeStyle='rgba(255,255,255,.22)'; g.stroke();   // the blade's lit edge
+    g.lineWidth=.8; g.strokeStyle='rgba(0,0,0,.6)'; g.stroke();
+  }
+  // a soft shadow at the opening
+  if(t>0){ const sh=g.createRadialGradient(cx,cy,r*.6,cx,cy,r*1.2); sh.addColorStop(0,'rgba(0,0,0,0)'); sh.addColorStop(1,'rgba(0,0,0,.35)');
+    g.fillStyle=sh; g.beginPath(); g.arc(cx,cy,r*1.2,0,7); g.fill(); }
+}
+function iris(to,ms){ cancelAnimationFrame(irisRaf); const from=irisT, t0=performance.now();
+  return new Promise(res=>{ const step=now=>{ const k=ms?Math.min(1,(now-t0)/ms):1, e=to>from?1-Math.pow(1-k,3):k*k;
+      irisT=from+(to-from)*e; drawIris(irisT); if(k<1) irisRaf=requestAnimationFrame(step); else res(); }; irisRaf=requestAnimationFrame(step); }); }
+// the shutter's mechanical click (made on the spot, no sound file)
+let camAudio=null;
+function shutterClick(){ try{ camAudio=camAudio||new (window.AudioContext||window.webkitAudioContext)();
+  const ac=camAudio, t=ac.currentTime; [0,.09].forEach((d,i)=>{ const len=Math.floor(ac.sampleRate*.035), buf=ac.createBuffer(1,len,ac.sampleRate), ch=buf.getChannelData(0);
+    for(let j=0;j<len;j++) ch[j]=(Math.random()*2-1)*Math.pow(1-j/len,3);
+    const src=ac.createBufferSource(), f=ac.createBiquadFilter(), gn=ac.createGain(); f.type='bandpass'; f.frequency.value=i?2400:3400; f.Q.value=.9; gn.gain.value=i?.35:.5;
+    src.buffer=buf; src.connect(f).connect(gn).connect(ac.destination); src.start(t+d); }); }catch{} }
 $('cam-home').addEventListener('click',goHome);
 $('cam-flip').addEventListener('click',()=>{ camFacing=camFacing==='environment'?'user':'environment'; startCam(); });
 $('cam-pick').addEventListener('click',()=>$('cam-file').click());
@@ -4782,8 +4823,8 @@ $('cam-shoot').addEventListener('click',async()=>{
   if(fx){ await fx.use(currentFilter()); c=fx.photo(v,v.videoWidth,v.videoHeight,{mirror:camFacing==='user'}); }
   else{ c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
     const g=c.getContext('2d'); if(camFacing==='user'){ g.translate(c.width,0); g.scale(-1,1); } g.drawImage(v,0,0); } // selfies look like the preview
-  const view=$('cam-view'), f=$('cam-flash'); view.classList.remove('open'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
-  setTimeout(()=>{ reviewShot(c); view.classList.add('open'); },200);
+  // the iOS 6 shutter: the iris snaps shut with a click, then opens on the photo
+  shutterClick(); await iris(0,140); reviewShot(c); await new Promise(r=>setTimeout(r,90)); iris(1,380);
 });
 ['cam-file','cam-libfile'].forEach(id=>$(id).addEventListener('change',e=>{
   const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return;
