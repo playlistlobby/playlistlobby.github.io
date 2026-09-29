@@ -338,6 +338,8 @@ body[data-screen=s-admin] .overlay{opacity:0}
 /* experimental tab */
 .lab-badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#0A5BC4;background:rgba(10,132,255,.14);padding:3px 9px;border-radius:999px}
 .lab h3{margin:6px 0 0;font-size:20px;line-height:26px;font-weight:700}
+#fb-lb-sub{white-space:pre-line}
+.a-in.ae-info{height:auto;min-height:90px;padding:10px 14px;border-radius:16px;resize:vertical;font:inherit;line-height:20px;white-space:pre-wrap}
 .lab-badge.nuke{color:#fff;background:#d9262c}
 .nuke-card{box-shadow:0 0 0 1.5px rgba(217,38,44,.55),0 0 26px rgba(217,38,44,.18)}
 .a-muted.wrap,.a-row .a-muted.wrap{white-space:normal}
@@ -574,6 +576,25 @@ body.chat-ios6 #log .bubble.glass::before{opacity:.35}
 body.chat-ios6 #log .bubble.glass::after{content:"";opacity:1;inset:auto;right:-7px;bottom:0;width:18px;height:17px;border-radius:0;
   background:var(--tint);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") center/100% 100% no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") center/100% 100% no-repeat}
 body.chat-ios6 #log .bubble.glass:not(.mine)::after{right:auto;left:-7px;transform:scaleX(-1)}
+/* chat bubbles, iOS 6 (from the Figma kit): the bubble itself is cut to the shape with its curled tail, so the tail always matches
+   the bubble (colours, gradients and custom patterns alike); a thin dark outline and a top highlight follow the same shape */
+body.chat-ios6 #log .bubble{position:relative;border-radius:16px;padding:7px 14px 8px;font-weight:400;font-size:16px;line-height:21px;letter-spacing:0}
+body.chat-ios6 #log .glass.tinted:not(.rare){background:
+  linear-gradient(180deg,rgba(255,255,255,.66) 0,rgba(255,255,255,.32) 14px,rgba(255,255,255,.1) 17px,rgba(255,255,255,0) 32px),
+  linear-gradient(0deg,rgba(0,0,0,.06),rgba(0,0,0,0) 12px),var(--tint)}
+@supports (-webkit-mask-box-image-source:none) or (mask-border-source:none){
+  body.chat-ios6 #log .bubble{border-radius:0!important;box-shadow:none!important;padding:7px 19px 8px 14px;
+    -webkit-mask-box-image-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");-webkit-mask-box-image-slice:14 16 16 14 fill;-webkit-mask-box-image-width:14px 16px 16px 14px;-webkit-mask-box-image-repeat:stretch;
+    mask-border-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");mask-border-slice:14 16 16 14 fill;mask-border-width:14px 16px 16px 14px;mask-border-repeat:stretch}
+  body.chat-ios6 #log .bubble:not(.mine){padding:7px 14px 8px 19px;
+    -webkit-mask-box-image-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");-webkit-mask-box-image-slice:14 14 16 16 fill;-webkit-mask-box-image-width:14px 14px 16px 16px;
+    mask-border-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");mask-border-slice:14 14 16 16 fill;mask-border-width:14px 14px 16px 16px}
+  body.chat-ios6 #log .bubble::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:1!important;box-sizing:border-box;
+    border-radius:0;background:none;box-shadow:none;filter:none;transform:none;animation:none;-webkit-mask:none;mask:none;
+    border-style:solid;border-color:transparent;border-width:14px 16px 16px 14px;border-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/clipPath%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.75'/%3E%3Cstop offset='.45' stop-color='%23fff' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.34' stroke-width='2'/%3E%3Cg transform='translate(0 1.3)'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='url(%23h)' stroke-width='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 14 16 16 14 fill stretch}
+  body.chat-ios6 #log .bubble:not(.mine)::before{border-width:14px 14px 16px 16px;border-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/clipPath%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.75'/%3E%3Cstop offset='.45' stop-color='%23fff' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.34' stroke-width='2'/%3E%3Cg transform='translate(0 1.3)'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='url(%23h)' stroke-width='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 14 14 16 16 fill stretch}
+  body.chat-ios6 #log .bubble::after,body.chat-ios6 #log .bubble.glass::after{display:none!important}
+}
 /* bottom bar: frosted toolbar, white field, glossy blue Send */
 body.chat-ios6 #chat #f-msg{left:0;right:0;transform:none;width:100%;bottom:var(--kb,0px);padding:7px 8px calc(7px + env(safe-area-inset-bottom));gap:8px;
   background:linear-gradient(rgba(246,248,251,.84),rgba(222,228,236,.9));-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);
@@ -1603,8 +1624,10 @@ body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
 
 /* tapping the top bar opens the Notification Center */
 .sb-status{cursor:pointer}
-.sb-status.has-new::before{content:"";position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 2px);margin-left:-3px;width:6px;height:6px;border-radius:50%;
-  background:#ff3b30;box-shadow:0 0 0 1px rgba(0,0,0,.4);pointer-events:none}
+/* unread notifications: a small red badge with the number, right after the countdown (tap the top bar to read them) */
+.sb-time[data-new]::after{content:attr(data-new);display:inline-block;min-width:14px;height:14px;margin-left:5px;padding:0 4px;box-sizing:border-box;border-radius:7px;
+  background:linear-gradient(#ff6b6b,#e0141a);color:#fff;font:700 10px/14px "Helvetica Neue",Helvetica,Arial,sans-serif;text-align:center;text-shadow:none;letter-spacing:0;
+  vertical-align:1px;box-shadow:0 0 0 1px rgba(255,255,255,.85),0 1px 2px rgba(0,0,0,.4)}
 /* the Notification Center: iOS 6 dark linen, pulled down from the top */
 .nc{position:fixed;inset:0;z-index:11;display:flex;flex-direction:column;color:#fff;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),linear-gradient(#2e3035,#23252a);box-shadow:0 10px 30px rgba(0,0,0,.6);animation:ncdown .38s cubic-bezier(.2,.9,.25,1)}
@@ -2351,6 +2374,9 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
               </div>
             </div>
             <div id="ae-songs"><input class="a-in" id="ae-pick" maxlength="80" placeholder="Winner will be picked by … (e.g. October 30)" aria-label="Winner will be picked by"></div>
+            <div id="ae-info" class="a-stack"><span class="a-muted" id="ae-info-lbl"></span>
+              <textarea class="a-in ae-info" id="ae-info-text" rows="4" maxlength="500" aria-label="Text"></textarea>
+              <span class="a-muted">Leave it empty to use the text shown as a hint.</span></div>
             <div class="a-row wrap"><button class="a-btn sm glass live" type="button" id="mys-reset">Close</button><button class="a-btn glass green live" type="button" id="mys-save">Save app</button></div>
           </div>
         </div>
@@ -3742,7 +3768,11 @@ function drawAppsAdmin(){
 function stripApp(a){ const {id,ts,...rest}=a; return rest; }
 $('app-new').addEventListener('click',()=>openAppEditor({type:'page',name:'New app',on:false,gen:0,text:'',bg:'#000000',fg:'#ffffff',order:storeApps.length}));
 function openAppEditor(a){ editingApp=a; appDraft={name:a.name||'',icon:a.icon||null,text:a.text||'',image:a.image||null,bg:a.bg||'#000000',fg:a.fg||'#ffffff',pickBy:a.pickBy||''};
-  $('app-edit').hidden=false; $('ae-page').hidden=a.type!=='page'; $('ae-songs').hidden=a.type!=='songwars'; mysEditDraw(); $('mys-name').focus(); }
+  $('app-edit').hidden=false; $('ae-page').hidden=a.type!=='page'; $('ae-songs').hidden=a.type!=='songwars';
+  const info=a.type==='songwars'||a.type==='flappy'; $('ae-info').hidden=!info;
+  if(info){ $('ae-info-lbl').textContent=a.type==='songwars'?'Text in the “i” info box':'Text at the top of the leaderboard';
+    $('ae-info-text').value=a.text||''; $('ae-info-text').placeholder=a.type==='songwars'?swInfoDefault(a):fbBoardDefault(); }
+  mysEditDraw(); $('mys-name').focus(); }
 function mysEditDraw(){
   $('mys-name').value=appDraft.name; $('mys-text').value=appDraft.text; $('ae-pick').value=appDraft.pickBy||'';
   $('mys-bg').value=appDraft.bg; $('mys-fg').value=appDraft.fg;
@@ -3764,6 +3794,7 @@ $('mys-save').addEventListener('click',async()=>{
   const data={...stripApp(a),type:a.type,name,icon:appDraft.icon||null,on:!!a.on,gen:a.gen||0,order:a.order??storeApps.length};
   if(a.type==='page') Object.assign(data,{text:appDraft.text.slice(0,500),image:appDraft.image||null,bg:appDraft.bg,fg:appDraft.fg});
   if(a.type==='songwars') data.pickBy=appDraft.pickBy.trim().slice(0,80);
+  if(a.type==='songwars'||a.type==='flappy') data.text=$('ae-info-text').value.trim().slice(0,500);
   try{ await api.saveApp(a.id||null,data); toast(`${name} saved.`); editingApp=null; $('app-edit').hidden=true; }catch(err){ fail('save the app')(err); }
 });
 
@@ -6255,7 +6286,8 @@ $('it-upload').addEventListener('click',async()=>{
 /* ---------- Song Wars: one song each (1-3 min, title and cover), likes, ranking, the admin picks the winner ---------- */
 let swApp=null, songs=[], swUnsub=null, swSort='likes', swDraft={title:'',cover:null,file:null,dur:0}, swBusy=false;
 const swTop=appTop($('s-songs'),'Song Wars');
-{ const ib=navBtn('i',()=>alertBox('🏆 Win a live show',`Upload one song (1 to 3 minutes) with a title and a cover. Everyone can like songs.\n\nThe winner will be picked by ${((swApp&&swApp.pickBy)||'').trim()||'the admin'} to perform their song live at the event.`));
+function swInfoDefault(a){ return `Upload one song (1 to 3 minutes) with a title and a cover. Everyone can like songs.\n\nThe winner will be picked by ${((a&&a.pickBy)||'').trim()||'the admin'} to perform their song live at the event.`; }
+{ const ib=navBtn('i',()=>{ const a=storeApps.find(x=>x.id===(swApp&&swApp.id))||swApp; alertBox('🏆 '+((a&&a.name)||'Song Wars'),((a&&a.text)||'').trim()||swInfoDefault(a)); });
   ib.classList.add('info'); ib.setAttribute('aria-label','About Song Wars'); swTop.right.prepend(ib); }
 function openSongs(a){ swApp=a; go('s-songs'); swTop.back.querySelector('span').textContent='Home'; $('s-songs').querySelector('.ios-title').textContent=a.name;
   if(!swUnsub) swUnsub=api.watchSongs(l=>{ songs=l; drawSongs(); }); drawSongs(); }
@@ -6614,10 +6646,12 @@ $('fb-lb-wipe').addEventListener('click',async()=>{
   if(!await confirmBox('Wipe the leaderboard?','Every Flappy Bird score is deleted and nobody is number 1. Everyone starts again from 0.','Wipe')) return;
   try{ const n=await api.wipeFlappy(); toast(`Leaderboard wiped (${n} score${n===1?'':'s'}).`); }catch(err){ fail('wipe the leaderboard')(err); }
 });
+function fbBoardDefault(){ return `Number 1 gets ${FLAPPY_DAILY_LIKES} likes every day. Reach 50 for 2 likes and 100 for 10 likes.`; }
 function drawBoard(){
   const box=$('fb-lb-list'), admin=homeMode==='admin', list=fbScores.slice().sort((a,b)=>b.best-a.best||a.ts-b.ts); box.replaceChildren();
   $('fb-lb-wipe').hidden=!admin||!list.length;
-  $('fb-lb-sub').textContent=`Number 1 gets ${FLAPPY_DAILY_LIKES} likes every day. Reach 50 for 2 likes and 100 for 10 likes. Your best: ${fb?fb.best:0}.`;
+  const fa=storeApps.find(x=>x.type==='flappy'), custom=((fa&&fa.text)||'').trim();
+  $('fb-lb-sub').textContent=`${custom||fbBoardDefault()} Your best: ${fb?fb.best:0}.`;
   if(!list.length) box.append(mk('p',null,'No scores yet. Be the first!'));
   list.slice(0,50).forEach((x,i)=>{ const r=mk('div','fb-row'+(x.code===me.code?' me':'')); r.append(mk('span','n',i===0?'👑':String(i+1)),mk('span','grow',x.name),mk('b',null,String(x.best)));
     if(admin){ const d=mk('button','mini-btn red','Remove'); d.type='button';
@@ -6708,7 +6742,8 @@ function startNotes(){
   });
 }
 function stopNotes(){ notesUnsub&&notesUnsub(); notesUnsub=null; notes=[]; markNew(); }
-function markNew(){ const n=notes.filter(x=>x.ts>ncSeen()).length; document.querySelectorAll('.sb-status').forEach(el=>el.classList.toggle('has-new',n>0)); }
+function markNew(){ const n=notes.filter(x=>x.ts>ncSeen()).length;
+  document.querySelectorAll('.sb-status').forEach(el=>{ el.classList.toggle('has-new',n>0); const t=el.querySelector('.sb-time'); if(t){ if(n>0) t.dataset.new=n>9?'9+':String(n); else delete t.dataset.new; } }); }
 function showBanner(n){
   const k=NOTE_KIND[n.kind]; if(!k) return; const b=$('nc-banner');
   $('ncb-ic').style.backgroundImage=`url("${k.icon()}")`; $('ncb-t').textContent=k.title(n); $('ncb-d').textContent=k.text(n);
