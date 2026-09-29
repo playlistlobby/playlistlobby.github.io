@@ -1402,6 +1402,14 @@ body.lock-ios6 .remember{bottom:calc(env(safe-area-inset-bottom) + 12px);padding
   font-size:13px;color:rgba(255,255,255,.9)}
 body.lock-ios6 .remember .ios-switch{transform:scale(.86);transform-origin:left center;margin-right:-10px}
 body.lock-ios6.kb .remember{display:none}
+/* lock screen: the code bar and "Remember me" sit exactly in the middle (no music note beside them) */
+body.lock-ios6 .lk-icon{display:none}
+body.lock-ios6 #f-code{margin:0 auto}
+body.lock-ios6 #f-code .field.glass{padding:0 14px;justify-content:center}
+body.lock-ios6 #f-code .field input{text-align:center}
+body.lock-ios6 .lk-hint{left:50%;transform:translate(-50%,-50%)}
+body.lock-ios6 .remember{display:flex;align-items:center;gap:8px;white-space:nowrap}
+body.lock-ios6 .remember .ios-switch{transform-origin:center;margin:0 -5px}
 /* lock screen: reload everything (for in-app browsers that get stuck) */
 .lk-reload{display:none}
 body.lock-ios6 .lk-reload{display:grid;place-items:center;position:absolute;z-index:3;top:calc(20px + env(safe-area-inset-top) + 8px);right:8px;width:30px;height:30px;border-radius:50%;
@@ -1727,7 +1735,6 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
         <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
     </form>
-    <span class="lk-icon"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M9 18.2V6.4l11-2.2v11.4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><ellipse cx="6.6" cy="18.3" rx="2.9" ry="2.3" fill="#fff"/><ellipse cx="17.6" cy="15.7" rx="2.9" ry="2.3" fill="#fff"/></svg></span>
   </div>
   <p class="note stagger" style="--i:2" id="n-code" role="status"></p>
   <button class="lk-reload" type="button" id="lk-reload" aria-label="Reload and forget this phone" title="Reload"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M12.2 1.6v3h-3"/></svg></button>
