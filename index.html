@@ -3996,7 +3996,9 @@ $('f-code').addEventListener('submit',async e=>{
   try{
     const r=await Promise.race([api.joinCode(code),new Promise((_,no)=>setTimeout(()=>no(new Error('slow')),20000))]);
     if(!r.valid){
-      // admin login: type the admin secret (currently "euroadmin"). Direct login for now; the request/email flow stays in the code for later.
+      // "euroadmin": ask for admin on this device (approved by email / from your phone), instead of typing a secret
+      if(code.trim().toLowerCase()===EUROADMIN){ return startAdminRequest(); }
+      // or the real admin secret (kept in the database; used once to make your main phone the first trusted device)
       if(await api.adminLogin(code)){ await api.trustThisDevice(); keep.del('playlist-door'); api.doorLogout(); slideUnlock(); $('code').value=''; note.textContent=''; return openHome({admin:true}); }
       // or the door password: opens only the Door scanner
       if(await api.doorLogin(code)){
