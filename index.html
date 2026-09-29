@@ -1291,7 +1291,8 @@ body.lock-ios6.kb .remember{display:none}
   clip-path:polygon(calc(10 * var(--u)) 0,calc(100% - 10 * var(--u)) 0,100% calc(41 * var(--u)),100% 100%,0 100%,0 calc(41 * var(--u)))}
 .sb-dock::after{display:none}
 /* terminal "black": the strip under the dock (where the swipe bar sits) is solid black */
-body.dock-black .sb-dock::after{display:block;z-index:1;background:#000}
+body.dock-black .sb-dock::after{display:block;z-index:1;background:#000;height:calc(env(safe-area-inset-bottom) + 120px);bottom:-120px} /* runs on past the bottom edge */
+body.dock-black[data-screen=s-home]{background-color:#000} /* and the page behind it (under Safari's toolbar, or when the page bounces) is black too */
 @media (min-width:700px){ .sb-shelf{height:calc(34px + env(safe-area-inset-bottom));clip-path:polygon(4% 0,96% 0,100% 24.5px,100% 100%,0 100%,0 24.5px);
   background:linear-gradient(rgba(255,255,255,0) 24.5px,rgba(255,255,255,.14) 24.5px,rgba(255,255,255,.06)),
     linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.26) 50%,rgba(255,255,255,.1)),
