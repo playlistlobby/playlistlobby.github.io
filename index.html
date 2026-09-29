@@ -791,6 +791,103 @@ body.user-ios6 #rare-note span{color:#111;font-weight:700}
 body[data-screen=s-settings] .bg,body[data-screen=s-ticket] .bg,body[data-screen=s-camera] .bg,body[data-screen=s-door] .bg,body[data-screen=s-photos] .bg{opacity:0}
 body[data-screen=s-settings] .overlay,body[data-screen=s-ticket] .overlay,body[data-screen=s-camera] .overlay,body[data-screen=s-door] .overlay,body[data-screen=s-photos] .overlay{opacity:0}
 .app-top{position:absolute;z-index:4;top:0;left:0;right:0}
+/* Game Center (Coin Flip): green felt, a wooden bar, maroon felt, yellow ribbons */
+body[data-screen=s-coin]{background:#2a8047}
+body[data-screen=s-coin] .bg,body[data-screen=s-coin] .overlay{opacity:0}
+#s-coin{background:#2c8a4c url(assets/gc/felt-green.jpg) center/256px;color:#fff}
+#s-coin .app-top .sb-status{background:#000}
+#s-coin .app-top .ios-nav{background:#8a3d17 url(assets/gc/wood.jpg) center/320px;-webkit-backdrop-filter:none;backdrop-filter:none;
+  box-shadow:inset 0 1px 0 rgba(255,220,180,.45),inset 0 -1px 0 rgba(40,12,0,.55),0 2px 6px rgba(0,0,0,.45)}
+#s-coin .ios-title{text-shadow:0 -1px 0 rgba(60,20,0,.7)}
+#s-coin .ios-back-shape path:first-child{fill:rgba(70,25,0,.28);stroke:rgba(50,15,0,.75)}
+#s-coin .ios-back,#s-coin .ios-navbtn{text-shadow:0 -1px 0 rgba(60,20,0,.7)}
+.gc-body{padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+.gc-hero{position:relative;display:flex;align-items:center;gap:10px;padding:16px 14px 16px 18px;background:#6e1030 url(assets/gc/felt-red.jpg) center/256px;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.12)}
+.gc-hero-txt{flex:1;min-width:0}
+.gc-title{margin:0;font:700 44px/1 Oswald,Impact,"Arial Narrow",sans-serif;letter-spacing:.01em;color:#fff;text-shadow:0 2px 0 rgba(40,0,15,.55)}
+.gc-hero p{margin:6px 0 0;font:400 13px/17px Georgia,"Times New Roman",serif;color:#f5dfe7}
+.gc-tabs{display:flex;padding:5px 8px 7px;background:#5c0c27 url(assets/gc/felt-red.jpg) center/256px;border-bottom:1px solid rgba(0,0,0,.35)}
+.gc-tabs button{flex:1;height:26px;font:700 13px/24px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;border:1.5px solid #e4de6c;margin-left:-1.5px;background:rgba(0,0,0,.08);text-shadow:0 -1px 0 rgba(0,0,0,.4)}
+.gc-tabs button:first-child{margin-left:0}
+.gc-tabs button[aria-selected=true]{background:linear-gradient(#f6f39a,#dcd856);color:#3d3a0e;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.gc-n{display:inline-block;min-width:18px;margin-left:5px;padding:0 5px;border-radius:9px;background:#d9262c;color:#fff;font-size:11px;line-height:16px;text-shadow:none}
+.gc-n:empty{display:none}
+.gc-pane{width:min(460px,calc(100% - 20px));margin:0 auto}
+.gc-head{margin:16px 0 10px;text-align:center;font:400 17px/22px Georgia,"Times New Roman",serif;color:#eeea84;text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.gc-head b{color:#fff}
+.gc-card,.gc-list{border:1.5px solid rgba(230,224,110,.9);background:rgba(8,60,28,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.gc-cell{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:50px;padding:6px 12px;font:400 17px Georgia,"Times New Roman",serif;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+.gc-cell+.gc-cell{border-top:1.5px solid rgba(230,224,110,.55)}
+.gc-cell.sides{flex-wrap:wrap}
+.gc-step{display:flex;align-items:center;gap:0;border:1.5px solid #e4de6c;border-radius:4px;overflow:hidden}
+.gc-step button{width:40px;height:34px;font:400 24px/1 Georgia,serif;color:#3d3a0e;background:linear-gradient(#f6f39a,#dcd856)}
+.gc-step button:disabled{opacity:.45}
+.gc-step b{min-width:64px;text-align:center;font:700 19px/34px Georgia,serif;color:#fff}
+.gc-step b::before{content:"♥ ";color:#ff8fa3}
+.cf-sides{display:flex;gap:8px}
+.cf-side{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px 0 5px;border-radius:20px;font:400 16px Georgia,serif;color:#fff;border:1.5px solid rgba(230,224,110,.5);background:rgba(0,0,0,.12);transition:transform .2s var(--spring)}
+.cf-side.on{border-color:#f3ee8a;background:rgba(243,238,138,.2);box-shadow:0 0 14px rgba(255,248,170,.5)}
+.cf-side:active{transform:scale(.95)}
+.cf-chip{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 16px/1 Georgia,serif;font-style:normal;color:#9a6406;
+  background:radial-gradient(circle at 36% 30%,#fff7c8,#f7d35c 30%,#d99b1c 75%,#9a6206);box-shadow:inset 0 0 0 2px #f0c64a,inset 0 0 0 3px #a86d0a,0 1px 2px rgba(0,0,0,.4)}
+.gc-ribbon{position:relative;display:block;margin:18px auto 0;width:min(250px,72%);height:36px;font:400 18px/36px Georgia,"Times New Roman",serif;color:#2c6a37;
+  background:linear-gradient(#f2ee8c,#d8d44e);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 2px 3px rgba(0,0,0,.3);text-shadow:0 1px 0 rgba(255,255,255,.5);transition:transform .15s,filter .15s}
+.gc-ribbon::before,.gc-ribbon::after{content:"";position:absolute;top:7px;width:24px;height:36px;background:linear-gradient(#cfcb46,#aeaa32);z-index:-1;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,38% 50%)}
+.gc-ribbon::before{left:-16px}
+.gc-ribbon::after{right:-16px;transform:scaleX(-1)}
+.gc-ribbon:active{transform:translateY(1px);filter:brightness(.92)}
+.gc-ribbon:disabled{filter:grayscale(.6) brightness(.8);opacity:.7}
+.gc-ribbon.sm{display:inline-block;margin:0;width:auto;min-width:64px;padding:0 12px;height:30px;font-size:15px;line-height:30px}
+.gc-ribbon.sm::before,.gc-ribbon.sm::after{display:none}
+.gc-ribbon.red{color:#fff;background:linear-gradient(#e0566f,#b21d3c);text-shadow:0 -1px 0 rgba(0,0,0,.3)}
+.gc-note{margin:16px 6px 0;text-align:center;font:400 13px/18px Georgia,serif;color:rgba(255,255,255,.8)}
+.gc-row{display:flex;align-items:center;gap:10px;min-height:54px;padding-right:10px}
+.gc-row+.gc-row{border-top:1.5px solid rgba(230,224,110,.55)}
+.gc-num{align-self:stretch;width:48px;flex:none;display:grid;place-items:center;background:#6e1030 url(assets/gc/felt-red.jpg) center/256px;
+  font:700 15px Georgia,serif;color:#f3e57e;border-right:1.5px solid rgba(230,224,110,.55)}
+.gc-row .orb{width:34px;height:34px;box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.4)}
+.gc-who{flex:1;min-width:0}
+.gc-who b{display:block;font:400 17px/21px Georgia,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+.gc-who small{display:block;font:400 12px/15px Georgia,serif;color:#eeea84}
+.gc-tag{font:700 13px Georgia,serif;padding:3px 8px;border-radius:4px}
+.gc-tag.win{color:#3d3a0e;background:#f2ee8c}
+.gc-tag.lose{color:#fff;background:rgba(178,29,60,.85)}
+.gc-tag.gone{color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.4)}
+.gc-empty{margin:0;padding:18px 12px;text-align:center;font:400 15px Georgia,serif;color:rgba(255,255,255,.85)}
+/* the coin: two faces and a thick gold edge, tossed in 3D */
+.cf-coin{position:relative;width:150px;height:150px;transform-style:preserve-3d}
+.cf-coin>i{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;font-style:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:radial-gradient(circle at 36% 30%,#fff7c8 0,#f7d35c 22%,#e0a624 55%,#a86d0a 100%);
+  box-shadow:inset 0 0 0 7px #eab93c,inset 0 0 0 9px #9a6406,inset 0 0 0 11px #f5d36a,inset 0 6px 14px rgba(255,255,255,.55),inset 0 -8px 16px rgba(80,40,0,.45)}
+.cf-coin>i.h{transform:translateZ(5px)}
+.cf-coin>i.t{transform:rotateX(180deg) translateZ(5px)}
+.cf-coin>i.e{backface-visibility:visible;-webkit-backface-visibility:visible;background:#b07a14;box-shadow:none}
+.cf-coin b{font:700 62px/1 Georgia,serif;color:#b27a0e;text-shadow:0 1px 0 #fff3b0,0 -1px 0 #7a4c02}
+.cf-coin small{position:absolute;bottom:24px;left:0;right:0;text-align:center;font:700 11px Georgia,serif;letter-spacing:.25em;color:#8a5a06}
+.cf-coin.sm{width:74px;height:74px}
+.cf-coin.sm>i.h{transform:translateZ(2px)}
+.cf-coin.sm>i.t{transform:rotateY(180deg) translateZ(2px)}
+.cf-coin.sm b{font-size:32px}
+.cf-coin.sm.spin{animation:cfspin 5s linear infinite}
+@keyframes cfspin{to{transform:rotateY(360deg)}}
+.cf-mini-toss{perspective:400px;flex:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))}
+.cf-stage{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;
+  background:radial-gradient(circle at 50% 45%,rgba(20,90,45,.55),rgba(5,30,15,.88));-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:fadein .25s}
+@keyframes fadein{from{opacity:0}}
+.cf-toss{perspective:900px;height:170px;display:flex;align-items:flex-end;justify-content:center}
+.cf-shadow{width:120px;height:18px;margin-top:6px;border-radius:50%;background:radial-gradient(rgba(0,0,0,.5),rgba(0,0,0,0) 70%)}
+.cf-res{margin:22px 0 0;min-height:44px;font:700 38px/44px Oswald,Impact,"Arial Narrow",sans-serif;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.cf-res.win{color:#f6f29a;text-shadow:0 0 18px rgba(255,248,170,.8),0 2px 0 rgba(0,0,0,.35);animation:popin .5s var(--spring)}
+.cf-res-sub{margin:4px 0 0;min-height:20px;font:400 15px/20px Georgia,serif;color:rgba(255,255,255,.88)}
+/* the Store's daily bonus */
+.st-gift{position:fixed;z-index:9;left:50%;top:38%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 26px 16px;border-radius:24px;
+  background:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.7));-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);
+  box-shadow:inset 0 1px 0 #fff,0 0 0 .5px rgba(0,0,0,.12),0 18px 40px -12px rgba(0,0,0,.45),0 0 40px rgba(255,255,255,.7);color:#1d2330;
+  font:400 14px/18px "Helvetica Neue",Helvetica,Arial,sans-serif;animation:gift .6s var(--spring);pointer-events:none}
+.st-gift b{font:700 34px/40px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#e0245e}
+.st-gift.out{transition:opacity .4s,transform .4s;opacity:0;transform:translate(-50%,-60%)}
+@keyframes gift{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}}
 .app-top .sb-status{position:relative;background:linear-gradient(rgba(58,78,106,.92),rgba(70,92,122,.9))}
 .app-top .ios-back{width:auto;min-width:62px;padding:0 10px 0 16px}
 .app-body{position:absolute;top:calc(64px + env(safe-area-inset-top));left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
@@ -1503,7 +1600,7 @@ body[data-screen=s-flappy] .bg,body[data-screen=s-flappy] .overlay{opacity:0}
 .a2h-ok img{width:44px;height:44px;border-radius:10px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body data-screen="s-code">
 <script>
@@ -1846,6 +1943,8 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
       <label class="cell"><span>Background <small>likes</small></span><input id="pr-background" type="number" min="0" max="999" inputmode="numeric"></label>
       <label class="cell"><span>T-shirt <small>kr</small></span><input id="pr-tshirt" type="number" min="0" max="99999" inputmode="numeric"></label>
       <label class="cell"><span>Screen message <small>kr</small></span><input id="pr-screen" type="number" min="0" max="99999" inputmode="numeric"></label>
+      <label class="cell"><span>Daily Store bonus <small>likes</small></span><input id="pr-daily" type="number" min="0" max="100" inputmode="numeric"></label>
+      <label class="cell"><span>Coin Flip max stake <small>likes</small></span><input id="pr-flipMax" type="number" min="1" max="500" inputmode="numeric"></label>
       <button class="cell btn blue" type="submit">Save prices</button>
     </form>
     <p class="grp-title">Waiting for payment</p>
@@ -1916,6 +2015,42 @@ document.body.classList.toggle('chat-ios6', PLAYLIST_LOOK.chat === 'ios6');
 </section>
 <section class="screen out app" id="s-songs" aria-label="Song Wars" hidden>
   <div class="app-body" id="sw-body"></div>
+</section>
+<section class="screen out app gc" id="s-coin" aria-label="Coin Flip" hidden>
+  <div class="app-body gc-body" id="cf-body">
+    <div class="gc-hero">
+      <div class="gc-hero-txt"><h2 class="gc-title" id="cf-title">COIN FLIP</h2><p id="cf-sub">Put your likes on heads or tails. The winner takes both stakes.</p></div>
+      <div class="cf-mini-toss" aria-hidden="true"><div class="cf-coin sm spin"><i class="h"><b>♥</b></i><i class="t"><b>★</b></i></div></div>
+    </div>
+    <div class="gc-tabs" role="tablist" id="cf-tabs">
+      <button type="button" role="tab" data-t="play" aria-selected="true">Play</button>
+      <button type="button" role="tab" data-t="open" aria-selected="false">Open Flips<span class="gc-n" id="cf-open-n"></span></button>
+      <button type="button" role="tab" data-t="mine" aria-selected="false">History</button>
+    </div>
+    <div class="gc-pane" id="cf-play">
+      <p class="gc-head">❖ You have <b id="cf-bal">0</b> likes ❖</p>
+      <div class="gc-card">
+        <div class="gc-cell"><span>Stake</span>
+          <div class="gc-step"><button type="button" id="cf-minus" aria-label="Less">−</button><b id="cf-stake">1</b><button type="button" id="cf-plus" aria-label="More">+</button></div></div>
+        <div class="gc-cell sides"><span>Your side</span>
+          <div class="cf-sides">
+            <button type="button" class="cf-side on" data-side="heads" aria-pressed="true"><i class="cf-chip">♥</i>Heads</button>
+            <button type="button" class="cf-side" data-side="tails" aria-pressed="false"><i class="cf-chip">★</i>Tails</button>
+          </div></div>
+      </div>
+      <button class="gc-ribbon" type="button" id="cf-post">Post Flip</button>
+      <button class="gc-ribbon" type="button" id="cf-bot">Flip the Bot</button>
+      <p class="gc-note" id="cf-note"></p>
+    </div>
+    <div class="gc-pane" id="cf-open" hidden><p class="gc-head" id="cf-open-h">❖ Open Flips ❖</p><div class="gc-list" id="cf-open-list"></div></div>
+    <div class="gc-pane" id="cf-mine" hidden><p class="gc-head" id="cf-mine-h">❖ Your Flips ❖</p><div class="gc-list" id="cf-mine-list"></div></div>
+  </div>
+  <div class="cf-stage" id="cf-stage" hidden>
+    <div class="cf-toss"><div class="cf-coin" id="cf-coin"><i class="h"><b>♥</b><small>HEADS</small></i><i class="t"><b>★</b><small>TAILS</small></i></div></div>
+    <div class="cf-shadow" id="cf-shadow"></div>
+    <p class="cf-res" id="cf-res"></p><p class="cf-res-sub" id="cf-res-sub"></p>
+    <button class="gc-ribbon" type="button" id="cf-done" hidden>Done</button>
+  </div>
 </section>
 <section class="screen out app" id="s-flappy" aria-label="Flappy Bird" hidden>
   <div class="fb-frame" id="fb-frame"><div class="fb-stage" id="fb-stage"><canvas id="fb-canvas" aria-label="Flappy Bird. Tap or press space to flap."></canvas></div></div>
@@ -2378,7 +2513,7 @@ const MEDIA_MAX_MB = 40, MEDIA_CHUNK = 900000;
 const SONG_MIN_S = 60, SONG_MAX_S = 180, SONG_MAX_MB = 10;   // Song Wars uploads
 const FLAPPY_DAILY_LIKES = 10;                                // number 1 on the Flappy Bird leaderboard, once a day
 // default icons of the apps the admin can switch on
-const APP_ICONS = { page:"assets/ios6/icon-mystery.svg", songwars:"assets/ios6/icon-songwars.svg", flappy:"assets/ios6/icon-flappy.svg" };                         // forum posts disappear for users after this (the admin keeps seeing them)
+const APP_ICONS = { page:"assets/ios6/icon-mystery.svg", songwars:"assets/ios6/icon-songwars.svg", flappy:"assets/ios6/icon-flappy.svg", coinflip:"assets/ios6/icon-coinflip.svg" };                         // forum posts disappear for users after this (the admin keeps seeing them)
 const SCREEN_SIZES = { S:.06, M:.09, L:.13 };   // share of the screen, like the admin's text tool
 const TSHIRT_SIZES = ['XS','S','M','L','XL','XXL'];
 const ADMIN_ID = "_admin";                   // the account the admin posts in the chat with (can't be used as a login code)
@@ -2388,6 +2523,8 @@ const DEFAULT_SHADE = 80;                     // profile colour for people who h
 /* =============================================== */
 const DEMO = new URLSearchParams(location.search).has('demo'); // ?demo forces the offline demo (for testing)
 let TTL = MESSAGE_TTL_HOURS*3600e3;
+// a Coin Flip from the database (times as milliseconds; a time the server hasn't set yet is null)
+const flipOut=d=>{ const x=d.data(); const ms=v=>v&&v.toMillis?v.toMillis():(typeof v==='number'?v:null); return {id:d.id,...x,ts:ms(x.ts)||Date.now(),doneAt:ms(x.doneAt)}; };
 const NAME_RE = /^[\p{L}\p{N}_.\- ]{2,20}$/u;
 
 const $ = id => document.getElementById(id);
@@ -2657,6 +2794,28 @@ async function firebaseApi(cfg){
       await b.commit(); return oref.id; },
     async claimDaily(code){ const r=fs.doc(db,"wallets",code), w=await fs.getDoc(r), d=w.exists()?w.data():{};
       await fs.setDoc(r,{...d,bonus:(d.bonus||0)+FLAPPY_DAILY_LIKES,dailyAt:fs.serverTimestamp()}); },
+    async claimStoreDaily(code,amount){ const r=fs.doc(db,"wallets",code), w=await fs.getDocFromServer(r).catch(()=>fs.getDoc(r)), d=w.exists()?w.data():{};
+      await fs.setDoc(r,{...d,bonus:(d.bonus||0)+amount,storeDailyAt:fs.serverTimestamp()}); },
+    // Coin Flip: the stake leaves your likes with the flip; the result is the server time the flip was taken
+    watchFlips(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"flips"),fs.orderBy("ts","desc"),fs.limit(150)),s=>cb(s.docs.map(flipOut)),e=>console.error(e)); },
+    async createFlip(f){
+      const wr=fs.doc(db,"wallets",f.code), w=await fs.getDoc(wr), d=w.exists()?w.data():{}, ref=fs.doc(fs.collection(db,"flips")), b=fs.writeBatch(db);
+      b.set(ref,{code:f.code,name:f.name,stake:f.stake,side:f.side,vsBot:!!f.bot,status:f.bot?'done':'open',paid:false,ts:fs.serverTimestamp(),
+        ...(f.bot?{opp:'_bot',oppName:'Bot',doneAt:fs.serverTimestamp()}:{})});
+      b.set(wr,{...d,spent:(d.spent||0)+f.stake,flip:ref.id}); await b.commit();
+      return f.bot?flipOut(await fs.getDocFromServer(ref)):{id:ref.id}; },
+    async joinFlip(f,code,name){
+      const wr=fs.doc(db,"wallets",code), w=await fs.getDoc(wr), d=w.exists()?w.data():{}, ref=fs.doc(db,"flips",f.id), b=fs.writeBatch(db);
+      b.update(ref,{status:'done',opp:code,oppName:name,doneAt:fs.serverTimestamp()});
+      b.set(wr,{...d,spent:(d.spent||0)+f.stake,flip:f.id}); await b.commit();
+      return flipOut(await fs.getDocFromServer(ref)); },
+    async claimFlip(f,code){
+      const wr=fs.doc(db,"wallets",code), w=await fs.getDocFromServer(wr).catch(()=>fs.getDoc(wr)), d=w.exists()?w.data():{}, b=fs.writeBatch(db);
+      b.update(fs.doc(db,"flips",f.id),{paid:true}); b.set(wr,{...d,bonus:(d.bonus||0)+f.stake*2,flip:f.id}); await b.commit(); },
+    async cancelFlip(f,admin){
+      const wr=fs.doc(db,"wallets",f.code), w=await fs.getDocFromServer(wr).catch(()=>fs.getDoc(wr)), d=w.exists()?w.data():{}, b=fs.writeBatch(db);
+      b.update(fs.doc(db,"flips",f.id),{status:'cancelled',doneAt:fs.serverTimestamp()});
+      b.set(wr,{...d,bonus:(d.bonus||0)+f.stake,...(admin?{}:{flip:f.id})}); await b.commit(); },
     // iTunes
     watchMedia(cb){ return fs.onSnapshot(fs.query(fs.collection(db,"media"),fs.orderBy("ts","desc")),s=>cb(s.docs.map(msgOut),!s.metadata.fromCache),e=>console.error(e)); },
     async uploadMedia(meta,bytes,onProgress){
@@ -2961,6 +3120,17 @@ function localApi(){
       if(token) d.merch[token]={name:o.name,size:o.size,order:id};
       if(o.item==='screen') d.queue.push({id,name:o.name,...o.msg,startAt:slot.start,endAt:slot.start+SCREEN_MSG_HOURS*3600e3}); return id; }); },
     async claimDaily(code){ mut(d=>{ const w=d.wallets[code]||{}; if(w.dailyAt&&Date.now()-w.dailyAt<20*3600e3) throw new Error('already today'); d.wallets[code]={...w,bonus:(w.bonus||0)+FLAPPY_DAILY_LIKES,dailyAt:Date.now()}; }); },
+    async claimStoreDaily(code,amount){ mut(d=>{ const w=d.wallets[code]||{}; if(w.storeDailyAt&&Date.now()-w.storeDailyAt<20*3600e3) throw new Error('already today'); d.wallets[code]={...w,bonus:(w.bonus||0)+amount,storeDailyAt:Date.now()}; }); },
+    watchFlips:cb=>sub(d=>cb((d.flips||[]).slice().sort((a,b)=>b.ts-a.ts).slice(0,150).map(f=>({...f})))),
+    async createFlip(f){ let out=null; mut(d=>{ d.flips=d.flips||[]; const w=d.wallets[f.code]||{}, now=Date.now(), id='fl'+now.toString(36)+Math.random().toString(36).slice(2,6);
+      out={id,code:f.code,name:f.name,stake:f.stake,side:f.side,vsBot:!!f.bot,status:f.bot?'done':'open',paid:false,ts:now,...(f.bot?{opp:'_bot',oppName:'Bot',doneAt:now+Math.floor(Math.random()*2)}:{})};
+      d.flips.push(out); d.wallets[f.code]={...w,spent:(w.spent||0)+f.stake,flip:id}; }); return {...out}; },
+    async joinFlip(f,code,name){ let out=null; mut(d=>{ const x=(d.flips||[]).find(y=>y.id===f.id); if(!x||x.status!=='open') throw new Error('taken');
+      Object.assign(x,{status:'done',opp:code,oppName:name,doneAt:Date.now()}); const w=d.wallets[code]||{}; d.wallets[code]={...w,spent:(w.spent||0)+x.stake,flip:x.id}; out={...x}; }); return out; },
+    async claimFlip(f,code){ mut(d=>{ const x=(d.flips||[]).find(y=>y.id===f.id); if(!x||x.paid) throw new Error('paid'); x.paid=true;
+      const w=d.wallets[code]||{}; d.wallets[code]={...w,bonus:(w.bonus||0)+x.stake*2,flip:x.id}; }); },
+    async cancelFlip(f){ mut(d=>{ const x=(d.flips||[]).find(y=>y.id===f.id); if(!x||x.status!=='open') throw new Error('gone'); x.status='cancelled'; x.doneAt=Date.now();
+      const w=d.wallets[x.code]||{}; d.wallets[x.code]={...w,bonus:(w.bonus||0)+x.stake}; }); },
     watchMedia:cb=>sub(d=>cb((d.media||[]).slice().reverse(),true)),
     async uploadMedia(meta,bytes,onProgress){ const id='md'+Date.now(), n=Math.ceil(bytes.length/MEDIA_CHUNK);
       for(let j=0;j<n;j++){ await idb.set('demo-chunk:'+id+'_'+j,bytes.slice(j*MEDIA_CHUNK,(j+1)*MEDIA_CHUNK)); onProgress&&onProgress((j+1)/n); }
@@ -3048,7 +3218,7 @@ function go(id){
   const next=$(id); if(next===current) return;
   leaveApp(current.id); // stop cameras and listeners of the app being left
   current.classList.add('out'); const prev=current;
-  setTimeout(()=>{prev.hidden=true;},350);
+  setTimeout(()=>{ if(prev!==current) prev.hidden=true; },350); // (tapping fast: never hide the screen that's showing again)
   next.hidden=false; next.classList.remove('enter'); void next.offsetWidth; next.classList.add('enter'); // replay the staggered entrance
   requestAnimationFrame(()=>requestAnimationFrame(()=>next.classList.remove('out')));
   current=next; layoutChat(); closeShadePop(); closePM(); closeMePop();
@@ -3310,12 +3480,12 @@ api.watchFeatures(f=>{ features=f||{}; migrateMystery(); });
 // listened to per login (a visitor on the lock screen may not read it): see startSocial
 function onApps(l){ storeApps=(l||[]).sort((a,b)=>(a.order??0)-(b.order??0)||String(a.name).localeCompare(b.name)); appsLoaded=true;
   if(current.id==='s-home') renderHome(); if(current.id==='s-store') drawStore(); if(adminOn){ drawAppsAdmin(); seedApps(); migrateMystery(); }
-  if(openAppId){ const a=storeApps.find(x=>x.id===openAppId); if(!a||(!a.on&&homeMode!=='admin')) goHome(); else if(a.type==='page') drawPage(a); else if(a.type==='songwars') drawSongs(); } }
+  if(openAppId){ const a=storeApps.find(x=>x.id===openAppId); if(!a||(!a.on&&homeMode!=='admin')) goHome(); else if(a.type==='page') drawPage(a); else if(a.type==='songwars') drawSongs(); else if(a.type==='coinflip') drawCoin(); } }
 function appIcon(a){ return a.icon||APP_ICONS[a.type]||APP_ICONS.page; }
 function installKey(a){ return `playlist-app-${a.id}-${me.code}`; }
 function appInstalled(a){ return !!a.on&&!!me.code&&store.get(installKey(a))===String(a.gen||0); }
-const APP_SUB={page:'?',songwars:'Upload your song. The winner performs it live.',flappy:'Tap to fly. Top the leaderboard for 10 likes a day.'};
-function openStoreApp(a){ openAppId=a.id; if(a.type==='songwars') return openSongs(a); if(a.type==='flappy') return openFlappy(a); drawPage(a); go('s-mystery'); }
+const APP_SUB={page:'?',songwars:'Upload your song. The winner performs it live.',flappy:'Tap to fly. Top the leaderboard for 10 likes a day.',coinflip:'Heads or tails? Win other people’s likes.'};
+function openStoreApp(a){ openAppId=a.id; if(a.type==='songwars') return openSongs(a); if(a.type==='flappy') return openFlappy(a); if(a.type==='coinflip') return openCoin(a); drawPage(a); go('s-mystery'); }
 // the admin's own pages
 function drawPage(a){
   const r=$('s-mystery').style; r.setProperty('--mys-bg',a.bg||'#000000'); r.setProperty('--mys-fg',a.fg||'#ffffff');
@@ -3330,6 +3500,7 @@ function seedApps(){
   if(!adminOn||!appsLoaded||seedApps.done) return; seedApps.done=true;
   if(!storeApps.some(a=>a.id==='songwars')) api.saveApp('songwars',{type:'songwars',name:'Song Wars',on:false,gen:0,pickBy:'',order:10}).catch(()=>{});
   if(!storeApps.some(a=>a.id==='flappy')) api.saveApp('flappy',{type:'flappy',name:'Flappy Bird',on:false,gen:0,order:11}).catch(()=>{});
+  if(!storeApps.some(a=>a.id==='coinflip')) api.saveApp('coinflip',{type:'coinflip',name:'Coin Flip',on:false,gen:0,order:12}).catch(()=>{});
 }
 function migrateMystery(){
   if(!adminOn||!appsLoaded||migrateMystery.done||storeApps.some(a=>a.id==='mystery')) return;
@@ -3344,7 +3515,7 @@ function drawAppsAdmin(){
   if(!storeApps.length) box.append(mk('p','a-muted','No apps yet.'));
   storeApps.forEach(a=>{
     const row=mk('div','app-li'), ic=mk('span','ico'), g=mk('div','grow'); ic.style.backgroundImage=`url("${appIcon(a)}")`;
-    g.append(mk('b',null,a.name),mk('small',null,({page:'Your page',songwars:'Song Wars',flappy:'Flappy Bird'})[a.type]+' · '+(a.on?'in the Store':'off')));
+    g.append(mk('b',null,a.name),mk('small',null,({page:'Your page',songwars:'Song Wars',flappy:'Flappy Bird',coinflip:'Coin Flip'})[a.type]+' · '+(a.on?'in the Store':'off')));
     const tog=btn(a.on?'On':'Off','tog'); tog.setAttribute('aria-pressed',String(!!a.on));
     tog.addEventListener('click',async()=>{ const on=!a.on;
       try{ await api.saveApp(a.id,{...stripApp(a),on,gen:on?(a.gen||0):(a.gen||0)+1}); toast(on?`${a.name} is in the Store.`:`${a.name} is off. People will need to download it again.`); }catch(err){ fail('change that')(err); } });
@@ -3601,7 +3772,7 @@ function openHome(opts={}){
     applyMyShade(me.shade); startSocial(); countLikes(); if(!blockUnsub) watchBlocks();
     if(!unwatch) unwatch=api.watch(render);
     if(!unwatchMe) unwatchMe=api.watchCode(me.code,onMyCode);
-    watchMyDMs();
+    watchMyDMs(); startFlips();
   }
   renderHome(); tickClock(); go('s-home');
 }
@@ -3888,7 +4059,7 @@ let adminUnsubs=[];
 function logOutUser(){
   // stop listening first: once the membership is gone the database refuses these reads
   unwatchMe&&unwatchMe(); unwatchMe=null; dmUnsub&&dmUnsub(); dmUnsub=null; closePM();
-  unwatch&&unwatch(); unwatch=null; lastList=[]; seenMsgs.clear(); firstRender=true; stopSocial();
+  unwatch&&unwatch(); unwatch=null; lastList=[]; seenMsgs.clear(); firstRender=true; stopSocial(); stopFlips();
   stopTicket(); stopBlocks(); stopForum(true); myPhotoUnsub&&myPhotoUnsub(); myPhotoUnsub=null; myPhotos=[]; filterUnsub&&filterUnsub(); filterUnsub=null; stopStore(true);
   if(me.code&&me.kind!=='admin') api.leave();
   keep.del('playlist-code'); keep.del('playlist-epoch'); loginEpoch=null; setMe(null,null); resetUserStep();
@@ -4629,6 +4800,7 @@ function leaveApp(from){
   if(from==='s-itunes'){ closePlayer(); itUnsub&&itUnsub(); itUnsub=null; }
   if(from==='s-songs'){ closePlayer(); swUnsub&&swUnsub(); swUnsub=null; }
   if(from==='s-flappy') stopFlappy();
+  if(from==='s-coin') leaveCoin();
   if(['s-mystery','s-songs','s-flappy'].includes(from)) openAppId=null;
   if(from==='s-orders') stopOrders();
   closeViewer();
@@ -5268,7 +5440,7 @@ const ITEM_ICONS={
 const kr=n=>n+' kr';
 const newRef=()=>'PL-'+newToken().slice(0,4);
 function openStore(){
-  go('s-store'); $('st-pass').hidden=true; $('st-wrap').hidden=true; buyArmed=null; drawStore();
+  go('s-store'); $('st-pass').hidden=true; $('st-wrap').hidden=true; buyArmed=null; drawStore(); setTimeout(tryStoreDaily,450);
   if(!storeUnsubs.length) storeUnsubs.push(api.watchMyOrders(me.code,l=>{ myOrders=l; watchMyMerch(); if(current.id==='s-store') drawStore(); }));
 }
 function stopStore(all){ if(!all) return; storeUnsubs.forEach(u=>u&&u()); storeUnsubs=[]; merchWatch.forEach(w=>w.unsub&&w.unsub()); merchWatch.clear(); myOrders=[]; }
@@ -5473,10 +5645,15 @@ async function openMerchPass(o){
 /* Store (admin): MobilePay number, orders waiting for payment, the screen line */
 let allOrders=[], ordersUnsubs=[], adminMerch=new Map();
 appTop($('s-orders'),'Store');
-function fillPrices(){ [...LIKE_ITEMS,...STORE_ITEMS].forEach(it=>{ const i=$('pr-'+it.id); if(i&&document.activeElement!==i) i.value=priceOf(it); }); }
+function fillPrices(){ [...LIKE_ITEMS,...STORE_ITEMS].forEach(it=>{ const i=$('pr-'+it.id); if(i&&document.activeElement!==i) i.value=priceOf(it); });
+  if(document.activeElement!==$('pr-daily')) $('pr-daily').value=storeDaily(); if(document.activeElement!==$('pr-flipMax')) $('pr-flipMax').value=flipMax(); }
 $('f-prices').addEventListener('submit',async e=>{
   e.preventDefault(); const p={};
   for(const it of [...LIKE_ITEMS,...STORE_ITEMS]){ const v=Math.round(+$('pr-'+it.id).value); if(!Number.isFinite(v)||v<0){ toast(`Check the price for ${it.name}.`); return shake($('f-prices')); } p[it.id]=v; }
+  const dy=Math.round(+$('pr-daily').value), fm=Math.round(+$('pr-flipMax').value);
+  if(!Number.isFinite(dy)||dy<0||dy>100){ toast('The daily bonus can be 0 to 100 likes (0 turns it off).'); return shake($('f-prices')); }
+  if(!Number.isFinite(fm)||fm<1||fm>500){ toast('The max stake can be 1 to 500 likes.'); return shake($('f-prices')); }
+  p.daily=dy; p.flipMax=fm;
   try{ await api.setPrices(p); document.activeElement.blur(); toast('Prices saved.'); }catch(err){ fail('save the prices')(err); }
 });
 function openOrders(){
@@ -5911,6 +6088,156 @@ const fbImg={}; ['background','base','pipe','message','gameover','restart','bird
 let fb=null, fbRaf=0, fbScores=[], fbTop=null, fbUnsubs=[], fbK=1;
 const fbTop_=appTop($('s-flappy'),'Flappy Bird');
 fbTop_.right.append(navBtn('Leaderboard',()=>{ $('fb-board').hidden=false; drawBoard(); sfx('swoosh'); }));
+/* ---------- Coin Flip: in the style of iOS 6 Game Center. Put likes on heads or tails and post it for someone to take,
+   or flip the bot. The coin is the database's clock at the moment the flip is taken (an even millisecond is heads),
+   so nobody can pick the result; the database checks every step. The winner collects both stakes. ---------- */
+const cfTop=appTop($('s-coin'),'Coin Flip');
+let cfFlips=[], cfUnsub=null, cfTab='play', cfStake=1, cfSide='heads', cfBusy=false, cfApp=null, cfClaiming=new Set(), cfSeen=null;
+const tsMs=v=>v?(v.toMillis?v.toMillis():+v):0;
+function flipMax(){ const v=+prices.flipMax; return Number.isFinite(v)&&v>=1?Math.round(v):20; }
+function storeDaily(){ const v=prices.daily; return v===''||v==null||!Number.isFinite(+v)?2:Math.max(0,Math.round(+v)); }
+const flipFace=f=>f.doneAt%2===0?'heads':'tails';
+function flipWinner(f){ if(f.status!=='done'||!f.doneAt) return null; return flipFace(f)===f.side?f.code:f.opp; }
+const sideName=s=>s==='heads'?'Heads':'Tails', other=s=>s==='heads'?'tails':'heads';
+// every member keeps an eye on their flips: winnings are collected, and "someone took your flip" is noticed
+function startFlips(){ if(cfUnsub||!me.code) return; cfSeen=null;
+  cfUnsub=api.watchFlips(l=>{ cfFlips=l; collectWins(); if(current.id==='s-coin') drawCoin(); }); }
+function stopFlips(){ cfUnsub&&cfUnsub(); cfUnsub=null; cfFlips=[]; cfClaiming.clear(); }
+function collectWins(){
+  if(homeMode!=='user'||!me.code) return;
+  cfFlips.filter(f=>f.status==='done'&&!f.paid&&flipWinner(f)===me.code&&!cfClaiming.has(f.id)).forEach(f=>{
+    cfClaiming.add(f.id);
+    api.claimFlip(f,me.code).then(()=>{ if(f.code===me.code&&!f.vsBot&&!cfStageOpen()) toast(`🪙 ${f.oppName} took your flip and you won ♥${f.stake*2}!`); })
+      .catch(err=>{ console.error(err); setTimeout(()=>cfClaiming.delete(f.id),8000); });
+  });
+}
+const cfStageOpen=()=>!$('cf-stage').hidden;
+function openCoin(a){
+  cfApp=a; const admin=homeMode==='admin';
+  go('s-coin'); cfTop.back.querySelector('span').textContent='Home'; $('s-coin').querySelector('.ios-title').textContent=a.name||'Coin Flip';
+  $('cf-stage').hidden=true; $('s-coin').classList.toggle('admin',admin);
+  $('cf-tabs').querySelector('[data-t=play]').hidden=admin; if(admin&&cfTab==='play') cfTab='open';
+  if(!cfUnsub) cfUnsub=api.watchFlips(l=>{ cfFlips=l; collectWins(); if(current.id==='s-coin') drawCoin(); });
+  setCfTab(cfTab);
+}
+function leaveCoin(){ $('cf-stage').hidden=true; if(homeMode==='admin'){ cfUnsub&&cfUnsub(); cfUnsub=null; } }
+function setCfTab(t){ cfTab=t; $('cf-tabs').querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===t)));
+  ['play','open','mine'].forEach(k=>$('cf-'+k).hidden=k!==t); drawCoin(); }
+$('cf-tabs').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>setCfTab(b.dataset.t)));
+function cfBalance(){ return Math.max(0,myBalance()); }
+function drawCoin(){
+  if(current.id!=='s-coin') return; const admin=homeMode==='admin', bal=cfBalance(), max=Math.min(flipMax(),Math.max(1,bal));
+  cfStake=Math.max(1,Math.min(cfStake,max));
+  $('cf-bal').textContent=admin?'—':String(bal); $('cf-stake').textContent=String(cfStake);
+  $('cf-minus').disabled=cfStake<=1; $('cf-plus').disabled=cfStake>=max;
+  document.querySelectorAll('.cf-side').forEach(b=>{ const on=b.dataset.side===cfSide; b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on)); });
+  const can=!admin&&bal>=1&&!cfBusy; $('cf-post').disabled=!can; $('cf-bot').disabled=!can;
+  $('cf-note').textContent=bal<1?'You need at least 1 like to play. Likes come from other people, the Store’s daily bonus and Flappy Bird.'
+    :`Post a flip and anyone can take it (they get ${sideName(other(cfSide))}). Or flip the bot right now. Up to ♥${flipMax()} per flip.`;
+  const open=cfFlips.filter(f=>f.status==='open'&&(admin||!blocked.has(f.code))).sort((a,b)=>b.ts-a.ts);
+  const others=open.filter(f=>f.code!==me.code).length; $('cf-open-n').textContent=!admin&&others?String(others):'';
+  // open flips
+  const ol=$('cf-open-list'); ol.replaceChildren(...open.map(f=>flipRow(f)));
+  if(!open.length) ol.append(mk('p','gc-empty',admin?'No open flips.':'No open flips right now. Post one from Play.'));
+  $('cf-open-h').textContent=`❖ ${open.length} Open Flip${open.length===1?'':'s'} ❖`;
+  // history
+  const mine=cfFlips.filter(f=>f.status!=='open'&&(admin||f.code===me.code||f.opp===me.code)).sort((a,b)=>(b.doneAt||b.ts)-(a.doneAt||a.ts)).slice(0,60);
+  const ml=$('cf-mine-list'); ml.replaceChildren(...mine.map(f=>flipRow(f)));
+  if(!mine.length) ml.append(mk('p','gc-empty',admin?'No finished flips yet.':'Your finished flips show up here.'));
+  $('cf-mine-h').textContent=admin?'❖ Recent Flips ❖':'❖ Your Flips ❖';
+}
+function flipRow(f){
+  const admin=homeMode==='admin', r=mk('div','gc-row'), num=mk('span','gc-num','♥'+f.stake), who=mk('div','gc-who');
+  const person=f.code===me.code&&f.opp?{code:f.opp,name:f.oppName}:{code:f.code,name:f.name};
+  const orb=orbEl({code:person.code==='_bot'?'':person.code,name:person.name}); r.append(num,orb,who);
+  if(f.status==='open'){
+    who.append(mk('b',null,f.code===me.code?'Your flip':f.name),mk('small',null,`${f.code===me.code?'You picked':'Picked'} ${sideName(f.side)} · ${ago(f.ts)}`));
+    if(admin||f.code===me.code){ const c=mk('button','gc-ribbon sm red',admin?'Refund':'Cancel'); c.type='button'; c.addEventListener('click',()=>cancelFlip(f)); r.append(c); }
+    else { const t=mk('button','gc-ribbon sm','Take'); t.type='button'; t.disabled=cfBusy||cfBalance()<f.stake; t.addEventListener('click',()=>takeFlip(f)); r.append(t); }
+    return r;
+  }
+  if(f.status==='cancelled'){ who.append(mk('b',null,f.code===me.code?'Your flip':f.name),mk('small',null,`Taken back · ${ago(f.doneAt||f.ts)}`)); r.append(mk('span','gc-tag gone','Refunded')); return r; }
+  const w=flipWinner(f), face=sideName(flipFace(f));
+  if(admin){ who.append(mk('b',null,`${f.name} vs ${f.oppName}`),mk('small',null,`${face} · ${w===f.code?f.name:f.oppName} won · ${ago(f.doneAt)}`)); r.append(mk('span','gc-tag win','♥'+f.stake*2)); return r; }
+  const won=w===me.code; who.append(mk('b',null,f.vsBot?'The Bot':(f.code===me.code?f.oppName:f.name)),mk('small',null,`${face} · ${ago(f.doneAt)}${won&&!f.paid?' · collecting…':''}`));
+  r.append(mk('span','gc-tag '+(won?'win':'lose'),won?`+♥${f.stake}`:`−♥${f.stake}`)); return r;
+}
+$('cf-minus').addEventListener('click',()=>{ cfStake=Math.max(1,cfStake-1); drawCoin(); });
+$('cf-plus').addEventListener('click',()=>{ cfStake=Math.min(flipMax(),Math.max(1,cfBalance()),cfStake+1); drawCoin(); });
+document.querySelectorAll('.cf-side').forEach(b=>b.addEventListener('click',()=>{ cfSide=b.dataset.side; sfx('key'); drawCoin(); }));
+function cfCheck(stake){
+  if(!cfApp||(!cfApp.on&&homeMode!=='admin')){ toast('Coin Flip is switched off right now.'); return false; }
+  if(cfBalance()<stake){ toast(`You need ♥${stake} for this flip.`); return false; }
+  if(stake>flipMax()){ toast(`Flips are up to ♥${flipMax()} right now.`); return false; }
+  return true;
+}
+$('cf-post').addEventListener('click',async()=>{
+  if(cfBusy||!cfCheck(cfStake)) return; cfBusy=true; drawCoin();
+  try{ await api.createFlip({code:me.code,name:me.username,stake:cfStake,side:cfSide}); sfx('post');
+    toast(`Your ♥${cfStake} flip is up. You get a notification when someone takes it.`); setCfTab('open'); }
+  catch(err){ fail('post the flip')(err); }
+  finally{ cfBusy=false; drawCoin(); }
+});
+$('cf-bot').addEventListener('click',async()=>{
+  if(cfBusy||!cfCheck(cfStake)) return; const stake=cfStake, side=cfSide; cfBusy=true; drawCoin(); tossStart();
+  try{ const f=await api.createFlip({code:me.code,name:me.username,stake,side,bot:true}); await tossLand(f,side); }
+  catch(err){ tossFail(); fail('flip the coin')(err); }
+  finally{ cfBusy=false; drawCoin(); }
+});
+async function takeFlip(f){
+  if(cfBusy||!cfCheck(f.stake)) return; const mySide=other(f.side);
+  if(!await confirmBox(`Flip ${f.name} for ♥${f.stake}?`,`${f.name} picked ${sideName(f.side)}, so you’re ${sideName(mySide)}. The winner gets ♥${f.stake*2}.`,'Flip')) return;
+  cfBusy=true; drawCoin(); tossStart();
+  try{ const done=await api.joinFlip(f,me.code,me.username); const won=flipWinner(done)===me.code;
+    sendNote(f.code,'flip',won?`took your ♥${f.stake} flip and won it`:`took your ♥${f.stake} flip. You won ♥${f.stake*2}!`);
+    await tossLand(done,mySide); }
+  catch(err){ tossFail(); toast('Someone else took that flip first, or the connection dropped.'); console.error(err); }
+  finally{ cfBusy=false; drawCoin(); }
+}
+async function cancelFlip(f){
+  const admin=homeMode==='admin';
+  if(!await confirmBox(admin?`Refund ${f.name}’s flip?`:'Take back your flip?',admin?`The flip is cancelled and ${f.name} gets ♥${f.stake} back.`:`You get your ♥${f.stake} back.`,admin?'Refund':'Take back')) return;
+  try{ await api.cancelFlip(f,admin); toast(admin?'Refunded.':`♥${f.stake} is back in your likes.`); }catch(err){ fail('cancel the flip')(err); }
+}
+// the toss: the coin spins while the database decides, then lands on the result
+let cfSpin=null;
+function tossStart(){
+  const st=$('cf-stage'), coin=$('cf-coin'); st.hidden=false; $('cf-res').textContent=''; $('cf-res').className='cf-res'; $('cf-res-sub').textContent=''; $('cf-done').hidden=true;
+  if(!coin.querySelector('.e')) for(let z=-4;z<=4;z++){ const e=mk('i','e'); e.style.transform=`translateZ(${z}px)`; coin.prepend(e); } // the coin's thickness
+  sfx('like'); cfSpin&&cfSpin.cancel();
+  cfSpin=coin.animate([{transform:'translateY(0) rotateX(0deg)'},{transform:'translateY(-120px) rotateX(720deg)'}],{duration:700,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'});
+  cfSpin.finished.then(()=>{ if(!cfSpin||cfSpin.playState!=='finished') return;
+    cfSpin=coin.animate([{transform:'translateY(-120px) rotateX(0deg)'},{transform:'translateY(-120px) rotateX(360deg)'}],{duration:260,iterations:Infinity}); }).catch(()=>{});
+}
+async function tossLand(f,mySide){
+  const coin=$('cf-coin'), face=flipFace(f), won=flipWinner(f)===me.code, turns=1440+(face==='tails'?180:0);
+  cfSpin&&cfSpin.cancel(); cfSpin=null;
+  const a=coin.animate([{transform:'translateY(-120px) rotateX(0deg)'},{transform:`translateY(-150px) rotateX(${turns*.55}deg)`,offset:.35},{transform:`translateY(0) rotateX(${turns}deg)`,offset:.82},
+    {transform:`translateY(-14px) rotateX(${turns}deg)`,offset:.9},{transform:`translateY(0) rotateX(${turns}deg)`}],{duration:1500,easing:'ease-in-out',fill:'forwards'});
+  await a.finished.catch(()=>{});
+  sfx('like',.5); const res=$('cf-res'); res.textContent=won?`YOU WIN ♥${f.stake*2}`:`${sideName(face).toUpperCase()}`; res.className='cf-res'+(won?' win':'');
+  $('cf-res-sub').textContent=won?`It landed on ${sideName(face)}. Your likes are on the way.`:`It landed on ${sideName(face)}. You lost ♥${f.stake}${f.vsBot?' to the bot':''}.`;
+  if(won){ cashSound(); if(navigator.vibrate) navigator.vibrate([40,40,80]); collectWins(); }
+  $('cf-done').hidden=false;
+}
+function tossFail(){ cfSpin&&cfSpin.cancel(); cfSpin=null; $('cf-stage').hidden=true; }
+$('cf-done').addEventListener('click',()=>{ $('cf-stage').hidden=true; $('cf-coin').getAnimations().forEach(x=>x.cancel()); setCfTab('mine'); });
+
+/* ---------- the Store's daily bonus (the admin sets how many likes; 0 turns it off) ---------- */
+function tryStoreDaily(){
+  const amt=storeDaily(); if(!me.code||homeMode!=='user'||!amt||tryStoreDaily.busy||!walletUnsub||current.id!=='s-store') return;
+  const last=Math.max(tsMs(wallet.storeDailyAt),+store.get('playlist-sdaily-'+me.code)||0);
+  if(Date.now()-last<20*3600e3) return;
+  tryStoreDaily.busy=true;
+  api.claimStoreDaily(me.code,amt).then(()=>{ store.set('playlist-sdaily-'+me.code,String(Date.now())); showGift(amt); },err=>console.error(err))
+    .finally(()=>setTimeout(()=>tryStoreDaily.busy=false,4000));
+}
+function showGift(n){
+  document.querySelectorAll('.st-gift').forEach(x=>x.remove());
+  const g=mk('div','st-gift'); g.append(mk('span',null,'Daily bonus'),mk('b',null,`+${n} ♥`),mk('span',null,'Come back tomorrow for more')); document.body.append(g);
+  cashSound(); if(navigator.vibrate) navigator.vibrate(40);
+  setTimeout(()=>{ g.classList.add('out'); setTimeout(()=>g.remove(),450); },2400);
+}
 function openFlappy(a){ ['wing','point','hit','die','swoosh'].forEach(n=>loadSfx(n).catch(()=>{})); go('s-flappy'); $('s-flappy').querySelector('.ios-title').textContent=a.name||'Flappy Bird';
   requestAnimationFrame(()=>{ fitFlappy(); fbReset(); });
   cancelAnimationFrame(fbRaf); let last=performance.now();
@@ -6070,6 +6397,7 @@ const NOTE_KIND={
   reply:{app:'Forum',icon:()=>HOME_THEME.icons.forum,title:n=>n.fromName,text:n=>`commented on “${n.extra}”`},
   dm:{app:'Messages',icon:()=>HOME_THEME.icons.chat,title:n=>n.fromName,text:n=>n.extra},
   flappy:{app:'Flappy Bird',icon:()=>APP_ICONS.flappy,title:n=>n.fromName,text:n=>`passed you on the leaderboard with ${n.extra}`},
+  flip:{app:'Coin Flip',icon:()=>APP_ICONS.coinflip,title:n=>n.fromName,text:n=>n.extra},
   admin:{app:'Playlist',icon:()=>'assets/apple-touch-icon.png',title:()=>'Playlist',text:n=>n.extra},
 };
 const ncKey=k=>`playlist-nc-${k}-${me.code||'admin'}`;
@@ -6136,6 +6464,7 @@ function openNote(n){ closeNC();
   if(n.kind==='dm'&&me.code){ openForum(); setTimeout(()=>{ setFmTab('inbox'); openThread(n.from,n.fromName); },420); }
   if(n.kind==='reply'&&me.code){ openForum(); const p=fmPosts.find(x=>x.title===n.extra); if(p) setTimeout(()=>openFmPost(p.id),420); }
   if(n.kind==='flappy'){ const a=storeApps.find(x=>x.type==='flappy'); if(a&&(homeMode==='admin'||appInstalled(a))) openStoreApp(a); }
+  if(n.kind==='flip'){ const a=storeApps.find(x=>x.type==='coinflip'); if(a&&(homeMode==='admin'||appInstalled(a))){ cfTab='mine'; openStoreApp(a); } }
 }
 
 /* ---------- resume session ---------- */
