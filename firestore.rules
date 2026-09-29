@@ -507,7 +507,7 @@ service cloud.firestore {
         && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 40
         && request.resource.data.cover is string && request.resource.data.cover.size() < 150000
         && request.resource.data.dur is number && request.resource.data.dur >= 60 && request.resource.data.dur <= 180
-        && request.resource.data.chunks is int && request.resource.data.chunks > 0 && request.resource.data.chunks <= 12
+        && request.resource.data.chunks is int && request.resource.data.chunks > 0 && request.resource.data.chunks <= 26
         && request.resource.data.likedBy == [] && request.resource.data.ts == request.time;
       allow update: if (isMember()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
@@ -610,7 +610,7 @@ service cloud.firestore {
         && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 60
         && request.resource.data.kind in ['music', 'video']
         && request.resource.data.status in ['free', 'soon', 'removed']
-        && request.resource.data.chunks is int && request.resource.data.chunks > 0 && request.resource.data.chunks <= 60
+        && request.resource.data.chunks is int && request.resource.data.chunks > 0 && request.resource.data.chunks <= 160
         && (request.resource.data.get('cover', null) == null
           || (request.resource.data.cover is string && request.resource.data.cover.size() < 150000));
       allow delete: if isAdmin();
