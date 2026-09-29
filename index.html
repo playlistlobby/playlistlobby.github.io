@@ -580,9 +580,8 @@ body.chat-ios6 #log .bubble.glass:not(.mine)::after{right:auto;left:-7px;transfo
 /* chat bubbles, iOS 6 (from the Figma kit): the bubble itself is cut to the shape with its curled tail, so the tail always matches
    the bubble (colours, gradients and custom patterns alike); a thin dark outline and a top highlight follow the same shape */
 body.chat-ios6 #log .bubble{position:relative;border-radius:16px;padding:7px 14px 8px;font-weight:400;font-size:16px;line-height:21px;letter-spacing:0}
-body.chat-ios6 #log .glass.tinted:not(.rare){background:
-  linear-gradient(180deg,rgba(255,255,255,.66) 0,rgba(255,255,255,.32) 14px,rgba(255,255,255,.1) 17px,rgba(255,255,255,0) 32px),
-  linear-gradient(0deg,rgba(0,0,0,.06),rgba(0,0,0,0) 12px),var(--tint)}
+body.chat-ios6 #log .glass.tinted:not(.rare){background:var(--tint)}
+body.chat-ios6 #log .bubble{text-shadow:var(--ink-sh,none)}
 @supports (-webkit-mask-box-image-source:none) or (mask-border-source:none){
   body.chat-ios6 #log .bubble{border-radius:0!important;box-shadow:none!important;padding:7px 19px 8px 14px;
     -webkit-mask-box-image-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");-webkit-mask-box-image-slice:14 16 16 14 fill;-webkit-mask-box-image-width:14px 16px 16px 14px;-webkit-mask-box-image-repeat:stretch;
@@ -592,9 +591,14 @@ body.chat-ios6 #log .glass.tinted:not(.rare){background:
     mask-border-source:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/svg%3E");mask-border-slice:14 14 16 16 fill;mask-border-width:14px 14px 16px 16px}
   body.chat-ios6 #log .bubble::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:1!important;box-sizing:border-box;
     border-radius:0;background:none;box-shadow:none;filter:none;transform:none;animation:none;-webkit-mask:none;mask:none;
-    border-style:solid;border-color:transparent;border-width:14px 16px 16px 14px;border-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/clipPath%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.75'/%3E%3Cstop offset='.45' stop-color='%23fff' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.34' stroke-width='2'/%3E%3Cg transform='translate(0 1.3)'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='url(%23h)' stroke-width='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 14 16 16 14 fill stretch}
-  body.chat-ios6 #log .bubble:not(.mine)::before{border-width:14px 14px 16px 16px;border-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/clipPath%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.75'/%3E%3Cstop offset='.45' stop-color='%23fff' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.34' stroke-width='2'/%3E%3Cg transform='translate(0 1.3)'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='url(%23h)' stroke-width='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 14 14 16 16 fill stretch}
-  body.chat-ios6 #log .bubble::after,body.chat-ios6 #log .bubble.glass::after{display:none!important}
+    border-style:solid;border-color:transparent;border-width:14px 16px 16px 14px;border-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.5' stroke-width='2'/%3E%3Cpath  d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.07' stroke-width='4'/%3E%3Cpath d='M32 30C32.4 35 34.6 37.8 38.6 39.3' fill='none' stroke='%23fff' stroke-opacity='.5' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 14 16 16 14 fill stretch}
+  body.chat-ios6 #log .bubble:not(.mine)::before{border-width:14px 14px 16px 16px;border-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23c)'%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.5' stroke-width='2'/%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M13 0H20.5A13 13 0 0 1 33.5 13V29C33.8 34.5 35.6 36.9 40 39.2C36.6 39.8 32.4 39.7 29.2 38.2C27.3 39.4 24.5 40 20.5 40H13A13 13 0 0 1 0 27V13A13 13 0 0 1 13 0Z' fill='none' stroke='%23000' stroke-opacity='.07' stroke-width='4'/%3E%3Cpath transform='matrix(-1 0 0 1 40 0)' d='M32 30C32.4 35 34.6 37.8 38.6 39.3' fill='none' stroke='%23fff' stroke-opacity='.5' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 14 14 16 16 fill stretch}
+  /* the shine from the Legacy iOS UI Kit, under the text: a white capsule along the top and a glow along the bottom */
+  body.chat-ios6 #log .bubble::after,body.chat-ios6 #log .bubble.glass::after{content:"";display:block!important;position:absolute;z-index:-1;inset:0;
+    width:auto;height:auto;border-radius:0;transform:none;opacity:1;pointer-events:none;-webkit-mask:none;mask:none;animation:none;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3ClinearGradient id='g' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.8'/%3E%3Cstop offset='1' stop-color='%23fff' stop-opacity='.2'/%3E%3C/linearGradient%3E%3Crect width='100%25' height='100%25' rx='6.5' fill='url(%23g)'/%3E%3C/svg%3E") 10px 1px/calc(100% - 26.5px) 13px no-repeat,linear-gradient(rgba(255,255,255,0) calc(100% - 13px),rgba(255,255,255,.5))}
+  body.chat-ios6 #log .bubble:not(.mine)::after,body.chat-ios6 #log .bubble.glass:not(.mine)::after{inset:0;background-position:16.5px 1px,0 0;transform:none}
+  body.chat-ios6 #log .bubble.rare::after{opacity:min(1,calc(var(--gloss,.4) * 2.5))} /* rare: follows the admin's gloss setting */
 }
 /* bottom bar: frosted toolbar, white field, glossy blue Send */
 body.chat-ios6 #chat #f-msg{left:0;right:0;transform:none;width:100%;bottom:var(--kb,0px);padding:7px 8px calc(7px + env(safe-area-inset-bottom));gap:8px;
@@ -945,6 +949,13 @@ body[data-screen=s-coin] .bg,body[data-screen=s-coin] .overlay{opacity:0}
 @keyframes gift{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}}
 .app-top .sb-status{position:relative;background:linear-gradient(rgba(58,78,106,.92),rgba(70,92,122,.9))}
 .app-top .ios-back{width:auto;min-width:62px;padding:0 10px 0 16px}
+/* app bars: back · title · buttons in three columns, so wide buttons on the right push the title aside (or shorten it with …)
+   instead of sliding under it; the title stays centred whenever there's room */
+.app-top .ios-nav{display:grid;grid-template-columns:minmax(max-content,1fr) minmax(0,max-content) minmax(max-content,1fr);column-gap:6px}
+.app-top .ios-nav>.ios-back{justify-self:start}
+.app-top .ios-nav-right{justify-self:end}
+.app-top .ios-title{position:static;transform:none;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:center}
+@media (max-width:380px){ .app-top .ios-title{font-size:17px} }
 .app-body{position:absolute;top:calc(64px + env(safe-area-inset-top));left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:20px 0 calc(30px + env(safe-area-inset-bottom))}
 .app-body.flush{padding:0 0 env(safe-area-inset-bottom)}
@@ -3495,9 +3506,13 @@ function adminLook(hex){ // any colour; text turns dark or light for contrast
   return {bg:hex, tint:hexA(hex,.82), soft:hexA(hex,.5), ink:lum>.6?'#111':'#fff'};
 }
 const lookOf=(code,shade,kind,tint)=>kind==='admin'?adminLook(tint):((kind==='rare'&&rareLook(code))||shadeOf(shade,kind));
+// light text (white on a dark colour) or dark text: picks the direction of the text's shadow
+const inkLight=c=>{ const h=String(c||'').replace('#',''), f=h.length===3?h.replace(/./g,'$&$&'):h, n=parseInt(f,16);
+  return f.length===6&&!isNaN(n)&&(.299*(n>>16&255)+.587*(n>>8&255)+.114*(n&255))/255>.6; };
 function paint(el,look,kind,id){
   el.classList.toggle('blue',kind==='blue'); el.classList.toggle('rare',!!look.rare);
   el.style.setProperty('--tint',look.tint); el.style.color=look.ink;
+  el.style.setProperty('--ink-sh',inkLight(look.ink)?'0 -1px 0 rgba(0,0,0,.3)':'0 1px 0 rgba(255,255,255,.55)');
   el.style.fontWeight=look.rare?look.weight:''; el.style.borderRadius=look.rare?look.radius+'px':'';
   if(look.rare){
     el.style.setProperty('--tex',look.texture?`url("${look.texture}")`:'none');
