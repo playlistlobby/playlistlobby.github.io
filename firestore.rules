@@ -523,7 +523,8 @@ service cloud.firestore {
         && id.matches('^' + myCode() + '_[0-9]+$')
         && request.resource.data.keys().hasOnly(['code','i','data'])
         && request.resource.data.data is bytes && request.resource.data.data.size() <= 1000000;
-      allow delete: if isAdmin() || (isMember() && resource.data.code == myCode());
+      // your own pieces (named <your code>_<n>), even if one is already gone
+      allow delete: if isAdmin() || (isMember() && id.matches('^' + myCode() + '_[0-9]+$'));
     }
 
     // Flappy Bird: each person's best score. The admin can take someone off the leaderboard.
