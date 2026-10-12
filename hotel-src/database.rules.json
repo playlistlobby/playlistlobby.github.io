@@ -94,6 +94,7 @@
         ".validate": "newData.hasChildren(['name'])",
         "name": { ".validate": "newData.isString() && newData.val().length <= 16" },
         "room": { ".validate": "newData.isString() && newData.val().length <= 64" },
+        "idle": { ".validate": "newData.isBoolean()" },
         "since": { ".validate": "newData.isNumber()" },
         "$other": { ".validate": false }
       }
@@ -294,7 +295,7 @@
         "chat": {
           ".indexOn": ["ts"],
           "$msg": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && newData.child('uid').val() === auth.uid && ($room === 'lobby' || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists())",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ($room === 'lobby' || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists()) && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
             ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0"
           }
         },

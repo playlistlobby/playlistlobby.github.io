@@ -18,6 +18,8 @@ interface Row {
   access: Access;
   friend: boolean;
   online: boolean;
+  /** online but hasn't touched anything for 15 minutes */
+  idle: boolean;
   count: number;
 }
 
@@ -65,7 +67,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   function rowFor(id: string, meta: RoomMeta): Row {
     return {
       owner: meta.owner, roomId: id, roomName: meta.name, ownerName: meta.ownerName, access: normAccess(meta.access),
-      friend: social.friends.has(meta.owner), online: social.isOnline(meta.owner), count: social.roomCounts().get(id) ?? 0,
+      friend: social.friends.has(meta.owner), online: social.isOnline(meta.owner), idle: social.isIdle(meta.owner), count: social.roomCounts().get(id) ?? 0,
     };
   }
 
@@ -92,10 +94,10 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     const sub = r.friend ? "friend" : r.access === "open" ? "open to everyone" : r.access === "knock" ? "knock to enter" : "closed";
     return h("div", { class: "door-row" },
       headBoxFor(r.owner),
-      h("span", { class: "dot " + (r.online ? "on" : "") }),
+      h("span", { class: "dot " + (r.online ? (r.idle ? "idle" : "on") : "") }),
       h("div", { class: "door-row-main" },
         h("div", { class: "door-row-name" }, r.roomName),
-        h("div", { class: "hint" }, `${r.ownerName} · ${sub}${r.count ? ` · ${r.count} inside` : ""}`)),
+        h("div", { class: "hint" }, `${r.ownerName} · ${sub}${r.idle ? " · idle" : ""}${r.count ? ` · ${r.count} inside` : ""}`)),
       actionFor(r));
   }
 

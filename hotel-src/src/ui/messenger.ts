@@ -83,10 +83,10 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     const online = social.isOnline(f.uid);
     const room = social.roomOf(f.uid);
     const unread = social.unread.get(f.uid) ?? 0;
-    const where = room === LOBBY_ID ? "In the basement" : room ? "In a room" : online ? "Online" : "Offline";
+    const where = social.isIdle(f.uid) ? "Idle" : room === LOBBY_ID ? "In the basement" : room ? "In a room" : online ? "Online" : "Offline";
     return h("div", { class: "frow" },
       headBox(f.figure),
-      h("span", { class: "dot " + (online ? "on" : "") }),
+      h("span", { class: "dot " + (online ? (social.isIdle(f.uid) ? "idle" : "on") : "") }),
       h("span", { class: "fname", title: where, onclick: () => openChat(f.uid) }, f.name, h("span", { class: "fwhere" }, where)),
       unread ? h("span", { class: "badge" }, String(unread)) : null,
       h("button", { class: "btn small", title: "Message", onclick: () => openChat(f.uid) }, "💬"),

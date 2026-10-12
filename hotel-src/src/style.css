@@ -128,6 +128,7 @@ button, input, select { font-family: var(--font); }
 .mini-input:focus { outline: none; border-color: #4a7ad8; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2), 0 0 0 2px rgba(74, 122, 216, .35); }
 .badge { background: radial-gradient(120% 90% at 50% 0%, #ff6b6b, #c40e12); color: #fff; border-radius: 9px; padding: 0 6px; font-size: 11px; font-weight: 700; border: 1px solid #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .4); }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: #aeb4bd; flex: none; display: inline-block; border: 1px solid rgba(0, 0, 0, .25); }
+.dot.idle { background: radial-gradient(circle at 35% 30%, #ffe08a, #e0a410); box-shadow: 0 0 4px #f0c040; }
 .dot.on { background: radial-gradient(circle at 35% 30%, #b5f59c, #34b21f); box-shadow: 0 0 4px #5fe03e; }
 
 /* ---- segmented controls (the .tabs / .tab buttons everywhere are segmented controls) ---- */

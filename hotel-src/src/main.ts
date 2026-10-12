@@ -16,6 +16,7 @@ import { mountAdmin } from "./ui/admin";
 import { runOnboarding } from "./ui/onboarding";
 import { trackKeyboard } from "./ui/keyboard";
 import { ensureDoorArt } from "./roomRender";
+import { watchIdle } from "./idle";
 import { player } from "./music";
 import { fetchMeta, LOBBY_ID, ownRoomId } from "./rooms";
 import { logAction } from "./logger";
@@ -237,9 +238,17 @@ async function showHotel(user: User): Promise<void> {
   for (const room of [LOBBY_ID, ownRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
   logAction(p, "login", "opened 6ixPlanet");
   const stopMessenger = mountMessenger(shell, ctx);
+  // 15 minutes without touching anything: marked idle (the door's room list says so) and sent home to your own room
+  const stopIdle = watchIdle(p, () => {
+    const own = ownRoomId(p.uid);
+    if (roomMounted === own && pageHost.hidden) return;
+    logAction(p, "visit", "went idle and was sent home");
+    go("room", { roomId: own, arrival: "bed" });
+  });
   offBadge = social.subscribe(() => bar?.setBadge(social.badgeCount));
   bar.setBadge(social.badgeCount);
   shellCleanup = () => {
+    stopIdle();
     stopMessenger();
     stopShop();
     stopDesigns();

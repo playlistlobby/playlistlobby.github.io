@@ -28,6 +28,8 @@ export interface Presence {
   name: string;
   /** room id the player is standing in, "" when browsing menus */
   room: string;
+  /** hasn't touched anything for a while (see idle.ts) */
+  idle?: boolean;
 }
 export interface DmMsg {
   id: string;
@@ -80,6 +82,9 @@ export function startPresence(p: Profile, room = ""): void {
 }
 export function setPresenceRoom(p: Profile, room: string): void {
   void update(ref(db, `presence/${p.uid}`), { room }).catch(() => undefined);
+}
+export function setPresenceIdle(p: Profile, idle: boolean): void {
+  void update(ref(db, `presence/${p.uid}`), { idle: idle ? true : null }).catch(() => undefined);
 }
 export function stopPresence(p: Profile): void {
   const r = ref(db, `presence/${p.uid}`);
@@ -142,6 +147,7 @@ class SocialStore {
     return this.totalUnread + this.requests.size + this.knocks.size;
   }
   isOnline = (uid: string) => this.presence.has(uid);
+  isIdle = (uid: string) => !!this.presence.get(uid)?.idle;
   friendUids = () => new Set(this.friends.keys());
   roomOf = (uid: string) => this.presence.get(uid)?.room ?? "";
 
@@ -178,7 +184,7 @@ class SocialStore {
       }),
       onValue(ref(db, "presence"), (snap) => {
         const next = new Map<string, Presence>();
-        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) next.set(uid, { name: v.name, room: v.room ?? "" });
+        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) next.set(uid, { name: v.name, room: v.room ?? "", idle: v.idle === true });
         this.presence = next;
         this.emit();
       }),

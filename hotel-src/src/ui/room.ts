@@ -51,7 +51,12 @@ import { closeMenu, showMenu } from "./contextMenu";
 import { mountSidePanel } from "./sidepanel";
 import { mountRoomPanel } from "./roomPanel";
 import { DoorApi, openDoor } from "./door";
+import { assetUrl } from "../assetUrl";
 import type { Ctx } from "../main";
+
+/** The hanger that floats above the bag of clothes in your own room (it's Habbo's own wardrobe icon). */
+const hangerImg = new Image();
+hangerImg.src = assetUrl("ui/hanger.png");
 
 const STEP_MS = 480;
 const BUBBLE_MS = 6500;
@@ -200,11 +205,31 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     h("form", { class: "chat-bar", onsubmit: (e: Event) => { e.preventDefault(); send(); } }, input, h("button", { class: "btn primary", type: "submit" }, "Send"))));
   const g = canvas.getContext("2d")!;
 
-  /** Game messages (OSRS "chatbox" lines) that only you see. */
-  function say(text: string, kind: "game" | "warn" = "game"): void {
-    log.append(h("div", { class: `line sys ${kind}` }, text));
+  // Every chat line disappears 15 minutes after it was said; the swept-out messages are also deleted from the database.
+  const CHAT_LIFE_MS = 15 * 60_000;
+  const lines: Array<{ el: HTMLElement; exp: number; msg?: ReturnType<typeof ref> }> = [];
+  function addLine(el: HTMLElement, lifeMs: number, msg?: ReturnType<typeof ref>): void {
+    log.append(el);
+    lines.push({ el, exp: Date.now() + lifeMs, msg });
     while (log.children.length > 60) log.firstElementChild?.remove();
     log.scrollTop = log.scrollHeight;
+  }
+  function sweepChat(): void {
+    const now = Date.now();
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const l = lines[i];
+      if (!l.el.isConnected) lines.splice(i, 1);
+      else if (l.exp <= now) {
+        l.el.remove();
+        if (l.msg) void remove(l.msg).catch(() => undefined);
+        lines.splice(i, 1);
+      }
+    }
+  }
+
+  /** Game messages (OSRS "chatbox" lines) that only you see. */
+  function say(text: string, kind: "game" | "warn" = "game"): void {
+    addLine(h("div", { class: `line sys ${kind}` }, text), CHAT_LIFE_MS);
   }
 
   const panel = mountSidePanel(sideHost, ctx, {
@@ -1046,9 +1071,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       onChildAdded(query(chatRef, orderByChild("ts"), limitToLast(40)), (snap) => {
         const m = snap.val();
         if (!m) return;
-        log.append(h("div", { class: "line" }, h("b", { class: m.uid === me.uid ? "me" : "" }, m.name + ": "), m.text));
-        while (log.children.length > 60) log.firstElementChild?.remove();
-        log.scrollTop = log.scrollHeight;
+        const age = typeof m.ts === "number" ? serverNow() - m.ts : 0;
+        if (age >= CHAT_LIFE_MS) { void remove(snap.ref).catch(() => undefined); return; } // already expired: not shown, cleaned up
+        addLine(h("div", { class: "line" }, h("b", { class: m.uid === me.uid ? "me" : "" }, m.name + ": "), m.text), CHAT_LIFE_MS - age, snap.ref);
         const p = players.get(m.uid);
         const recent = typeof m.ts === "number" ? m.ts > joinedAt - 15000 : true;
         if (p && recent) p.bubble = { text: m.text, until: performance.now() + BUBBLE_MS };
@@ -1066,6 +1091,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           say(`${players.get(ev.from)?.name ?? "Someone"} stabs you with a knife. It doesn't hurt a bit.`);
         }
       }, () => undefined));
+    const chatSweep = window.setInterval(sweepChat, 20_000);
+    unsubs.push(() => window.clearInterval(chatSweep));
     // the lobby has a CD player; its state is shared with everyone in the room
     if (roomId === LOBBY_ID) unsubs.push(watchCdPlayer(onCdState));
     renderOnline();
@@ -1110,10 +1137,53 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { opts: { figure: p.figure, dir, headDir: dir, actions, gesture, frame }, yOff };
   }
 
-  function drawFurni(f: { kind: string; x: number; y: number; dir?: number }, now: number): Hitbox | null {
+  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
+      if (b && k.opens && isOwnRoom) {
+        // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
+        const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
+        const pulse = 0.5 + 0.5 * Math.sin(now / 450);
+        const cx = (b.x0 + b.x1) / 2;
+        const cy = (b.y0 + b.y1) / 2;
+        const r = 42 * scale * (hot ? 1.2 : 1);
+        // a warm gold halo (plain alpha, so it shows on the pale room background too), then the bag lit up on top when pointed at
+        g.save();
+        const halo = g.createRadialGradient(cx, cy, 2 * scale, cx, cy, r);
+        const a = 0.11 + 0.05 * pulse + (hot ? 0.14 : 0);
+        halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
+        halo.addColorStop(0.55, `rgba(255,200,40,${(a * 0.6).toFixed(2)})`);
+        halo.addColorStop(1, "rgba(255,200,40,0)");
+        g.fillStyle = halo;
+        g.beginPath();
+        g.arc(cx, cy, r, 0, Math.PI * 2);
+        g.fill();
+        g.restore();
+        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale); // the bag again, on top of the halo
+        if (hot) {
+          g.save();
+          g.globalCompositeOperation = "lighter";
+          drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.12 + 0.05 * pulse);
+          g.restore();
+        }
+        // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
+        const showHanger = !me.seenDoor || hot;
+        if (showHanger && hangerImg.complete && hangerImg.naturalWidth) {
+          const hs = scale * (hot ? 0.5 : 0.42);
+          const hw = hangerImg.naturalWidth * hs;
+          const hh = hangerImg.naturalHeight * hs;
+          const bob = Math.sin(now / 380) * 3 * scale;
+          g.save();
+          g.imageSmoothingEnabled = false;
+          g.shadowColor = "rgba(255,226,140,0.7)";
+          g.shadowBlur = (hot ? 6 : 3) * scale;
+          g.drawImage(hangerImg, cx - hw / 2, b.y0 - hh - 2 * scale + bob, hw, hh);
+          g.restore();
+        }
+        // while the hanger always shows, the click box covers it too
+        return { id: "", ...b, y0: me.seenDoor ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
+      }
       return b ? { id: "", ...b, depth: f.x + f.y } : null;
     }
     const { A, B, C, D, gd, fill } = drawFurniBase(g, f.kind, f.x, f.y, toScreen, scale);
