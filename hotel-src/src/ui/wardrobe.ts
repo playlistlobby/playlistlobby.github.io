@@ -1,6 +1,7 @@
 import { h, toast } from "./dom";
 import { renderAvatar } from "../avatarService";
 import { deleteOutfit, saveFigure, saveOutfit, WARDROBE_SLOTS } from "../db";
+import { logAction } from "../logger";
 import type { Ctx } from "../main";
 
 export function mountWardrobe(root: HTMLElement, ctx: Ctx): () => void {
@@ -35,6 +36,7 @@ export function mountWardrobe(root: HTMLElement, ctx: Ctx): () => void {
             onclick: async () => {
               try {
                 await saveOutfit(profile, i, { figure: profile.figure, gender: profile.gender });
+                logAction(profile, "outfit", `saved an outfit to slot ${i + 1}`);
                 toast(`Saved current look to slot ${i + 1}`);
                 redraw();
               } catch (err) { toast((err as Error).message, "err"); }
@@ -45,6 +47,7 @@ export function mountWardrobe(root: HTMLElement, ctx: Ctx): () => void {
             onclick: async () => {
               try {
                 await saveFigure(profile, outfit.figure, outfit.gender);
+                logAction(profile, "outfit", `wore the outfit in slot ${i + 1}`);
                 ctx.refreshHeader();
                 toast("Outfit on!");
                 redraw();

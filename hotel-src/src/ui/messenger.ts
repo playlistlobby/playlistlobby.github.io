@@ -2,6 +2,7 @@ import { h, toast, trimCanvas } from "./dom";
 import { renderAvatar } from "../avatarService";
 import { social, PublicProfile } from "../social";
 import { LOBBY_ID } from "../rooms";
+import { FEATURES } from "../features";
 import type { Ctx } from "../main";
 
 function headOf(figure: string): HTMLElement {
@@ -59,7 +60,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
         h("button", { class: "btn small primary", title: "Accept", onclick: () => social.accept(r.uid).then(() => toast(`You and ${r.name} are friends now.`), () => toast("Couldn't accept that.", "err")) }, "✓"),
         h("button", { class: "btn small", title: "Decline", onclick: () => void social.decline(r.uid) }, "✕")));
 
-    const inviteRows = social.invites.map((i) =>
+    const inviteRows = (FEATURES.rooms ? social.invites : []).map((i) =>
       h("div", { class: "frow" }, h("span", { class: "fname" }, `${i.fromName} invited you to "${i.roomName}"`),
         h("button", { class: "btn small primary", onclick: () => { void social.dismissInvite(i.id); ctx.navigate("room", { roomId: i.room }); } }, "Join"),
         h("button", { class: "btn small", onclick: () => void social.dismissInvite(i.id) }, "✕")));
@@ -91,7 +92,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
       h("span", { class: "fname", title: online ? (room ? "In a room" : "Online") : "Offline", onclick: () => openChat(f.uid) }, f.name),
       unread ? h("span", { class: "badge" }, String(unread)) : null,
       h("button", { class: "btn small", title: "Message", onclick: () => openChat(f.uid) }, "💬"),
-      room ? h("button", { class: "btn small", title: room === LOBBY_ID ? "Go to the lobby" : "Follow into their room", onclick: () => ctx.navigate("room", { roomId: room }) }, "➜") : null,
+      room && (room === LOBBY_ID || FEATURES.rooms) ? h("button", { class: "btn small", title: room === LOBBY_ID ? "Go to the lobby" : "Follow into their room", onclick: () => ctx.navigate("room", { roomId: room }) }, "➜") : null,
       h("button", { class: "btn small", title: "Remove friend", onclick: () => {
         if (confirm(`Remove ${f.name} from your friends?`)) void social.removeFriend(f.uid).then(() => closeChat(f.uid));
       } }, "✕"));
@@ -148,6 +149,9 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
 
   const onOpenChat = (e: Event) => openChat((e as CustomEvent<string>).detail);
   window.addEventListener("open-chat", onOpenChat);
+  // the Friends icon on the home screen opens/closes the friends list
+  const onToggleFriends = () => { open = !open; renderPanel(); };
+  window.addEventListener("toggle-friends", onToggleFriends);
 
   // ---- live updates ---------------------------------------------------------------------
   const offStore = social.subscribe(() => {
@@ -168,6 +172,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
   });
 
   const offInvite = social.onInvite((i) => {
+    if (!FEATURES.rooms) return;
     const card = h("div", { class: "invite-card" },
       h("div", {}, h("strong", {}, i.fromName), ` invited you to `, h("strong", {}, `"${i.roomName}"`)),
       h("div", { class: "row" },
@@ -183,6 +188,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     offDm();
     offInvite();
     window.removeEventListener("open-chat", onOpenChat);
+    window.removeEventListener("toggle-friends", onToggleFriends);
     dock.remove();
     popups.remove();
   };

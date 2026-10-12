@@ -10,9 +10,18 @@ export interface ItemDef {
   useOnPlayer?: "stab";
   /** furniture kind this item can be used on (e.g. a CD on the CD player) */
   useOnObject?: string;
+  /** used on yourself with one click (the syringe) */
+  useSelf?: "syringe";
 }
 
 export const ITEMS: Record<string, ItemDef> = {
+  syringe: {
+    id: "syringe",
+    name: "Syringe",
+    examine: "A clean syringe. Click it to draw blood from yourself: 2 drops of blood, once a day.",
+    icon: assetUrl("items/syringe.svg"),
+    useSelf: "syringe",
+  },
   cd: {
     id: "cd",
     name: "CD",
@@ -23,7 +32,7 @@ export const ITEMS: Record<string, ItemDef> = {
   knife: {
     id: "knife",
     name: "Knife",
-    examine: "A small, sharp knife. Use it on another player: one stab a day draws a drop of blood.",
+    examine: "A small, sharp knife. Use it on another player: you can stab each person once a day, and every stab draws a drop of blood.",
     icon: assetUrl("items/knife.svg"),
     useOnPlayer: "stab",
   },

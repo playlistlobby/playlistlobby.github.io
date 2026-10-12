@@ -16,6 +16,7 @@ import {
 } from "../catalog";
 import { renderAvatar } from "../avatarService";
 import { buyItems, saveFigure } from "../db";
+import { logAction } from "../logger";
 import type { Ctx } from "../main";
 
 export type EditorMode = "customize" | "shop";
@@ -115,7 +116,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode, onboa
   // ---- item grid ---------------------------------------------------------------
   function visibleItems(): Item[] {
     const all = itemsFor(slotId, gender);
-    return mode === "shop" ? all.filter((i) => !isOwned(i, profile.owned)) : all.filter((i) => isOwned(i, profile.owned));
+    return mode === "shop" ? all.filter((i) => !isOwned(i, profile.owned) && i.shopOn) : all.filter((i) => isOwned(i, profile.owned));
   }
 
   function renderGrid(): void {
@@ -195,7 +196,8 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode, onboa
             try {
               await saveFigure(profile, figureToString(parts), gender);
               ctx.refreshHeader();
-              if (onboarding) ctx.navigate("room");
+              logAction(profile, "look", onboarding ? "created their character" : "changed their look");
+              if (onboarding) ctx.navigate("home");
               else toast("Look saved!");
             } catch (err) {
               toast((err as Error).message, "err");
@@ -219,6 +221,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode, onboa
           try {
             await buyItems(profile, basket.map((i) => i.key), cost);
             await saveFigure(profile, figureToString(parts), gender);
+            logAction(profile, "buy", `bought ${basket.map((i) => i.key).join(", ")} for ${cost}`);
             ctx.refreshHeader();
             toast(`Bought ${basket.length} item${basket.length > 1 ? "s" : ""} and put them on!`);
             redraw();

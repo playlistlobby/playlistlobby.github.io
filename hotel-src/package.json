@@ -8,9 +8,10 @@
     "dev:emu": "vite --mode emulator",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "emulators": "firebase emulators:start --only auth,database --project demo-hotel",
+    "emulators": "node scripts/build-rules.mjs && firebase emulators:start --only auth,database --project demo-hotel",
     "build:pages": "tsc --noEmit && vite build --outDir ../hotel --emptyOutDir",
-    "deploy:rules": "firebase deploy --only database --project playlist-lobby"
+    "deploy:rules": "node scripts/build-rules.mjs && firebase deploy --only database --project playlist-lobby",
+    "build:rules": "node scripts/build-rules.mjs"
   },
   "dependencies": {
     "firebase": "^10.14.1"

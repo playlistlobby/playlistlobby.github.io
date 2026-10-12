@@ -1,7 +1,7 @@
 import { h } from "./dom";
 import { showMenu } from "./contextMenu";
 import { BLOOD_ICON, INV_SIZE, ITEMS, MUSIC_ACCESS_KEY } from "../items";
-import { canStabToday, msUntilTomorrow } from "../db";
+import { canUseSyringe, msUntilTomorrow, stabsToday } from "../db";
 import { EMOTES, hasEmote } from "../emotes";
 import { fmtTime, player, TRACKS } from "../music";
 import type { Ctx } from "../main";
@@ -19,6 +19,8 @@ export interface PanelOpts {
   say(text: string, kind?: "game" | "warn"): void;
   onSelect(slot: number | null): void;
   onEmote(id: string): void;
+  /** an item that is used on yourself with one click (the syringe) */
+  onUseSelf(what: "syringe"): void;
   /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
   roomTab?: { icon: string; title: string; mount(container: HTMLElement): () => void };
 }
@@ -73,7 +75,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   // ---- inventory -----------------------------------------------------------------------
   function selectedHint(): string {
     const it = selected !== null ? profile.inventory[selected] : null;
-    if (!it) return "Click an item, then click what to use it on: the knife on a player, the CD on the CD player.";
+    if (!it) return "Knife: click it, then a player. CD: click it, then the CD player. Syringe: just click it.";
     return ITEMS[it.item].useOnObject ? "Now click the CD player in the lobby." : "Now click a player to use it on them.";
   }
 
@@ -91,13 +93,16 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
         onclick: () => {
           if (!def) return;
           if (loaned) return opts.say(`Your ${def.name} is in the player. It'll be back when it's done.`, "warn");
+          if (def.useSelf) return opts.onUseSelf(def.useSelf);
           setSelected(selected === i ? null : i);
         },
         oncontextmenu: (e: MouseEvent) => {
           e.preventDefault();
           if (!def) return;
           showMenu(e.clientX, e.clientY, [
-            ...(loaned ? [] : [{ label: selected === i ? "Cancel use" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]),
+            ...(loaned ? [] : def.useSelf
+              ? [{ label: "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!) }]
+              : [{ label: selected === i ? "Cancel use" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]),
             { label: "Examine", target: def.name, action: () => opts.say(loaned ? `${def.examine} (It's in the player right now.)` : def.examine) },
           ]);
         },
@@ -106,14 +111,16 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
       grid.append(el);
     }
 
-    const ready = canStabToday(profile);
+    const syringeReady = canUseSyringe(profile);
+    const stabbed = stabsToday(profile);
     body.replaceChildren(
       h("div", { class: "osrs-title" }, "Inventory"),
       grid,
       h("div", { class: "inv-foot" },
         h("div", { class: "blood-line" }, h("img", { src: BLOOD_ICON, alt: "", class: "blood-ico" }), ` ${profile.blood} drop${profile.blood === 1 ? "" : "s"} of blood`),
-        h("div", { class: "stab-status " + (ready ? "ready" : "used") },
-          ready ? "Daily stab: ready" : `Daily stab used. Again in ${untilText(msUntilTomorrow())}`),
+        h("div", { class: "stab-status ready" }, stabbed === 0 ? "Stab each person once a day" : `Stabbed today: ${stabbed}. Each person once a day`),
+        h("div", { class: "stab-status " + (syringeReady ? "ready" : "used") },
+          syringeReady ? "Syringe: ready (2 drops)" : `Syringe used. Again in ${untilText(msUntilTomorrow())}`),
         h("div", { class: "hint" }, selectedHint())));
   }
 

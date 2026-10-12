@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- plunger -->
+  <path d="M1 1h2v1h1v1H3v1H1V3H0V2h1z" fill="#8d6e63"/>
+  <path d="M3 3h1v1h1v1H4V4H3z" fill="#bcaaa4"/>
+  <!-- plunger rod -->
+  <path d="M4 4h1v1h1v1H5V5H4z" fill="#cfd8dc"/>
+  <!-- barrel -->
+  <path d="M6 5h1v1h1v1h1v1h1v1h1v1h-1v1H9v-1H8v-1H7V9H6V8H5V7h1z" fill="#e3f2fd"/>
+  <path d="M7 6h1v1h1v1h1v1h1v1h-1V9H9V8H8V7H7z" fill="#b71c1c"/>
+  <path d="M8 6h1v1h1v1h1v1h1v1h-1v1H9v-1H8v-1H7V9H6V8h1V7h1z" fill="#d32f2f" opacity=".85"/>
+  <path d="M6 5h1v1H6zm4 4h1v1h-1z" fill="#90a4ae"/>
+  <!-- finger grips -->
+  <path d="M5 8h1v1H5zm3 3h1v1H8z" fill="#90a4ae"/>
+  <!-- hub + needle -->
+  <path d="M11 10h1v1h1v1h-1v-1h-1z" fill="#78909c"/>
+  <path d="M12 11h1v1h1v1h1v1h-1v-1h-1v-1h-1z" fill="#eceff1"/>
+  <path d="M14 13h1v1h-1z" fill="#b71c1c"/>
+</svg>

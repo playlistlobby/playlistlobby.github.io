@@ -34,9 +34,15 @@ export interface Item {
   gender: "M" | "F" | "U";
   /** how many colors this item takes (0 = not colorable) */
   colors: number;
-  /** 0 = starter item (free) */
+  /** what it costs right now in drops of blood (0 = free, everyone owns it). The admin can change this. */
   price: number;
   key: string;
+  /** the price before any admin changes */
+  basePrice: number;
+  /** free starter item (the default look and the data's "preselectable" sets): not for sale, everyone owns it */
+  starter: boolean;
+  /** sold in the shop right now (the admin decides) */
+  shopOn: boolean;
 }
 
 export interface Swatch {
@@ -97,7 +103,7 @@ export async function loadCatalog(): Promise<void> {
       const starter = !!set.preselectable || defaultKeys.has(key);
       // Drops are scarce (one a day), so clothes cost 1-4 of them.
       const price = starter ? 0 : Math.max(1, Math.round((BASE_PRICE[slot.id] + (hash(slot.id + id) % 6) * 10) / 25));
-      list.push({ type: slot.id, id, gender: set.gender, colors, price, key });
+      list.push({ type: slot.id, id, gender: set.gender, colors, price, key, basePrice: price, starter, shopOn: !starter });
     }
     list.sort((a, b) => a.price - b.price || Number(a.id) - Number(b.id));
     items[slot.id] = list;
@@ -108,6 +114,23 @@ export async function loadCatalog(): Promise<void> {
       .sort((a, b) => a[1].index - b[1].index)
       .map(([cid, c]) => ({ id: cid, hex: c.color }));
   }
+}
+
+/** Applies the admin's shop settings (config/shop/clothing) to the catalog. Starter items are never changed. */
+export function applyClothingConfig(cfg: Record<string, { on: boolean; price: number }>): void {
+  for (const list of Object.values(items ?? {})) {
+    for (const it of list) {
+      if (it.starter) continue;
+      const e = cfg[it.key];
+      it.price = e ? e.price : it.basePrice;
+      it.shopOn = e ? e.on : true;
+    }
+  }
+}
+
+/** Every clothing item, grouped by slot (for the admin panel). */
+export function allItemsBySlot(): Record<string, Item[]> {
+  return items ?? {};
 }
 
 export function itemsFor(slot: string, gender: Gender): Item[] {

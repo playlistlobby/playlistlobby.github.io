@@ -44,9 +44,23 @@ export const EMOTE_BY_ID: Record<string, EmoteDef> = Object.fromEntries(EMOTES.m
 
 export const emoteKey = (id: string) => `emote_${id}`;
 
+// The admin can put emotes on sale, change their price, or make one free (config/shop/emotes). The built-in free emotes stay free.
+let overrides: Record<string, { on: boolean; price: number }> = {};
+export function setEmoteOverrides(o: Record<string, { on: boolean; price: number }>): void {
+  overrides = o;
+}
+/** Current price in drops of blood (0 = free for everyone). */
+export function emotePrice(def: EmoteDef): number {
+  return def.price === 0 ? 0 : overrides[def.id]?.price ?? def.price;
+}
+/** Is it for sale in the shop right now? */
+export function emoteForSale(def: EmoteDef): boolean {
+  return def.price !== 0 && emotePrice(def) > 0 && (overrides[def.id]?.on ?? true);
+}
+
 export function hasEmote(p: Pick<Profile, "owned">, id: string): boolean {
   const def = EMOTE_BY_ID[id];
-  return !!def && (def.price === 0 || !!p.owned[emoteKey(id)]);
+  return !!def && (emotePrice(def) === 0 || !!p.owned[emoteKey(id)]);
 }
 
 /** Order of facing directions for spinning, clockwise on screen. */

@@ -16,7 +16,9 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { canStabToday, msUntilTomorrow, rewardStab, serverNow } from "../db";
+import { canStab, canUseSyringe, msUntilTomorrow, rewardStab, rewardSyringe, SYRINGE_BLOOD, serverNow } from "../db";
+import { logAction } from "../logger";
+import { FEATURES } from "../features";
 import { BLOOD_ICON, findSlot, ITEMS } from "../items";
 import { CdAudio, CdState, cdEnded, clearCdPlayer, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { fmtTime } from "../music";
@@ -79,6 +81,7 @@ interface Player {
 }
 
 interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean }
+interface SyringeFx { uid: string; start: number; burst: boolean }
 interface DropFx { from: string; to: string; start: number }
 interface Particle { x: number; y: number; vx: number; vy: number; born: number; life: number }
 interface Floater { text: string; x: number; y: number; born: number; color: string }
@@ -112,6 +115,7 @@ function loadImg(src: string): HTMLImageElement {
 }
 const knifeImg = loadImg(ITEMS.knife.icon);
 const bloodImg = loadImg(BLOOD_ICON);
+const syringeImg = loadImg(ITEMS.syringe.icon);
 
 /** Pixels from the feet line up to the top of the 64x110 avatar canvas (tuned against the bobba sprites). */
 const FEET_Y = 94;
@@ -140,6 +144,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
   let tool: string | null = null;
 
   const stabFx: StabFx[] = [];
+  const syringeFx: SyringeFx[] = [];
   const dropFx: DropFx[] = [];
   const particles: Particle[] = [];
   const floaters: Floater[] = [];
@@ -176,7 +181,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       updateHint();
     },
     onEmote: (id) => performEmote(id),
-    roomTab: roomId === LOBBY_ID ? undefined : {
+    onUseSelf: (what) => { if (what === "syringe") void useSyringe(); },
+    roomTab: !FEATURES.rooms || roomId === LOBBY_ID ? undefined : {
       icon: "🏠",
       title: "Room",
       mount: (container) => mountRoomPanel(container, ctx, {
@@ -546,6 +552,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     p.path = []; // stand still to emote
     startEmote(p, def);
     update(ref(db, `rooms/${roomId}/players/${me.uid}`), { emote: { id, ts: serverTimestamp() } }).catch(() => say("Your emote didn't go through.", "warn"));
+    logAction(me, "emote", `/${id}`);
   }
 
   // ---- the knife -------------------------------------------------------------------
@@ -553,9 +560,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     const target = players.get(uid);
     if (!target || uid === me.uid) return;
     if (findSlot(me.inventory, "knife") < 0) return say("You need a knife for that.", "warn");
-    if (!canStabToday(me)) {
+    if (!canStab(me, uid)) {
       const mins = Math.max(1, Math.ceil(msUntilTomorrow() / 60000));
-      return say(`You've already drawn blood today. Your knife will thirst again in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`, "warn");
+      return say(`You've already stabbed ${target.name} today. You can stab them again in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`, "warn");
     }
     pending = { type: "stab", uid, since: performance.now(), lastTry: 0 };
     clearSelection(); // like OSRS, the item stops being a "selected" cursor once you commit to a target
@@ -710,6 +717,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       if (cdPlaying()) return say(`The CD player is busy playing ${cdState!.byName}'s CD.`, "warn");
       await insertCd(me, slot);
       panel.refresh();
+      logAction(me, "cd", "put a CD in the CD player");
       say("You slide the CD into the player. Music starts up. ♪ It will pop back into your inventory when it's finished.");
     } catch {
       say("The CD player spits your CD back out. Someone else got there first.", "warn");
@@ -721,6 +729,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
   async function ejectCd(): Promise<void> {
     try {
       await clearCdPlayer();
+      logAction(me, "cd", "ejected their CD");
       say("You press eject.");
     } catch {
       say("The eject button doesn't respond.", "warn");
@@ -753,7 +762,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     if (!p || !target || stabbing) return;
     stabbing = true;
     try {
-      if (!canStabToday(me)) return say("You've already drawn blood today.", "warn");
+      if (!canStab(me, uid)) return say(`You've already stabbed ${target.name} today.`, "warn");
       p.dir = dirOf(currentTile(p), currentTile(target));
       p.emote = undefined;
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(console.warn);
@@ -764,15 +773,47 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
         return say("Your stab missed. They may have just left.", "warn");
       }
       try {
-        await rewardStab(me);
+        await rewardStab(me, uid);
         ctx.refreshHeader();
         panel.refresh();
+        logAction(me, "stab", `stabbed ${target.name} (+1)`);
         say(`You stab ${target.name}. It does them no harm, and a drop of blood trickles into your pouch. (+1)`);
       } catch {
         say("The drop of blood slips through your fingers… (the hotel refused it)", "warn");
       }
     } finally {
       stabbing = false;
+    }
+  }
+
+  // ---- the syringe: draw 2 drops from yourself, once a day -----------------------------------
+  let drawing = false;
+  async function useSyringe(): Promise<void> {
+    if (drawing) return;
+    if (findSlot(me.inventory, "syringe") < 0) return say("You don't have a syringe.", "warn");
+    if (!canUseSyringe(me)) {
+      const mins = Math.max(1, Math.ceil(msUntilTomorrow() / 60000));
+      return say(`You've already drawn your blood today. Your arm needs ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`} to recover.`, "warn");
+    }
+    drawing = true;
+    try {
+      const p = mine();
+      if (p) { p.path = []; p.emote = undefined; }
+      try {
+        // everyone sees it, like a stab
+        await push(ref(db, `rooms/${roomId}/events`), { type: "syringe", from: me.uid, to: me.uid, ts: serverTimestamp() });
+      } catch { /* the animation is optional; the blood isn't */ }
+      try {
+        await rewardSyringe(me);
+        ctx.refreshHeader();
+        panel.refresh();
+        logAction(me, "syringe", `drew blood with the syringe (+${SYRINGE_BLOOD})`);
+        say(`You slide the needle in and draw some blood. It fills the barrel nicely. (+${SYRINGE_BLOOD})`);
+      } catch {
+        say("The needle slips and the blood goes to waste… (the hotel refused it)", "warn");
+      }
+    } finally {
+      drawing = false;
     }
   }
 
@@ -851,7 +892,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       }, () => undefined),
       onChildAdded(query(eventsRef, orderByChild("ts"), limitToLast(10)), (snap) => {
         const ev = snap.val();
-        if (!ev || ev.type !== "stab" || typeof ev.ts !== "number" || ev.ts < joinedAt - 3000) return;
+        if (!ev || typeof ev.ts !== "number" || ev.ts < joinedAt - 3000) return;
+        if (ev.type === "syringe") {
+          syringeFx.push({ uid: ev.from, start: performance.now(), burst: false });
+          return;
+        }
+        if (ev.type !== "stab") return;
         stabFx.push({ from: ev.from, to: ev.to, start: performance.now(), impact: false, dropped: false });
         if (ev.to === me.uid && ev.from !== me.uid) {
           say(`${players.get(ev.from)?.name ?? "Someone"} stabs you with a knife. It doesn't hurt a bit.`);
@@ -1090,6 +1136,23 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       }
     }
 
+    // syringe pressed into the arm
+    for (const fx of syringeFx) {
+      const who = players.get(fx.uid);
+      if (!who) continue;
+      const t = (now - fx.start) / 900;
+      if (t > 0.85) continue;
+      const c = chest(who);
+      const pushIn = t < 0.4 ? t / 0.4 : 1;
+      g.save();
+      g.translate(c.x - (22 - 8 * pushIn) * scale, c.y + (-6 + 6 * pushIn) * scale);
+      g.rotate(Math.PI * 0.25);
+      g.imageSmoothingEnabled = false;
+      const s = 28 * Math.max(1, scale);
+      g.drawImage(syringeImg, -s / 2, -s / 2, s, s);
+      g.restore();
+    }
+
     // flying drop of blood from victim to attacker's pouch
     for (const d of dropFx) {
       const a = players.get(d.from);
@@ -1213,6 +1276,26 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       notes.push({ born: now, life: 2200, glyph: glyphsPool[Math.floor(Math.random() * 4)], ox: (Math.random() - 0.5) * 22, phase: Math.random() * 6, color: colors[Math.floor(Math.random() * 4)] });
     }
     for (let i = notes.length - 1; i >= 0; i--) if (now - notes[i].born > notes[i].life) notes.splice(i, 1);
+
+    // syringe: a burst of blood once the needle is in
+    for (let i = syringeFx.length - 1; i >= 0; i--) {
+      const fx = syringeFx[i];
+      const t = (now - fx.start) / 900;
+      const who = players.get(fx.uid);
+      if (!fx.burst && t >= 0.45) {
+        fx.burst = true;
+        if (who) {
+          const f = feetOf(who, now);
+          for (let k = 0; k < 7; k++) {
+            const ang = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
+            const sp = 0.04 + Math.random() * 0.06;
+            particles.push({ x: f.x - 8 * scale, y: f.y - 44 * scale, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, born: now, life: 600 + Math.random() * 250 });
+          }
+          if (fx.uid === me.uid) floaters.push({ text: `+${SYRINGE_BLOOD}`, x: f.x, y: f.y - 70 * scale, born: now, color: "#ff5252" });
+        }
+      }
+      if (t > 1.2 || !who) syringeFx.splice(i, 1);
+    }
 
     // emote glyph spawner
     for (const p of players.values()) {
@@ -1369,6 +1452,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
 
   // ---- boot --------------------------------------------------------------------------
   async function init(): Promise<void> {
+    if (roomId !== LOBBY_ID && !FEATURES.rooms) return kicked("Rooms are switched off for now.");
     if (roomId === LOBBY_ID) {
       applyDef(lobbyDef());
       start();
