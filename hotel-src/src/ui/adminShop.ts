@@ -4,7 +4,7 @@ import { allItemsBySlot, Item, SLOTS } from "../catalog";
 import { BLOOD_ICON, ITEMS } from "../items";
 import { EMOTES, emotePrice } from "../emotes";
 import { logAction } from "../logger";
-import { clearShopEntry, itemEntry, musicEntry, saveShopEntry, shopConfig } from "../shopConfig";
+import { clearShop, clearShopEntry, itemEntry, musicEntry, resetShop, saveShopEntry, shopConfig } from "../shopConfig";
 import { buildItemIconPack, figureWearing, listSets, SetInfo } from "../templateExport";
 import { download } from "../zip";
 import type { Ctx } from "../main";
@@ -17,7 +17,22 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
   let off: (() => void) | null = null;
   const subTabs = h("div", { class: "tabs" });
   const host = h("div", {});
-  root.append(subTabs, host);
+  const bigButtons = h("div", { class: "panel row", style: { marginBottom: "10px" } },
+    h("button", { class: "btn danger", onclick: async () => {
+      if (!confirm("Take EVERYTHING off sale (all clothing, emotes, items, the jukebox pass, and your own designs)? Prices are kept, so you can switch things back on one by one.")) return;
+      try {
+        await clearShop(EMOTES.map((e) => ({ id: e.id, price: e.price })));
+        saved("cleared the shop (everything off sale)");
+        toast("The shop is empty.");
+        open(sub);
+      } catch { failed(); }
+    } }, "Clear the shop"),
+    h("button", { class: "btn", onclick: async () => {
+      if (!confirm("Forget every shop change you made (prices, what's on sale) and go back to the defaults?")) return;
+      try { await resetShop(); saved("reset the shop to its defaults"); toast("Shop reset to defaults."); open(sub); } catch { failed(); }
+    } }, "Reset to defaults"),
+    h("span", { class: "hint" }, "Clear the shop takes everything off sale in one go."));
+  root.append(bigButtons, subTabs, host);
 
   const saved = (what: string) => logAction(ctx.profile, "admin", what);
   const failed = () => toast("Couldn't save (are you still signed in as admin?)", "err");

@@ -1,4 +1,4 @@
-import { onValue, ref, remove, set, Unsubscribe } from "firebase/database";
+import { onValue, ref, remove, set, update, Unsubscribe } from "firebase/database";
 import { db } from "./firebase";
 import { applyClothingConfig } from "./catalog";
 import { setEmoteOverrides } from "./emotes";
@@ -66,6 +66,22 @@ export function onShopConfig(fn: () => void): () => void {
 export function saveShopEntry(section: ShopSection, key: string, entry: ShopEntry): Promise<void> {
   return set(ref(db, `config/shop/${section}/${key}`), { on: !!entry.on, price: Math.max(0, Math.min(999, Math.round(entry.price))) });
 }
+/** "Clear the shop": nothing is on sale any more (clothing default off, every entry switched off). Prices are kept so items can be turned back on. */
+export async function clearShop(emotes: Array<{ id: string; price: number }>): Promise<void> {
+  const updates: Record<string, unknown> = { "clothing/_default": { on: false, price: 0 } };
+  for (const [section, entries] of Object.entries(shopConfig) as Array<[ShopSection, Record<string, ShopEntry>]>) {
+    for (const [key, e] of Object.entries(entries)) if (e.on && key !== "_default") updates[`${section}/${key}`] = { on: false, price: e.price };
+  }
+  for (const e of emotes) if (shopConfig.emotes[e.id]?.on !== false) updates[`emotes/${e.id}`] = { on: false, price: shopConfig.emotes[e.id]?.price ?? e.price };
+  updates["music/pass"] = { on: false, price: shopConfig.music.pass?.price ?? MUSIC_ACCESS_PRICE };
+  await update(ref(db, "config/shop"), updates);
+}
+
+/** Back to how the shop started: everything the admin changed is forgotten. */
+export function resetShop(): Promise<void> {
+  return remove(ref(db, "config/shop"));
+}
+
 export function clearShopEntry(section: ShopSection, key: string): Promise<void> {
   return remove(ref(db, `config/shop/${section}/${key}`));
 }

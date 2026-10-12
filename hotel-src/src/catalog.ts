@@ -144,7 +144,8 @@ export function applyClothingConfig(cfg: Record<string, { on: boolean; price: nu
       if (it.starter) continue;
       const e = cfg[it.key];
       it.price = e ? e.price : it.basePrice;
-      it.shopOn = e ? e.on : true;
+      // "_default" is the admin's switch for everything without its own entry ("Clear the shop" turns it off)
+      it.shopOn = e ? e.on : cfg._default ? cfg._default.on : true;
     }
   }
 }
