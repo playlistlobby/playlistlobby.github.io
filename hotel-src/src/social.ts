@@ -346,6 +346,20 @@ class SocialStore {
     return () => { window.clearTimeout(timer); offInvite(); offKnock(); };
   }
 
+  /**
+   * Lockpick: let myself into someone's room (until I disconnect) and use up one lockpick, in one atomic write.
+   * The invite holds the inventory slot of the pick; the rules only accept it if that slot held a lockpick and the same write uses it up.
+   */
+  async lockpick(owner: string, slot: number, qtyLeft: number): Promise<void> {
+    const me = this.me!;
+    const invite = `roomInvites/${ownRoomId(owner)}/${me.uid}`;
+    await update(ref(db), {
+      [invite]: slot,
+      [`users/${me.uid}/inventory/${slot}`]: qtyLeft > 0 ? { item: "lockpick", qty: qtyLeft } : null,
+    });
+    void onDisconnect(ref(db, invite)).remove();
+  }
+
   /** Owner: let a knocker in (they get access until I log off) or send them away. */
   async answerKnock(visitor: string, allow: boolean): Promise<void> {
     const me = this.me!;

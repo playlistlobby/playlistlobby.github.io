@@ -24,12 +24,19 @@
         "createdAt": { ".validate": "newData.isNumber()" },
         "seenDoor": { ".validate": "newData.isBoolean()" },
 
+        "sixty": {
+          "knifeAt": { ".validate": "newData.isNumber() && newData.val() === now && !data.exists()" },
+          "syringeGiven": { ".validate": "newData.val() === true && newData.parent().child('knifeAt').val() <= now - 43200000" },
+          "$other": { ".validate": false }
+        },
+
         "inventory": {
           "$slot": {
             ".validate": "$slot.matches(/^([0-9]|1[0-9]|2[0-7])$/) && newData.hasChildren(['item', 'qty'])",
-            "item": { ".validate": "newData.val() === 'knife' || newData.val() === 'cd' || newData.val() === 'syringe'" },
+            "item": { ".validate": "newData.val() === 'knife' || newData.val() === 'cd' || newData.val() === 'syringe' || newData.val() === 'lockpick' || newData.val() === 'cigarette' || newData.val() === 'cigbutt'" },
             "qty": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000" },
             "inPlayer": { ".validate": "newData.isBoolean()" },
+            "lit": { ".validate": "newData.isNumber()" },
             "$other": { ".validate": false }
           }
         },
@@ -64,6 +71,11 @@
           "$key": {
             ".validate": "newData.hasChildren(['on', 'price']) && newData.child('on').isBoolean() && newData.child('price').isNumber() && newData.child('price').val() >= 0 && newData.child('price').val() <= 999"
           }
+        }
+      },
+      "npc": {
+        "$id": {
+          ".validate": "newData.hasChildren(['figure', 'gender']) && newData.child('figure').isString() && newData.child('figure').val().length < 200 && (newData.child('gender').val() === 'M' || newData.child('gender').val() === 'F')"
         }
       }
     },
@@ -148,7 +160,9 @@
       "$room": {
         ".write": "@PW@ && root.child('roomsMeta').child($room).child('owner').val() === auth.uid",
         "$uid": {
-          ".read": "@PW@ && auth.uid === $uid"
+          ".read": "@PW@ && auth.uid === $uid",
+          ".write": "@PW@ && auth.uid === $uid && root.child('roomsMeta').child($room).child('owner').val() !== null && root.child('roomsMeta').child($room).child('owner').val() !== auth.uid && newData.isNumber() && root.child('users').child(auth.uid).child('inventory').child('' + newData.val()).child('item').val() === 'lockpick' && (!newData.parent().parent().parent().child('users').child(auth.uid).child('inventory').child('' + newData.val()).exists() || newData.parent().parent().parent().child('users').child(auth.uid).child('inventory').child('' + newData.val()).child('qty').val() < root.child('users').child(auth.uid).child('inventory').child('' + newData.val()).child('qty').val())",
+          ".validate": "newData.val() === true || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 27)"
         }
       }
     },
@@ -285,6 +299,7 @@
           "$uid": {
             ".write": "@PW@ && auth.uid === $uid && @IN@",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
+            "smoke": { ".validate": "newData.isNumber()" },
             "emote": {
               "id": { ".validate": "newData.isString() && (newData.val() === 'wave' || newData.val() === 'smile' || newData.val() === 'sad' || newData.val() === 'jump' || newData.val() === 'angry' || newData.val() === 'surprised' || newData.val() === 'sleep' || newData.val() === 'laugh' || newData.val() === 'love' || newData.val() === 'cheer' || newData.val() === 'spin' || newData.val() === 'dance')" },
               "ts": { ".validate": "newData.isNumber()" },

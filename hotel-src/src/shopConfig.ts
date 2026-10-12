@@ -2,7 +2,7 @@ import { onValue, ref, remove, set, update, Unsubscribe } from "firebase/databas
 import { db } from "./firebase";
 import { applyClothingConfig } from "./catalog";
 import { setEmoteOverrides } from "./emotes";
-import { MUSIC_ACCESS_PRICE } from "./items";
+import { ITEM_DEFAULTS, MUSIC_ACCESS_PRICE } from "./items";
 
 /**
  * What's in the shop is decided by the admin (Admin app > Clothes & Items) and stored at config/shop.
@@ -30,7 +30,7 @@ const listeners = new Set<() => void>();
 /** The jukebox pass entry (stored as config/shop/music/pass). */
 export const musicEntry = (): ShopEntry => shopConfig.music.pass ?? { on: true, price: MUSIC_ACCESS_PRICE };
 /** A physical item (knife, CD, syringe). Not sold unless the admin turns it on. */
-export const itemEntry = (id: string): ShopEntry => shopConfig.items[id] ?? { on: false, price: DEFAULT_ITEM_PRICE };
+export const itemEntry = (id: string): ShopEntry => shopConfig.items[id] ?? ITEM_DEFAULTS[id] ?? { on: false, price: DEFAULT_ITEM_PRICE };
 
 function apply(raw: Partial<ShopConfig> | null): void {
   shopConfig.clothing = raw?.clothing ?? {};

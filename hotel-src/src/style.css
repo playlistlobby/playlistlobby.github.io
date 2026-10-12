@@ -315,6 +315,13 @@ button, input, select { font-family: var(--font); }
 .msg-toast { bottom: 60px; cursor: pointer; }
 .cd-popup { position: absolute; top: 44px; right: 10px; z-index: 5; width: 232px; display: grid; gap: 6px; color: #fff; padding: 10px 12px; border-radius: 10px; border: 1px solid #c8d0e0; background: linear-gradient(#1a2b66, #0a1440); box-shadow: 0 6px 18px rgba(0, 0, 0, .55); }
 .cd-popup .hint { color: #b6c2e0; }
+.door-actions { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.sixty-shop { width: 280px; max-width: calc(100% - 20px); left: 10px; right: auto; top: 44px; }
+.sixty-body { display: grid; gap: 8px; }
+.sixty-row { display: grid; grid-template-columns: 36px 1fr auto; gap: 8px; align-items: center; }
+.sixty-ico { width: 36px; height: 36px; image-rendering: pixelated; }
+.sixty-name { font-weight: 700; color: #ffe27a; }
+.sixty-main .hint { font-size: 10px; line-height: 1.25; }
 .cd-head { display: flex; justify-content: space-between; align-items: center; }
 .cd-title { font-weight: 700; color: #ffe27a; word-break: break-word; }
 .cd-bar { height: 6px; background: #05102e; border-radius: 3px; overflow: hidden; border: 1px solid #3a4a80; }

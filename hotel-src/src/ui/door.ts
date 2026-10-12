@@ -4,6 +4,7 @@ import { social } from "../social";
 import { Access, LOBBY_ID, normAccess, ownRoomId, RoomMeta, watchAllRooms } from "../rooms";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
+import { findSlot } from "../items";
 import type { Ctx } from "../main";
 
 export interface DoorApi {
@@ -75,19 +76,39 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     const all = Object.entries(rooms)
       .filter(([id, m]) => id.startsWith("u_") && m.owner !== me.uid && id !== currentRoom)
       .map(([id, m]) => rowFor(id, m));
-    const visible = all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online));
+    // with a lockpick in your pocket every room is a candidate, closed ones too
+    const visible = all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online) || hasPick());
     return visible.sort((a, b) =>
       Number(b.friend) - Number(a.friend) || Number(b.online) - Number(a.online) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, 40);
   }
 
+  const hasPick = () => findSlot(me.inventory, "lockpick") >= 0;
+
+  /** Uses a lockpick: you're in without knocking, even in a closed room. The pick is used up. */
+  async function pickLock(r: Row): Promise<void> {
+    const slot = findSlot(me.inventory, "lockpick");
+    if (slot < 0) return;
+    const had = me.inventory[slot]!.qty;
+    try {
+      await social.lockpick(r.owner, slot, had - 1); // opens the lock and uses up the pick in one write
+      if (had > 1) me.inventory[slot]!.qty = had - 1; else me.inventory[slot] = null;
+      toast("Click. The lock gives way.");
+      enter(r.roomId, `${r.ownerName}'s room (picked the lock)`);
+    } catch {
+      toast("The lock won't give.", "err");
+    }
+  }
+
   function actionFor(r: Row): HTMLElement {
     if (r.friend || r.access === "open") return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Visit");
+    const pick = hasPick() ? h("button", { class: "btn small", title: "Use a lockpick (once)", onclick: (e: Event) => { if (chosen(e)) void pickLock(r); } }, "🔓 Pick") : null;
+    let main: HTMLElement;
     if (r.access === "knock") {
-      return r.online
+      main = r.online
         ? h("button", { class: "btn small", onclick: (e: Event) => { if (chosen(e)) startKnock(r); } }, "Knock")
         : h("button", { class: "btn small", disabled: true }, "Offline");
-    }
-    return h("button", { class: "btn small", disabled: true }, "Closed");
+    } else main = h("button", { class: "btn small", disabled: true }, "Closed");
+    return h("span", { class: "door-actions" }, main, pick);
   }
 
   function rowEl(r: Row): HTMLElement {

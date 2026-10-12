@@ -18,17 +18,19 @@ import { renderAvatar } from "../avatarService";
 import { buyItems, saveFigure } from "../db";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
+import { saveSixtyLook, SIXTY, sixtyLook } from "../npc";
 import type { Ctx } from "../main";
 
-export type EditorMode = "customize" | "shop";
+/** customize = your own look (owned items), shop = try and buy, npc = the admin dressing 6ixty (every item, nothing owned or bought) */
+export type EditorMode = "customize" | "shop" | "npc";
 
 const PAGE_SIZE = 18;
 
 /** Customizer + shop share one editor: same preview, slots, colors and item grid, different item filter and footer. */
 export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () => void {
   const profile = ctx.profile;
-  let gender: Gender = profile.gender;
-  let parts: Parts = parseFigure(profile.figure || DEFAULT_FIGURE[gender]);
+  let gender: Gender = mode === "npc" ? sixtyLook().gender : profile.gender;
+  let parts: Parts = parseFigure(mode === "npc" ? sixtyLook().figure : profile.figure || DEFAULT_FIGURE[gender]);
   let slotId = mode === "shop" ? "ch" : "hr";
   let page = 0;
   let dir = 2;
@@ -50,7 +52,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
 
   // ---- layout ---------------------------------------------------------------
   const previewCanvas = h("canvas", { class: "preview-canvas", width: 64, height: 110 });
-  const nameTag = h("div", { class: "preview-name" }, profile.name);
+  const nameTag = h("div", { class: "preview-name" }, mode === "npc" ? SIXTY.name : profile.name);
   const tabsEl = h("div", { class: "tabs" });
   const colorsEl = h("div", { class: "colors" });
   const gridEl = h("div", { class: "grid" });
@@ -89,7 +91,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   // ---- slot tabs -------------------------------------------------------------
   /** A category only shows up if there is something in it: items you own (Character) or items still on sale that you don't own (Shop). */
   function slotsShown() {
-    const has = SLOTS.filter((s) => itemsFor(s.id, gender).some((i) => mode === "shop" ? !isOwned(i, profile.owned) && i.shopOn : isOwned(i, profile.owned)));
+    const has = SLOTS.filter((s) => itemsFor(s.id, gender).some((i) => mode === "npc" ? true : mode === "shop" ? !isOwned(i, profile.owned) && i.shopOn : isOwned(i, profile.owned)));
     return has.length ? has : SLOTS;
   }
 
@@ -125,7 +127,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   // ---- item grid ---------------------------------------------------------------
   function visibleItems(): Item[] {
     const all = itemsFor(slotId, gender);
-    return mode === "shop" ? all.filter((i) => !isOwned(i, profile.owned) && i.shopOn) : all.filter((i) => isOwned(i, profile.owned));
+    return mode === "npc" ? all : mode === "shop" ? all.filter((i) => !isOwned(i, profile.owned) && i.shopOn) : all.filter((i) => isOwned(i, profile.owned));
   }
 
   function renderGrid(): void {
@@ -137,7 +139,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
     const current = parts[slotId];
     gridEl.replaceChildren();
 
-    if (mode === "customize" && !slot.required) {
+    if (mode !== "shop" && !slot.required) {
       gridEl.append(
         h("button", { class: "cell none" + (!current ? " on" : ""), onclick: () => { delete parts[slotId]; drawPreview(); redraw(); } }, "None"));
     }
@@ -178,7 +180,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   // ---- footer ------------------------------------------------------------------
   function renderGender(): void {
     genderEl.replaceChildren();
-    if (mode !== "customize") return;
+    if (mode === "shop") return;
     genderEl.append(
       h("div", { class: "row center" },
         ...(["M", "F"] as Gender[]).map((g) =>
@@ -197,13 +199,21 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
 
   function renderFooter(): void {
     footerEl.replaceChildren();
-    if (mode === "customize") {
+    if (mode !== "shop") {
       footerEl.classList.add("sticky");
       footerEl.append(
         h("button", {
           class: "btn primary",
           onclick: async () => {
             try {
+              if (mode === "npc") {
+                await saveSixtyLook(figureToString(parts), gender);
+                savedKey = lookKey();
+                logAction(profile, "admin", "changed 6ixty's look");
+                playSfx("camera", 0.35);
+                toast("6ixty's look saved!");
+                return;
+              }
               await saveFigure(profile, figureToString(parts), gender);
               savedKey = lookKey();
               ctx.refreshHeader();
@@ -215,11 +225,11 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
               toast((err as Error).message, "err");
             }
           },
-        }, "Save look"),
+        }, mode === "npc" ? "Save 6ixty's look" : "Save look"),
         h("button", {
           class: "btn",
           onclick: () => {
-            if (lookKey() !== savedKey && !confirm("You haven't saved your new look. Go back without saving?")) return;
+            if (lookKey() !== savedKey && !confirm("You haven't saved the new look. Go back without saving?")) return;
             ctx.navigate("room");
           },
         }, "Go back"));

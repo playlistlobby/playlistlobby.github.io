@@ -1,7 +1,7 @@
 import { get, onValue, ref, serverTimestamp, set, update } from "firebase/database";
 import { db, firebaseReady } from "./firebase";
 import { DEFAULT_FIGURE, Gender } from "./catalog";
-import { emptyInventory, findSlotAny, Inventory, parseInventory, START_BLOOD } from "./items";
+import { emptyInventory, findSlotAny, Inventory, parseInventory, SMOKE_MS, START_BLOOD } from "./items";
 
 export interface Outfit {
   figure: string;
@@ -27,13 +27,17 @@ export interface Profile {
   isAdmin: boolean;
   /** has opened the door at least once (until then the door flashes to show where to go) */
   seenDoor: boolean;
+  /** how far the player is with 6ixty: knifeAt = when he gave the knife (0 = not met yet), syringeGiven = the second gift (12 hours later) */
+  sixty: { knifeAt: number; syringeGiven: boolean };
 }
+
+export const SIXTY_GIFT_DELAY_MS = 12 * 3_600_000;
 
 export const WARDROBE_SLOTS = 8;
 export const SYRINGE_BLOOD = 2;
 const DAY_MS = 86_400_000;
-/** What every player starts with (and gets back if it's missing). */
-export const STARTER_ITEMS = ["knife", "syringe"]; // the CD is switched off for now (see DISABLED_ITEMS in items.ts)
+/** Nobody starts with anything any more: 6ixty gives the knife (right away) and the syringe (12 hours later). */
+export const STARTER_ITEMS: string[] = [];
 
 // ---- server clock -----------------------------------------------------------------
 // The database rules judge "today" with the server's clock, so the client must too.
@@ -64,7 +68,7 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
-  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false };
+  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false } };
   // figure "" marks a player who hasn't been through the customizer yet.
   await set(ref(db, `users/${uid}`), {
     name,
@@ -94,10 +98,23 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     syringeDay: v.syringeDay ?? 0,
     isAdmin,
     seenDoor: !!v.seenDoor,
+    // accounts from before 6ixty already have their knife and syringe: they skip his introduction
+    sixty: v.sixty
+      ? { knifeAt: Number(v.sixty.knifeAt) || 0, syringeGiven: !!v.sixty.syringeGiven }
+      : findSlotAny(parseInventory(v.inventory), "knife") >= 0 || findSlotAny(parseInventory(v.inventory), "syringe") >= 0
+        ? { knifeAt: 1, syringeGiven: true }
+        : { knifeAt: 0, syringeGiven: false },
   };
 
   // Accounts made before something existed get it now.
   const patch: Record<string, unknown> = {};
+  // a cigarette lit more than a minute ago (the page was closed meanwhile) is a butt by now
+  profile.inventory.forEach((s, i) => {
+    if (s?.item === "cigarette" && s.lit && Date.now() - s.lit > SMOKE_MS + 5000) {
+      profile.inventory[i] = { item: "cigbutt", qty: 1 };
+      patch[`inventory/${i}`] = { item: "cigbutt", qty: 1 };
+    }
+  });
   if (v.blood === undefined) {
     profile.blood = START_BLOOD;
     patch.blood = START_BLOOD;
@@ -142,6 +159,48 @@ export async function buyInventoryItem(p: Profile, item: string, cost: number): 
   p.blood -= cost;
   p.inventory[free] = { item, qty: 1 };
 }
+
+/** Puts one item into the first free inventory slot. Throws if the inventory is full. Returns the slot. */
+export async function giveItem(p: Profile, item: string, extra: Record<string, unknown> = {}): Promise<number> {
+  const free = p.inventory.findIndex((s) => s === null);
+  if (free < 0) throw new Error("Your inventory is full");
+  await update(ref(db, `users/${p.uid}`), { [`inventory/${free}`]: { item, qty: 1, ...extra } });
+  p.inventory[free] = { item, qty: 1, ...(extra as object) };
+  return free;
+}
+
+/** Uses up one of the item in a slot (or empties the slot). */
+export async function consumeSlot(p: Profile, slot: number): Promise<void> {
+  const s = p.inventory[slot];
+  if (!s) return;
+  if (s.qty > 1) {
+    await update(ref(db, `users/${p.uid}`), { [`inventory/${slot}/qty`]: s.qty - 1 });
+    s.qty -= 1;
+  } else {
+    await update(ref(db, `users/${p.uid}`), { [`inventory/${slot}`]: null });
+    p.inventory[slot] = null;
+  }
+}
+
+/** 6ixty's first gift: the knife. Starts the 12-hour wait for the second gift. */
+export async function sixtyGiveKnife(p: Profile): Promise<void> {
+  const free = p.inventory.findIndex((s) => s === null);
+  if (free < 0) throw new Error("Your inventory is full");
+  await update(ref(db, `users/${p.uid}`), { [`inventory/${free}`]: { item: "knife", qty: 1 }, "sixty/knifeAt": serverTimestamp() });
+  p.inventory[free] = { item: "knife", qty: 1 };
+  p.sixty.knifeAt = serverNow();
+}
+
+/** His second gift, once the 12 hours are up: the syringe. */
+export async function sixtyGiveSyringe(p: Profile): Promise<void> {
+  const free = p.inventory.findIndex((s) => s === null);
+  if (free < 0) throw new Error("Your inventory is full");
+  await update(ref(db, `users/${p.uid}`), { [`inventory/${free}`]: { item: "syringe", qty: 1 }, "sixty/syringeGiven": true });
+  p.inventory[free] = { item: "syringe", qty: 1 };
+  p.sixty.syringeGiven = true;
+}
+
+export const sixtySyringeReady = (p: Profile): boolean => p.sixty.knifeAt > 0 && !p.sixty.syringeGiven && serverNow() - p.sixty.knifeAt >= SIXTY_GIFT_DELAY_MS;
 
 /** Banks the drop of blood for stabbing `targetUid`. The rules only accept +1, once per person per UTC day. */
 export async function rewardStab(p: Profile, targetUid: string): Promise<void> {

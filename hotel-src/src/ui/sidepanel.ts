@@ -1,7 +1,7 @@
 import { h } from "./dom";
 import { showMenu } from "./contextMenu";
 import { BLOOD_ICON, INV_SIZE, ITEMS, MUSIC_ACCESS_KEY } from "../items";
-import { canUseSyringe, msUntilTomorrow, stabsToday } from "../db";
+import { consumeSlot } from "../db";
 import { EMOTES, hasEmote } from "../emotes";
 import { fmtTime, player, TRACKS } from "../music";
 import type { Ctx } from "../main";
@@ -20,7 +20,7 @@ export interface PanelOpts {
   onSelect(slot: number | null): void;
   onEmote(id: string): void;
   /** an item that is used on yourself with one click (the syringe) */
-  onUseSelf(what: "syringe"): void;
+  onUseSelf(what: "syringe" | "smoke"): void;
   /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
   roomTab?: { icon: string; title: string; mount(container: HTMLElement): () => void };
 }
@@ -107,8 +107,13 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           if (!def) return;
           showMenu(e.clientX, e.clientY, [
             ...(loaned ? [] : def.useSelf
-              ? [{ label: "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!) }]
-              : [{ label: selected === i ? "Cancel use" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]),
+              ? [{ label: def.useSelf === "smoke" ? "Light up" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!) }]
+              : def.droppable ? [] : def.useOnObject || def.useOnPlayer
+              ? [{ label: selected === i ? "Cancel use" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
+              : []),
+            ...(def.droppable ? [{ label: "Drop", target: def.name, action: () => {
+              void consumeSlot(profile, i).then(() => { if (selected === i) setSelected(null); renderInventory(); opts.say(`You drop the ${def.name.toLowerCase()}.`); }, () => opts.say("It won't go.", "warn"));
+            } }] : []),
             { label: "Examine", target: def.name, action: () => opts.say(loaned ? `${def.examine} (It's in the player right now.)` : def.examine) },
           ]);
         },

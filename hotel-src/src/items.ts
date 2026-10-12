@@ -10,9 +10,20 @@ export interface ItemDef {
   useOnPlayer?: "stab";
   /** furniture kind this item can be used on (e.g. a CD on the CD player) */
   useOnObject?: string;
-  /** used on yourself with one click (the syringe) */
-  useSelf?: "syringe";
+  /** used on yourself with one click (the syringe, a cigarette) */
+  useSelf?: "syringe" | "smoke";
+  /** can be dropped from the inventory (right-click > Drop) */
+  droppable?: boolean;
 }
+
+/** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
+export const SIXTY_STOCK = ["lockpick", "cigarette"];
+/** Default shop entry for items that start on sale (everything else starts off). */
+export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
+  lockpick: { on: true, price: 4 },
+  cigarette: { on: true, price: 1 },
+};
+export const SMOKE_MS = 60_000;
 
 export const ITEMS: Record<string, ItemDef> = {
   syringe: {
@@ -28,6 +39,26 @@ export const ITEMS: Record<string, ItemDef> = {
     examine: "A scratched CD with a handwritten label. Use it on the CD player in the basement so everyone can hear it. It comes back when it's done.",
     icon: assetUrl("items/cd.svg"),
     useOnObject: "cdplayer",
+  },
+  lockpick: {
+    id: "lockpick",
+    name: "Lockpick",
+    examine: "A bent piece of wire. It works once: it lets you into the room of someone who isn't your friend. Use it from the door menu.",
+    icon: assetUrl("items/lockpick.svg"),
+  },
+  cigarette: {
+    id: "cigarette",
+    name: "Cigarette",
+    examine: "A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.",
+    icon: assetUrl("items/cigarette.svg"),
+    useSelf: "smoke",
+  },
+  cigbutt: {
+    id: "cigbutt",
+    name: "Cigarette butt",
+    examine: "What's left. Right-click it to drop it.",
+    icon: assetUrl("items/cigbutt.svg"),
+    droppable: true,
   },
   knife: {
     id: "knife",
@@ -46,6 +77,8 @@ export interface InvItem {
   qty: number;
   /** true while the item is loaned out (a CD sitting in the CD player); it can't be used until it's back */
   inPlayer?: boolean;
+  /** a lit cigarette: when it was lit (server time, ms) */
+  lit?: number;
 }
 export type Inventory = Array<InvItem | null>;
 
@@ -60,7 +93,7 @@ export function parseInventory(raw: unknown): Inventory {
   if (!raw || typeof raw !== "object") return inv;
   for (const [k, v] of Object.entries(raw as Record<string, InvItem | null>)) {
     const slot = Number(k);
-    if (v && slot >= 0 && slot < INV_SIZE && ITEMS[v.item] && !DISABLED_ITEMS.has(v.item)) inv[slot] = { item: v.item, qty: v.qty ?? 1, ...(v.inPlayer ? { inPlayer: true } : {}) };
+    if (v && slot >= 0 && slot < INV_SIZE && ITEMS[v.item] && !DISABLED_ITEMS.has(v.item)) inv[slot] = { item: v.item, qty: v.qty ?? 1, ...(v.inPlayer ? { inPlayer: true } : {}), ...(typeof v.lit === "number" ? { lit: v.lit } : {}) };
   }
   return inv;
 }

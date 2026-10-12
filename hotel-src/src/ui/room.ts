@@ -16,9 +16,11 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { canStab, canUseSyringe, msUntilTomorrow, rewardStab, rewardSyringe, SYRINGE_BLOOD, serverNow } from "../db";
+import { canStab, canUseSyringe, msUntilTomorrow, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
+import { SIXTY, SIXTY_LINES, sixtyLook, watchSixtyLook } from "../npc";
+import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
-import { BLOOD_ICON, findSlot, ITEMS } from "../items";
+import { BLOOD_ICON, findSlot, ITEMS, SMOKE_MS } from "../items";
 import { CdAudio, CdState, cdEnded, clearCdPlayer, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
@@ -90,6 +92,8 @@ interface Player {
   lying?: boolean;
   /** an offline owner shown asleep: not in the database, just drawn here */
   sleeper?: boolean;
+  /** when this player lit a cigarette (server time, ms); they smoke for SMOKE_MS */
+  smoke?: number;
 }
 
 interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean }
@@ -104,6 +108,7 @@ interface NoteFx { born: number; life: number; glyph: string; ox: number; phase:
 type Pending =
   | { type: "stab"; uid: string; since: number; lastTry: number }
   | { type: "door"; since: number; lastTry: number }
+  | { type: "sixty"; since: number; lastTry: number }
   | { type: "arcade" | "cd" | "bag"; fid: string; since: number; lastTry: number };
 
 const cheb = (a: Pt, b: Pt) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
@@ -240,7 +245,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       updateHint();
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what) => { if (what === "syringe") void useSyringe(); },
+    onUseSelf: (what) => { if (what === "syringe") void useSyringe(); else void useCigarette(); },
     roomTab: roomId === LOBBY_ID && !me.isAdmin ? undefined : {
       icon: "🏠",
       title: "Room",
@@ -266,6 +271,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (item?.useOnObject) text = hoverObj && hoverObj.kind === item.useOnObject ? `Use ${item.name} → ${FURNI_KINDS[hoverObj.kind].label}` : `Use ${item.name} →`;
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
+    else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
     else if (hoverDoor) text = isOwnRoom ? "Door: to the basement" : "Door: rooms";
     actionHint.textContent = text;
@@ -277,6 +283,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function rebuildBlocked(): void {
     blocked.clear();
     blocked.add(`${def.doorX},0`); // the door itself stands on this tile; you use it from beside or in front of it
+    if (roomId === LOBBY_ID) blocked.add(`${SIXTY.x},${SIXTY.y}`); // 6ixty stands in the basement
     for (const f of def.furni) {
       const k = FURNI_KINDS[f.kind];
       if (k.flat) continue; // flat pieces (a label on the floor) can be walked over
@@ -456,6 +463,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj && !target) {
       if (obj.kind === "cdplayer") openCdPopup();
       else if (obj.kind === "bag") startBag(obj.id);
+      else if (obj.kind === "npc") startSixty();
       else startArcade(obj.id);
       return;
     }
@@ -478,6 +486,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     const obj = pick(objBoxes, mx, my);
     if (obj?.kind === "arcade") opts.push({ label: "Play", target: "Arcade machine", action: () => startArcade(obj.id) });
+    if (obj?.kind === "npc") {
+      opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
+      opts.push({ label: "Examine", target: SIXTY.name, action: () => say("6ixty. He sells things, and he knows how this place works.") });
+      if (me.isAdmin) opts.push({ label: "Change look", target: SIXTY.name, action: () => ctx.navigate("npc") });
+    }
     if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
     if (obj?.kind === "cdplayer") {
       if (item?.useOnObject === "cdplayer") opts.push({ label: `Use ${item.name} →`, target: "CD player", action: () => startCd(obj.id) });
@@ -583,6 +596,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return {
       uid, name: v.name ?? "?", figure: v.figure ?? me.figure, dir: v.dir ?? 2,
       from: p, to: p, stepStart: 0, path: [], dest: p, lastEmoteTs: v.emote?.ts ?? 0,
+      smoke: typeof v.smoke === "number" ? v.smoke : undefined,
     };
   }
 
@@ -738,6 +752,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const uid = pending.uid;
         pending = null;
         void executeStab(uid);
+      }
+      return;
+    }
+    if (pending.type === "sixty") {
+      const goal = { x: SIXTY.x, y: SIXTY.y };
+      const r = approach(p, goal, now, pending);
+      if (r === "unreachable") { pending = null; return say("You can't get to him.", "warn"); }
+      if (r === "arrived") {
+        pending = null;
+        p.dir = dirOf(currentTile(p), goal);
+        update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
+        void talkSixty();
       }
       return;
     }
@@ -908,7 +934,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         ctx.refreshHeader();
         panel.refresh();
         logAction(me, "stab", `stabbed ${target.name} (+1)`);
-        say(`You stab ${target.name}. It does them no harm, and a drop of blood trickles into your pouch. (+1)`);
+        say("You did what you had to do");
       } catch {
         say("The drop of blood slips through your fingers… (the hotel refused it)", "warn");
       }
@@ -946,6 +972,89 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     } finally {
       drawing = false;
     }
+  }
+
+  // ---- 6ixty, the basement's merchant and guide ---------------------------------------------------------
+  let sixtyBubble: Bubble | null = null;
+  let sixtyShop: SixtyShopApi | null = null;
+  let sixtyBusy = false;
+  let sixtyLast: HTMLCanvasElement | undefined;
+  const sixtyTimers: number[] = [];
+  const sixtyAfter = (ms: number, fn: () => void) => { sixtyTimers.push(window.setTimeout(() => { if (!disposed) fn(); }, ms)); };
+  const sixtySay = (text: string, ms = 4200) => { sixtyBubble = { text, until: performance.now() + ms }; };
+  /** he has something for you: the knife (first meeting) or the syringe (12 hours after the knife) */
+  const sixtyWants = () => me.sixty.knifeAt === 0 || sixtySyringeReady(me);
+
+  function startSixty(): void {
+    clearSelection();
+    pending = { type: "sixty", since: performance.now(), lastTry: 0 };
+  }
+
+  function openSixtyWindow(): void {
+    if (sixtyShop) return;
+    sixtyShop = openSixtyShop(stage, ctx, () => panel.refresh(), () => { sixtyShop = null; });
+  }
+
+  async function talkSixty(): Promise<void> {
+    if (sixtyBusy) return;
+    sixtyBusy = true;
+    try {
+      if (me.sixty.knifeAt === 0) {
+        try { await sixtyGiveKnife(me); } catch { return sixtySay(SIXTY_LINES.full); }
+        panel.refresh();
+        logAction(me, "room", "got the knife from 6ixty");
+        sixtySay(SIXTY_LINES.knife, 2600);
+        sixtyAfter(2900, () => sixtySay(SIXTY_LINES.tomorrow, 6500));
+      } else if (sixtySyringeReady(me)) {
+        try { await sixtyGiveSyringe(me); } catch { return sixtySay(SIXTY_LINES.full); }
+        panel.refresh();
+        logAction(me, "room", "got the syringe from 6ixty");
+        sixtySay(SIXTY_LINES.syringe, 2600);
+        sixtyAfter(1800, openSixtyWindow);
+      } else {
+        sixtySay(SIXTY_LINES.shop, 2500);
+        openSixtyWindow();
+      }
+    } finally {
+      sixtyBusy = false;
+    }
+  }
+
+  // ---- smoking ------------------------------------------------------------------------------------------
+  const isSmoking = (p: Player | undefined): boolean => !!p && typeof p.smoke === "number" && serverNow() - p.smoke < SMOKE_MS;
+
+  async function useCigarette(): Promise<void> {
+    const p = mine();
+    if (!p || p.lying) return;
+    if (isSmoking(p)) return say("You're already smoking one.", "warn");
+    const slot = me.inventory.findIndex((s) => s?.item === "cigarette" && !s.lit);
+    if (slot < 0) return;
+    const t = serverNow();
+    try {
+      await update(ref(db, `users/${me.uid}`), { [`inventory/${slot}/lit`]: serverTimestamp() });
+      me.inventory[slot]!.lit = t;
+      p.smoke = t;
+      void update(myRef, { smoke: serverTimestamp() }).catch(() => undefined);
+      logAction(me, "room", "lit a cigarette");
+      panel.refresh();
+      say("You light up.");
+    } catch {
+      say("The lighter won't catch. (the hotel refused it)", "warn");
+    }
+  }
+
+  /** A cigarette that has burned for a minute becomes a butt in the inventory. */
+  function burnDown(): void {
+    me.inventory.forEach((s, i) => {
+      if (s?.item !== "cigarette" || !s.lit || serverNow() - s.lit < SMOKE_MS) return;
+      me.inventory[i] = { item: "cigbutt", qty: 1 };
+      void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 } }).catch(() => undefined);
+      const p = mine();
+      if (p) p.smoke = undefined;
+      void update(myRef, { smoke: null }).catch(() => undefined);
+      panel.refresh();
+      say("The cigarette burns down to a butt.");
+    });
   }
 
   // ---- start: presence, players, chat, events ---------------------------------------
@@ -1022,8 +1131,23 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       stage.append(fade);
       window.setTimeout(() => fade.remove(), WAKE_MS + 800);
     }
+    // a cigarette still burning from before (you changed rooms) keeps smoking
+    const burning = me.inventory.find((s) => s?.item === "cigarette" && s.lit && serverNow() - s.lit < SMOKE_MS)?.lit;
+    if (burning) mineP.smoke = burning;
     void onDisconnect(myRef).remove();
-    set(myRef, { name: me.name, figure: me.figure, x: spawn.x, y: spawn.y, dir: 2, ts: serverTimestamp() }).catch(() => kicked("You can't be in that room."));
+    set(myRef, { name: me.name, figure: me.figure, x: spawn.x, y: spawn.y, dir: 2, ts: serverTimestamp(), ...(burning ? { smoke: burning } : {}) }).catch(() => kicked("You can't be in that room."));
+    unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
+    const burnTimer = window.setInterval(burnDown, 1000);
+    unsubs.push(() => window.clearInterval(burnTimer));
+    if (roomId === LOBBY_ID) {
+      unsubs.push(watchSixtyLook((l) => { void renderAvatar({ figure: l.figure, dir: SIXTY.dir, headDir: SIXTY.dir, actions: ["std"], gesture: "std", frame: 0 }); }));
+      // he whispers to anyone he has something for, now and every little while until they come over
+      sixtyAfter(1500, () => { if (sixtyWants() && !sixtyBusy) sixtySay(SIXTY_LINES.psst, 3200); });
+      const psst = window.setInterval(() => {
+        if (sixtyWants() && !sixtyBusy && !sixtyShop && !(sixtyBubble && sixtyBubble.until > performance.now())) sixtySay(SIXTY_LINES.psst, 3200);
+      }, 14_000);
+      unsubs.push(() => window.clearInterval(psst));
+    }
     setPresenceRoom(me, roomId);
     unsubs.push(social.subscribe(syncSleeper));
 
@@ -1043,6 +1167,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (!p) return;
         p.name = v.name;
         p.figure = v.figure;
+        p.smoke = typeof v.smoke === "number" ? v.smoke : undefined;
         if (v.x !== p.dest.x || v.y !== p.dest.y) setDestination(p, { x: v.x, y: v.y });
         const em = v.emote;
         if (em && typeof em.ts === "number" && em.ts !== p.lastEmoteTs) {
@@ -1127,7 +1252,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (em?.def.motion === "bounce") yOff = -Math.abs(Math.sin(t / 110)) * 7;
     if (em?.def.motion === "hop") yOff = -Math.abs(Math.sin((t / em.def.ms) * Math.PI * 2)) * 16;
 
-    const actions = moving ? ["wlk"] : em?.def.actions ?? ["std"];
+    // smoking: the hand is up at the mouth (the "drink" arm pose with no cup; the cigarette itself is drawn on top)
+    const actions = moving ? ["wlk"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
       ? Math.floor((now - p.stepStart) / (STEP_MS / 4)) % 4
@@ -1135,6 +1261,32 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       : em?.def.actions?.includes("wav") ? Math.floor(now / 250) % 2
       : 0;
     return { opts: { figure: p.figure, dir, headDir: dir, actions, gesture, frame }, yOff };
+  }
+
+  /** A cigarette at the mouth and a thin stream of smoke rising from the tip. (fx, fy) = the player's feet, `dir` the way they face. */
+  function drawCigarette(fx: number, fy: number, dir: number, now: number): void {
+    const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0; // which side of the face the cigarette sticks out on
+    const s = scale;
+    const mx = fx + side * 5 * s;                 // the mouth
+    const my = fy - (FEET_Y - 36) * s;
+    const tipx = mx + (side || 1) * 8 * s;
+    const tipy = my + 2 * s;
+    g.save();
+    g.lineCap = "round";
+    g.strokeStyle = "#f3efe6"; g.lineWidth = 2 * s;
+    g.beginPath(); g.moveTo(mx, my); g.lineTo(tipx, tipy); g.stroke();
+    g.strokeStyle = "#ff7a2a"; g.lineWidth = 2.2 * s;
+    g.beginPath(); g.moveTo(tipx - (side || 1) * 1.2 * s, tipy - 0.2 * s); g.lineTo(tipx, tipy); g.stroke();
+    // smoke: a few soft puffs that drift up, widen and fade
+    for (let i = 0; i < 6; i++) {
+      const t = (now / 1900 + i / 6) % 1;
+      const px = tipx + Math.sin(t * 7 + i * 1.7) * 3.5 * s + t * 3 * s * (side || 1);
+      const py = tipy - t * 36 * s;
+      const r = (1.6 + t * 4.2) * s;
+      g.fillStyle = `rgba(222,224,230,${(0.42 * (1 - t)).toFixed(3)})`;
+      g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
   }
 
   function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number }, now: number): Hitbox | null {
@@ -1624,6 +1776,40 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       });
     }
 
+    if (roomId === LOBBY_ID) {
+      // 6ixty: not a player, just drawn here; clicking him is how you meet him
+      const look = sixtyLook();
+      const talking = !!sixtyBubble && sixtyBubble.until > now;
+      const sopts = { figure: look.figure, dir: SIXTY.dir, headDir: SIXTY.dir, actions: ["std"], gesture: talking ? "spk" : "std", frame: talking ? Math.floor(now / 140) % 2 : 0 };
+      let simg = getCached(sopts);
+      if (!simg) { renderAvatar(sopts); simg = sixtyLast; } else sixtyLast = simg;
+      const sw = iso(SIXTY.x, SIXTY.y);
+      const sf = toScreen({ x: sw.x, y: sw.y + TILE_H / 2 });
+      objs.push({ id: SIXTY.id, kind: "npc", x0: sf.x - 22 * scale, x1: sf.x + 22 * scale, y0: sf.y - FEET_Y * scale, y1: sf.y + 8 * scale, depth: SIXTY.x + SIXTY.y });
+      const sHot = hoverObj?.kind === "npc";
+      list.push({
+        depth: SIXTY.x + SIXTY.y + 0.5,
+        draw: () => {
+          g.fillStyle = "rgba(0,0,0,0.18)";
+          g.beginPath(); g.ellipse(sf.x, sf.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); g.fill();
+          if (simg) g.drawImage(simg, sf.x - 32 * scale, sf.y - FEET_Y * scale, simg.width * scale, simg.height * scale);
+          g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
+          const tw = g.measureText(SIXTY.name).width + 10;
+          g.fillStyle = sHot ? "rgba(120,80,10,0.9)" : "rgba(0,0,0,0.55)";
+          g.beginPath(); g.roundRect(sf.x - tw / 2, sf.y + 7 * scale, tw, 14 * Math.max(1, scale), 5); g.fill();
+          g.fillStyle = "#ffe27a";
+          g.textBaseline = "top"; g.textAlign = "center";
+          g.fillText(SIXTY.name, sf.x, sf.y + 9 * scale);
+          g.textAlign = "start";
+        },
+      });
+      if (sixtyBubble && sixtyBubble.until > now) {
+        const left = sixtyBubble.until - now;
+        const sb = sixtyBubble;
+        bubbles.push(() => drawBubble(sb.text, SIXTY.name, sf.x, sf.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1));
+      }
+    }
+
     for (const p of players.values()) {
       if (p.lying) {
         // asleep (or just waking up): drawn lying on the bed
@@ -1691,6 +1877,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (fx.to === p.uid) flash = Math.max(flash, flashAmount(t));
       }
       const lift = yOff * scale;
+      const smoking = !isMoving(p, now) && isSmoking(p);
 
       boxes.push({ id: p.uid, x0: feet.x - 22 * scale, x1: feet.x + 22 * scale, y0: feet.y - FEET_Y * scale, y1: feet.y + 8 * scale, depth: pos.x + pos.y });
       list.push({
@@ -1706,6 +1893,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             g.drawImage(img, ax, ay, img.width * scale, img.height * scale);
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
           }
+          if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now);
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
@@ -1793,6 +1981,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     },
     hide() {
       active = false;
+      sixtyShop?.close();
       closeCdPopup();
       closeMenu();
       doorApi?.close();

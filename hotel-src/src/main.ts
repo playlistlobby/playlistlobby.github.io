@@ -28,7 +28,7 @@ import { publishProfile, social, startPresence, stopPresence } from "./social";
 export const APP_NAME = "6ixPlanet";
 export const STAFF_NOTICE = "Staff can see chat, private messages and activity on 6ixPlanet.";
 
-export type View = "room" | "customize" | "shop" | "admin";
+export type View = "room" | "customize" | "shop" | "admin" | "npc";
 
 export interface NavOpts {
   /** which room to open when view is "room" (defaults to the last room you were in, at first your own) */
@@ -261,14 +261,14 @@ async function showHotel(user: User): Promise<void> {
     social.stop();
   };
 
-  function mountCharacter(host: HTMLElement): () => void {
+  function mountCharacter(host: HTMLElement, mode: "customize" | "npc" = "customize"): () => void {
     const body = h("div", { class: "char-body" });
     host.append(body);
-    return mountEditor(body, ctx, "customize");
+    return mountEditor(body, ctx, mode);
   }
 
   function go(view: View, opts: NavOpts = {}): void {
-    if (view === "admin" && !p.isAdmin) view = "room";
+    if ((view === "admin" || view === "npc") && !p.isAdmin) view = "room";
     if (view === "room") {
       const target = opts.roomId ?? lastRoomId;
       pageCleanup?.();
@@ -296,6 +296,7 @@ async function showHotel(user: User): Promise<void> {
       pageHost.hidden = false;
       pageHost.scrollTop = 0;
       if (view === "customize") pageCleanup = mountCharacter(pageHost);
+      else if (view === "npc") pageCleanup = mountCharacter(pageHost, "npc");
       else if (view === "shop") pageCleanup = mountShop(pageHost, ctx);
       else if (view === "admin") pageCleanup = mountAdmin(pageHost, ctx);
       if (view === "shop" || view === "admin") {
