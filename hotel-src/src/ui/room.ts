@@ -119,8 +119,8 @@ const bloodImg = loadImg(BLOOD_ICON);
 const syringeImg = loadImg(ITEMS.syringe.icon);
 
 /** Where the lying avatar's 110x64 picture sits relative to the bed-head tile's floor point (tuned by eye against the bed art). */
-const LAY_DX = -22;
-const LAY_DY = -34;
+const LAY_DX = -81;
+const LAY_DY = -70;
 
 /** Pixels from the feet line up to the top of the 64x110 avatar canvas (tuned against the bobba sprites). */
 const FEET_Y = 94;
@@ -1546,7 +1546,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const ay = c.y + LAY_DY * scale;
         const lw = (limg?.width ?? 110) * scale;
         const lh = (limg?.height ?? 64) * scale;
-        boxes.push({ id: p.uid, x0: ax, x1: ax + lw, y0: ay, y1: ay + lh, depth: BED_HEAD.x + BED_HEAD.y + 3 });
+        // clickable area = just the sleeping body (the picture itself has a lot of empty padding around it)
+        boxes.push({ id: p.uid, x0: ax + 78 * scale, x1: ax + 154 * scale, y0: ay + 48 * scale, y1: ay + 90 * scale, depth: BED_HEAD.x + BED_HEAD.y + 3 });
         list.push({
           depth: BED_HEAD.x + 3 - 1 + BED_HEAD.y + 0.6, // just after the bed itself
           draw: () => {
@@ -1560,12 +1561,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             const tw = g.measureText(label).width + 10;
             g.fillStyle = targeted ? "rgba(150,20,20,0.85)" : "rgba(0,0,0,0.55)";
             g.beginPath();
-            g.roundRect(c.x - tw / 2, ay + lh + 2 * scale, tw, 14 * Math.max(1, scale), 5);
+            const lx = c.x + 32 * scale; // under the middle of the bed
+            const ly = c.y + 26 * scale;
+            g.roundRect(lx - tw / 2, ly, tw, 14 * Math.max(1, scale), 5);
             g.fill();
             g.fillStyle = "#fff";
             g.textBaseline = "top";
             g.textAlign = "center";
-            g.fillText(label, c.x, ay + lh + 4 * scale);
+            g.fillText(label, lx, ly + 2 * scale);
             g.textAlign = "start";
           },
         });

@@ -534,3 +534,6 @@ button, input, select { font-family: var(--font); }
 .onb-zzz { font-size: 56px; line-height: 1; animation: zzz 3s ease-in-out infinite; }
 @keyframes zzz { 0%, 100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(-8px); opacity: 1; } }
 .onb-wake { font-size: 20px; min-height: 54px; }
+
+.onb-wake-wrap { width: min(320px, 100%); margin-top: 28vh; }
+.onb-wake-wrap .onb-wake { box-shadow: 0 4px 18px rgba(30, 50, 60, .45); }

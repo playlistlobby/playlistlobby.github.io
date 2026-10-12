@@ -14,6 +14,8 @@ export default class AvatarInfo {
     isSmall: boolean;
     rectWidth: number;
     rectHeight: number;
+    padX: number = 0;
+    padY: number = 0;
     figure: FigurePart[];
     drawAction: DrawAction;
     handItem: number;
@@ -95,6 +97,12 @@ export default class AvatarInfo {
                     const temp = this.rectWidth;
                     this.rectWidth = this.rectHeight
                     this.rectHeight = temp;
+                    // 6ixPlanet: the lying-down parts are drawn left of and above the swapped 110x64 box (the head and torso were cut off),
+                    // so the picture gets padding and everything is drawn shifted by it (see AvatarImager)
+                    this.padX = 90;
+                    this.padY = 30;
+                    this.rectWidth += this.padX;
+                    this.rectHeight += this.padY;
 
                     switch (this.gesture) {
                         case "spk":

@@ -8,6 +8,9 @@ export const AVATAR_RESOURCES_URL = "https://images.bobba.io/gordon/PRODUCTION-2
 export const imager = new AvatarImager(AVATAR_RESOURCES_URL);
 export const avatarsReady: Promise<void> = imager.initialize();
 
+/** Extra room the lying-down picture has to the left of / above its 110x64 box (see avatar/AvatarInfo.ts). */
+export const LAY_PAD = { x: 90, y: 30 };
+
 export interface RenderOpts {
   figure: string;
   dir: number;

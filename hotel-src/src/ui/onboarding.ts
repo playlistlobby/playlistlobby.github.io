@@ -102,11 +102,7 @@ export function runOnboarding(region: HTMLElement, ctx: Ctx, needAvatar: boolean
         }
       });
       page.replaceChildren(
-        h("div", { class: "onb-card onb-sleep" },
-          h("div", { class: "onb-zzz" }, "💤"),
-          h("h1", {}, "You're asleep…"),
-          h("p", { class: "muted onb-sub" }, "It's dark and the air is cold. Time to open your eyes."),
-          wake));
+        h("div", { class: "onb-wake-wrap" }, wake));
     }
 
     function show(): void {
