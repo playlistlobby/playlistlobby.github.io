@@ -43,6 +43,8 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     h("div", { class: "door-head" }, h("strong", {}, "🚪 Where to?"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
     body);
   host.append(el);
+  el.classList.add("arming");
+  window.setTimeout(() => el.classList.remove("arming"), 500);
 
   function enter(roomId: string, label: string): void {
     logAction(me, "visit", `went to ${label}`);

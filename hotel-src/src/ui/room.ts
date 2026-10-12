@@ -40,7 +40,7 @@ import {
   watchLobbyFurni,
   watchMeta,
 } from "../rooms";
-import { Box, drawDoor, drawFurniBase, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
+import { Box, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
 import { h, toast } from "./dom";
@@ -142,7 +142,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   let hoverDoor = false;
   let doorBox: Box | null = null;
   let doorApi: DoorApi | null = null;
-  const doorLabel = roomId === LOBBY_ID ? "ROOMS" : "EXIT";
 
   // OSRS-style "use item on ..." state
   let selectedSlot: number | null = null;
@@ -228,6 +227,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   // ---- room geometry ---------------------------------------------------------------
   function rebuildBlocked(): void {
     blocked.clear();
+    blocked.add(`${def.doorX},0`); // the door itself stands on this tile; you use it from beside or in front of it
     for (const f of def.furni) {
       const k = FURNI_KINDS[f.kind];
       if (k.flat) continue; // flat pieces (a label on the floor) can be walked over
@@ -273,6 +273,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     floorOrigin = shell.origin;
     layout();
     void ensureFurniSprites(def);
+    void ensureDoorArt();
     // textured floors/walls need their images first; draw again once they're in
     const forDef = def;
     void ensureTextures(def.theme).then(() => {
@@ -282,6 +283,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
       floorOrigin = again.origin;
     });
     roomTitle.textContent = def.ownerName ? `${def.name} · by ${def.ownerName}` : def.name;
+    stage.classList.toggle("horror", def.theme.style === "grime");
     defListeners.forEach((l) => l());
   }
 
@@ -505,7 +507,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   function tryPlace(kind: string, t: Pt): void {
     const k = FURNI_KINDS[kind];
     const adminLobby = def.id === LOBBY_ID && me.isAdmin;
-    if (!k || (!k.placeable && !(adminLobby && k.nitro))) return;
+    if (!k || (!k.placeable && !(adminLobby && (k.nitro || INTERACTIVE_KINDS.has(kind))))) return;
     if (def.furni.length >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
     const fp = footprint(kind, toolDir);
     for (let i = 0; i < fp.w; i++) {
@@ -1407,7 +1409,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     g.imageSmoothingEnabled = scale < 1;
     g.clearRect(0, 0, canvas.width, canvas.height);
     g.drawImage(floor, offX - floorOrigin.x * scale, offY - floorOrigin.y * scale, floor.width * scale, floor.height * scale);
-    doorBox = drawDoor(g, def.doorX, toScreen, scale, doorLabel, hoverDoor ? 1 : 0);
+    doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, hoverDoor ? 1 : 0, def.theme.style === "grime");
 
     if (!started) return;
     for (const p of players.values()) advance(p, now);

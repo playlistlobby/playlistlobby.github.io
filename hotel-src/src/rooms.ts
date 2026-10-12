@@ -17,6 +17,8 @@ export interface RoomTheme {
   /** optional texture ids from public/textures (floor_<id>.png / wall_<id>.png) */
   floorTex?: string;
   wallTex?: string;
+  /** "grime": dirty concrete drawn procedurally (stains, cracks, rust, puddles), and a dark moody stage */
+  style?: "grime";
 }
 
 export interface FurniKind {
@@ -143,9 +145,11 @@ export const ownRoomId = (uid: string) => `u_${uid}`;
 export const ownerOfRoom = (id: string) => (id.startsWith("u_") ? id.slice(2) : null);
 export const isLobby = (id: string) => id === LOBBY_ID;
 
-/** The public lobby: a fixed layout (arcade machines and CD player against the back wall) plus whatever pieces the admin added. */
+/** Cold, damp concrete: the look of the public room. */
+export const GRIME_THEME: RoomTheme = { floorA: "#5f6262", floorB: "#686b6b", wall: "#575c5d", rug: false, rugColor: "#000000", style: "grime" };
+
+/** The public room: an empty, filthy concrete cell. Everything in it was put there by the admin (Room > 🏠 tab). */
 export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
-  const fixed: Array<[string, number, number]> = [["sofa", 9, 1], ["plant", 1, 9], ["table", 5, 5], ["arcade", 3, 0], ["arcade", 5, 0], ["cdplayer", 7, 0], ["wf_label", 4, 2]];
   return {
     id: LOBBY_ID,
     name: "Main Lobby",
@@ -154,9 +158,9 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     access: "open",
     w: 12,
     h: 12,
-    theme: { ...DEFAULT_THEME },
-    rug: { x0: 3, y0: 3, w: 6, h: 6 },
-    furni: [...fixed.map(([kind, x, y], i) => ({ id: `lobby${i}`, kind, x, y })), ...extras.filter((f) => FURNI_KINDS[f.kind])],
+    theme: { ...GRIME_THEME },
+    rug: null,
+    furni: extras.filter((f) => FURNI_KINDS[f.kind]),
     doorX: DOOR_X,
   };
 }

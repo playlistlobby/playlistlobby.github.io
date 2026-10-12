@@ -12,6 +12,7 @@ import {
   WALL_COLORS,
   WALL_TEXTURES,
   removeFurni,
+  INTERACTIVE_KINDS,
   isFixedLobbyPiece,
   LOBBY_ID,
 } from "../rooms";
@@ -51,7 +52,7 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
 
   /** Furniture picker: the tools, the pieces to place, and rotate / clear. */
   function furnitureSection(def: RoomDef, tool: string | null, admin: boolean): HTMLElement {
-    const kinds = Object.values(FURNI_KINDS).filter((k) => (admin ? k.placeable || !!k.nitro?.startsWith("db:") : k.placeable));
+    const kinds = Object.values(FURNI_KINDS).filter((k) => (admin ? k.placeable || !!k.nitro?.startsWith("db:") || INTERACTIVE_KINDS.has(k.id) : k.placeable));
     const picked = tool && tool !== "pickup" ? FURNI_KINDS[tool] : undefined;
     const clearable = def.furni.filter((f) => !isFixedLobbyPiece(f.id));
     return h("div", { class: "rp-sec" },

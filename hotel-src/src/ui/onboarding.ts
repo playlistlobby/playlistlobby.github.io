@@ -5,7 +5,7 @@ import { saveFigure } from "../db";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import { createRoom, defFromTemplate, ROOM_TEMPLATES, RoomTemplate } from "../rooms";
-import { ensureTextures, renderRoomPreview } from "../roomRender";
+import { ensureDoorArt, ensureTextures, renderRoomPreview } from "../roomRender";
 import type { Ctx } from "../main";
 
 /**
@@ -107,7 +107,7 @@ export function runOnboarding(region: HTMLElement, ctx: Ctx, needAvatar: boolean
         }, preview, h("div", { class: "onb-room-name" }, tpl.name), h("div", { class: "hint" }, `${tpl.w}×${tpl.h} · ${tpl.blurb}`));
         cards.set(tpl.id, card);
         const def = defFromTemplate(tpl, { uid: profile.uid, name: profile.name });
-        void ensureTextures(def.theme).then(() => {
+        void Promise.all([ensureTextures(def.theme), ensureDoorArt()]).then(() => {
           if (disposed || !preview.isConnected) return;
           preview.replaceChildren(renderRoomPreview(def, 300));
         });

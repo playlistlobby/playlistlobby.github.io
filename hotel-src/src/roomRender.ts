@@ -1,7 +1,7 @@
 // Isometric room drawing shared by the live room (ui/room.ts) and the first-run room picker previews.
 import { assetUrl } from "./assetUrl";
 import { footprint, FURNI_KINDS, RoomDef, RoomTheme } from "./rooms";
-import { loadNitro, nitroIfReady, NitroFurni, spritesFor } from "./nitro";
+import { derive, loadNitro, nitroIfReady, NitroFurni, spritesFor } from "./nitro";
 
 export const TILE_W = 64;
 export const TILE_H = 32;
@@ -41,6 +41,135 @@ export function ensureTextures(theme: Partial<RoomTheme>): Promise<void> {
 }
 
 const texture = (kind: "floor" | "wall", id?: string) => (id ? textures.get(`${kind}_${id}`) ?? null : null);
+
+// ---- dirty concrete (procedural, so no texture files are needed) ----------------------------------------------
+/** Small seeded random generator: the same room always gets the same stains, so redraws don't shimmer. */
+function seeded(seed: number): () => number {
+  let a = seed | 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Stains, grit, cracks, rust, water streaks and (on floors) puddles, painted over a polygon. */
+function paintGrime(x: CanvasRenderingContext2D, pts: Pt[], kind: "wall" | "floor", seed: number): void {
+  const r = seeded(seed);
+  const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+  const bx = Math.min(...xs), by = Math.min(...ys), bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by;
+  const rnd = (a: number, b: number) => a + r() * (b - a);
+  x.save();
+  x.beginPath();
+  pts.forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
+  x.closePath();
+  x.clip();
+
+  // big soft blotches: damp patches, soot, a few paler worn areas
+  const blotches = Math.round((bw * bh) / 5200);
+  for (let i = 0; i < blotches; i++) {
+    const cx = rnd(bx, bx + bw), cy = rnd(by, by + bh), rad = rnd(18, kind === "wall" ? 70 : 90);
+    const dark = r() < 0.78;
+    const g = x.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    const col = dark ? (r() < 0.25 ? "40,30,22" : "12,14,14") : "170,172,165";
+    g.addColorStop(0, `rgba(${col},${dark ? rnd(0.12, 0.34) : rnd(0.05, 0.12)})`);
+    g.addColorStop(1, `rgba(${col},0)`);
+    x.fillStyle = g;
+    x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+  }
+
+  // grit
+  const specks = Math.round((bw * bh) / 26);
+  for (let i = 0; i < specks; i++) {
+    const light = r() < 0.38;
+    x.fillStyle = light ? `rgba(200,205,200,${rnd(0.04, 0.16)})` : `rgba(0,0,0,${rnd(0.08, 0.3)})`;
+    x.fillRect(rnd(bx, bx + bw), rnd(by, by + bh), r() < 0.85 ? 1 : 2, r() < 0.85 ? 1 : 2);
+  }
+
+  if (kind === "wall") {
+    // water streaks running down from the top, rust trails, and a few dark red drips
+    const streaks = Math.round(bw / 11);
+    for (let i = 0; i < streaks; i++) {
+      const sx = rnd(bx, bx + bw), sy = by + rnd(-10, bh * 0.55), len = rnd(30, 140), wd = rnd(1.5, 7);
+      const rust = r() < 0.2;
+      const g = x.createLinearGradient(0, sy, 0, sy + len);
+      const col = rust ? "112,52,24" : "22,20,18";
+      g.addColorStop(0, `rgba(${col},0)`);
+      g.addColorStop(0.15, `rgba(${col},${rust ? rnd(0.22, 0.38) : rnd(0.16, 0.34)})`);
+      g.addColorStop(1, `rgba(${col},0)`);
+      x.fillStyle = g;
+      x.fillRect(sx, sy, wd, len);
+    }
+    for (let i = 0; i < Math.max(2, Math.round(bw / 120)); i++) {
+      const sx = rnd(bx + 8, bx + bw - 8), sy = by + rnd(bh * 0.1, bh * 0.45), len = rnd(18, 64);
+      const g = x.createLinearGradient(0, sy, 0, sy + len);
+      g.addColorStop(0, "rgba(88,12,10,.0)");
+      g.addColorStop(0.2, "rgba(88,12,10,.55)");
+      g.addColorStop(1, "rgba(60,8,8,.5)");
+      x.fillStyle = g;
+      x.fillRect(sx, sy, 2, len);
+      x.fillStyle = "rgba(60,8,8,.6)";
+      x.beginPath(); x.arc(sx + 1, sy + len, 2.2, 0, Math.PI * 2); x.fill();
+    }
+    // grimier toward the floor
+    const g = x.createLinearGradient(0, by, 0, by + bh);
+    g.addColorStop(0, "rgba(0,0,0,0.12)");
+    g.addColorStop(0.55, "rgba(0,0,0,0)");
+    g.addColorStop(1, "rgba(0,0,0,0.28)");
+    x.fillStyle = g;
+    x.fillRect(bx, by, bw, bh);
+  } else {
+    // puddles: dark ellipses squashed to the floor's perspective, with a faint wet sheen, and a stain or two
+    for (let i = 0; i < 5; i++) {
+      const cx = rnd(bx + bw * 0.2, bx + bw * 0.8), cy = rnd(by + bh * 0.3, by + bh * 0.8), rw = rnd(16, 46);
+      const pg = x.createRadialGradient(cx, cy, rw * 0.15, cx, cy, rw);
+      pg.addColorStop(0, "rgba(8,12,14,.4)");
+      pg.addColorStop(0.75, "rgba(8,12,14,.28)");
+      pg.addColorStop(1, "rgba(8,12,14,0)");
+      x.fillStyle = pg;
+      x.save();
+      x.translate(cx, cy);
+      x.scale(1, 0.5);
+      x.beginPath(); x.arc(0, 0, rw, 0, Math.PI * 2); x.fill();
+      x.restore();
+      x.strokeStyle = "rgba(190,205,210,.14)";
+      x.lineWidth = 1;
+      x.beginPath(); x.ellipse(cx - rw * 0.15, cy - rw * 0.08, rw * 0.7, rw * 0.3, 0, Math.PI * 1.05, Math.PI * 1.7); x.stroke();
+    }
+    for (let i = 0; i < 2; i++) {
+      const cx = rnd(bx + bw * 0.25, bx + bw * 0.75), cy = rnd(by + bh * 0.35, by + bh * 0.75), rw = rnd(14, 34);
+      const g = x.createRadialGradient(cx, cy, 0, cx, cy, rw);
+      g.addColorStop(0, "rgba(78,14,12,.5)");
+      g.addColorStop(1, "rgba(78,14,12,0)");
+      x.fillStyle = g;
+      x.beginPath(); x.ellipse(cx, cy, rw, rw / 2, 0, 0, Math.PI * 2); x.fill();
+    }
+  }
+
+  // cracks that branch
+  const crack = (sx: number, sy: number, dx: number, dy: number, steps: number, depth: number) => {
+    x.beginPath();
+    x.moveTo(sx, sy);
+    let cx = sx, cy = sy;
+    for (let i = 0; i < steps; i++) {
+      cx += dx * rnd(3, 8) + rnd(-3, 3);
+      cy += dy * rnd(3, 8) + rnd(-3, 3);
+      x.lineTo(cx, cy);
+      if (depth > 0 && r() < 0.12) crack(cx, cy, dx + rnd(-1, 1), dy + rnd(-0.6, 0.6), Math.round(steps / 2), depth - 1);
+      x.moveTo(cx, cy);
+    }
+    x.strokeStyle = `rgba(6,6,6,${rnd(0.45, 0.7)})`;
+    x.lineWidth = rnd(0.7, 1.4);
+    x.stroke();
+  };
+  const cracks = Math.max(2, Math.round((bw * bh) / 38000));
+  for (let i = 0; i < cracks; i++) {
+    const ang = kind === "wall" ? rnd(0.9, 2.2) : rnd(0, Math.PI);
+    crack(rnd(bx, bx + bw), rnd(by, by + bh), Math.cos(ang), Math.sin(ang), Math.round(rnd(10, 26)), 2);
+  }
+  x.restore();
+}
 
 // ---- the room shell: floor, walls ------------------------------------------------------------------
 export interface Shell {
@@ -104,6 +233,10 @@ export function renderRoomShell(def: RoomDef): Shell {
   // baseboards
   poly([o, br, { x: br.x, y: br.y - 10 }, { x: o.x, y: o.y - 10 }], shade(t.wall, 0.72));
   poly([o, bl, { x: bl.x, y: bl.y - 10 }, { x: o.x, y: o.y - 10 }], shade(t.wall, 0.64));
+  if (t.style === "grime") {
+    paintGrime(x, rightWall, "wall", 11);
+    paintGrime(x, leftWall, "wall", 23);
+  }
   // floor edge thickness
   const bot = iso(W, H);
   poly([bl, bot, { x: bot.x, y: bot.y + 8 }, { x: bl.x, y: bl.y + 8 }], shade(t.floorA, 0.6));
@@ -136,6 +269,22 @@ export function renderRoomShell(def: RoomDef): Shell {
         x.restore();
       }
     }
+  }
+  if (t.style === "grime") {
+    paintGrime(x, [iso(0, 0), iso(W, 0), iso(W, H), iso(0, H)], "floor", 37);
+    // the room darkens toward the walls, as if one dim bulb lit the middle
+    const mid = iso(W / 2, H / 2);
+    const g = x.createRadialGradient(mid.x, mid.y + TILE_H / 2, 20, mid.x, mid.y + TILE_H / 2, Math.max(W, H) * TILE_W * 0.55);
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(1, "rgba(0,0,0,0.42)");
+    x.save();
+    x.beginPath();
+    [iso(0, 0), iso(W, 0), iso(W, H), iso(0, H)].forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
+    x.closePath();
+    x.clip();
+    x.fillStyle = g;
+    x.fillRect(minX, minY, maxX - minX, maxY - minY);
+    x.restore();
   }
   return { canvas: c, origin: { x: -minX, y: -minY } };
 }
@@ -181,17 +330,21 @@ export function ensureFurniSprites(def: RoomDef): Promise<void> {
 }
 
 /** Draws sprite art standing on the floor footprint (w x h tiles) at (tx, ty). The art's anchor is the centre of that footprint. */
-export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: number, h: number, tx: number, ty: number, dir: number, nudge: { x: number; y: number } | undefined, toScreen: (p: Pt) => Pt, scale: number, alpha = 1): void {
+export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: number, h: number, tx: number, ty: number, dir: number, nudge: { x: number; y: number } | undefined, toScreen: (p: Pt) => Pt, scale: number, alpha = 1): Box | null {
   const o = toScreen(iso(tx + w / 2, ty + h / 2)); // 1x1: the middle of the tile's diamond
   const ox = o.x + (nudge?.x ?? 0) * scale;
   const oy = o.y + (nudge?.y ?? 0) * scale;
   const prevSmoothing = g.imageSmoothingEnabled;
   g.imageSmoothingEnabled = false;
+  let box: Box | null = null;
   for (const s of spritesFor(n, dir)) {
     const sw = s.sw * scale;
     const sh = s.sh * scale;
     const left = ox + s.dx * scale;
     const top = oy + s.dy * scale;
+    if (!s.isShadow && s.sw > 2 && s.sh > 2) {
+      box = box ? { x0: Math.min(box.x0, left), y0: Math.min(box.y0, top), x1: Math.max(box.x1, left + sw), y1: Math.max(box.y1, top + sh) } : { x0: left, y0: top, x1: left + sw, y1: top + sh };
+    }
     g.save();
     g.globalAlpha = alpha * (s.isShadow ? 0.22 : 1); // the shadow art is solid black; the game draws it faint
     if (s.flipH) {
@@ -204,6 +357,7 @@ export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: 
     g.restore();
   }
   g.imageSmoothingEnabled = prevSmoothing;
+  return box;
 }
 
 /** Draws a placed .nitro piece of a registered furniture kind. Returns false until its art has loaded. */
@@ -220,7 +374,7 @@ export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: 
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 
 /** Draws the door on the back-right wall above tile (doorX, 0) and returns its click box. glow 0..1 lights it up (hover). */
-export function drawDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, label: string, glow: number): Box {
+export function drawDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, label: string, glow: number, worn = false): Box {
   const BL = toScreen(iso(doorX, 0));
   const BR = toScreen(iso(doorX + 1, 0));
   const P = (u: number, v: number): Pt => ({ x: BL.x + (BR.x - BL.x) * u, y: BL.y + (BR.y - BL.y) * u - v * scale });
@@ -233,10 +387,10 @@ export function drawDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (
     g.fill();
   };
   // frame, then the door leaf
-  fillQuad(quad(-0.07, 0, 1.07, DOOR_H + 7), "#2e1b10");
+  fillQuad(quad(-0.07, 0, 1.07, DOOR_H + 7), worn ? "#14110f" : "#2e1b10");
   const leaf = g.createLinearGradient(BL.x, 0, BR.x, 0);
-  leaf.addColorStop(0, "#8d5c35");
-  leaf.addColorStop(1, "#6a4125");
+  leaf.addColorStop(0, worn ? "#4d4740" : "#8d5c35"); // worn = a scarred steel door
+  leaf.addColorStop(1, worn ? "#35312c" : "#6a4125");
   fillQuad(quad(0.03, 0, 0.97, DOOR_H), leaf);
   // two raised panels
   fillQuad(quad(0.14, 8, 0.86, 38), "rgba(0,0,0,0.18)");
@@ -245,23 +399,102 @@ export function drawDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (
   fillQuad(quad(0.17, 49, 0.83, 73), "rgba(255,255,255,0.07)");
   // knob
   const knob = P(0.82, 42);
-  g.fillStyle = "#e6c14d";
+  if (worn) {
+    // rust streaks down the door
+    fillQuad(quad(0.12, 20, 0.2, DOOR_H - 4), "rgba(110,52,24,.38)");
+    fillQuad(quad(0.55, 8, 0.62, DOOR_H - 18), "rgba(90,40,18,.32)");
+    fillQuad(quad(0.78, 30, 0.84, DOOR_H - 2), "rgba(30,26,22,.4)");
+  }
+  g.fillStyle = worn ? "#8c8576" : "#e6c14d";
   g.beginPath(); g.arc(knob.x, knob.y, 3 * scale, 0, Math.PI * 2); g.fill();
   g.fillStyle = "rgba(255,255,255,0.7)";
   g.beginPath(); g.arc(knob.x - scale, knob.y - scale, 1 * scale, 0, Math.PI * 2); g.fill();
   if (glow > 0) fillQuad(quad(0.03, 0, 0.97, DOOR_H), `rgba(255,236,150,${(0.28 * glow).toFixed(2)})`);
   // sign above
-  fillQuad(quad(-0.12, DOOR_H + 11, 1.12, DOOR_H + 27), "#16255c");
+  fillQuad(quad(-0.12, DOOR_H + 11, 1.12, DOOR_H + 27), worn ? "#2a1210" : "#16255c");
   const c = P(0.5, DOOR_H + 19);
   g.save();
   g.font = `bold ${Math.round(9 * Math.max(1, scale))}px Verdana, sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "middle";
-  g.fillStyle = glow > 0 ? "#fff6b0" : "#d6e0ff";
+  g.fillStyle = glow > 0 ? "#fff6b0" : worn ? "#d98a7a" : "#d6e0ff";
   g.fillText(label, c.x, c.y);
   g.restore();
   const pts = [P(-0.12, 0), P(1.12, 0), P(1.12, DOOR_H + 27), P(-0.12, DOOR_H + 27)];
   return { x0: Math.min(...pts.map((p) => p.x)), x1: Math.max(...pts.map((p) => p.x)), y0: Math.min(...pts.map((p) => p.y)), y1: Math.max(...pts.map((p) => p.y)) };
+}
+
+// ---- the real door: Habbo's teleport door (.nitro), carpet erased, plain colour or fully greyscale -------------------
+const DOOR_PATH = "furni/teleport_door.nitro";
+/** the way the door faces: dir 4 looks into the room from the back-right wall */
+const DOOR_DIR = 4;
+let doorColour: NitroFurni | null = null;
+let doorGrey: NitroFurni | null = null;
+
+/** Loads the door art (once) and prepares its two looks. Draw again when it resolves; until then the old painted door is used. */
+export function ensureDoorArt(): Promise<void> {
+  if (doorColour) return Promise.resolve();
+  return loadNitro(DOOR_PATH).then((n) => {
+    if (!n || doorColour) return;
+    // the red doormat is painted into the door frame's sprite: wipe the strongly red pixels at its bottom
+    const clean = derive(n, (g) => {
+      for (const [key, f] of Object.entries(n.json.spritesheet.frames)) {
+        if (!/_64_[abc]_/.test(key)) continue;
+        const frameA = /_64_a_/.test(key); // the frame's own sprite carries the mat; the leaf sprites only have a few red specks
+        const { x, y, w, h } = f.frame;
+        if (w < 3 || h < 3) continue;
+        const img = g.getImageData(x, y, w, h);
+        const d = img.data;
+        const top = Math.floor(h * 0.6);
+        const wiped = new Set<number>();
+        for (let py = top; py < h; py++) {
+          for (let px = 0; px < w; px++) {
+            const i = (py * w + px) * 4;
+            const r = d[i], gg = d[i + 1], b = d[i + 2];
+            if (d[i + 3] > 0 && r > 80 && gg < r * 0.34 && b < r * 0.34) { d[i + 3] = 0; wiped.add(py * w + px); }
+          }
+        }
+        // the mat also had a thin, dotted black outline: take the dark pixels within two pixels of the wiped area
+        const dark = (i: number) => d[i + 3] > 0 && d[i] < 40 && d[i + 1] < 40 && d[i + 2] < 40;
+        const touching: number[] = [];
+        for (let py = top; py < h && frameA; py++) {
+          for (let px = 0; px < w; px++) {
+            const i = (py * w + px) * 4;
+            if (!dark(i)) continue;
+            let near = false;
+            for (let dy = -2; dy <= 2 && !near; dy++) for (let dx = -2; dx <= 2 && !near; dx++) if (wiped.has((py + dy) * w + px + dx)) near = true;
+            if (near) touching.push(i);
+          }
+        }
+        for (const i of touching) d[i + 3] = 0;
+        g.putImageData(img, x, y);
+      }
+    });
+    doorColour = clean;
+    doorGrey = derive(clean, (g, w, h) => {
+      const img = g.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const l = Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
+        d[i] = d[i + 1] = d[i + 2] = l;
+      }
+      g.putImageData(img, 0, 0);
+    });
+  });
+}
+
+/** Draws the room's door on the back-right wall and returns its click box. The painted door is the fallback while the art loads. */
+export function drawRoomDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, glow: number, grey: boolean): Box {
+  const art = grey ? doorGrey : doorColour;
+  if (!art) return drawDoor(g, doorX, toScreen, scale, "", glow, grey);
+  const box = drawNitroSprites(g, art, 1, 1, doorX, 0, DOOR_DIR, undefined, toScreen, scale);
+  if (glow > 0) {
+    g.save();
+    g.globalCompositeOperation = "lighter";
+    drawNitroSprites(g, art, 1, 1, doorX, 0, DOOR_DIR, undefined, toScreen, scale, 0.22 * glow);
+    g.restore();
+  }
+  return box ?? drawDoor(g, doorX, toScreen, scale, "", glow, grey);
 }
 
 // ---- small static preview (room picker cards) ----------------------------------------------------------
@@ -280,7 +513,7 @@ export function renderRoomPreview(def: RoomDef, width: number): HTMLCanvasElemen
   g.imageSmoothingQuality = "high";
   g.drawImage(shell.canvas, 0, 0, width, shell.canvas.height * scale);
   const toScreen = (p: Pt): Pt => ({ x: (shell.origin.x + p.x) * scale, y: (shell.origin.y + p.y) * scale });
-  drawDoor(g, def.doorX, toScreen, scale, "EXIT", 0);
+  drawRoomDoor(g, def.doorX, toScreen, scale, 0, def.theme.style === "grime");
   void ensureFurniSprites(def);
   [...def.furni].filter((f) => !FURNI_KINDS[f.kind].nitro)
     .sort((a, b) => a.x + FURNI_KINDS[a.kind].w + a.y + FURNI_KINDS[a.kind].h - (b.x + FURNI_KINDS[b.kind].w + b.y + FURNI_KINDS[b.kind].h))

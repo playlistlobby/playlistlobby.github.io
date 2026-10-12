@@ -2,7 +2,7 @@
 // (h_<pose>_<layer>_<partId>_<direction>_<frame>); we list the parts it contains, let the admin group them into garments,
 // and turn each garment into a Studio design (which can then be repainted, repriced or deleted like any other).
 import { Draft, DraftFrame, DesignMeta, DesignPart, allocateDesignId, cloneCanvas, frameName, parseFrameKey, publishDraft } from "./designs";
-import { buildNitro, NitroFurni, NitroJson, unpackNitro } from "./nitro";
+import { buildNitro, NitroFurni, NitroJson, SheetImage, unpackNitro } from "./nitro";
 
 export interface FigurePart {
   /** sprite layer: ch, ls, rs, lg, sh, hr, ... */
@@ -28,7 +28,7 @@ interface FrameRef {
 export interface FigureNitro {
   fileName: string;
   libName: string;
-  image: ImageBitmap;
+  image: SheetImage;
   frames: FrameRef[];
   parts: FigurePart[];
 }
@@ -97,7 +97,7 @@ export interface Garment {
   price: number;
 }
 
-function cropFrame(image: ImageBitmap, f: FrameRef): HTMLCanvasElement {
+function cropFrame(image: SheetImage, f: FrameRef): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = f.rect.w;
   c.height = f.rect.h;

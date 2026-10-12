@@ -23,9 +23,12 @@ export interface NitroJson {
   [k: string]: unknown;
 }
 
+/** The sprite sheet: the decoded image, or an edited copy of it (see derive()). */
+export type SheetImage = ImageBitmap | HTMLCanvasElement;
+
 export interface NitroFurni {
   name: string;
-  image: ImageBitmap;
+  image: SheetImage;
   json: NitroJson;
   /** layer letters present at the 64px size, in draw order ("sd" is the shadow and comes first) */
   layers: string[];
@@ -130,9 +133,20 @@ export function directionsOf(n: NitroFurni): number[] {
   return [...dirs].sort((a, b) => a - b);
 }
 
+/** A copy of the furniture whose sprite sheet has been edited (recolour, erase something...). `edit` gets the sheet's 2D context. */
+export function derive(n: NitroFurni, edit: (g: CanvasRenderingContext2D, w: number, h: number) => void): NitroFurni {
+  const c = document.createElement("canvas");
+  c.width = n.image.width;
+  c.height = n.image.height;
+  const g = c.getContext("2d", { willReadFrequently: true })!;
+  g.drawImage(n.image, 0, 0);
+  edit(g, c.width, c.height);
+  return { ...n, image: c };
+}
+
 export interface SpriteDraw {
   layer: string;
-  image: ImageBitmap;
+  image: SheetImage;
   sx: number; sy: number; sw: number; sh: number;
   /** where the sprite's top-left sits relative to the furniture's anchor point, in 64px pixels */
   dx: number; dy: number;
