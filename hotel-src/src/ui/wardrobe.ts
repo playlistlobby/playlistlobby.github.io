@@ -2,6 +2,7 @@ import { h, toast } from "./dom";
 import { renderAvatar } from "../avatarService";
 import { deleteOutfit, saveFigure, saveOutfit, WARDROBE_SLOTS } from "../db";
 import { logAction } from "../logger";
+import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 
 export function mountWardrobe(root: HTMLElement, ctx: Ctx): () => void {
@@ -49,6 +50,8 @@ export function mountWardrobe(root: HTMLElement, ctx: Ctx): () => void {
                 await saveFigure(profile, outfit.figure, outfit.gender);
                 logAction(profile, "outfit", `wore the outfit in slot ${i + 1}`);
                 ctx.refreshHeader();
+                ctx.lookChanged();
+                playSfx("camera", 0.35);
                 toast("Outfit on!");
                 redraw();
               } catch (err) { toast((err as Error).message, "err"); }
@@ -63,7 +66,7 @@ export function mountWardrobe(root: HTMLElement, ctx: Ctx): () => void {
     });
 
     wrap.replaceChildren(
-      h("h2", {}, "Wardrobe"),
+      h("h2", {}, "Saved outfits"),
       h("div", { class: "wardrobe-current" },
         avatarCanvas(profile.figure),
         h("div", {},

@@ -6,6 +6,7 @@ import { TRACKS } from "../music";
 import { EMOTES, emoteForSale, emoteKey, emotePrice, hasEmote } from "../emotes";
 import { itemEntry, musicEntry, onShopConfig } from "../shopConfig";
 import { logAction } from "../logger";
+import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 
 type ShopTab = "clothing" | "emotes" | "items" | "music";
@@ -49,7 +50,7 @@ function mountEmoteShop(root: HTMLElement, ctx: Ctx, rerender: () => void): () =
   root.append(
     h("div", { class: "panel" },
       h("h2", {}, "Emotes"),
-      h("p", { class: "muted" }, `You already have: ${free.map((e) => `${e.icon} ${e.name}`).join("  ")}. Unlocked emotes show up in the Emotes tab in the lobby, or type /name in chat.`),
+      h("p", { class: "muted" }, `You already have: ${free.map((e) => `${e.icon} ${e.name}`).join("  ")}. Unlocked emotes show up in the Emotes tab in a room, or type /name in chat.`),
       sale.length === 0 ? h("p", { class: "muted" }, "Nothing on sale right now. Check back soon.") : null,
       h("div", { class: "emote-shop" }, ...sale.map((e) => {
         const owned = hasEmote(p, e.id);
@@ -70,7 +71,8 @@ function mountEmoteShop(root: HTMLElement, ctx: Ctx, rerender: () => void): () =
                     await buyItems(p, [emoteKey(e.id)], price);
                     ctx.refreshHeader();
                     logAction(p, "buy", `bought the ${e.name} emote for ${price}`);
-                    toast(`${e.name} unlocked! Try /${e.id} in the lobby.`);
+                    playSfx("cash", 0.45);
+                    toast(`${e.name} unlocked! Try /${e.id} in a room.`);
                     rerender();
                   } catch (err) {
                     toast((err as Error).message, "err");
@@ -106,6 +108,7 @@ function mountItemShop(root: HTMLElement, ctx: Ctx, rerender: () => void): () =>
                 await buyInventoryItem(p, it.id, price);
                 ctx.refreshHeader();
                 logAction(p, "buy", `bought a ${it.name} for ${price}`);
+                playSfx("cash", 0.45);
                 toast(`${it.name} added to your inventory.`);
                 rerender();
               } catch (err) {
@@ -129,7 +132,7 @@ function mountMusicShop(root: HTMLElement, ctx: Ctx, rerender: () => void): () =
       h("p", {}, `Stream music while you're in 6ixPlanet. Includes ${TRACKS.length} track${TRACKS.length === 1 ? "" : "s"} for now; more get added over time.`),
       h("ul", { class: "muted" }, ...TRACKS.map((t) => h("li", {}, `♪ ${t.title}`))),
       owned
-        ? h("div", {}, h("p", { class: "ok-text" }, "✔ You own this."), h("button", { class: "btn primary", onclick: () => ctx.navigate("room") }, "Go listen (Music tab in the lobby)"))
+        ? h("div", {}, h("p", { class: "ok-text" }, "✔ You own this."), h("button", { class: "btn primary", onclick: () => ctx.navigate("room") }, "Go listen (Music tab in any room)"))
         : !entry.on
           ? h("p", { class: "muted" }, "The jukebox pass isn't on sale right now.")
           : h("div", {},
@@ -141,13 +144,14 @@ function mountMusicShop(root: HTMLElement, ctx: Ctx, rerender: () => void): () =
                     await buyItems(p, [MUSIC_ACCESS_KEY], entry.price);
                     ctx.refreshHeader();
                     logAction(p, "buy", `bought the jukebox pass for ${entry.price}`);
-                    toast("Jukebox pass unlocked! Open the Music tab in the lobby.");
+                    playSfx("cash", 0.45);
+                    toast("Jukebox pass unlocked! Open the Music tab in any room.");
                     rerender();
                   } catch (err) {
                     toast((err as Error).message, "err");
                   }
                 },
               }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` Buy for ${entry.price} drops`),
-              affordable ? null : h("p", { class: "muted" }, `You have ${p.blood}. Stab people in the lobby to earn drops.`))));
+              affordable ? null : h("p", { class: "muted" }, `You have ${p.blood}. Stab people in the public room to earn drops.`))));
   return () => undefined;
 }

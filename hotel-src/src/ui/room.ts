@@ -18,7 +18,6 @@ import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
 import { canStab, canUseSyringe, msUntilTomorrow, rewardStab, rewardSyringe, SYRINGE_BLOOD, serverNow } from "../db";
 import { logAction } from "../logger";
-import { FEATURES } from "../features";
 import { BLOOD_ICON, findSlot, ITEMS } from "../items";
 import { CdAudio, CdState, cdEnded, clearCdPlayer, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { fmtTime } from "../music";
@@ -29,6 +28,7 @@ import {
   FURNI_KINDS,
   INTERACTIVE_KINDS,
   fetchMeta,
+  isDoorTile,
   lobbyDef,
   LOBBY_ID,
   MAX_FURNI,
@@ -37,17 +37,16 @@ import {
   RoomDef,
   watchMeta,
 } from "../rooms";
+import { Box, drawDoor, drawFurniBase, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
 import { h, toast } from "./dom";
-import { showMenu } from "./contextMenu";
+import { closeMenu, showMenu } from "./contextMenu";
 import { mountSidePanel } from "./sidepanel";
 import { mountRoomPanel } from "./roomPanel";
+import { DoorApi, openDoor } from "./door";
 import type { Ctx } from "../main";
 
-const TILE_W = 64;
-const TILE_H = 32;
-const WALL_H = 120;
 const STEP_MS = 480;
 const BUBBLE_MS = 6500;
 const MAX_CHARS = 100;
@@ -58,8 +57,6 @@ const DIRS: Array<[number, number, number]> = [
   // dx, dy, habbo direction (0 = up-right on screen, 2 = down-right, 4 = down-left, 6 = up-left)
   [0, -1, 0], [1, -1, 1], [1, 0, 2], [1, 1, 3], [0, 1, 4], [-1, 1, 5], [-1, 0, 6], [-1, -1, 7],
 ];
-
-interface Pt { x: number; y: number }
 
 interface Bubble { text: string; until: number }
 interface ActiveEmote { def: EmoteDef; start: number; lastFx: number }
@@ -91,21 +88,15 @@ interface NoteFx { born: number; life: number; glyph: string; ox: number; phase:
 
 type Pending =
   | { type: "stab"; uid: string; since: number; lastTry: number }
+  | { type: "door"; since: number; lastTry: number }
   | { type: "arcade" | "cd"; fid: string; since: number; lastTry: number };
 
-const iso = (x: number, y: number): Pt => ({ x: (x - y) * (TILE_W / 2), y: (x + y) * (TILE_H / 2) });
 const cheb = (a: Pt, b: Pt) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
 function dirOf(from: Pt, to: Pt): number {
   const dx = Math.sign(to.x - from.x);
   const dy = Math.sign(to.y - from.y);
   return DIRS.find((d) => d[0] === dx && d[1] === dy)?.[2] ?? 2;
-}
-
-function shade(hex: string, f: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const c = (v: number) => Math.max(0, Math.min(255, Math.round(v * f)));
-  return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`;
 }
 
 function loadImg(src: string): HTMLImageElement {
@@ -120,12 +111,22 @@ const syringeImg = loadImg(ITEMS.syringe.icon);
 /** Pixels from the feet line up to the top of the 64x110 avatar canvas (tuned against the bobba sprites). */
 const FEET_Y = 94;
 
-export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => void {
+export interface RoomApi {
+  dispose(): void;
+  /** the room stays mounted (so you stay in it) while you look at Character or Shop; show/hide pause and resume it */
+  show(): void;
+  hide(): void;
+  /** call after the player's look changed so everyone in the room sees the new one */
+  figureChanged(): void;
+}
+
+export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi {
   const me = ctx.profile;
   const players = new Map<string, Player>();
   const unsubs: Unsubscribe[] = [];
   let disposed = false;
   let started = false;
+  let active = true;
 
   let def: RoomDef = lobbyDef();
   const blocked = new Set<string>();
@@ -135,6 +136,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
   let hitboxes: Hitbox[] = [];
   let objBoxes: Hitbox[] = [];
   let hoverObj: Hitbox | null = null;
+  let hoverDoor = false;
+  let doorBox: Box | null = null;
+  let doorApi: DoorApi | null = null;
+  const doorLabel = roomId === LOBBY_ID ? "ROOMS" : "EXIT";
 
   // OSRS-style "use item on ..." state
   let selectedSlot: number | null = null;
@@ -155,10 +160,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
   // ---- DOM ---------------------------------------------------------------------
   const canvas = h("canvas", { class: "room-canvas" });
   const log = h("div", { class: "chat-log" });
-  const online = h("div", { class: "online" });
+  const online = h("div", { class: "online", title: "Who's in this room", onclick: () => online.classList.toggle("open") });
   const roomTitle = h("div", { class: "room-title" }, roomId === LOBBY_ID ? "Main Lobby" : "Loading room…");
   const actionHint = h("div", { class: "action-hint hidden" });
-  const input = h("input", { class: "chat-input", type: "text", maxLength: MAX_CHARS, placeholder: "Click to chat — try /dance, or click the floor to walk", autocomplete: "off" });
+  const input = h("input", { class: "chat-input", type: "text", maxLength: MAX_CHARS, placeholder: "Say something, or try /dance. Tap the floor to walk.", autocomplete: "off" });
   const stage = h("div", { class: "stage" }, canvas, online, log, actionHint, roomTitle);
   const sideHost = h("div", { class: "side-host" });
   root.append(h("div", { class: "room" },
@@ -182,7 +187,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     },
     onEmote: (id) => performEmote(id),
     onUseSelf: (what) => { if (what === "syringe") void useSyringe(); },
-    roomTab: !FEATURES.rooms || roomId === LOBBY_ID ? undefined : {
+    roomTab: roomId === LOBBY_ID ? undefined : {
       icon: "🏠",
       title: "Room",
       mount: (container) => mountRoomPanel(container, ctx, {
@@ -206,6 +211,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
+    else if (hoverDoor) text = roomId === LOBBY_ID ? "Door: rooms" : "Door: leave the room";
     actionHint.textContent = text;
     actionHint.classList.toggle("hidden", !text);
     canvas.style.cursor = item || tool ? "crosshair" : "pointer";
@@ -249,65 +255,21 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
   let floorOrigin: Pt = { x: 0, y: 0 };
   let floor: HTMLCanvasElement = document.createElement("canvas");
 
-  function renderRoomShell(): HTMLCanvasElement {
-    const W = def.w;
-    const H = def.h;
-    const t = def.theme;
-    const minX = -H * (TILE_W / 2) - 8;
-    const maxX = W * (TILE_W / 2) + 8;
-    const minY = -WALL_H - 8;
-    const maxY = (W + H) * (TILE_H / 2) + 20;
-    const c = document.createElement("canvas");
-    c.width = maxX - minX;
-    c.height = maxY - minY;
-    const x = c.getContext("2d")!;
-    x.translate(-minX, -minY);
-    const poly = (pts: Pt[], fill: string, stroke?: string) => {
-      x.beginPath();
-      pts.forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y)));
-      x.closePath();
-      x.fillStyle = fill;
-      x.fill();
-      if (stroke) { x.strokeStyle = stroke; x.lineWidth = 1; x.stroke(); }
-    };
-    // walls: left wall along x = 0 (running down-left), right wall along y = 0 (running down-right)
-    const o = iso(0, 0);
-    const bl = iso(0, H);
-    const br = iso(W, 0);
-    poly([o, br, { x: br.x, y: br.y - WALL_H }, { x: o.x, y: o.y - WALL_H }], shade(t.wall, 1), shade(t.wall, 0.8));
-    poly([o, bl, { x: bl.x, y: bl.y - WALL_H }, { x: o.x, y: o.y - WALL_H }], shade(t.wall, 0.88), shade(t.wall, 0.8));
-    // baseboards
-    poly([o, br, { x: br.x, y: br.y - 10 }, { x: o.x, y: o.y - 10 }], shade(t.wall, 0.72));
-    poly([o, bl, { x: bl.x, y: bl.y - 10 }, { x: o.x, y: o.y - 10 }], shade(t.wall, 0.64));
-    // floor edge thickness
-    const bot = iso(W, H);
-    poly([bl, bot, { x: bot.x, y: bot.y + 8 }, { x: bl.x, y: bl.y + 8 }], shade(t.floorA, 0.6));
-    poly([br, bot, { x: bot.x, y: bot.y + 8 }, { x: br.x, y: br.y + 8 }], shade(t.floorA, 0.45));
-    // tiles
-    for (let ty = 0; ty < H; ty++) {
-      for (let tx = 0; tx < W; tx++) {
-        const p = iso(tx, ty);
-        const r = def.rug;
-        const rug = !!r && tx >= r.x0 && tx < r.x0 + r.w && ty >= r.y0 && ty < r.y0 + r.h;
-        const edgeRug = rug && !!r && (tx === r.x0 || tx === r.x0 + r.w - 1 || ty === r.y0 || ty === r.y0 + r.h - 1);
-        const fill = rug ? shade(t.rugColor, edgeRug ? 0.88 : 1) : (tx + ty) % 2 ? t.floorA : t.floorB;
-        poly([
-          { x: p.x, y: p.y },
-          { x: p.x + TILE_W / 2, y: p.y + TILE_H / 2 },
-          { x: p.x, y: p.y + TILE_H },
-          { x: p.x - TILE_W / 2, y: p.y + TILE_H / 2 },
-        ], fill, "rgba(0,0,0,0.12)");
-      }
-    }
-    floorOrigin = { x: -minX, y: -minY };
-    return c;
-  }
-
   function applyDef(next: RoomDef): void {
     def = next;
     rebuildBlocked();
-    floor = renderRoomShell();
+    const shell = renderRoomShell(def);
+    floor = shell.canvas;
+    floorOrigin = shell.origin;
     layout();
+    // textured floors/walls need their images first; draw again once they're in
+    const forDef = def;
+    void ensureTextures(def.theme).then(() => {
+      if (disposed || def !== forDef || (!def.theme.floorTex && !def.theme.wallTex)) return;
+      const again = renderRoomShell(def);
+      floor = again.canvas;
+      floorOrigin = again.origin;
+    });
     roomTitle.textContent = def.ownerName ? `${def.name} · by ${def.ownerName}` : def.name;
     defListeners.forEach((l) => l());
   }
@@ -362,20 +324,25 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       return t.x >= f.x && t.x < f.x + k.w && t.y >= f.y && t.y < f.y + k.h;
     });
 
+  const inBox = (m: Pt, b: Box | null) => !!b && m.x >= b.x0 && m.x <= b.x1 && m.y >= b.y0 && m.y <= b.y1;
+
   canvas.addEventListener("mousemove", (e) => {
     const m = mousePos(e);
     hover = tileAt(m.x, m.y);
     const hp = playerAt(m.x, m.y);
     const ho = hp ? null : pick(objBoxes, m.x, m.y);
-    if (hp !== hoverPlayer || ho?.id !== hoverObj?.id) {
+    const hd = !hp && !ho && inBox(m, doorBox);
+    if (hp !== hoverPlayer || ho?.id !== hoverObj?.id || hd !== hoverDoor) {
       hoverPlayer = hp;
       hoverObj = ho;
+      hoverDoor = hd;
       updateHint();
     }
   });
-  canvas.addEventListener("mouseleave", () => { hover = null; hoverPlayer = null; hoverObj = null; updateHint(); });
+  canvas.addEventListener("mouseleave", () => { hover = null; hoverPlayer = null; hoverObj = null; hoverDoor = false; updateHint(); });
 
   canvas.addEventListener("click", (e) => {
+    if (suppressClick) { suppressClick = false; return; }
     const m = mousePos(e);
     const target = playerAt(m.x, m.y);
     const t = tileAt(m.x, m.y);
@@ -390,6 +357,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       return;
     }
 
+    const obj = pick(objBoxes, m.x, m.y);
+
+    // the door (on the wall behind everything, so players and furniture win clicks that overlap it)
+    if (!target && !obj && inBox(m, doorBox)) {
+      clearSelection();
+      startDoor();
+      return;
+    }
+
     const item = selectedDef();
     if (item?.useOnPlayer === "stab") {
       if (target && target.uid !== me.uid) startStab(target.uid);
@@ -401,8 +377,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       }
       return;
     }
-
-    const obj = pick(objBoxes, m.x, m.y);
 
     // an item that goes on a piece of furniture (the CD on the CD player)
     if (item?.useOnObject) {
@@ -423,11 +397,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     if (t && walkable(t.x, t.y)) { pending = null; walkTo(t); }
   });
 
-  canvas.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    const m = mousePos(e);
-    const target = playerAt(m.x, m.y);
-    const tile = tileAt(m.x, m.y);
+  /** The right-click menu for whatever is at canvas position (mx, my); (cx, cy) is where on the page to show it. */
+  function openContextAt(mx: number, my: number, cx: number, cy: number): void {
+    const target = playerAt(mx, my);
+    const tile = tileAt(mx, my);
     const item = selectedDef();
     const hasKnife = findSlot(me.inventory, "knife") >= 0;
     const opts: Array<{ label: string; target?: string; danger?: boolean; action: () => void }> = [];
@@ -438,20 +411,57 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       if (social.friends.has(target.uid)) opts.push({ label: "Message", target: target.name, action: () => window.dispatchEvent(new CustomEvent("open-chat", { detail: target.uid })) });
       else opts.push({ label: "Add friend", target: target.name, action: () => social.sendRequest(target.name).then((s) => say(s), (err) => say((err as Error).message, "warn")) });
     }
-    const obj = pick(objBoxes, m.x, m.y);
+    const obj = pick(objBoxes, mx, my);
     if (obj?.kind === "arcade") opts.push({ label: "Play", target: "Arcade machine", action: () => startArcade(obj.id) });
     if (obj?.kind === "cdplayer") {
       if (item?.useOnObject === "cdplayer") opts.push({ label: `Use ${item.name} →`, target: "CD player", action: () => startCd(obj.id) });
       opts.push({ label: "Volume", target: "CD player", action: () => openCdPopup() });
       opts.push({ label: "Examine", target: "CD player", action: () => say(cdState && !cdEnded(cdState) ? `The CD player is playing "${cdState.title}", put in by ${cdState.byName}.` : "A chunky CD player. It's empty. Use a CD on it.") });
     }
+    if (!target && !obj && inBox({ x: mx, y: my }, doorBox)) opts.push({ label: "Open", target: "Door", action: () => startDoor() });
     const furni = tile ? furniAtTile(tile) : undefined;
     if (furni && isOwner() && furni.kind !== "arcade") {
       opts.push({ label: "Pick up", target: FURNI_KINDS[furni.kind].label, action: () => void removeFurni(def.id, furni.id).catch(() => undefined) });
     }
     if (tile && walkable(tile.x, tile.y)) opts.push({ label: "Walk here", action: () => { pending = null; walkTo(tile); } });
-    showMenu(e.clientX, e.clientY, opts);
+    showMenu(cx, cy, opts);
+  }
+
+  canvas.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    if (performance.now() - lastLongPress < 900) return; // a touch long-press already opened the menu
+    const m = mousePos(e);
+    openContextAt(m.x, m.y, e.clientX, e.clientY);
   });
+
+  // touch: a long press is the "right click"
+  let press: { x: number; y: number; cx: number; cy: number; timer: number } | null = null;
+  let suppressClick = false;
+  let lastLongPress = -1e9;
+  const endPress = () => {
+    if (!press) return;
+    window.clearTimeout(press.timer);
+    press = null;
+  };
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    const m = mousePos(e);
+    const at = { x: m.x, y: m.y, cx: e.clientX, cy: e.clientY };
+    press = {
+      ...at,
+      timer: window.setTimeout(() => {
+        press = null;
+        suppressClick = true;
+        lastLongPress = performance.now();
+        openContextAt(at.x, at.y, at.cx, at.cy);
+      }, 480),
+    };
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (press && Math.hypot(e.clientX - press.cx, e.clientY - press.cy) > 10) endPress();
+  });
+  canvas.addEventListener("pointerup", endPress);
+  canvas.addEventListener("pointercancel", endPress);
 
   function clearSelection(): void {
     selectedSlot = null;
@@ -462,6 +472,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     if (e.key !== "Escape") return;
     if (selectedSlot !== null) clearSelection();
     closeCdPopup();
+    doorApi?.close();
     if (tool) { tool = null; updateHint(); defListeners.forEach((l) => l()); }
   };
   window.addEventListener("keydown", onKey);
@@ -475,6 +486,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       for (let j = 0; j < k.h; j++) {
         const x = t.x + i;
         const y = t.y + j;
+        if (isDoorTile(x, y, def.doorX)) return say("Keep the doorway clear.", "warn");
         if (!walkable(x, y)) return say("There's no room for that there.", "warn");
         for (const p of players.values()) {
           const pt = currentTile(p);
@@ -573,6 +585,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     pending = { type: "arcade", fid, since: performance.now(), lastTry: 0 };
   }
 
+  function startDoor(): void {
+    if (doorApi) return;
+    pending = { type: "door", since: performance.now(), lastTry: 0 };
+  }
+
+  function showDoor(): void {
+    if (doorApi) return;
+    doorApi = openDoor(stage, ctx, roomId, () => { doorApi = null; });
+  }
+
   /** Walks next to a tile (or a player's tile), returns true once adjacent. */
   function approach(p: Player, goal: Pt, now: number, tries: { lastTry: number }): "arrived" | "walking" | "unreachable" {
     const mt = currentTile(p);
@@ -598,6 +620,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
     if (!pending || !p || stabbing) return;
     if (now - pending.since > 20_000) { pending = null; return say("You lose track of what you were doing.", "warn"); }
     if (p.path.length || isMoving(p, now)) return;
+
+    if (pending.type === "door") {
+      const goal = { x: def.doorX, y: 0 };
+      const r = approach(p, goal, now, pending);
+      if (r === "unreachable") { pending = null; return say("You can't get to the door.", "warn"); }
+      if (r === "arrived") {
+        pending = null;
+        p.dir = 0; // face the wall the door is in
+        update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
+        showDoor();
+      }
+      return;
+    }
 
     if (pending.type === "stab") {
       const target = players.get(pending.uid);
@@ -818,10 +853,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
   }
 
   // ---- start: presence, players, chat, events ---------------------------------------
+  /** You come in through the door: the tile in front of it, or the nearest free one. */
   function spawnTile(): Pt {
-    const free: Pt[] = [];
-    for (let y = 1; y < Math.min(def.h, 5); y++) for (let x = 1; x < Math.min(def.w, 5); x++) if (walkable(x, y)) free.push({ x, y });
-    return free[Math.floor(Math.random() * free.length)] ?? { x: 0, y: 0 };
+    const want = { x: def.doorX, y: 1 };
+    const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
+    const tiles: Pt[] = [];
+    for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
+    tiles.sort((a, b) => Math.hypot(a.x - want.x, a.y - want.y) - Math.hypot(b.x - want.x, b.y - want.y));
+    // a little variety so a crowd doesn't stack on one tile
+    const near = tiles.slice(0, 4);
+    return near[Math.floor(Math.random() * near.length)] ?? { x: 0, y: 0 };
   }
 
   const playersRef = ref(db, `rooms/${roomId}/players`);
@@ -948,25 +989,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
 
   function drawFurni(f: { kind: string; x: number; y: number }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
-    const top = (x: number, y: number, dz: number): Pt => {
-      const p = toScreen(iso(x, y));
-      return { x: p.x, y: p.y - dz * scale };
-    };
-    const A = top(f.x, f.y, k.height);
-    const B = top(f.x + k.w, f.y, k.height);
-    const C = top(f.x + k.w, f.y + k.h, k.height);
-    const D = top(f.x, f.y + k.h, k.height);
-    const gd = (pt: Pt): Pt => ({ x: pt.x, y: pt.y + k.height * scale });
-    const fill = (pts: Pt[], color: string) => {
-      g.beginPath();
-      pts.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)));
-      g.closePath();
-      g.fillStyle = color;
-      g.fill();
-    };
-    fill([D, C, gd(C), gd(D)], shade(k.color, 0.7));
-    fill([B, C, gd(C), gd(B)], shade(k.color, 0.55));
-    fill([A, B, C, D], shade(k.color, 1.05));
+    const { A, B, C, D, gd, fill } = drawFurniBase(g, f.kind, f.x, f.y, toScreen, scale);
 
     if (f.kind === "arcade") {
       // screen + marquee + controls on the face that looks down-left
@@ -1337,12 +1360,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
   function loop(): void {
     if (disposed) return;
     raf = requestAnimationFrame(loop);
+    if (!active) return;
     const now = performance.now();
     const dpr = window.devicePixelRatio || 1;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.imageSmoothingEnabled = scale < 1;
     g.clearRect(0, 0, canvas.width, canvas.height);
     g.drawImage(floor, offX - floorOrigin.x * scale, offY - floorOrigin.y * scale, floor.width * scale, floor.height * scale);
+    doorBox = drawDoor(g, def.doorX, toScreen, scale, doorLabel, hoverDoor ? 1 : 0);
 
     if (!started) return;
     for (const p of players.values()) advance(p, now);
@@ -1452,7 +1477,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
 
   // ---- boot --------------------------------------------------------------------------
   async function init(): Promise<void> {
-    if (roomId !== LOBBY_ID && !FEATURES.rooms) return kicked("Rooms are switched off for now.");
     if (roomId === LOBBY_ID) {
       applyDef(lobbyDef());
       start();
@@ -1462,7 +1486,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       const meta = await fetchMeta(roomId);
       if (disposed) return;
       if (!meta) return kicked("That room doesn't exist.");
-      if (!(await canEnter(meta, me.uid, social.friendUids()))) return kicked(`${meta.ownerName}'s room is ${meta.access === "invite" ? "invite only" : "friends only"}.`);
+      if (!(await canEnter(meta, me.uid, social.friendUids()))) return kicked(`${meta.ownerName}'s room is closed. Knock on the door of the public room to ask.`);
       if (disposed) return;
       applyDef(defFromMeta(roomId, meta));
       start();
@@ -1479,12 +1503,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
   raf = requestAnimationFrame(loop);
   void init();
 
-  return () => {
+  function dispose(): void {
     disposed = true;
     cancelAnimationFrame(raf);
     resizeObs.disconnect();
     window.removeEventListener("keydown", onKey);
     unsubs.forEach((u) => u());
+    endPress();
+    doorApi?.close();
     closeCdPopup();
     cdAudio.stop(); // leaving the lobby = you can't hear the CD player any more (your CD stays in it until it ends)
     if (unblockHandler) window.removeEventListener("pointerdown", unblockHandler);
@@ -1494,5 +1520,28 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): () => vo
       void remove(myRef);
     }
     setPresenceRoom(me, "");
+  }
+
+  return {
+    dispose,
+    show() {
+      active = true;
+      panel.refresh();
+      layout();
+      ctx.refreshHeader();
+    },
+    hide() {
+      active = false;
+      closeCdPopup();
+      closeMenu();
+      doorApi?.close();
+    },
+    figureChanged() {
+      const p = mine();
+      if (!p) return;
+      p.figure = me.figure;
+      void renderAvatar({ figure: me.figure, dir: 2 });
+      update(myRef, { figure: me.figure }).catch(() => undefined);
+    },
   };
 }

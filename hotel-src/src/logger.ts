@@ -6,9 +6,9 @@ import { db } from "./firebase";
 export type LogType =
   | "register" | "login" | "logout"
   | "buy" | "stab" | "syringe" | "cd" | "emote"
-  | "friend" | "outfit" | "look" | "admin";
+  | "friend" | "outfit" | "look" | "visit" | "room" | "design" | "admin";
 
-export const LOG_TYPES: LogType[] = ["register", "login", "logout", "buy", "stab", "syringe", "cd", "emote", "friend", "outfit", "look", "admin"];
+export const LOG_TYPES: LogType[] = ["register", "login", "logout", "buy", "stab", "syringe", "cd", "emote", "friend", "outfit", "look", "visit", "room", "design", "admin"];
 
 /** Fire-and-forget: logging must never get in the way of what the player is doing. */
 export function logAction(who: { uid: string; name: string }, type: LogType, detail: string): void {

@@ -1,5 +1,6 @@
 // @ts-nocheck
-// Vendored from Josedn/bobba_client (GPL-3.0), see ../../LICENSE-bobba-GPL3. Modified: extractImage returns a canvas.
+// Vendored from Josedn/bobba_client (GPL-3.0), see ../../LICENSE-bobba-GPL3. Modified: extractImage returns a canvas;
+// customLibs lets 6ixPlanet's Studio add its own clothing libraries (lib name -> loader returning {data, atlas}), see src/designs.ts.
 import AvatarInfo, { Direction, FigurePart } from "./AvatarInfo";
 import AvatarChunk from "./AvatarChunk";
 export default class AvatarImager {
@@ -12,8 +13,10 @@ export default class AvatarImager {
     draworder: any;
     animation: any;
     resourcesUrl: string;
+    customLibs: any;
 
     constructor(resourcesUrl: string) {
+        this.customLibs = {};
         this.ready = false;
         this.offsets = {};
         this.chunks = {};
@@ -91,6 +94,12 @@ export default class AvatarImager {
     }
 
     fetchOffsetAsync(uniqueName: string): Promise<any> {
+        if (this.customLibs[uniqueName]) {
+            return this.customLibs[uniqueName]().then(({ data, atlas }) => {
+                this.offsets[uniqueName].data = data;
+                this.offsets[uniqueName].atlas = atlas;
+            });
+        }
         const offsetPromise = this.fetchJsonAsync(this.resourcesUrl + uniqueName + "/offset.json")
             .then(data => {
                 this.offsets[uniqueName].data = data;

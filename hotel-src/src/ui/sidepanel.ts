@@ -33,7 +33,10 @@ function untilText(ms: number): string {
 /** OSRS-style side panel: stone tabs on top, 4x7 inventory grid, music tab. */
 export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): PanelApi {
   const profile = ctx.profile;
+  const isMobile = () => window.matchMedia("(max-width: 900px)").matches;
   let tab: Tab = "inventory";
+  /** on phones the panel starts as a bare tab strip; tapping the open tab again folds it away */
+  let collapsed = isMobile();
   let selected: number | null = null;
   let unsubMusic: (() => void) | null = null;
   let roomCleanup: (() => void) | null = null;
@@ -45,7 +48,11 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
 
   function renderTabs(): void {
     const mk = (id: Tab, icon: string, title: string) =>
-      h("button", { class: "osrs-tab" + (tab === id ? " on" : ""), title, onclick: () => { tab = id; render(); } }, icon);
+      h("button", { class: "osrs-tab" + (tab === id && !collapsed ? " on" : ""), title, onclick: () => {
+        if (isMobile() && tab === id) collapsed = !collapsed;
+        else { tab = id; collapsed = false; }
+        render();
+      } }, icon);
     tabsEl.replaceChildren(
       mk("inventory", "🎒", "Inventory"),
       mk("emotes", "😀", "Emotes"),
@@ -168,6 +175,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     unsubMusic = null;
     roomCleanup?.();
     roomCleanup = null;
+    panel.classList.toggle("collapsed", collapsed);
     renderTabs();
     if (tab === "inventory") renderInventory();
     else if (tab === "emotes") renderEmotes();

@@ -43,6 +43,8 @@ export interface Item {
   starter: boolean;
   /** sold in the shop right now (the admin decides) */
   shopOn: boolean;
+  /** made in the admin's Studio (not part of the original avatar data) */
+  custom?: boolean;
 }
 
 export interface Swatch {
@@ -116,10 +118,29 @@ export async function loadCatalog(): Promise<void> {
   }
 }
 
+/** Replaces the Studio-made items in the catalog (call after the registered designs change, then applyClothingConfig again). */
+export function setCustomItems(defs: Array<{ slot: string; id: string; gender: "M" | "F" | "U"; colors: number }>): void {
+  if (!items) return;
+  for (const slot of Object.keys(items)) items[slot] = items[slot].filter((i) => !i.custom);
+  for (const d of defs) {
+    if (!items[d.slot]) continue;
+    // free for everyone until the admin puts a price on it (see applyClothingConfig)
+    items[d.slot].unshift({ type: d.slot, id: d.id, gender: d.gender, colors: d.colors, price: 0, key: itemKey(d.slot, d.id), basePrice: 0, starter: true, shopOn: false, custom: true });
+  }
+}
+
 /** Applies the admin's shop settings (config/shop/clothing) to the catalog. Starter items are never changed. */
 export function applyClothingConfig(cfg: Record<string, { on: boolean; price: number }>): void {
   for (const list of Object.values(items ?? {})) {
     for (const it of list) {
+      if (it.custom) {
+        // Studio items: no entry = free for everyone; an entry sets the price, and "on" decides whether it's for sale
+        const e = cfg[it.key];
+        it.price = e ? e.price : 0;
+        it.starter = it.price === 0;
+        it.shopOn = !!e && e.on && e.price > 0;
+        continue;
+      }
       if (it.starter) continue;
       const e = cfg[it.key];
       it.price = e ? e.price : it.basePrice;
@@ -173,6 +194,28 @@ export function defaultColors(item: Item, previous?: FigurePart): string[] {
     out.push(prev && sw.some((s) => s.id === prev) ? prev : sw[Math.min(i * 3, sw.length - 1)]?.id ?? "1");
   }
   return out;
+}
+
+/** How often a random look wears an optional slot (hair almost always, hats and glasses now and then). */
+const RANDOM_CHANCE: Record<string, number> = { hr: 0.95, ha: 0.2, ea: 0.2, fa: 0.15, he: 0, cc: 0, cp: 0, ca: 0, wa: 0 };
+
+/** A random look built only from free items (what everybody owns), in random colours. Used by the first-run avatar picker. */
+export function randomFigure(gender: Gender): string {
+  const pick = <T>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
+  const parts: Parts = {};
+  const defaults = parseFigure(DEFAULT_FIGURE[gender]);
+  for (const slot of SLOTS) {
+    const free = itemsFor(slot.id, gender).filter((i) => i.price === 0);
+    if (!slot.required && Math.random() >= (RANDOM_CHANCE[slot.id] ?? 0)) continue;
+    const item = free.length ? pick(free) : undefined;
+    if (!item) {
+      if (slot.required && defaults[slot.id]) parts[slot.id] = defaults[slot.id];
+      continue;
+    }
+    const sw = swatchesFor(slot.id);
+    parts[slot.id] = { id: item.id, colors: Array.from({ length: item.colors }, () => pick(sw)?.id ?? "1") };
+  }
+  return figureToString(parts);
 }
 
 /** Every item in a figure that costs coins and is not owned. Used to block wearing/saving unowned clothes. */

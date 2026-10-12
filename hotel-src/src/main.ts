@@ -1,54 +1,52 @@
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, firebaseReady, useEmulator } from "./firebase";
+import { ref, remove } from "firebase/database";
+import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
 import { createProfile, loadProfile, Profile } from "./db";
 import { avatarsReady } from "./avatarService";
 import { loadCatalog } from "./catalog";
 import { h, toast } from "./ui/dom";
-import { lockTime, navBar, statusBar } from "./ui/ios";
+import { lockTime, statusBar } from "./ui/ios";
+import { topBar, TopBarApi } from "./ui/topbar";
 import { mountEditor } from "./ui/editor";
-import { mountRoom } from "./ui/room";
+import { mountRoom, RoomApi } from "./ui/room";
 import { mountShop } from "./ui/shop";
 import { mountWardrobe } from "./ui/wardrobe";
-import { mountNavigator } from "./ui/navigator";
 import { mountMessenger } from "./ui/messenger";
 import { mountAdmin } from "./ui/admin";
-import { BLOOD_ICON } from "./items";
+import { runOnboarding } from "./ui/onboarding";
 import { player } from "./music";
-import { LOBBY_ID } from "./rooms";
-import { assetUrl } from "./assetUrl";
-import { FEATURES } from "./features";
+import { fetchMeta, LOBBY_ID, ownRoomId } from "./rooms";
 import { logAction } from "./logger";
 import { watchShopConfig } from "./shopConfig";
+import { watchDesigns } from "./designs";
 import { publishProfile, social, startPresence, stopPresence } from "./social";
 
 export const APP_NAME = "6ixPlanet";
 export const STAFF_NOTICE = "Staff can see chat, private messages and activity on 6ixPlanet.";
 
-export type View = "home" | "room" | "rooms" | "customize" | "wardrobe" | "shop" | "admin";
+export type View = "room" | "customize" | "shop" | "admin";
 
 export interface NavOpts {
-  /** which room to open when view is "room" (defaults to the lobby; other rooms only exist when FEATURES.rooms is on) */
+  /** which room to open when view is "room" (defaults to the last room you were in, at first your own) */
   roomId?: string;
-  onboarding?: boolean;
+  /** which part of the Character page to open */
+  tab?: "look" | "outfits";
 }
 
 export interface Ctx {
   profile: Profile;
   navigate(view: View, opts?: NavOpts): void;
   refreshHeader(): void;
+  /** tell the room you're standing in that your look changed */
+  lookChanged(): void;
 }
 
-const TITLES: Record<View, string> = { home: APP_NAME, room: "Lobby", rooms: "Rooms", customize: "Character", wardrobe: "Wardrobe", shop: "Shop", admin: "Admin" };
-
 const app = document.getElementById("app")!;
-let cleanup: (() => void) | null = null;
 /** things that live as long as you're signed in (messenger, presence, friends listeners) */
 let shellCleanup: (() => void) | null = null;
 
 function clear(): void {
-  cleanup?.();
-  cleanup = null;
   shellCleanup?.();
   shellCleanup = null;
   app.replaceChildren();
@@ -129,7 +127,7 @@ function showAuth(): void {
           h("div", { class: "d" }, now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }))),
         h("div", { class: "auth" },
           h("div", { class: "logo" }, APP_NAME),
-          h("p", { class: "tagline" }, "Sign in to hang out in the lobby."),
+          h("p", { class: "tagline" }, "Sign in to hang out."),
           form,
           h("p", { class: "notice" }, STAFF_NOTICE),
           useEmulator ? h("p", { class: "notice" }, "(running against local Firebase emulators)") : null))));
@@ -142,11 +140,14 @@ async function showHotel(user: User): Promise<void> {
   const isAdmin = isAdminUser(user);
   let profile: Profile | null;
   let stopShop: () => void = () => undefined;
+  let stopDesigns: () => void = () => undefined;
   try {
     const shop = watchShopConfig();
     stopShop = shop.stop;
     await Promise.all([avatarsReady, loadCatalog()]);
-    await shop.ready; // after the catalog, so the admin's prices land on real items
+    const designs = watchDesigns(isAdmin); // player-made clothes join the catalog (needs the base catalog first)
+    stopDesigns = designs.stop;
+    await Promise.all([shop.ready, designs.ready]); // the admin's prices land on real items
     profile = await loadProfile(user.uid, isAdmin);
     if (!profile) {
       // Account exists but profile is missing (e.g. interrupted registration); create one so the user isn't locked out.
@@ -155,6 +156,7 @@ async function showHotel(user: User): Promise<void> {
     }
   } catch (ex) {
     stopShop();
+    stopDesigns();
     clear();
     app.append(h("div", { class: "center-screen" }, h("div", { class: "panel auth" },
       h("h1", {}, "Couldn't load"), h("p", {}, friendlyError(ex)),
@@ -164,130 +166,134 @@ async function showHotel(user: User): Promise<void> {
     return;
   }
   const p = profile;
-
-  clear();
-  const region = h("div", { style: { flex: "1", minHeight: "0", display: "flex", flexDirection: "column" } });
-  const shell = h("div", { class: "shell", "data-view": "home" }, statusBar(), region);
-  app.append(shell);
-
-  /** Leave cleanly: take your avatar and presence out of the room *before* signing out (afterwards the rules would refuse). */
-  const doLogout = async () => {
-    logAction(p, "logout", "logged out");
-    cleanup?.();
-    cleanup = null;
-    await new Promise((r) => setTimeout(r, 300));
-    stopPresence(p);
-    await new Promise((r) => setTimeout(r, 150));
-    await logout();
-  };
+  let bar: TopBarApi | null = null;
+  let roomApi: RoomApi | null = null;
+  let roomMounted = "";
+  let lastRoomId = ownRoomId(p.uid);
+  let pageCleanup: (() => void) | null = null;
+  let offBadge: (() => void) | null = null;
 
   const ctx: Ctx = {
     profile: p,
     navigate: (v, opts) => go(v, opts),
-    refreshHeader() {
-      document.querySelectorAll(".coins").forEach((el) => {
-        el.replaceChildren(h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "drops of blood" }), ` ${p.blood}`);
-        (el as HTMLElement).title = "Drops of blood";
-      });
-    },
+    refreshHeader: () => bar?.refreshBlood(p.blood),
+    lookChanged: () => roomApi?.figureChanged(),
   };
 
-  // Social: friends, requests, DMs, invites and who's online are live for the whole session.
+  // ---- first run: pick an avatar, then a room (skipped for players who already have both) ----
+  let ownMeta = null as Awaited<ReturnType<typeof fetchMeta>>;
+  try { ownMeta = await fetchMeta(ownRoomId(p.uid)); } catch { /* treated as "no room yet"; the room step will say if it can't write */ }
+  const needAvatar = !p.figure;
+  const needRoom = !ownMeta;
+  if (needAvatar || needRoom) {
+    clear();
+    const host = h("div", { class: "onb-host" });
+    app.append(h("div", { class: "shell" }, statusBar(), host));
+    await runOnboarding(host, ctx, needAvatar, needRoom);
+  }
+
+  clear();
+  const roomHost = h("div", { class: "room-host" });
+  const pageHost = h("main", { class: "page", hidden: true });
+  bar = topBar({
+    appName: APP_NAME,
+    isAdmin: p.isAdmin,
+    onNav: (v) => go(v),
+    onOutfits: () => go("customize", { tab: "outfits" }),
+    onLogout: () => void doLogout(),
+  });
+  const shell = h("div", { class: "shell" }, statusBar(), bar.el, roomHost, pageHost);
+  app.append(shell);
+  ctx.refreshHeader();
+
+  /** Leave cleanly: take your avatar and presence out of the room *before* signing out (afterwards the rules would refuse). */
+  const doLogout = async () => {
+    logAction(p, "logout", "logged out");
+    roomApi?.dispose();
+    roomApi = null;
+    await new Promise((r) => setTimeout(r, 300));
+    stopPresence(p);
+    await social.clearRoomInvites();
+    await new Promise((r) => setTimeout(r, 150));
+    await logout();
+  };
+
+  // Social: friends, requests, DMs, knocks and who's online are live for the whole session.
   void publishProfile(p).catch((err) => console.warn("couldn't publish profile", err));
   social.start(p);
+  social.armInviteCleanup();
   startPresence(p);
+  // a crashed or reloaded earlier visit can leave a ghost of you standing in a room; clear those before walking in
+  for (const room of [LOBBY_ID, ownRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
   logAction(p, "login", "opened 6ixPlanet");
   const stopMessenger = mountMessenger(shell, ctx);
-  let offBadge: (() => void) | null = null;
+  offBadge = social.subscribe(() => bar?.setBadge(social.badgeCount));
+  bar.setBadge(social.badgeCount);
   shellCleanup = () => {
     stopMessenger();
     stopShop();
+    stopDesigns();
     offBadge?.();
+    roomApi?.dispose();
+    roomApi = null;
+    pageCleanup?.();
+    pageCleanup = null;
     social.stop();
   };
 
-  // ---- home screen (springboard) ----
-  function renderHome(): HTMLElement {
-    interface App { id: string; label: string; icon: string; view?: View; run?: () => void; badge?: boolean }
-    const apps: App[] = [
-      { id: "room", label: "Lobby", icon: assetUrl("ios6/icon-door.png"), view: "room" },
-      { id: "customize", label: "Character", icon: assetUrl("ios6/character.svg"), view: "customize" },
-      { id: "wardrobe", label: "Wardrobe", icon: assetUrl("ios6/wardrobe.svg"), view: "wardrobe" },
-      { id: "shop", label: "Shop", icon: assetUrl("ios6/icon-store.png"), view: "shop" },
-      { id: "friends", label: "Friends", icon: assetUrl("ios6/icon-chat.png"), run: () => window.dispatchEvent(new CustomEvent("toggle-friends")), badge: true },
-      ...(FEATURES.rooms ? [{ id: "rooms", label: "Rooms", icon: assetUrl("ios6/icon-settings.png"), view: "rooms" as View }] : []),
-      ...(p.isAdmin ? [{ id: "admin", label: "Admin", icon: assetUrl("ios6/icon-admin.png"), view: "admin" as View }] : []),
-      { id: "logout", label: "Log out", icon: assetUrl("ios6/icon-logout.svg"), run: () => void doLogout() },
-    ];
-
-    const board = h("div", { class: "springboard app-open" });
-    const grid = h("div", { class: "sb-grid", role: "list" });
-    for (const a of apps) {
-      const icon = h("span", { class: "sb-icon", style: { backgroundImage: `url("${a.icon}")` } });
-      const badge = a.badge ? h("span", { class: "sb-badge hidden", "data-friends-badge": "1" }) : null;
-      if (badge) icon.append(badge);
-      const btn = h("button", {
-        class: "sb-app",
-        role: "listitem",
-        onclick: () => {
-          if (a.run) return a.run();
-          // zoom into the icon, then open the app (like iOS)
-          const r = icon.getBoundingClientRect();
-          board.style.setProperty("--ox", r.left + r.width / 2 + "px");
-          board.style.setProperty("--oy", r.top + r.height / 2 - 64 + "px");
-          board.classList.add("out");
-          setTimeout(() => go(a.view!), 280);
-        },
-      }, icon, h("span", { class: "sb-label" }, a.label));
-      grid.append(btn);
-    }
-    const updateBadge = () => {
-      const n = social.totalUnread;
-      document.querySelectorAll("[data-friends-badge]").forEach((el) => {
-        el.textContent = String(n);
-        el.classList.toggle("hidden", n === 0);
-      });
+  function mountCharacter(host: HTMLElement, tab: "look" | "outfits"): () => void {
+    let inner: (() => void) | null = null;
+    const seg = h("div", { class: "seg page-seg" });
+    const body = h("div", { class: "char-body" });
+    host.append(seg, body);
+    const show = (t: "look" | "outfits") => {
+      inner?.();
+      body.replaceChildren();
+      seg.replaceChildren(...([["look", "Look"], ["outfits", "Saved outfits"]] as Array<["look" | "outfits", string]>).map(([id, label]) =>
+        h("button", { class: "tab" + (id === t ? " on" : ""), onclick: () => show(id) }, label)));
+      inner = t === "look" ? mountEditor(body, ctx, "customize") : mountWardrobe(body, ctx);
     };
-    offBadge?.();
-    offBadge = social.subscribe(updateBadge);
-    updateBadge();
-    board.append(
-      grid,
-      h("div", { class: "sb-footer" }, `${APP_NAME} is open source (GPL-3.0): `, h("a", { href: "https://github.com/playlistlobby/playlistlobby.github.io/tree/main/hotel-src", target: "_blank", rel: "noopener" }, "source")),
-      h("div", { class: "sb-dock", "aria-hidden": "true" }, h("div", { class: "sb-shelf" })));
-    return board;
+    show(tab);
+    return () => inner?.();
   }
 
   function go(view: View, opts: NavOpts = {}): void {
-    cleanup?.();
-    cleanup = null;
-    region.replaceChildren();
-    shell.dataset.view = view;
-    if (view === "home") {
-      region.append(renderHome());
-      return;
+    if (view === "admin" && !p.isAdmin) view = "room";
+    if (view === "room") {
+      const target = opts.roomId ?? lastRoomId;
+      pageCleanup?.();
+      pageCleanup = null;
+      pageHost.replaceChildren();
+      pageHost.hidden = true;
+      roomHost.hidden = false;
+      if (roomApi && roomMounted === target) {
+        roomApi.show();
+      } else {
+        // a different room: leave the old one, walk into the new one
+        roomApi?.dispose();
+        roomHost.replaceChildren();
+        roomMounted = target;
+        lastRoomId = target;
+        roomApi = mountRoom(roomHost, ctx, target);
+      }
+      ctx.refreshHeader();
+    } else {
+      roomApi?.hide();
+      roomHost.hidden = true;
+      pageCleanup?.();
+      pageCleanup = null;
+      pageHost.replaceChildren();
+      pageHost.hidden = false;
+      pageHost.scrollTop = 0;
+      if (view === "customize") pageCleanup = mountCharacter(pageHost, opts.tab ?? "look");
+      else if (view === "shop") pageCleanup = mountShop(pageHost, ctx);
+      else if (view === "admin") pageCleanup = mountAdmin(pageHost, ctx);
     }
-    const onboarding = !!opts.onboarding;
-    const bar = navBar({
-      title: TITLES[view],
-      back: onboarding ? undefined : { label: "Home", onBack: () => go("home") },
-      right: [h("span", { class: "barbtn blood-pill" }, h("span", { class: "coins" }))],
-    });
-    const main = h("main", { class: "app-open" });
-    region.append(bar, main);
-    ctx.refreshHeader();
-    if (view === "room") cleanup = mountRoom(main, ctx, FEATURES.rooms ? opts.roomId ?? LOBBY_ID : LOBBY_ID);
-    else if (view === "rooms" && FEATURES.rooms) cleanup = mountNavigator(main, ctx);
-    else if (view === "customize") cleanup = mountEditor(main, ctx, "customize", onboarding);
-    else if (view === "shop") cleanup = mountShop(main, ctx);
-    else if (view === "admin" && p.isAdmin) cleanup = mountAdmin(main, ctx);
-    else if (view === "wardrobe") cleanup = mountWardrobe(main, ctx);
-    else go("home");
+    bar?.setActive(view);
   }
 
-  // New players go through the customizer first, everyone else starts on the home screen.
-  if (!p.figure) go("customize", { onboarding: true });
-  else go("home");
+  // Everyone starts in their own room, standing at the door.
+  go("room", { roomId: ownRoomId(p.uid) });
 }
 
 // ---- boot ----------------------------------------------------------------------
@@ -314,3 +320,4 @@ function route(user: User | null): void {
   if (user) showHotel(user).catch((ex) => toast(friendlyError(ex), "err"));
   else showAuth();
 }
+

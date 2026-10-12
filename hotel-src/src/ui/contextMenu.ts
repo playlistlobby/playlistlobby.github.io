@@ -37,11 +37,11 @@ export function showMenu(x: number, y: number, options: MenuOption[]): void {
       if (e instanceof KeyboardEvent && e.key !== "Escape") return;
       if (e instanceof MouseEvent && menu.contains(e.target as Node)) return;
       closeMenu();
-      window.removeEventListener("mousedown", away);
+      window.removeEventListener("pointerdown", away);
       window.removeEventListener("keydown", away);
       window.removeEventListener("blur", away);
     };
-    window.addEventListener("mousedown", away);
+    window.addEventListener("pointerdown", away);
     window.addEventListener("keydown", away);
     window.addEventListener("blur", away);
   }, 0);

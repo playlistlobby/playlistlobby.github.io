@@ -2,6 +2,7 @@ import { h, toast } from "./dom";
 import {
   Access,
   FLOOR_PRESETS,
+  FLOOR_TEXTURES,
   FURNI_KINDS,
   MAX_FURNI,
   RoomDef,
@@ -9,9 +10,11 @@ import {
   SIZES,
   updateRoom,
   WALL_COLORS,
+  WALL_TEXTURES,
   removeFurni,
 } from "../rooms";
 import { social } from "../social";
+import { assetUrl } from "../assetUrl";
 import type { Ctx } from "../main";
 
 export interface RoomHooks {
@@ -23,7 +26,12 @@ export interface RoomHooks {
   onDefChange(fn: () => void): () => void;
 }
 
-const ACCESS_LABEL: Record<Access, string> = { open: "Open to all", friends: "Friends only", invite: "Invite only" };
+const ACCESS_LABEL: Record<Access, string> = { open: "Open to all", knock: "Knock to enter", closed: "Friends only" };
+const ACCESS_HELP: Record<Access, string> = {
+  open: "Anyone can walk in.",
+  knock: "Friends walk in. Everyone else knocks and you let them in from your friends menu.",
+  closed: "Only friends can come in. Strangers can't knock.",
+};
 
 /** The "Room" tab: owners edit their room here, everyone else sees who owns it. */
 export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHooks): () => void {
@@ -63,8 +71,9 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
 
       h("div", { class: "rp-sec" },
         h("div", { class: "rp-label" }, "Who can come in"),
-        h("div", { class: "rp-chips" }, ...(["open", "friends", "invite"] as Access[]).map((a) =>
-          h("button", { class: "chip" + (def.access === a ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { access: a })) }, ACCESS_LABEL[a])))),
+        h("div", { class: "rp-chips" }, ...(["open", "knock", "closed"] as Access[]).map((a) =>
+          h("button", { class: "chip" + (def.access === a ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { access: a })) }, ACCESS_LABEL[a]))),
+        h("div", { class: "hint" }, ACCESS_HELP[def.access])),
 
       h("div", { class: "rp-sec" },
         h("div", { class: "rp-label" }, "Size"),
@@ -91,12 +100,25 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
             style: { background: `linear-gradient(135deg, ${f.a} 50%, ${f.b} 50%)` },
             onclick: () => void safe(updateRoom(def.id, { "theme/floorA": f.a, "theme/floorB": f.b })),
           }))),
+        h("div", { class: "rp-label" }, "Floor pattern"),
+        h("div", { class: "rp-chips" },
+          h("button", { class: "chip" + (!def.theme.floorTex ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { "theme/floorTex": null })) }, "Plain"),
+          ...FLOOR_TEXTURES.map((t) =>
+            h("button", { class: "chip" + (def.theme.floorTex === t.id ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { "theme/floorTex": t.id })) }, t.name))),
         h("div", { class: "rp-label" }, "Walls"),
         h("div", { class: "rp-chips" }, ...WALL_COLORS.map((c) =>
           h("button", {
             class: "chip swatch2" + (def.theme.wall === c ? " on" : ""),
             style: { background: c },
-            onclick: () => void safe(updateRoom(def.id, { "theme/wall": c })),
+            onclick: () => void safe(updateRoom(def.id, { "theme/wall": c, "theme/wallTex": null })),
+          }))),
+        h("div", { class: "rp-label" }, "Wallpaper"),
+        h("div", { class: "rp-chips" }, ...WALL_TEXTURES.map((t) =>
+          h("button", {
+            class: "chip wp" + (def.theme.wallTex === t.id ? " on" : ""),
+            title: t.name,
+            style: { backgroundImage: `url("${assetUrl(`textures/wall_${t.id}.png`)}")` },
+            onclick: () => void safe(updateRoom(def.id, { "theme/wallTex": t.id })),
           }))),
         h("div", { class: "rp-label" }, "Rug"),
         h("div", { class: "rp-chips" },

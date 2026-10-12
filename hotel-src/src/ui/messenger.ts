@@ -1,24 +1,14 @@
-import { h, toast, trimCanvas } from "./dom";
-import { renderAvatar } from "../avatarService";
+import { h, toast } from "./dom";
+import { headBox } from "./head";
 import { social, PublicProfile } from "../social";
 import { LOBBY_ID } from "../rooms";
-import { FEATURES } from "../features";
+import { playSfx } from "../sfx";
+import { logAction } from "../logger";
 import type { Ctx } from "../main";
-
-function headOf(figure: string): HTMLElement {
-  const box = h("div", { class: "head" });
-  renderAvatar({ figure, dir: 2, headDir: 2, headOnly: true }).then((c) => {
-    if (!c || !box.isConnected) return;
-    const t = trimCanvas(c);
-    t.className = "head-canvas";
-    box.replaceChildren(t);
-  });
-  return box;
-}
 
 const fmtClock = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-/** Docked friends list + private chat windows + room-invite popups. Lives for as long as you're signed in. */
+/** Docked friends list + private chat windows + room requests and invites. Lives for as long as you're signed in. */
 export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
   const me = ctx.profile;
   let open = false;
@@ -33,7 +23,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
   root.append(dock, popups);
 
   // ---- friends panel ------------------------------------------------------------------
-  const addInput = h("input", { type: "text", placeholder: "Add friend by username", maxLength: 16, class: "mini-input" });
+  const addInput = h("input", { type: "text", placeholder: "Add friend by username", maxLength: 16, class: "mini-input", autocapitalize: "none", spellcheck: false });
 
   async function addFriend(): Promise<void> {
     const name = addInput.value;
@@ -47,20 +37,26 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
 
   function renderPanel(): void {
     panel.classList.toggle("hidden", !open);
+    document.body.classList.toggle("friends-open", open);
     const friends = [...social.friends.values()].sort((a, b) => Number(social.isOnline(b.uid)) - Number(social.isOnline(a.uid)) || a.name.localeCompare(b.name));
     const onlineCount = friends.filter((f) => social.isOnline(f.uid)).length;
     toggle.firstChild!.textContent = `👥 Friends (${onlineCount}/${friends.length}) `;
-    const unread = social.totalUnread;
-    badge.textContent = String(unread);
-    badge.classList.toggle("hidden", unread === 0);
+    const count = social.badgeCount;
+    badge.textContent = String(count);
+    badge.classList.toggle("hidden", count === 0);
     if (!open) return;
 
+    const knockRows = [...social.knocks.values()].map((k) =>
+      h("div", { class: "frow" }, h("span", { class: "knock-ico" }, "✊"), h("span", { class: "fname knock-name" }, `${k.name} is at your door`),
+        h("button", { class: "btn small primary", title: "Let them in", onclick: () => social.answerKnock(k.uid, true).then(() => { logAction(me, "room", `let ${k.name} into their room`); toast(`${k.name} can come in until you log off.`); }, () => toast("Couldn't let them in.", "err")) }, "Let in"),
+        h("button", { class: "btn small", title: "Send them away", onclick: () => void social.answerKnock(k.uid, false) }, "✕")));
+
     const reqRows = [...social.requests.values()].map((r) =>
-      h("div", { class: "frow" }, headOf(r.figure), h("span", { class: "fname" }, r.name),
-        h("button", { class: "btn small primary", title: "Accept", onclick: () => social.accept(r.uid).then(() => toast(`You and ${r.name} are friends now.`), () => toast("Couldn't accept that.", "err")) }, "✓"),
+      h("div", { class: "frow" }, headBox(r.figure), h("span", { class: "fname" }, r.name),
+        h("button", { class: "btn small primary", title: "Accept", onclick: () => social.accept(r.uid).then(() => { playSfx("friend"); toast(`You and ${r.name} are friends now.`); }, () => toast("Couldn't accept that.", "err")) }, "✓"),
         h("button", { class: "btn small", title: "Decline", onclick: () => void social.decline(r.uid) }, "✕")));
 
-    const inviteRows = (FEATURES.rooms ? social.invites : []).map((i) =>
+    const inviteRows = social.invites.map((i) =>
       h("div", { class: "frow" }, h("span", { class: "fname" }, `${i.fromName} invited you to "${i.roomName}"`),
         h("button", { class: "btn small primary", onclick: () => { void social.dismissInvite(i.id); ctx.navigate("room", { roomId: i.room }); } }, "Join"),
         h("button", { class: "btn small", onclick: () => void social.dismissInvite(i.id) }, "✕")));
@@ -68,16 +64,17 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     // header + input are built once so typing isn't interrupted by presence updates
     if (!panel.firstChild) {
       panel.append(
-        h("div", { class: "fp-head" }, h("strong", {}, "Friends"), h("button", { class: "btn small", onclick: () => { open = false; renderPanel(); } }, "–")),
+        h("div", { class: "fp-head" }, h("strong", {}, "Friends"), h("button", { class: "btn small", onclick: () => { open = false; renderPanel(); } }, "Close")),
         h("form", { class: "row fp-add", onsubmit: (e: Event) => { e.preventDefault(); void addFriend(); } }, addInput, h("button", { class: "btn small", type: "submit" }, "Add")),
         dyn);
     }
     dyn.replaceChildren(
+      ...(knockRows.length ? [h("div", { class: "fp-sec fp-knocks" }, h("div", { class: "fp-label" }, `Room requests (${knockRows.length})`), ...knockRows)] : []),
       ...(inviteRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, "Room invites"), ...inviteRows)] : []),
-      ...(reqRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, `Requests (${reqRows.length})`), ...reqRows)] : []),
+      ...(reqRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, `Friend requests (${reqRows.length})`), ...reqRows)] : []),
       h("div", { class: "fp-list" },
         ...(friends.length === 0
-          ? [h("div", { class: "hint pad" }, "No friends yet. Add someone by username, or right-click a player in a room.")]
+          ? [h("div", { class: "hint pad" }, "No friends yet. Add someone by username, or right-click (long-press) a player in a room.")]
           : friends.map((f) => friendRow(f)))));
   }
   const dyn = h("div", { class: "fp-dyn" });
@@ -86,13 +83,14 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     const online = social.isOnline(f.uid);
     const room = social.roomOf(f.uid);
     const unread = social.unread.get(f.uid) ?? 0;
+    const where = room === LOBBY_ID ? "In the public room" : room ? "In a room" : online ? "Online" : "Offline";
     return h("div", { class: "frow" },
-      headOf(f.figure),
+      headBox(f.figure),
       h("span", { class: "dot " + (online ? "on" : "") }),
-      h("span", { class: "fname", title: online ? (room ? "In a room" : "Online") : "Offline", onclick: () => openChat(f.uid) }, f.name),
+      h("span", { class: "fname", title: where, onclick: () => openChat(f.uid) }, f.name, h("span", { class: "fwhere" }, where)),
       unread ? h("span", { class: "badge" }, String(unread)) : null,
       h("button", { class: "btn small", title: "Message", onclick: () => openChat(f.uid) }, "💬"),
-      room && (room === LOBBY_ID || FEATURES.rooms) ? h("button", { class: "btn small", title: room === LOBBY_ID ? "Go to the lobby" : "Follow into their room", onclick: () => ctx.navigate("room", { roomId: room }) }, "➜") : null,
+      room ? h("button", { class: "btn small", title: room === LOBBY_ID ? "Go to the public room" : "Follow into their room", onclick: () => { open = false; renderPanel(); ctx.navigate("room", { roomId: room }); } }, "➜") : null,
       h("button", { class: "btn small", title: "Remove friend", onclick: () => {
         if (confirm(`Remove ${f.name} from your friends?`)) void social.removeFriend(f.uid).then(() => closeChat(f.uid));
       } }, "✕"));
@@ -124,7 +122,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
         const text = field.value.trim();
         if (!text) return;
         field.value = "";
-        social.sendDm(uid, text).catch(() => toast("That message didn't go through.", "err"));
+        social.sendDm(uid, text).then(() => playSfx("sent", 0.3), () => toast("That message didn't go through.", "err"));
       } }, field));
     const render = () => {
       status.className = "dot " + (social.isOnline(uid) ? "on" : "");
@@ -149,7 +147,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
 
   const onOpenChat = (e: Event) => openChat((e as CustomEvent<string>).detail);
   window.addEventListener("open-chat", onOpenChat);
-  // the Friends icon on the home screen opens/closes the friends list
+  // the Friends button in the top bar (phones) opens/closes the list the same way the corner button does
   const onToggleFriends = () => { open = !open; renderPanel(); };
   window.addEventListener("toggle-friends", onToggleFriends);
 
@@ -166,13 +164,14 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     if (m.from === me.uid || windows.has(friend)) return;
     const f = social.friends.get(friend);
     if (!f) return;
+    playSfx("message", 0.4);
     const pop = h("div", { class: "toast ok show msg-toast", onclick: () => { openChat(friend); pop.remove(); } }, `💬 ${f.name}: ${m.text.slice(0, 60)}`);
     document.body.append(pop);
     setTimeout(() => pop.remove(), 5000);
   });
 
   const offInvite = social.onInvite((i) => {
-    if (!FEATURES.rooms) return;
+    playSfx("knock", 0.4);
     const card = h("div", { class: "invite-card" },
       h("div", {}, h("strong", {}, i.fromName), ` invited you to `, h("strong", {}, `"${i.roomName}"`)),
       h("div", { class: "row" },
@@ -182,11 +181,26 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     setTimeout(() => card.remove(), 20000);
   });
 
+  // someone knocking on my door: a pop-up right away (the request also waits in the friends menu)
+  const offKnock = social.onKnock((k) => {
+    playSfx("knock", 0.5);
+    const card = h("div", { class: "invite-card knock-card" },
+      h("div", {}, "✊ ", h("strong", {}, k.name), " is knocking on your door."),
+      h("div", { class: "row" },
+        h("button", { class: "btn small primary", onclick: () => { card.remove(); void social.answerKnock(k.uid, true).then(() => { logAction(me, "room", `let ${k.name} into their room`); toast(`${k.name} can come in until you log off.`); }, () => toast("Couldn't let them in.", "err")); } }, "Let in"),
+        h("button", { class: "btn small", onclick: () => { card.remove(); void social.answerKnock(k.uid, false); } }, "Send away"),
+        h("button", { class: "btn small", onclick: () => card.remove() }, "Later")));
+    popups.append(card);
+    setTimeout(() => card.remove(), 25000);
+  });
+
   renderPanel();
   return () => {
     offStore();
     offDm();
     offInvite();
+    offKnock();
+    document.body.classList.remove("friends-open");
     window.removeEventListener("open-chat", onOpenChat);
     window.removeEventListener("toggle-friends", onToggleFriends);
     dock.remove();

@@ -17,6 +17,7 @@ import {
 import { renderAvatar } from "../avatarService";
 import { buyItems, saveFigure } from "../db";
 import { logAction } from "../logger";
+import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 
 export type EditorMode = "customize" | "shop";
@@ -24,7 +25,7 @@ export type EditorMode = "customize" | "shop";
 const PAGE_SIZE = 18;
 
 /** Customizer + shop share one editor: same preview, slots, colors and item grid, different item filter and footer. */
-export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode, onboarding = false): () => void {
+export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () => void {
   const profile = ctx.profile;
   let gender: Gender = profile.gender;
   let parts: Parts = parseFigure(profile.figure || DEFAULT_FIGURE[gender]);
@@ -61,7 +62,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode, onboa
   root.append(
     h("div", { class: "editor" },
       h("div", { class: "editor-left panel" },
-        h("h2", {}, mode === "shop" ? "Clothing shop" : onboarding ? "Create your character" : "Your character"),
+        h("h2", {}, mode === "shop" ? "Clothing shop" : "Your character"),
         h("div", { class: "preview-box" }, previewCanvas, nameTag),
         h("div", { class: "row center" },
           h("button", { class: "btn small", onclick: () => rotate(-1) }, "⟲"),
@@ -196,14 +197,15 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode, onboa
             try {
               await saveFigure(profile, figureToString(parts), gender);
               ctx.refreshHeader();
-              logAction(profile, "look", onboarding ? "created their character" : "changed their look");
-              if (onboarding) ctx.navigate("home");
-              else toast("Look saved!");
+              ctx.lookChanged();
+              logAction(profile, "look", "changed their look");
+              playSfx("camera", 0.35);
+              toast("Look saved!");
             } catch (err) {
               toast((err as Error).message, "err");
             }
           },
-        }, onboarding ? "Enter the hotel →" : "Save look"));
+        }, "Save look"));
       return;
     }
     const basket = unownedItems(parts, profile.owned);
@@ -223,6 +225,8 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode, onboa
             await saveFigure(profile, figureToString(parts), gender);
             logAction(profile, "buy", `bought ${basket.map((i) => i.key).join(", ")} for ${cost}`);
             ctx.refreshHeader();
+            ctx.lookChanged();
+            playSfx("cash", 0.45);
             toast(`Bought ${basket.length} item${basket.length > 1 ? "s" : ""} and put them on!`);
             redraw();
           } catch (err) {

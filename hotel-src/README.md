@@ -1,6 +1,6 @@
-# Bobba Hotel demo
+# 6ixPlanet
 
-A small Habbo-style hotel: **username + password accounts (Firebase Auth) → character customizer → live isometric lobby**, with an OSRS-style inventory, a knife that draws blood (the hotel's currency), a shop for clothes / emotes / music access, a wardrobe, friends + private chat, player-made rooms you can decorate and invite people to, and an arcade machine in the lobby.
+A small Habbo-style hotel: **username + password accounts (Firebase Auth) → pick an avatar (randomizer over the free clothes) → pick one of three rooms → you start in your own room**, with a door to the public room and to other players' rooms (friends walk in, strangers knock), an OSRS-style inventory, a knife that draws blood (the hotel's currency), a shop for clothes / emotes / music access, saved outfits, friends + private chat and an arcade machine in the public room. The admin has a **Studio** for designing clothing. Works on phones.
 
 - Avatars are rendered in the browser from Habbo's sprite data, using the avatar imager from [Josedn/bobba_client](https://github.com/Josedn/bobba_client) (GPL-3.0, vendored in `src/avatar/`). Sprite atlases and `figuredata.json` come from `images.bobba.io` (see `src/avatarService.ts` to point it at your own mirror).
 - Everything realtime lives in Firebase Realtime Database. There is no custom server.
@@ -45,7 +45,9 @@ The config in `src/firebaseConfig.ts` is public (identifiers, not secrets). To p
 | **CD + CD player** | everyone owns a CD; use it on the CD player in the lobby (it walks you over). Everyone in the lobby hears it in sync, music notes float out of the machine, and the CD comes back to your inventory when it ends (or when you eject it). Click the player with nothing selected for volume controls (volume is per listener). | `src/cdplayer.ts`, `src/ui/room.ts` |
 | **Music access** | shop item unlocks the Music tab, which streams `public/music/*.mp3` | `src/music.ts` |
 | **Friends + private chat** | requests by username, accept/decline, online dots, follow into a room, DMs between friends, unread badges | `src/social.ts`, `src/ui/messenger.ts` |
-| **Rooms** | `Rooms` tab: create your room, then use the 🏠 tab inside it to rename it, set access (open / friends / invite only), resize, recolor floor / walls / rug, place furniture, invite friends | `src/rooms.ts`, `src/ui/navigator.ts`, `src/ui/roomPanel.ts` |
+| **First run** | avatar step (Boy/Girl tab + 🎲 Randomize over free clothes), then a choice of 3 room templates with previews | `src/ui/onboarding.ts`, `src/rooms.ts` (`ROOM_TEMPLATES`) |
+| **Rooms + doors** | everyone has a room (`u_<uid>`); a door on the back wall of every room and the public room opens a popup: public room / my room / visit a player. Friends' rooms and open rooms: walk in. Strangers: **Knock**; the owner sees the request in the Friends menu (and a pop-up) and lets them in for that session. The 🏠 tab in your own room edits name, access (open / knock / friends only), size, floor + wallpaper textures, rug, furniture. | `src/ui/door.ts`, `src/ui/roomPanel.ts`, `src/social.ts` (knocks), `src/roomRender.ts` |
+| **Studio (admin)** | design clothing: start from an existing garment, repaint it in the built-in pixel painter, import PNG/ZIP frames, add a pattern, set price + shop, publish. Stored as a small sprite sheet in `designs/*` and slotted into the avatar imager as a normal set. | `src/designs.ts`, `src/designTools.ts`, `src/ui/studio.ts`, `src/ui/painter.ts` |
 | **Arcade** | two cabinets in the lobby; click one, walk up, pick a game | `src/arcade/` |
 
 ### Adding things
@@ -59,12 +61,14 @@ The config in `src/firebaseConfig.ts` is public (identifiers, not secrets). To p
 
 ## What the database rules enforce
 
-The rules (not just the UI) enforce: only you can touch your data; blood can only go up by exactly 1, once per UTC day (and only down otherwise); non-free emotes need the matching `owned` entry; friendship needs a request that the other side accepts; DMs and invites only flow between mutual friends; room access (open / friends / invite) applies to who can read or write a room's players and chat; only the owner edits a room.
+The rules (not just the UI) enforce: only you can touch your data; blood can only go up by exactly 1, once per UTC day (and only down otherwise); non-free emotes need the matching `owned` entry; friendship needs a request that the other side accepts; DMs and invites only flow between mutual friends; a room's players and chat are open to its owner, friends of the owner, anyone let in (`roomInvites`, wiped when the owner logs off) and, for open rooms, everyone; knocks are refused for closed rooms; only the owner edits a room; only the admin account writes `designs/*` and `config/*`.
 
 ## Known limits
 
 - **Prices aren't enforced.** The rules stop players from minting blood or touching others' data, but they can't check what something costs, so a tampered client could unlock shop items without paying. Real enforcement needs Cloud Functions.
 - **The music file isn't access-controlled.** The Music tab is gated, but the mp3 is a static file anyone with the URL can fetch. Real gating needs signed URLs.
 - Rooms have a 40-piece furniture cap and furniture is simple colored blocks (no sprites yet). Chat history is never pruned. Avatars don't collide.
+- Studio designs are stored as base64 PNG sprite sheets in the Realtime Database (limit ~880 KB each).
+- The floor/wall textures, UI sounds and any assets taken from the Habbo asset dump belong to their original owner.
 - The "surprised" face sprite is missing from the hosted atlas, so that emote jumps instead of pulling a face.
 - Assets are hotlinked from third-party hosts.

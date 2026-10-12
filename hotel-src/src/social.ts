@@ -17,6 +17,7 @@ import {
 import { db } from "./firebase";
 import { serverNow } from "./db";
 import type { Profile } from "./db";
+import { ownRoomId } from "./rooms";
 
 export interface PublicProfile {
   uid: string;
@@ -40,6 +41,12 @@ export interface Invite {
   roomName: string;
   from: string;
   fromName: string;
+  ts: number;
+}
+/** Someone knocking on your room's door (shown in the friends menu until you let them in or send them away). */
+export interface Knock {
+  uid: string;
+  name: string;
   ts: number;
 }
 
@@ -90,12 +97,15 @@ class SocialStore {
   requests = new Map<string, PublicProfile>();
   presence = new Map<string, Presence>();
   invites: Invite[] = [];
+  /** people knocking on my room's door right now */
+  knocks = new Map<string, Knock>();
   dms = new Map<string, DmMsg[]>();
   unread = new Map<string, number>();
   /** friend whose chat window is open (their messages don't count as unread) */
   openChat = new Set<string>();
 
   private listeners = new Set<Listener>();
+  private knockListeners = new Set<(k: Knock) => void>();
   private inviteListeners = new Set<(i: Invite) => void>();
   private dmListeners = new Set<(friend: string, m: DmMsg) => void>();
   private unsubs: Unsubscribe[] = [];
@@ -110,6 +120,10 @@ class SocialStore {
     this.inviteListeners.add(fn);
     return () => this.inviteListeners.delete(fn);
   }
+  onKnock(fn: (k: Knock) => void): () => void {
+    this.knockListeners.add(fn);
+    return () => this.knockListeners.delete(fn);
+  }
   onDm(fn: (friend: string, m: DmMsg) => void): () => void {
     this.dmListeners.add(fn);
     return () => this.dmListeners.delete(fn);
@@ -122,6 +136,10 @@ class SocialStore {
     let n = 0;
     this.unread.forEach((v) => (n += v));
     return n;
+  }
+  /** what the Friends button's red badge counts: unread messages, friend requests and people knocking */
+  get badgeCount(): number {
+    return this.totalUnread + this.requests.size + this.knocks.size;
   }
   isOnline = (uid: string) => this.presence.has(uid);
   friendUids = () => new Set(this.friends.keys());
@@ -164,6 +182,14 @@ class SocialStore {
         this.presence = next;
         this.emit();
       }),
+      onValue(ref(db, `knocks/${me.uid}`), (snap) => {
+        const next = new Map<string, Knock>();
+        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) next.set(uid, { uid, name: v.name ?? "?", ts: typeof v.ts === "number" ? v.ts : serverNow() });
+        const fresh = [...next.values()].filter((k) => !this.knocks.has(k.uid));
+        this.knocks = next;
+        this.emit();
+        fresh.forEach((k) => this.knockListeners.forEach((l) => l(k)));
+      }, () => undefined),
       onChildAdded(ref(db, `invites/${me.uid}`), (snap) => {
         const v = snap.val();
         if (!v) return;
@@ -184,6 +210,7 @@ class SocialStore {
     this.requests.clear();
     this.presence.clear();
     this.invites = [];
+    this.knocks.clear();
     this.dms.clear();
     this.unread.clear();
     this.openChat.clear();
@@ -266,6 +293,73 @@ class SocialStore {
       [`roomInvites/${roomId}/${friend}`]: true,
       [`invites/${friend}/${id}`]: { room: roomId, roomName, from: me.uid, fromName: me.name, ts: serverTimestamp() },
     });
+  }
+
+  // ---- knocking on someone's door -------------------------------------------------------------
+  /** username -> uid (null if nobody has that name) */
+  async uidOf(rawName: string): Promise<string | null> {
+    const name = rawName.trim().toLowerCase();
+    if (!name) return null;
+    const snap = await get(ref(db, `usernames/${name}`));
+    return snap.exists() ? (snap.val() as string) : null;
+  }
+
+  /** Asks to be let into someone's room. The owner answers from their friends menu. */
+  async knock(owner: string): Promise<void> {
+    const me = this.me!;
+    const r = ref(db, `knocks/${owner}/${me.uid}`);
+    await set(r, { name: me.name, ts: serverTimestamp() });
+    void onDisconnect(r).remove(); // a knock from someone who closed the page isn't a knock any more
+  }
+
+  cancelKnock(owner: string): Promise<void> {
+    const r = ref(db, `knocks/${owner}/${this.me!.uid}`);
+    void onDisconnect(r).cancel().catch(() => undefined);
+    return remove(r).catch(() => undefined);
+  }
+
+  /** Watches the answer to my knock: "accepted" once the owner lets me in, "declined" if they send me away. Returns a stop function. */
+  watchKnock(owner: string, cb: (answer: "accepted" | "declined") => void): Unsubscribe {
+    const me = this.me!;
+    let seenKnock = false;
+    let accepted = false;
+    let timer = 0;
+    const offInvite = onValue(ref(db, `roomInvites/${ownRoomId(owner)}/${me.uid}`), (s) => {
+      if (!s.exists() || accepted) return;
+      accepted = true;
+      window.clearTimeout(timer);
+      cb("accepted");
+    }, () => undefined);
+    const offKnock = onValue(ref(db, `knocks/${owner}/${me.uid}`), (s) => {
+      if (s.exists()) { seenKnock = true; return; }
+      if (!seenKnock || accepted) return;
+      // letting me in removes the knock and adds the invite in one write; give the invite a moment to show up before calling it a "no"
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => { if (!accepted) cb("declined"); }, 700);
+    }, () => undefined);
+    return () => { window.clearTimeout(timer); offInvite(); offKnock(); };
+  }
+
+  /** Owner: let a knocker in (they get access until I log off) or send them away. */
+  async answerKnock(visitor: string, allow: boolean): Promise<void> {
+    const me = this.me!;
+    const updates: Record<string, unknown> = { [`knocks/${me.uid}/${visitor}`]: null };
+    if (allow) updates[`roomInvites/${ownRoomId(me.uid)}/${visitor}`] = true;
+    await update(ref(db), updates);
+  }
+
+  /** Let-in grants only last for one session: they're wiped when I disconnect. Call after signing in and after creating my room. */
+  armInviteCleanup(): void {
+    const me = this.me;
+    if (!me) return;
+    void onDisconnect(ref(db, `roomInvites/${ownRoomId(me.uid)}`)).remove().catch(() => undefined);
+  }
+
+  clearRoomInvites(): Promise<void> {
+    const me = this.me;
+    if (!me) return Promise.resolve();
+    void onDisconnect(ref(db, `roomInvites/${ownRoomId(me.uid)}`)).cancel().catch(() => undefined);
+    return remove(ref(db, `roomInvites/${ownRoomId(me.uid)}`)).catch(() => undefined);
   }
 
   async dismissInvite(id: string): Promise<void> {

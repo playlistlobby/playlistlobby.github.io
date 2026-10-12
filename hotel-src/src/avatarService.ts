@@ -27,6 +27,12 @@ function keyOf(o: RenderOpts): string {
   return [o.figure, o.dir, o.headDir ?? o.dir, (o.actions ?? ["std"]).join("+"), o.gesture ?? "std", o.frame ?? 0, o.headOnly ? 1 : 0].join("|");
 }
 
+/** Forgets every rendered avatar (after a custom design changed, so the next draw uses the new art). */
+export function clearAvatarCache(): void {
+  cache.clear();
+  pending.clear();
+}
+
 export function getCached(o: RenderOpts): HTMLCanvasElement | undefined {
   return cache.get(keyOf(o));
 }
