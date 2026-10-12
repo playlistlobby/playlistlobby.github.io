@@ -38,8 +38,6 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   let disposed = false;
 
   ensureRequired();
-  /** Character page: one simple column (character in the middle, tabs only for what you own, Save look / Go back at the bottom). The shop keeps the two-column editor. */
-  const solo = mode === "customize";
   const lookKey = () => figureToString(parts) + gender;
   let savedKey = lookKey();
 
@@ -60,30 +58,19 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   const footerEl = h("div", { class: "editor-footer" });
   const genderEl = h("div", { class: "gender" });
 
-  const waveBtn = h("button", { class: "btn small", onclick: () => { waving = !waving; frame = 0; waveBtn.classList.toggle("on", waving); drawPreview(); } }, "Wave");
   const rotate = (d: number) => { dir = (dir + d + 8) % 8; drawPreview(); };
 
-  if (solo) {
-    root.append(
-      h("div", { class: "editor solo" },
-        h("div", { class: "editor-solo panel" },
-          h("div", { class: "preview-box" }, previewCanvas, nameTag),
-          h("div", { class: "row center" },
-            h("button", { class: "btn small", title: "Turn left", onclick: () => rotate(-1) }, "⟲"),
-            h("button", { class: "btn small", title: "Turn right", onclick: () => rotate(1) }, "⟳")),
-          genderEl, tabsEl, colorsEl, gridEl, pagerEl, footerEl)));
-  } else root.append(
-    h("div", { class: "editor" },
-      h("div", { class: "editor-left panel" },
-        h("h2", {}, mode === "shop" ? "Clothing shop" : "Your character"),
+  // one centred column for both pages: character, turn arrows, (Shop: the buy box), gender, category tabs, colours, items
+  root.append(
+    h("div", { class: "editor solo" },
+      h("div", { class: "editor-solo panel" },
         h("div", { class: "preview-box" }, previewCanvas, nameTag),
         h("div", { class: "row center" },
-          h("button", { class: "btn small", onclick: () => rotate(-1) }, "⟲"),
-          waveBtn,
-          h("button", { class: "btn small", onclick: () => rotate(1) }, "⟳")),
-        genderEl,
-        footerEl),
-      h("div", { class: "editor-right panel" }, tabsEl, colorsEl, gridEl, pagerEl)));
+          h("button", { class: "btn small", title: "Turn left", onclick: () => rotate(-1) }, "⟲"),
+          h("button", { class: "btn small", title: "Turn right", onclick: () => rotate(1) }, "⟳")),
+        ...(mode === "shop" ? [footerEl] : []),
+        genderEl, tabsEl, colorsEl, gridEl, pagerEl,
+        ...(mode === "shop" ? [] : [footerEl]))));
 
   // ---- preview ---------------------------------------------------------------
   function drawPreview(): void {
@@ -100,11 +87,10 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   }, 350);
 
   // ---- slot tabs -------------------------------------------------------------
-  /** On the Character page a category only shows up if you own something in it. */
+  /** A category only shows up if there is something in it: items you own (Character) or items still on sale that you don't own (Shop). */
   function slotsShown() {
-    if (!solo) return SLOTS;
-    const owned = SLOTS.filter((s) => itemsFor(s.id, gender).some((i) => isOwned(i, profile.owned)));
-    return owned.length ? owned : SLOTS;
+    const has = SLOTS.filter((s) => itemsFor(s.id, gender).some((i) => mode === "shop" ? !isOwned(i, profile.owned) && i.shopOn : isOwned(i, profile.owned)));
+    return has.length ? has : SLOTS;
   }
 
   function renderTabs(): void {
