@@ -118,17 +118,9 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
       grid.append(el);
     }
 
-    const syringeReady = canUseSyringe(profile);
-    const stabbed = stabsToday(profile);
     body.replaceChildren(
       h("div", { class: "osrs-title" }, "Inventory"),
-      grid,
-      h("div", { class: "inv-foot" },
-        h("div", { class: "blood-line" }, h("img", { src: BLOOD_ICON, alt: "", class: "blood-ico" }), ` ${profile.blood} drop${profile.blood === 1 ? "" : "s"} of blood`),
-        h("div", { class: "stab-status ready" }, stabbed === 0 ? "Stab each person once a day" : `Stabbed today: ${stabbed}. Each person once a day`),
-        h("div", { class: "stab-status " + (syringeReady ? "ready" : "used") },
-          syringeReady ? "Syringe: ready (2 drops)" : `Syringe used. Again in ${untilText(msUntilTomorrow())}`),
-        h("div", { class: "hint" }, selectedHint())));
+      grid);
   }
 
   // ---- music ---------------------------------------------------------------------------

@@ -298,6 +298,10 @@ async function showHotel(user: User): Promise<void> {
       if (view === "customize") pageCleanup = mountCharacter(pageHost);
       else if (view === "shop") pageCleanup = mountShop(pageHost, ctx);
       else if (view === "admin") pageCleanup = mountAdmin(pageHost, ctx);
+      if (view === "shop" || view === "admin") {
+        // no Room tab any more: these pages have a Go back button at the bottom, like the Character page
+        pageHost.append(h("div", { class: "page-back" }, h("button", { class: "btn", onclick: () => go("room") }, "Go back")));
+      }
     }
     bar?.setActive(view);
   }
