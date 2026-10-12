@@ -361,13 +361,12 @@ export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: 
 }
 
 /** Draws a placed .nitro piece of a registered furniture kind. Returns false until its art has loaded. */
-export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: number, ty: number, dir: number, toScreen: (p: Pt) => Pt, scale: number, alpha = 1): boolean {
+export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: number, ty: number, dir: number, toScreen: (p: Pt) => Pt, scale: number, alpha = 1): Box | null {
   const k = FURNI_KINDS[kindId];
   const n = k?.nitro ? nitroIfReady(k.nitro) : undefined;
-  if (!n) return false;
+  if (!n) return null;
   const fp = footprint(kindId, dir);
-  drawNitroSprites(g, n, fp.w, fp.h, tx, ty, dir, k.nudge, toScreen, scale, alpha);
-  return true;
+  return drawNitroSprites(g, n, fp.w, fp.h, tx, ty, dir, k.nudge, toScreen, scale, alpha);
 }
 
 // ---- the door -------------------------------------------------------------------------------------------

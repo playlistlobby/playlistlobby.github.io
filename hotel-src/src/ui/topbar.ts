@@ -20,11 +20,11 @@ export interface TopBarApi {
 
 /**
  * The iOS 6 navigation bar: logo (and, on phones, the Friends button) on the left, the segmented control
- * Room | Character | Shop (| Admin) in the middle, drops of blood and a menu on the right.
+ * Room | Shop (| Admin) in the middle, drops of blood and a menu on the right. (Character is the bag of clothes in your room.)
  * On phones it wraps into two rows so everything stays tappable.
  */
 export function topBar(o: TopBarOpts): TopBarApi {
-  const tabs: Array<[View, string]> = [["room", "Room"], ["customize", "Character"], ["shop", "Shop"], ...(o.isAdmin ? [["admin", "Admin"] as [View, string]] : [])];
+  const tabs: Array<[View, string]> = [["room", "Room"], ["shop", "Shop"], ...(o.isAdmin ? [["admin", "Admin"] as [View, string]] : [])];
   const tabEls = new Map<View, HTMLElement>();
   const seg = h("nav", { class: "nav-tabs", "aria-label": "Sections" },
     ...tabs.map(([view, label]) => {

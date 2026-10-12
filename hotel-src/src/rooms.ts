@@ -37,6 +37,8 @@ export interface FurniKind {
   fixed?: boolean;
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
+  /** clicking it in your own room walks you over and opens this page */
+  opens?: "character";
   /** lies flat on the floor: you can walk over it and it's drawn underneath everyone */
   flat?: boolean;
   /** nudges the art (64px pixels) if it doesn't sit right on its tiles */
@@ -57,6 +59,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
   // the bed every player room has (a fixed piece: not in the furniture menu, not stored in the database)
   bed: { id: "bed", label: "Bed", icon: "🛏️", w: 1, h: 3, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/hween_c25_makeshiftbed.nitro", rotatable: true, fixed: true },
+  // the bag of clothes in the corner of your own room: click it (your avatar walks over first) to open the Character page
+  bag: { id: "bag", label: "Bag of clothes", icon: "🛍️", w: 1, h: 1, height: 26, color: "#2a2a2a", placeable: false, nitro: "furni/messy_c21_trashbags.nitro", rotatable: true, fixed: true, opens: "character" },
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
@@ -159,7 +163,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
 }
 
 /** The built-in lobby pieces can't be picked up; the ones the admin added can. */
-export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID;
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID;
 
 export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
   return onValue(ref(db, "lobby/furni"), (s) => {
@@ -172,6 +176,9 @@ export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscrib
 /** Where the (fixed) bed sits in every player room, and which way it faces. It lies along the back-right wall, clear of the door. */
 export const BED_ID = "bed";
 export const BED = { x: 3, y: 0, dir: 2 };
+/** The bag of clothes sits in the far right corner, next to the bed. */
+export const BAG_ID = "bag";
+export const BAG = { x: 7, y: 0, dir: 2 };
 /** The tile you stand on when you get out of bed (and where you start every login). */
 export const BED_SIDE = { x: 4, y: 1 };
 /** The tile the sleeper's head is on (the end of the bed by the pillow). */
@@ -194,7 +201,7 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
     .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir }));
-  furni.unshift({ id: BED_ID, kind: "bed", x: BED.x, y: BED.y, dir: BED.dir });
+  furni.unshift({ id: BED_ID, kind: "bed", x: BED.x, y: BED.y, dir: BED.dir }, { id: BAG_ID, kind: "bag", x: BAG.x, y: BAG.y, dir: BAG.dir });
   const rug: RugRect | null = theme.rug
     ? { x0: Math.floor((ROOM_W - 4) / 2), y0: Math.floor((ROOM_H - 4) / 2), w: 4, h: 4 }
     : null;

@@ -74,7 +74,7 @@ export function runOnboarding(region: HTMLElement, ctx: Ctx, needAvatar: boolean
       page.replaceChildren(
         h("div", { class: "onb-card" },
           h("div", { class: "onb-head" }, h("h1", {}, "Choose your avatar"), needRoom ? stepDots(1) : null),
-          h("p", { class: "muted onb-sub" }, `Hi ${profile.name}! Shuffle until you like what you see. You can change everything later in Character.`),
+          h("p", { class: "muted onb-sub" }, `Hi ${profile.name}! Shuffle until you like what you see. You can change everything later from the bag of clothes in your room.`),
           genderEl,
           h("div", { class: "onb-stage" }, canvas),
           h("div", { class: "row center onb-tools" },

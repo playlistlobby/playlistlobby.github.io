@@ -99,7 +99,7 @@ interface NoteFx { born: number; life: number; glyph: string; ox: number; phase:
 type Pending =
   | { type: "stab"; uid: string; since: number; lastTry: number }
   | { type: "door"; since: number; lastTry: number }
-  | { type: "arcade" | "cd"; fid: string; since: number; lastTry: number };
+  | { type: "arcade" | "cd" | "bag"; fid: string; since: number; lastTry: number };
 
 const cheb = (a: Pt, b: Pt) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
@@ -430,6 +430,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (obj.kind === "cdplayer") openCdPopup();
+      else if (obj.kind === "bag") startBag(obj.id);
       else startArcade(obj.id);
       return;
     }
@@ -452,6 +453,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     const obj = pick(objBoxes, mx, my);
     if (obj?.kind === "arcade") opts.push({ label: "Play", target: "Arcade machine", action: () => startArcade(obj.id) });
+    if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
     if (obj?.kind === "cdplayer") {
       if (item?.useOnObject === "cdplayer") opts.push({ label: `Use ${item.name} →`, target: "CD player", action: () => startCd(obj.id) });
       opts.push({ label: "Volume", target: "CD player", action: () => openCdPopup() });
@@ -638,6 +640,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     pending = { type: "arcade", fid, since: performance.now(), lastTry: 0 };
   }
 
+  /** Walk over to the bag of clothes; processPending opens the Character page once you're next to it. */
+  function startBag(fid: string): void {
+    clearSelection();
+    pending = { type: "bag", fid, since: performance.now(), lastTry: 0 };
+  }
+
   function startDoor(): void {
     if (doorApi) return;
     if (isOwnRoom) {
@@ -718,6 +726,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       p.dir = dirOf(currentTile(p), { x: f.x, y: f.y });
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
       if (job.type === "cd") void executeInsert();
+      else if (job.type === "bag") ctx.navigate("customize", { tab: "look" });
       else openArcade();
     }
   }
@@ -1103,7 +1112,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   function drawFurni(f: { kind: string; x: number; y: number; dir?: number }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
-    if (k.nitro) { drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale); return null; }
+    if (k.nitro) {
+      const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
+      return b ? { id: "", ...b, depth: f.x + f.y } : null;
+    }
     const { A, B, C, D, gd, fill } = drawFurniBase(g, f.kind, f.x, f.y, toScreen, scale);
 
     if (f.kind === "arcade") {
@@ -1536,7 +1548,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           : f.x + footprint(f.kind, f.dir).w + f.y + footprint(f.kind, f.dir).h - 1,
         draw: () => {
           const box = drawFurni(f, now);
-          if (box && INTERACTIVE_KINDS.has(f.kind)) objs.push({ ...box, id: f.id, kind: f.kind });
+          // the bag of clothes can be clicked in your own room only
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || (FURNI_KINDS[f.kind].opens && isOwnRoom))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
