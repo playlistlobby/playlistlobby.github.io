@@ -513,6 +513,11 @@ html.kb .side-host { display: none; }
 @media (max-width: 800px) {
   .studio-grid, .paint-body { grid-template-columns: 1fr; }
 }
+/* iOS zooms into any field smaller than 16px when it gets focus (that was the "whole site jumps" when opening the chat).
+   The classed inputs above set their own 14px, so they're listed here; touch screens of any width, incl. phones in landscape. */
+@media (pointer: coarse) {
+  input, select, textarea, .chat-input, .cw-input, .mini-input, .cellrow input, .admin-bar select { font-size: 16px; }
+}
 
 /* ---- Studio: furniture + nitro import ---- */
 .furni-thumb { width: 96px; height: 96px; image-rendering: pixelated; }
