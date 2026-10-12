@@ -12,6 +12,11 @@ export function trackKeyboard(): void {
   let lastKeyboard = 0; // keyboard height seen last time
   let loop = 0;
 
+  // iOS draws its field helper (up/down arrows + checkmark) over the bottom of the page, just above the keys, without counting it in the
+  // visible height. Pages can't remove it, so leave room for it: the strip it covers is the only thing hidden.
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const HELPER_BAR = ios ? 48 : 0;
+
   const typing = (): boolean => {
     const a = document.activeElement;
     return a instanceof HTMLInputElement || a instanceof HTMLTextAreaElement;
@@ -23,7 +28,7 @@ export function trackKeyboard(): void {
     const covered = window.innerHeight - vv.height;
     if (covered > 100) lastKeyboard = covered;
     // keyboard reported: exact. Not reported yet (animation still running): assume it's about to show up at its usual height.
-    const h = covered > 100 ? vv.height : window.innerHeight - (lastKeyboard || Math.round(window.innerHeight * 0.38));
+    const h = (covered > 100 ? vv.height : window.innerHeight - (lastKeyboard || Math.round(window.innerHeight * 0.38))) - HELPER_BAR;
     const top = Math.max(0, vv.offsetTop);
     root.style.setProperty("--vv-top", `${top}px`);
     root.style.setProperty("--vv-h", `${h}px`);
