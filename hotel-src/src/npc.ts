@@ -7,9 +7,9 @@ export const SIXTY = {
   id: "sixty",
   name: "6ixty",
   /** the tile he stands on (it can't be walked through) and which way he faces */
-  x: 6,
-  y: 3,
-  dir: 3,
+  x: 0,
+  y: 8,
+  dir: 2,
 };
 
 export interface NpcLook {
