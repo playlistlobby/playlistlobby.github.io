@@ -16,6 +16,7 @@ export default class AvatarInfo {
     rectHeight: number;
     padX: number = 0;
     padY: number = 0;
+    padB: number = 0;
     figure: FigurePart[];
     drawAction: DrawAction;
     handItem: number;
@@ -101,8 +102,9 @@ export default class AvatarInfo {
                     // so the picture gets padding and everything is drawn shifted by it (see AvatarImager)
                     this.padX = 90;
                     this.padY = 30;
-                    this.rectWidth += this.padX;
-                    this.rectHeight += this.padY;
+                    this.padB = 30; // and room below, or the feet get cut off
+                    this.rectWidth += this.padX + 20;
+                    this.rectHeight += this.padY + this.padB;
 
                     switch (this.gesture) {
                         case "spk":

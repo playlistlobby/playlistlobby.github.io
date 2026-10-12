@@ -119,8 +119,8 @@ const bloodImg = loadImg(BLOOD_ICON);
 const syringeImg = loadImg(ITEMS.syringe.icon);
 
 /** Where the lying avatar's 110x64 picture sits relative to the bed-head tile's floor point (tuned by eye against the bed art). */
-const LAY_DX = -81;
-const LAY_DY = -70;
+const LAY_DX = -76;
+const LAY_DY = -76;
 
 /** Pixels from the feet line up to the top of the 64x110 avatar canvas (tuned against the bobba sprites). */
 const FEET_Y = 94;
@@ -640,6 +640,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   function startDoor(): void {
     if (doorApi) return;
+    // the menu opens straight away (waiting for the walk made people tap again, and the second tap hit a button); the avatar still strolls over
+    showDoor();
     pending = { type: "door", since: performance.now(), lastTry: 0 };
   }
 
@@ -683,7 +685,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         pending = null;
         p.dir = 0; // face the wall the door is in
         update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
-        showDoor();
       }
       return;
     }

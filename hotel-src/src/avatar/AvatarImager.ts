@@ -342,7 +342,7 @@ export default class AvatarImager {
                         if (this.offsets[chunk.lib].data != null && this.offsets[chunk.lib].data[chunk.getResourceName()] != null) {
                             //console.log(chunk);
                             if (chunk.resource != null) {
-                                const baseH = avatarInfo.rectHeight - (avatarInfo.padY || 0);
+                                const baseH = avatarInfo.rectHeight - (avatarInfo.padY || 0) - (avatarInfo.padB || 0);
                                 let posX = -this.offsets[chunk.lib].data[chunk.getResourceName()].x + (avatarInfo.padX || 0);
                                 let posY = (baseH / 2) - this.offsets[chunk.lib].data[chunk.getResourceName()].y + baseH / 2.5 + (avatarInfo.padY || 0);
                                 //console.log("x: " + posX + " - y: " + posY + " - color: " + chunk.color);
