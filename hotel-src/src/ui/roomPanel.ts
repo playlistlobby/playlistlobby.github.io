@@ -6,17 +6,14 @@ import {
   FURNI_KINDS,
   MAX_FURNI,
   RoomDef,
-  RUG_COLORS,
   updateRoom,
   WALL_COLORS,
-  WALL_TEXTURES,
   removeFurni,
   INTERACTIVE_KINDS,
   isFixedLobbyPiece,
   LOBBY_ID,
 } from "../rooms";
 import { social } from "../social";
-import { assetUrl } from "../assetUrl";
 import type { Ctx } from "../main";
 
 export interface RoomHooks {
@@ -128,23 +125,7 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
             style: { background: c },
             onclick: () => void safe(updateRoom(def.id, { "theme/wall": c, "theme/wallTex": null })),
           }))),
-        h("div", { class: "rp-label" }, "Wallpaper"),
-        h("div", { class: "rp-chips" }, ...WALL_TEXTURES.map((t) =>
-          h("button", {
-            class: "chip wp" + (def.theme.wallTex === t.id ? " on" : ""),
-            title: t.name,
-            style: { backgroundImage: `url("${assetUrl(`textures/wall_${t.id}.png`)}")` },
-            onclick: () => void safe(updateRoom(def.id, { "theme/wallTex": t.id })),
-          }))),
-        h("div", { class: "rp-label" }, "Rug"),
-        h("div", { class: "rp-chips" },
-          h("button", { class: "chip" + (def.theme.rug ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { "theme/rug": !def.theme.rug })) }, def.theme.rug ? "On" : "Off"),
-          ...RUG_COLORS.map((c) =>
-            h("button", {
-              class: "chip swatch2" + (def.theme.rugColor === c ? " on" : ""),
-              style: { background: c },
-              onclick: () => void safe(updateRoom(def.id, { "theme/rug": true, "theme/rugColor": c })),
-            })))),
+      ),
 
       furnitureSection(def, tool, false),
 
