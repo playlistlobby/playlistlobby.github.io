@@ -44,7 +44,17 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     body);
   host.append(el);
   el.classList.add("arming");
-  window.setTimeout(() => el.classList.remove("arming"), 500);
+  window.setTimeout(() => el.classList.remove("arming"), 800);
+  // A button only counts if the press that clicked it started on this menu (after it settled): a stray tap or click left over
+  // from opening the menu, or a replayed one, can never choose a destination for you.
+  let pressedOn = 0;
+  el.addEventListener("pointerdown", () => { if (!el.classList.contains("arming")) pressedOn = performance.now(); }, true);
+  const chosen = (e: Event): boolean => {
+    const keyboard = (e as MouseEvent).detail === 0; // Enter/Space on a focused button
+    const ok = keyboard || (pressedOn > 0 && performance.now() - pressedOn < 2500);
+    pressedOn = 0;
+    return ok;
+  };
 
   function enter(roomId: string, label: string): void {
     logAction(me, "visit", `went to ${label}`);
@@ -69,10 +79,10 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   }
 
   function actionFor(r: Row): HTMLElement {
-    if (r.friend || r.access === "open") return h("button", { class: "btn small primary", onclick: () => enter(r.roomId, `${r.ownerName}'s room`) }, "Visit");
+    if (r.friend || r.access === "open") return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Visit");
     if (r.access === "knock") {
       return r.online
-        ? h("button", { class: "btn small", onclick: () => startKnock(r) }, "Knock")
+        ? h("button", { class: "btn small", onclick: (e: Event) => { if (chosen(e)) startKnock(r); } }, "Knock")
         : h("button", { class: "btn small", disabled: true }, "Offline");
     }
     return h("button", { class: "btn small", disabled: true }, "Closed");
@@ -97,8 +107,8 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     const foundRow = found && searched && "uid" in searched ? rowFor(ownRoomId(searched.uid), found) : null;
     body.replaceChildren(
       h("div", { class: "door-main" },
-        currentRoom !== LOBBY_ID ? h("button", { class: "btn primary door-big", onclick: () => enter(LOBBY_ID, "the basement") }, "🕳 Basement") : null,
-        currentRoom !== mineId ? h("button", { class: "btn primary door-big", onclick: () => enter(mineId, "their own room") }, "🏠 My room") : null),
+        currentRoom !== LOBBY_ID ? h("button", { class: "btn primary door-big", onclick: (e: Event) => { if (chosen(e)) enter(LOBBY_ID, "the basement"); } }, "🕳 Basement") : null,
+        currentRoom !== mineId ? h("button", { class: "btn primary door-big", onclick: (e: Event) => { if (chosen(e)) enter(mineId, "their own room"); } }, "🏠 My room") : null),
       h("div", { class: "fp-label" }, "Visit a player's room"),
       h("form", { class: "row door-search", onsubmit: async (e: Event) => {
         e.preventDefault();

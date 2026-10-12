@@ -242,7 +242,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
-    else if (hoverDoor) text = roomId === LOBBY_ID ? "Door: rooms" : "Door: leave the room";
+    else if (hoverDoor) text = isOwnRoom ? "Door: to the basement" : "Door: rooms";
     actionHint.textContent = text;
     actionHint.classList.toggle("hidden", !text);
     canvas.style.cursor = item || tool ? "crosshair" : "pointer";
@@ -640,7 +640,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   function startDoor(): void {
     if (doorApi) return;
-    // the menu opens straight away (waiting for the walk made people tap again, and the second tap hit a button); the avatar still strolls over
+    if (isOwnRoom) {
+      // your own room's door is simple: it leads to the basement, no menu
+      if (!me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); }
+      logAction(me, "visit", "went to the basement");
+      ctx.navigate("room", { roomId: LOBBY_ID });
+      return;
+    }
+    // everywhere else the door opens the menu (basement, your room, visit someone); it opens straight away while the avatar strolls over
     showDoor();
     pending = { type: "door", since: performance.now(), lastTry: 0 };
   }
