@@ -135,7 +135,8 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
 export async function saveFigure(p: Profile, figure: string, gender: Gender): Promise<void> {
   await update(ref(db, `users/${p.uid}`), { figure, gender });
   // the public copy other players see (friends list, room avatars)
-  await update(ref(db, `profiles/${p.uid}`), { name: p.name, figure }).catch(() => undefined);
+  // (the admin account is 6ixty: its public look is his, not the one being saved here)
+  if (!p.isAdmin) await update(ref(db, `profiles/${p.uid}`), { name: p.name, figure }).catch(() => undefined);
   p.figure = figure;
   p.gender = gender;
 }

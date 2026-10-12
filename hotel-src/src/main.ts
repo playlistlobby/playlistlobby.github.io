@@ -1,5 +1,6 @@
 import { onAuthStateChanged, User } from "firebase/auth";
-import { ref, remove } from "firebase/database";
+import { ref, remove, update } from "firebase/database";
+import { SIXTY, watchSixtyLook } from "./npc";
 import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
 import { createProfile, loadProfile, Profile } from "./db";
@@ -231,6 +232,14 @@ async function showHotel(user: User): Promise<void> {
 
   // Social: friends, requests, DMs, knocks and who's online are live for the whole session.
   void publishProfile(p).catch((err) => console.warn("couldn't publish profile", err));
+  // The admin account IS 6ixty: its public look follows the one set for him, and the admin's room is his room.
+  let stopSixtyLook: (() => void) | null = null;
+  if (p.isAdmin) {
+    stopSixtyLook = watchSixtyLook((l) => { void update(ref(db, `profiles/${p.uid}`), { name: SIXTY.name, figure: l.figure }).catch(() => undefined); });
+    void fetchMeta(ownRoomId(p.uid)).then((m) => {
+      if (m && (m.name !== "6ixty's room" || m.ownerName !== SIXTY.name)) void update(ref(db, `roomsMeta/${ownRoomId(p.uid)}`), { name: "6ixty's room", ownerName: SIXTY.name }).catch(() => undefined);
+    }).catch(() => undefined);
+  }
   social.start(p);
   social.armInviteCleanup();
   startPresence(p);
@@ -248,6 +257,7 @@ async function showHotel(user: User): Promise<void> {
   offBadge = social.subscribe(() => bar?.setBadge(social.badgeCount));
   bar.setBadge(social.badgeCount);
   shellCleanup = () => {
+    stopSixtyLook?.();
     stopIdle();
     stopMessenger();
     stopShop();

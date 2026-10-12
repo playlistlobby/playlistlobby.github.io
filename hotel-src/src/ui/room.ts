@@ -94,6 +94,8 @@ interface Player {
   sleeper?: boolean;
   /** when this player lit a cigarette (server time, ms); they smoke for SMOKE_MS */
   smoke?: number;
+  /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
+  npc?: boolean;
 }
 
 interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean }
@@ -163,6 +165,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** while now < introUntil the player lies in bed (the wake-up); 0 = no intro */
   let introUntil = 0;
   const isOwnRoom = roomId === ownRoomId(me.uid);
+  // The admin account IS 6ixty: in every room they show up as him (his name and look), and in the basement they stand
+  // at his spot, can't move, and talk as him.
+  const asSixty = me.isAdmin;
+  const frozen = asSixty && roomId === LOBBY_ID;
+  const shownName = asSixty ? SIXTY.name : me.name;
+  const shownFigure = (): string => (asSixty ? sixtyLook().figure : me.figure);
 
   let def: RoomDef = lobbyDef();
   const blocked = new Set<string>();
@@ -437,6 +445,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return;
     }
 
+    if (target?.npc && target.uid !== me.uid) { clearSelection(); startSixty(); return; }
     const item = selectedDef();
     if (item?.useOnPlayer === "stab") {
       if (target && target.uid !== me.uid) startStab(target.uid);
@@ -477,7 +486,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const item = selectedDef();
     const hasKnife = findSlot(me.inventory, "knife") >= 0;
     const opts: Array<{ label: string; target?: string; danger?: boolean; action: () => void }> = [];
-    if (target && target.uid !== me.uid) {
+    if (target?.npc && target.uid !== me.uid) {
+      opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
+      opts.push({ label: "Examine", target: SIXTY.name, action: () => say("6ixty. He sells things, and he knows how this place works.") });
+    } else if (target && target.uid !== me.uid) {
       if (item?.useOnPlayer === "stab") opts.push({ label: `Use ${item.name} →`, target: target.name, action: () => startStab(target.uid) });
       if (hasKnife && item?.useOnPlayer !== "stab") opts.push({ label: "Stab", target: target.name, danger: true, action: () => startStab(target.uid) });
       opts.push({ label: "Examine", target: target.name, action: () => say(`${target.name}: a fellow hotel guest.`) });
@@ -597,6 +609,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       uid, name: v.name ?? "?", figure: v.figure ?? me.figure, dir: v.dir ?? 2,
       from: p, to: p, stepStart: 0, path: [], dest: p, lastEmoteTs: v.emote?.ts ?? 0,
       smoke: typeof v.smoke === "number" ? v.smoke : undefined,
+      npc: v.sixty === true,
     };
   }
 
@@ -617,7 +630,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   function walkTo(dest: Pt): void {
     const p = mine();
-    if (!p) return;
+    if (!p || frozen) return; // 6ixty doesn't walk
     setDestination(p, dest);
     if (p.path.length === 0) return;
     update(ref(db, `rooms/${roomId}/players/${me.uid}`), { x: dest.x, y: dest.y, dir: dirOf(currentTile(p), p.path[0]) }).catch(console.warn);
@@ -665,6 +678,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function startStab(uid: string): void {
     const target = players.get(uid);
     if (!target || uid === me.uid) return;
+    if (target.npc) return startSixty(); // you don't stab 6ixty, you talk to him
     if (findSlot(me.inventory, "knife") < 0) return say("You need a knife for that.", "warn");
     if (!canStab(me, uid)) {
       const mins = Math.max(1, Math.ceil(msUntilTomorrow() / 60000));
@@ -1119,8 +1133,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function start(): void {
     if (started || disposed) return;
     started = true;
-    const spawn = spawnTile();
-    const mineP = makePlayer(me.uid, { name: me.name, figure: me.figure, x: spawn.x, y: spawn.y, dir: 2 });
+    const spawn = frozen ? { x: SIXTY.x, y: SIXTY.y } : spawnTile(); // as 6ixty you stand exactly where he stands
+    const startDir = frozen ? SIXTY.dir : 2;
+    const mineP = makePlayer(me.uid, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, sixty: asSixty });
     players.set(me.uid, mineP);
     if (opts.intro && isOwnRoom) {
       // first wake-up: start under the covers (drawn lying on the bed), get up when the eyes have opened
@@ -1135,12 +1150,22 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const burning = me.inventory.find((s) => s?.item === "cigarette" && s.lit && serverNow() - s.lit < SMOKE_MS)?.lit;
     if (burning) mineP.smoke = burning;
     void onDisconnect(myRef).remove();
-    set(myRef, { name: me.name, figure: me.figure, x: spawn.x, y: spawn.y, dir: 2, ts: serverTimestamp(), ...(burning ? { smoke: burning } : {}) }).catch(() => kicked("You can't be in that room."));
+    set(myRef, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, ts: serverTimestamp(), ...(burning ? { smoke: burning } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
+    if (roomId === LOBBY_ID || asSixty) {
+      // 6ixty's look (the admin can change it); as 6ixty you wear it too
+      unsubs.push(watchSixtyLook((l) => {
+        void renderAvatar({ figure: l.figure, dir: SIXTY.dir, headDir: SIXTY.dir, actions: ["std"], gesture: "std", frame: 0 });
+        if (asSixty) {
+          const mp = mine();
+          if (mp) mp.figure = l.figure;
+          void update(myRef, { figure: l.figure }).catch(() => undefined);
+        }
+      }));
+    }
     if (roomId === LOBBY_ID) {
-      unsubs.push(watchSixtyLook((l) => { void renderAvatar({ figure: l.figure, dir: SIXTY.dir, headDir: SIXTY.dir, actions: ["std"], gesture: "std", frame: 0 }); }));
       // he whispers to anyone he has something for, now and every little while until they come over
       sixtyAfter(1500, () => { if (sixtyWants() && !sixtyBusy) sixtySay(SIXTY_LINES.psst, 3200); });
       const psst = window.setInterval(() => {
@@ -1168,6 +1193,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.name = v.name;
         p.figure = v.figure;
         p.smoke = typeof v.smoke === "number" ? v.smoke : undefined;
+        p.npc = v.sixty === true;
         if (v.x !== p.dest.x || v.y !== p.dest.y) setDestination(p, { x: v.x, y: v.y });
         const em = v.emote;
         if (em && typeof em.ts === "number" && em.ts !== p.lastEmoteTs) {
@@ -1184,7 +1210,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (!disposed && mineNow) {
             const t = currentTile(mineNow);
             void onDisconnect(myRef).remove();
-            set(myRef, { name: me.name, figure: me.figure, x: t.x, y: t.y, dir: mineNow.dir, ts: serverTimestamp() }).catch(() => undefined);
+            set(myRef, { name: shownName, figure: shownFigure(), x: t.x, y: t.y, dir: mineNow.dir, ts: serverTimestamp(), ...(asSixty ? { sixty: true } : {}) }).catch(() => undefined);
           }
           return;
         }
@@ -1233,7 +1259,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (EMOTE_BY_ID[id]) return performEmote(id);
       return say(`Unknown command. Emotes: ${Object.keys(EMOTE_BY_ID).map((e) => "/" + e).join(" ")}`, "warn");
     }
-    push(chatRef, { uid: me.uid, name: me.name, text, ts: serverTimestamp() }).catch(console.warn);
+    push(chatRef, { uid: me.uid, name: shownName, text, ts: serverTimestamp() }).catch(console.warn);
   }
 
   // ---- render helpers ----------------------------------------------------------------
@@ -1785,9 +1811,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (!simg) { renderAvatar(sopts); simg = sixtyLast; } else sixtyLast = simg;
       const sw = iso(SIXTY.x, SIXTY.y);
       const sf = toScreen({ x: sw.x, y: sw.y + TILE_H / 2 });
-      objs.push({ id: SIXTY.id, kind: "npc", x0: sf.x - 22 * scale, x1: sf.x + 22 * scale, y0: sf.y - FEET_Y * scale, y1: sf.y + 8 * scale, depth: SIXTY.x + SIXTY.y });
+      // when the admin is in the room they ARE 6ixty (a real player standing here), so the stand-in steps aside
+      const sixtyHere = [...players.values()].some((q) => q.npc);
+      if (!sixtyHere) objs.push({ id: SIXTY.id, kind: "npc", x0: sf.x - 22 * scale, x1: sf.x + 22 * scale, y0: sf.y - FEET_Y * scale, y1: sf.y + 8 * scale, depth: SIXTY.x + SIXTY.y });
       const sHot = hoverObj?.kind === "npc";
-      list.push({
+      if (!sixtyHere) list.push({
         depth: SIXTY.x + SIXTY.y + 0.5,
         draw: () => {
           g.fillStyle = "rgba(0,0,0,0.18)";
@@ -1989,8 +2017,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     figureChanged() {
       const p = mine();
       if (!p) return;
-      p.figure = me.figure;
-      void renderAvatar({ figure: me.figure, dir: 2 });
+      p.figure = shownFigure();
+      void renderAvatar({ figure: p.figure, dir: 2 });
       update(myRef, { figure: me.figure }).catch(() => undefined);
     },
   };

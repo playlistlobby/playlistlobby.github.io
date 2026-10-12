@@ -18,6 +18,7 @@ import { db } from "./firebase";
 import { serverNow } from "./db";
 import type { Profile } from "./db";
 import { ownRoomId } from "./rooms";
+import { SIXTY, sixtyLook } from "./npc";
 
 export interface PublicProfile {
   uid: string;
@@ -68,7 +69,8 @@ export async function fetchProfile(uid: string): Promise<PublicProfile | null> {
 /** Publishes name + look (readable by other players) and claims the username lookup entry. Idempotent. */
 export async function publishProfile(p: Profile): Promise<void> {
   profileCache.delete(p.uid);
-  await set(ref(db, `profiles/${p.uid}`), { name: p.name, figure: p.figure });
+  // the admin account is 6ixty: that is the name and look everybody else sees (friends list, sleeping in their room, ...)
+  await set(ref(db, `profiles/${p.uid}`), p.isAdmin ? { name: SIXTY.name, figure: sixtyLook().figure } : { name: p.name, figure: p.figure });
   const claim = ref(db, `usernames/${p.name.toLowerCase()}`);
   const existing = await get(claim);
   if (!existing.exists()) await set(claim, p.uid).catch(() => undefined);
