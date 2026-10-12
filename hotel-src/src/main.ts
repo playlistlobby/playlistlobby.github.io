@@ -15,6 +15,7 @@ import { mountWardrobe } from "./ui/wardrobe";
 import { mountMessenger } from "./ui/messenger";
 import { mountAdmin } from "./ui/admin";
 import { runOnboarding } from "./ui/onboarding";
+import { trackKeyboard } from "./ui/keyboard";
 import { ensureDoorArt } from "./roomRender";
 import { player } from "./music";
 import { fetchMeta, LOBBY_ID, ownRoomId } from "./rooms";
@@ -49,6 +50,7 @@ export interface Ctx {
 }
 
 const app = document.getElementById("app")!;
+trackKeyboard();
 /** things that live as long as you're signed in (messenger, presence, friends listeners) */
 let shellCleanup: (() => void) | null = null;
 

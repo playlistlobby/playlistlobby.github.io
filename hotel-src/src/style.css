@@ -381,6 +381,14 @@ button, input, select { font-family: var(--font); }
 /* ---- full height on phones (accounts for the browser's address bar) ---- */
 @supports (height: 100dvh) { html, body, #app { height: 100dvh; } }
 
+/* ---- phone keyboard open (set by ui/keyboard.ts): the app is pinned to the visible area, so only the chat bar rides above the keys ---- */
+html.kb, html.kb body { overflow: hidden; overscroll-behavior: none; }
+html.kb #app { position: fixed; left: 0; right: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100dvh); }
+html.kb .messenger { bottom: var(--kb-gap, 0px); }
+html.kb .chat-window { height: min(62vh, calc(var(--vv-h, 100dvh) - 56px)); }
+html.kb .chat-bar { padding-bottom: 7px; }
+html.kb .side-host { display: none; }
+
 /* ---- first run: choose an avatar, then a room ---- */
 .onb-host { flex: 1; min-height: 0; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 18px 12px calc(18px + env(safe-area-inset-bottom)); background: #c9d6d8 url("/ios6/wallpaper-real.jpg") center top / cover no-repeat; }
 .onb { width: 100%; display: flex; justify-content: center; }
