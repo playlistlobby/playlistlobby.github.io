@@ -41,6 +41,23 @@ export function ensureTextures(theme: Partial<RoomTheme>): Promise<void> {
 
 const texture = (kind: "floor" | "wall", id?: string) => (id ? textures.get(`${kind}_${id}`) ?? null : null);
 
+// ---- the basement's painted surfaces (one big picture per surface, made in Blender) ----------------------------
+// floor.jpg: left-to-right along game x, top-to-bottom along game y (top-left = the back corner), 128 px per tile.
+// wall_right.jpg / wall_left.jpg: 128 px per tile across and the wall's full height down; the left picture starts at the left-hand corner.
+const basementArt: { floor?: HTMLImageElement; wallRight?: HTMLImageElement; wallLeft?: HTMLImageElement } = {};
+let basementLoad: Promise<void> | null = null;
+/** Loads the basement's painted floor and walls. Until they have loaded (or if they fail) the basement falls back to the generated concrete. */
+export function ensureBasementArt(): Promise<void> {
+  basementLoad ??= Promise.all((["floor", "wallRight", "wallLeft"] as const).map((k) => new Promise<void>((done) => {
+    const img = new Image();
+    img.onload = () => { basementArt[k] = img; done(); };
+    img.onerror = () => done();
+    img.src = assetUrl(`textures/basement/${k === "floor" ? "floor" : k === "wallRight" ? "wall_right" : "wall_left"}.jpg`);
+  }))).then(() => undefined);
+  return basementLoad;
+}
+const basementReady = () => !!(basementArt.floor && basementArt.wallRight && basementArt.wallLeft);
+
 // ---- dirty concrete (procedural, so no texture files are needed) ----------------------------------------------
 /** Small seeded random generator: the same room always gets the same stains, so redraws don't shimmer. */
 function seeded(seed: number): () => number {
@@ -229,12 +246,28 @@ export function renderRoomShell(def: RoomDef): Shell {
     }
     poly(leftWall, "rgba(0,0,0,0.14)");
   }
-  // baseboards
-  poly([o, br, { x: br.x, y: br.y - 10 }, { x: o.x, y: o.y - 10 }], shade(t.wall, 0.72));
-  poly([o, bl, { x: bl.x, y: bl.y - 10 }, { x: o.x, y: o.y - 10 }], shade(t.wall, 0.64));
-  if (t.style === "grime") {
-    paintGrime(x, rightWall, "wall", 11);
-    paintGrime(x, leftWall, "wall", 23);
+  const painted = t.style === "grime" && basementReady();
+  if (painted) {
+    // the painted walls: each picture is laid onto its wall (128 px per tile along it, the full wall height down)
+    const wr = basementArt.wallRight!, wl = basementArt.wallLeft!;
+    x.save();
+    path(rightWall); x.clip();
+    x.transform(TILE_W / 2 / (wr.width / W), TILE_H / 2 / (wr.width / W), 0, WALL_H / wr.height, o.x, o.y - WALL_H);
+    x.drawImage(wr, 0, 0);
+    x.restore();
+    x.save();
+    path(leftWall); x.clip();
+    x.transform(TILE_W / 2 / (wl.width / H), -TILE_H / 2 / (wl.width / H), 0, WALL_H / wl.height, bl.x, bl.y - WALL_H);
+    x.drawImage(wl, 0, 0);
+    x.restore();
+  } else {
+    // baseboards
+    poly([o, br, { x: br.x, y: br.y - 10 }, { x: o.x, y: o.y - 10 }], shade(t.wall, 0.72));
+    poly([o, bl, { x: bl.x, y: bl.y - 10 }, { x: o.x, y: o.y - 10 }], shade(t.wall, 0.64));
+    if (t.style === "grime") {
+      paintGrime(x, rightWall, "wall", 11);
+      paintGrime(x, leftWall, "wall", 23);
+    }
   }
   // floor edge thickness
   const bot = iso(W, H);
@@ -269,7 +302,16 @@ export function renderRoomShell(def: RoomDef): Shell {
       }
     }
   }
-  if (t.style === "grime") {
+  if (painted) {
+    // the painted floor: its picture runs along game x (right-down) and game y (left-down), starting at the back corner
+    const fl = basementArt.floor!;
+    x.save();
+    path([iso(0, 0), iso(W, 0), iso(W, H), iso(0, H)]); x.clip();
+    const px = fl.width / W, py = fl.height / H;
+    x.transform(TILE_W / 2 / px, TILE_H / 2 / px, -TILE_W / 2 / py, TILE_H / 2 / py, o.x, o.y);
+    x.drawImage(fl, 0, 0);
+    x.restore();
+  } else if (t.style === "grime") {
     paintGrime(x, [iso(0, 0), iso(W, 0), iso(W, H), iso(0, H)], "floor", 37);
     // the room darkens toward the walls, as if one dim bulb lit the middle
     const mid = iso(W / 2, H / 2);

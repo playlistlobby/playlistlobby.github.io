@@ -15,7 +15,7 @@ import { mountMessenger } from "./ui/messenger";
 import { mountAdmin } from "./ui/admin";
 import { runOnboarding } from "./ui/onboarding";
 import { trackKeyboard } from "./ui/keyboard";
-import { ensureDoorArt } from "./roomRender";
+import { ensureBasementArt, ensureDoorArt } from "./roomRender";
 import { watchIdle } from "./idle";
 import { player } from "./music";
 import { fetchMeta, LOBBY_ID, ownRoomId } from "./rooms";
@@ -151,7 +151,7 @@ async function showHotel(user: User): Promise<void> {
   try {
     const shop = watchShopConfig();
     stopShop = shop.stop;
-    await Promise.all([avatarsReady, loadCatalog(), ensureDoorArt()]); // the door art too, so a room never draws without its door
+    await Promise.all([avatarsReady, loadCatalog(), ensureDoorArt(), ensureBasementArt()]); // the door art too, so a room never draws without its door
     const designs = watchDesigns(isAdmin); // player-made clothes join the catalog (needs the base catalog first)
     stopDesigns = designs.stop;
     const furni = watchFurni(); // uploaded furniture becomes placeable kinds (rooms must know them before they draw)
