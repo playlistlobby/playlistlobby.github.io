@@ -59,8 +59,8 @@ export function emoteForSale(def: EmoteDef): boolean {
 }
 
 export function hasEmote(p: Pick<Profile, "owned">, id: string): boolean {
-  const def = EMOTE_BY_ID[id];
-  return !!def && (emotePrice(def) === 0 || !!p.owned[emoteKey(id)]);
+  void p;
+  return !!EMOTE_BY_ID[id]; // every emote is free for everyone now (the shop no longer sells them)
 }
 
 /** Order of facing directions for spinning, clockwise on screen. */

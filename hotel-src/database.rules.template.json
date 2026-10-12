@@ -286,7 +286,7 @@
             ".write": "@PW@ && auth.uid === $uid && @IN@",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
             "emote": {
-              "id": { ".validate": "newData.isString() && (newData.val() === 'wave' || newData.val() === 'smile' || newData.val() === 'sad' || newData.val() === 'jump' || root.child('users').child(auth.uid).child('owned').child('emote_' + newData.val()).exists() || root.child('config').child('shop').child('emotes').child(newData.val()).child('price').val() === 0)" },
+              "id": { ".validate": "newData.isString() && (newData.val() === 'wave' || newData.val() === 'smile' || newData.val() === 'sad' || newData.val() === 'jump' || newData.val() === 'angry' || newData.val() === 'surprised' || newData.val() === 'sleep' || newData.val() === 'laugh' || newData.val() === 'love' || newData.val() === 'cheer' || newData.val() === 'spin' || newData.val() === 'dance')" },
               "ts": { ".validate": "newData.isNumber()" },
               "$other": { ".validate": false }
             }

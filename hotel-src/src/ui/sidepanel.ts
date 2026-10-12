@@ -56,7 +56,6 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     tabsEl.replaceChildren(
       mk("inventory", "🎒", "Inventory"),
       mk("emotes", "😀", "Emotes"),
-      mk("music", "♪", "Music"),
       ...(opts.roomTab ? [mk("room", opts.roomTab.icon, opts.roomTab.title)] : []));
   }
 
