@@ -8,7 +8,7 @@ import { LOG_TYPES, logAction } from "../logger";
 import { social } from "../social";
 import { todayStart } from "../db";
 import { mountAdminShop } from "./adminShop";
-import { mountStudio } from "./studio";
+import { mountStudioHub } from "./studioHub";
 import type { Ctx } from "../main";
 
 type Tab = "players" | "messages" | "activity" | "shop" | "studio" | "settings";
@@ -64,7 +64,7 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
     tab = next;
     body.replaceChildren();
     tabsEl.replaceChildren(...TAB_LABELS.map(([id, label]) => h("button", { class: "tab" + (id === tab ? " on" : ""), onclick: () => show(id) }, label)));
-    const run = { players: accounts, messages, activity: actions, shop: (el: HTMLElement) => mountAdminShop(el, ctx), studio: (el: HTMLElement) => mountStudio(el, ctx), settings }[tab];
+    const run = { players: accounts, messages, activity: actions, shop: (el: HTMLElement) => mountAdminShop(el, ctx), studio: (el: HTMLElement) => mountStudioHub(el, ctx), settings }[tab];
     void Promise.resolve(run(body)).then((d) => { if (tab === next) dispose = d ?? null; else d?.(); });
   }
 

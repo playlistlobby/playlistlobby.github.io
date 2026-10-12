@@ -28,16 +28,19 @@ import {
   FURNI_KINDS,
   INTERACTIVE_KINDS,
   fetchMeta,
+  footprint,
   isDoorTile,
+  isFixedLobbyPiece,
   lobbyDef,
   LOBBY_ID,
   MAX_FURNI,
   placeFurni,
   removeFurni,
   RoomDef,
+  watchLobbyFurni,
   watchMeta,
 } from "../rooms";
-import { Box, drawDoor, drawFurniBase, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
+import { Box, drawDoor, drawFurniBase, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
 import { h, toast } from "./dom";
@@ -147,6 +150,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   let stabbing = false;
   /** owner's edit tool: a furniture kind id, "pickup", or null */
   let tool: string | null = null;
+  /** which way the piece being placed faces (0/2/4/6; press R) */
+  let toolDir = 0;
 
   const stabFx: StabFx[] = [];
   const syringeFx: SyringeFx[] = [];
@@ -155,7 +160,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   const floaters: Floater[] = [];
   const glyphs: GlyphFx[] = [];
 
-  const isOwner = () => def.ownerUid === me.uid;
+  /** you can edit your own room; the admin can also edit the public room's extra furniture */
+  const isOwner = () => def.ownerUid === me.uid || (def.id === LOBBY_ID && me.isAdmin);
 
   // ---- DOM ---------------------------------------------------------------------
   const canvas = h("canvas", { class: "room-canvas" });
@@ -187,14 +193,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     },
     onEmote: (id) => performEmote(id),
     onUseSelf: (what) => { if (what === "syringe") void useSyringe(); },
-    roomTab: roomId === LOBBY_ID ? undefined : {
+    roomTab: roomId === LOBBY_ID && !me.isAdmin ? undefined : {
       icon: "🏠",
       title: "Room",
       mount: (container) => mountRoomPanel(container, ctx, {
         getDef: () => def,
         isOwner,
         getTool: () => tool,
-        setTool: (t) => { tool = t; updateHint(); },
+        setTool: (t) => { if (t !== tool) toolDir = 0; tool = t; updateHint(); },
+        getToolDir: () => toolDir,
+        rotateTool,
         onDefChange: (fn) => { defListeners.add(fn); return () => defListeners.delete(fn); },
       }),
     },
@@ -206,7 +214,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   function updateHint(): void {
     const item = selectedDef();
     let text = "";
-    if (tool && isOwner()) text = tool === "pickup" ? "Pick up furniture: click it" : `Place ${FURNI_KINDS[tool]?.label ?? tool}: click a tile`;
+    if (tool && isOwner()) text = tool === "pickup" ? "Pick up furniture: click it" : `Place ${FURNI_KINDS[tool]?.label ?? tool}: click a tile${FURNI_KINDS[tool]?.rotatable ? " (R turns it)" : ""}`;
     else if (item?.useOnObject) text = hoverObj && hoverObj.kind === item.useOnObject ? `Use ${item.name} → ${FURNI_KINDS[hoverObj.kind].label}` : `Use ${item.name} →`;
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
@@ -222,7 +230,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     blocked.clear();
     for (const f of def.furni) {
       const k = FURNI_KINDS[f.kind];
-      for (let i = 0; i < k.w; i++) for (let j = 0; j < k.h; j++) blocked.add(`${f.x + i},${f.y + j}`);
+      if (k.flat) continue; // flat pieces (a label on the floor) can be walked over
+      const fp = footprint(f.kind, f.dir);
+      for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) blocked.add(`${f.x + i},${f.y + j}`);
     }
   }
   const walkable = (x: number, y: number) => x >= 0 && y >= 0 && x < def.w && y < def.h && !blocked.has(`${x},${y}`);
@@ -262,6 +272,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     floor = shell.canvas;
     floorOrigin = shell.origin;
     layout();
+    void ensureFurniSprites(def);
     // textured floors/walls need their images first; draw again once they're in
     const forDef = def;
     void ensureTextures(def.theme).then(() => {
@@ -320,8 +331,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   };
   const furniAtTile = (t: Pt) =>
     def.furni.find((f) => {
-      const k = FURNI_KINDS[f.kind];
-      return t.x >= f.x && t.x < f.x + k.w && t.y >= f.y && t.y < f.y + k.h;
+      const fp = footprint(f.kind, f.dir);
+      return t.x >= f.x && t.x < f.x + fp.w && t.y >= f.y && t.y < f.y + fp.h;
     });
 
   const inBox = (m: Pt, b: Box | null) => !!b && m.x >= b.x0 && m.x <= b.x1 && m.y >= b.y0 && m.y <= b.y1;
@@ -352,7 +363,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
       if (!t) return;
       if (tool === "pickup") {
         const f = furniAtTile(t);
-        if (f) void removeFurni(def.id, f.id).catch(() => toast("Couldn't pick that up", "err"));
+        if (f && isFixedLobbyPiece(f.id)) say("That one is part of the lobby itself.", "warn");
+        else if (f) void removeFurni(def.id, f.id).catch(() => toast("Couldn't pick that up", "err"));
       } else tryPlace(tool, t);
       return;
     }
@@ -420,7 +432,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     }
     if (!target && !obj && inBox({ x: mx, y: my }, doorBox)) opts.push({ label: "Open", target: "Door", action: () => startDoor() });
     const furni = tile ? furniAtTile(tile) : undefined;
-    if (furni && isOwner() && furni.kind !== "arcade") {
+    if (furni && isOwner() && furni.kind !== "arcade" && !isFixedLobbyPiece(furni.id)) {
       opts.push({ label: "Pick up", target: FURNI_KINDS[furni.kind].label, action: () => void removeFurni(def.id, furni.id).catch(() => undefined) });
     }
     if (tile && walkable(tile.x, tile.y)) opts.push({ label: "Walk here", action: () => { pending = null; walkTo(tile); } });
@@ -475,15 +487,29 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     doorApi?.close();
     if (tool) { tool = null; updateHint(); defListeners.forEach((l) => l()); }
   };
+  const onRotateKey = (e: KeyboardEvent) => {
+    if (e.key.toLowerCase() !== "r" || e.ctrlKey || e.metaKey || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    rotateTool();
+  };
   window.addEventListener("keydown", onKey);
+  window.addEventListener("keydown", onRotateKey);
+
+  function rotateTool(): void {
+    if (!tool || tool === "pickup" || !FURNI_KINDS[tool]?.rotatable) return;
+    toolDir = (toolDir + 2) % 8;
+    updateHint();
+    defListeners.forEach((l) => l());
+  }
 
   // ---- furniture placing (owner) ---------------------------------------------------
   function tryPlace(kind: string, t: Pt): void {
     const k = FURNI_KINDS[kind];
-    if (!k || !k.placeable) return;
+    const adminLobby = def.id === LOBBY_ID && me.isAdmin;
+    if (!k || (!k.placeable && !(adminLobby && k.nitro))) return;
     if (def.furni.length >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
-    for (let i = 0; i < k.w; i++) {
-      for (let j = 0; j < k.h; j++) {
+    const fp = footprint(kind, toolDir);
+    for (let i = 0; i < fp.w; i++) {
+      for (let j = 0; j < fp.h; j++) {
         const x = t.x + i;
         const y = t.y + j;
         if (isDoorTile(x, y, def.doorX)) return say("Keep the doorway clear.", "warn");
@@ -494,7 +520,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
         }
       }
     }
-    void placeFurni(def.id, kind, t.x, t.y).catch(() => say("Couldn't place that.", "warn"));
+    void placeFurni(def.id, kind, t.x, t.y, k.rotatable ? toolDir : 0).catch(() => say("Couldn't place that.", "warn"));
   }
 
   // ---- players -------------------------------------------------------------------
@@ -917,6 +943,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
         }
       }),
       onChildRemoved(playersRef, (snap) => {
+        if (snap.key === me.uid) {
+          // Our entry vanished while we're still here (e.g. the connection of a page we just reloaded timed out and its
+          // "remove me on disconnect" fired late). Put ourselves back where we stand.
+          const mineNow = players.get(me.uid);
+          if (!disposed && mineNow) {
+            const t = currentTile(mineNow);
+            void onDisconnect(myRef).remove();
+            set(myRef, { name: me.name, figure: me.figure, x: t.x, y: t.y, dir: mineNow.dir, ts: serverTimestamp() }).catch(() => undefined);
+          }
+          return;
+        }
         players.delete(snap.key!);
         if (hoverPlayer?.uid === snap.key) { hoverPlayer = null; updateHint(); }
         renderOnline();
@@ -987,8 +1024,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     return { opts: { figure: p.figure, dir, headDir: dir, actions, gesture, frame }, yOff };
   }
 
-  function drawFurni(f: { kind: string; x: number; y: number }, now: number): Hitbox | null {
+  function drawFurni(f: { kind: string; x: number; y: number; dir?: number }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
+    if (k.nitro) { drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale); return null; }
     const { A, B, C, D, gd, fill } = drawFurniBase(g, f.kind, f.x, f.y, toScreen, scale);
 
     if (f.kind === "arcade") {
@@ -1338,8 +1376,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     if (!tool || tool === "pickup" || !hover || !isOwner()) return;
     const k = FURNI_KINDS[tool];
     if (!k) return;
-    for (let i = 0; i < k.w; i++) {
-      for (let j = 0; j < k.h; j++) {
+    const fp = footprint(tool, toolDir);
+    for (let i = 0; i < fp.w; i++) {
+      for (let j = 0; j < fp.h; j++) {
         const x = hover.x + i;
         const y = hover.y + j;
         const ok = walkable(x, y);
@@ -1354,6 +1393,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
         g.fill();
       }
     }
+    if (k.nitro) drawNitroFurni(g, tool, hover.x, hover.y, toolDir, toScreen, scale, 0.6);
   }
 
   let raf = 0;
@@ -1397,7 +1437,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
 
     for (const f of def.furni) {
       list.push({
-        depth: f.x + FURNI_KINDS[f.kind].w + f.y + FURNI_KINDS[f.kind].h - 1,
+        // flat pieces lie on the floor, so they're drawn before (underneath) everyone else
+        depth: FURNI_KINDS[f.kind].flat ? -1 : f.x + footprint(f.kind, f.dir).w + f.y + footprint(f.kind, f.dir).h - 1,
         draw: () => {
           const box = drawFurni(f, now);
           if (box && INTERACTIVE_KINDS.has(f.kind)) objs.push({ ...box, id: f.id, kind: f.kind });
@@ -1480,6 +1521,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     if (roomId === LOBBY_ID) {
       applyDef(lobbyDef());
       start();
+      unsubs.push(watchLobbyFurni((extras) => { if (!disposed) applyDef(lobbyDef(extras)); })); // pieces the admin added
       return;
     }
     try {
@@ -1508,6 +1550,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     cancelAnimationFrame(raf);
     resizeObs.disconnect();
     window.removeEventListener("keydown", onKey);
+    window.removeEventListener("keydown", onRotateKey);
     unsubs.forEach((u) => u());
     endPress();
     doorApi?.close();

@@ -20,6 +20,7 @@ import { fetchMeta, LOBBY_ID, ownRoomId } from "./rooms";
 import { logAction } from "./logger";
 import { watchShopConfig } from "./shopConfig";
 import { watchDesigns } from "./designs";
+import { watchFurni } from "./furniDefs";
 import { publishProfile, social, startPresence, stopPresence } from "./social";
 
 export const APP_NAME = "6ixPlanet";
@@ -141,13 +142,16 @@ async function showHotel(user: User): Promise<void> {
   let profile: Profile | null;
   let stopShop: () => void = () => undefined;
   let stopDesigns: () => void = () => undefined;
+  let stopFurni: () => void = () => undefined;
   try {
     const shop = watchShopConfig();
     stopShop = shop.stop;
     await Promise.all([avatarsReady, loadCatalog()]);
     const designs = watchDesigns(isAdmin); // player-made clothes join the catalog (needs the base catalog first)
     stopDesigns = designs.stop;
-    await Promise.all([shop.ready, designs.ready]); // the admin's prices land on real items
+    const furni = watchFurni(); // uploaded furniture becomes placeable kinds (rooms must know them before they draw)
+    stopFurni = furni.stop;
+    await Promise.all([shop.ready, designs.ready, furni.ready]); // the admin's prices land on real items
     profile = await loadProfile(user.uid, isAdmin);
     if (!profile) {
       // Account exists but profile is missing (e.g. interrupted registration); create one so the user isn't locked out.
@@ -157,6 +161,7 @@ async function showHotel(user: User): Promise<void> {
   } catch (ex) {
     stopShop();
     stopDesigns();
+    stopFurni();
     clear();
     app.append(h("div", { class: "center-screen" }, h("div", { class: "panel auth" },
       h("h1", {}, "Couldn't load"), h("p", {}, friendlyError(ex)),
@@ -233,6 +238,7 @@ async function showHotel(user: User): Promise<void> {
     stopMessenger();
     stopShop();
     stopDesigns();
+    stopFurni();
     offBadge?.();
     roomApi?.dispose();
     roomApi = null;

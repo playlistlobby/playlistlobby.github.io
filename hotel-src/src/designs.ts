@@ -259,9 +259,13 @@ export function listDesigns(): DesignMeta[] {
   return Object.entries(lastRaw).map(([id, v]) => normalizeMeta(id, v)).filter((m): m is DesignMeta => !!m).sort((a, b) => Number(b.id) - Number(a.id));
 }
 
+const reserved = new Set<string>();
+
 export function allocateDesignId(): string {
-  const ids = [...Object.keys(lastRaw), ...localDrafts].map(Number).filter((n) => Number.isFinite(n));
-  return String(Math.max(DESIGN_ID_START - 1, ...ids) + 1);
+  const ids = [...Object.keys(lastRaw), ...localDrafts, ...reserved].map(Number).filter((n) => Number.isFinite(n));
+  const id = String(Math.max(DESIGN_ID_START - 1, ...ids) + 1);
+  reserved.add(id); // a batch import asks for several ids before any of them reaches the database
+  return id;
 }
 
 export const designRev = (id: string): number => Number(lastRaw[id]?.rev ?? 0);

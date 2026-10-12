@@ -31,6 +31,21 @@ export interface FurniKind {
   color: string;
   /** can players put it in their own room? */
   placeable: boolean;
+  /** drawn from a Habbo .nitro file in public/ instead of as a box */
+  nitro?: string;
+  /** lies flat on the floor: you can walk over it and it's drawn underneath everyone */
+  flat?: boolean;
+  /** nudges the art (64px pixels) if it doesn't sit right on its tiles */
+  nudge?: { x: number; y: number };
+  /** can be turned to face another way when placed (its footprint swaps when it faces 2 or 6) */
+  rotatable?: boolean;
+}
+
+/** Tiles a piece covers given the way it faces. */
+export function footprint(kindId: string, dir = 0): { w: number; h: number } {
+  const k = FURNI_KINDS[kindId];
+  if (!k) return { w: 1, h: 1 };
+  return k.rotatable && (dir === 2 || dir === 6) ? { w: k.h, h: k.w } : { w: k.w, h: k.h };
 }
 
 export const FURNI_KINDS: Record<string, FurniKind> = {
@@ -42,6 +57,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   shelf: { id: "shelf", label: "Shelf", icon: "📚", w: 1, h: 1, height: 74, color: "#6a4a2c", placeable: true },
   arcade: { id: "arcade", label: "Arcade machine", icon: "🕹️", w: 1, h: 1, height: 78, color: "#26327a", placeable: false },
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
+  wf_label: { id: "wf_label", label: "Label", icon: "🏷️", w: 1, h: 1, height: 3, color: "#3a3a3a", placeable: false, nitro: "furni/wf_label.nitro", flat: true },
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
@@ -52,6 +68,8 @@ export interface PlacedFurni {
   kind: string;
   x: number;
   y: number;
+  /** facing 0/2/4/6 (only matters for rotatable pieces) */
+  dir?: number;
 }
 
 export interface RugRect {
@@ -125,9 +143,9 @@ export const ownRoomId = (uid: string) => `u_${uid}`;
 export const ownerOfRoom = (id: string) => (id.startsWith("u_") ? id.slice(2) : null);
 export const isLobby = (id: string) => id === LOBBY_ID;
 
-/** The public lobby: fixed layout, with the arcade machines and CD player against the back wall. */
-export function lobbyDef(): RoomDef {
-  const fixed: Array<[string, number, number]> = [["sofa", 9, 1], ["plant", 1, 9], ["table", 5, 5], ["arcade", 3, 0], ["arcade", 5, 0], ["cdplayer", 7, 0]];
+/** The public lobby: a fixed layout (arcade machines and CD player against the back wall) plus whatever pieces the admin added. */
+export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
+  const fixed: Array<[string, number, number]> = [["sofa", 9, 1], ["plant", 1, 9], ["table", 5, 5], ["arcade", 3, 0], ["arcade", 5, 0], ["cdplayer", 7, 0], ["wf_label", 4, 2]];
   return {
     id: LOBBY_ID,
     name: "Main Lobby",
@@ -138,9 +156,19 @@ export function lobbyDef(): RoomDef {
     h: 12,
     theme: { ...DEFAULT_THEME },
     rug: { x0: 3, y0: 3, w: 6, h: 6 },
-    furni: fixed.map(([kind, x, y], i) => ({ id: `lobby${i}`, kind, x, y })),
+    furni: [...fixed.map(([kind, x, y], i) => ({ id: `lobby${i}`, kind, x, y })), ...extras.filter((f) => FURNI_KINDS[f.kind])],
     doorX: DOOR_X,
   };
+}
+
+/** The built-in lobby pieces can't be picked up; the ones the admin added can. */
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id);
+
+export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
+  return onValue(ref(db, "lobby/furni"), (s) => {
+    const raw = (s.val() ?? {}) as Record<string, { kind: string; x: number; y: number; dir?: number }>;
+    cb(Object.entries(raw).map(([id, f]) => ({ id, kind: f.kind, x: f.x, y: f.y, dir: f.dir })));
+  }, () => cb([]));
 }
 
 // ---- starter room templates (first-run: pick one of three) ------------------------------------
@@ -183,14 +211,14 @@ export interface RoomMeta {
   w: number;
   h: number;
   theme?: Partial<RoomTheme>;
-  furni?: Record<string, { kind: string; x: number; y: number }>;
+  furni?: Record<string, { kind: string; x: number; y: number; dir?: number }>;
 }
 
 export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   const theme: RoomTheme = { ...DEFAULT_THEME, ...(meta.theme ?? {}) };
   const furni = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind])
-    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y }));
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir }));
   const rug: RugRect | null = theme.rug
     ? { x0: Math.max(0, Math.floor((meta.w - 4) / 2)), y0: Math.max(0, Math.floor((meta.h - 4) / 2)), w: 4, h: 4 }
     : null;
@@ -242,12 +270,15 @@ export async function createRoom(p: Profile, tpl: RoomTemplate): Promise<string>
 
 export const updateRoom = (id: string, patch: Record<string, unknown>) => update(metaRef(id), patch);
 
-export async function placeFurni(id: string, kind: string, x: number, y: number): Promise<void> {
-  const f = push(ref(db, `roomsMeta/${id}/furni`));
-  await set(f, { kind, x, y });
+/** Furniture of the public room lives under lobby/furni (admin only); everyone else's under their room. */
+const furniPathOf = (roomId: string) => (roomId === LOBBY_ID ? "lobby/furni" : `roomsMeta/${roomId}/furni`);
+
+export async function placeFurni(id: string, kind: string, x: number, y: number, dir = 0): Promise<void> {
+  const f = push(ref(db, furniPathOf(id)));
+  await set(f, dir ? { kind, x, y, dir } : { kind, x, y });
 }
 
-export const removeFurni = (id: string, fid: string) => remove(ref(db, `roomsMeta/${id}/furni/${fid}`));
+export const removeFurni = (id: string, fid: string) => remove(ref(db, `${furniPathOf(id)}/${fid}`));
 
 /** Can this player walk straight in? Mirrors the database rules so we can say no politely instead of failing.
  *  Open rooms and friends' rooms: yes. Anyone else needs to be let in (a roomInvites entry), which a knock asks for. */

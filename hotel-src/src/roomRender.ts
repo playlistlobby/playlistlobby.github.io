@@ -1,6 +1,7 @@
 // Isometric room drawing shared by the live room (ui/room.ts) and the first-run room picker previews.
 import { assetUrl } from "./assetUrl";
-import { FURNI_KINDS, RoomDef, RoomTheme } from "./rooms";
+import { footprint, FURNI_KINDS, RoomDef, RoomTheme } from "./rooms";
+import { loadNitro, nitroIfReady, NitroFurni, spritesFor } from "./nitro";
 
 export const TILE_W = 64;
 export const TILE_H = 32;
@@ -172,6 +173,49 @@ export function drawFurniBase(g: CanvasRenderingContext2D, kindId: string, tx: n
   return { A, B, C, D, gd, fill };
 }
 
+// ---- sprite furniture (.nitro files) ---------------------------------------------------------------------
+/** Starts loading the .nitro art of every sprite piece in a room. The pieces appear on their own once loaded. */
+export function ensureFurniSprites(def: RoomDef): Promise<void> {
+  const paths = new Set(def.furni.map((f) => FURNI_KINDS[f.kind]?.nitro).filter((p): p is string => !!p));
+  return Promise.all([...paths].map((p) => loadNitro(p))).then(() => undefined);
+}
+
+/** Draws sprite art standing on the floor footprint (w x h tiles) at (tx, ty). The art's anchor is the centre of that footprint. */
+export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: number, h: number, tx: number, ty: number, dir: number, nudge: { x: number; y: number } | undefined, toScreen: (p: Pt) => Pt, scale: number, alpha = 1): void {
+  const o = toScreen(iso(tx + w / 2, ty + h / 2)); // 1x1: the middle of the tile's diamond
+  const ox = o.x + (nudge?.x ?? 0) * scale;
+  const oy = o.y + (nudge?.y ?? 0) * scale;
+  const prevSmoothing = g.imageSmoothingEnabled;
+  g.imageSmoothingEnabled = false;
+  for (const s of spritesFor(n, dir)) {
+    const sw = s.sw * scale;
+    const sh = s.sh * scale;
+    const left = ox + s.dx * scale;
+    const top = oy + s.dy * scale;
+    g.save();
+    g.globalAlpha = alpha * (s.isShadow ? 0.22 : 1); // the shadow art is solid black; the game draws it faint
+    if (s.flipH) {
+      g.translate(left + sw, top);
+      g.scale(-1, 1);
+      g.drawImage(s.image, s.sx, s.sy, s.sw, s.sh, 0, 0, sw, sh);
+    } else {
+      g.drawImage(s.image, s.sx, s.sy, s.sw, s.sh, left, top, sw, sh);
+    }
+    g.restore();
+  }
+  g.imageSmoothingEnabled = prevSmoothing;
+}
+
+/** Draws a placed .nitro piece of a registered furniture kind. Returns false until its art has loaded. */
+export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: number, ty: number, dir: number, toScreen: (p: Pt) => Pt, scale: number, alpha = 1): boolean {
+  const k = FURNI_KINDS[kindId];
+  const n = k?.nitro ? nitroIfReady(k.nitro) : undefined;
+  if (!n) return false;
+  const fp = footprint(kindId, dir);
+  drawNitroSprites(g, n, fp.w, fp.h, tx, ty, dir, k.nudge, toScreen, scale, alpha);
+  return true;
+}
+
 // ---- the door -------------------------------------------------------------------------------------------
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 
@@ -237,7 +281,8 @@ export function renderRoomPreview(def: RoomDef, width: number): HTMLCanvasElemen
   g.drawImage(shell.canvas, 0, 0, width, shell.canvas.height * scale);
   const toScreen = (p: Pt): Pt => ({ x: (shell.origin.x + p.x) * scale, y: (shell.origin.y + p.y) * scale });
   drawDoor(g, def.doorX, toScreen, scale, "EXIT", 0);
-  [...def.furni]
+  void ensureFurniSprites(def);
+  [...def.furni].filter((f) => !FURNI_KINDS[f.kind].nitro)
     .sort((a, b) => a.x + FURNI_KINDS[a.kind].w + a.y + FURNI_KINDS[a.kind].h - (b.x + FURNI_KINDS[b.kind].w + b.y + FURNI_KINDS[b.kind].h))
     .forEach((f) => drawFurniBase(g, f.kind, f.x, f.y, toScreen, scale));
   return out;

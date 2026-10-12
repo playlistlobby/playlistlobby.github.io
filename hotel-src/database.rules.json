@@ -162,6 +162,53 @@
       }
     },
 
+    "furni": {
+      "meta": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+        "$kind": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'admin@users.bobba.invalid'",
+          ".validate": "$kind.matches(/^x_[a-z0-9_]{1,24}$/) && newData.hasChildren(['name', 'w', 'h', 'players', 'flat'])",
+          "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 28" },
+          "w": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 8" },
+          "h": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 8" },
+          "players": { ".validate": "newData.isBoolean()" },
+          "flat": { ".validate": "newData.isBoolean()" },
+          "ox": { ".validate": "newData.isNumber() && newData.val() >= -200 && newData.val() <= 200" },
+          "oy": { ".validate": "newData.isNumber() && newData.val() >= -200 && newData.val() <= 200" },
+          "height": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300" },
+          "dirs": { ".validate": "true" },
+          "rev": { ".validate": "newData.isNumber()" },
+          "updatedAt": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": "false" }
+        }
+      },
+      "sheet": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+        "$kind": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'admin@users.bobba.invalid'",
+          ".validate": "$kind.matches(/^x_[a-z0-9_]{1,24}$/) && newData.hasChildren(['png', 'json'])",
+          "png": { ".validate": "newData.isString() && newData.val().length < 700000" },
+          "json": { ".validate": "newData.isString() && newData.val().length < 60000" },
+          "$other": { ".validate": "false" }
+        }
+      }
+    },
+
+    "lobby": {
+      "furni": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'admin@users.bobba.invalid'",
+        "$f": {
+          ".validate": "newData.hasChildren(['kind', 'x', 'y'])",
+          "kind": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 12" },
+          "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 12" },
+          "dir": { ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6" },
+          "$other": { ".validate": "false" }
+        }
+      }
+    },
+
     "designs": {
       "meta": {
         ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
@@ -217,9 +264,10 @@
         "furni": {
           "$f": {
             ".validate": "newData.hasChildren(['kind', 'x', 'y'])",
-            "kind": { ".validate": "newData.val() === 'crate' || newData.val() === 'table' || newData.val() === 'sofa' || newData.val() === 'plant' || newData.val() === 'lamp' || newData.val() === 'shelf'" },
+            "kind": { ".validate": "newData.val() === 'crate' || newData.val() === 'table' || newData.val() === 'sofa' || newData.val() === 'plant' || newData.val() === 'lamp' || newData.val() === 'shelf' || root.child('furni').child('meta').child(newData.val()).child('players').val() === true" },
             "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16" },
             "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16" },
+            "dir": { ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6" },
             "$other": { ".validate": false }
           }
         },

@@ -1,5 +1,6 @@
 import { h, toast, trimCanvas } from "./dom";
 import { mountPainter, PainterApi } from "./painter";
+import { mountNitroClothing } from "./studioNitro";
 import { renderAvatar } from "../avatarService";
 import { DEFAULT_FIGURE, figureToString, Gender, parseFigure, SLOTS, swatchesFor } from "../catalog";
 import {
@@ -40,6 +41,7 @@ export function mountStudio(root: HTMLElement, ctx: Ctx): () => void {
   let offList: (() => void) | null = null;
   let previewTimer = 0;
   let stopWalk: (() => void) | null = null;
+  let stopNitro: (() => void) | null = null;
 
   const failed = (err: unknown) => toast((err as Error)?.message || "Something went wrong.", "err");
 
@@ -54,9 +56,19 @@ export function mountStudio(root: HTMLElement, ctx: Ctx): () => void {
   }
 
   // ---- list of designs -------------------------------------------------------------------------------------
+  function showNitro(): void {
+    leaveEditor();
+    offList?.();
+    stopNitro?.();
+    host.replaceChildren();
+    stopNitro = mountNitroClothing(host, ctx, showList);
+  }
+
   function showList(): void {
     leaveEditor();
     offList?.();
+    stopNitro?.();
+    stopNitro = null;
     const grid = h("div", { class: "apanel-grid" });
     const draw = () => {
       const all = listDesigns();
@@ -75,6 +87,7 @@ export function mountStudio(root: HTMLElement, ctx: Ctx): () => void {
     host.replaceChildren(
       h("div", { class: "admin-bar" },
         h("button", { class: "btn primary", onclick: showPicker }, "＋ New design"),
+        h("button", { class: "btn", onclick: showNitro }, "⬆ Import .nitro"),
         h("span", { class: "hint" }, "Designs start from an existing garment, so they come with the right layers and animations.")),
       grid);
     draw();
@@ -393,5 +406,6 @@ export function mountStudio(root: HTMLElement, ctx: Ctx): () => void {
     disposed = true;
     leaveEditor();
     offList?.();
+    stopNitro?.();
   };
 }

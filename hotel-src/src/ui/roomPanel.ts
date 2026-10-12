@@ -12,6 +12,8 @@ import {
   WALL_COLORS,
   WALL_TEXTURES,
   removeFurni,
+  isFixedLobbyPiece,
+  LOBBY_ID,
 } from "../rooms";
 import { social } from "../social";
 import { assetUrl } from "../assetUrl";
@@ -22,6 +24,8 @@ export interface RoomHooks {
   isOwner(): boolean;
   getTool(): string | null;
   setTool(tool: string | null): void;
+  getToolDir(): number;
+  rotateTool(): void;
   /** called whenever the room definition changes (live edits by the owner) */
   onDefChange(fn: () => void): () => void;
 }
@@ -42,8 +46,36 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
   const safe = (p: Promise<unknown>, okMsg?: string) =>
     p.then(() => okMsg && toast(okMsg), () => toast("The hotel refused that change.", "err"));
 
+  const kindChip = (k: (typeof FURNI_KINDS)[string], tool: string | null) =>
+    h("button", { class: "chip" + (tool === k.id ? " on" : ""), title: `${k.label} (${k.w}×${k.h})`, onclick: () => { hooks.setTool(tool === k.id ? null : k.id); render(); } }, `${k.icon} ${k.label}`);
+
+  /** Furniture picker: the tools, the pieces to place, and rotate / clear. */
+  function furnitureSection(def: RoomDef, tool: string | null, admin: boolean): HTMLElement {
+    const kinds = Object.values(FURNI_KINDS).filter((k) => (admin ? k.placeable || !!k.nitro?.startsWith("db:") : k.placeable));
+    const picked = tool && tool !== "pickup" ? FURNI_KINDS[tool] : undefined;
+    const clearable = def.furni.filter((f) => !isFixedLobbyPiece(f.id));
+    return h("div", { class: "rp-sec" },
+      h("div", { class: "rp-label" }, `Furniture (${def.furni.length}/${MAX_FURNI})`),
+      h("div", { class: "rp-chips" },
+        ...kinds.map((k) => kindChip(k, tool)),
+        h("button", { class: "chip" + (tool === "pickup" ? " on" : ""), onclick: () => { hooks.setTool(tool === "pickup" ? null : "pickup"); render(); } }, "🧹 Pick up")),
+      picked?.rotatable ? h("div", { class: "row" }, h("button", { class: "btn small", onclick: () => { hooks.rotateTool(); render(); } }, `⟳ Turn (R) · facing ${hooks.getToolDir()}`)) : null,
+      h("div", { class: "hint" }, tool ? "Click in the room to use the tool. Esc to stop." : "Pick a piece, then click a tile in the room."),
+      clearable.length ? h("button", { class: "btn small", onclick: () => {
+        if (confirm(admin ? "Remove everything you added to the public room?" : "Remove all furniture from this room?")) for (const f of clearable) void removeFurni(def.id, f.id);
+      } }, "Clear room") : null);
+  }
+
   function render(): void {
     const def = hooks.getDef();
+    if (def.id === LOBBY_ID) {
+      // the public room: only the admin gets here, and only the furniture can be changed
+      wrap.replaceChildren(
+        h("div", { class: "osrs-title" }, "Public room"),
+        h("div", { class: "hint" }, "Admin: add furniture uploaded in Admin > Studio > Furniture. The built-in pieces stay."),
+        furnitureSection(def, hooks.getTool(), true));
+      return;
+    }
     if (!hooks.isOwner()) {
       wrap.replaceChildren(
         h("div", { class: "osrs-title" }, "Room"),
@@ -130,16 +162,7 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
               onclick: () => void safe(updateRoom(def.id, { "theme/rug": true, "theme/rugColor": c })),
             })))),
 
-      h("div", { class: "rp-sec" },
-        h("div", { class: "rp-label" }, `Furniture (${def.furni.length}/${MAX_FURNI})`),
-        h("div", { class: "rp-chips" },
-          ...Object.values(FURNI_KINDS).filter((k) => k.placeable).map((k) =>
-            h("button", { class: "chip" + (tool === k.id ? " on" : ""), title: `${k.label} (${k.w}×${k.h})`, onclick: () => { hooks.setTool(tool === k.id ? null : k.id); render(); } }, `${k.icon} ${k.label}`)),
-          h("button", { class: "chip" + (tool === "pickup" ? " on" : ""), onclick: () => { hooks.setTool(tool === "pickup" ? null : "pickup"); render(); } }, "🧹 Pick up")),
-        h("div", { class: "hint" }, tool ? "Click in the room to use the tool. Esc to stop." : "Pick a piece, then click a tile in the room."),
-        def.furni.length ? h("button", { class: "btn small", onclick: () => {
-          if (confirm("Remove all furniture from this room?")) for (const f of def.furni) void removeFurni(def.id, f.id);
-        } }, "Clear room") : null),
+      furnitureSection(def, tool, false),
 
       (inviteHost = h("div", {}, inviteSection())));
   }
