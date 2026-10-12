@@ -382,7 +382,7 @@ button, input, select { font-family: var(--font); }
 @supports (height: 100dvh) { html, body, #app { height: 100dvh; } }
 
 /* ---- phone keyboard open (set by ui/keyboard.ts): the app is pinned to the visible area, so only the chat bar rides above the keys ---- */
-html.kb, html.kb body { overflow: hidden; overscroll-behavior: none; }
+html.kb, html.kb body { overflow: hidden; overscroll-behavior: none; touch-action: manipulation; }
 html.kb #app { position: fixed; left: 0; right: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100dvh); }
 html.kb .messenger { bottom: var(--kb-gap, 0px); }
 html.kb .chat-window { height: min(62vh, calc(var(--vv-h, 100dvh) - 56px)); }
