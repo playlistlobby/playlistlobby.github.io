@@ -1,0 +1,193 @@
+import { h } from "./dom";
+import { showMenu } from "./contextMenu";
+import { BLOOD_ICON, INV_SIZE, ITEMS, MUSIC_ACCESS_KEY } from "../items";
+import { canStabToday, msUntilTomorrow } from "../db";
+import { EMOTES, hasEmote } from "../emotes";
+import { fmtTime, player, TRACKS } from "../music";
+import type { Ctx } from "../main";
+
+type Tab = "inventory" | "emotes" | "music" | "room";
+
+export interface PanelApi {
+  setSelected(slot: number | null): void;
+  /** call after the profile changed (inventory, blood, stab status) */
+  refresh(): void;
+  dispose(): void;
+}
+
+export interface PanelOpts {
+  say(text: string, kind?: "game" | "warn"): void;
+  onSelect(slot: number | null): void;
+  onEmote(id: string): void;
+  /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
+  roomTab?: { icon: string; title: string; mount(container: HTMLElement): () => void };
+}
+
+function untilText(ms: number): string {
+  const mins = Math.max(1, Math.ceil(ms / 60000));
+  return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+}
+
+/** OSRS-style side panel: stone tabs on top, 4x7 inventory grid, music tab. */
+export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): PanelApi {
+  const profile = ctx.profile;
+  let tab: Tab = "inventory";
+  let selected: number | null = null;
+  let unsubMusic: (() => void) | null = null;
+  let roomCleanup: (() => void) | null = null;
+
+  const tabsEl = h("div", { class: "osrs-tabs" });
+  const body = h("div", { class: "osrs-body" });
+  const panel = h("aside", { class: "osrs-panel" }, tabsEl, body);
+  root.append(panel);
+
+  function renderTabs(): void {
+    const mk = (id: Tab, icon: string, title: string) =>
+      h("button", { class: "osrs-tab" + (tab === id ? " on" : ""), title, onclick: () => { tab = id; render(); } }, icon);
+    tabsEl.replaceChildren(
+      mk("inventory", "🎒", "Inventory"),
+      mk("emotes", "😀", "Emotes"),
+      mk("music", "♪", "Music"),
+      ...(opts.roomTab ? [mk("room", opts.roomTab.icon, opts.roomTab.title)] : []));
+  }
+
+  // ---- emotes --------------------------------------------------------------------------
+  function renderEmotes(): void {
+    const grid = h("div", { class: "emote-grid" },
+      ...EMOTES.map((e) => {
+        const owned = hasEmote(profile, e.id);
+        return h("button", {
+          class: "emote-cell" + (owned ? "" : " locked"),
+          title: owned ? `${e.name}: ${e.desc}  (/${e.id})` : `${e.name}: locked. Buy it in the shop for ${e.price} drops.`,
+          onclick: () => opts.onEmote(e.id),
+        }, h("span", { class: "emote-icon" }, e.icon), h("span", { class: "emote-name" }, e.name), owned ? null : h("span", { class: "emote-lock" }, "🔒"));
+      }));
+    body.replaceChildren(
+      h("div", { class: "osrs-title" }, "Emotes"),
+      grid,
+      h("div", { class: "inv-foot" },
+        h("div", { class: "hint" }, "Click one to perform it, or type /name in chat (like /dance). Walking cancels it."),
+        EMOTES.some((e) => !hasEmote(profile, e.id)) ? h("button", { class: "btn small", onclick: () => ctx.navigate("shop") }, "Get more in the shop") : null));
+  }
+
+  // ---- inventory -----------------------------------------------------------------------
+  function selectedHint(): string {
+    const it = selected !== null ? profile.inventory[selected] : null;
+    if (!it) return "Click an item, then click what to use it on: the knife on a player, the CD on the CD player.";
+    return ITEMS[it.item].useOnObject ? "Now click the CD player in the lobby." : "Now click a player to use it on them.";
+  }
+
+  function renderInventory(): void {
+    unsubMusic?.();
+    unsubMusic = null;
+    const grid = h("div", { class: "inv-grid" });
+    for (let i = 0; i < INV_SIZE; i++) {
+      const slot = profile.inventory[i];
+      const def = slot ? ITEMS[slot.item] : null;
+      const loaned = !!slot?.inPlayer; // e.g. the CD is sitting in the CD player right now
+      const el = h("div", {
+        class: "inv-slot" + (selected === i ? " selected" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
+        title: def ? (loaned ? `${def.name} (in the player)` : def.name) : "",
+        onclick: () => {
+          if (!def) return;
+          if (loaned) return opts.say(`Your ${def.name} is in the player. It'll be back when it's done.`, "warn");
+          setSelected(selected === i ? null : i);
+        },
+        oncontextmenu: (e: MouseEvent) => {
+          e.preventDefault();
+          if (!def) return;
+          showMenu(e.clientX, e.clientY, [
+            ...(loaned ? [] : [{ label: selected === i ? "Cancel use" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]),
+            { label: "Examine", target: def.name, action: () => opts.say(loaned ? `${def.examine} (It's in the player right now.)` : def.examine) },
+          ]);
+        },
+      }, def ? h("img", { src: def.icon, alt: def.name, draggable: false }) : null,
+        slot && slot.qty > 1 ? h("span", { class: "qty" }, String(slot.qty)) : null);
+      grid.append(el);
+    }
+
+    const ready = canStabToday(profile);
+    body.replaceChildren(
+      h("div", { class: "osrs-title" }, "Inventory"),
+      grid,
+      h("div", { class: "inv-foot" },
+        h("div", { class: "blood-line" }, h("img", { src: BLOOD_ICON, alt: "", class: "blood-ico" }), ` ${profile.blood} drop${profile.blood === 1 ? "" : "s"} of blood`),
+        h("div", { class: "stab-status " + (ready ? "ready" : "used") },
+          ready ? "Daily stab: ready" : `Daily stab used. Again in ${untilText(msUntilTomorrow())}`),
+        h("div", { class: "hint" }, selectedHint())));
+  }
+
+  // ---- music ---------------------------------------------------------------------------
+  function renderMusic(): void {
+    unsubMusic?.();
+    unsubMusic = null;
+    if (!profile.owned[MUSIC_ACCESS_KEY]) {
+      body.replaceChildren(
+        h("div", { class: "osrs-title" }, "Music"),
+        h("div", { class: "music-locked" },
+          h("p", {}, "🔒 You don't have a jukebox pass."),
+          h("p", { class: "hint" }, "Buy music access in the shop to stream tracks while you hang out."),
+          h("button", { class: "btn small", onclick: () => ctx.navigate("shop") }, "Open shop")));
+      return;
+    }
+
+    const list = h("div", { class: "track-list" });
+    const now = h("div", { class: "now" });
+    const playBtn = h("button", { class: "btn small", onclick: () => player.toggle() });
+    const seek = h("input", { type: "range", min: 0, max: 1000, value: 0, class: "seek", oninput: () => player.seek(Number(seek.value) / 1000) });
+    const time = h("span", { class: "time" });
+    const vol = h("input", { type: "range", min: 0, max: 100, value: Math.round(player.audio.volume * 100), class: "vol", oninput: () => player.setVolume(Number(vol.value) / 100) });
+
+    const sync = () => {
+      const a = player.audio;
+      list.replaceChildren(...TRACKS.map((t) =>
+        h("div", { class: "track" + (player.current?.id === t.id ? " on" : ""), onclick: () => player.play(t) },
+          h("span", { class: "track-ico" }, player.current?.id === t.id && player.playing ? "▶" : "♪"),
+          h("div", {}, h("div", { class: "track-title" }, t.title), h("div", { class: "hint" }, t.artist)))));
+      now.textContent = player.failed
+        ? "Couldn't load that track."
+        : player.current ? `${player.playing ? "Now playing" : "Paused"}: ${player.current.title}` : "Pick a track to start streaming.";
+      playBtn.textContent = player.playing ? "⏸ Pause" : "▶ Play";
+      if (document.activeElement !== seek && Number.isFinite(a.duration) && a.duration > 0) seek.value = String(Math.round((a.currentTime / a.duration) * 1000));
+      time.textContent = `${fmtTime(a.currentTime)} / ${fmtTime(a.duration)}`;
+    };
+    unsubMusic = player.subscribe(sync);
+    sync();
+    body.replaceChildren(h("div", { class: "osrs-title" }, "Music"), list, now, h("div", { class: "row center" }, playBtn), seek, time, h("label", { class: "hint" }, "Volume ", vol));
+  }
+
+  function render(): void {
+    unsubMusic?.();
+    unsubMusic = null;
+    roomCleanup?.();
+    roomCleanup = null;
+    renderTabs();
+    if (tab === "inventory") renderInventory();
+    else if (tab === "emotes") renderEmotes();
+    else if (tab === "room" && opts.roomTab) {
+      body.replaceChildren();
+      roomCleanup = opts.roomTab.mount(body);
+    } else renderMusic();
+  }
+
+  function setSelected(slot: number | null): void {
+    selected = slot;
+    opts.onSelect(slot);
+    if (tab === "inventory") renderInventory();
+  }
+
+  render();
+  // the "again in 5h 10m" line should tick over without needing a click
+  const timer = window.setInterval(() => { if (tab === "inventory") renderInventory(); }, 60_000);
+
+  return {
+    setSelected(slot) { selected = slot; if (tab === "inventory") renderInventory(); },
+    refresh: render,
+    dispose() {
+      window.clearInterval(timer);
+      unsubMusic?.();
+      roomCleanup?.();
+      panel.remove();
+    },
+  };
+}

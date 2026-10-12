@@ -1,0 +1,53 @@
+import type { Profile } from "./db";
+
+// An emote is a short performance: a face and/or arm action from the avatar sprites, a body motion,
+// and floating glyphs. Free emotes are always usable; the rest are sold in the shop for drops of blood
+// and unlocked by an `emote_<id>` entry in the player's owned map (the database rules check it too).
+export type Motion = "bounce" | "hop" | "spin" | "dance";
+
+export interface EmoteDef {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  /** drops of blood; 0 = free for everyone */
+  price: number;
+  /** avatar face gesture: sml (smile), sad, agr (angry), sur (surprised), eyb (eyes closed) */
+  gesture?: string;
+  /** avatar actions while performing, e.g. ["wav"] or ["sit"] */
+  actions?: string[];
+  motion?: Motion;
+  /** glyphs that float up above the head */
+  fx?: string[];
+  /** how long it plays, ms (0 = until you move) */
+  ms: number;
+}
+
+export const EMOTES: EmoteDef[] = [
+  { id: "wave", name: "Wave", icon: "👋", desc: "Say hi.", price: 0, actions: ["wav"], ms: 2200 },
+  { id: "smile", name: "Smile", icon: "🙂", desc: "A friendly grin.", price: 0, gesture: "sml", ms: 3500 },
+  { id: "sad", name: "Sad", icon: "😢", desc: "Bit of a downer.", price: 0, gesture: "sad", fx: ["💧"], ms: 3500 },
+  { id: "jump", name: "Jump", icon: "🦘", desc: "Hop on the spot.", price: 0, motion: "hop", ms: 1300 },
+
+  { id: "angry", name: "Angry", icon: "😠", desc: "Steam comes out of your ears.", price: 1, gesture: "agr", fx: ["💢"], ms: 3500 },
+  // (the "sur" face sprite is missing from the hosted atlas, so this one jumps instead of changing face)
+  { id: "surprised", name: "Surprised", icon: "😮", desc: "Didn't see that coming.", price: 1, motion: "hop", fx: ["❗", "❓"], ms: 1800 },
+  { id: "sleep", name: "Sleep", icon: "😴", desc: "Eyes shut, zzz.", price: 1, gesture: "eyb", fx: ["💤"], ms: 5000 },
+  { id: "laugh", name: "Laugh", icon: "😂", desc: "Crack up.", price: 2, gesture: "sml", motion: "bounce", fx: ["😂"], ms: 3500 },
+  { id: "love", name: "Love", icon: "😍", desc: "Hearts everywhere.", price: 2, gesture: "sml", fx: ["❤️", "💕"], ms: 4000 },
+  { id: "cheer", name: "Cheer", icon: "🎉", desc: "Hands up, confetti.", price: 2, actions: ["wav"], motion: "hop", fx: ["🎉", "✨"], ms: 3000 },
+  { id: "spin", name: "Spin", icon: "🌀", desc: "Round and round.", price: 2, motion: "spin", ms: 2200 },
+  { id: "dance", name: "Dance", icon: "🕺", desc: "Bust a move.", price: 3, motion: "dance", fx: ["🎵", "🎶"], ms: 6000 },
+];
+
+export const EMOTE_BY_ID: Record<string, EmoteDef> = Object.fromEntries(EMOTES.map((e) => [e.id, e]));
+
+export const emoteKey = (id: string) => `emote_${id}`;
+
+export function hasEmote(p: Pick<Profile, "owned">, id: string): boolean {
+  const def = EMOTE_BY_ID[id];
+  return !!def && (def.price === 0 || !!p.owned[emoteKey(id)]);
+}
+
+/** Order of facing directions for spinning, clockwise on screen. */
+export const SPIN_DIRS = [2, 3, 4, 5, 6, 7, 0, 1];

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- blade -->
+  <path d="M13 1h1v1h1v1h-1v1h-1v1h-1v1h-1v1h-1v1H9v1H8V9H7V8h1V7h1V6h1V5h1V4h1V3h1V2h-1z" fill="#cfd8dc"/>
+  <path d="M14 2h1v1h-1v1h-1v1h-1v1h-1v1h-1v1H9v1H8V8h1V7h1V6h1V5h1V4h1V3h1z" fill="#eceff1"/>
+  <path d="M13 4h1v1h-1v1h-1v1h-1v1H9v1H8V9h1V8h1V7h1V6h1V5h1z" fill="#90a4ae"/>
+  <!-- guard -->
+  <path d="M5 8h1v1h1v1h1v1H7v1H6v-1H5v-1H4V9h1z" fill="#6d4c41"/>
+  <!-- handle -->
+  <path d="M3 11h1v1h1v1H4v1H3v1H2v-1H1v-1h1v-1h1z" fill="#8d6e63"/>
+  <path d="M2 12h1v1H2zm1 1h1v1H3z" fill="#5d4037"/>
+  <!-- blood tip -->
+  <path d="M14 1h1v1h-1z" fill="#b71c1c"/>
+</svg>

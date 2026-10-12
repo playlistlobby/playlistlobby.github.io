@@ -1,0 +1,285 @@
+import {
+  get,
+  limitToLast,
+  onChildAdded,
+  onDisconnect,
+  onValue,
+  orderByChild,
+  push,
+  query,
+  ref,
+  remove,
+  serverTimestamp,
+  set,
+  update,
+  Unsubscribe,
+} from "firebase/database";
+import { db } from "./firebase";
+import { serverNow } from "./db";
+import type { Profile } from "./db";
+
+export interface PublicProfile {
+  uid: string;
+  name: string;
+  figure: string;
+}
+export interface Presence {
+  name: string;
+  /** room id the player is standing in, "" when browsing menus */
+  room: string;
+}
+export interface DmMsg {
+  id: string;
+  from: string;
+  text: string;
+  ts: number;
+}
+export interface Invite {
+  id: string;
+  room: string;
+  roomName: string;
+  from: string;
+  fromName: string;
+  ts: number;
+}
+
+// ---- public directory ---------------------------------------------------------------
+const profileCache = new Map<string, PublicProfile>();
+
+export async function fetchProfile(uid: string): Promise<PublicProfile | null> {
+  const hit = profileCache.get(uid);
+  if (hit) return hit;
+  const snap = await get(ref(db, `profiles/${uid}`));
+  if (!snap.exists()) return null;
+  const p = { uid, name: snap.val().name as string, figure: snap.val().figure as string };
+  profileCache.set(uid, p);
+  return p;
+}
+
+/** Publishes name + look (readable by other players) and claims the username lookup entry. Idempotent. */
+export async function publishProfile(p: Profile): Promise<void> {
+  profileCache.delete(p.uid);
+  await set(ref(db, `profiles/${p.uid}`), { name: p.name, figure: p.figure });
+  const claim = ref(db, `usernames/${p.name.toLowerCase()}`);
+  const existing = await get(claim);
+  if (!existing.exists()) await set(claim, p.uid).catch(() => undefined);
+}
+
+// ---- presence -----------------------------------------------------------------------
+export function startPresence(p: Profile, room = ""): void {
+  const r = ref(db, `presence/${p.uid}`);
+  void onDisconnect(r).remove();
+  void set(r, { name: p.name, room, since: serverTimestamp() });
+}
+export function setPresenceRoom(p: Profile, room: string): void {
+  void update(ref(db, `presence/${p.uid}`), { room }).catch(() => undefined);
+}
+export function stopPresence(p: Profile): void {
+  const r = ref(db, `presence/${p.uid}`);
+  void onDisconnect(r).cancel();
+  void remove(r).catch(() => undefined);
+}
+
+// ---- the store ----------------------------------------------------------------------
+type Listener = () => void;
+
+/** Everything social about the signed-in player, kept live: friends, requests, DMs, invites, who is online. */
+class SocialStore {
+  me: Profile | null = null;
+  friends = new Map<string, PublicProfile>();
+  requests = new Map<string, PublicProfile>();
+  presence = new Map<string, Presence>();
+  invites: Invite[] = [];
+  dms = new Map<string, DmMsg[]>();
+  unread = new Map<string, number>();
+  /** friend whose chat window is open (their messages don't count as unread) */
+  openChat = new Set<string>();
+
+  private listeners = new Set<Listener>();
+  private inviteListeners = new Set<(i: Invite) => void>();
+  private dmListeners = new Set<(friend: string, m: DmMsg) => void>();
+  private unsubs: Unsubscribe[] = [];
+  private dmUnsubs = new Map<string, Unsubscribe>();
+  private sessionStart = 0;
+
+  subscribe(fn: Listener): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+  onInvite(fn: (i: Invite) => void): () => void {
+    this.inviteListeners.add(fn);
+    return () => this.inviteListeners.delete(fn);
+  }
+  onDm(fn: (friend: string, m: DmMsg) => void): () => void {
+    this.dmListeners.add(fn);
+    return () => this.dmListeners.delete(fn);
+  }
+  private emit(): void {
+    this.listeners.forEach((l) => l());
+  }
+
+  get totalUnread(): number {
+    let n = 0;
+    this.unread.forEach((v) => (n += v));
+    return n;
+  }
+  isOnline = (uid: string) => this.presence.has(uid);
+  friendUids = () => new Set(this.friends.keys());
+  roomOf = (uid: string) => this.presence.get(uid)?.room ?? "";
+
+  start(me: Profile): void {
+    this.stop();
+    this.me = me;
+    this.sessionStart = serverNow();
+
+    this.unsubs.push(
+      onValue(ref(db, `friends/${me.uid}`), async (snap) => {
+        const ids = Object.keys(snap.val() ?? {});
+        const next = new Map<string, PublicProfile>();
+        await Promise.all(ids.map(async (id) => {
+          const pp = await fetchProfile(id);
+          if (pp) next.set(id, pp);
+        }));
+        this.friends = next;
+        // one DM listener per friend
+        for (const id of next.keys()) if (!this.dmUnsubs.has(id)) this.watchDm(id);
+        for (const [id, u] of this.dmUnsubs) {
+          if (!next.has(id)) { u(); this.dmUnsubs.delete(id); this.dms.delete(id); this.unread.delete(id); }
+        }
+        this.emit();
+      }),
+      onValue(ref(db, `friendRequests/${me.uid}`), async (snap) => {
+        const ids = Object.keys(snap.val() ?? {});
+        const next = new Map<string, PublicProfile>();
+        await Promise.all(ids.map(async (id) => {
+          const pp = await fetchProfile(id);
+          if (pp) next.set(id, pp);
+        }));
+        this.requests = next;
+        this.emit();
+      }),
+      onValue(ref(db, "presence"), (snap) => {
+        const next = new Map<string, Presence>();
+        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) next.set(uid, { name: v.name, room: v.room ?? "" });
+        this.presence = next;
+        this.emit();
+      }),
+      onChildAdded(ref(db, `invites/${me.uid}`), (snap) => {
+        const v = snap.val();
+        if (!v) return;
+        const inv: Invite = { id: snap.key!, room: v.room, roomName: v.roomName, from: v.from, fromName: v.fromName, ts: v.ts };
+        this.invites.push(inv);
+        this.emit();
+        // only pop up for invites that arrived while we were here
+        if (typeof inv.ts === "number" && inv.ts >= this.sessionStart - 2000) this.inviteListeners.forEach((l) => l(inv));
+      }));
+  }
+
+  stop(): void {
+    this.unsubs.forEach((u) => u());
+    this.unsubs = [];
+    this.dmUnsubs.forEach((u) => u());
+    this.dmUnsubs.clear();
+    this.friends.clear();
+    this.requests.clear();
+    this.presence.clear();
+    this.invites = [];
+    this.dms.clear();
+    this.unread.clear();
+    this.openChat.clear();
+    this.me = null;
+  }
+
+  private watchDm(friend: string): void {
+    const me = this.me!;
+    const unsub = onChildAdded(query(ref(db, `dms/${me.uid}/${friend}`), orderByChild("ts"), limitToLast(50)), (snap) => {
+      const v = snap.val();
+      if (!v) return;
+      const list = this.dms.get(friend) ?? [];
+      if (list.some((m) => m.id === snap.key)) return;
+      const msg: DmMsg = { id: snap.key!, from: v.from, text: v.text, ts: typeof v.ts === "number" ? v.ts : serverNow() };
+      list.push(msg);
+      this.dms.set(friend, list);
+      // history that was already there when we signed in is neither "unread" nor worth a pop-up
+      const fresh = msg.ts >= this.sessionStart - 2000;
+      if (fresh && msg.from !== me.uid && !this.openChat.has(friend)) {
+        this.unread.set(friend, (this.unread.get(friend) ?? 0) + 1);
+      }
+      this.emit();
+      if (fresh) this.dmListeners.forEach((l) => l(friend, msg));
+    }, () => undefined);
+    this.dmUnsubs.set(friend, unsub);
+  }
+
+  markRead(friend: string): void {
+    if (this.unread.delete(friend)) this.emit();
+  }
+
+  // ---- actions ----
+  async sendRequest(rawName: string): Promise<string> {
+    const me = this.me!;
+    const name = rawName.trim();
+    if (!name) throw new Error("Type a username first.");
+    const snap = await get(ref(db, `usernames/${name.toLowerCase()}`));
+    if (!snap.exists()) throw new Error(`Nobody is called "${name}".`);
+    const uid = snap.val() as string;
+    if (uid === me.uid) throw new Error("That's you!");
+    if (this.friends.has(uid)) throw new Error("You're already friends.");
+    if (this.requests.has(uid)) {
+      await this.accept(uid); // they already asked us: just say yes
+      return `You and ${name} are now friends.`;
+    }
+    await set(ref(db, `friendRequests/${uid}/${me.uid}`), { ts: serverTimestamp() });
+    return `Friend request sent to ${name}.`;
+  }
+
+  async accept(from: string): Promise<void> {
+    const me = this.me!;
+    const since = serverNow();
+    await update(ref(db), {
+      [`friends/${me.uid}/${from}`]: { since },
+      [`friends/${from}/${me.uid}`]: { since },
+      [`friendRequests/${me.uid}/${from}`]: null,
+    });
+  }
+
+  decline(from: string): Promise<void> {
+    return remove(ref(db, `friendRequests/${this.me!.uid}/${from}`));
+  }
+
+  async removeFriend(uid: string): Promise<void> {
+    const me = this.me!;
+    await update(ref(db), { [`friends/${me.uid}/${uid}`]: null, [`friends/${uid}/${me.uid}`]: null });
+  }
+
+  async sendDm(friend: string, text: string): Promise<void> {
+    const me = this.me!;
+    const id = push(ref(db, `dms/${me.uid}/${friend}`)).key!;
+    const msg = { from: me.uid, text: text.slice(0, 200), ts: serverTimestamp() };
+    await update(ref(db), { [`dms/${me.uid}/${friend}/${id}`]: msg, [`dms/${friend}/${me.uid}/${id}`]: msg });
+  }
+
+  async inviteToRoom(friend: string, roomId: string, roomName: string): Promise<void> {
+    const me = this.me!;
+    const id = push(ref(db, `invites/${friend}`)).key!;
+    await update(ref(db), {
+      [`roomInvites/${roomId}/${friend}`]: true,
+      [`invites/${friend}/${id}`]: { room: roomId, roomName, from: me.uid, fromName: me.name, ts: serverTimestamp() },
+    });
+  }
+
+  async dismissInvite(id: string): Promise<void> {
+    this.invites = this.invites.filter((i) => i.id !== id);
+    this.emit();
+    await remove(ref(db, `invites/${this.me!.uid}/${id}`)).catch(() => undefined);
+  }
+
+  /** How many players are in each room right now (from presence). */
+  roomCounts(): Map<string, number> {
+    const counts = new Map<string, number>();
+    this.presence.forEach((p) => p.room && counts.set(p.room, (counts.get(p.room) ?? 0) + 1));
+    return counts;
+  }
+}
+
+export const social = new SocialStore();

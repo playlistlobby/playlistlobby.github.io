@@ -1,0 +1,23 @@
+{
+  "name": "hotel-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:emu": "vite --mode emulator",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "emulators": "firebase emulators:start --only auth,database --project demo-hotel",
+    "build:pages": "tsc --noEmit && vite build --outDir ../hotel --emptyOutDir",
+    "deploy:rules": "firebase deploy --only database --project playlist-lobby"
+  },
+  "dependencies": {
+    "firebase": "^10.14.1"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.29.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
