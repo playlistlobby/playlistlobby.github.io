@@ -25,7 +25,7 @@ export const ITEMS: Record<string, ItemDef> = {
   cd: {
     id: "cd",
     name: "CD",
-    examine: "A scratched CD with a handwritten label. Use it on the CD player in the lobby so everyone can hear it. It comes back when it's done.",
+    examine: "A scratched CD with a handwritten label. Use it on the CD player in the basement so everyone can hear it. It comes back when it's done.",
     icon: assetUrl("items/cd.svg"),
     useOnObject: "cdplayer",
   },

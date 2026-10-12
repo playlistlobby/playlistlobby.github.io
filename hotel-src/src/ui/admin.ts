@@ -159,7 +159,7 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
         h("tbody", {}, ...shown.map((r) => h("tr", {}, h("td", { class: "hint" }, fmt(r.ts)), h("td", {}, h("b", {}, r.name)), h("td", {}, r.text))))));
       host.scrollTop = host.scrollHeight;
     }
-    el.append(h("div", { class: "admin-bar" }, search, h("span", { class: "hint" }, "Public room chat, last 300 messages, live")), host);
+    el.append(h("div", { class: "admin-bar" }, search, h("span", { class: "hint" }, "Basement chat, last 300 messages, live")), host);
     const off = onValue(query(ref(db, "rooms/lobby/chat"), orderByChild("ts"), limitToLast(300)), (snap) => {
       rows = [];
       snap.forEach((c) => { const v = c.val(); rows.push({ ts: v.ts ?? 0, uid: v.uid, name: v.name ?? "?", text: v.text ?? "" }); });

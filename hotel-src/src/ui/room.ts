@@ -27,6 +27,8 @@ import {
   defFromMeta,
   FURNI_KINDS,
   INTERACTIVE_KINDS,
+  BED_HEAD,
+  BED_SIDE,
   fetchMeta,
   footprint,
   isDoorTile,
@@ -34,6 +36,7 @@ import {
   lobbyDef,
   LOBBY_ID,
   MAX_FURNI,
+  ownRoomId,
   placeFurni,
   removeFurni,
   RoomDef,
@@ -41,7 +44,7 @@ import {
   watchMeta,
 } from "../rooms";
 import { Box, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
-import { setPresenceRoom, social } from "../social";
+import { fetchProfile, setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
 import { h, toast } from "./dom";
 import { closeMenu, showMenu } from "./contextMenu";
@@ -78,6 +81,10 @@ interface Player {
   emote?: ActiveEmote;
   lastEmoteTs: number;
   last?: HTMLCanvasElement;
+  /** drawn lying on the bed (an offline owner asleep, or you waking up) */
+  lying?: boolean;
+  /** an offline owner shown asleep: not in the database, just drawn here */
+  sleeper?: boolean;
 }
 
 interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean }
@@ -111,6 +118,10 @@ const knifeImg = loadImg(ITEMS.knife.icon);
 const bloodImg = loadImg(BLOOD_ICON);
 const syringeImg = loadImg(ITEMS.syringe.icon);
 
+/** Where the lying avatar's 110x64 picture sits relative to the bed-head tile's floor point (tuned by eye against the bed art). */
+const LAY_DX = -22;
+const LAY_DY = -34;
+
 /** Pixels from the feet line up to the top of the 64x110 avatar canvas (tuned against the bobba sprites). */
 const FEET_Y = 94;
 
@@ -123,13 +134,25 @@ export interface RoomApi {
   figureChanged(): void;
 }
 
-export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi {
+export interface RoomOpts {
+  /** how you come in: through the door (default) or standing by your bed (login) */
+  arrival?: "door" | "bed";
+  /** play the first-time wake-up: lying in bed, eyes opening, then getting up */
+  intro?: boolean;
+}
+
+const WAKE_MS = 2300;
+
+export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: RoomOpts = {}): RoomApi {
   const me = ctx.profile;
   const players = new Map<string, Player>();
   const unsubs: Unsubscribe[] = [];
   let disposed = false;
   let started = false;
   let active = true;
+  /** while now < introUntil the player lies in bed (the wake-up); 0 = no intro */
+  let introUntil = 0;
+  const isOwnRoom = roomId === ownRoomId(me.uid);
 
   let def: RoomDef = lobbyDef();
   const blocked = new Set<string>();
@@ -158,6 +181,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   const particles: Particle[] = [];
   const floaters: Floater[] = [];
   const glyphs: GlyphFx[] = [];
+  const zzzAt = new Map<string, number>();
 
   /** you can edit your own room; the admin can also edit the public room's extra furniture */
   const isOwner = () => def.ownerUid === me.uid || (def.id === LOBBY_ID && me.isAdmin);
@@ -356,6 +380,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
 
   canvas.addEventListener("click", (e) => {
     if (suppressClick) { suppressClick = false; return; }
+    if (introUntil && performance.now() < introUntil) return; // still waking up
     const m = mousePos(e);
     const target = playerAt(m.x, m.y);
     const t = tileAt(m.x, m.y);
@@ -620,6 +645,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
 
   function showDoor(): void {
     if (doorApi) return;
+    if (!me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); } // stop the door flashing
     doorApi = openDoor(stage, ctx, roomId, () => { doorApi = null; });
   }
 
@@ -881,9 +907,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   }
 
   // ---- start: presence, players, chat, events ---------------------------------------
-  /** You come in through the door: the tile in front of it, or the nearest free one. */
+  /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
-    const want = { x: def.doorX, y: 1 };
+    const want = opts.arrival === "bed" && isOwnRoom ? BED_SIDE : { x: def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -906,19 +932,58 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
   }
 
   function renderOnline(): void {
+    const here = [...players.values()].filter((p) => !p.sleeper);
     online.replaceChildren(
-      h("strong", {}, `In room (${players.size})`),
-      ...[...players.values()].map((p) => h("div", { class: p.uid === me.uid ? "me" : "" }, p.name)));
+      h("strong", {}, `In room (${here.length})`),
+      ...here.map((p) => h("div", { class: p.uid === me.uid ? "me" : "" }, p.name)));
+  }
+
+  // ---- offline owners sleep in their bed -----------------------------------------------------------------
+  let sleeperToken = 0;
+  /** Someone else's room whose owner is offline shows the owner asleep in the bed (you can still stab them). Not stored anywhere. */
+  function syncSleeper(): void {
+    const owner = def.ownerUid;
+    if (!started || disposed || !owner || owner === me.uid || roomId === LOBBY_ID) return;
+    const cur = players.get(owner);
+    const wanted = !social.isOnline(owner) && !(cur && !cur.sleeper);
+    if (!wanted) {
+      if (cur?.sleeper) { players.delete(owner); if (hoverPlayer?.uid === owner) hoverPlayer = null; renderOnline(); }
+      return;
+    }
+    if (cur?.sleeper) return;
+    const token = ++sleeperToken;
+    void fetchProfile(owner).then((pp) => {
+      if (disposed || token !== sleeperToken || !pp) return;
+      const now = players.get(owner);
+      if ((now && !now.sleeper) || social.isOnline(owner)) return;
+      const sl = makePlayer(owner, { name: pp.name, figure: pp.figure, x: BED_HEAD.x, y: BED_HEAD.y, dir: 2 });
+      sl.lying = true;
+      sl.sleeper = true;
+      players.set(owner, sl);
+      void renderAvatar({ figure: pp.figure, dir: 2, actions: ["lay"] });
+      renderOnline();
+    });
   }
 
   function start(): void {
     if (started || disposed) return;
     started = true;
     const spawn = spawnTile();
-    players.set(me.uid, makePlayer(me.uid, { name: me.name, figure: me.figure, x: spawn.x, y: spawn.y, dir: 2 }));
+    const mineP = makePlayer(me.uid, { name: me.name, figure: me.figure, x: spawn.x, y: spawn.y, dir: 2 });
+    players.set(me.uid, mineP);
+    if (opts.intro && isOwnRoom) {
+      // first wake-up: start under the covers (drawn lying on the bed), get up when the eyes have opened
+      mineP.lying = true;
+      mineP.from = mineP.to = mineP.dest = { ...BED_HEAD };
+      introUntil = performance.now() + WAKE_MS;
+      const fade = h("div", { class: "wake-fade" });
+      stage.append(fade);
+      window.setTimeout(() => fade.remove(), WAKE_MS + 800);
+    }
     void onDisconnect(myRef).remove();
     set(myRef, { name: me.name, figure: me.figure, x: spawn.x, y: spawn.y, dir: 2, ts: serverTimestamp() }).catch(() => kicked("You can't be in that room."));
     setPresenceRoom(me, roomId);
+    unsubs.push(social.subscribe(syncSleeper));
 
     const denied = () => kicked("You don't have access to that room.");
     unsubs.push(
@@ -959,6 +1024,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
         players.delete(snap.key!);
         if (hoverPlayer?.uid === snap.key) { hoverPlayer = null; updateHint(); }
         renderOnline();
+        syncSleeper(); // the owner just left: back to bed
       }),
       onChildAdded(query(chatRef, orderByChild("ts"), limitToLast(40)), (snap) => {
         const m = snap.val();
@@ -986,6 +1052,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     // the lobby has a CD player; its state is shared with everyone in the room
     if (roomId === LOBBY_ID) unsubs.push(watchCdPlayer(onCdState));
     renderOnline();
+    syncSleeper();
   }
 
   function send(): void {
@@ -1277,7 +1344,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
       const age = now - gl.born;
       const f = feetOf(p, now);
       g.globalAlpha = Math.max(0, 1 - age / gl.life);
-      g.fillText(gl.glyph, f.x + gl.ox * scale, f.y - (FEET_Y + 6) * scale - age * 0.035 * scale);
+      g.fillText(gl.glyph, f.x + gl.ox * scale, f.y - (p.sleeper ? 34 : FEET_Y + 6) * scale - age * 0.035 * scale);
     }
     g.globalAlpha = 1;
 
@@ -1360,6 +1427,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
       if (t > 1.2 || !who) syringeFx.splice(i, 1);
     }
 
+    // sleepers breathe out little zzz's
+    for (const p of players.values()) {
+      if (p.sleeper && now - (zzzAt.get(p.uid) ?? 0) > 1100) {
+        zzzAt.set(p.uid, now);
+        glyphs.push({ uid: p.uid, glyph: "💤", born: now, life: 1900, ox: 10 + (Math.random() - 0.5) * 16 });
+      }
+    }
     // emote glyph spawner
     for (const p of players.values()) {
       const em = p.emote;
@@ -1409,7 +1483,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     g.imageSmoothingEnabled = scale < 1;
     g.clearRect(0, 0, canvas.width, canvas.height);
     g.drawImage(floor, offX - floorOrigin.x * scale, offY - floorOrigin.y * scale, floor.width * scale, floor.height * scale);
-    doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, hoverDoor ? 1 : 0, def.theme.style === "grime");
+    if (introUntil && performance.now() >= introUntil) {
+      // eyes open: get out of bed and stand next to it
+      const mp = mine();
+      if (mp) { mp.lying = false; mp.from = mp.to = mp.dest = { ...BED_SIDE }; mp.dir = 2; }
+      introUntil = 0;
+    }
+    // until you've opened the door once, it flashes to show you where to go
+    const flashing = isOwnRoom && !me.seenDoor && !introUntil && started;
+    const glow = Math.max(hoverDoor ? 1 : 0, flashing ? 0.55 + 0.45 * Math.sin(performance.now() / 280) : 0);
+    doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime");
 
     if (!started) return;
     for (const p of players.values()) advance(p, now);
@@ -1440,7 +1523,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     for (const f of def.furni) {
       list.push({
         // flat pieces lie on the floor, so they're drawn before (underneath) everyone else
-        depth: FURNI_KINDS[f.kind].flat ? -1 : f.x + footprint(f.kind, f.dir).w + f.y + footprint(f.kind, f.dir).h - 1,
+        depth: FURNI_KINDS[f.kind].flat ? -1
+          : FURNI_KINDS[f.kind].nitro ? f.x + footprint(f.kind, f.dir).w - 1 + f.y + footprint(f.kind, f.dir).h - 1 + 0.25 // sprite pieces: their far tile, so people beside them stand in front
+          : f.x + footprint(f.kind, f.dir).w + f.y + footprint(f.kind, f.dir).h - 1,
         draw: () => {
           const box = drawFurni(f, now);
           if (box && INTERACTIVE_KINDS.has(f.kind)) objs.push({ ...box, id: f.id, kind: f.kind });
@@ -1449,6 +1534,43 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
     }
 
     for (const p of players.values()) {
+      if (p.lying) {
+        // asleep (or just waking up): drawn lying on the bed
+        const lopts = { figure: p.figure, dir: 2, actions: ["lay"] };
+        let limg = getCached(lopts);
+        if (!limg) { renderAvatar(lopts); limg = p.last; } else p.last = limg;
+        const c = feetOf(p, now);
+        let lflash = 0;
+        for (const fx of stabFx) { const t = (now - fx.start) / STAB_MS; if (t <= 1 && fx.to === p.uid) lflash = Math.max(lflash, flashAmount(t)); }
+        const ax = c.x + LAY_DX * scale;
+        const ay = c.y + LAY_DY * scale;
+        const lw = (limg?.width ?? 110) * scale;
+        const lh = (limg?.height ?? 64) * scale;
+        boxes.push({ id: p.uid, x0: ax, x1: ax + lw, y0: ay, y1: ay + lh, depth: BED_HEAD.x + BED_HEAD.y + 3 });
+        list.push({
+          depth: BED_HEAD.x + 3 - 1 + BED_HEAD.y + 0.6, // just after the bed itself
+          draw: () => {
+            if (limg) {
+              g.drawImage(limg, ax, ay, lw, lh);
+              if (lflash > 0.02) g.drawImage(redWash(limg, lflash), ax, ay, lw, lh);
+            }
+            const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
+            g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
+            const label = p.sleeper ? `${p.name} 💤` : p.name;
+            const tw = g.measureText(label).width + 10;
+            g.fillStyle = targeted ? "rgba(150,20,20,0.85)" : "rgba(0,0,0,0.55)";
+            g.beginPath();
+            g.roundRect(c.x - tw / 2, ay + lh + 2 * scale, tw, 14 * Math.max(1, scale), 5);
+            g.fill();
+            g.fillStyle = "#fff";
+            g.textBaseline = "top";
+            g.textAlign = "center";
+            g.fillText(label, c.x, ay + lh + 4 * scale);
+            g.textAlign = "start";
+          },
+        });
+        continue;
+      }
       const pos = posOf(p, now);
       const { opts, yOff } = frameFor(p, now);
       let img = getCached(opts);
@@ -1530,7 +1652,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string): RoomApi 
       const meta = await fetchMeta(roomId);
       if (disposed) return;
       if (!meta) return kicked("That room doesn't exist.");
-      if (!(await canEnter(meta, me.uid, social.friendUids()))) return kicked(`${meta.ownerName}'s room is closed. Knock on the door of the public room to ask.`);
+      if (!(await canEnter(meta, me.uid, social.friendUids()))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
       if (disposed) return;
       applyDef(defFromMeta(roomId, meta));
       start();

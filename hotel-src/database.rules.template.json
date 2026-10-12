@@ -22,6 +22,7 @@
           ".validate": "newData.isNumber() && newData.val() === now - now % 86400000 && (!data.exists() || data.val() < newData.val())"
         },
         "createdAt": { ".validate": "newData.isNumber()" },
+        "seenDoor": { ".validate": "newData.isBoolean()" },
 
         "inventory": {
           "$slot": {
@@ -305,7 +306,7 @@
           ".indexOn": ["ts"],
           "$event": {
             ".write": "@PW@ && !data.exists() && newData.child('from').val() === auth.uid && @IN@",
-            ".validate": "newData.hasChildren(['type', 'from', 'to', 'ts']) && ((newData.child('type').val() === 'stab' && newData.child('to').val() !== auth.uid && root.child('rooms').child($room).child('players').child(newData.child('to').val()).exists()) || (newData.child('type').val() === 'syringe' && newData.child('to').val() === auth.uid))"
+            ".validate": "newData.hasChildren(['type', 'from', 'to', 'ts']) && ((newData.child('type').val() === 'stab' && newData.child('to').val() !== auth.uid && (root.child('rooms').child($room).child('players').child(newData.child('to').val()).exists() || root.child('roomsMeta').child($room).child('owner').val() === newData.child('to').val())) || (newData.child('type').val() === 'syringe' && newData.child('to').val() === auth.uid))"
           }
         }
       }

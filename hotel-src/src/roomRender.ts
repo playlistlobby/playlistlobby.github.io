@@ -6,7 +6,6 @@ import { derive, loadNitro, nitroIfReady, NitroFurni, spritesFor } from "./nitro
 export const TILE_W = 64;
 export const TILE_H = 32;
 export const WALL_H = 120;
-export const DOOR_H = 86;
 
 export interface Pt { x: number; y: number }
 
@@ -329,9 +328,10 @@ export function ensureFurniSprites(def: RoomDef): Promise<void> {
   return Promise.all([...paths].map((p) => loadNitro(p))).then(() => undefined);
 }
 
-/** Draws sprite art standing on the floor footprint (w x h tiles) at (tx, ty). The art's anchor is the centre of that footprint. */
+/** Draws sprite art standing on the floor footprint (w x h tiles) at (tx, ty). The art's anchor is the centre of the base tile (tx, ty). */
 export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: number, h: number, tx: number, ty: number, dir: number, nudge: { x: number; y: number } | undefined, toScreen: (p: Pt) => Pt, scale: number, alpha = 1): Box | null {
-  const o = toScreen(iso(tx + w / 2, ty + h / 2)); // 1x1: the middle of the tile's diamond
+  const o = toScreen(iso(tx + 0.5, ty + 0.5)); // the art is anchored to the middle of the piece's base tile (its lowest x,y)
+  void w; void h;
   const ox = o.x + (nudge?.x ?? 0) * scale;
   const oy = o.y + (nudge?.y ?? 0) * scale;
   const prevSmoothing = g.imageSmoothingEnabled;
@@ -372,57 +372,6 @@ export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: 
 
 // ---- the door -------------------------------------------------------------------------------------------
 export interface Box { x0: number; y0: number; x1: number; y1: number }
-
-/** Draws the door on the back-right wall above tile (doorX, 0) and returns its click box. glow 0..1 lights it up (hover). */
-export function drawDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, label: string, glow: number, worn = false): Box {
-  const BL = toScreen(iso(doorX, 0));
-  const BR = toScreen(iso(doorX + 1, 0));
-  const P = (u: number, v: number): Pt => ({ x: BL.x + (BR.x - BL.x) * u, y: BL.y + (BR.y - BL.y) * u - v * scale });
-  const quad = (u0: number, v0: number, u1: number, v1: number): Pt[] => [P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)];
-  const fillQuad = (pts: Pt[], style: string | CanvasGradient) => {
-    g.beginPath();
-    pts.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)));
-    g.closePath();
-    g.fillStyle = style;
-    g.fill();
-  };
-  // frame, then the door leaf
-  fillQuad(quad(-0.07, 0, 1.07, DOOR_H + 7), worn ? "#14110f" : "#2e1b10");
-  const leaf = g.createLinearGradient(BL.x, 0, BR.x, 0);
-  leaf.addColorStop(0, worn ? "#4d4740" : "#8d5c35"); // worn = a scarred steel door
-  leaf.addColorStop(1, worn ? "#35312c" : "#6a4125");
-  fillQuad(quad(0.03, 0, 0.97, DOOR_H), leaf);
-  // two raised panels
-  fillQuad(quad(0.14, 8, 0.86, 38), "rgba(0,0,0,0.18)");
-  fillQuad(quad(0.14, 46, 0.86, 76), "rgba(0,0,0,0.18)");
-  fillQuad(quad(0.17, 11, 0.83, 35), "rgba(255,255,255,0.07)");
-  fillQuad(quad(0.17, 49, 0.83, 73), "rgba(255,255,255,0.07)");
-  // knob
-  const knob = P(0.82, 42);
-  if (worn) {
-    // rust streaks down the door
-    fillQuad(quad(0.12, 20, 0.2, DOOR_H - 4), "rgba(110,52,24,.38)");
-    fillQuad(quad(0.55, 8, 0.62, DOOR_H - 18), "rgba(90,40,18,.32)");
-    fillQuad(quad(0.78, 30, 0.84, DOOR_H - 2), "rgba(30,26,22,.4)");
-  }
-  g.fillStyle = worn ? "#8c8576" : "#e6c14d";
-  g.beginPath(); g.arc(knob.x, knob.y, 3 * scale, 0, Math.PI * 2); g.fill();
-  g.fillStyle = "rgba(255,255,255,0.7)";
-  g.beginPath(); g.arc(knob.x - scale, knob.y - scale, 1 * scale, 0, Math.PI * 2); g.fill();
-  if (glow > 0) fillQuad(quad(0.03, 0, 0.97, DOOR_H), `rgba(255,236,150,${(0.28 * glow).toFixed(2)})`);
-  // sign above
-  fillQuad(quad(-0.12, DOOR_H + 11, 1.12, DOOR_H + 27), worn ? "#2a1210" : "#16255c");
-  const c = P(0.5, DOOR_H + 19);
-  g.save();
-  g.font = `bold ${Math.round(9 * Math.max(1, scale))}px Verdana, sans-serif`;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  g.fillStyle = glow > 0 ? "#fff6b0" : worn ? "#d98a7a" : "#d6e0ff";
-  g.fillText(label, c.x, c.y);
-  g.restore();
-  const pts = [P(-0.12, 0), P(1.12, 0), P(1.12, DOOR_H + 27), P(-0.12, DOOR_H + 27)];
-  return { x0: Math.min(...pts.map((p) => p.x)), x1: Math.max(...pts.map((p) => p.x)), y0: Math.min(...pts.map((p) => p.y)), y1: Math.max(...pts.map((p) => p.y)) };
-}
 
 // ---- the real door: Habbo's teleport door (.nitro), carpet erased, plain colour or fully greyscale -------------------
 const DOOR_PATH = "furni/teleport_door.nitro";
@@ -483,18 +432,19 @@ export function ensureDoorArt(): Promise<void> {
   });
 }
 
-/** Draws the room's door on the back-right wall and returns its click box. The painted door is the fallback while the art loads. */
+/** Draws the room's door on the back-right wall and returns its click box. Nothing is drawn until the door art has loaded (main.ts waits for it before the first room). */
 export function drawRoomDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, glow: number, grey: boolean): Box {
   const art = grey ? doorGrey : doorColour;
-  if (!art) return drawDoor(g, doorX, toScreen, scale, "", glow, grey);
+  const none: Box = { x0: 0, y0: 0, x1: 0, y1: 0 };
+  if (!art) return none;
   const box = drawNitroSprites(g, art, 1, 1, doorX, 0, DOOR_DIR, undefined, toScreen, scale);
   if (glow > 0) {
     g.save();
     g.globalCompositeOperation = "lighter";
-    drawNitroSprites(g, art, 1, 1, doorX, 0, DOOR_DIR, undefined, toScreen, scale, 0.22 * glow);
+    drawNitroSprites(g, art, 1, 1, doorX, 0, DOOR_DIR, undefined, toScreen, scale, 0.3 * glow);
     g.restore();
   }
-  return box ?? drawDoor(g, doorX, toScreen, scale, "", glow, grey);
+  return box ?? none;
 }
 
 // ---- small static preview (room picker cards) ----------------------------------------------------------

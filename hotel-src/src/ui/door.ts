@@ -24,7 +24,7 @@ interface Row {
 const KNOCK_TIMEOUT_MS = 60_000;
 
 /**
- * The door popup (click the door in any room): go to the public room or your own room, or visit someone else's.
+ * The door popup (click the door in any room): go to the basement or your own room, or visit someone else's.
  * Friends' rooms and open rooms: walk in. Everyone else: knock, and the owner lets you in from their friends menu.
  */
 export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClose: () => void): DoorApi {
@@ -97,7 +97,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     const foundRow = found && searched && "uid" in searched ? rowFor(ownRoomId(searched.uid), found) : null;
     body.replaceChildren(
       h("div", { class: "door-main" },
-        currentRoom !== LOBBY_ID ? h("button", { class: "btn primary door-big", onclick: () => enter(LOBBY_ID, "the public room") }, "🏙 Public room") : null,
+        currentRoom !== LOBBY_ID ? h("button", { class: "btn primary door-big", onclick: () => enter(LOBBY_ID, "the basement") }, "🕳 Basement") : null,
         currentRoom !== mineId ? h("button", { class: "btn primary door-big", onclick: () => enter(mineId, "their own room") }, "🏠 My room") : null),
       h("div", { class: "fp-label" }, "Visit a player's room"),
       h("form", { class: "row door-search", onsubmit: async (e: Event) => {

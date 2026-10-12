@@ -83,7 +83,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   function selectedHint(): string {
     const it = selected !== null ? profile.inventory[selected] : null;
     if (!it) return "Knife: click it, then a player. CD: click it, then the CD player. Syringe: just click it.";
-    return ITEMS[it.item].useOnObject ? "Now click the CD player in the lobby." : "Now click a player to use it on them.";
+    return ITEMS[it.item].useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
   }
 
   function renderInventory(): void {

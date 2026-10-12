@@ -4,12 +4,11 @@ import { renderAvatar } from "../avatarService";
 import { saveFigure } from "../db";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
-import { createRoom, defFromTemplate, ROOM_TEMPLATES, RoomTemplate } from "../rooms";
-import { ensureDoorArt, ensureTextures, renderRoomPreview } from "../roomRender";
+import { createRoom } from "../rooms";
 import type { Ctx } from "../main";
 
 /**
- * First run: step 1 choose an avatar (a randomizer over the free clothes, plus a boy/girl tab), step 2 choose one of three rooms.
+ * First run: step 1 choose an avatar (a randomizer over the free clothes, plus a boy/girl tab), step 2 a single "Wake up" button.
  * Each step only shows up if it's still needed, so a player who quit half way carries on where they stopped.
  * Resolves once the player has an avatar and a room; the caller then drops them into their room.
  */
@@ -70,6 +69,7 @@ export function runOnboarding(region: HTMLElement, ctx: Ctx, needAvatar: boolean
         }
       });
       if (!needRoom) next.textContent = "Done";
+      else next.textContent = "Next";
 
       page.replaceChildren(
         h("div", { class: "onb-card" },
@@ -86,61 +86,32 @@ export function runOnboarding(region: HTMLElement, ctx: Ctx, needAvatar: boolean
       draw();
     }
 
-    // ---- step 2: room ------------------------------------------------------------------------------
-    function showRoom(): void {
+    // ---- step 2: wake up -----------------------------------------------------------------------------
+    function showWake(): void {
       const profile = ctx.profile;
-      let chosen: RoomTemplate | null = null;
-      const cards = new Map<string, HTMLElement>();
-      const go = h("button", { class: "btn primary onb-next", disabled: true }, "Choose a room first");
-
-      const list = h("div", { class: "onb-rooms" }, ...ROOM_TEMPLATES.map((tpl) => {
-        const preview = h("div", { class: "onb-room-preview" }, h("span", { class: "muted" }, "…"));
-        const card = h("button", {
-          class: "onb-room",
-          type: "button",
-          onclick: () => {
-            chosen = tpl;
-            cards.forEach((c, id) => c.classList.toggle("on", id === tpl.id));
-            go.removeAttribute("disabled");
-            go.textContent = `Move into ${tpl.name}`;
-          },
-        }, preview, h("div", { class: "onb-room-name" }, tpl.name), h("div", { class: "hint" }, `${tpl.w}×${tpl.h} · ${tpl.blurb}`));
-        cards.set(tpl.id, card);
-        const def = defFromTemplate(tpl, { uid: profile.uid, name: profile.name });
-        void Promise.all([ensureTextures(def.theme), ensureDoorArt()]).then(() => {
-          if (disposed || !preview.isConnected) return;
-          preview.replaceChildren(renderRoomPreview(def, 300));
-        });
-        return card;
-      }));
-
-      go.addEventListener("click", async () => {
-        if (!chosen) return;
-        go.setAttribute("disabled", "");
+      const wake = h("button", { class: "btn primary onb-next onb-wake" }, "Wake up");
+      wake.addEventListener("click", async () => {
+        wake.setAttribute("disabled", "");
         try {
-          await createRoom(profile, chosen);
-          logAction(profile, "room", `set up their room (${chosen.name})`);
-          playSfx("camera", 0.35);
+          await createRoom(profile);
+          logAction(profile, "room", "woke up in their room");
           finish();
         } catch (err) {
-          toast((err as Error).message || "Couldn't create your room.", "err");
-          go.removeAttribute("disabled");
+          toast((err as Error).message || "Couldn't wake up.", "err");
+          wake.removeAttribute("disabled");
         }
       });
-
       page.replaceChildren(
-        h("div", { class: "onb-card wide" },
-          h("div", { class: "onb-head" }, h("h1", {}, "Choose your room"), needAvatar ? stepDots(2) : null),
-          h("p", { class: "muted onb-sub" }, "This is your space. You'll start here every time you log in, and you can redecorate it later. The door on the wall takes you to the public room and to other players' rooms."),
-          list,
-          h("div", { class: "row center" },
-            needAvatar ? h("button", { class: "btn", onclick: () => { step = "avatar"; show(); } }, "Back") : null,
-            go)));
+        h("div", { class: "onb-card onb-sleep" },
+          h("div", { class: "onb-zzz" }, "💤"),
+          h("h1", {}, "You're asleep…"),
+          h("p", { class: "muted onb-sub" }, "It's dark and the air is cold. Time to open your eyes."),
+          wake));
     }
 
     function show(): void {
       if (step === "avatar") showAvatar();
-      else showRoom();
+      else showWake();
     }
 
     function finish(): void {

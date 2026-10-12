@@ -74,7 +74,7 @@ export function mountAdminFurni(root: HTMLElement, ctx: Ctx): () => void {
         h("div", { class: "nm" }, `${m.w}×${m.h}${m.flat ? " · flat" : ""}`))) : [h("p", { class: "hint" }, "No furniture yet. Upload a .nitro file above.")]));
     };
     host.replaceChildren(
-      h("p", { class: "muted" }, "Furniture uploaded here can be placed in the public room (Room tab > the 🏠 tab while you stand in it). Turn on \"players can place it\" to let everyone use it in their own rooms."),
+      h("p", { class: "muted" }, "Furniture uploaded here can be placed in the basement (Room tab > the 🏠 tab while you stand in it). Turn on \"players can place it\" to let everyone use it in their own rooms."),
       drop, status, grid);
     draw();
     offList = onFurniChanged(draw);

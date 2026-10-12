@@ -152,6 +152,6 @@ function mountMusicShop(root: HTMLElement, ctx: Ctx, rerender: () => void): () =
                   }
                 },
               }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` Buy for ${entry.price} drops`),
-              affordable ? null : h("p", { class: "muted" }, `You have ${p.blood}. Stab people in the public room to earn drops.`))));
+              affordable ? null : h("p", { class: "muted" }, `You have ${p.blood}. Stab people in the basement to earn drops.`))));
   return () => undefined;
 }

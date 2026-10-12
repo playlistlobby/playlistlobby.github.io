@@ -33,6 +33,8 @@ export interface FurniKind {
   color: string;
   /** can players put it in their own room? */
   placeable: boolean;
+  /** built into every player room (never stored in the database, can't be picked up) */
+  fixed?: boolean;
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** lies flat on the floor: you can walk over it and it's drawn underneath everyone */
@@ -51,15 +53,10 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 }
 
 export const FURNI_KINDS: Record<string, FurniKind> = {
-  crate: { id: "crate", label: "Crate", icon: "📦", w: 1, h: 1, height: 26, color: "#9c6b3a", placeable: true },
-  table: { id: "table", label: "Table", icon: "🪵", w: 2, h: 2, height: 22, color: "#7b5a36", placeable: true },
-  sofa: { id: "sofa", label: "Sofa", icon: "🛋️", w: 2, h: 1, height: 26, color: "#8a3e3e", placeable: true },
-  plant: { id: "plant", label: "Plant", icon: "🪴", w: 1, h: 1, height: 44, color: "#3d7a45", placeable: true },
-  lamp: { id: "lamp", label: "Lamp", icon: "💡", w: 1, h: 1, height: 62, color: "#c9b25a", placeable: true },
-  shelf: { id: "shelf", label: "Shelf", icon: "📚", w: 1, h: 1, height: 74, color: "#6a4a2c", placeable: true },
   arcade: { id: "arcade", label: "Arcade machine", icon: "🕹️", w: 1, h: 1, height: 78, color: "#26327a", placeable: false },
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
-  wf_label: { id: "wf_label", label: "Label", icon: "🏷️", w: 1, h: 1, height: 3, color: "#3a3a3a", placeable: false, nitro: "furni/wf_label.nitro", flat: true },
+  // the bed every player room has (a fixed piece: not in the furniture menu, not stored in the database)
+  bed: { id: "bed", label: "Bed", icon: "🛏️", w: 1, h: 3, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/hween_c25_makeshiftbed.nitro", rotatable: true, fixed: true },
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
@@ -131,13 +128,9 @@ export const WALL_TEXTURES: Array<{ id: string; name: string }> = [
   { id: "hearts", name: "Hearts" }, { id: "clouds", name: "Clouds" }, { id: "groovy_green", name: "Groovy green" }, { id: "groovy_blue", name: "Groovy blue" },
 ];
 
-export const SIZES: Array<{ label: string; w: number; h: number }> = [
-  { label: "Small 8×8", w: 8, h: 8 },
-  { label: "Medium 10×10", w: 10, h: 10 },
-  { label: "Large 12×12", w: 12, h: 12 },
-  { label: "Wide 14×9", w: 14, h: 9 },
-  { label: "Deep 9×14", w: 9, h: 14 },
-];
+/** Every player room is the same size. */
+export const ROOM_W = 8;
+export const ROOM_H = 8;
 export const MAX_FURNI = 40;
 
 export const LOBBY_ID = "lobby";
@@ -152,7 +145,7 @@ export const GRIME_THEME: RoomTheme = { floorA: "#5f6262", floorB: "#686b6b", wa
 export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
   return {
     id: LOBBY_ID,
-    name: "Main Lobby",
+    name: "Basement",
     ownerUid: null,
     ownerName: null,
     access: "open",
@@ -166,7 +159,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
 }
 
 /** The built-in lobby pieces can't be picked up; the ones the admin added can. */
-export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id);
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID;
 
 export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
   return onValue(ref(db, "lobby/furni"), (s) => {
@@ -175,37 +168,14 @@ export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscrib
   }, () => cb([]));
 }
 
-// ---- starter room templates (first-run: pick one of three) ------------------------------------
-export interface RoomTemplate {
-  id: string;
-  name: string;
-  blurb: string;
-  w: number;
-  h: number;
-  theme: RoomTheme;
-  furni: Array<[kind: string, x: number, y: number]>;
-}
-
-export const ROOM_TEMPLATES: RoomTemplate[] = [
-  {
-    id: "studio", name: "Cozy Studio", blurb: "Small and warm. Sand floor, a sofa and a reading corner.",
-    w: 8, h: 8,
-    theme: { floorA: "#a99a6a", floorB: "#b5a678", wall: "#b9c9cf", rug: true, rugColor: "#c9544f" },
-    furni: [["sofa", 3, 1], ["shelf", 5, 0], ["lamp", 7, 0], ["plant", 7, 3], ["crate", 6, 6], ["plant", 0, 6]],
-  },
-  {
-    id: "loft", name: "Wood Loft", blurb: "Roomy oak loft with a big table and shelves along the wall.",
-    w: 10, h: 10,
-    theme: { floorA: "#a2713f", floorB: "#b0814d", wall: "#e8d8b0", rug: true, rugColor: "#4f7bc9" },
-    furni: [["table", 5, 5], ["sofa", 2, 8], ["shelf", 4, 0], ["shelf", 6, 0], ["plant", 9, 0], ["plant", 0, 9], ["lamp", 8, 8], ["crate", 8, 2]],
-  },
-  {
-    id: "lounge", name: "Beach Lounge", blurb: "A wide ocean-blue lounge with palms and plenty of floor to dance on.",
-    w: 14, h: 9,
-    theme: { floorA: "#3f7fa6", floorB: "#4a8db5", wall: "#d9a38a", rug: true, rugColor: "#c9a24f" },
-    furni: [["sofa", 4, 1], ["sofa", 9, 1], ["plant", 13, 0], ["plant", 0, 8], ["table", 6, 5], ["crate", 11, 6], ["lamp", 13, 8], ["plant", 13, 3]],
-  },
-];
+// ---- the bed -----------------------------------------------------------------------------------------------
+/** Where the (fixed) bed sits in every player room, and which way it faces. It lies along the back-right wall, clear of the door. */
+export const BED_ID = "bed";
+export const BED = { x: 3, y: 0, dir: 2 };
+/** The tile you stand on when you get out of bed (and where you start every login). */
+export const BED_SIDE = { x: 4, y: 1 };
+/** The tile the sleeper's head is on (the end of the bed by the pillow). */
+export const BED_HEAD = { x: 3, y: 0 };
 
 export interface RoomMeta {
   owner: string;
@@ -220,21 +190,15 @@ export interface RoomMeta {
 
 export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   const theme: RoomTheme = { ...DEFAULT_THEME, ...(meta.theme ?? {}) };
-  const furni = Object.entries(meta.furni ?? {})
-    .filter(([, f]) => FURNI_KINDS[f.kind])
+  // furniture of kinds that no longer exist (the old test cubes) is ignored; the bed is always there
+  const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
+    .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
     .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir }));
+  furni.unshift({ id: BED_ID, kind: "bed", x: BED.x, y: BED.y, dir: BED.dir });
   const rug: RugRect | null = theme.rug
-    ? { x0: Math.max(0, Math.floor((meta.w - 4) / 2)), y0: Math.max(0, Math.floor((meta.h - 4) / 2)), w: 4, h: 4 }
+    ? { x0: Math.floor((ROOM_W - 4) / 2), y0: Math.floor((ROOM_H - 4) / 2), w: 4, h: 4 }
     : null;
-  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: normAccess(meta.access), w: meta.w, h: meta.h, theme, rug, furni, doorX: DOOR_X };
-}
-
-/** A definition for a room that isn't saved yet (the first-run picker previews these). */
-export function defFromTemplate(tpl: RoomTemplate, owner: { uid: string; name: string }): RoomDef {
-  const meta: RoomMeta = { owner: owner.uid, ownerName: owner.name, name: `${owner.name}'s room`.slice(0, 28), access: "knock", w: tpl.w, h: tpl.h, theme: { ...tpl.theme } };
-  const def = defFromMeta(ownRoomId(owner.uid), meta);
-  def.furni = tpl.furni.map(([kind, x, y], i) => ({ id: `t${i}`, kind, x, y }));
-  return def;
+  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: normAccess(meta.access), w: ROOM_W, h: ROOM_H, theme, rug, furni, doorX: DOOR_X };
 }
 
 // ---- database helpers ----------------------------------------------------------------
@@ -253,20 +217,19 @@ export function watchAllRooms(cb: (rooms: Record<string, RoomMeta>) => void): Un
   return onValue(ref(db, "roomsMeta"), (s) => cb((s.val() ?? {}) as Record<string, RoomMeta>));
 }
 
-/** Creates the player's own room from a template (name, size, colours and furniture in one write). */
-export async function createRoom(p: Profile, tpl: RoomTemplate): Promise<string> {
+/** The room every new player wakes up in: same size for everyone, plain floor and walls, only the bed. */
+export const STARTER_THEME: RoomTheme = { floorA: "#8d7a5f", floorB: "#95826a", wall: "#a8aeb0", rug: false, rugColor: "#c9544f" };
+
+export async function createRoom(p: Profile): Promise<string> {
   const id = ownRoomId(p.uid);
-  const furni: Record<string, { kind: string; x: number; y: number }> = {};
-  for (const [kind, x, y] of tpl.furni) furni[push(ref(db, `roomsMeta/${id}/furni`)).key!] = { kind, x, y };
   const meta: RoomMeta = {
     owner: p.uid,
     ownerName: p.name,
     name: `${p.name}'s room`.slice(0, 28),
     access: "knock",
-    w: tpl.w,
-    h: tpl.h,
-    theme: { ...tpl.theme },
-    furni,
+    w: ROOM_W,
+    h: ROOM_H,
+    theme: { ...STARTER_THEME },
   };
   await set(metaRef(id), meta);
   return id;

@@ -7,7 +7,6 @@ import {
   MAX_FURNI,
   RoomDef,
   RUG_COLORS,
-  SIZES,
   updateRoom,
   WALL_COLORS,
   WALL_TEXTURES,
@@ -56,23 +55,23 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
     const picked = tool && tool !== "pickup" ? FURNI_KINDS[tool] : undefined;
     const clearable = def.furni.filter((f) => !isFixedLobbyPiece(f.id));
     return h("div", { class: "rp-sec" },
-      h("div", { class: "rp-label" }, `Furniture (${def.furni.length}/${MAX_FURNI})`),
+      h("div", { class: "rp-label" }, `Furniture (${clearable.length}/${MAX_FURNI})`),
       h("div", { class: "rp-chips" },
         ...kinds.map((k) => kindChip(k, tool)),
         h("button", { class: "chip" + (tool === "pickup" ? " on" : ""), onclick: () => { hooks.setTool(tool === "pickup" ? null : "pickup"); render(); } }, "🧹 Pick up")),
       picked?.rotatable ? h("div", { class: "row" }, h("button", { class: "btn small", onclick: () => { hooks.rotateTool(); render(); } }, `⟳ Turn (R) · facing ${hooks.getToolDir()}`)) : null,
-      h("div", { class: "hint" }, tool ? "Click in the room to use the tool. Esc to stop." : "Pick a piece, then click a tile in the room."),
+      h("div", { class: "hint" }, kinds.length === 0 ? "No furniture is available yet. New pieces will show up here." : tool ? "Click in the room to use the tool. Esc to stop." : "Pick a piece, then click a tile in the room."),
       clearable.length ? h("button", { class: "btn small", onclick: () => {
-        if (confirm(admin ? "Remove everything you added to the public room?" : "Remove all furniture from this room?")) for (const f of clearable) void removeFurni(def.id, f.id);
+        if (confirm(admin ? "Remove everything you added to the basement?" : "Remove all furniture from this room?")) for (const f of clearable) void removeFurni(def.id, f.id);
       } }, "Clear room") : null);
   }
 
   function render(): void {
     const def = hooks.getDef();
     if (def.id === LOBBY_ID) {
-      // the public room: only the admin gets here, and only the furniture can be changed
+      // the basement: only the admin gets here, and only the furniture can be changed
       wrap.replaceChildren(
-        h("div", { class: "osrs-title" }, "Public room"),
+        h("div", { class: "osrs-title" }, "Basement"),
         h("div", { class: "hint" }, "Admin: add furniture uploaded in Admin > Studio > Furniture. The built-in pieces stay."),
         furnitureSection(def, hooks.getTool(), true));
       return;
@@ -107,22 +106,6 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
         h("div", { class: "rp-chips" }, ...(["open", "knock", "closed"] as Access[]).map((a) =>
           h("button", { class: "chip" + (def.access === a ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { access: a })) }, ACCESS_LABEL[a]))),
         h("div", { class: "hint" }, ACCESS_HELP[def.access])),
-
-      h("div", { class: "rp-sec" },
-        h("div", { class: "rp-label" }, "Size"),
-        h("div", { class: "rp-chips" }, ...SIZES.map((s) =>
-          h("button", {
-            class: "chip" + (def.w === s.w && def.h === s.h ? " on" : ""),
-            onclick: () => {
-              // furniture that would end up outside the smaller room goes back to the inventory (i.e. is removed)
-              const patch: Record<string, unknown> = { w: s.w, h: s.h };
-              for (const f of def.furni) {
-                const k = FURNI_KINDS[f.kind];
-                if (f.x + k.w > s.w || f.y + k.h > s.h) patch[`furni/${f.id}`] = null;
-              }
-              void safe(updateRoom(def.id, patch));
-            },
-          }, s.label)))),
 
       h("div", { class: "rp-sec" },
         h("div", { class: "rp-label" }, "Floor"),

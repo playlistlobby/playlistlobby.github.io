@@ -526,3 +526,11 @@ button, input, select { font-family: var(--font); }
 }
 .stage.horror .room-title, .stage.horror .online { background: rgba(0, 0, 0, .7); }
 @media (prefers-reduced-motion: reduce) { .stage.horror::before { animation: none; } }
+
+/* ---- waking up ---- */
+.wake-fade { position: absolute; inset: 0; z-index: 9; pointer-events: none; background: #000; animation: wakefade 2.1s ease-in 0.35s forwards; }
+@keyframes wakefade { 0% { opacity: 1; } 35% { opacity: .85; } 50% { opacity: .55; } 62% { opacity: .75; } 100% { opacity: 0; } }
+.onb-sleep { text-align: center; padding: 28px 20px; }
+.onb-zzz { font-size: 56px; line-height: 1; animation: zzz 3s ease-in-out infinite; }
+@keyframes zzz { 0%, 100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(-8px); opacity: 1; } }
+.onb-wake { font-size: 20px; min-height: 54px; }

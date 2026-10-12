@@ -83,14 +83,14 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     const online = social.isOnline(f.uid);
     const room = social.roomOf(f.uid);
     const unread = social.unread.get(f.uid) ?? 0;
-    const where = room === LOBBY_ID ? "In the public room" : room ? "In a room" : online ? "Online" : "Offline";
+    const where = room === LOBBY_ID ? "In the basement" : room ? "In a room" : online ? "Online" : "Offline";
     return h("div", { class: "frow" },
       headBox(f.figure),
       h("span", { class: "dot " + (online ? "on" : "") }),
       h("span", { class: "fname", title: where, onclick: () => openChat(f.uid) }, f.name, h("span", { class: "fwhere" }, where)),
       unread ? h("span", { class: "badge" }, String(unread)) : null,
       h("button", { class: "btn small", title: "Message", onclick: () => openChat(f.uid) }, "💬"),
-      room ? h("button", { class: "btn small", title: room === LOBBY_ID ? "Go to the public room" : "Follow into their room", onclick: () => { open = false; renderPanel(); ctx.navigate("room", { roomId: room }); } }, "➜") : null,
+      room ? h("button", { class: "btn small", title: room === LOBBY_ID ? "Go to the basement" : "Follow into their room", onclick: () => { open = false; renderPanel(); ctx.navigate("room", { roomId: room }); } }, "➜") : null,
       h("button", { class: "btn small", title: "Remove friend", onclick: () => {
         if (confirm(`Remove ${f.name} from your friends?`)) void social.removeFriend(f.uid).then(() => closeChat(f.uid));
       } }, "✕"));

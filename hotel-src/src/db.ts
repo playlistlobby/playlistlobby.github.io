@@ -25,6 +25,8 @@ export interface Profile {
   syringeDay: number;
   /** the admin account (username "admin") gets the Admin app */
   isAdmin: boolean;
+  /** has opened the door at least once (until then the door flashes to show where to go) */
+  seenDoor: boolean;
 }
 
 export const WARDROBE_SLOTS = 8;
@@ -62,7 +64,7 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
-  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false };
+  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false };
   // figure "" marks a player who hasn't been through the customizer yet.
   await set(ref(db, `users/${uid}`), {
     name,
@@ -91,6 +93,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     stabs: v.stabs ?? {},
     syringeDay: v.syringeDay ?? 0,
     isAdmin,
+    seenDoor: !!v.seenDoor,
   };
 
   // Accounts made before something existed get it now.

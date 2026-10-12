@@ -15,6 +15,7 @@ import { mountWardrobe } from "./ui/wardrobe";
 import { mountMessenger } from "./ui/messenger";
 import { mountAdmin } from "./ui/admin";
 import { runOnboarding } from "./ui/onboarding";
+import { ensureDoorArt } from "./roomRender";
 import { player } from "./music";
 import { fetchMeta, LOBBY_ID, ownRoomId } from "./rooms";
 import { logAction } from "./logger";
@@ -31,6 +32,10 @@ export type View = "room" | "customize" | "shop" | "admin";
 export interface NavOpts {
   /** which room to open when view is "room" (defaults to the last room you were in, at first your own) */
   roomId?: string;
+  /** how you come into a room: through the door (default) or standing by your bed (login) */
+  arrival?: "door" | "bed";
+  /** play the first-time wake-up in bed */
+  intro?: boolean;
   /** which part of the Character page to open */
   tab?: "look" | "outfits";
 }
@@ -146,7 +151,7 @@ async function showHotel(user: User): Promise<void> {
   try {
     const shop = watchShopConfig();
     stopShop = shop.stop;
-    await Promise.all([avatarsReady, loadCatalog()]);
+    await Promise.all([avatarsReady, loadCatalog(), ensureDoorArt()]); // the door art too, so a room never draws without its door
     const designs = watchDesigns(isAdmin); // player-made clothes join the catalog (needs the base catalog first)
     stopDesigns = designs.stop;
     const furni = watchFurni(); // uploaded furniture becomes placeable kinds (rooms must know them before they draw)
@@ -190,11 +195,13 @@ async function showHotel(user: User): Promise<void> {
   try { ownMeta = await fetchMeta(ownRoomId(p.uid)); } catch { /* treated as "no room yet"; the room step will say if it can't write */ }
   const needAvatar = !p.figure;
   const needRoom = !ownMeta;
+  let intro = false;
   if (needAvatar || needRoom) {
     clear();
     const host = h("div", { class: "onb-host" });
     app.append(h("div", { class: "shell" }, statusBar(), host));
     await runOnboarding(host, ctx, needAvatar, needRoom);
+    intro = !p.seenDoor; // the wake-up plays once, for someone who has never opened the door
   }
 
   clear();
@@ -280,7 +287,7 @@ async function showHotel(user: User): Promise<void> {
         roomHost.replaceChildren();
         roomMounted = target;
         lastRoomId = target;
-        roomApi = mountRoom(roomHost, ctx, target);
+        roomApi = mountRoom(roomHost, ctx, target, { arrival: opts.arrival, intro: opts.intro });
       }
       ctx.refreshHeader();
     } else {
@@ -299,7 +306,7 @@ async function showHotel(user: User): Promise<void> {
   }
 
   // Everyone starts in their own room, standing at the door.
-  go("room", { roomId: ownRoomId(p.uid) });
+  go("room", { roomId: ownRoomId(p.uid), arrival: "bed", intro });
 }
 
 // ---- boot ----------------------------------------------------------------------
