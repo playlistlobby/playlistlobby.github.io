@@ -19,7 +19,9 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
   const host = h("div", {});
   const bigButtons = h("div", { class: "panel row", style: { marginBottom: "10px" } },
     h("button", { class: "btn danger", onclick: async () => {
-      if (!confirm("Take EVERYTHING off sale (all clothing, emotes, items, the jukebox pass, and your own designs)? Prices are kept, so you can switch things back on one by one.")) return;
+      const typed = prompt("This takes EVERYTHING off sale (all clothing, emotes, items, the jukebox pass and your own designs). Prices are kept, so you can switch things back on one by one.\n\nType  clear  to confirm:");
+      if (typed === null) return;
+      if (typed.trim().toLowerCase() !== "clear") return void toast('Nothing changed. You have to type "clear".', "err");
       try {
         await clearShop(EMOTES.map((e) => ({ id: e.id, price: e.price })));
         saved("cleared the shop (everything off sale)");

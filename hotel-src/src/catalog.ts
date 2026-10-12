@@ -19,12 +19,12 @@ export const SLOTS: Slot[] = [
   { id: "he", label: "Head items", headOnly: true, required: false },
   { id: "ea", label: "Glasses", headOnly: true, required: false },
   { id: "fa", label: "Face items", headOnly: true, required: false },
-  { id: "ch", label: "Shirts", headOnly: false, required: true },
+  { id: "ch", label: "Shirts", headOnly: false, required: false },
   { id: "cc", label: "Jackets", headOnly: false, required: false },
   { id: "cp", label: "Prints", headOnly: false, required: false },
   { id: "ca", label: "Chest items", headOnly: false, required: false },
-  { id: "lg", label: "Trousers", headOnly: false, required: true },
-  { id: "sh", label: "Shoes", headOnly: false, required: true },
+  { id: "lg", label: "Trousers", headOnly: false, required: false },
+  { id: "sh", label: "Shoes", headOnly: false, required: false },
   { id: "wa", label: "Belts", headOnly: false, required: false },
 ];
 
@@ -198,7 +198,7 @@ export function defaultColors(item: Item, previous?: FigurePart): string[] {
 }
 
 /** How often a random look wears an optional slot (hair almost always, hats and glasses now and then). */
-const RANDOM_CHANCE: Record<string, number> = { hr: 0.95, ha: 0.2, ea: 0.2, fa: 0.15, he: 0, cc: 0, cp: 0, ca: 0, wa: 0 };
+const RANDOM_CHANCE: Record<string, number> = { ch: 1, lg: 1, sh: 1, hr: 0.95, ha: 0.2, ea: 0.2, fa: 0.15, he: 0, cc: 0, cp: 0, ca: 0, wa: 0 };
 
 /** A random look built only from free items (what everybody owns), in random colours. Used by the first-run avatar picker. */
 export function randomFigure(gender: Gender): string {
