@@ -33,7 +33,7 @@ export const WARDROBE_SLOTS = 8;
 export const SYRINGE_BLOOD = 2;
 const DAY_MS = 86_400_000;
 /** What every player starts with (and gets back if it's missing). */
-export const STARTER_ITEMS = ["knife", "cd", "syringe"];
+export const STARTER_ITEMS = ["knife", "syringe"]; // the CD is switched off for now (see DISABLED_ITEMS in items.ts)
 
 // ---- server clock -----------------------------------------------------------------
 // The database rules judge "today" with the server's clock, so the client must too.

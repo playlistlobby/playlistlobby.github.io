@@ -51,13 +51,16 @@ export type Inventory = Array<InvItem | null>;
 
 export const emptyInventory = (): Inventory => Array.from({ length: INV_SIZE }, () => null);
 
+/** Items that exist in the code but are switched off for now: nobody gets one and any already held are hidden (the data stays, so turning one back on restores it). */
+export const DISABLED_ITEMS = new Set(["cd"]);
+
 /** RTDB stores sparse arrays as objects (or arrays); normalise to a fixed 28-slot array. */
 export function parseInventory(raw: unknown): Inventory {
   const inv = emptyInventory();
   if (!raw || typeof raw !== "object") return inv;
   for (const [k, v] of Object.entries(raw as Record<string, InvItem | null>)) {
     const slot = Number(k);
-    if (v && slot >= 0 && slot < INV_SIZE && ITEMS[v.item]) inv[slot] = { item: v.item, qty: v.qty ?? 1, ...(v.inPlayer ? { inPlayer: true } : {}) };
+    if (v && slot >= 0 && slot < INV_SIZE && ITEMS[v.item] && !DISABLED_ITEMS.has(v.item)) inv[slot] = { item: v.item, qty: v.qty ?? 1, ...(v.inPlayer ? { inPlayer: true } : {}) };
   }
   return inv;
 }
