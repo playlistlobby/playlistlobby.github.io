@@ -232,8 +232,10 @@ export function renderRoomShell(def: RoomDef): Shell {
   const rightWall = [o, br, { x: br.x, y: br.y - WALL_H }, { x: o.x, y: o.y - WALL_H }];
   const leftWall = [o, bl, { x: bl.x, y: bl.y - WALL_H }, { x: o.x, y: o.y - WALL_H }];
   // walls: right wall along y = 0 (running down-right), left wall along x = 0 (running down-left)
-  poly(rightWall, shade(t.wall, 1), shade(t.wall, 0.8));
-  poly(leftWall, shade(t.wall, 0.88), shade(t.wall, 0.8));
+  const painted = t.style === "grime" && basementReady();
+  // with the painted basement the base under the pictures is black, so the antialiased edge between wall and floor is dark, not grey
+  poly(rightWall, painted ? "#000" : shade(t.wall, 1), painted ? "#000" : shade(t.wall, 0.8));
+  poly(leftWall, painted ? "#000" : shade(t.wall, 0.88), painted ? "#000" : shade(t.wall, 0.8));
   if (wallPat) {
     for (const side of [1, -1]) {
       x.save();
@@ -246,7 +248,6 @@ export function renderRoomShell(def: RoomDef): Shell {
     }
     poly(leftWall, "rgba(0,0,0,0.14)");
   }
-  const painted = t.style === "grime" && basementReady();
   if (painted) {
     // the painted walls: each picture is laid onto its wall (128 px per tile along it, the full wall height down)
     const wr = basementArt.wallRight!, wl = basementArt.wallLeft!;
@@ -276,7 +277,8 @@ export function renderRoomShell(def: RoomDef): Shell {
   // tiles
   const floorTex = texture("floor", t.floorTex);
   const floorPat = floorTex ? patternOf(floorTex) : null;
-  for (let ty = 0; ty < H; ty++) {
+  if (painted) poly([iso(0, 0), iso(W, 0), iso(W, H), iso(0, H)], "#000"); // black under the painted floor, so its edges stay dark
+  for (let ty = 0; ty < H && !painted; ty++) {
     for (let tx = 0; tx < W; tx++) {
       const p = iso(tx, ty);
       const r = def.rug;
