@@ -726,7 +726,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       p.dir = dirOf(currentTile(p), { x: f.x, y: f.y });
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
       if (job.type === "cd") void executeInsert();
-      else if (job.type === "bag") ctx.navigate("customize", { tab: "look" });
+      else if (job.type === "bag") ctx.navigate("customize");
       else openArcade();
     }
   }

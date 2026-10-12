@@ -11,7 +11,6 @@ import { topBar, TopBarApi } from "./ui/topbar";
 import { mountEditor } from "./ui/editor";
 import { mountRoom, RoomApi } from "./ui/room";
 import { mountShop } from "./ui/shop";
-import { mountWardrobe } from "./ui/wardrobe";
 import { mountMessenger } from "./ui/messenger";
 import { mountAdmin } from "./ui/admin";
 import { runOnboarding } from "./ui/onboarding";
@@ -37,8 +36,6 @@ export interface NavOpts {
   arrival?: "door" | "bed";
   /** play the first-time wake-up in bed */
   intro?: boolean;
-  /** which part of the Character page to open */
-  tab?: "look" | "outfits";
 }
 
 export interface Ctx {
@@ -213,7 +210,6 @@ async function showHotel(user: User): Promise<void> {
     appName: APP_NAME,
     isAdmin: p.isAdmin,
     onNav: (v) => go(v),
-    onOutfits: () => go("customize", { tab: "outfits" }),
     onLogout: () => void doLogout(),
   });
   const shell = h("div", { class: "shell" }, statusBar(), bar.el, roomHost, pageHost);
@@ -256,20 +252,10 @@ async function showHotel(user: User): Promise<void> {
     social.stop();
   };
 
-  function mountCharacter(host: HTMLElement, tab: "look" | "outfits"): () => void {
-    let inner: (() => void) | null = null;
-    const seg = h("div", { class: "seg page-seg" });
+  function mountCharacter(host: HTMLElement): () => void {
     const body = h("div", { class: "char-body" });
-    host.append(seg, body);
-    const show = (t: "look" | "outfits") => {
-      inner?.();
-      body.replaceChildren();
-      seg.replaceChildren(...([["look", "Look"], ["outfits", "Saved outfits"]] as Array<["look" | "outfits", string]>).map(([id, label]) =>
-        h("button", { class: "tab" + (id === t ? " on" : ""), onclick: () => show(id) }, label)));
-      inner = t === "look" ? mountEditor(body, ctx, "customize") : mountWardrobe(body, ctx);
-    };
-    show(tab);
-    return () => inner?.();
+    host.append(body);
+    return mountEditor(body, ctx, "customize");
   }
 
   function go(view: View, opts: NavOpts = {}): void {
@@ -300,7 +286,7 @@ async function showHotel(user: User): Promise<void> {
       pageHost.replaceChildren();
       pageHost.hidden = false;
       pageHost.scrollTop = 0;
-      if (view === "customize") pageCleanup = mountCharacter(pageHost, opts.tab ?? "look");
+      if (view === "customize") pageCleanup = mountCharacter(pageHost);
       else if (view === "shop") pageCleanup = mountShop(pageHost, ctx);
       else if (view === "admin") pageCleanup = mountAdmin(pageHost, ctx);
     }

@@ -38,6 +38,10 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   let disposed = false;
 
   ensureRequired();
+  /** Character page: one simple column (character in the middle, tabs only for what you own, Save look / Go back at the bottom). The shop keeps the two-column editor. */
+  const solo = mode === "customize";
+  const lookKey = () => figureToString(parts) + gender;
+  let savedKey = lookKey();
 
   function ensureRequired(): void {
     const defaults = parseFigure(DEFAULT_FIGURE[gender]);
@@ -59,7 +63,16 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   const waveBtn = h("button", { class: "btn small", onclick: () => { waving = !waving; frame = 0; waveBtn.classList.toggle("on", waving); drawPreview(); } }, "Wave");
   const rotate = (d: number) => { dir = (dir + d + 8) % 8; drawPreview(); };
 
-  root.append(
+  if (solo) {
+    root.append(
+      h("div", { class: "editor solo" },
+        h("div", { class: "editor-solo panel" },
+          h("div", { class: "preview-box" }, previewCanvas, nameTag),
+          h("div", { class: "row center" },
+            h("button", { class: "btn small", title: "Turn left", onclick: () => rotate(-1) }, "⟲"),
+            h("button", { class: "btn small", title: "Turn right", onclick: () => rotate(1) }, "⟳")),
+          genderEl, tabsEl, colorsEl, gridEl, pagerEl, footerEl)));
+  } else root.append(
     h("div", { class: "editor" },
       h("div", { class: "editor-left panel" },
         h("h2", {}, mode === "shop" ? "Clothing shop" : "Your character"),
@@ -87,9 +100,18 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   }, 350);
 
   // ---- slot tabs -------------------------------------------------------------
+  /** On the Character page a category only shows up if you own something in it. */
+  function slotsShown() {
+    if (!solo) return SLOTS;
+    const owned = SLOTS.filter((s) => itemsFor(s.id, gender).some((i) => isOwned(i, profile.owned)));
+    return owned.length ? owned : SLOTS;
+  }
+
   function renderTabs(): void {
+    const shown = slotsShown();
+    if (!shown.some((s) => s.id === slotId)) { slotId = shown[0].id; page = 0; }
     tabsEl.replaceChildren(
-      ...SLOTS.map((s) =>
+      ...shown.map((s) =>
         h("button", { class: "tab" + (s.id === slotId ? " on" : ""), onclick: () => { slotId = s.id; page = 0; redraw(); } }, s.label)));
   }
 
@@ -190,12 +212,14 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   function renderFooter(): void {
     footerEl.replaceChildren();
     if (mode === "customize") {
+      footerEl.classList.add("sticky");
       footerEl.append(
         h("button", {
           class: "btn primary",
           onclick: async () => {
             try {
               await saveFigure(profile, figureToString(parts), gender);
+              savedKey = lookKey();
               ctx.refreshHeader();
               ctx.lookChanged();
               logAction(profile, "look", "changed their look");
@@ -205,7 +229,14 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
               toast((err as Error).message, "err");
             }
           },
-        }, "Save look"));
+        }, "Save look"),
+        h("button", {
+          class: "btn",
+          onclick: () => {
+            if (lookKey() !== savedKey && !confirm("You haven't saved your new look. Go back without saving?")) return;
+            ctx.navigate("room");
+          },
+        }, "Go back"));
       return;
     }
     const basket = unownedItems(parts, profile.owned);

@@ -7,7 +7,6 @@ export interface TopBarOpts {
   appName: string;
   isAdmin: boolean;
   onNav(view: View): void;
-  onOutfits(): void;
   onLogout(): void;
 }
 
@@ -44,7 +43,6 @@ export function topBar(o: TopBarOpts): TopBarApi {
     e.stopPropagation();
     if (menu) return closeMenu();
     menu = h("div", { class: "nav-pop", role: "menu" },
-      h("button", { class: "nav-pop-item", onclick: () => { closeMenu(); o.onOutfits(); } }, "👕 Saved outfits"),
       h("button", { class: "nav-pop-item", onclick: (ev: Event) => {
         setSfxMuted(!sfxMuted());
         (ev.currentTarget as HTMLElement).textContent = sfxMuted() ? "🔇 Sounds: off" : "🔊 Sounds: on";
