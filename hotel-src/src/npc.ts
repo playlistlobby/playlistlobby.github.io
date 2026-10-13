@@ -17,7 +17,7 @@ export interface NpcLook {
   gender: Gender;
 }
 
-const FALLBACK: NpcLook = { figure: "hd-200-10.hr-99001-35.ch-3506-9003.cc-99003-9001.lg-99002-9002.sh-99007.wa-99006-9001-1408", gender: "M" };
+const FALLBACK: NpcLook = { figure: "hd-200-10.hr-99001-35.ch-3506-9003.cc-99003-9001.lg-99002-9002.sh-290-9001.wa-99006-9001-1408", gender: "M" };
 let look: NpcLook = FALLBACK;
 
 export const sixtyLook = (): NpcLook => look;
