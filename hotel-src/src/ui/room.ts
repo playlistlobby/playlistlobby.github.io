@@ -703,10 +703,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function startDoor(): void {
     if (doorApi) return;
     if (isOwnRoom) {
-      // your own room's door is simple: it leads to the basement, no menu
-      if (!me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); }
-      logAction(me, "visit", "went to the basement");
-      ctx.navigate("room", { roomId: LOBBY_ID });
+      // your own room's door is simple: it leads to the basement, no menu. Your avatar walks to the door first (processPending sends you down on arrival).
+      pending = { type: "door", since: performance.now(), lastTry: 0 };
       return;
     }
     // everywhere else the door opens the menu (basement, your room, visit someone); it opens straight away while the avatar strolls over
@@ -754,6 +752,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         pending = null;
         p.dir = 0; // face the wall the door is in
         update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
+        if (isOwnRoom) {
+          // arrived at your own room's door: down to the basement
+          if (!me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); }
+          logAction(me, "visit", "went to the basement");
+          ctx.navigate("room", { roomId: LOBBY_ID });
+        }
       }
       return;
     }

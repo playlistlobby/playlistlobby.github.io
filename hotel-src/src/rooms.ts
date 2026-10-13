@@ -159,8 +159,8 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     h: 12,
     theme: { ...GRIME_THEME },
     rug: null,
-    // the Flappy Bird machine is part of the basement (it stands against the left wall)
-    furni: [{ id: "lobby1", kind: "flappy", x: 5, y: 0, dir: 2 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
+    // the Flappy Bird machine is part of the basement (it stands against the left wall, 8 tiles down from the back corner)
+    furni: [{ id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
     doorX: DOOR_X,
   };
 }
