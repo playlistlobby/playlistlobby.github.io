@@ -35,6 +35,8 @@ export interface DesignMeta {
   published: boolean;
   rev: number;
   updatedAt: number;
+  /** drops of blood it costs by default (garments that ship with the game as shop items); the admin can still change it. 0/absent = free */
+  price?: number;
 }
 
 export interface SheetFrame {
@@ -208,11 +210,12 @@ function normalizeMeta(id: string, v: any): DesignMeta | null {
     type: String(p.type), index: Number(p.index ?? 0), colorable: !!p.colorable, colorindex: Number(p.colorindex ?? 0),
     ...(p.partId ? { partId: String(p.partId) } : {}),
   }));
+  const price = Number(v.price) > 0 ? Math.round(Number(v.price)) : 0;
   const hidden: string[] = v.hidden ? (Array.isArray(v.hidden) ? v.hidden : Object.values(v.hidden)) : [];
   return {
     id, name: String(v.name ?? id), slot: String(v.slot), gender: v.gender === "F" ? "F" : v.gender === "U" ? "U" : "M",
     base: { type: String(v.base?.type ?? v.slot), id: String(v.base?.id ?? "") }, parts, hidden, published: !!v.published,
-    rev: Number(v.rev ?? 0), updatedAt: Number(v.updatedAt ?? 0),
+    rev: Number(v.rev ?? 0), updatedAt: Number(v.updatedAt ?? 0), ...(price ? { price } : {}),
   };
 }
 
@@ -247,10 +250,14 @@ export async function loadBundledDesigns(): Promise<void> {
 // fetched at start-up; each garment's sprite sheet is fetched the first time somebody's avatar actually wears or previews it.
 const starterIds = new Set<string>();
 
-export async function loadStarterDesigns(): Promise<void> {
+export const loadStarterDesigns = (): Promise<void> => loadStaticDesigns("starter");
+/** The shop wardrobe (public/designs/shop/): garments that ship with the game and are sold for blood (each carries its default price). */
+export const loadShopDesigns = (): Promise<void> => loadStaticDesigns("shop");
+
+async function loadStaticDesigns(dir: "starter" | "shop"): Promise<void> {
   await avatarsReady;
   try {
-    const res = await fetch(assetUrl("designs/starter/index.json"));
+    const res = await fetch(assetUrl(`designs/${dir}/index.json`));
     if (!res.ok) return;
     const raw = (await res.json()) as Record<string, any>;
     for (const [id, v] of Object.entries(raw)) {
@@ -259,8 +266,8 @@ export async function loadStarterDesigns(): Promise<void> {
       starterIds.add(id);
       let loaded: Promise<{ data: any; atlas: any }> | null = null;
       registerDesign(meta, () => (loaded ??= (async () => {
-        const r = await fetch(assetUrl(`designs/starter/${id}.json`));
-        if (!r.ok) throw new Error(`starter design ${id} has no sheet`);
+        const r = await fetch(assetUrl(`designs/${dir}/${id}.json`));
+        if (!r.ok) throw new Error(`${dir} design ${id} has no sheet`);
         const sheet = (await r.json()) as DesignSheet;
         return { data: makeLibData(designLib(id), sheet.frames), atlas: await loadImage(sheet.png) };
       })().catch((err) => { loaded = null; throw err; })));
@@ -268,14 +275,14 @@ export async function loadStarterDesigns(): Promise<void> {
     syncCatalog();
     listeners.forEach((l) => l());
   } catch (err) {
-    console.warn("couldn't load the starter wardrobe", err);
+    console.warn(`couldn't load the ${dir} wardrobe`, err);
   }
 }
 
 /** Puts every registered design into the shop/character catalogue (and applies the admin's prices to them). */
 function syncCatalog(): void {
   setCustomItems([...registered.values()].filter((m) => !bundledIds.has(m.id) || adminView).map((m) => ({
-    slot: m.slot, id: m.id, gender: m.gender, colors: Math.max(0, ...m.parts.map((p) => p.colorindex)),
+    slot: m.slot, id: m.id, gender: m.gender, colors: Math.max(0, ...m.parts.map((p) => p.colorindex)), price: m.price ?? 0,
   })));
   applyClothingConfig(shopConfig.clothing);
 }

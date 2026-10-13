@@ -22,7 +22,7 @@ import { player } from "./music";
 import { fetchMeta, LOBBY_ID, ownRoomId } from "./rooms";
 import { logAction } from "./logger";
 import { watchShopConfig } from "./shopConfig";
-import { loadBundledDesigns, loadStarterDesigns, watchDesigns } from "./designs";
+import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns, watchDesigns } from "./designs";
 import { watchFurni } from "./furniDefs";
 import { publishProfile, social, startPresence, stopPresence } from "./social";
 
@@ -152,7 +152,7 @@ async function showHotel(user: User): Promise<void> {
   try {
     const shop = watchShopConfig();
     stopShop = shop.stop;
-    await Promise.all([avatarsReady, loadCatalog(), ensureDoorArt(), ensureBasementArt(), loadBundledDesigns(), loadStarterDesigns()]); // the door art too, so a room never draws without its door
+    await Promise.all([avatarsReady, loadCatalog(), ensureDoorArt(), ensureBasementArt(), loadBundledDesigns(), loadStarterDesigns(), loadShopDesigns()]); // the door art too, so a room never draws without its door
     const designs = watchDesigns(isAdmin); // player-made clothes join the catalog (needs the base catalog first)
     stopDesigns = designs.stop;
     const furni = watchFurni(); // uploaded furniture becomes placeable kinds (rooms must know them before they draw)

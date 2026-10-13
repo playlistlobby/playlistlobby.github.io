@@ -136,13 +136,14 @@ export async function loadCatalog(): Promise<void> {
 }
 
 /** Replaces the Studio-made items in the catalog (call after the registered designs change, then applyClothingConfig again). */
-export function setCustomItems(defs: Array<{ slot: string; id: string; gender: "M" | "F" | "U"; colors: number }>): void {
+export function setCustomItems(defs: Array<{ slot: string; id: string; gender: "M" | "F" | "U"; colors: number; price?: number }>): void {
   if (!items) return;
   for (const slot of Object.keys(items)) items[slot] = items[slot].filter((i) => !i.custom);
   for (const d of defs) {
     if (!items[d.slot]) continue;
-    // free for everyone until the admin puts a price on it (see applyClothingConfig)
-    items[d.slot].unshift({ type: d.slot, id: d.id, gender: d.gender, colors: d.colors, price: 0, key: itemKey(d.slot, d.id), basePrice: 0, starter: true, baseStarter: true, shopOn: false, custom: true });
+    // free for everyone until the admin puts a price on it (see applyClothingConfig), unless it ships with a price (the shop garments)
+    const price = d.price ?? 0;
+    items[d.slot].unshift({ type: d.slot, id: d.id, gender: d.gender, colors: d.colors, price, key: itemKey(d.slot, d.id), basePrice: price, starter: price === 0, baseStarter: price === 0, shopOn: price > 0, custom: true });
   }
 }
 
@@ -151,11 +152,11 @@ export function applyClothingConfig(cfg: Record<string, { on: boolean; price: nu
   for (const list of Object.values(items ?? {})) {
     for (const it of list) {
       if (it.custom) {
-        // Studio items: no entry = free for everyone; an entry sets the price, and "on" decides whether it's for sale
+        // Studio items: no entry = free for everyone (or the price it ships with); an entry sets the price, and "on" decides whether it's for sale
         const e = cfg[it.key];
-        it.price = e ? e.price : 0;
+        it.price = e ? e.price : it.basePrice;
         it.starter = it.price === 0;
-        it.shopOn = !!e && e.on && e.price > 0;
+        it.shopOn = e ? e.on && e.price > 0 : it.price > 0;
         continue;
       }
       if (it.baseStarter) continue;
