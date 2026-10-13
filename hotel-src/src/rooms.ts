@@ -260,9 +260,9 @@ export const BAG = { x: 7, y: 0, dir: 2 };
 /** The toolbox starts between the bed and the bag. */
 export const TOOLBOX_ID = "toolbox";
 export const TOOLBOX = { x: 6, y: 0, dir: 4 };
-/** The sink starts next to the door. */
+/** The sink starts in the left corner of the back wall, next to the door. */
 export const SINK_ID = "sink";
-export const SINK = { x: 2, y: 0, dir: 4 };
+export const SINK = { x: 0, y: 0, dir: 4 };
 /** The tile you stand on when you get out of bed (and where you start every login). */
 export const BED_SIDE = { x: 4, y: 1 };
 /** The tile the sleeper's head is on (the end of the bed by the pillow). */
