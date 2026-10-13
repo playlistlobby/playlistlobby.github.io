@@ -1538,25 +1538,61 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
   }
 
-  /** 6ixty's pill: you say your piece, pass out where you stand, the screen goes black for two seconds, and you wake up in your own room. */
+  /**
+   * 6ixty's pill. Nothing happens for 5-10 seconds while the screen swims (more and more blur, you can still walk about). Then you say
+   * your piece and slowly pass out where you stand, the screen fades to black and stays black for two seconds, and you wake up in your own room.
+   */
   let faintUntil = 0;
+  let woozy = false;
+  let pillCleanup: (() => void) | null = null;
   async function usePill(): Promise<void> {
     const p = mine();
-    if (!p || p.lying || faintUntil) return;
+    if (!p || p.lying || faintUntil || woozy) return;
     const slot = findSlot(me.inventory, "pill");
     if (slot < 0) return say("You don't have a pill.", "warn");
     try { await consumeSlot(me, slot); } catch { return say("The pill slips out of your fingers. (the hotel refused it)", "warn"); }
-    faintUntil = performance.now() + 60_000;
+    woozy = true;
     clearSelection();
     panel.refresh();
-    logAction(me, "room", "swallowed a pill and passed out");
-    push(chatRef, { uid: me.uid, name: shownName, text: "Faaaahhhh shii", ts: serverTimestamp() }).catch(console.warn);
-    p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
-    p.faint = true;
-    update(myRef, { lay: true, sit: null }).catch(() => undefined);
+    logAction(me, "room", "swallowed a pill");
+    say("You swallow the pill. Give it a moment…");
+    const buffer = 5000 + Math.random() * 5000;
+    const app = document.getElementById("app");
+    const t0 = performance.now();
+    const timers: number[] = [];
     const black = h("div", { class: "blackout" });
-    window.setTimeout(() => { document.body.append(black); requestAnimationFrame(() => { black.style.opacity = "1"; }); }, 700); // down first, then the screen goes dark
-    window.setTimeout(() => {
+    const stop = (removeBlack: boolean): void => {
+      window.clearInterval(swim);
+      timers.forEach((t) => window.clearTimeout(t));
+      if (app) app.style.filter = "";
+      if (removeBlack) black.remove();
+      woozy = false;
+      pillCleanup = null;
+    };
+    // the swimming screen: the blur creeps up with a slow wobble, heavier once you go down
+    const swim = window.setInterval(() => {
+      const t = performance.now() - t0;
+      const ramp = Math.min(1, t / buffer);
+      const extra = t > buffer ? Math.min(1, (t - buffer) / 1800) * 4 : 0;
+      const px = 0.4 + 5.6 * ramp * ramp + extra + Math.sin(performance.now() / 430) * 1.1 * ramp;
+      if (app) app.style.filter = `blur(${Math.max(0, px).toFixed(1)}px)`;
+    }, 70);
+    pillCleanup = () => stop(false); // leaving the room mid-way ends the dizziness (a started blackout finishes on its own)
+    const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
+    at(buffer, () => {
+      if (disposed) return stop(true);
+      faintUntil = performance.now() + 60_000;
+      push(chatRef, { uid: me.uid, name: shownName, text: "Faaaahhhh shii", ts: serverTimestamp() }).catch(console.warn);
+      p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
+      p.faint = true; // they go down
+      update(myRef, { lay: true, sit: null }).catch(() => undefined);
+    });
+    at(buffer + 1400, () => { document.body.append(black); black.style.transition = "opacity 1.4s ease"; requestAnimationFrame(() => { black.style.opacity = "1"; }); });
+    at(buffer + 3300, () => {
+      // fully black: wake up in your own room
+      if (app) app.style.filter = "";
+      window.clearInterval(swim);
+      pillCleanup = null;
       if (disposed) return;
       faintUntil = 0;
       p.faint = false;
@@ -1567,9 +1603,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       } else {
         ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed" });
       }
-    }, 1600);
-    window.setTimeout(() => { black.style.opacity = "0"; }, 3000); // two seconds of black
-    window.setTimeout(() => black.remove(), 3500);
+    });
+    at(buffer + 5300, () => { black.style.transition = "opacity 1s ease"; black.style.opacity = "0"; }); // two seconds of black
+    at(buffer + 6500, () => { black.remove(); woozy = false; });
   }
 
   /** A cigarette that has burned for a minute becomes a butt in the inventory. */
@@ -2627,6 +2663,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     endPress();
     doorApi?.close();
     furniBuyApi?.close();
+    pillCleanup?.();
     furnishUi?.dispose();
     closeCdPopup();
     cdAudio.stop(); // leaving the lobby = you can't hear the CD player any more (your CD stays in it until it ends)
