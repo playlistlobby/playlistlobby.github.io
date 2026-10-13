@@ -1987,6 +1987,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.beginPath();
           g.ellipse(feet.x + lunge.x, feet.y + lunge.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2);
           g.fill();
+          // facing away from the camera (up-right, up-left, up) the knife hand is behind the body: draw the knife first so the body covers it
+          const knifeOut = !isMoving(p, now) && !p.emote && !smoking && holdsKnife(p, now);
+          const knifeBehind = knifeOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
+          if (knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           if (img) {
             const ax = feet.x + lunge.x - 32 * scale;
             const ay = feet.y + lunge.y + lift - FEET_Y * scale;
@@ -1994,7 +1998,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
           }
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now);
-          if (!isMoving(p, now) && !p.emote && !smoking && holdsKnife(p, now)) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          if (knifeOut && !knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
