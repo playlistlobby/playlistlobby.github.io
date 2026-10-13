@@ -128,6 +128,10 @@ function loadImg(src: string): HTMLImageElement {
   return img;
 }
 const knifeImg = loadImg(ITEMS.knife.icon);
+/** Where the hand ends up in the avatar's "carry" pose, per facing (0..7), as pixels from the feet; measured from the avatar sprites. */
+const KNIFE_HAND: Array<[number, number]> = [[25, -24], [17, -22], [-8, -24], [-10, -26], [-23, -24], [-17, -24], [14, -26], [15, -24]];
+/** The way the knife picture of each direction points on screen (a 2:1 isometric view): up-right, right, down-right, down, down-left, left, up-left, up. */
+const KNIFE_AXIS: Array<[number, number]> = [[0.894, -0.447], [1, 0], [0.894, 0.447], [0, 1], [-0.894, 0.447], [-1, 0], [-0.894, -0.447], [0, -1]];
 /** the knife as furniture art: eight pictures, one per direction, used to draw it in a player's hand */
 const KNIFE_NITRO = "furni/survival_c26_knife.nitro";
 void loadNitro(KNIFE_NITRO);
@@ -1321,7 +1325,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (em?.def.motion === "hop") yOff = -Math.abs(Math.sin((t / em.def.ms) * Math.PI * 2)) * 16;
 
     // smoking: the hand is up at the mouth (the "drink" arm pose with no cup; the cigarette itself is drawn on top)
-    const actions = moving ? ["wlk"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : ["std"]);
+    // (holding a knife: the arm is out in the "carry" pose, and the knife itself is drawn in that hand)
+    const actions = moving ? ["wlk"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && holdsKnife(p, now) ? ["crr=9999"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
       ? Math.floor((now - p.stepStart) / (STEP_MS / 4)) % 4
@@ -1335,18 +1340,24 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function drawKnifeInHand(fx: number, fy: number, dir: number): void {
     const n = nitroIfReady(KNIFE_NITRO);
     if (!n) return;
-    const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0;
-    const hx = fx + (side * 14 + (side === 0 ? (dir === 0 ? 8 : -8) : 0)) * scale; // the hand, at hip height beside the body
-    const hy = fy - 25 * scale;
+    const [hdx, hdy] = KNIFE_HAND[dir] ?? KNIFE_HAND[2];
+    const [ux, uy] = KNIFE_AXIS[dir] ?? KNIFE_AXIS[2]; // which way the blade points on screen = the way they face
+    const hx = fx + hdx * scale; // the fist (where the arm ends in the "carry" pose)
+    const hy = fy + hdy * scale;
+    const k = scale * 0.7;
     g.save();
     g.imageSmoothingEnabled = false;
     for (const s of spritesFor(n, dir)) {
       if (s.isShadow) continue;
-      const k = scale * 0.9;
-      g.drawImage(s.image, s.sx, s.sy, s.sw, s.sh, hx - (s.sw * k) / 2, hy - (s.sh * k) / 2, s.sw * k, s.sh * k);
+      // the grip sits in the fist: a little way in from the handle end, along the knife's length
+      const half = Math.hypot(s.sw, s.sh) * 0.95 * 0.5;
+      const gripX = s.sw / 2 - ux * half * 0.55;
+      const gripY = s.sh / 2 - uy * half * 0.55;
+      g.drawImage(s.image, s.sx, s.sy, s.sw, s.sh, hx - gripX * k, hy - gripY * k, s.sw * k, s.sh * k);
     }
     g.restore();
   }
+  // a knife in the hand: selected in your inventory (your own avatar), or mid-stab (everyone sees the attacker). The avatar's arm is held out for it.
   const holdsKnife = (p: Player, now: number): boolean =>
     (p.uid === me.uid && selectedDef()?.useOnPlayer === "stab") || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
 
@@ -1983,7 +1994,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
           }
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now);
-          if (holdsKnife(p, now)) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          if (!isMoving(p, now) && !p.emote && !smoking && holdsKnife(p, now)) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
