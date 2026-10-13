@@ -6,7 +6,7 @@ import { db } from "./firebase";
 export type LogType =
   | "register" | "login" | "logout"
   | "buy" | "stab" | "syringe" | "cd" | "emote"
-  | "friend" | "outfit" | "look" | "visit" | "room" | "design" | "admin";
+  | "trade" | "friend" | "outfit" | "look" | "visit" | "room" | "design" | "admin";
 
 export const LOG_TYPES: LogType[] = ["register", "login", "logout", "buy", "stab", "syringe", "cd", "emote", "friend", "outfit", "look", "visit", "room", "design", "admin"];
 

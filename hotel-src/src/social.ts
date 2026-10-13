@@ -54,6 +54,13 @@ export interface Invite {
   fromName: string;
   ts: number;
 }
+/** Someone asking you to trade (it waits in the friends badge until you answer; it disappears if they leave). */
+export interface TradeInvite {
+  uid: string;
+  name: string;
+  ts: number;
+}
+
 /** Someone knocking on your room's door (shown in the friends menu until you let them in or send them away). */
 export interface Knock {
   uid: string;
@@ -117,6 +124,8 @@ class SocialStore {
   invites: Invite[] = [];
   /** people knocking on my room's door right now */
   knocks = new Map<string, Knock>();
+  /** people who want to trade with me right now */
+  tradeInvites = new Map<string, TradeInvite>();
   dms = new Map<string, DmMsg[]>();
   unread = new Map<string, number>();
   /** friend whose chat window is open (their messages don't count as unread) */
@@ -124,6 +133,8 @@ class SocialStore {
 
   private listeners = new Set<Listener>();
   private knockListeners = new Set<(k: Knock) => void>();
+  private tradeInviteListeners = new Set<(i: TradeInvite) => void>();
+  private tradeStartListeners = new Set<(id: string) => void>();
   private inviteListeners = new Set<(i: Invite) => void>();
   private dmListeners = new Set<(friend: string, m: DmMsg) => void>();
   private unsubs: Unsubscribe[] = [];
@@ -137,6 +148,15 @@ class SocialStore {
   onInvite(fn: (i: Invite) => void): () => void {
     this.inviteListeners.add(fn);
     return () => this.inviteListeners.delete(fn);
+  }
+  onTradeInvite(fn: (i: TradeInvite) => void): () => void {
+    this.tradeInviteListeners.add(fn);
+    return () => this.tradeInviteListeners.delete(fn);
+  }
+  /** a trade with me in it was created (I accepted an invite, or the one I sent was accepted) */
+  onTradeStart(fn: (id: string) => void): () => void {
+    this.tradeStartListeners.add(fn);
+    return () => this.tradeStartListeners.delete(fn);
   }
   onKnock(fn: (k: Knock) => void): () => void {
     this.knockListeners.add(fn);
@@ -157,7 +177,7 @@ class SocialStore {
   }
   /** what the Friends button's red badge counts: unread messages, friend requests and people knocking */
   get badgeCount(): number {
-    return this.totalUnread + this.requests.size + this.knocks.size;
+    return this.totalUnread + this.requests.size + this.knocks.size + this.tradeInvites.size;
   }
   /** the presence list has arrived (until then nobody can be called gone) */
   presenceLoaded = false;
@@ -216,6 +236,22 @@ class SocialStore {
         this.emit();
         fresh.forEach((k) => this.knockListeners.forEach((l) => l(k)));
       }, () => undefined),
+      onValue(ref(db, `tradeInvites/${me.uid}`), (snap) => {
+        const next = new Map<string, TradeInvite>();
+        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) next.set(uid, { uid, name: v.name ?? "?", ts: typeof v.ts === "number" ? v.ts : serverNow() });
+        const fresh = [...next.values()].filter((k) => !this.tradeInvites.has(k.uid));
+        this.tradeInvites = next;
+        this.emit();
+        fresh.forEach((k) => this.tradeInviteListeners.forEach((l) => l(k)));
+      }, () => undefined),
+      onChildAdded(ref(db, `userTrades/${me.uid}`), (snap) => {
+        const id = snap.key!;
+        // only trades that start while I'm here open a window (older ones are finished by recoverTrades at sign-in)
+        void get(ref(db, `trades/${id}`)).then((t) => {
+          const v = t.val();
+          if (v && v.status === "open" && typeof v.ts === "number" && v.ts >= this.sessionStart - 60_000) this.tradeStartListeners.forEach((l) => l(id));
+        }).catch(() => undefined);
+      }, () => undefined),
       onChildAdded(ref(db, `invites/${me.uid}`), (snap) => {
         const v = snap.val();
         if (!v) return;
@@ -237,6 +273,7 @@ class SocialStore {
     this.presence.clear();
     this.invites = [];
     this.knocks.clear();
+    this.tradeInvites.clear();
     this.dms.clear();
     this.unread.clear();
     this.openChat.clear();
@@ -328,6 +365,19 @@ class SocialStore {
     if (!name) return null;
     const snap = await get(ref(db, `usernames/${name}`));
     return snap.exists() ? (snap.val() as string) : null;
+  }
+
+  /** Asks an online player to trade. The invite goes away by itself if I leave. */
+  async inviteToTrade(uid: string): Promise<void> {
+    const me = this.me!;
+    const r = ref(db, `tradeInvites/${uid}/${me.uid}`);
+    await set(r, { name: me.name, ts: serverTimestamp() });
+    void onDisconnect(r).remove();
+  }
+
+  /** The invited player says no (or the inviter takes the invite back). */
+  async dropTradeInvite(to: string, from: string): Promise<void> {
+    await remove(ref(db, `tradeInvites/${to}/${from}`)).catch(() => undefined);
   }
 
   /** Asks to be let into someone's room. The owner answers from their friends menu. */

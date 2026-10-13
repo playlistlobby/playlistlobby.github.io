@@ -13,6 +13,7 @@ import { mountEditor } from "./ui/editor";
 import { mountRoom, RoomApi } from "./ui/room";
 import { mountShop } from "./ui/shop";
 import { mountMessenger } from "./ui/messenger";
+import { mountTrades } from "./ui/trade";
 import { mountAdmin } from "./ui/admin";
 import { runOnboarding } from "./ui/onboarding";
 import { trackKeyboard } from "./ui/keyboard";
@@ -251,6 +252,7 @@ async function showHotel(user: User): Promise<void> {
   for (const room of [LOBBY_ID, ownRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
   logAction(p, "login", "opened 6ixPlanet");
   const stopMessenger = mountMessenger(shell, ctx);
+  const stopTrades = mountTrades(ctx);
   // 10 minutes without touching anything: marked idle (the door's room list says so) and sent home to your own room
   const stopIdle = watchIdle(p, () => {
     const own = ownRoomId(p.uid);
@@ -264,6 +266,7 @@ async function showHotel(user: User): Promise<void> {
     stopSixtyLook?.();
     stopIdle();
     stopMessenger();
+    stopTrades();
     stopShop();
     stopDesigns();
     stopFurni();

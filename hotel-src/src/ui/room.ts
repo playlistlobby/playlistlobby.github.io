@@ -608,6 +608,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (target?.npc && target.uid !== me.uid) { clearSelection(); startSixty(); return; }
     const item = selectedDef();
+    // tapping another player (with nothing selected) opens their menu: add friend, invite to trade, walk here...
+    if (target && target.uid !== me.uid && !target.sleeper && !item) { openContextAt(m.x, m.y, e.clientX, e.clientY); return; }
     if (item?.furniture) {
       if (!isOwnRoom) { clearSelection(); say("You can only put furniture down in your own room.", "warn"); return; }
       if (t && selectedSlot !== null) void putDown(t, { kind: item.id, source: "inv", slot: selectedSlot }, toolDir || defaultDir(item.id));
@@ -662,6 +664,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (item?.useOnPlayer === "stab") opts.push({ label: `Use ${item.name} →`, target: target.name, action: () => startStab(target.uid) });
       if (hasKnife && item?.useOnPlayer !== "stab") opts.push({ label: "Stab", target: target.name, danger: true, action: () => startStab(target.uid) });
       opts.push({ label: "Examine", target: target.name, action: () => say(`${target.name}: a fellow hotel guest.`) });
+      if (social.isOnline(target.uid) && !target.sleeper) opts.push({ label: "Invite to trade", target: target.name, action: () => void social.inviteToTrade(target.uid).then(() => say(`You ask ${target.name} to trade. They have to accept.`), () => say("Couldn't send that trade invite.", "warn")) });
       if (social.friends.has(target.uid)) opts.push({ label: "Message", target: target.name, action: () => window.dispatchEvent(new CustomEvent("open-chat", { detail: target.uid })) });
       else opts.push({ label: "Add friend", target: target.name, action: () => social.sendRequest(target.name).then((s) => say(s), (err) => say((err as Error).message, "warn")) });
     }
@@ -756,6 +759,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   };
   window.addEventListener("keydown", onKey);
   window.addEventListener("keydown", onRotateKey);
+  const onPocket = () => { panel.refresh(); ctx.refreshHeader(); };
+  window.addEventListener("pocket-changed", onPocket);
 
   function rotateTool(): void {
     if (!tool || tool === "pickup" || !FURNI_KINDS[tool]?.rotatable) return;
@@ -2862,6 +2867,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     resizeObs.disconnect();
     window.removeEventListener("keydown", onKey);
     window.removeEventListener("keydown", onRotateKey);
+    window.removeEventListener("pocket-changed", onPocket);
     unsubs.forEach((u) => u());
     if (roomId === LOBBY_ID) setAmbience(false);
     endPress();
