@@ -143,7 +143,7 @@ export function draftFromParts(fig: FigureNitro, o: { id: string; name: string; 
     const n = seenType.get(p.type) ?? 0;
     seenType.set(p.type, n + 1);
     // the first layer of a kind uses the design's id; a second one gets a number of its own
-    const partId = n === 0 ? o.id : String(Number(o.id) + 100 * n);
+    const partId = n === 0 ? o.id : String(Number(o.id) * 10 + n);
     parts.push({ type: p.type, index: n, colorable: p.colorindex > 0, colorindex: p.colorindex, ...(n > 0 ? { partId } : {}) });
     for (const f of fig.frames) {
       if (f.type !== p.type || f.id !== p.id) continue;

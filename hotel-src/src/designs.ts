@@ -243,6 +243,35 @@ export async function loadBundledDesigns(): Promise<void> {
   }
 }
 
+// The starter wardrobe (public/designs/starter/): ~150 garments from the Habbo clothing files that are free for every player. Only the small index is
+// fetched at start-up; each garment's sprite sheet is fetched the first time somebody's avatar actually wears or previews it.
+const starterIds = new Set<string>();
+
+export async function loadStarterDesigns(): Promise<void> {
+  await avatarsReady;
+  try {
+    const res = await fetch(assetUrl("designs/starter/index.json"));
+    if (!res.ok) return;
+    const raw = (await res.json()) as Record<string, any>;
+    for (const [id, v] of Object.entries(raw)) {
+      const meta = normalizeMeta(id, { ...v, published: true });
+      if (!meta) continue;
+      starterIds.add(id);
+      let loaded: Promise<{ data: any; atlas: any }> | null = null;
+      registerDesign(meta, () => (loaded ??= (async () => {
+        const r = await fetch(assetUrl(`designs/starter/${id}.json`));
+        if (!r.ok) throw new Error(`starter design ${id} has no sheet`);
+        const sheet = (await r.json()) as DesignSheet;
+        return { data: makeLibData(designLib(id), sheet.frames), atlas: await loadImage(sheet.png) };
+      })().catch((err) => { loaded = null; throw err; })));
+    }
+    syncCatalog();
+    listeners.forEach((l) => l());
+  } catch (err) {
+    console.warn("couldn't load the starter wardrobe", err);
+  }
+}
+
 /** Puts every registered design into the shop/character catalogue (and applies the admin's prices to them). */
 function syncCatalog(): void {
   setCustomItems([...registered.values()].filter((m) => !bundledIds.has(m.id) || adminView).map((m) => ({
@@ -259,7 +288,7 @@ function applyMetas(raw: Record<string, any>, isAdmin: boolean): void {
     if (!meta || (!meta.published && !isAdmin)) continue;
     next.set(id, meta);
   }
-  for (const id of [...registered.keys()]) if (!next.has(id) && !localDrafts.has(id) && !bundledIds.has(id)) unregisterDesign(id);
+  for (const id of [...registered.keys()]) if (!next.has(id) && !localDrafts.has(id) && !bundledIds.has(id) && !starterIds.has(id)) unregisterDesign(id);
   for (const [id, meta] of next) {
     if (localDrafts.has(id)) continue;
     const cur = registered.get(id);
