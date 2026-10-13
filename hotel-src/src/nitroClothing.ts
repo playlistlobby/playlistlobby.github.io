@@ -130,4 +130,29 @@ export function draftFromGarment(fig: FigureNitro, gm: Garment): Draft {
   return { meta, frames, reuseStanding: false, original };
 }
 
+/**
+ * A garment built part by part, for ones the plain importer can't make: each part names its layer, its id in the library and which
+ * colour it takes (0 = keeps its own art). Two parts of the same layer (a belt strap and its drape) get their own part ids.
+ */
+export interface PartSpec { type: string; id: string; colorindex: number }
+export function draftFromParts(fig: FigureNitro, o: { id: string; name: string; slot: string; gender: "M" | "F" | "U"; parts: PartSpec[] }): Draft {
+  const frames = new Map<string, DraftFrame>();
+  const parts: DesignPart[] = [];
+  const seenType = new Map<string, number>();
+  for (const p of o.parts) {
+    const n = seenType.get(p.type) ?? 0;
+    seenType.set(p.type, n + 1);
+    // the first layer of a kind uses the design's id; a second one gets a number of its own
+    const partId = n === 0 ? o.id : String(Number(o.id) + 100 * n);
+    parts.push({ type: p.type, index: n, colorable: p.colorindex > 0, colorindex: p.colorindex, ...(n > 0 ? { partId } : {}) });
+    for (const f of fig.frames) {
+      if (f.type !== p.type || f.id !== p.id) continue;
+      frames.set(frameName(f.action, p.type, partId, f.dir, f.frame), { canvas: cropFrame(fig.image, f), ox: f.ox, oy: f.oy, edited: true });
+    }
+  }
+  const meta: DesignMeta = { id: o.id, name: o.name.slice(0, 28), slot: o.slot, gender: o.gender, base: { type: o.slot, id: "nitro" }, parts, hidden: [], published: true, rev: 0, updatedAt: 0 };
+  const original = new Map([...frames].map(([k, f]) => [k, { canvas: cloneCanvas(f.canvas), ox: f.ox, oy: f.oy }]));
+  return { meta, frames, reuseStanding: false, original };
+}
+
 export { publishDraft };

@@ -7,6 +7,7 @@ import { avatarsReady, clearAvatarCache, imager } from "./avatarService";
 import { extractImage } from "./avatar/Atlas";
 import { applyClothingConfig, setCustomItems } from "./catalog";
 import { shopConfig } from "./shopConfig";
+import { assetUrl } from "./assetUrl";
 
 export const DESIGN_ID_START = 90001;
 
@@ -17,6 +18,8 @@ export interface DesignPart {
   /** drawn in grey and tinted by the player's chosen colour */
   colorable: boolean;
   colorindex: number;
+  /** a garment with two layers of the same kind (a belt strap and its drape) gives the second one its own part id (default: the design's id) */
+  partId?: string;
 }
 
 export interface DesignMeta {
@@ -134,9 +137,9 @@ function makeLibData(lib: string, frames: Record<string, SheetFrame>): any {
 }
 
 /** Forget everything cached for this design so the next draw uses its current art. */
-export function invalidateDesign(id: string): void {
+export function invalidateDesign(id: string, partIds: string[] = []): void {
   delete imager.offsets[designLib(id)];
-  for (const k of Object.keys(imager.chunks)) if (k.includes(`_${id}_`)) delete imager.chunks[k];
+  for (const k of Object.keys(imager.chunks)) if ([id, ...partIds].some((x) => k.includes(`_${x}_`))) delete imager.chunks[k];
   clearAvatarCache();
 }
 
@@ -152,27 +155,27 @@ export function registerDesign(meta: DesignMeta, loader: LibLoader): void {
     preselectable: false,
     sellable: false,
     legacy: false,
-    part: meta.parts.map((p) => ({ type: p.type, id: Number(meta.id), colorable: p.colorable, index: p.index, colorindex: p.colorindex })),
+    part: meta.parts.map((p) => ({ type: p.type, id: Number(p.partId ?? meta.id), colorable: p.colorable, index: p.index, colorindex: p.colorindex })),
     hidden: meta.hidden ?? [],
   };
   for (const p of meta.parts) {
     imager.figuremap[p.type] ??= {};
-    imager.figuremap[p.type][meta.id] = lib;
+    imager.figuremap[p.type][p.partId ?? meta.id] = lib;
   }
   imager.customLibs[lib] = loader;
   registered.set(meta.id, meta);
-  invalidateDesign(meta.id);
+  invalidateDesign(meta.id, meta.parts.flatMap((p) => (p.partId ? [p.partId] : [])));
 }
 
 export function unregisterDesign(id: string): void {
   const meta = registered.get(id);
   if (meta) {
     delete imager.figuredata?.settype?.[meta.slot]?.set?.[id];
-    for (const p of meta.parts) delete imager.figuremap?.[p.type]?.[id];
+    for (const p of meta.parts) delete imager.figuremap?.[p.type]?.[p.partId ?? id];
   }
   delete imager.customLibs[designLib(id)];
   registered.delete(id);
-  invalidateDesign(id);
+  invalidateDesign(id, (meta?.parts ?? []).flatMap((p) => (p.partId ? [p.partId] : [])));
 }
 
 const sheetCache = new Map<string, Promise<{ data: any; atlas: any }>>();
@@ -203,6 +206,7 @@ function normalizeMeta(id: string, v: any): DesignMeta | null {
   if (!v || typeof v !== "object" || !v.slot || !v.parts) return null;
   const parts: DesignPart[] = (Array.isArray(v.parts) ? v.parts : Object.values(v.parts)).filter(Boolean).map((p: any) => ({
     type: String(p.type), index: Number(p.index ?? 0), colorable: !!p.colorable, colorindex: Number(p.colorindex ?? 0),
+    ...(p.partId ? { partId: String(p.partId) } : {}),
   }));
   const hidden: string[] = v.hidden ? (Array.isArray(v.hidden) ? v.hidden : Object.values(v.hidden)) : [];
   return {
@@ -212,9 +216,36 @@ function normalizeMeta(id: string, v: any): DesignMeta | null {
   };
 }
 
+// ---- garments that ship with the game ---------------------------------------------------------------------------
+// 6ixty's outfit lives in public/designs/bundle.json (made from the Habbo clothing files), so it works without anyone importing it into the
+// database. They are registered with the avatar imager like any design, but only the admin sees them in the catalogue (to dress 6ixty).
+const bundledIds = new Set<string>();
+let adminView = false;
+
+export async function loadBundledDesigns(): Promise<void> {
+  await avatarsReady;
+  try {
+    const res = await fetch(assetUrl("designs/bundle.json"));
+    if (!res.ok) return;
+    const raw = (await res.json()) as { metas: Record<string, any>; sheets: Record<string, DesignSheet> };
+    for (const [id, v] of Object.entries(raw.metas)) {
+      const meta = normalizeMeta(id, { ...v, published: true });
+      const sheet = raw.sheets[id];
+      if (!meta || !sheet) continue;
+      bundledIds.add(id);
+      let loaded: Promise<{ data: any; atlas: any }> | null = null;
+      registerDesign(meta, () => (loaded ??= loadImage(sheet.png).then((atlas) => ({ data: makeLibData(designLib(id), sheet.frames), atlas }))));
+    }
+    syncCatalog();
+    listeners.forEach((l) => l());
+  } catch (err) {
+    console.warn("couldn't load the built-in garments", err);
+  }
+}
+
 /** Puts every registered design into the shop/character catalogue (and applies the admin's prices to them). */
 function syncCatalog(): void {
-  setCustomItems([...registered.values()].map((m) => ({
+  setCustomItems([...registered.values()].filter((m) => !bundledIds.has(m.id) || adminView).map((m) => ({
     slot: m.slot, id: m.id, gender: m.gender, colors: Math.max(0, ...m.parts.map((p) => p.colorindex)),
   })));
   applyClothingConfig(shopConfig.clothing);
@@ -228,7 +259,7 @@ function applyMetas(raw: Record<string, any>, isAdmin: boolean): void {
     if (!meta || (!meta.published && !isAdmin)) continue;
     next.set(id, meta);
   }
-  for (const id of [...registered.keys()]) if (!next.has(id) && !localDrafts.has(id)) unregisterDesign(id);
+  for (const id of [...registered.keys()]) if (!next.has(id) && !localDrafts.has(id) && !bundledIds.has(id)) unregisterDesign(id);
   for (const [id, meta] of next) {
     if (localDrafts.has(id)) continue;
     const cur = registered.get(id);
@@ -241,6 +272,7 @@ function applyMetas(raw: Record<string, any>, isAdmin: boolean): void {
 
 /** Keeps the avatar data in step with the database: players get published designs, the admin gets drafts too. */
 export function watchDesigns(isAdmin: boolean): { ready: Promise<void>; stop: Unsubscribe } {
+  adminView = isAdmin;
   let resolve!: () => void;
   const ready = new Promise<void>((r) => (resolve = r));
   const stop = onValue(
