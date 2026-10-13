@@ -12,7 +12,13 @@ export interface ArcadeGame {
   icon: string;
   blurb: string;
   comingSoon?: boolean;
-  mount(host: HTMLElement, api: { close(): void }): () => void;
+  mount(host: HTMLElement, api: ArcadeApi): () => void;
+}
+
+export interface ArcadeApi {
+  close(): void;
+  /** the player picked up a drop of blood in the game: bank it (resolves false if the hotel refused it) */
+  collectBlood?(): Promise<boolean>;
 }
 
 const soon = (id: string, title: string, icon: string, blurb: string): ArcadeGame => ({
@@ -33,7 +39,7 @@ export function closeArcade(): void {
 }
 
 /** Opens the arcade cabinet UI: game list first, then the chosen game (or straight into `gameId`). Escape closes. */
-export function openArcade(gameId?: string): void {
+export function openArcade(gameId?: string, extra: { collectBlood?: () => Promise<boolean> } = {}): void {
   if (overlay) return;
   let cleanup: (() => void) | null = null;
   const body = h("div", { class: "arcade-body" });
@@ -66,7 +72,7 @@ export function openArcade(gameId?: string): void {
     title.textContent = `${g.icon} ${g.title}`;
     // a machine that is made for one game (the Flappy Bird cabinet) has nothing else on it: no way back to a list
     back.classList.toggle("hidden", !!gameId && g.id === gameId);
-    cleanup = g.mount(body, { close });
+    cleanup = g.mount(body, { close, collectBlood: extra.collectBlood });
   }
   function close(): void {
     stopGame();

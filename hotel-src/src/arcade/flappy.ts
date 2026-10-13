@@ -1,6 +1,7 @@
 import { h } from "../ui/dom";
 import { assetUrl } from "../assetUrl";
 import { sfxMuted } from "../sfx";
+import { BLOOD_ICON } from "../items";
 import type { ArcadeGame } from "./arcade";
 
 /**
@@ -13,7 +14,11 @@ const IMAGES = ["background", "base", "pipe", "message", "gameover", "restart", 
 const SOUNDS = { wing: "sfx_wing", point: "sfx_point", hit: "sfx_hit", die: "sfx_die", swoosh: "sfx_swooshing" } as const;
 const BEST_KEY = "6ixplanet-flappy-best";
 
-interface Pipe { x: number; gap: number; passed: boolean }
+/** every this many pipes there is a DROP_CHANCE chance that a drop of blood hangs in the next gap */
+const DROP_EVERY = 25;
+const DROP_CHANCE = 0.25;
+interface Pipe { x: number; gap: number; passed: boolean; drop?: boolean }
+interface Float { text: string; x: number; y: number; t: number }
 interface State { state: "ready" | "play" | "over"; y: number; v: number; t: number; score: number; best: number; groundX: number; pipes: Pipe[]; flash: number; newBest: boolean }
 
 export const flappy: ArcadeGame = {
@@ -21,10 +26,10 @@ export const flappy: ArcadeGame = {
   title: "Flappy Bird",
   icon: "🐤",
   blurb: "Tap to flap. Don't touch the pipes.",
-  mount(host) {
+  mount(host, api) {
     const canvas = h("canvas", { "aria-label": "Flappy Bird. Tap or press space to flap." });
     const stage = h("div", { class: "fb-stage" }, canvas);
-    host.append(stage, h("div", { class: "hint" }, "Tap, click or press Space to flap."));
+    host.append(stage, h("div", { class: "hint" }, api.collectBlood ? "Tap, click or press Space to flap. Every 25 pipes there may be a drop of blood to catch." : "Tap, click or press Space to flap."));
     const g = canvas.getContext("2d")!;
 
     const img: Record<string, HTMLImageElement> = {};
@@ -43,6 +48,11 @@ export const flappy: ArcadeGame = {
         void fetch(assetUrl(`arcade/flappy/${SOUNDS[name]}.wav`)).then((r) => r.arrayBuffer()).then((a) => actx!.decodeAudioData(a)).then((b) => { bufs[name] = b; play(b); }).catch(() => undefined);
       } catch { /* no audio: the game still plays */ }
     };
+
+    const dropImg = new Image();
+    dropImg.src = BLOOD_ICON;
+    const floats: Float[] = [];
+    let caught = 0;
 
     const bestNow = () => { try { return Number(localStorage.getItem(BEST_KEY)) || 0; } catch { return 0; } };
     let fb: State;
@@ -84,9 +94,29 @@ export const flappy: ArcadeGame = {
       const span = FB.SPACING * fb.pipes.length;
       for (const p of fb.pipes) {
         p.x -= FB.SPEED * dt;
-        if (p.x + FB.PIPE_W < 0) { p.x += span; p.gap = gapY(); p.passed = false; }
-        if (!p.passed && p.x + FB.PIPE_W / 2 <= FB.BX + 17) { p.passed = true; fb.score++; sfx("point", 0.6); }
+        if (p.x + FB.PIPE_W < 0) { p.x += span; p.gap = gapY(); p.passed = false; p.drop = false; }
+        if (!p.passed && p.x + FB.PIPE_W / 2 <= FB.BX + 17) {
+          p.passed = true; fb.score++; sfx("point", 0.6);
+          // every 25th pipe: a one-in-four chance that a drop of blood hangs in the gap of the next pipe
+          if (api.collectBlood && fb.score % DROP_EVERY === 0 && Math.random() < DROP_CHANCE) {
+            const next = fb.pipes.filter((q) => !q.passed && q.x > p.x).sort((a, b) => a.x - b.x)[0];
+            if (next) next.drop = true;
+          }
+        }
       }
+      // pick up a drop: the bird touches it
+      for (const p of fb.pipes) {
+        if (!p.drop) continue;
+        const dx = p.x + FB.PIPE_W / 2 - (FB.BX + 17), dy = p.gap + FB.GAP / 2 - fb.y;
+        if ((dx / 26) ** 2 + (dy / 22) ** 2 <= 1) {
+          p.drop = false;
+          sfx("swoosh", 0.7);
+          floats.push({ text: "+1", x: FB.BX + 17, y: fb.y - 20, t: 0 });
+          void api.collectBlood?.().then((ok) => { if (ok) caught++; else floats.push({ text: "refused", x: FB.BX + 17, y: fb.y - 40, t: 0 }); });
+        }
+      }
+      for (const f of floats) f.t += dt;
+      while (floats.length && floats[0].t > 60) floats.shift();
       // hit a pipe or the ground: the bird is an oval (16 x 11.5 from its middle), pipes reach up past the top of the screen
       const cx = FB.BX + 17, cy = fb.y, rx = 16, ry = 11.5;
       const touches = (x0: number, y0: number, x1: number, y1: number) => {
@@ -136,6 +166,14 @@ export const flappy: ArcadeGame = {
         if (fb.state === "ready") break;
         g.save(); g.translate(p.x + FB.PIPE_W / 2, p.gap); g.scale(1, -1); g.drawImage(img.pipe, -FB.PIPE_W / 2, 0, FB.PIPE_W, ph); g.restore(); // the top pipe, upside down
         g.drawImage(img.pipe, p.x, p.gap + FB.GAP, FB.PIPE_W, ph);
+        if (p.drop && dropImg.complete) {
+          // the drop of blood: bobbing in the middle of the gap with a soft red glow
+          const bob = Math.sin(fb.t / 9) * 4, cx = p.x + FB.PIPE_W / 2, cy = p.gap + FB.GAP / 2 + bob;
+          const glow = g.createRadialGradient(cx, cy, 2, cx, cy, 24);
+          glow.addColorStop(0, "rgba(255,60,60,0.55)"); glow.addColorStop(1, "rgba(255,60,60,0)");
+          g.fillStyle = glow; g.beginPath(); g.arc(cx, cy, 24, 0, Math.PI * 2); g.fill();
+          g.drawImage(dropImg, cx - 14, cy - 14, 28, 28);
+        }
       }
       for (let x = fb.groundX; x < FB.W; x += 335) g.drawImage(img.base, x, FB.GROUND, 336, 112);
       const frame = fb.state === "over" ? 1 : Math.floor(Math.max(0, fb.t) / 6) % 3;
@@ -143,6 +181,14 @@ export const flappy: ArcadeGame = {
       g.save(); g.translate(FB.BX + 17, fb.y); g.rotate(ang); g.drawImage(img["bird-" + frame], -17, -12, 34, 24); g.restore();
       if (fb.state === "ready") g.drawImage(img.message, (FB.W - 184) / 2, 80, 184, 267);
       if (fb.state === "play") digits(fb.score, FB.W / 2, 40, 40);
+      for (const f of floats) {
+        g.save();
+        g.globalAlpha = Math.max(0, 1 - f.t / 60);
+        g.font = '800 22px "Helvetica Neue",Helvetica,Arial,sans-serif'; g.textAlign = "center"; g.textBaseline = "middle";
+        g.lineWidth = 4; g.strokeStyle = "#000"; g.strokeText(f.text, f.x, f.y - f.t * 0.6);
+        g.fillStyle = "#ff4d4d"; g.fillText(f.text, f.x, f.y - f.t * 0.6);
+        g.restore();
+      }
       if (fb.state === "over") {
         g.drawImage(img.gameover, (FB.W - 192) / 2, 86, 192, 42);
         const pw = 176, phh = 136, px = (FB.W - pw) / 2, py = 142;

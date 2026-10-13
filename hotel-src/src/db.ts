@@ -285,6 +285,12 @@ export async function rewardStab(p: Profile, targetUid: string): Promise<void> {
   p.stabs[targetUid] = day;
 }
 
+/** Banks a drop of blood picked up in Flappy Bird. The rules want a gap of at least 20 seconds between drops (25 pipes take longer than that). */
+export async function rewardFlappyDrop(p: Profile): Promise<void> {
+  await update(ref(db, `users/${p.uid}`), { blood: p.blood + 1, flappyAt: serverTimestamp() });
+  p.blood += 1;
+}
+
 /** Banks the syringe's 2 drops. The rules only accept +2, once per UTC day. */
 export async function rewardSyringe(p: Profile): Promise<void> {
   const day = todayStart();

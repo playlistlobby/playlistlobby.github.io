@@ -16,7 +16,7 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { canStab, canUseSyringe, carveCat, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
+import { canStab, canUseSyringe, carveCat, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
 import { SIXTY, SIXTY_LINES, sixtyLook, watchSixtyLook } from "../npc";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
@@ -913,7 +913,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (job.type === "cd") void executeInsert();
       else if (job.type === "bag") ctx.navigate("customize");
       else if (job.type === "dumpster") void searchTheDumpster();
-      else openArcade(f.kind === "flappy" ? "flappy" : undefined);
+      else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
+        collectBlood: async () => {
+          try {
+            await rewardFlappyDrop(me);
+            ctx.refreshHeader();
+            logAction(me, "room", "caught a drop of blood in Flappy Bird (+1)");
+            return true;
+          } catch { return false; }
+        },
+      });
     }
   }
 
