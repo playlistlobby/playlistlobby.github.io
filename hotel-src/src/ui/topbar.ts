@@ -19,13 +19,11 @@ export interface TopBarApi {
 
 /**
  * The iOS 6 navigation bar: logo (and, on phones, the Friends button) on the left, the segmented control
- * the drops-of-blood counter in the middle, the Shop button and a menu (Admin, sounds, log out) on the right. (Character is the bag of clothes in your room.)
+ * the drops-of-blood counter in the middle and a menu (Admin, sounds, log out) on the right. (Character is the bag of clothes in your room; the shop is the white door in the basement, and the wardrobe in it opens the clothing shop.)
  * On phones it wraps into two rows so everything stays tappable.
  */
 export function topBar(o: TopBarOpts): TopBarApi {
-  // the Shop button sits at the right; every other page (Character, Shop, Admin) has its own Go back button, so there is no Room tab
-  const shopBtn = h("button", { class: "barbtn nav-shop", onclick: () => o.onNav("shop") }, "Shop");
-
+  // every page (Character, Shop, Admin) has its own Go back button, so there is no Room tab, and no Shop button any more
   const badge = h("span", { class: "badge hidden", "data-friends-badge": "1" });
   const friendsBtn = h("button", { class: "barbtn nav-friends", title: "Friends", onclick: () => window.dispatchEvent(new CustomEvent("toggle-friends")) }, "👥", badge);
   const coins = h("span", { class: "coins", title: "Drops of blood" });
@@ -52,14 +50,14 @@ export function topBar(o: TopBarOpts): TopBarApi {
     setTimeout(() => window.addEventListener("pointerdown", away), 0);
   } }, "⚙");
 
-  const right = h("div", { class: "nav-right" }, shopBtn, menuBtn);
+  const right = h("div", { class: "nav-right" }, menuBtn);
   const el = h("header", { class: "navbar" },
     h("div", { class: "nav-left" }, friendsBtn, h("div", { class: "nav-logo" }, h("img", { src: BLOOD_ICON, alt: "", class: "blood-ico" }), o.appName)),
     pill, right);
 
   return {
     el,
-    setActive(view) { shopBtn.classList.toggle("on", view === "shop"); closeMenu(); },
+    setActive() { closeMenu(); },
     refreshBlood(blood) {
       coins.replaceChildren(h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "drops of blood" }), ` ${blood}`);
     },
