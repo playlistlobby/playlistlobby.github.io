@@ -1683,11 +1683,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const slot = findSlot(me.inventory, "pill");
     if (slot < 0) return say("You don't have a pill.", "warn");
     try { await consumeSlot(me, slot); } catch { return say("The pill slips out of your fingers. (the hotel refused it)", "warn"); }
-    woozy = true;
     clearSelection();
     panel.refresh();
     logAction(me, "room", "swallowed a pill");
     say("You swallow the pill. Give it a moment…");
+    startWoozy();
+  }
+
+  /** The dizzy-then-pass-out sequence (the pill, and ass weed once it's smoked). */
+  function startWoozy(tries = 0): void {
+    if (disposed || faintUntil || woozy) return;
+    const p = mine();
+    if (!p) { if (tries < 20) window.setTimeout(() => startWoozy(tries + 1), 500); return; } // still walking in
+    if (p.lying) return;
+    woozy = true;
     const buffer = 5000 + Math.random() * 5000;
     const app = document.getElementById("app");
     const t0 = performance.now();
@@ -1757,8 +1766,21 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     me.inventory.forEach((s, i) => {
       const sm = s ? SMOKABLE[s.item] : undefined;
       if (!s || !sm || !s.lit || serverNow() - s.lit < SMOKE_MS) return;
-      // a finished cigarette / joint / blunt: for a while a stab is worth more (ass weed only gives the cigarette bonus)
-      const bonus = s.ass ? SMOKABLE.cigarette : sm;
+      // a finished cigarette / joint / blunt: for a while a stab is worth more (ass weed knocks you out instead)
+      if (s.ass && s.item !== "cigarette") {
+        // ass weed: no boost, it just knocks you out like the pill
+        me.inventory[i] = { item: "cigbutt", qty: 1 };
+        void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 } }).catch(() => undefined);
+        const pl = mine();
+        if (pl) pl.smoke = undefined;
+        void update(myRef, { smoke: null }).catch(() => undefined);
+        panel.refresh();
+        logAction(me, "room", `smoked ass ${s.item}`);
+        say("That was ass weed… it hits you hard. Give it a moment…");
+        startWoozy();
+        return;
+      }
+      const bonus = sm;
       const until = serverNow() + bonus.boostMs;
       me.boostUntil = until;
       me.boostMult = bonus.mult;
