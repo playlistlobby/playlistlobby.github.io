@@ -29,8 +29,10 @@ import {
   defFromMeta,
   FURNI_KINDS,
   INTERACTIVE_KINDS,
-  BED_HEAD,
-  BED_SIDE,
+  BED,
+  BED_ID,
+  bedHead,
+  bedSide,
   fetchMeta,
   footprint,
   isDoorTile,
@@ -53,6 +55,8 @@ import {
 import { loadNitro, nitroIfReady, spritesFor } from "../nitro";
 import { onFurniShopChanged, picksToday, priceOf } from "../furniShop";
 import { FurniBuyApi, openFurniBuy } from "./furniBuy";
+import { FurnishApi, mountFurnishUi } from "./furnish";
+import { canTurn, isFixedPiece, movePiece, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
 import { Box, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { fetchProfile, setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
@@ -206,6 +210,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let extraDoorBoxes: Array<{ box: Box; door: ExtraDoor }> = [];
   let hoverExtra = -1;
   let furniBuyApi: FurniBuyApi | null = null;
+  // the furnishing menu (toolbox): your room without you in it, pieces to drag around, storage
+  let furnishOn = false;
+  let furnishUi: FurnishApi | null = null;
+  let fzSel: string | null = null;
+  let fzPlacing: { kind: string; source: "inv" | "storage"; slot?: number } | null = null;
+  let fzDir = 6;
+  let fzDrag: { id: string; kind: string; grab: Pt; moved: boolean; spot: Spot } | null = null;
+  let furniBoxes: Array<{ id: string; box: Box; depth: number }> = [];
   let doorApi: DoorApi | null = null;
 
   // OSRS-style "use item on ..." state
@@ -328,6 +340,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) blocked.add(`${f.x + i},${f.y + j}`);
     }
   }
+  const bedPiece = () => def.furni.find((f) => f.id === BED_ID) ?? { ...BED, id: BED_ID, kind: "bed" };
+  const headTile = (): Pt => bedHead(bedPiece());
+  const walkable0 = (x: number, y: number) => x >= 0 && y >= 0 && x < def.w && y < def.h && !blocked.has(`${x},${y}`);
+  /** the free tile nearest to a wanted one (the bed's side may have been moved against a wall) */
+  function nearestWalkable(want: Pt): Pt {
+    let best: Pt = want, bd = Infinity;
+    for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) {
+      if (!walkable0(x, y)) continue;
+      const d = Math.hypot(x - want.x, y - want.y);
+      if (d < bd) { bd = d; best = { x, y }; }
+    }
+    return best;
+  }
+  const sideTile = (): Pt => nearestWalkable(bedSide(bedPiece()));
   const walkable = (x: number, y: number) => x >= 0 && y >= 0 && x < def.w && y < def.h && !blocked.has(`${x},${y}`);
 
   /** 8-directional BFS; diagonals can't cut corners. Returns tiles after `start`, [] if unreachable. */
@@ -450,6 +476,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   canvas.addEventListener("mouseleave", () => { hover = null; hoverPlayer = null; hoverObj = null; hoverDoor = false; hoverExtra = -1; updateHint(); });
 
   canvas.addEventListener("click", (e) => {
+    if (furnishOn) return; // the furnishing menu has its own pointer handling
     if (suppressClick) { suppressClick = false; return; }
     if (introUntil && performance.now() < introUntil) return; // still waking up
     const m = mousePos(e);
@@ -485,6 +512,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (target?.npc && target.uid !== me.uid) { clearSelection(); startSixty(); return; }
     const item = selectedDef();
+    if (item?.furniture) {
+      if (!isOwnRoom) { clearSelection(); say("You can only put furniture down in your own room.", "warn"); return; }
+      if (t && selectedSlot !== null) void putDown(t, { kind: item.id, source: "inv", slot: selectedSlot }, toolDir || 6);
+      return;
+    }
     if (item?.useOnPlayer === "stab") {
       if (target && target.uid !== me.uid) startStab(target.uid);
       else if (target) say("You can't stab yourself.", "warn");
@@ -509,7 +541,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (obj.kind === "cdplayer") openCdPopup();
-      else if (obj.kind === "bag" || obj.kind === "wardrobe") startBag(obj.id);
+      else if (obj.kind === "bag" || obj.kind === "wardrobe" || obj.kind === "toolbox") startBag(obj.id);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
       else startArcade(obj.id);
@@ -549,6 +581,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (obj && isDisplayPiece(obj.id)) opts.push({ label: "Buy", target: FURNI_KINDS[obj.kind!].label, action: () => openBuy(obj.kind!) });
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
+    if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
     if (obj?.kind === "cdplayer") {
       if (item?.useOnObject === "cdplayer") opts.push({ label: `Use ${item.name} →`, target: "CD player", action: () => startCd(obj.id) });
@@ -566,6 +599,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   canvas.addEventListener("contextmenu", (e) => {
     e.preventDefault();
+    if (furnishOn) return;
     if (performance.now() - lastLongPress < 900) return; // a touch long-press already opened the menu
     const m = mousePos(e);
     openContextAt(m.x, m.y, e.clientX, e.clientY);
@@ -581,7 +615,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     press = null;
   };
   canvas.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "mouse") return;
+    if (e.pointerType === "mouse" || furnishOn) return;
     const m = mousePos(e);
     const at = { x: m.x, y: m.y, cx: e.clientX, cy: e.clientY };
     press = {
@@ -607,6 +641,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
   const onKey = (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
+    if (furnishOn) { if (fzPlacing) fzPlacing = null; else if (fzSel) fzSel = null; else exitFurnish(); refreshFz(); return; }
     if (selectedSlot !== null) clearSelection();
     closeCdPopup();
     doorApi?.close();
@@ -614,6 +649,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   };
   const onRotateKey = (e: KeyboardEvent) => {
     if (e.key.toLowerCase() !== "r" || e.ctrlKey || e.metaKey || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (furnishOn) { fzTurn(); return; }
+    if (selectedDef()?.furniture) { toolDir = ((toolDir || 6) + 2) % 8; return; }
     rotateTool();
   };
   window.addEventListener("keydown", onKey);
@@ -646,6 +683,184 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
     }
     void placeFurni(def.id, kind, t.x, t.y, k.rotatable ? toolDir : 0).catch(() => say("Couldn't place that.", "warn"));
+  }
+
+  // ---- the furnishing menu -----------------------------------------------------------------------------------
+  const othersOccupy = (): Set<string> => {
+    const s = new Set<string>();
+    for (const p of players.values()) { if (p.uid === me.uid || p.sleeper) continue; const t = currentTile(p); s.add(`${t.x},${t.y}`); }
+    return s;
+  };
+  const fzPiece = () => (fzSel ? def.furni.find((f) => f.id === fzSel) ?? null : null);
+  const refreshFz = () => { furnishUi?.refresh(); panel.refresh(); };
+
+  function enterFurnish(): void {
+    if (!isOwnRoom || furnishOn) return;
+    clearSelection();
+    pending = null;
+    furnishOn = true;
+    fzSel = null; fzPlacing = null; fzDrag = null;
+    canvas.style.cursor = "grab";
+    furnishUi = mountFurnishUi(stage, {
+      profile: me,
+      def: () => def,
+      selected: fzPiece,
+      placing: () => fzPlacing,
+      done: exitFurnish,
+      turn: fzTurn,
+      store: () => { const f = fzPiece(); if (f) void storeFromRoom(me, def.id, f).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
+      startPlacing: (source, kind, slot) => { fzPlacing = { kind, source, slot }; fzDir = 6; fzSel = null; refreshFz(); },
+      cancelPlacing: () => { fzPlacing = null; refreshFz(); },
+      storeFromInventory: (slot) => void storeFromInventory(me, slot).then(refreshFz, (err) => say((err as Error).message, "warn")),
+      takeFromStorage: (kind) => void takeFromStorage(me, kind).then(refreshFz, (err) => say((err as Error).message, "warn")),
+    });
+  }
+
+  function exitFurnish(): void {
+    if (!furnishOn) return;
+    furnishOn = false;
+    fzSel = null; fzPlacing = null; fzDrag = null;
+    furnishUi?.dispose();
+    furnishUi = null;
+    canvas.style.cursor = "pointer";
+    // a piece may now stand where you were: step to the nearest free tile
+    const p = mine();
+    if (p && blocked.has(`${currentTile(p).x},${currentTile(p).y}`)) {
+      const to = nearestWalkable(currentTile(p));
+      p.from = p.to = p.dest = to; p.path = [];
+      update(myRef, { x: to.x, y: to.y }).catch(() => undefined);
+    }
+    updateHint();
+  }
+
+  /** The tile a piece's origin goes on when the pointer is on tile t: the pointer is in the middle of its footprint. */
+  const originFor = (kind: string, dir: number, t: Pt): Pt => {
+    const fp = footprint(kind, dir);
+    return { x: t.x - Math.floor((fp.w - 1) / 2), y: t.y - Math.floor((fp.h - 1) / 2) };
+  };
+
+  async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage"; slot?: number }, dir: number): Promise<void> {
+    const o = originFor(what.kind, dir, t);
+    const spot: Spot = { x: o.x, y: o.y, dir: FURNI_KINDS[what.kind].rotatable ? dir : 0 };
+    if (placedCount(def) >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
+    const why = whyNot(def, what.kind, spot, null, othersOccupy());
+    if (why) return say(why, "warn");
+    try {
+      if (what.source === "inv") await placeFromInventory(me, def.id, what.slot!, spot);
+      else await placeFromStorage(me, def.id, what.kind, spot);
+      playSfx("select", 0.4);
+      if (!furnishOn) clearSelection();
+      fzPlacing = null;
+      refreshFz();
+    } catch (err) {
+      say((err as Error).message || "Couldn't put that down.", "warn");
+    }
+  }
+
+  function fzTurn(): void {
+    if (fzPlacing) { fzDir = (fzDir + 2) % 8; return; }
+    const f = fzPiece();
+    if (!f || !canTurn(f)) return;
+    const dir = ((f.dir ?? 0) + 2) % 8;
+    // turning swaps the footprint: slide it back inside the room if it now sticks out
+    const fp = footprint(f.kind, dir);
+    const spot: Spot = { x: Math.min(f.x, def.w - fp.w), y: Math.min(f.y, def.h - fp.h), dir };
+    const why = whyNot(def, f.kind, spot, f.id, othersOccupy());
+    if (why) return say(why, "warn");
+    void movePiece(def.id, f, spot).catch(() => say("Couldn't turn that.", "warn"));
+  }
+
+  const pieceAtPointer = (m: Pt, t: Pt | null) => {
+    let best: { id: string; depth: number } | null = null;
+    for (const b of furniBoxes) if (m.x >= b.box.x0 && m.x <= b.box.x1 && m.y >= b.box.y0 && m.y <= b.box.y1 && (!best || b.depth > best.depth)) best = b;
+    return best ? def.furni.find((f) => f.id === best!.id) ?? null : t ? furniAtTile(t) ?? null : null;
+  };
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!furnishOn || (e.pointerType === "mouse" && e.button !== 0)) return;
+    const m = mousePos(e);
+    const t = tileAt(m.x, m.y);
+    hover = t;
+    if (fzPlacing) { if (t) void putDown(t, fzPlacing, fzDir); return; }
+    const f = pieceAtPointer(m, t);
+    if (!f) { fzSel = null; furnishUi?.refresh(); return; }
+    fzSel = f.id;
+    fzDrag = { id: f.id, kind: f.kind, grab: t ? { x: t.x - f.x, y: t.y - f.y } : { x: 0, y: 0 }, moved: false, spot: { x: f.x, y: f.y, dir: f.dir ?? 0 } };
+    canvas.setPointerCapture?.(e.pointerId);
+    furnishUi?.refresh();
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!furnishOn) return;
+    const t = tileAt(mousePos(e).x, mousePos(e).y);
+    hover = t;
+    if (fzDrag && t) {
+      const spot: Spot = { x: t.x - fzDrag.grab.x, y: t.y - fzDrag.grab.y, dir: fzDrag.spot.dir };
+      if (spot.x !== fzDrag.spot.x || spot.y !== fzDrag.spot.y) { fzDrag.spot = spot; fzDrag.moved = true; canvas.style.cursor = "grabbing"; }
+    }
+  });
+  const fzRelease = () => {
+    if (!furnishOn || !fzDrag) return;
+    const d = fzDrag;
+    fzDrag = null;
+    canvas.style.cursor = "grab";
+    const f = def.furni.find((x) => x.id === d.id);
+    if (!f || !d.moved) return;
+    const why = whyNot(def, f.kind, d.spot, f.id, othersOccupy());
+    if (why) return say(why, "warn");
+    void movePiece(def.id, f, d.spot).catch(() => say("Couldn't move that.", "warn"));
+  };
+  canvas.addEventListener("pointerup", fzRelease);
+  canvas.addEventListener("pointercancel", () => { fzDrag = null; });
+
+  /** Floor grid, the selected piece's outline and the ghost of what you're dragging or about to put down. */
+  function drawFurnishOverlay(): void {
+    const diamond = (x: number, y: number, fill: string | null, stroke: string | null) => {
+      const p = toScreen(iso(x, y));
+      g.beginPath();
+      g.moveTo(p.x, p.y);
+      g.lineTo(p.x + (TILE_W / 2) * scale, p.y + (TILE_H / 2) * scale);
+      g.lineTo(p.x, p.y + TILE_H * scale);
+      g.lineTo(p.x - (TILE_W / 2) * scale, p.y + (TILE_H / 2) * scale);
+      g.closePath();
+      if (fill) { g.fillStyle = fill; g.fill(); }
+      if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); }
+    };
+    for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) diamond(x, y, null, "rgba(255,255,255,0.22)");
+    const sel = fzPiece();
+    if (sel && !fzDrag?.moved) {
+      const fp = footprint(sel.kind, sel.dir);
+      for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) diamond(sel.x + i, sel.y + j, "rgba(255,226,90,0.28)", "rgba(255,226,90,0.9)");
+    }
+    const ghost = (kind: string, spot: Spot, ignore: string | null) => {
+      const ok = !whyNot(def, kind, spot, ignore, othersOccupy());
+      const fp = footprint(kind, spot.dir);
+      for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) diamond(spot.x + i, spot.y + j, ok ? "rgba(80,220,120,0.45)" : "rgba(230,70,70,0.45)", null);
+      if (FURNI_KINDS[kind].nitro) drawNitroFurni(g, kind, spot.x, spot.y, spot.dir, toScreen, scale, 0.6);
+    };
+    if (fzDrag?.moved) ghost(fzDrag.kind, fzDrag.spot, fzDrag.id);
+    else if (fzPlacing && hover) { const o = originFor(fzPlacing.kind, fzDir, hover); ghost(fzPlacing.kind, { x: o.x, y: o.y, dir: fzDir }, null); }
+  }
+
+  /** The ghost for a furniture item you've selected in your pocket (outside the furnishing menu). */
+  function drawCarryGhost(): void {
+    const item = selectedDef();
+    if (furnishOn || !item?.furniture || !isOwnRoom || !hover) return;
+    const o = originFor(item.id, toolDir || 6, hover);
+    const spot: Spot = { x: o.x, y: o.y, dir: toolDir || 6 };
+    const ok = !whyNot(def, item.id, spot, null, othersOccupy());
+    const fp = footprint(item.id, spot.dir);
+    for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) {
+      const p = toScreen(iso(spot.x + i, spot.y + j));
+      g.beginPath();
+      g.moveTo(p.x, p.y);
+      g.lineTo(p.x + (TILE_W / 2) * scale, p.y + (TILE_H / 2) * scale);
+      g.lineTo(p.x, p.y + TILE_H * scale);
+      g.lineTo(p.x - (TILE_W / 2) * scale, p.y + (TILE_H / 2) * scale);
+      g.closePath();
+      g.fillStyle = ok ? "rgba(80,220,120,0.45)" : "rgba(230,70,70,0.45)";
+      g.fill();
+    }
+    if (FURNI_KINDS[item.id].nitro) drawNitroFurni(g, item.id, spot.x, spot.y, spot.dir, toScreen, scale, 0.6);
   }
 
   // ---- players -------------------------------------------------------------------
@@ -949,7 +1164,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       p.dir = dirOf(me0, face);
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
       if (job.type === "cd") void executeInsert();
-      else if (job.type === "bag") ctx.navigate(FURNI_KINDS[f.kind].opens === "shop" ? "shop" : "customize");
+      else if (job.type === "bag") {
+        const opens = FURNI_KINDS[f.kind].opens;
+        if (opens === "furnish") enterFurnish();
+        else ctx.navigate(opens === "shop" ? "shop" : "customize");
+      }
       else if (job.type === "dumpster") void searchTheDumpster();
       else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
         collectBlood: async () => {
@@ -1257,7 +1476,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = opts.arrival === "bed" && isOwnRoom ? BED_SIDE : { x: back ? back.x : def.doorX, y: 1 };
+    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -1304,7 +1523,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (disposed || token !== sleeperToken || !pp) return;
       const now = players.get(owner);
       if ((now && !now.sleeper) || social.isOnline(owner)) return;
-      const sl = makePlayer(owner, { name: pp.name, figure: pp.figure, x: BED_HEAD.x, y: BED_HEAD.y, dir: 2 });
+      const sl = makePlayer(owner, { name: pp.name, figure: pp.figure, x: headTile().x, y: headTile().y, dir: 2 });
       sl.lying = true;
       sl.sleeper = true;
       players.set(owner, sl);
@@ -1323,7 +1542,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (opts.intro && isOwnRoom) {
       // first wake-up: start under the covers (drawn lying on the bed), get up when the eyes have opened
       mineP.lying = true;
-      mineP.from = mineP.to = mineP.dest = { ...BED_HEAD };
+      mineP.from = mineP.to = mineP.dest = { ...headTile() };
       introUntil = performance.now() + WAKE_MS;
       const fade = h("div", { class: "wake-fade" });
       stage.append(fade);
@@ -1623,6 +1842,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       g.fillStyle = "#3b7de2";
       const b2 = P(0.64, 0.6);
       g.beginPath(); g.arc(b2.x, b2.y, 3 * scale, 0, Math.PI * 2); g.fill();
+    } else if (f.kind === "toolbox") {
+      // a red metal toolbox: a dark lid line, a handle on top and a latch on the front
+      const c = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };
+      g.lineCap = "round";
+      g.strokeStyle = "#2a2a2a"; g.lineWidth = 2.2 * scale;
+      g.beginPath(); g.moveTo(c.x - 7 * scale, c.y + 1 * scale); g.quadraticCurveTo(c.x, c.y - 9 * scale, c.x + 7 * scale, c.y + 1 * scale); g.stroke();
+      const P = (u: number, v: number): Pt => ({ x: D.x + (C.x - D.x) * u, y: D.y + (C.y - D.y) * u + k.height * scale * v });
+      const l0 = P(0.04, 0.38), l1 = P(0.96, 0.38);
+      g.strokeStyle = "rgba(0,0,0,0.45)"; g.lineWidth = 1.4 * scale;
+      g.beginPath(); g.moveTo(l0.x, l0.y); g.lineTo(l1.x, l1.y); g.stroke();
+      const latch = P(0.5, 0.38);
+      g.fillStyle = "#d9d9d9"; g.fillRect(latch.x - 2.2 * scale, latch.y - 2 * scale, 4.4 * scale, 5 * scale);
     } else if (f.kind === "lamp") {
       const c = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };
       const grad = g.createRadialGradient(c.x, c.y, 2, c.x, c.y, 34 * scale);
@@ -2009,7 +2240,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (introUntil && performance.now() >= introUntil) {
       // eyes open: get out of bed and stand next to it
       const mp = mine();
-      if (mp) { mp.lying = false; mp.from = mp.to = mp.dest = { ...BED_SIDE }; mp.dir = 2; }
+      if (mp) { mp.lying = false; mp.from = mp.to = mp.dest = { ...sideTile() }; mp.dir = 2; }
       introUntil = 0;
     }
     // until you've opened the door once, it flashes to show you where to go
@@ -2037,12 +2268,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       g.stroke();
     }
     drawGhost();
+    if (furnishOn) drawFurnishOverlay(); else drawCarryGhost();
 
     type Drawable = { depth: number; draw: () => void };
     const list: Drawable[] = [];
     const boxes: Hitbox[] = [];
     const objs: Hitbox[] = [];
     const bubbles: Array<() => void> = [];
+    const pieceBoxes: Array<{ id: string; box: Box; depth: number }> = [];
 
     for (const f of def.furni) {
       list.push({
@@ -2052,6 +2285,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           : f.x + footprint(f.kind, f.dir).w + f.y + footprint(f.kind, f.dir).h - 1,
         draw: () => {
           const box = drawFurni(f, now);
+          if (box && furnishOn) pieceBoxes.push({ id: f.id, box, depth: box.depth });
           // the bag of clothes can be clicked in your own room only
           if (box && (INTERACTIVE_KINDS.has(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop")) || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
@@ -2094,7 +2328,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
     }
 
+    furniBoxes = pieceBoxes;
     for (const p of players.values()) {
+      if (furnishOn) break; // the furnishing menu shows the room, not the people in it
       if (p.lying) {
         // asleep (or just waking up): drawn lying on the bed
         const lopts = { figure: p.figure, dir: 2, actions: ["lay"] };
@@ -2108,9 +2344,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const lw = (limg?.width ?? 110) * scale;
         const lh = (limg?.height ?? 64) * scale;
         // clickable area = just the sleeping body (the picture itself has a lot of empty padding around it)
-        boxes.push({ id: p.uid, x0: ax + 78 * scale, x1: ax + 154 * scale, y0: ay + 48 * scale, y1: ay + 90 * scale, depth: BED_HEAD.x + BED_HEAD.y + 3 });
+        boxes.push({ id: p.uid, x0: ax + 78 * scale, x1: ax + 154 * scale, y0: ay + 48 * scale, y1: ay + 90 * scale, depth: headTile().x + headTile().y + 3 });
         list.push({
-          depth: BED_HEAD.x + 3 - 1 + BED_HEAD.y + 0.6, // just after the bed itself
+          depth: headTile().x + 3 - 1 + headTile().y + 0.6, // just after the bed itself
           draw: () => {
             if (limg) {
               g.drawImage(limg, ax, ay, lw, lh);
@@ -2257,6 +2493,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     endPress();
     doorApi?.close();
     furniBuyApi?.close();
+    furnishUi?.dispose();
     closeCdPopup();
     cdAudio.stop(); // leaving the lobby = you can't hear the CD player any more (your CD stays in it until it ends)
     if (unblockHandler) window.removeEventListener("pointerdown", unblockHandler);
@@ -2282,6 +2519,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (roomId === LOBBY_ID) setAmbience(false);
       sixtyShop?.close();
       furniBuyApi?.close();
+      exitFurnish();
       closeCdPopup();
       closeMenu();
       doorApi?.close();

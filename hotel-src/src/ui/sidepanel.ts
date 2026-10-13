@@ -85,7 +85,8 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   function selectedHint(): string {
     const it = selected !== null ? profile.inventory[selected] : null;
     if (!it) return "Knife: click it, then a player (or a dead cat). CD: click it, then the CD player. Syringe: just click it.";
-    return itemDef(it.item)?.useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
+    const d = itemDef(it.item);
+    return d?.furniture ? "Now click a free spot in your room to put it down (R turns it)." : d?.useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
   }
 
   function renderInventory(): void {
@@ -117,8 +118,8 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           showMenu(e.clientX, e.clientY, [
             ...(loaned ? [] : def.useSelf
               ? [{ label: def.useSelf === "smoke" ? "Light up" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!) }]
-              : def.droppable ? [] : def.useOnObject || def.useOnPlayer
-              ? [{ label: selected === i ? "Cancel use" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
+              : def.droppable ? [] : def.useOnObject || def.useOnPlayer || def.furniture
+              ? [{ label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
               : []),
             ...(def.carvable && findSlot(profile.inventory, "knife") >= 0 ? [{ label: "Use knife", target: def.name, action: () => opts.onCarve(i) }] : []),
             ...(def.droppable ? [{ label: "Drop", target: def.name, action: () => {

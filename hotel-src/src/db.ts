@@ -33,6 +33,8 @@ export interface Profile {
   dumpsterAt: number;
   /** how many dead cats this player has cut open (the database rules count them to allow the +5) */
   catsCarved: number;
+  /** furniture kept in the toolbox's storage: kind -> how many */
+  storage: Record<string, number>;
 }
 
 export const SIXTY_GIFT_DELAY_MS = 12 * 3_600_000;
@@ -83,7 +85,7 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
-  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsterAt: 0, catsCarved: 0 };
+  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsterAt: 0, catsCarved: 0, storage: {} };
   // figure "" marks a player who hasn't been through the customizer yet.
   await set(ref(db, `users/${uid}`), {
     name,
@@ -115,6 +117,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     seenDoor: !!v.seenDoor,
     dumpsterAt: Number(v.dumpsterAt) || 0,
     catsCarved: Number(v.catsCarved) || 0,
+    storage: Object.fromEntries(Object.entries((v.storage ?? {}) as Record<string, number>).filter(([, n]) => Number(n) > 0).map(([k, n]) => [k, Number(n)])),
     // accounts from before 6ixty already have their knife and syringe: they skip his introduction
     sixty: v.sixty
       ? { knifeAt: Number(v.sixty.knifeAt) || 0, syringeGiven: !!v.sixty.syringeGiven }

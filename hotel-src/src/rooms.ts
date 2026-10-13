@@ -38,7 +38,7 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop";
+  opens?: "character" | "shop" | "furnish";
   /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
   seat?: boolean;
   /** lies flat on the floor: you can walk over it and it's drawn underneath everyone */
@@ -77,6 +77,8 @@ const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECE
 
 export const FURNI_KINDS: Record<string, FurniKind> = {
   ...shopKinds(),
+  // the toolbox in every player room: click it and the furnishing menu opens (a plain painted box, no art file)
+  toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish" },
   // the wardrobe in the shop room: click it and the clothing shop opens
   wardrobe: { id: "wardrobe", label: "Wardrobe", icon: "🚪", w: 2, h: 1, height: 90, color: "#6b5a48", placeable: false, nitro: "furni/uni_wardrobe.nitro", rotatable: true, fixed: true, opens: "shop" },
   arcade: { id: "arcade", label: "Arcade machine", icon: "🕹️", w: 1, h: 1, height: 78, color: "#26327a", placeable: false },
@@ -211,7 +213,7 @@ export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
 /** The shop: a clean white room with the wardrobe on the back wall and today's pieces on display. */
 export function shopDef(picks: string[]): RoomDef {
   const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }];
-  picks.slice(0, 4).forEach((kind, i) => { if (FURNI_KINDS[kind]) furni.push({ id: DISPLAY_PREFIX + i, kind, x: SHOP_SLOTS[i].x, y: SHOP_SLOTS[i].y, dir: 4 }); });
+  picks.slice(0, 4).forEach((kind, i) => { if (FURNI_KINDS[kind]) furni.push({ id: DISPLAY_PREFIX + i, kind, x: SHOP_SLOTS[i].x, y: SHOP_SLOTS[i].y, dir: 6 }); });
   return {
     id: SHOP_ID, name: "Shop", ownerUid: null, ownerName: null, access: "open", w: 8, h: 8,
     theme: { floorA: "#e6e2d8", floorB: "#efece4", wall: "#f3f3f3", rug: false, rugColor: "#000000" },
@@ -220,7 +222,7 @@ export function shopDef(picks: string[]): RoomDef {
 }
 
 /** The built-in lobby pieces can't be picked up; the ones the admin added can. */
-export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id.startsWith("shop_");
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id.startsWith("shop_");
 
 export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
   return onValue(ref(db, "lobby/furni"), (s) => {
@@ -236,6 +238,9 @@ export const BED = { x: 3, y: 0, dir: 2 };
 /** The bag of clothes sits in the far right corner, next to the bed. */
 export const BAG_ID = "bag";
 export const BAG = { x: 7, y: 0, dir: 2 };
+/** The toolbox starts between the bed and the bag. */
+export const TOOLBOX_ID = "toolbox";
+export const TOOLBOX = { x: 6, y: 0, dir: 0 };
 /** The tile you stand on when you get out of bed (and where you start every login). */
 export const BED_SIDE = { x: 4, y: 1 };
 /** The tile the sleeper's head is on (the end of the bed by the pillow). */
@@ -250,7 +255,15 @@ export interface RoomMeta {
   h: number;
   theme?: Partial<RoomTheme>;
   furni?: Record<string, { kind: string; x: number; y: number; dir?: number }>;
+  /** where the owner moved the fixed pieces to (the bed can't be turned, so only its x/y count) */
+  bed?: { x: number; y: number; dir?: number };
+  bag?: { x: number; y: number; dir?: number };
+  toolbox?: { x: number; y: number; dir?: number };
 }
+
+/** The tile the sleeper's head is on (the pillow end of the bed), and the tile beside the bed you step out onto. */
+export const bedHead = (bed: { x: number; y: number }) => ({ x: bed.x, y: bed.y });
+export const bedSide = (bed: { x: number; y: number }) => ({ x: bed.x + 1, y: bed.y + 1 });
 
 export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   const theme: RoomTheme = { ...DEFAULT_THEME, ...(meta.theme ?? {}) };
@@ -258,7 +271,9 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
     .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir }));
-  furni.unshift({ id: BED_ID, kind: "bed", x: BED.x, y: BED.y, dir: BED.dir }, { id: BAG_ID, kind: "bag", x: BAG.x, y: BAG.y, dir: BAG.dir });
+  const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
+  const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX);
+  furni.unshift({ id: BED_ID, kind: "bed", x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: "bag", x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir });
   const rug: RugRect | null = theme.rug
     ? { x0: Math.floor((ROOM_W - 4) / 2), y0: Math.floor((ROOM_H - 4) / 2), w: 4, h: 4 }
     : null;

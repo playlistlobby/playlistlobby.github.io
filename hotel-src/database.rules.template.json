@@ -21,6 +21,9 @@
         "flappyAt": {
           ".validate": "newData.isNumber() && newData.val() === now && (!data.exists() || data.val() <= now - 20000)"
         },
+        "storage": {
+          "$kind": { ".validate": "$kind.matches(/^[fx]_[a-z0-9_]{1,30}$/) && newData.isNumber() && newData.val() >= 1 && newData.val() <= 99" }
+        },
         "dumpsterAt": {
           ".validate": "newData.isNumber() && newData.val() === now && (!data.exists() || data.val() <= now - 10800000)"
         },
@@ -296,10 +299,13 @@
           "wallTex": { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9_]{1,24}$/)" },
           "$other": { ".validate": false }
         },
+        "bed": { "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8" }, "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8" }, "dir": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6" }, "$other": { ".validate": false } },
+        "bag": { "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8" }, "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8" }, "dir": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6" }, "$other": { ".validate": false } },
+        "toolbox": { "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8" }, "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8" }, "dir": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6" }, "$other": { ".validate": false } },
         "furni": {
           "$f": {
             ".validate": "newData.hasChildren(['kind', 'x', 'y'])",
-            "kind": { ".validate": "newData.val() === 'crate' || newData.val() === 'table' || newData.val() === 'sofa' || newData.val() === 'plant' || newData.val() === 'lamp' || newData.val() === 'shelf' || root.child('furni').child('meta').child(newData.val()).child('players').val() === true" },
+            "kind": { ".validate": "newData.val() === 'crate' || newData.val() === 'table' || newData.val() === 'sofa' || newData.val() === 'plant' || newData.val() === 'lamp' || newData.val() === 'shelf' || newData.val().matches(/^f_[a-z0-9_]{1,30}$/) || root.child('furni').child('meta').child(newData.val()).child('players').val() === true" },
             "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16" },
             "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16" },
             "dir": { ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6" },
