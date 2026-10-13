@@ -20,7 +20,7 @@ import { canStab, canUseSyringe, carveCat, rewardFlappyDrop, CAT_BLOOD, dumpster
 import { SIXTY, SIXTY_LINES, sixtyLook, watchSixtyLook } from "../npc";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
-import { BLOOD_ICON, findSlot, ITEMS, SMOKE_MS } from "../items";
+import { BLOOD_ICON, findSlot, itemDef, ITEMS, SMOKE_MS } from "../items";
 import { CdAudio, CdState, cdEnded, clearCdPlayer, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
@@ -42,10 +42,17 @@ import {
   placeFurni,
   removeFurni,
   RoomDef,
+  ExtraDoor,
+  isDisplayPiece,
+  isPublicRoom,
+  SHOP_ID,
+  shopDef,
   watchLobbyFurni,
   watchMeta,
 } from "../rooms";
 import { loadNitro, nitroIfReady, spritesFor } from "../nitro";
+import { onFurniShopChanged, picksToday, priceOf } from "../furniShop";
+import { FurniBuyApi, openFurniBuy } from "./furniBuy";
 import { Box, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { fetchProfile, setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
@@ -112,7 +119,7 @@ interface NoteFx { born: number; life: number; glyph: string; ox: number; phase:
 
 type Pending =
   | { type: "stab"; uid: string; since: number; lastTry: number }
-  | { type: "door"; since: number; lastTry: number }
+  | { type: "door"; since: number; lastTry: number; to?: ExtraDoor }
   | { type: "sixty"; since: number; lastTry: number; auto?: boolean }
   | { type: "arcade" | "cd" | "bag" | "dumpster"; fid: string; since: number; lastTry: number };
 
@@ -163,6 +170,8 @@ export interface RoomOpts {
   arrival?: "door" | "bed";
   /** play the first-time wake-up: lying in bed, eyes opening, then getting up */
   intro?: boolean;
+  /** the room you walked in from (you appear in front of the door that leads back to it) */
+  from?: string;
 }
 
 const WAKE_MS = 2300;
@@ -194,6 +203,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let hoverObj: Hitbox | null = null;
   let hoverDoor = false;
   let doorBox: Box | null = null;
+  let extraDoorBoxes: Array<{ box: Box; door: ExtraDoor }> = [];
+  let hoverExtra = -1;
+  let furniBuyApi: FurniBuyApi | null = null;
   let doorApi: DoorApi | null = null;
 
   // OSRS-style "use item on ..." state
@@ -267,7 +279,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     onEmote: (id) => performEmote(id),
     onCarve: (slot) => { void carveDeadCat(slot); },
     onUseSelf: (what) => { if (what === "syringe") void useSyringe(); else void useCigarette(); },
-    roomTab: roomId === LOBBY_ID && !me.isAdmin ? undefined : {
+    roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
       icon: "🏠",
       title: "Room",
       mount: (container) => mountRoomPanel(container, ctx, {
@@ -283,7 +295,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   });
   const defListeners = new Set<() => void>();
 
-  const selectedDef = () => (selectedSlot !== null && me.inventory[selectedSlot] ? ITEMS[me.inventory[selectedSlot]!.item] : null);
+  const selectedDef = () => (selectedSlot !== null && me.inventory[selectedSlot] ? itemDef(me.inventory[selectedSlot]!.item) ?? null : null);
 
   function updateHint(): void {
     const item = selectedDef();
@@ -293,8 +305,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
+    else if (hoverObj && isDisplayPiece(hoverObj.id)) text = `${FURNI_KINDS[hoverObj.kind!].label} · ${priceOf(hoverObj.kind!)} drops (click to buy)`;
+    else if (hoverObj && hoverObj.kind === "wardrobe") text = "Wardrobe: the clothing shop";
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
-    else if (hoverDoor) text = isOwnRoom ? "Door: to the basement" : "Door: rooms";
+    else if (hoverExtra >= 0 && def.extraDoors?.[hoverExtra]) text = `Door: ${def.extraDoors[hoverExtra].label}`;
+    else if (hoverDoor) text = isOwnRoom ? "Door: to the basement" : def.doorTo ? "Door: back to the basement" : "Door: rooms";
     actionHint.textContent = text;
     actionHint.classList.toggle("hidden", !text);
     canvas.style.cursor = item || tool ? "crosshair" : "pointer";
@@ -304,6 +319,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function rebuildBlocked(): void {
     blocked.clear();
     blocked.add(`${def.doorX},0`); // the door itself stands on this tile; you use it from beside or in front of it
+    for (const d of def.extraDoors ?? []) blocked.add(`${d.x},0`);
     if (roomId === LOBBY_ID) blocked.add(`${SIXTY.x},${SIXTY.y}`); // 6ixty stands in the basement
     for (const f of def.furni) {
       const k = FURNI_KINDS[f.kind];
@@ -422,14 +438,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const hp = playerAt(m.x, m.y);
     const ho = hp ? null : pick(objBoxes, m.x, m.y);
     const hd = !hp && !ho && inBox(m, doorBox);
-    if (hp !== hoverPlayer || ho?.id !== hoverObj?.id || hd !== hoverDoor) {
+    const he = !hp && !ho && !hd ? extraDoorBoxes.findIndex((e) => inBox(m, e.box)) : -1;
+    if (hp !== hoverPlayer || ho?.id !== hoverObj?.id || hd !== hoverDoor || he !== hoverExtra) {
       hoverPlayer = hp;
       hoverObj = ho;
       hoverDoor = hd;
+      hoverExtra = he;
       updateHint();
     }
   });
-  canvas.addEventListener("mouseleave", () => { hover = null; hoverPlayer = null; hoverObj = null; hoverDoor = false; updateHint(); });
+  canvas.addEventListener("mouseleave", () => { hover = null; hoverPlayer = null; hoverObj = null; hoverDoor = false; hoverExtra = -1; updateHint(); });
 
   canvas.addEventListener("click", (e) => {
     if (suppressClick) { suppressClick = false; return; }
@@ -451,11 +469,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     const obj = pick(objBoxes, m.x, m.y);
 
+    // one of today's pieces in the shop room: a window asks Buy or Cancel
+    if (!target && obj && isDisplayPiece(obj.id)) { clearSelection(); openBuy(obj.kind!); return; }
+
     // the door (on the wall behind everything, so players and furniture win clicks that overlap it)
     if (!target && !obj && inBox(m, doorBox)) {
       clearSelection();
       startDoor();
       return;
+    }
+    if (!target && !obj) {
+      const ed = extraDoorBoxes.find((e) => inBox(m, e.box));
+      if (ed) { clearSelection(); pending = { type: "door", since: performance.now(), lastTry: 0, to: ed.door }; return; }
     }
 
     if (target?.npc && target.uid !== me.uid) { clearSelection(); startSixty(); return; }
@@ -484,7 +509,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (obj.kind === "cdplayer") openCdPopup();
-      else if (obj.kind === "bag") startBag(obj.id);
+      else if (obj.kind === "bag" || obj.kind === "wardrobe") startBag(obj.id);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
       else startArcade(obj.id);
@@ -522,6 +547,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       opts.push({ label: "Search", target: "Dumpster", action: () => startDumpster(obj.id) });
       opts.push({ label: "Examine", target: "Dumpster", action: () => say("An alley dumpster. It stinks. Somebody has to look inside, and it can be you every three hours.") });
     }
+    if (obj && isDisplayPiece(obj.id)) opts.push({ label: "Buy", target: FURNI_KINDS[obj.kind!].label, action: () => openBuy(obj.kind!) });
+    if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
     if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
     if (obj?.kind === "cdplayer") {
       if (item?.useOnObject === "cdplayer") opts.push({ label: `Use ${item.name} →`, target: "CD player", action: () => startCd(obj.id) });
@@ -780,9 +807,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     pending = { type: "bag", fid, since: performance.now(), lastTry: 0 };
   }
 
+  function openBuy(kind: string): void {
+    furniBuyApi?.close();
+    furniBuyApi = openFurniBuy(stage, ctx, kind, () => panel.refresh(), () => { furniBuyApi = null; });
+  }
+
   function startDoor(): void {
     if (doorApi) return;
-    if (isOwnRoom) {
+    if (isOwnRoom || def.doorTo) {
       // your own room's door is simple: it leads to the basement, no menu. Your avatar walks to the door first (processPending sends you down on arrival).
       pending = { type: "door", since: performance.now(), lastTry: 0 };
       return;
@@ -853,19 +885,25 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (p.path.length || isMoving(p, now)) return;
 
     if (pending.type === "door") {
-      const goal = { x: def.doorX, y: 0 };
+      const to = pending.to;
+      const goal = { x: to ? to.x : def.doorX, y: 0 };
       const r = approach(p, goal, now, pending);
       if (r === "unreachable") { pending = null; return say("You can't get to the door.", "warn"); }
       if (r === "arrived") {
         pending = null;
         p.dir = 0; // face the wall the door is in
         update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
-        if (isOwnRoom) {
-          // arrived at your own room's door: down to the basement
+        if (to) {
+          // one of the extra doors (the white one to the shop)
           playSfx("doorOpen", 0.6);
-          if (!me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); }
+          logAction(me, "visit", `went to the ${to.label.toLowerCase()}`);
+          ctx.navigate("room", { roomId: to.to, from: roomId });
+        } else if (isOwnRoom || def.doorTo) {
+          // arrived at your own room's door (down to the basement) or the shop's door (back to the basement)
+          playSfx("doorOpen", 0.6);
+          if (isOwnRoom && !me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); }
           logAction(me, "visit", "went to the basement");
-          ctx.navigate("room", { roomId: LOBBY_ID });
+          ctx.navigate("room", { roomId: def.doorTo ?? LOBBY_ID, from: roomId });
         }
       }
       return;
@@ -911,7 +949,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       p.dir = dirOf(me0, face);
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
       if (job.type === "cd") void executeInsert();
-      else if (job.type === "bag") ctx.navigate("customize");
+      else if (job.type === "bag") ctx.navigate(FURNI_KINDS[f.kind].opens === "shop" ? "shop" : "customize");
       else if (job.type === "dumpster") void searchTheDumpster();
       else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
         collectBlood: async () => {
@@ -1218,7 +1256,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- start: presence, players, chat, events ---------------------------------------
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
-    const want = opts.arrival === "bed" && isOwnRoom ? BED_SIDE : { x: def.doorX, y: 1 };
+    const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
+    const want = opts.arrival === "bed" && isOwnRoom ? BED_SIDE : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -1252,7 +1291,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** Someone else's room whose owner is offline shows the owner asleep in the bed (you can still stab them). Not stored anywhere. */
   function syncSleeper(): void {
     const owner = def.ownerUid;
-    if (!started || disposed || !owner || owner === me.uid || roomId === LOBBY_ID) return;
+    if (!started || disposed || !owner || owner === me.uid || isPublicRoom(roomId)) return;
     const cur = players.get(owner);
     const wanted = !social.isOnline(owner) && !(cur && !cur.sleeper);
     if (!wanted) {
@@ -1522,7 +1561,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const k = FURNI_KINDS[f.kind];
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
-      if (b && k.opens && isOwnRoom) {
+      if (b && k.opens && (isOwnRoom || k.opens === "shop")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -1977,6 +2016,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const flashing = isOwnRoom && !me.seenDoor && !introUntil && started;
     const glow = Math.max(hoverDoor ? 1 : 0, flashing ? 0.55 + 0.45 * Math.sin(performance.now() / 280) : 0);
     doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime");
+    extraDoorBoxes = (def.extraDoors ?? []).map((d, i) => ({ door: d, box: drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : 0, d.white ? "white" : def.theme.style === "grime") }));
 
     if (!started) return;
     for (const p of players.values()) advance(p, now);
@@ -2013,7 +2053,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         draw: () => {
           const box = drawFurni(f, now);
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || (FURNI_KINDS[f.kind].opens && isOwnRoom))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop")) || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -2173,6 +2213,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   // ---- boot --------------------------------------------------------------------------
   async function init(): Promise<void> {
+    if (roomId === SHOP_ID) {
+      applyDef(shopDef(picksToday()));
+      start();
+      unsubs.push(onFurniShopChanged(() => { if (!disposed) applyDef(shopDef(picksToday())); })); // the admin swapped a piece
+      return;
+    }
     if (roomId === LOBBY_ID) {
       applyDef(lobbyDef());
       start();
@@ -2210,6 +2256,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (roomId === LOBBY_ID) setAmbience(false);
     endPress();
     doorApi?.close();
+    furniBuyApi?.close();
     closeCdPopup();
     cdAudio.stop(); // leaving the lobby = you can't hear the CD player any more (your CD stays in it until it ends)
     if (unblockHandler) window.removeEventListener("pointerdown", unblockHandler);
@@ -2234,6 +2281,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       active = false;
       if (roomId === LOBBY_ID) setAmbience(false);
       sixtyShop?.close();
+      furniBuyApi?.close();
       closeCdPopup();
       closeMenu();
       doorApi?.close();

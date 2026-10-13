@@ -1,4 +1,6 @@
 import { assetUrl } from "./assetUrl";
+import { FURNI_KINDS } from "./rooms";
+import { loadNitro } from "./nitro";
 
 // Old-school-RuneScape-style items. Inventory slots hold an item id + quantity.
 export interface ItemDef {
@@ -16,6 +18,8 @@ export interface ItemDef {
   droppable?: boolean;
   /** select the knife, then click this: it can be cut open for blood (the dead cat) */
   carvable?: boolean;
+  /** a piece of furniture: select it, then click a free spot in your own room to put it down */
+  furniture?: boolean;
   /** picture while it's lit (the cigarette: the plain icon is the unlit one) */
   litIcon?: string;
 }
@@ -87,6 +91,43 @@ export const ITEMS: Record<string, ItemDef> = {
   },
 };
 
+/** Furniture is an inventory item too: its id is the furniture kind's id ("f_sofa" for pieces that ship with the game, "x_..." for Studio pieces). */
+export const isFurniItem = (id: string): boolean => /^[fx]_[a-z0-9_]{1,30}$/.test(id);
+const furniIcons = new Map<string, string>();
+const furniIconListeners = new Set<() => void>();
+export const onFurniIcon = (fn: () => void): (() => void) => { furniIconListeners.add(fn); return () => furniIconListeners.delete(fn); };
+const BLANK_ICON = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="6" y="12" width="20" height="14" rx="2" fill="#8a8f99"/><rect x="6" y="12" width="20" height="4" fill="#aab0ba"/></svg>');
+
+/** The shop picture of a piece (the icon inside its .nitro), drawn once; shows a plain box until it's ready. */
+export function furniIcon(kind: string): string {
+  const got = furniIcons.get(kind);
+  if (got) return got;
+  furniIcons.set(kind, BLANK_ICON);
+  const path = FURNI_KINDS[kind]?.nitro;
+  if (path) {
+    void loadNitro(path).then((n) => {
+      if (!n) return;
+      const key = Object.keys(n.json.spritesheet.frames).find((k) => /_icon_a(.png)?$/.test(k));
+      const fr = key ? n.json.spritesheet.frames[key].frame : null;
+      if (!fr) return;
+      const c = document.createElement("canvas");
+      c.width = fr.w; c.height = fr.h;
+      c.getContext("2d")!.drawImage(n.image, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
+      furniIcons.set(kind, c.toDataURL("image/png"));
+      furniIconListeners.forEach((l) => l());
+    }).catch(() => undefined);
+  }
+  return furniIcons.get(kind)!;
+}
+
+/** The definition of any inventory item: the fixed ones above, or a piece of furniture. */
+export function itemDef(id: string): ItemDef | undefined {
+  if (ITEMS[id]) return ITEMS[id];
+  const k = FURNI_KINDS[id];
+  if (!k || !isFurniItem(id)) return undefined;
+  return { id, name: k.label, examine: `${k.label}: furniture. Click it, then a free spot in your own room to put it down. Your toolbox can also store it.`, icon: furniIcon(id), furniture: true };
+}
+
 export const INV_SIZE = 28; // 4 columns x 7 rows, like the real thing
 export const INV_COLS = 4;
 
@@ -111,7 +152,7 @@ export function parseInventory(raw: unknown): Inventory {
   if (!raw || typeof raw !== "object") return inv;
   for (const [k, v] of Object.entries(raw as Record<string, InvItem | null>)) {
     const slot = Number(k);
-    if (v && slot >= 0 && slot < INV_SIZE && ITEMS[v.item] && !DISABLED_ITEMS.has(v.item)) inv[slot] = { item: v.item, qty: v.qty ?? 1, ...(v.inPlayer ? { inPlayer: true } : {}), ...(typeof v.lit === "number" ? { lit: v.lit } : {}) };
+    if (v && slot >= 0 && slot < INV_SIZE && itemDef(v.item) && !DISABLED_ITEMS.has(v.item)) inv[slot] = { item: v.item, qty: v.qty ?? 1, ...(v.inPlayer ? { inPlayer: true } : {}), ...(typeof v.lit === "number" ? { lit: v.lit } : {}) };
   }
   return inv;
 }

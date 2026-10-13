@@ -1,6 +1,6 @@
 import { h } from "./dom";
 import { showMenu } from "./contextMenu";
-import { BLOOD_ICON, findSlot, INV_SIZE, ITEMS, MUSIC_ACCESS_KEY } from "../items";
+import { BLOOD_ICON, findSlot, INV_SIZE, itemDef, ITEMS, MUSIC_ACCESS_KEY, onFurniIcon } from "../items";
 import { consumeSlot } from "../db";
 import { playSfx } from "../sfx";
 import { EMOTES, hasEmote } from "../emotes";
@@ -85,7 +85,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   function selectedHint(): string {
     const it = selected !== null ? profile.inventory[selected] : null;
     if (!it) return "Knife: click it, then a player (or a dead cat). CD: click it, then the CD player. Syringe: just click it.";
-    return ITEMS[it.item].useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
+    return itemDef(it.item)?.useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
   }
 
   function renderInventory(): void {
@@ -94,7 +94,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     const grid = h("div", { class: "inv-grid" });
     for (let i = 0; i < INV_SIZE; i++) {
       const slot = profile.inventory[i];
-      const def = slot ? ITEMS[slot.item] : null;
+      const def = slot ? itemDef(slot.item) ?? null : null;
       const loaned = !!slot?.inPlayer; // e.g. the CD is sitting in the CD player right now
       const el = h("div", {
         class: "inv-slot" + (selected === i ? " selected" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
@@ -200,12 +200,14 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   render();
   // the "again in 5h 10m" line should tick over without needing a click
   const timer = window.setInterval(() => { if (tab === "inventory") renderInventory(); }, 60_000);
+  const offIcons = onFurniIcon(() => { if (tab === "inventory") renderInventory(); }); // a piece's picture finished loading
 
   return {
     setSelected(slot) { selected = slot; if (tab === "inventory") renderInventory(); },
     refresh: render,
     dispose() {
       window.clearInterval(timer);
+      offIcons();
       unsubMusic?.();
       roomCleanup?.();
       panel.remove();

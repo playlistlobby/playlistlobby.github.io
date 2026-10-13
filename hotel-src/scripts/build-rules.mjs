@@ -6,7 +6,7 @@ const PW = "auth != null && auth.token.firebase.sign_in_provider === 'password'"
 const ADMIN = `${PW} && auth.token.email === 'admin@users.bobba.invalid'`;
 // "may enter room $room": the lobby, your own room, an open room, a room you were let into, or a friend's room (friends always get in)
 const OWNER = "root.child('roomsMeta').child($room).child('owner').val()";
-const IN = `($room === 'lobby' || ${OWNER} === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('friends').child(${OWNER}).child(auth.uid).exists())`;
+const IN = `($room === 'lobby' || $room === 'shop' || ${OWNER} === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('friends').child(${OWNER}).child(auth.uid).exists())`;
 const out = readFileSync("database.rules.template.json", "utf8").replaceAll("@ADMIN@", ADMIN).replaceAll("@PW@", PW).replaceAll("@IN@", IN);
 JSON.parse(out); // fail loudly if the result isn't valid JSON
 writeFileSync("database.rules.json", out);

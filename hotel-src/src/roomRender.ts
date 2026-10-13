@@ -422,6 +422,7 @@ const DOOR_PATH = "furni/teleport_door.nitro";
 const DOOR_DIR = 4;
 let doorColour: NitroFurni | null = null;
 let doorGrey: NitroFurni | null = null;
+let doorWhite: NitroFurni | null = null;
 
 /** Loads the door art (once) and prepares its two looks. Draw again when it resolves; until then the old painted door is used. */
 export function ensureDoorArt(): Promise<void> {
@@ -472,12 +473,23 @@ export function ensureDoorArt(): Promise<void> {
       }
       g.putImageData(img, 0, 0);
     });
+    // the shop's door: the same door, painted clean white
+    doorWhite = derive(clean, (g, w, h) => {
+      const img = g.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const l = Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
+        const v = Math.min(255, Math.round(150 + l * 0.42)); // lifted towards white, the panel shading stays
+        d[i] = v; d[i + 1] = v; d[i + 2] = Math.min(255, v + 2);
+      }
+      g.putImageData(img, 0, 0);
+    });
   });
 }
 
 /** Draws the room's door on the back-right wall and returns its click box. Nothing is drawn until the door art has loaded (main.ts waits for it before the first room). */
-export function drawRoomDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, glow: number, grey: boolean): Box {
-  const art = grey ? doorGrey : doorColour;
+export function drawRoomDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, glow: number, look: boolean | "white"): Box {
+  const art = look === "white" ? doorWhite : look ? doorGrey : doorColour;
   const none: Box = { x0: 0, y0: 0, x1: 0, y1: 0 };
   if (!art) return none;
   const box = drawNitroSprites(g, art, 1, 1, doorX, 0, DOOR_DIR, undefined, toScreen, scale);

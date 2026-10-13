@@ -24,6 +24,7 @@ import { logAction } from "./logger";
 import { watchShopConfig } from "./shopConfig";
 import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns, watchDesigns } from "./designs";
 import { watchFurni } from "./furniDefs";
+import { watchFurniShop } from "./furniShop";
 import { publishProfile, social, startPresence, stopPresence } from "./social";
 
 export const APP_NAME = "6ixPlanet";
@@ -38,6 +39,8 @@ export interface NavOpts {
   arrival?: "door" | "bed";
   /** play the first-time wake-up in bed */
   intro?: boolean;
+  /** the room you came from: you appear in front of the door that leads back to it */
+  from?: string;
 }
 
 export interface Ctx {
@@ -156,8 +159,9 @@ async function showHotel(user: User): Promise<void> {
     const designs = watchDesigns(isAdmin); // player-made clothes join the catalog (needs the base catalog first)
     stopDesigns = designs.stop;
     const furni = watchFurni(); // uploaded furniture becomes placeable kinds (rooms must know them before they draw)
-    stopFurni = furni.stop;
-    await Promise.all([shop.ready, designs.ready, furni.ready]); // the admin's prices land on real items
+    const fshop = watchFurniShop(); // today's four pieces in the shop room (the admin can change them)
+    stopFurni = () => { furni.stop(); fshop.stop(); };
+    await Promise.all([shop.ready, designs.ready, furni.ready, fshop.ready]); // the admin's prices land on real items
     profile = await loadProfile(user.uid, isAdmin);
     if (!profile) {
       // Account exists but profile is missing (e.g. interrupted registration); create one so the user isn't locked out.
@@ -294,7 +298,7 @@ async function showHotel(user: User): Promise<void> {
         roomHost.replaceChildren();
         roomMounted = target;
         lastRoomId = target;
-        roomApi = mountRoom(roomHost, ctx, target, { arrival: opts.arrival, intro: opts.intro });
+        roomApi = mountRoom(roomHost, ctx, target, { arrival: opts.arrival, intro: opts.intro, from: opts.from });
       }
       ctx.refreshHeader();
     } else {

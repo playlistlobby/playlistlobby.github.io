@@ -4,6 +4,10 @@ import { allItemsBySlot, Item, SLOTS } from "../catalog";
 import { BLOOD_ICON, DISABLED_ITEMS, ITEMS } from "../items";
 import { EMOTES, emotePrice } from "../emotes";
 import { logAction } from "../logger";
+import { clearPrice, clearTodayPicks, isAdminPick, onFurniShopChanged, PICKS_PER_DAY, picksToday, priceOf, randomPicks, saveTodayPicks, savePrice, shopPool } from "../furniShop";
+import { FURNI_KINDS } from "../rooms";
+import { furniIcon, onFurniIcon } from "../items";
+import { todayStart } from "../db";
 import { clearShop, clearShopEntry, itemEntry, musicEntry, resetShop, saveShopEntry, shopConfig } from "../shopConfig";
 import { buildItemIconPack, figureWearing, listSets, SetInfo } from "../templateExport";
 import { download } from "../zip";
@@ -185,10 +189,45 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
 
   // ---- furniture -------------------------------------------------------------------------------------------
   function furnitureTab(el: HTMLElement): () => void {
-    el.append(h("div", { class: "panel" },
-      h("h3", {}, "Furniture"),
-      h("p", { class: "hint" }, "Furniture isn't sold yet: there are no prices and no list of what each player owns. The shop's Furniture tab says \"coming soon\" until that exists. Furniture you upload (Studio > Furniture) can already be placed by you, and by players where you ticked \"players can place it\".")));
-    return () => undefined;
+    const body = h("div", {});
+    el.append(body);
+    const label = (k: string) => FURNI_KINDS[k]?.label ?? k;
+    function render(): void {
+      const picks = picksToday();
+      const pool = shopPool();
+      const pinned = isAdminPick();
+      const slot = (i: number) => {
+        const cur = picks[i];
+        const sel = h("select", { onchange: async () => {
+          const next = picks.slice();
+          next[i] = sel.value;
+          try { await saveTodayPicks(next); saved(`put ${label(sel.value)} in furniture slot ${i + 1}`); } catch { failed(); }
+        } }, ...pool.map((k) => h("option", { value: k, selected: k === cur }, `${label(k)} (${priceOf(k)})`)));
+        return h("div", { class: "row", style: { alignItems: "center", gap: "8px" } },
+          h("img", { src: furniIcon(cur), alt: "", style: { width: "40px", height: "40px", objectFit: "contain", imageRendering: "pixelated" } }),
+          h("b", {}, `Slot ${i + 1}`), sel, h("span", { class: "hint" }, `${priceOf(cur)} drops`));
+      };
+      body.replaceChildren(
+        h("div", { class: "panel" },
+          h("h3", {}, "Shop room: today's four pieces"),
+          h("p", { class: "hint" }, `Everyone sees the same four. They change at midnight (UTC). ${pinned ? "You changed today's pick: it stays until midnight." : "Today's pick is random (the same for everyone)."}`),
+          ...Array.from({ length: Math.min(PICKS_PER_DAY, picks.length) }, (_, i) => slot(i)),
+          h("div", { class: "row", style: { marginTop: "8px" } },
+            h("button", { class: "btn small", onclick: async () => { try { await saveTodayPicks(randomPicks(todayStart() + Math.floor(Math.random() * 1e6) * 86_400_000)); saved("rerolled the shop's furniture"); } catch { failed(); } } }, "Reroll"),
+            h("button", { class: "btn small", disabled: !pinned, onclick: async () => { try { await clearTodayPicks(); saved("went back to the random furniture pick"); } catch { failed(); } } }, "Back to the random pick"))),
+        h("div", { class: "panel" },
+          h("h3", {}, "Prices (10-25 drops by default)"),
+          h("div", { class: "scroll-box" }, h("table", { class: "atable" },
+            h("thead", {}, h("tr", {}, ...["", "Piece", "Price (drops)", ""].map((c) => h("th", {}, c)))),
+            h("tbody", {}, ...pool.map((k) => h("tr", {},
+              h("td", {}, h("img", { src: furniIcon(k), alt: "", style: { width: "32px", height: "32px", objectFit: "contain", imageRendering: "pixelated" } })),
+              h("td", {}, h("b", {}, label(k))),
+              h("td", {}, priceBox(priceOf(k), async (n) => { try { await savePrice(k, n); saved(`set ${label(k)} to ${n} drops`); } catch { failed(); } })),
+              h("td", {}, h("button", { class: "btn small", onclick: async () => { try { await clearPrice(k); saved(`reset the price of ${label(k)}`); } catch { failed(); } } }, "Default")))))))));
+    }
+    render();
+    const offs = [onFurniShopChanged(render), onFurniIcon(render)];
+    return () => offs.forEach((o) => o());
   }
 
   // ---- 6ixty's stock -----------------------------------------------------------------------------------------

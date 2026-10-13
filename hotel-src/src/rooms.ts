@@ -37,8 +37,10 @@ export interface FurniKind {
   fixed?: boolean;
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
-  /** clicking it in your own room walks you over and opens this page */
-  opens?: "character";
+  /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
+  opens?: "character" | "shop";
+  /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
+  seat?: boolean;
   /** lies flat on the floor: you can walk over it and it's drawn underneath everyone */
   flat?: boolean;
   /** nudges the art (64px pixels) if it doesn't sit right on its tiles */
@@ -54,7 +56,29 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
   return k.rotatable && (dir === 2 || dir === 6) ? { w: k.h, h: k.w } : { w: k.w, h: k.h };
 }
 
+/** Furniture that ships with the game and is sold in the shop room (10-25 drops). Each file is in public/furni/f_<id>.nitro. */
+export interface ShopPiece { id: string; label: string; icon: string; price: number; w: number; h: number; height: number; flat?: boolean; seat?: boolean }
+export const SHOP_PIECES: ShopPiece[] = [
+  { id: "bloodfloor", label: "Blood streak", icon: "🩸", price: 10, w: 1, h: 3, height: 3, flat: true },
+  { id: "toastfriend", label: "Toast friend", icon: "🍞", price: 10, w: 1, h: 1, height: 30 },
+  { id: "bodybag", label: "Body bag", icon: "🧳", price: 12, w: 2, h: 1, height: 20 },
+  { id: "bench", label: "Grunge bench", icon: "🪑", price: 14, w: 3, h: 1, height: 36, seat: true },
+  { id: "sofa", label: "Old sofa", icon: "🛋️", price: 16, w: 2, h: 1, height: 44, seat: true },
+  { id: "cardtable", label: "Card table", icon: "🃏", price: 18, w: 3, h: 2, height: 34 },
+  { id: "torturebed", label: "Restraint bed", icon: "⛓️", price: 20, w: 1, h: 3, height: 42 },
+  { id: "fountain", label: "Fountain", icon: "⛲", price: 22, w: 2, h: 2, height: 50 },
+];
+export const SHOP_KIND_PREFIX = "f_";
+
+const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECES.map((p) => [SHOP_KIND_PREFIX + p.id, {
+  id: SHOP_KIND_PREFIX + p.id, label: p.label, icon: p.icon, w: p.w, h: p.h, height: p.height, color: "#6b5a48", placeable: false,
+  nitro: `furni/${SHOP_KIND_PREFIX}${p.id}.nitro`, rotatable: true, ...(p.flat ? { flat: true } : {}), ...(p.seat ? { seat: true } : {}),
+} as FurniKind]));
+
 export const FURNI_KINDS: Record<string, FurniKind> = {
+  ...shopKinds(),
+  // the wardrobe in the shop room: click it and the clothing shop opens
+  wardrobe: { id: "wardrobe", label: "Wardrobe", icon: "🚪", w: 2, h: 1, height: 90, color: "#6b5a48", placeable: false, nitro: "furni/uni_wardrobe.nitro", rotatable: true, fixed: true, opens: "shop" },
   arcade: { id: "arcade", label: "Arcade machine", icon: "🕹️", w: 1, h: 1, height: 78, color: "#26327a", placeable: false },
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
   // the Flappy Bird arcade machine (Habbo's cupcake-duck cabinet) in the basement: click it and you play Flappy Bird
@@ -70,6 +94,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 /** Furniture you can click on and do something with (not just walk around). */
 export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "flappy", "dumpster"]);
 
+interface Pt2 { x: number; y: number }
 export interface PlacedFurni {
   id: string;
   kind: string;
@@ -99,7 +124,13 @@ export interface RoomDef {
   furni: PlacedFurni[];
   /** tile column of the door on the back-right wall */
   doorX: number;
+  /** the main door leads straight to this room (no door menu) */
+  doorTo?: string;
+  /** more doors on the back-right wall, each leading to a room of its own */
+  extraDoors?: ExtraDoor[];
 }
+
+export interface ExtraDoor { x: number; to: string; label: string; white?: boolean }
 
 /** Every room has its door on the back-right wall at this tile column. */
 export const DOOR_X = 1;
@@ -142,6 +173,9 @@ export const ROOM_H = 8;
 export const MAX_FURNI = 40;
 
 export const LOBBY_ID = "lobby";
+export const SHOP_ID = "shop";
+/** rooms with no owner that everyone shares (the basement and the shop) */
+export const isPublicRoom = (id: string) => id === LOBBY_ID || id === SHOP_ID;
 export const ownRoomId = (uid: string) => `u_${uid}`;
 export const ownerOfRoom = (id: string) => (id.startsWith("u_") ? id.slice(2) : null);
 export const isLobby = (id: string) => id === LOBBY_ID;
@@ -164,11 +198,29 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     // the Flappy Bird machine is part of the basement (it stands against the left wall, 8 tiles down from the back corner)
     furni: [{ id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
     doorX: DOOR_X,
+    // the white door on the other side of 6ixty leads to the shop
+    extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", white: true }],
+  };
+}
+
+/** Where the four daily pieces stand in the shop room (every piece is placed facing the same way, each in its own 3x3 corner). */
+export const SHOP_SLOTS: Pt2[] = [{ x: 1, y: 2 }, { x: 5, y: 2 }, { x: 1, y: 5 }, { x: 5, y: 5 }];
+export const DISPLAY_PREFIX = "shop_disp";
+export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
+
+/** The shop: a clean white room with the wardrobe on the back wall and today's pieces on display. */
+export function shopDef(picks: string[]): RoomDef {
+  const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }];
+  picks.slice(0, 4).forEach((kind, i) => { if (FURNI_KINDS[kind]) furni.push({ id: DISPLAY_PREFIX + i, kind, x: SHOP_SLOTS[i].x, y: SHOP_SLOTS[i].y, dir: 4 }); });
+  return {
+    id: SHOP_ID, name: "Shop", ownerUid: null, ownerName: null, access: "open", w: 8, h: 8,
+    theme: { floorA: "#e6e2d8", floorB: "#efece4", wall: "#f3f3f3", rug: false, rugColor: "#000000" },
+    rug: null, furni, doorX: DOOR_X, doorTo: LOBBY_ID,
   };
 }
 
 /** The built-in lobby pieces can't be picked up; the ones the admin added can. */
-export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID;
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id.startsWith("shop_");
 
 export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
   return onValue(ref(db, "lobby/furni"), (s) => {

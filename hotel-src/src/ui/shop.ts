@@ -28,6 +28,6 @@ export function mountShop(root: HTMLElement, ctx: Ctx): () => void {
 
 /** Placeholder until furniture has prices and a list of what each player owns. */
 function mountFurnitureShop(root: HTMLElement): () => void {
-  root.append(h("div", { class: "panel" }, h("h2", {}, "Furniture"), h("p", { class: "muted" }, "Furniture for your room is coming soon.")));
+  root.append(h("div", { class: "panel" }, h("h2", {}, "Furniture"), h("p", { class: "muted" }, "Furniture is sold in the shop room: take the white door in the basement (to the right of 6ixty). Four pieces a day.")));
   return () => undefined;
 }

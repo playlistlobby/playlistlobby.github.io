@@ -285,6 +285,16 @@ export async function rewardStab(p: Profile, targetUid: string): Promise<void> {
   p.stabs[targetUid] = day;
 }
 
+/** Buys a piece of furniture from the shop room: the drops are taken and the piece lands in the first free inventory slot, in one write. */
+export async function buyFurni(p: Profile, kind: string, price: number): Promise<void> {
+  if (p.blood < price) throw new Error(`You need ${price - p.blood} more drops`);
+  const free = p.inventory.findIndex((s) => s === null);
+  if (free < 0) throw new Error("Your inventory is full");
+  await update(ref(db, `users/${p.uid}`), { blood: p.blood - price, [`inventory/${free}`]: { item: kind, qty: 1 } });
+  p.blood -= price;
+  p.inventory[free] = { item: kind, qty: 1 };
+}
+
 /** Banks a drop of blood picked up in Flappy Bird. The rules want a gap of at least 20 seconds between drops (25 pipes take longer than that). */
 export async function rewardFlappyDrop(p: Profile): Promise<void> {
   await update(ref(db, `users/${p.uid}`), { blood: p.blood + 1, flappyAt: serverTimestamp() });

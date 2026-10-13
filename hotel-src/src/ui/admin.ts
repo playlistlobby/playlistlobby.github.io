@@ -3,7 +3,7 @@ import { db } from "../firebase";
 import { h, toast } from "./dom";
 import { headBox } from "./head";
 import { changePassword } from "../auth";
-import { ITEMS } from "../items";
+import { itemDef } from "../items";
 import { LOG_TYPES, logAction } from "../logger";
 import { social } from "../social";
 import { todayStart } from "../db";
@@ -104,7 +104,7 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
 
     function userDetail(u: UserRec): HTMLElement {
       const nm = names();
-      const inv = Object.entries(u.inventory).map(([slot, s]) => `${ITEMS[s.item]?.name ?? s.item}${s.inPlayer ? " (in the CD player)" : ""} (slot ${Number(slot) + 1})`);
+      const inv = Object.entries(u.inventory).map(([slot, s]) => `${itemDef(s.item)?.name ?? s.item}${s.inPlayer ? " (in the CD player)" : ""} (slot ${Number(slot) + 1})`);
       const stabbed = Object.entries(u.stabs).map(([uid, d]) => `${nm.get(uid) ?? uid.slice(0, 6)} (${fmtDate(d)})`);
       return h("div", { class: "panel", style: { marginTop: "10px" } },
         h("h2", {}, u.name),
