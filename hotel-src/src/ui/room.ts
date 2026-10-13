@@ -498,6 +498,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     const obj = pick(objBoxes, mx, my);
     if (obj?.kind === "arcade") opts.push({ label: "Play", target: "Arcade machine", action: () => startArcade(obj.id) });
+    if (obj?.kind === "flappy") opts.push({ label: "Play", target: "Flappy Bird", action: () => startArcade(obj.id) });
     if (obj?.kind === "npc") {
       opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
       opts.push({ label: "Examine", target: SIXTY.name, action: () => say("6ixty. He sells things, and he knows how this place works.") });
@@ -792,7 +793,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
       if (job.type === "cd") void executeInsert();
       else if (job.type === "bag") ctx.navigate("customize");
-      else openArcade();
+      else openArcade(f.kind === "flappy" ? "flappy" : undefined);
     }
   }
 

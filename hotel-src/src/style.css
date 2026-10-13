@@ -315,6 +315,8 @@ button, input, select { font-family: var(--font); }
 .msg-toast { bottom: 60px; cursor: pointer; }
 .cd-popup { position: absolute; top: 44px; right: 10px; z-index: 5; width: 232px; display: grid; gap: 6px; color: #fff; padding: 10px 12px; border-radius: 10px; border: 1px solid #c8d0e0; background: linear-gradient(#1a2b66, #0a1440); box-shadow: 0 6px 18px rgba(0, 0, 0, .55); }
 .cd-popup .hint { color: #b6c2e0; }
+.fb-stage { position: relative; height: min(70vh, 540px); aspect-ratio: 9 / 16; max-width: 100%; margin: 0 auto 6px; border-radius: 8px; overflow: hidden; background: #4ec0ca; touch-action: none; user-select: none; -webkit-user-select: none; }
+.fb-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .door-actions { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .sixty-shop { width: 280px; max-width: calc(100% - 20px); left: 10px; right: auto; top: 44px; }
 .sixty-body { display: grid; gap: 8px; }

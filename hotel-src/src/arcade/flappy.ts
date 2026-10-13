@@ -1,0 +1,190 @@
+import { h } from "../ui/dom";
+import { assetUrl } from "../assetUrl";
+import { sfxMuted } from "../sfx";
+import type { ArcadeGame } from "./arcade";
+
+/**
+ * Flappy Bird, ported from the Playlist app (the same numbers as the original: a 100 px gap, pipes 144 px apart).
+ * Tap, click or press Space / Up to flap. The best score is kept in this browser; there's no leaderboard here.
+ * The world is 288 x 512 units and is drawn at the screen's full resolution so the pixel art stays sharp.
+ */
+const FB = { W: 288, H: 512, GROUND: 400, GAP: 100, SPEED: 2, GRAV: 0.25, FLAP: -4.6, PIPE_W: 52, SPACING: 144, BX: 60 };
+const IMAGES = ["background", "base", "pipe", "message", "gameover", "restart", "bird-0", "bird-1", "bird-2", ..."0123456789"];
+const SOUNDS = { wing: "sfx_wing", point: "sfx_point", hit: "sfx_hit", die: "sfx_die", swoosh: "sfx_swooshing" } as const;
+const BEST_KEY = "6ixplanet-flappy-best";
+
+interface Pipe { x: number; gap: number; passed: boolean }
+interface State { state: "ready" | "play" | "over"; y: number; v: number; t: number; score: number; best: number; groundX: number; pipes: Pipe[]; flash: number; newBest: boolean }
+
+export const flappy: ArcadeGame = {
+  id: "flappy",
+  title: "Flappy Bird",
+  icon: "🐤",
+  blurb: "Tap to flap. Don't touch the pipes.",
+  mount(host) {
+    const canvas = h("canvas", { "aria-label": "Flappy Bird. Tap or press space to flap." });
+    const stage = h("div", { class: "fb-stage" }, canvas);
+    host.append(stage, h("div", { class: "hint" }, "Tap, click or press Space to flap."));
+    const g = canvas.getContext("2d")!;
+
+    const img: Record<string, HTMLImageElement> = {};
+    for (const n of IMAGES) { img[n] = new Image(); img[n].src = assetUrl(`arcade/flappy/${n}.png`); }
+
+    // sounds: Web Audio, so they're instant and can overlap (a phone only allows sound after a tap, which is what starts the game)
+    let actx: AudioContext | null = null;
+    const bufs: Record<string, AudioBuffer> = {};
+    const sfx = (name: keyof typeof SOUNDS, vol = 0.5): void => {
+      if (sfxMuted()) return;
+      try {
+        actx ??= new AudioContext();
+        if (actx.state === "suspended") void actx.resume();
+        const play = (b: AudioBuffer) => { const s = actx!.createBufferSource(); const gn = actx!.createGain(); gn.gain.value = vol; s.buffer = b; s.connect(gn).connect(actx!.destination); s.start(); };
+        if (bufs[name]) return play(bufs[name]);
+        void fetch(assetUrl(`arcade/flappy/${SOUNDS[name]}.wav`)).then((r) => r.arrayBuffer()).then((a) => actx!.decodeAudioData(a)).then((b) => { bufs[name] = b; play(b); }).catch(() => undefined);
+      } catch { /* no audio: the game still plays */ }
+    };
+
+    const bestNow = () => { try { return Number(localStorage.getItem(BEST_KEY)) || 0; } catch { return 0; } };
+    let fb: State;
+    const reset = (): void => { fb = { state: "ready", y: 240, v: 0, t: 0, score: 0, best: bestNow(), groundX: 0, pipes: [], flash: 0, newBest: false }; };
+    reset();
+
+    const gapY = () => Math.round(FB.GROUND * 0.2 + Math.random() * (FB.GROUND * 0.6 - FB.GAP));
+    function flap(): void {
+      if (fb.state === "ready") {
+        fb.state = "play";
+        fb.pipes = [];
+        for (let x = FB.W + 40; x < FB.W + 40 + FB.SPACING * Math.ceil((FB.W + FB.PIPE_W) / FB.SPACING + 1); x += FB.SPACING) fb.pipes.push({ x, gap: gapY(), passed: false });
+      }
+      if (fb.state === "play") { if (fb.y > -48) { fb.v = FB.FLAP; sfx("wing", 0.55); } return; }
+      if (fb.state === "over" && fb.t > 30) { reset(); sfx("swoosh", 0.5); }
+    }
+
+    function over(): void {
+      fb.state = "over"; fb.t = 0; fb.flash = 1;
+      if (navigator.vibrate) navigator.vibrate(60);
+      sfx("hit", 0.7);
+      if (fb.y + 12 < FB.GROUND) window.setTimeout(() => sfx("die", 0.6), 300); // hit a pipe: the fall
+      if (fb.score > fb.best) {
+        fb.best = fb.score; fb.newBest = fb.score > 0;
+        try { localStorage.setItem(BEST_KEY, String(fb.best)); } catch { /* private window: just not kept */ }
+      }
+    }
+
+    function step(dt: number): void {
+      fb.t += dt;
+      if (fb.state !== "over") fb.groundX = (fb.groundX - FB.SPEED * dt) % 24;
+      if (fb.state === "ready") { fb.y = 240 + Math.sin(fb.t / 8) * 5; return; }
+      if (fb.state === "over") {
+        if (fb.y < FB.GROUND - 12) { fb.v = Math.min(fb.v + FB.GRAV * dt, 10); fb.y += fb.v * dt; }
+        fb.flash = Math.max(0, fb.flash - 0.08 * dt);
+        return;
+      }
+      fb.v = Math.min(fb.v + FB.GRAV * dt, 10); fb.y += fb.v * dt;
+      const span = FB.SPACING * fb.pipes.length;
+      for (const p of fb.pipes) {
+        p.x -= FB.SPEED * dt;
+        if (p.x + FB.PIPE_W < 0) { p.x += span; p.gap = gapY(); p.passed = false; }
+        if (!p.passed && p.x + FB.PIPE_W / 2 <= FB.BX + 17) { p.passed = true; fb.score++; sfx("point", 0.6); }
+      }
+      // hit a pipe or the ground: the bird is an oval (16 x 11.5 from its middle), pipes reach up past the top of the screen
+      const cx = FB.BX + 17, cy = fb.y, rx = 16, ry = 11.5;
+      const touches = (x0: number, y0: number, x1: number, y1: number) => {
+        const nx = Math.max(x0, Math.min(cx, x1)), ny = Math.max(y0, Math.min(cy, y1));
+        return ((cx - nx) / rx) ** 2 + ((cy - ny) / ry) ** 2 <= 1;
+      };
+      const hit = fb.y + 12 >= FB.GROUND || fb.pipes.some((p) => touches(p.x, -1e4, p.x + FB.PIPE_W, p.gap) || touches(p.x, p.gap + FB.GAP, p.x + FB.PIPE_W, 1e4));
+      if (hit) over();
+    }
+
+    const digits = (n: number, cx: number, y: number, hh: number): void => {
+      const s = String(n);
+      const w = [...s].map((c) => (img[c].naturalWidth || 24) * hh / 36);
+      const total = w.reduce((a, b) => a + b, 0) + (s.length - 1) * 2;
+      let x = cx - total / 2;
+      [...s].forEach((c, i) => { g.drawImage(img[c], x, y, w[i], hh); x += w[i] + 2; });
+    };
+
+    function panel(x: number, y: number, w: number, hh: number): void {
+      const r = 10;
+      g.save();
+      g.beginPath(); g.roundRect(x, y, w, hh, r); g.fillStyle = "#ded895"; g.fill();
+      g.lineWidth = 3; g.strokeStyle = "#543847"; g.stroke();
+      g.beginPath(); g.roundRect(x + 5, y + 5, w - 10, hh - 10, r - 4); g.lineWidth = 1.5; g.strokeStyle = "rgba(84,56,71,.25)"; g.stroke();
+      g.font = '800 15px "Helvetica Neue",Helvetica,Arial,sans-serif'; g.textAlign = "center"; g.textBaseline = "top";
+      const label = (t: string, yy: number) => { g.fillStyle = "#fff"; g.fillText(t, x + w / 2, yy + 1.5); g.fillStyle = "#e86101"; g.fillText(t, x + w / 2, yy); };
+      label("SCORE", y + 14); digits(fb.score, x + w / 2, y + 34, 30);
+      label("BEST", y + 76); digits(fb.best, x + w / 2, y + 96, 30);
+      if (fb.newBest) {
+        g.font = '800 11px "Helvetica Neue",Helvetica,Arial,sans-serif';
+        const bw = 38, bxx = x + w - bw - 10, byy = y + 78;
+        g.beginPath(); g.roundRect(bxx, byy, bw, 16, 8); g.fillStyle = "#ff3b30"; g.fill();
+        g.fillStyle = "#fff"; g.fillText("NEW", bxx + bw / 2, byy + 2.5);
+      }
+      g.restore();
+    }
+
+    let k = 1;
+    function draw(): void {
+      if (!canvas.width) return;
+      g.setTransform(k, 0, 0, k, 0, 0); g.imageSmoothingEnabled = false;
+      // sky, city, ground
+      const bgw = FB.H * (img.background.naturalWidth || 288) / (img.background.naturalHeight || 512);
+      for (let x = 0; x < FB.W; x += bgw - 1) g.drawImage(img.background, x, 0, bgw, FB.H);
+      const ph = FB.PIPE_W * (img.pipe.naturalHeight || 793) / (img.pipe.naturalWidth || 138);
+      for (const p of fb.pipes) {
+        if (fb.state === "ready") break;
+        g.save(); g.translate(p.x + FB.PIPE_W / 2, p.gap); g.scale(1, -1); g.drawImage(img.pipe, -FB.PIPE_W / 2, 0, FB.PIPE_W, ph); g.restore(); // the top pipe, upside down
+        g.drawImage(img.pipe, p.x, p.gap + FB.GAP, FB.PIPE_W, ph);
+      }
+      for (let x = fb.groundX; x < FB.W; x += 335) g.drawImage(img.base, x, FB.GROUND, 336, 112);
+      const frame = fb.state === "over" ? 1 : Math.floor(Math.max(0, fb.t) / 6) % 3;
+      const ang = fb.state === "play" || fb.state === "over" ? Math.max(-0.4, Math.min(1.4, fb.v / 8)) : 0;
+      g.save(); g.translate(FB.BX + 17, fb.y); g.rotate(ang); g.drawImage(img["bird-" + frame], -17, -12, 34, 24); g.restore();
+      if (fb.state === "ready") g.drawImage(img.message, (FB.W - 184) / 2, 80, 184, 267);
+      if (fb.state === "play") digits(fb.score, FB.W / 2, 40, 40);
+      if (fb.state === "over") {
+        g.drawImage(img.gameover, (FB.W - 192) / 2, 86, 192, 42);
+        const pw = 176, phh = 136, px = (FB.W - pw) / 2, py = 142;
+        panel(px, py, pw, phh);
+        if (fb.t > 30) g.drawImage(img.restart, (FB.W - 130) / 2, py + phh + 14, 130, 45);
+        if (fb.flash > 0) { g.fillStyle = `rgba(255,255,255,${fb.flash})`; g.fillRect(0, 0, FB.W, FB.H); }
+      }
+    }
+
+    // the canvas matches the stage in real pixels; the world is 512 high and 288 wide
+    function fit(): void {
+      const cw = stage.clientWidth, ch = stage.clientHeight;
+      if (!cw || !ch) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      canvas.width = Math.round(cw * dpr); canvas.height = Math.round(ch * dpr);
+      k = canvas.height / FB.H;
+    }
+    const ro = new ResizeObserver(fit);
+    ro.observe(stage);
+    fit();
+
+    let raf = 0, last = performance.now();
+    const loop = (now: number): void => {
+      const dt = Math.min(2.5, (now - last) / (1000 / 60)); // 1 = one frame at 60 fps, like the original
+      last = now;
+      step(dt);
+      draw();
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    const onPointer = (e: PointerEvent) => { e.preventDefault(); flap(); };
+    const onKey = (e: KeyboardEvent) => { if (e.code === "Space" || e.key === " " || e.key === "ArrowUp") { e.preventDefault(); flap(); } };
+    canvas.addEventListener("pointerdown", onPointer);
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("keydown", onKey);
+      canvas.removeEventListener("pointerdown", onPointer);
+      void actx?.close().catch(() => undefined);
+    };
+  },
+};

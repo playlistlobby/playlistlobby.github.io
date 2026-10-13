@@ -1,5 +1,6 @@
 import { h } from "../ui/dom";
 import { snake } from "./snake";
+import { flappy } from "./flappy";
 
 /**
  * An arcade game. To add one: write a module exporting an ArcadeGame, import it here and add it to GAMES.
@@ -20,6 +21,7 @@ const soon = (id: string, title: string, icon: string, blurb: string): ArcadeGam
 
 export const GAMES: ArcadeGame[] = [
   snake,
+  flappy,
   soon("blood-catch", "Blood Catch", "🩸", "Catch the falling drops."),
   soon("lobby-pong", "Lobby Pong", "🏓", "Two players, one ball."),
 ];
@@ -30,8 +32,8 @@ export function closeArcade(): void {
   overlay?.dispatchEvent(new Event("arcade-close"));
 }
 
-/** Opens the arcade cabinet UI: game list first, then the chosen game. Escape closes. */
-export function openArcade(): void {
+/** Opens the arcade cabinet UI: game list first, then the chosen game (or straight into `gameId`). Escape closes. */
+export function openArcade(gameId?: string): void {
   if (overlay) return;
   let cleanup: (() => void) | null = null;
   const body = h("div", { class: "arcade-body" });
@@ -74,5 +76,6 @@ export function openArcade(): void {
   const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
   window.addEventListener("keydown", onKey);
   root.addEventListener("arcade-close", close);
-  showList();
+  const direct = gameId ? GAMES.find((g) => g.id === gameId && !g.comingSoon) : undefined;
+  if (direct) play(direct); else showList();
 }

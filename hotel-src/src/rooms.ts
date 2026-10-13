@@ -57,6 +57,8 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 export const FURNI_KINDS: Record<string, FurniKind> = {
   arcade: { id: "arcade", label: "Arcade machine", icon: "🕹️", w: 1, h: 1, height: 78, color: "#26327a", placeable: false },
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
+  // the Flappy Bird arcade machine (Habbo's cupcake-duck cabinet) in the basement: click it and you play Flappy Bird
+  flappy: { id: "flappy", label: "Flappy Bird arcade", icon: "🐤", w: 1, h: 2, height: 80, color: "#2a2218", placeable: false, nitro: "furni/arcade_flappy.nitro", rotatable: true },
   // the bed every player room has (a fixed piece: not in the furniture menu, not stored in the database)
   bed: { id: "bed", label: "Bed", icon: "🛏️", w: 1, h: 3, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/hween_c25_makeshiftbed.nitro", rotatable: true, fixed: true },
   // the bag of clothes in the corner of your own room: click it (your avatar walks over first) to open the Character page
@@ -64,7 +66,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "flappy"]);
 
 export interface PlacedFurni {
   id: string;
@@ -157,7 +159,8 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     h: 12,
     theme: { ...GRIME_THEME },
     rug: null,
-    furni: extras.filter((f) => FURNI_KINDS[f.kind]),
+    // the Flappy Bird machine is part of the basement (it stands against the left wall)
+    furni: [{ id: "lobby1", kind: "flappy", x: 5, y: 0, dir: 2 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
     doorX: DOOR_X,
   };
 }
