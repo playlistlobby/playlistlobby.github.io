@@ -37,6 +37,9 @@ export interface Profile {
   storage: Record<string, number>;
 }
 
+/** Furniture everybody starts with, waiting in their toolbox's storage (given once, to new players and to everybody who played before). */
+export const STARTER_FURNITURE = ["f_sofa"];
+
 export const SIXTY_GIFT_DELAY_MS = 12 * 3_600_000;
 /** the dumpster can be searched once every 3 hours; it gives a cigarette (75%) or a dead cat (25%) */
 export const DUMPSTER_MS = 3 * 3_600_000;
@@ -85,7 +88,7 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
-  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsterAt: 0, catsCarved: 0, storage: {} };
+  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsterAt: 0, catsCarved: 0, storage: Object.fromEntries(STARTER_FURNITURE.map((k) => [k, 1])) };
   // figure "" marks a player who hasn't been through the customizer yet.
   await set(ref(db, `users/${uid}`), {
     name,
@@ -94,6 +97,8 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     blood: profile.blood,
     inventory: first,
     createdAt: serverTimestamp(),
+    starterFurni: true,
+    storage: Object.fromEntries(STARTER_FURNITURE.map((k) => [k, 1])),
   });
   return profile;
 }
@@ -140,6 +145,11 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     patch.blood = START_BLOOD;
   }
   if (v.createdAt === undefined) patch.createdAt = serverTimestamp();
+  // everybody gets the starter furniture once (players from before it existed get it now); what they do with it afterwards is theirs
+  if (!v.starterFurni) {
+    for (const k of STARTER_FURNITURE) { profile.storage[k] = (profile.storage[k] ?? 0) + 1; patch[`storage/${k}`] = profile.storage[k]; }
+    patch.starterFurni = true;
+  }
   Object.assign(patch, compactedPatch(profile)); // close any gaps left in the inventory (older accounts)
   // everyone has the starter items (they're never used up: the CD comes back, the syringe is a daily tool)
   for (const item of STARTER_ITEMS) {

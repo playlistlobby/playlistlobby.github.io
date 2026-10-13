@@ -35,6 +35,7 @@
         },
         "createdAt": { ".validate": "newData.isNumber()" },
         "seenDoor": { ".validate": "newData.isBoolean()" },
+        "starterFurni": { ".validate": "newData.val() === true" },
 
         "sixty": {
           "knifeAt": { ".validate": "newData.isNumber() && newData.val() === now && !data.exists()" },
