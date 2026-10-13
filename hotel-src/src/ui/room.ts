@@ -1484,6 +1484,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const tipy = my + 2.5 * s;
     g.save();
     g.lineCap = "round";
+    // turned away from the camera the mouth is on the far side of the head: no cigarette in front of the hair, only the smoke drifting up
+    const away = dir === 6 || dir === 7 || dir === 0;
+    if (!away) {
     // dark edge first so the white paper reads against a pale shirt or a hand
     g.strokeStyle = "rgba(30,24,20,0.75)"; g.lineWidth = 4.2 * s;
     g.beginPath(); g.moveTo(mx, my); g.lineTo(tipx, tipy); g.stroke();
@@ -1493,6 +1496,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.beginPath(); g.moveTo(mx, my); g.lineTo(mx + (side || 1) * 3 * s, my + 0.7 * s); g.stroke();
     g.strokeStyle = "#ff6a1a"; g.lineWidth = 3 * s;
     g.beginPath(); g.moveTo(tipx - (side || 1) * 1.6 * s, tipy - 0.3 * s); g.lineTo(tipx, tipy); g.stroke();
+    }
     // smoke: a few soft puffs that drift up, widen and fade
     for (let i = 0; i < 6; i++) {
       const t = (now / 1900 + i / 6) % 1;
