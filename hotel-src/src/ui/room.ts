@@ -1165,7 +1165,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.dir = 0; // face the wall the door is in
         update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
         if (to) {
-          // one of the extra doors (the white one to the shop)
+          // one of the extra doors (the yellow one to the shop)
           playSfx("doorOpen", 0.6);
           logAction(me, "visit", `went to the ${to.label.toLowerCase()}`);
           ctx.navigate("room", { roomId: to.to, from: roomId });
@@ -2302,7 +2302,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const flashing = isOwnRoom && !me.seenDoor && !introUntil && started;
     const glow = Math.max(hoverDoor ? 1 : 0, flashing ? 0.55 + 0.45 * Math.sin(performance.now() / 280) : 0);
     doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime");
-    extraDoorBoxes = (def.extraDoors ?? []).map((d, i) => ({ door: d, box: drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : 0, d.white ? "white" : def.theme.style === "grime") }));
+    extraDoorBoxes = (def.extraDoors ?? []).map((d, i) => ({ door: d, box: drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : 0, d.yellow ? "yellow" : def.theme.style === "grime") }));
 
     if (!started) return;
     for (const p of players.values()) advance(p, now);

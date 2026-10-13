@@ -129,7 +129,7 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
 
       h("div", { class: "rp-sec" },
         h("div", { class: "rp-label" }, "Furniture"),
-        h("div", { class: "hint" }, "Arrange your room with the toolbox in it: click the red box. Buy furniture in the shop (the white door in the basement).")),
+        h("div", { class: "hint" }, "Arrange your room with the toolbox in it: click the toolbox. Buy furniture in the shop (the yellow door in the basement).")),
 
       (inviteHost = h("div", {}, inviteSection())));
   }

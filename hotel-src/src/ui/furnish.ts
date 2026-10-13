@@ -79,7 +79,7 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
         h("button", { class: "tab" + (tab === "storage" ? " on" : ""), onclick: () => { tab = "storage"; render(); } }, `Storage (${stored.reduce((a, [, n]) => a + n, 0)})`),
         h("button", { class: "tab" + (tab === "inventory" ? " on" : ""), onclick: () => { tab = "inventory"; render(); } }, `Carrying (${carried.length})`),
         h("span", { class: "hint" }, tab === "storage" ? `Free pockets: ${freeSlots(p)}` : "Store pieces to keep your pockets free.")),
-      h("div", { class: "fz-list" }, ...(cells.length ? cells : [h("div", { class: "hint" }, tab === "storage" ? "Nothing in storage. Pick a piece up with Store, or put a carried piece into storage from the Carrying tab." : "You aren't carrying any furniture. Buy some in the shop (the white door in the basement).")])));
+      h("div", { class: "fz-list" }, ...(cells.length ? cells : [h("div", { class: "hint" }, tab === "storage" ? "Nothing in storage. Pick a piece up with Store, or put a carried piece into storage from the Carrying tab." : "You aren't carrying any furniture. Buy some in the shop (the yellow door in the basement).")])));
     void storedCount;
   }
   render();

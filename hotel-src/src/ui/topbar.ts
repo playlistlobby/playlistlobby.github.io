@@ -19,7 +19,7 @@ export interface TopBarApi {
 
 /**
  * The iOS 6 navigation bar: logo (and, on phones, the Friends button) on the left, the segmented control
- * the drops-of-blood counter in the middle and a menu (Admin, sounds, log out) on the right. (Character is the bag of clothes in your room; the shop is the white door in the basement, and the wardrobe in it opens the clothing shop.)
+ * the drops-of-blood counter in the middle and a menu (Admin, sounds, log out) on the right. (Character is the bag of clothes in your room; the shop is the yellow door in the basement, and the wardrobe in it opens the clothing shop.)
  * On phones it wraps into two rows so everything stays tappable.
  */
 export function topBar(o: TopBarOpts): TopBarApi {

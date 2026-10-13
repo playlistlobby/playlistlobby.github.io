@@ -134,7 +134,7 @@ export interface RoomDef {
   extraDoors?: ExtraDoor[];
 }
 
-export interface ExtraDoor { x: number; to: string; label: string; white?: boolean }
+export interface ExtraDoor { x: number; to: string; label: string; yellow?: boolean }
 
 /** Every room has its door on the back-right wall at this tile column. */
 export const DOOR_X = 1;
@@ -202,8 +202,8 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     // the Flappy Bird machine is part of the basement (it stands against the left wall, 8 tiles down from the back corner)
     furni: [{ id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
     doorX: DOOR_X,
-    // the white door on the other side of 6ixty leads to the shop
-    extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", white: true }],
+    // the yellow door on the other side of 6ixty leads to the shop
+    extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }],
   };
 }
 
