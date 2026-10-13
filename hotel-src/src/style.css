@@ -335,6 +335,7 @@ button, input, select { font-family: var(--font); }
 .fz-pick .qty { position: absolute; right: 2px; bottom: 0; font-size: 11px; font-weight: 700; color: #ffe27a; }
 .fz-name { font-size: 9px; text-align: center; line-height: 1.1; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fz-mini { padding: 0 8px; font-size: 10px; line-height: 16px; }
+.blackout { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity .3s ease; z-index: 9999; pointer-events: all; }
 .furni-buy { width: 250px; }
 .furni-buy-body { display: flex; gap: 10px; align-items: center; }
 .furni-buy-img { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; background: rgba(255, 255, 255, .08); border-radius: 8px; padding: 4px; }

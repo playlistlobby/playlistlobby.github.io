@@ -13,7 +13,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke";
+  useSelf?: "syringe" | "smoke" | "pill";
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
   /** select the knife, then click this: it can be cut open for blood (the dead cat) */
@@ -25,15 +25,23 @@ export interface ItemDef {
 }
 
 /** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
-export const SIXTY_STOCK = ["lockpick", "cigarette"];
+export const SIXTY_STOCK = ["lockpick", "cigarette", "pill"];
 /** Default shop entry for items that start on sale (everything else starts off). */
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   lockpick: { on: true, price: 4 },
   cigarette: { on: true, price: 1 },
+  pill: { on: true, price: 3 },
 };
 export const SMOKE_MS = 60_000;
 
 export const ITEMS: Record<string, ItemDef> = {
+  pill: {
+    id: "pill",
+    name: "Pill",
+    examine: "A red and white pill from 6ixty. Swallow it and you pass out; you wake up in your own room. He doesn't say what's in it.",
+    icon: assetUrl("items/pill.svg"),
+    useSelf: "pill",
+  },
   syringe: {
     id: "syringe",
     name: "Syringe",

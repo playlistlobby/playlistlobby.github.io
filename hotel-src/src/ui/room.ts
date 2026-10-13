@@ -16,7 +16,7 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { canStab, canUseSyringe, carveCat, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
+import { canStab, canUseSyringe, carveCat, consumeSlot, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
 import { SIXTY, SIXTY_LINES, sixtyLook, watchSixtyLook } from "../npc";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
@@ -125,6 +125,8 @@ interface Player {
   npc?: boolean;
   /** sitting on a chair or couch (shown to everyone through players/<uid>/sit) */
   sit?: boolean;
+  /** passed out on the floor (a pill from 6ixty; shown to everyone through players/<uid>/lay) */
+  faint?: boolean;
   /** you clicked a seat: where to sit once you've walked there, and which way to face */
   sitTo?: { x: number; y: number; dir: number };
 }
@@ -315,7 +317,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     },
     onEmote: (id) => performEmote(id),
     onCarve: (slot) => { void carveDeadCat(slot); },
-    onUseSelf: (what) => { if (what === "syringe") void useSyringe(); else void useCigarette(); },
+    onUseSelf: (what) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else void useCigarette(); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
       icon: "🏠",
       title: "Room",
@@ -510,6 +512,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   canvas.addEventListener("click", (e) => {
     if (furnishOn) return; // the furnishing menu has its own pointer handling
+    if (faintUntil) return; // out cold
     if (suppressClick) { suppressClick = false; return; }
     if (introUntil && performance.now() < introUntil) return; // still waking up
     const m = mousePos(e);
@@ -907,6 +910,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       smoke: typeof v.smoke === "number" ? v.smoke : undefined,
       npc: v.sixty === true,
       sit: v.sit === true,
+      faint: v.lay === true,
     };
   }
 
@@ -927,7 +931,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   function walkTo(dest: Pt): void {
     const p = mine();
-    if (!p || frozen) return; // 6ixty doesn't walk
+    if (!p || frozen || faintUntil) return; // 6ixty doesn't walk, and nobody walks while out cold
     if (p.sit && !seatTiles.has(`${dest.x},${dest.y}`)) { p.sit = false; update(ref(db, `rooms/${roomId}/players/${me.uid}`), { sit: null }).catch(() => undefined); } // you get up when you walk
     if (!seatTiles.has(`${dest.x},${dest.y}`)) p.sitTo = undefined;
     setDestination(p, dest);
@@ -1534,6 +1538,40 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
   }
 
+  /** 6ixty's pill: you say your piece, pass out where you stand, the screen goes black for two seconds, and you wake up in your own room. */
+  let faintUntil = 0;
+  async function usePill(): Promise<void> {
+    const p = mine();
+    if (!p || p.lying || faintUntil) return;
+    const slot = findSlot(me.inventory, "pill");
+    if (slot < 0) return say("You don't have a pill.", "warn");
+    try { await consumeSlot(me, slot); } catch { return say("The pill slips out of your fingers. (the hotel refused it)", "warn"); }
+    faintUntil = performance.now() + 60_000;
+    clearSelection();
+    panel.refresh();
+    logAction(me, "room", "swallowed a pill and passed out");
+    push(chatRef, { uid: me.uid, name: shownName, text: "Faaaahhhh shii", ts: serverTimestamp() }).catch(console.warn);
+    p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
+    p.faint = true;
+    update(myRef, { lay: true, sit: null }).catch(() => undefined);
+    const black = h("div", { class: "blackout" });
+    window.setTimeout(() => { document.body.append(black); requestAnimationFrame(() => { black.style.opacity = "1"; }); }, 700); // down first, then the screen goes dark
+    window.setTimeout(() => {
+      if (disposed) return;
+      faintUntil = 0;
+      p.faint = false;
+      if (isOwnRoom) {
+        const to = sideTile();
+        p.from = p.to = p.dest = to; p.path = []; p.dir = 2;
+        update(myRef, { x: to.x, y: to.y, dir: 2, lay: null }).catch(() => undefined);
+      } else {
+        ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed" });
+      }
+    }, 1600);
+    window.setTimeout(() => { black.style.opacity = "0"; }, 3000); // two seconds of black
+    window.setTimeout(() => black.remove(), 3500);
+  }
+
   /** A cigarette that has burned for a minute becomes a butt in the inventory. */
   function burnDown(): void {
     me.inventory.forEach((s, i) => {
@@ -1696,6 +1734,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.smoke = typeof v.smoke === "number" ? v.smoke : undefined;
         p.npc = v.sixty === true;
         p.sit = v.sit === true;
+        p.faint = v.lay === true;
         if (p.sit && typeof v.dir === "number") p.dir = v.dir;
         if (v.x !== p.dest.x || v.y !== p.dest.y) setDestination(p, { x: v.x, y: v.y });
         const em = v.emote;
@@ -2425,8 +2464,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     furniBoxes = pieceBoxes;
     for (const p of players.values()) {
       if (furnishOn) break; // the furnishing menu shows the room, not the people in it
-      if (p.lying) {
-        // asleep (or just waking up): drawn lying on the bed
+      if (p.lying || p.faint) {
+        // asleep (or just waking up): drawn lying on the bed; or passed out on the floor wherever they were
+        const dh = p.lying ? headTile() : currentTile(p);
         const lopts = { figure: p.figure, dir: 2, actions: ["lay"] };
         let limg = getCached(lopts);
         if (!limg) { renderAvatar(lopts); limg = p.last; } else p.last = limg;
@@ -2438,9 +2478,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const lw = (limg?.width ?? 110) * scale;
         const lh = (limg?.height ?? 64) * scale;
         // clickable area = just the sleeping body (the picture itself has a lot of empty padding around it)
-        boxes.push({ id: p.uid, x0: ax + 78 * scale, x1: ax + 154 * scale, y0: ay + 48 * scale, y1: ay + 90 * scale, depth: headTile().x + headTile().y + 3 });
+        boxes.push({ id: p.uid, x0: ax + 78 * scale, x1: ax + 154 * scale, y0: ay + 48 * scale, y1: ay + 90 * scale, depth: dh.x + dh.y + 3 });
         list.push({
-          depth: headTile().x + 3 - 1 + headTile().y + 0.6, // just after the bed itself
+          depth: p.lying ? headTile().x + 3 - 1 + headTile().y + 0.6 : dh.x + dh.y + 0.6, // just after the bed itself
           draw: () => {
             if (limg) {
               g.drawImage(limg, ax, ay, lw, lh);
