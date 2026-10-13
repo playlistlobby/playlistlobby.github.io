@@ -1,6 +1,6 @@
 import { h, toast } from "./dom";
 import { buyInventoryItem } from "../db";
-import { BLOOD_ICON, ITEMS, SIXTY_STOCK } from "../items";
+import { BLOOD_ICON, DISABLED_ITEMS, ITEMS, SIXTY_STOCK } from "../items";
 import { itemEntry, onShopConfig } from "../shopConfig";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
@@ -22,7 +22,8 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
 
   function render(): void {
     if (closed) return;
-    const stock = SIXTY_STOCK.filter((id) => itemEntry(id).on);
+    // his shelf: whatever the admin has switched on (Admin > Shop > 6ixty stock); lockpick and cigarette are on by default
+    const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => ITEMS[id] && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && itemEntry(id).on);
     body.replaceChildren(
       ...(stock.length === 0 ? [h("div", { class: "hint" }, "Nothing on the shelf right now.")] : stock.map((id) => {
         const it = ITEMS[id];

@@ -1,7 +1,7 @@
 import { get, onValue, ref, serverTimestamp, set, update } from "firebase/database";
 import { db, firebaseReady } from "./firebase";
 import { DEFAULT_FIGURE, Gender } from "./catalog";
-import { emptyInventory, findSlotAny, Inventory, parseInventory, SMOKE_MS, START_BLOOD } from "./items";
+import { DISABLED_ITEMS, emptyInventory, findSlotAny, Inventory, ITEMS, parseInventory, SMOKE_MS, START_BLOOD } from "./items";
 
 export interface Outfit {
   figure: string;
@@ -64,7 +64,14 @@ export const canUseSyringe = (p: Profile): boolean => p.syringeDay < todayStart(
 export async function createProfile(uid: string, name: string): Promise<Profile> {
   const inventory = emptyInventory();
   const first: Record<number, { item: string; qty: number }> = {};
-  STARTER_ITEMS.forEach((item, i) => {
+  // items the admin ticked "starter" (Admin > Shop > 6ixty stock) start in every new player's inventory
+  const starters = [...STARTER_ITEMS];
+  try {
+    const snap = await get(ref(db, "config/shop/items"));
+    const cfg = (snap.val() ?? {}) as Record<string, { starter?: boolean }>;
+    for (const [id, e] of Object.entries(cfg)) if (e?.starter && ITEMS[id] && !DISABLED_ITEMS.has(id) && !starters.includes(id)) starters.push(id);
+  } catch { /* the settings couldn't be read: nobody starts with extras this time */ }
+  starters.slice(0, inventory.length).forEach((item, i) => {
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
@@ -210,19 +217,22 @@ export async function compactInventory(p: Profile): Promise<void> {
 
 /** 6ixty's first gift: the knife. Starts the 12-hour wait for the second gift. */
 export async function sixtyGiveKnife(p: Profile): Promise<void> {
+  // (a knife that is already in the inventory, e.g. a starter item, isn't given twice)
+  const has = findSlotAny(p.inventory, "knife") >= 0;
   const free = p.inventory.findIndex((s) => s === null);
-  if (free < 0) throw new Error("Your inventory is full");
-  await update(ref(db, `users/${p.uid}`), { [`inventory/${free}`]: { item: "knife", qty: 1 }, "sixty/knifeAt": serverTimestamp() });
-  p.inventory[free] = { item: "knife", qty: 1 };
+  if (!has && free < 0) throw new Error("Your inventory is full");
+  await update(ref(db, `users/${p.uid}`), { ...(has ? {} : { [`inventory/${free}`]: { item: "knife", qty: 1 } }), "sixty/knifeAt": serverTimestamp() });
+  if (!has) p.inventory[free] = { item: "knife", qty: 1 };
   p.sixty.knifeAt = serverNow();
 }
 
 /** His second gift, once the 12 hours are up: the syringe. */
 export async function sixtyGiveSyringe(p: Profile): Promise<void> {
+  const has = findSlotAny(p.inventory, "syringe") >= 0;
   const free = p.inventory.findIndex((s) => s === null);
-  if (free < 0) throw new Error("Your inventory is full");
-  await update(ref(db, `users/${p.uid}`), { [`inventory/${free}`]: { item: "syringe", qty: 1 }, "sixty/syringeGiven": true });
-  p.inventory[free] = { item: "syringe", qty: 1 };
+  if (!has && free < 0) throw new Error("Your inventory is full");
+  await update(ref(db, `users/${p.uid}`), { ...(has ? {} : { [`inventory/${free}`]: { item: "syringe", qty: 1 } }), "sixty/syringeGiven": true });
+  if (!has) p.inventory[free] = { item: "syringe", qty: 1 };
   p.sixty.syringeGiven = true;
 }
 

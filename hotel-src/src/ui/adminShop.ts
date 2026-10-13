@@ -1,7 +1,7 @@
 import { h, toast, trimCanvas } from "./dom";
 import { renderAvatar } from "../avatarService";
 import { allItemsBySlot, Item, SLOTS } from "../catalog";
-import { BLOOD_ICON, ITEMS } from "../items";
+import { BLOOD_ICON, DISABLED_ITEMS, ITEMS } from "../items";
 import { EMOTES, emotePrice } from "../emotes";
 import { logAction } from "../logger";
 import { clearShop, clearShopEntry, itemEntry, musicEntry, resetShop, saveShopEntry, shopConfig } from "../shopConfig";
@@ -9,7 +9,7 @@ import { buildItemIconPack, figureWearing, listSets, SetInfo } from "../template
 import { download } from "../zip";
 import type { Ctx } from "../main";
 
-type Sub = "clothing" | "emotes" | "items";
+type Sub = "clothing" | "furniture" | "sixty";
 
 /** Admin > Shop: decide what is on sale and for how much. (Making new clothes is in the Studio tab.) */
 export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
@@ -46,10 +46,10 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
   function open(next: Sub): void {
     off?.();
     sub = next;
-    subTabs.replaceChildren(...([["clothing", "Clothing"], ["emotes", "Emotes"], ["items", "Items & music"]] as Array<[Sub, string]>).map(([id, label]) =>
+    subTabs.replaceChildren(...([["clothing", "Clothing"], ["furniture", "Furniture"], ["sixty", "6ixty stock"]] as Array<[Sub, string]>).map(([id, label]) =>
       h("button", { class: "tab" + (id === sub ? " on" : ""), onclick: () => open(id) }, label)));
     host.replaceChildren();
-    off = (sub === "clothing" ? clothingTab : sub === "emotes" ? emotesTab : itemsTab)(host);
+    off = (sub === "clothing" ? clothingTab : sub === "furniture" ? furnitureTab : sixtyTab)(host);
   }
 
   // ---- clothing --------------------------------------------------------------------------------------------
@@ -82,18 +82,20 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
     }
     const filtered = (): SetInfo[] => listSets(slot).filter((s) => (!gender || s.gender === gender) && (!status || statusOf(s) === status) && (!search || s.id.includes(search)));
 
-    async function bulk(action: "on" | "off" | "reset", price: number): Promise<void> {
+    async function bulk(action: "on" | "off" | "reset" | "starter", price: number): Promise<void> {
       const targets = [...selected].map((k) => ({ type: k.split(":")[0], id: k.split(":")[1] })).filter((r) => {
         const it = catalogItem(r.type, r.id);
-        return it && !it.starter;
+        // reset/starter can touch the admin's own starter ticks too; the shop actions only apply to things that can be sold
+        return it && !it.baseStarter && !it.custom && (action === "reset" || action === "starter" || !it.starter);
       });
-      if (!targets.length) return toast("None of the ticked items can be sold (club or free items can't).", "err");
+      if (!targets.length) return toast("None of the ticked items can be changed (club, built-in free and Studio items can't).", "err");
       try {
         await Promise.all(targets.map((r) => {
           const key = `${r.type}_${r.id}`;
+          if (action === "starter") return saveShopEntry("clothing", key, { on: false, price: catalogItem(r.type, r.id)!.basePrice, starter: true });
           return action === "reset" ? clearShopEntry("clothing", key) : saveShopEntry("clothing", key, { on: action === "on", price });
         }));
-        saved(`${action === "reset" ? "reset" : action === "on" ? `put in the shop at ${price}` : "removed from the shop"}: ${targets.length} clothing items`);
+        saved(`${action === "reset" ? "reset" : action === "starter" ? "made starter (free for everyone)" : action === "on" ? `put in the shop at ${price}` : "removed from the shop"}: ${targets.length} clothing items`);
         toast(`Updated ${targets.length} item${targets.length === 1 ? "" : "s"}`);
         draw();
       } catch { failed(); }
@@ -115,6 +117,22 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
       });
       const sellable = !!it && !it.starter && st !== "club";
       const hasEntry = !!shopConfig.clothing[`${info.type}_${info.id}`];
+      // the "starter" tick: everyone owns it for free (not for Studio items, which are already free until priced, nor the data's built-in starters)
+      const canStarter = !!it && !it.custom && !it.baseStarter && st !== "club";
+      const starterBox = canStarter
+        ? h("label", { title: "Starter: free for everyone, never sold" }, h("input", {
+            type: "checkbox", checked: it!.starter,
+            onchange: async (e: Event) => {
+              const on = (e.target as HTMLInputElement).checked;
+              try {
+                if (on) await saveShopEntry("clothing", `${info.type}_${info.id}`, { on: false, price: it!.basePrice, starter: true });
+                else await clearShopEntry("clothing", `${info.type}_${info.id}`);
+                saved(`${on ? "made" : "unmade"} ${info.type}-${info.id} a starter item`);
+                draw();
+              } catch { failed(); }
+            },
+          }), "starter")
+        : null;
       return h("div", { class: "acard" + (selected.has(key) ? " sel" : "") },
         h("span", { class: "tag " + (st === "free" ? "free" : st === "club" ? "club" : st === "noshop" ? "off" : "") }, st === "free" ? (it?.custom ? "made here" : it?.starter ? "starter" : "free") : st === "club" ? "club" : st === "shop" ? "in shop" : "not sold"),
         thumb,
@@ -134,6 +152,7 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
               }),
               h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "drops" }))
           : h("div", { class: "hint" }, st === "club" ? "club item: can't be sold" : "free for everyone"),
+        starterBox,
         sellable && hasEntry ? h("button", { class: "btn small", onclick: async () => { try { await clearShopEntry("clothing", `${info.type}_${info.id}`); draw(); } catch { failed(); } } }, "Reset") : null);
     }
 
@@ -156,6 +175,7 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
         h("button", { class: "btn small", onclick: () => { selected.clear(); draw(); } }, "Clear"),
         h("button", { class: "btn small primary", onclick: () => void bulk("on", Math.max(0, Math.min(999, Number(bulkPrice.value) || 0))) }, "Put in shop at"), bulkPrice,
         h("button", { class: "btn small", onclick: () => void bulk("off", 0) }, "Remove from shop"),
+        h("button", { class: "btn small", title: "Free for everyone, never sold", onclick: () => void bulk("starter", 0) }, "Make starter"),
         h("button", { class: "btn small", onclick: () => void bulk("reset", 0) }, "Reset to default")),
       h("p", { class: "hint", style: { margin: "6px 0 0" } }, "Clothes you make yourself live in the Studio tab; set their price there."));
     el.append(actionsBar, bar, grid, pager);
@@ -163,61 +183,42 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
     return () => undefined;
   }
 
-  // ---- emotes ----------------------------------------------------------------------------------------------
-  function emotesTab(el: HTMLElement): () => void {
-    const rows = EMOTES.map((e) => {
-      const free = e.price === 0;
-      const entry = shopConfig.emotes[e.id];
-      const on = entry ? entry.on : true;
-      const price = emotePrice(e);
-      return h("tr", {},
-        h("td", { style: { fontSize: "22px" } }, e.icon), h("td", {}, h("b", {}, e.name)), h("td", { class: "hint" }, e.desc),
-        ...(free ? [h("td", { colspan: "3", class: "hint" }, "Always free for everyone")]
-          : [
-            h("td", { class: "num" }, String(e.price)),
-            h("td", {}, h("label", {}, h("input", {
-              type: "checkbox", checked: on,
-              onchange: async (ev: Event) => { try { await saveShopEntry("emotes", e.id, { on: (ev.target as HTMLInputElement).checked, price }); saved(`${(ev.target as HTMLInputElement).checked ? "put" : "removed"} the ${e.name} emote ${(ev.target as HTMLInputElement).checked ? "in" : "from"} the shop`); } catch { failed(); } },
-            }), " on sale")),
-            h("td", {}, priceBox(price, async (n) => { try { await saveShopEntry("emotes", e.id, { on, price: n }); saved(`set the ${e.name} emote to ${n} drops${n === 0 ? " (free for everyone)" : ""}`); } catch { failed(); } }),
-              entry ? h("button", { class: "btn small", style: { marginLeft: "6px" }, onclick: async () => { try { await clearShopEntry("emotes", e.id); reopen(); } catch { failed(); } } }, "Reset") : null),
-          ]));
-    });
-    const reopen = () => { el.replaceChildren(); emotesTab(el); };
-    el.append(
-      h("p", { class: "hint" }, "A price of 0 makes an emote free for everyone. Changes apply to players straight away."),
-      h("div", { class: "scroll-box" }, h("table", { class: "atable" },
-        h("thead", {}, h("tr", {}, ...["", "Emote", "What it does", "Default", "Shop", "Price (drops)"].map((c) => h("th", {}, c)))),
-        h("tbody", {}, ...rows))));
+  // ---- furniture -------------------------------------------------------------------------------------------
+  function furnitureTab(el: HTMLElement): () => void {
+    el.append(h("div", { class: "panel" },
+      h("h3", {}, "Furniture"),
+      h("p", { class: "hint" }, "Furniture isn't sold yet: there are no prices and no list of what each player owns. The shop's Furniture tab says \"coming soon\" until that exists. Furniture you upload (Studio > Furniture) can already be placed by you, and by players where you ticked \"players can place it\".")));
     return () => undefined;
   }
 
-  // ---- items & music ---------------------------------------------------------------------------------------
-  function itemsTab(el: HTMLElement): () => void {
-    const itemRows = Object.values(ITEMS).map((it) => {
-      const e = itemEntry(it.id);
+  // ---- 6ixty's stock -----------------------------------------------------------------------------------------
+  /** What 6ixty can sell, and what new players start with: lockpick and cigarette are on his shelf by default. */
+  function sixtyTab(el: HTMLElement): () => void {
+    const ids = Object.keys(ITEMS).filter((id) => !DISABLED_ITEMS.has(id) && id !== "cigbutt");
+    const rowFor = (id: string): HTMLElement => {
+      const it = ITEMS[id];
+      const e = itemEntry(id);
       return h("tr", {},
         h("td", {}, h("img", { src: it.icon, alt: "", style: { width: "32px", height: "32px", imageRendering: "pixelated" } })),
         h("td", {}, h("b", {}, it.name)), h("td", { class: "hint" }, it.examine),
         h("td", {}, h("label", {}, h("input", {
           type: "checkbox", checked: e.on,
-          onchange: async (ev: Event) => { try { await saveShopEntry("items", it.id, { on: (ev.target as HTMLInputElement).checked, price: e.price }); saved(`${(ev.target as HTMLInputElement).checked ? "put" : "removed"} the ${it.name} ${(ev.target as HTMLInputElement).checked ? "in" : "from"} the shop`); } catch { failed(); } },
-        }), " sold in shop")),
-        h("td", {}, priceBox(e.price, async (n) => { try { await saveShopEntry("items", it.id, { on: e.on, price: n }); saved(`set the ${it.name} to ${n} drops`); } catch { failed(); } })));
-    });
-    const m = musicEntry();
-    const musicRow = h("tr", {},
-      h("td", { style: { fontSize: "22px" } }, "♪"), h("td", {}, h("b", {}, "Jukebox pass")), h("td", { class: "hint" }, "Unlocks the Music tab in every room"),
-      h("td", {}, h("label", {}, h("input", {
-        type: "checkbox", checked: m.on,
-        onchange: async (ev: Event) => { try { await saveShopEntry("music", "pass", { on: (ev.target as HTMLInputElement).checked, price: m.price }); saved(`${(ev.target as HTMLInputElement).checked ? "put" : "removed"} the jukebox pass ${(ev.target as HTMLInputElement).checked ? "in" : "from"} the shop`); } catch { failed(); } },
-      }), " sold in shop")),
-      h("td", {}, priceBox(m.price, async (n) => { try { await saveShopEntry("music", "pass", { on: m.on, price: n }); saved(`set the jukebox pass to ${n} drops`); } catch { failed(); } })));
+          onchange: async (ev: Event) => { try { await saveShopEntry("items", id, { on: (ev.target as HTMLInputElement).checked, price: e.price }); saved(`${(ev.target as HTMLInputElement).checked ? "put" : "removed"} the ${it.name} ${(ev.target as HTMLInputElement).checked ? "on" : "off"} 6ixty's shelf`); } catch { failed(); } },
+        }), " 6ixty sells it")),
+        h("td", {}, priceBox(e.price, async (n) => { try { await saveShopEntry("items", id, { on: e.on, price: n }); saved(`set the ${it.name} to ${n} drops`); } catch { failed(); } })),
+        h("td", {}, h("label", { title: "New players start with one in their inventory" }, h("input", {
+          type: "checkbox", checked: !!e.starter,
+          onchange: async (ev: Event) => {
+            const on = (ev.target as HTMLInputElement).checked;
+            try { await saveShopEntry("items", id, { on: e.on, price: e.price, starter: on }); saved(`${on ? "made" : "unmade"} the ${it.name} a starter item`); open("sixty"); } catch { failed(); }
+          },
+        }), " starter")));
+    };
     el.append(
-      h("p", { class: "hint" }, "Everyone starts with a knife, a CD and a syringe. Turn an item on to sell extra copies; it goes into the buyer's inventory."),
+      h("p", { class: "hint" }, "6ixty sells what is ticked here (the shop window opens when a player talks to him). Tick \"starter\" and every NEW player starts with one in their inventory (players who already have an account aren't given one). The knife and the syringe come from 6ixty himself: the knife the first time you meet him, the syringe 12 hours later."),
       h("div", { class: "scroll-box" }, h("table", { class: "atable" },
-        h("thead", {}, h("tr", {}, ...["", "Item", "What it does", "Shop", "Price (drops)"].map((c) => h("th", {}, c)))),
-        h("tbody", {}, ...itemRows, musicRow))),
+        h("thead", {}, h("tr", {}, ...["", "Item", "What it does", "On the shelf", "Price (drops)", "Starter"].map((c) => h("th", {}, c)))),
+        h("tbody", {}, ...ids.map(rowFor)))),
       h("div", { class: "row", style: { marginTop: "10px" } },
         h("button", { class: "btn small", onclick: async () => {
           try {

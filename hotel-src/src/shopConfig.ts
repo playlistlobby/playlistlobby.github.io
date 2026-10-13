@@ -12,6 +12,8 @@ import { ITEM_DEFAULTS, MUSIC_ACCESS_PRICE } from "./items";
 export interface ShopEntry {
   on: boolean;
   price: number;
+  /** "starter": clothes are free for everyone; physical items are in the inventory of every new player */
+  starter?: boolean;
 }
 export type ShopSection = "clothing" | "emotes" | "items" | "music";
 
@@ -64,13 +66,14 @@ export function onShopConfig(fn: () => void): () => void {
 
 // ---- admin writes (the database rules only let the admin account do these) --------------------
 export function saveShopEntry(section: ShopSection, key: string, entry: ShopEntry): Promise<void> {
-  return set(ref(db, `config/shop/${section}/${key}`), { on: !!entry.on, price: Math.max(0, Math.min(999, Math.round(entry.price))) });
+  const starter = entry.starter ?? shopConfig[section][key]?.starter; // editing the price doesn't lose the starter tick
+  return set(ref(db, `config/shop/${section}/${key}`), { on: !!entry.on, price: Math.max(0, Math.min(999, Math.round(entry.price))), ...(starter ? { starter: true } : {}) });
 }
 /** "Clear the shop": nothing is on sale any more (clothing default off, every entry switched off). Prices are kept so items can be turned back on. */
 export async function clearShop(emotes: Array<{ id: string; price: number }>): Promise<void> {
   const updates: Record<string, unknown> = { "clothing/_default": { on: false, price: 0 } };
   for (const [section, entries] of Object.entries(shopConfig) as Array<[ShopSection, Record<string, ShopEntry>]>) {
-    for (const [key, e] of Object.entries(entries)) if (e.on && key !== "_default") updates[`${section}/${key}`] = { on: false, price: e.price };
+    for (const [key, e] of Object.entries(entries)) if (e.on && key !== "_default") updates[`${section}/${key}`] = { on: false, price: e.price, ...(e.starter ? { starter: true } : {}) };
   }
   for (const e of emotes) if (shopConfig.emotes[e.id]?.on !== false) updates[`emotes/${e.id}`] = { on: false, price: shopConfig.emotes[e.id]?.price ?? e.price };
   updates["music/pass"] = { on: false, price: shopConfig.music.pass?.price ?? MUSIC_ACCESS_PRICE };

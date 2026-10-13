@@ -39,8 +39,10 @@ export interface Item {
   key: string;
   /** the price before any admin changes */
   basePrice: number;
-  /** free starter item (the default look and the data's "preselectable" sets): not for sale, everyone owns it */
+  /** free starter item (the default look, the data's "preselectable" sets, or one the admin ticked "starter"): not for sale, everyone owns it */
   starter: boolean;
+  /** starter because the data says so (not something the admin can switch off) */
+  baseStarter: boolean;
   /** sold in the shop right now (the admin decides) */
   shopOn: boolean;
   /** made in the admin's Studio (not part of the original avatar data) */
@@ -105,7 +107,7 @@ export async function loadCatalog(): Promise<void> {
       const starter = !!set.preselectable || defaultKeys.has(key);
       // Drops are scarce (one a day), so clothes cost 1-4 of them.
       const price = starter ? 0 : Math.max(1, Math.round((BASE_PRICE[slot.id] + (hash(slot.id + id) % 6) * 10) / 25));
-      list.push({ type: slot.id, id, gender: set.gender, colors, price, key, basePrice: price, starter, shopOn: !starter });
+      list.push({ type: slot.id, id, gender: set.gender, colors, price, key, basePrice: price, starter, baseStarter: starter, shopOn: !starter });
     }
     list.sort((a, b) => a.price - b.price || Number(a.id) - Number(b.id));
     items[slot.id] = list;
@@ -125,12 +127,12 @@ export function setCustomItems(defs: Array<{ slot: string; id: string; gender: "
   for (const d of defs) {
     if (!items[d.slot]) continue;
     // free for everyone until the admin puts a price on it (see applyClothingConfig)
-    items[d.slot].unshift({ type: d.slot, id: d.id, gender: d.gender, colors: d.colors, price: 0, key: itemKey(d.slot, d.id), basePrice: 0, starter: true, shopOn: false, custom: true });
+    items[d.slot].unshift({ type: d.slot, id: d.id, gender: d.gender, colors: d.colors, price: 0, key: itemKey(d.slot, d.id), basePrice: 0, starter: true, baseStarter: true, shopOn: false, custom: true });
   }
 }
 
 /** Applies the admin's shop settings (config/shop/clothing) to the catalog. Starter items are never changed. */
-export function applyClothingConfig(cfg: Record<string, { on: boolean; price: number }>): void {
+export function applyClothingConfig(cfg: Record<string, { on: boolean; price: number; starter?: boolean }>): void {
   for (const list of Object.values(items ?? {})) {
     for (const it of list) {
       if (it.custom) {
@@ -141,8 +143,10 @@ export function applyClothingConfig(cfg: Record<string, { on: boolean; price: nu
         it.shopOn = !!e && e.on && e.price > 0;
         continue;
       }
-      if (it.starter) continue;
+      if (it.baseStarter) continue;
       const e = cfg[it.key];
+      if (e?.starter) { it.starter = true; it.price = 0; it.shopOn = false; continue; } // the admin made it a starter: free for everyone, not sold
+      it.starter = false;
       it.price = e ? e.price : it.basePrice;
       // "_default" is the admin's switch for everything without its own entry ("Clear the shop" turns it off)
       it.shopOn = e ? e.on : cfg._default ? cfg._default.on : true;

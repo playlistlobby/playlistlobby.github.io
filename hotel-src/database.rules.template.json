@@ -69,7 +69,7 @@
       "shop": {
         "$section": {
           "$key": {
-            ".validate": "newData.hasChildren(['on', 'price']) && newData.child('on').isBoolean() && newData.child('price').isNumber() && newData.child('price').val() >= 0 && newData.child('price').val() <= 999"
+            ".validate": "newData.hasChildren(['on', 'price']) && newData.child('on').isBoolean() && newData.child('price').isNumber() && newData.child('price').val() >= 0 && newData.child('price').val() <= 999 && (!newData.child('starter').exists() || newData.child('starter').val() === true)"
           }
         }
       },
