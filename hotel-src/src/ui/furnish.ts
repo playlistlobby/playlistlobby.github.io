@@ -64,6 +64,7 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
       bar.replaceChildren(h("div", { class: "fz-sel hint" }, "Tap a piece to select it, then drag it. Tap a piece below to put it down."));
     }
 
+    tray.style.display = placing ? "none" : ""; // while you're choosing where to put a piece down, the tray steps out of the way so the whole room shows
     const stored = Object.entries(p.storage).filter(([k, n]) => n > 0 && FURNI_KINDS[k]);
     const carried = p.inventory.map((s, slot) => ({ s, slot })).filter((e): e is { s: NonNullable<typeof e.s>; slot: number } => !!e.s && !!FURNI_KINDS[e.s.item] && /^[fx]_/.test(e.s.item));
     const cell = (kind: string, count: number, onPlace: () => void, secondary: { label: string; run: () => void }) =>

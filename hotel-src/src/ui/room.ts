@@ -304,6 +304,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       selectedSlot = slot;
       pending = null;
       updateHint();
+      // in the furnishing menu, tapping a piece of furniture you carry picks it up to put down (the same as tapping it in the tray)
+      const it = slot !== null ? me.inventory[slot] : null;
+      if (furnishOn && it && itemDef(it.item)?.furniture) {
+        fzPlacing = { kind: it.item, source: "inv", slot: slot! };
+        fzDir = defaultDir(it.item);
+        fzSel = null;
+        furnishUi?.refresh();
+      } else if (furnishOn && slot === null && fzPlacing?.source === "inv") { fzPlacing = null; furnishUi?.refresh(); }
     },
     onEmote: (id) => performEmote(id),
     onCarve: (slot) => { void carveDeadCat(slot); },
@@ -668,7 +676,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
   const onKey = (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
-    if (furnishOn) { if (fzPlacing) fzPlacing = null; else if (fzSel) fzSel = null; else exitFurnish(); refreshFz(); return; }
+    if (furnishOn) { if (fzPlacing) { fzPlacing = null; clearSelection(); } else if (fzSel) fzSel = null; else exitFurnish(); refreshFz(); return; }
     if (selectedSlot !== null) clearSelection();
     closeCdPopup();
     doorApi?.close();
@@ -736,8 +744,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       done: exitFurnish,
       turn: fzTurn,
       store: () => { const f = fzPiece(); if (f) void storeFromRoom(me, def.id, f).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
-      startPlacing: (source, kind, slot) => { fzPlacing = { kind, source, slot }; fzDir = defaultDir(kind); fzSel = null; refreshFz(); },
-      cancelPlacing: () => { fzPlacing = null; refreshFz(); },
+      startPlacing: (source, kind, slot) => { fzPlacing = { kind, source, slot }; fzDir = defaultDir(kind); fzSel = null; if (source === "inv" && slot !== undefined) { selectedSlot = slot; panel.setSelected(slot); } else if (selectedSlot !== null) clearSelection(); refreshFz(); },
+      cancelPlacing: () => { fzPlacing = null; clearSelection(); refreshFz(); },
       storeFromInventory: (slot) => void storeFromInventory(me, slot).then(refreshFz, (err) => say((err as Error).message, "warn")),
       takeFromStorage: (kind) => void takeFromStorage(me, kind).then(refreshFz, (err) => say((err as Error).message, "warn")),
     });
@@ -776,7 +784,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (what.source === "inv") await placeFromInventory(me, def.id, what.slot!, spot);
       else await placeFromStorage(me, def.id, what.kind, spot);
       playSfx("select", 0.4);
-      if (!furnishOn) clearSelection();
+      clearSelection();
       fzPlacing = null;
       refreshFz();
     } catch (err) {
