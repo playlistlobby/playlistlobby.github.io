@@ -84,13 +84,17 @@ let items: Record<string, Item[]> | null = null;
 const swatches: Record<string, Swatch[]> = {};
 
 /** Colours the game's clothing palette doesn't have (it only goes down to dark grey and up to light grey): true black, white and a darker red. */
-export const EXTRA_COLORS: Array<[string, string]> = [["9001", "1c1c1c"], ["9002", "f2f2f2"], ["9003", "7a1b20"]];
+export const EXTRA_COLORS: Array<[string, string]> = [["9001", "1c1c1c"], ["9002", "f2f2f2"], ["9003", "7a1b20"], ["9004", "d11a22"]];
 
 function addExtraColors(fd: any): void {
-  const palette = fd.palette?.[fd.settype?.ch?.paletteid];
-  if (!palette) return;
-  let index = Math.max(0, ...Object.values<any>(palette).map((c) => Number(c.index) || 0)) + 1;
-  for (const [id, color] of EXTRA_COLORS) if (!palette[id]) palette[id] = { index: index++, club: 0, selectable: true, color };
+  const skin = fd.settype?.hd?.paletteid;
+  for (const pid of new Set(Object.values<any>(fd.settype ?? {}).map((t) => t.paletteid))) {
+    if (pid === skin) continue; // not for skin tones
+    const palette = fd.palette?.[pid];
+    if (!palette) continue;
+    let index = Math.max(0, ...Object.values<any>(palette).map((c) => Number(c.index) || 0)) + 1;
+    for (const [id, color] of EXTRA_COLORS) if (!palette[id]) palette[id] = { index: index++, club: 0, selectable: true, color };
+  }
 }
 
 /** Builds the catalog from the figuredata.json that the avatar imager loads. */

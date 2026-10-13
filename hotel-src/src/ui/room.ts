@@ -105,7 +105,7 @@ interface StabFx { from: string; to: string; start: number; impact: boolean; dro
 interface SyringeFx { uid: string; start: number; burst: boolean }
 interface DropFx { from: string; to: string; start: number }
 interface Particle { x: number; y: number; vx: number; vy: number; born: number; life: number }
-interface Floater { text: string; x: number; y: number; born: number; color: string }
+interface Floater { text: string; x: number; y: number; born: number; color: string; icon?: HTMLImageElement; life?: number }
 interface GlyphFx { uid: string; glyph: string; born: number; life: number; ox: number }
 interface Hitbox { id: string; kind?: string; x0: number; y0: number; x1: number; y1: number; depth: number }
 interface NoteFx { born: number; life: number; glyph: string; ox: number; phase: number; color: string }
@@ -113,7 +113,7 @@ interface NoteFx { born: number; life: number; glyph: string; ox: number; phase:
 type Pending =
   | { type: "stab"; uid: string; since: number; lastTry: number }
   | { type: "door"; since: number; lastTry: number }
-  | { type: "sixty"; since: number; lastTry: number }
+  | { type: "sixty"; since: number; lastTry: number; auto?: boolean }
   | { type: "arcade" | "cd" | "bag"; fid: string; since: number; lastTry: number };
 
 const cheb = (a: Pt, b: Pt) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
@@ -814,6 +814,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return;
     }
     if (pending.type === "sixty") {
+      const job0 = pending;
       const goal = { x: SIXTY.x, y: SIXTY.y };
       const r = approach(p, goal, now, pending);
       if (r === "unreachable") { pending = null; return say("You can't get to him.", "warn"); }
@@ -821,7 +822,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         pending = null;
         p.dir = dirOf(currentTile(p), goal);
         update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
-        void talkSixty();
+        if (!job0.auto || sixtyWants()) void talkSixty(); // walking over on arrival only talks if he has something for you
       }
       return;
     }
@@ -1048,9 +1049,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** he has something for you: the knife (first meeting) or the syringe (12 hours after the knife) */
   const sixtyWants = () => me.sixty.knifeAt === 0 || sixtySyringeReady(me);
 
-  function startSixty(): void {
+  function startSixty(auto = false): void {
     clearSelection();
-    pending = { type: "sixty", since: performance.now(), lastTry: 0 };
+    pending = { type: "sixty", since: performance.now(), lastTry: 0, ...(auto ? { auto: true } : {}) };
+  }
+
+  /** a little "+1 Knife" with its icon pops up over your head when 6ixty hands you something */
+  function giftPop(text: string, icon: HTMLImageElement): void {
+    const p = mine();
+    if (!p) return;
+    const t = performance.now();
+    const fp = feetOf(p, t);
+    floaters.push({ text, x: fp.x, y: fp.y - 78 * scale, born: t, color: "#ffe27a", icon, life: 2200 });
   }
 
   function openSixtyWindow(): void {
@@ -1066,6 +1076,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         try { await sixtyGiveKnife(me); } catch { return sixtySay(SIXTY_LINES.full); }
         panel.refresh();
         playSfx("give", 0.6);
+        giftPop("+1 Knife", knifeImg);
         logAction(me, "room", "got the knife from 6ixty");
         sixtySay(SIXTY_LINES.knife, 2600);
         sixtyAfter(2900, () => sixtySay(SIXTY_LINES.tomorrow, 6500));
@@ -1073,6 +1084,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         try { await sixtyGiveSyringe(me); } catch { return sixtySay(SIXTY_LINES.full); }
         panel.refresh();
         playSfx("give", 0.6);
+        giftPop("+1 Syringe", syringeImg);
         logAction(me, "room", "got the syringe from 6ixty");
         sixtySay(SIXTY_LINES.syringe, 2600);
         sixtyAfter(1800, openSixtyWindow);
@@ -1221,6 +1233,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (roomId === LOBBY_ID) {
       // he whispers to anyone he has something for, now and every little while until they come over
       sixtyAfter(1500, () => { if (sixtyWants() && !sixtyBusy) sixtySay(SIXTY_LINES.psst, 3200); });
+      // you walk over to him by yourself when you come down (the admin plays him and stays put)
+      if (!asSixty) sixtyAfter(900, () => { if (!pending && !mine()?.lying) startSixty(true); });
       const psst = window.setInterval(() => {
         if (sixtyWants() && !sixtyBusy && !sixtyShop && !(sixtyBubble && sixtyBubble.until > performance.now())) sixtySay(SIXTY_LINES.psst, 3200);
       }, 14_000);
@@ -1698,15 +1712,27 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // floating "+1"
     for (const f of floaters) {
       const age = now - f.born;
-      g.globalAlpha = Math.max(0, 1 - age / 1100);
-      g.font = `bold ${Math.round(16 * Math.max(1, scale))}px Verdana, sans-serif`;
+      const life = f.life ?? 1100;
+      g.globalAlpha = Math.max(0, Math.min(1, (life - age) / (life * 0.45)));
+      const fsz = Math.round(16 * Math.max(1, scale));
+      g.font = `bold ${fsz}px Verdana, sans-serif`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.lineWidth = 3;
       g.strokeStyle = "#000";
-      g.strokeText(f.text, f.x, f.y - age * 0.04);
+      const fy = f.y - age * 0.04;
+      let fx = f.x;
+      if (f.icon?.complete && f.icon.naturalWidth) {
+        const sz = fsz * 1.7;
+        const tw = g.measureText(f.text).width;
+        const pop = 1 + 0.35 * Math.max(0, 1 - age / 260); // a little pop as it appears
+        const left = f.x - (sz + 4 + tw) / 2;
+        fx = left + sz + 4 + tw / 2;
+        g.drawImage(f.icon, left + sz / 2 - (sz * pop) / 2, fy - (sz * pop) / 2, sz * pop, sz * pop);
+      }
+      g.strokeText(f.text, fx, fy);
       g.fillStyle = f.color;
-      g.fillText(f.text, f.x, f.y - age * 0.04);
+      g.fillText(f.text, fx, fy);
     }
     g.globalAlpha = 1;
     g.textAlign = "start";
@@ -1792,7 +1818,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     for (let i = glyphs.length - 1; i >= 0; i--) if (now - glyphs[i].born > glyphs[i].life) glyphs.splice(i, 1);
     for (let i = particles.length - 1; i >= 0; i--) if (now - particles[i].born > particles[i].life) particles.splice(i, 1);
-    for (let i = floaters.length - 1; i >= 0; i--) if (now - floaters[i].born > 1100) floaters.splice(i, 1);
+    for (let i = floaters.length - 1; i >= 0; i--) if (now - floaters[i].born > (floaters[i].life ?? 1100)) floaters.splice(i, 1);
   }
 
   /** Translucent footprint of the piece the owner is about to place. */
@@ -1905,7 +1931,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           const tw = g.measureText(SIXTY.name).width + 10;
           g.fillStyle = sHot ? "rgba(120,80,10,0.9)" : "rgba(0,0,0,0.55)";
           g.beginPath(); g.roundRect(sf.x - tw / 2, sf.y + 7 * scale, tw, 14 * Math.max(1, scale), 5); g.fill();
-          g.fillStyle = "#ffe27a";
+          g.fillStyle = "#ff3b3b";
           g.textBaseline = "top"; g.textAlign = "center";
           g.fillText(SIXTY.name, sf.x, sf.y + 9 * scale);
           g.textAlign = "start";
@@ -2015,7 +2041,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.beginPath();
           g.roundRect(feet.x - tw / 2, feet.y + 7 * scale, tw, 14 * Math.max(1, scale), 5);
           g.fill();
-          g.fillStyle = p.uid === me.uid ? "#ffe27a" : "#fff";
+          g.fillStyle = p.npc ? "#ff3b3b" : p.uid === me.uid ? "#ffe27a" : "#fff";
           g.textBaseline = "top";
           g.textAlign = "center";
           g.fillText(p.name, feet.x, feet.y + 9 * scale);

@@ -247,7 +247,7 @@ async function showHotel(user: User): Promise<void> {
   for (const room of [LOBBY_ID, ownRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
   logAction(p, "login", "opened 6ixPlanet");
   const stopMessenger = mountMessenger(shell, ctx);
-  // 15 minutes without touching anything: marked idle (the door's room list says so) and sent home to your own room
+  // 10 minutes without touching anything: marked idle (the door's room list says so) and sent home to your own room
   const stopIdle = watchIdle(p, () => {
     const own = ownRoomId(p.uid);
     if (roomMounted === own && pageHost.hidden) return;
