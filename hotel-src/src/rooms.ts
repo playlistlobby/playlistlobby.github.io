@@ -79,8 +79,8 @@ const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECE
 
 export const FURNI_KINDS: Record<string, FurniKind> = {
   ...shopKinds(),
-  // the toolbox in every player room: click it and the furnishing menu opens (a plain painted box, no art file)
-  toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish" },
+  // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
+  toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
   // the wardrobe in the shop room: click it and the clothing shop opens
   wardrobe: { id: "wardrobe", label: "Wardrobe", icon: "🚪", w: 2, h: 1, height: 90, color: "#6b5a48", placeable: false, nitro: "furni/uni_wardrobe.nitro", rotatable: true, fixed: true, opens: "shop" },
   arcade: { id: "arcade", label: "Arcade machine", icon: "🕹️", w: 1, h: 1, height: 78, color: "#26327a", placeable: false },
@@ -249,7 +249,7 @@ export const BAG_ID = "bag";
 export const BAG = { x: 7, y: 0, dir: 2 };
 /** The toolbox starts between the bed and the bag. */
 export const TOOLBOX_ID = "toolbox";
-export const TOOLBOX = { x: 6, y: 0, dir: 0 };
+export const TOOLBOX = { x: 6, y: 0, dir: 4 };
 /** The tile you stand on when you get out of bed (and where you start every login). */
 export const BED_SIDE = { x: 4, y: 1 };
 /** The tile the sleeper's head is on (the end of the bed by the pillow). */

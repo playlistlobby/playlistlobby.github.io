@@ -1847,7 +1847,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const k = FURNI_KINDS[f.kind];
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
-      if (b && k.opens && (isOwnRoom || k.opens === "shop")) {
+      if (b && k.opens && k.opens !== "furnish" && (isOwnRoom || k.opens === "shop")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -1909,19 +1909,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       g.fillStyle = "#3b7de2";
       const b2 = P(0.64, 0.6);
       g.beginPath(); g.arc(b2.x, b2.y, 3 * scale, 0, Math.PI * 2); g.fill();
-    } else if (f.kind === "toolbox") {
-      // a red metal toolbox: a dark lid line, a handle on top and a latch on the front
-      const c = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };
-      g.lineCap = "round";
-      g.strokeStyle = "#2a2a2a"; g.lineWidth = 2.2 * scale;
-      g.beginPath(); g.moveTo(c.x - 7 * scale, c.y + 1 * scale); g.quadraticCurveTo(c.x, c.y - 9 * scale, c.x + 7 * scale, c.y + 1 * scale); g.stroke();
-      const P = (u: number, v: number): Pt => ({ x: D.x + (C.x - D.x) * u, y: D.y + (C.y - D.y) * u + k.height * scale * v });
-      const l0 = P(0.04, 0.38), l1 = P(0.96, 0.38);
-      g.strokeStyle = "rgba(0,0,0,0.45)"; g.lineWidth = 1.4 * scale;
-      g.beginPath(); g.moveTo(l0.x, l0.y); g.lineTo(l1.x, l1.y); g.stroke();
-      const latch = P(0.5, 0.38);
-      g.fillStyle = "#d9d9d9"; g.fillRect(latch.x - 2.2 * scale, latch.y - 2 * scale, 4.4 * scale, 5 * scale);
-    } else if (f.kind === "lamp") {
+    } else if (f.kind === "lamp") {    } else if (f.kind === "lamp") {
       const c = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };
       const grad = g.createRadialGradient(c.x, c.y, 2, c.x, c.y, 34 * scale);
       grad.addColorStop(0, "rgba(255,240,170,0.55)");
