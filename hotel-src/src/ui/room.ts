@@ -16,7 +16,7 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { canStab, canUseSyringe, msUntilTomorrow, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
+import { canStab, canUseSyringe, carveCat, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
 import { SIXTY, SIXTY_LINES, sixtyLook, watchSixtyLook } from "../npc";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
@@ -114,7 +114,7 @@ type Pending =
   | { type: "stab"; uid: string; since: number; lastTry: number }
   | { type: "door"; since: number; lastTry: number }
   | { type: "sixty"; since: number; lastTry: number; auto?: boolean }
-  | { type: "arcade" | "cd" | "bag"; fid: string; since: number; lastTry: number };
+  | { type: "arcade" | "cd" | "bag" | "dumpster"; fid: string; since: number; lastTry: number };
 
 const cheb = (a: Pt, b: Pt) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
@@ -139,6 +139,8 @@ const KNIFE_NITRO = "furni/survival_c26_knife.nitro";
 void loadNitro(KNIFE_NITRO);
 const bloodImg = loadImg(BLOOD_ICON);
 const syringeImg = loadImg(ITEMS.syringe.icon);
+const cigaretteImg = loadImg(ITEMS.cigarette.icon);
+const deadcatImg = loadImg(ITEMS.deadcat.icon);
 
 /** Where the lying avatar's 110x64 picture sits relative to the bed-head tile's floor point (tuned by eye against the bed art). */
 const LAY_DX = -76;
@@ -263,6 +265,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       updateHint();
     },
     onEmote: (id) => performEmote(id),
+    onCarve: (slot) => { void carveDeadCat(slot); },
     onUseSelf: (what) => { if (what === "syringe") void useSyringe(); else void useCigarette(); },
     roomTab: roomId === LOBBY_ID && !me.isAdmin ? undefined : {
       icon: "🏠",
@@ -483,6 +486,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (obj.kind === "cdplayer") openCdPopup();
       else if (obj.kind === "bag") startBag(obj.id);
       else if (obj.kind === "npc") startSixty();
+      else if (obj.kind === "dumpster") startDumpster(obj.id);
       else startArcade(obj.id);
       return;
     }
@@ -513,6 +517,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
       opts.push({ label: "Examine", target: SIXTY.name, action: () => say("6ixty. He sells things, and he knows how this place works.") });
       if (me.isAdmin) opts.push({ label: "Change look", target: SIXTY.name, action: () => ctx.navigate("npc") });
+    }
+    if (obj?.kind === "dumpster") {
+      opts.push({ label: "Search", target: "Dumpster", action: () => startDumpster(obj.id) });
+      opts.push({ label: "Examine", target: "Dumpster", action: () => say("An alley dumpster. It stinks. Somebody has to look inside, and it can be you every three hours.") });
     }
     if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
     if (obj?.kind === "cdplayer") {
@@ -700,6 +708,68 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (cheb(currentTile(mine()!), currentTile(target)) > 1) say(`You walk towards ${target.name}…`);
   }
 
+  function startDumpster(fid: string): void {
+    clearSelection();
+    pending = { type: "dumpster", fid, since: performance.now(), lastTry: 0 };
+  }
+
+  let searching = false;
+  /** next to the dumpster: rummage through it (a cigarette 75%, a dead cat 25%), once every 3 hours */
+  async function searchTheDumpster(): Promise<void> {
+    if (searching) return;
+    const wait = dumpsterWaitMs(me);
+    if (wait > 0) {
+      const mins = Math.ceil(wait / 60000);
+      return say(`You've already been through it. Nothing new yet: try again in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`, "warn");
+    }
+    if (me.inventory.every((s) => s !== null)) return say("Your inventory is full.", "warn");
+    searching = true;
+    try {
+      say("You dig through the dumpster…");
+      playSfx("select", 0.4);
+      await new Promise((r) => window.setTimeout(r, 900));
+      if (disposed) return;
+      const found = await searchDumpster(me);
+      panel.refresh();
+      playSfx("give", 0.6);
+      if (found === "deadcat") {
+        giftPop("+1 Dead cat", deadcatImg);
+        say("Under the bin bags: a dead cat. Poor thing.");
+      } else {
+        giftPop("+1 Cigarette", cigaretteImg);
+        say("You find a cigarette that's hardly been smoked.");
+      }
+      logAction(me, "room", `searched the dumpster and found a ${found === "deadcat" ? "dead cat" : "cigarette"}`);
+    } catch (err) {
+      say((err as Error).message || "You find nothing but rot.", "warn");
+    } finally {
+      searching = false;
+    }
+  }
+
+  /** the knife on a dead cat from your inventory: +5 drops of blood, the cat is used up */
+  async function carveDeadCat(slot: number): Promise<void> {
+    if (me.inventory[slot]?.item !== "deadcat") return;
+    if (findSlot(me.inventory, "knife") < 0) return say("You've got nothing to cut it with.", "warn");
+    try {
+      await carveCat(me, slot);
+      clearSelection();
+      ctx.refreshHeader();
+      panel.refresh();
+      playSfx("stab", 0.5);
+      const p = mine();
+      if (p) {
+        const t = performance.now();
+        const fp = feetOf(p, t);
+        floaters.push({ text: `+${CAT_BLOOD}`, x: fp.x, y: fp.y - 70 * scale, born: t, color: "#ff5252", icon: bloodImg, life: 1700 });
+      }
+      logAction(me, "stab", `cut open a dead cat (+${CAT_BLOOD})`);
+      say(`You open the cat up with your knife. It's still a little warm. (+${CAT_BLOOD})`);
+    } catch {
+      say("The cat slips away… (the hotel refused it)", "warn");
+    }
+  }
+
   function startArcade(fid: string): void {
     pending = { type: "arcade", fid, since: performance.now(), lastTry: 0 };
   }
@@ -842,6 +912,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
       if (job.type === "cd") void executeInsert();
       else if (job.type === "bag") ctx.navigate("customize");
+      else if (job.type === "dumpster") void searchTheDumpster();
       else openArcade(f.kind === "flappy" ? "flappy" : undefined);
     }
   }

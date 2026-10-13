@@ -1,6 +1,6 @@
 import { h } from "./dom";
 import { showMenu } from "./contextMenu";
-import { BLOOD_ICON, INV_SIZE, ITEMS, MUSIC_ACCESS_KEY } from "../items";
+import { BLOOD_ICON, findSlot, INV_SIZE, ITEMS, MUSIC_ACCESS_KEY } from "../items";
 import { consumeSlot } from "../db";
 import { playSfx } from "../sfx";
 import { EMOTES, hasEmote } from "../emotes";
@@ -22,6 +22,8 @@ export interface PanelOpts {
   onEmote(id: string): void;
   /** an item that is used on yourself with one click (the syringe) */
   onUseSelf(what: "syringe" | "smoke"): void;
+  /** the knife was used on a dead cat in this slot */
+  onCarve(slot: number): void;
   /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
   roomTab?: { icon: string; title: string; mount(container: HTMLElement): () => void };
 }
@@ -82,7 +84,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   // ---- inventory -----------------------------------------------------------------------
   function selectedHint(): string {
     const it = selected !== null ? profile.inventory[selected] : null;
-    if (!it) return "Knife: click it, then a player. CD: click it, then the CD player. Syringe: just click it.";
+    if (!it) return "Knife: click it, then a player (or a dead cat). CD: click it, then the CD player. Syringe: just click it.";
     return ITEMS[it.item].useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
   }
 
@@ -101,6 +103,11 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           if (!def) return;
           playSfx("select", 0.35);
           if (loaned) return opts.say(`Your ${def.name} is in the player. It'll be back when it's done.`, "warn");
+          if (def.carvable) {
+            const k = selected !== null ? profile.inventory[selected] : null;
+            if (k?.item === "knife") return opts.onCarve(i);
+            return opts.say(findSlot(profile.inventory, "knife") >= 0 ? "Select your knife first, then click the cat." : "You've got nothing to cut it with.", "warn");
+          }
           if (def.useSelf) return opts.onUseSelf(def.useSelf);
           setSelected(selected === i ? null : i);
         },
@@ -113,6 +120,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
               : def.droppable ? [] : def.useOnObject || def.useOnPlayer
               ? [{ label: selected === i ? "Cancel use" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
               : []),
+            ...(def.carvable && findSlot(profile.inventory, "knife") >= 0 ? [{ label: "Use knife", target: def.name, action: () => opts.onCarve(i) }] : []),
             ...(def.droppable ? [{ label: "Drop", target: def.name, action: () => {
               void consumeSlot(profile, i).then(() => { setSelected(null); renderInventory(); opts.say(`You drop the ${def.name.toLowerCase()}.`); }, () => opts.say("It won't go.", "warn"));
             } }] : []),

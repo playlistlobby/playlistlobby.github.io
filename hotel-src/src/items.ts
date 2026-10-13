@@ -14,6 +14,8 @@ export interface ItemDef {
   useSelf?: "syringe" | "smoke";
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
+  /** select the knife, then click this: it can be cut open for blood (the dead cat) */
+  carvable?: boolean;
 }
 
 /** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
@@ -59,6 +61,13 @@ export const ITEMS: Record<string, ItemDef> = {
     examine: "What's left. Right-click it to drop it.",
     icon: assetUrl("items/cigbutt.svg"),
     droppable: true,
+  },
+  deadcat: {
+    id: "deadcat",
+    name: "Dead cat",
+    examine: "Somebody threw it out. Its blood hasn't all gone cold yet. Select your knife, then click the cat.",
+    icon: assetUrl("items/deadcat.svg"),
+    carvable: true,
   },
   knife: {
     id: "knife",

@@ -29,9 +29,17 @@ export interface Profile {
   seenDoor: boolean;
   /** how far the player is with 6ixty: knifeAt = when he gave the knife (0 = not met yet), syringeGiven = the second gift (12 hours later) */
   sixty: { knifeAt: number; syringeGiven: boolean };
+  /** when the dumpster was last searched (server time, ms; 0 = never) */
+  dumpsterAt: number;
+  /** how many dead cats this player has cut open (the database rules count them to allow the +5) */
+  catsCarved: number;
 }
 
 export const SIXTY_GIFT_DELAY_MS = 12 * 3_600_000;
+/** the dumpster can be searched once every 3 hours; it gives a cigarette (75%) or a dead cat (25%) */
+export const DUMPSTER_MS = 3 * 3_600_000;
+export const CAT_CHANCE = 0.25;
+export const CAT_BLOOD = 5;
 
 export const WARDROBE_SLOTS = 8;
 export const SYRINGE_BLOOD = 2;
@@ -75,7 +83,7 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
-  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false } };
+  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsterAt: 0, catsCarved: 0 };
   // figure "" marks a player who hasn't been through the customizer yet.
   await set(ref(db, `users/${uid}`), {
     name,
@@ -105,6 +113,8 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     syringeDay: v.syringeDay ?? 0,
     isAdmin,
     seenDoor: !!v.seenDoor,
+    dumpsterAt: Number(v.dumpsterAt) || 0,
+    catsCarved: Number(v.catsCarved) || 0,
     // accounts from before 6ixty already have their knife and syringe: they skip his introduction
     sixty: v.sixty
       ? { knifeAt: Number(v.sixty.knifeAt) || 0, syringeGiven: !!v.sixty.syringeGiven }
@@ -237,6 +247,35 @@ export async function sixtyGiveSyringe(p: Profile): Promise<void> {
 }
 
 export const sixtySyringeReady = (p: Profile): boolean => p.sixty.knifeAt > 0 && !p.sixty.syringeGiven && serverNow() - p.sixty.knifeAt >= SIXTY_GIFT_DELAY_MS;
+
+export const dumpsterWaitMs = (p: Profile): number => Math.max(0, p.dumpsterAt + DUMPSTER_MS - serverNow());
+
+/** Rummages through the dumpster: a cigarette (75%) or a dead cat (25%) lands in the inventory. Once every 3 hours. */
+export async function searchDumpster(p: Profile): Promise<"cigarette" | "deadcat"> {
+  const free = p.inventory.findIndex((s) => s === null);
+  if (free < 0) throw new Error("Your inventory is full");
+  const item = Math.random() < CAT_CHANCE ? "deadcat" : "cigarette";
+  await update(ref(db, `users/${p.uid}`), { dumpsterAt: serverTimestamp(), [`inventory/${free}`]: { item, qty: 1 } });
+  p.dumpsterAt = serverNow();
+  p.inventory[free] = { item, qty: 1 };
+  return item;
+}
+
+/** Cuts a dead cat open with the knife: +5 drops of blood, the cat is used up (the rules check you held one and count it). */
+export async function carveCat(p: Profile, slot: number): Promise<void> {
+  if (p.inventory[slot]?.item !== "deadcat") throw new Error("That isn't a dead cat");
+  const before = p.inventory.slice();
+  const after = before.map((s, i) => (i === slot ? null : s)).filter((s): s is NonNullable<typeof s> => !!s);
+  const patch: Record<string, unknown> = {};
+  for (let i = 0; i < before.length; i++) {
+    const want = after[i] ?? null;
+    if (JSON.stringify(want) !== JSON.stringify(before[i])) patch[`inventory/${i}`] = want;
+  }
+  await update(ref(db, `users/${p.uid}`), { ...patch, blood: p.blood + CAT_BLOOD, catsCarved: p.catsCarved + 1 });
+  p.blood += CAT_BLOOD;
+  p.catsCarved += 1;
+  for (let i = 0; i < before.length; i++) p.inventory[i] = after[i] ?? null;
+}
 
 /** Banks the drop of blood for stabbing `targetUid`. The rules only accept +1, once per person per UTC day. */
 export async function rewardStab(p: Profile, targetUid: string): Promise<void> {

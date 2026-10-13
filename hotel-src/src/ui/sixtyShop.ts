@@ -23,7 +23,7 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
   function render(): void {
     if (closed) return;
     // his shelf: whatever the admin has switched on (Admin > Shop > 6ixty stock); lockpick and cigarette are on by default
-    const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => ITEMS[id] && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && itemEntry(id).on);
+    const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => ITEMS[id] && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "deadcat" && itemEntry(id).on);
     body.replaceChildren(
       ...(stock.length === 0 ? [h("div", { class: "hint" }, "Nothing on the shelf right now.")] : stock.map((id) => {
         const it = ITEMS[id];
