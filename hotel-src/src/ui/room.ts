@@ -1746,11 +1746,27 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     syncSleeper();
   }
 
+  /** TEMP-GIVEBLUD: /giveblud 25 adds 25 drops of blood (for testing only). */
+  async function giveBlud(n: number): Promise<void> {
+    if (!(n > 0)) return say("Usage: /giveblud 25", "warn");
+    try {
+      await update(ref(db, `users/${me.uid}`), { blood: me.blood + n, testBlood: serverTimestamp() });
+      me.blood += n;
+      ctx.refreshHeader();
+      say(`(test) You got ${n} drops of blood.`);
+    } catch {
+      say("The hotel refused that. (test command)", "warn");
+    }
+  }
+
   function send(): void {
     const text = input.value.trim().slice(0, MAX_CHARS);
     if (!text) return;
     input.value = "";
     if (text.startsWith("/")) {
+      // TEMP-GIVEBLUD: testing command, remove together with the 'testBlood' rule in database.rules.template.json
+      const gift = /^\/giveblud\s+(\d{1,4})$/i.exec(text);
+      if (gift) { void giveBlud(Math.min(1000, Number(gift[1]))); return; }
       const id = text.slice(1).toLowerCase();
       if (EMOTE_BY_ID[id]) return performEmote(id);
       return say(`Unknown command. Emotes: ${Object.keys(EMOTE_BY_ID).map((e) => "/" + e).join(" ")}`, "warn");
