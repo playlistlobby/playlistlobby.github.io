@@ -64,7 +64,8 @@ export function openArcade(gameId?: string): void {
   function play(g: ArcadeGame): void {
     stopGame();
     title.textContent = `${g.icon} ${g.title}`;
-    back.classList.remove("hidden");
+    // a machine that is made for one game (the Flappy Bird cabinet) has nothing else on it: no way back to a list
+    back.classList.toggle("hidden", !!gameId && g.id === gameId);
     cleanup = g.mount(body, { close });
   }
   function close(): void {

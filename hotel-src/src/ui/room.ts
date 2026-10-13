@@ -45,6 +45,7 @@ import {
   watchLobbyFurni,
   watchMeta,
 } from "../rooms";
+import { loadNitro, nitroIfReady, spritesFor } from "../nitro";
 import { Box, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { fetchProfile, setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
@@ -127,6 +128,9 @@ function loadImg(src: string): HTMLImageElement {
   return img;
 }
 const knifeImg = loadImg(ITEMS.knife.icon);
+/** the knife as furniture art: eight pictures, one per direction, used to draw it in a player's hand */
+const KNIFE_NITRO = "furni/survival_c26_knife.nitro";
+void loadNitro(KNIFE_NITRO);
 const bloodImg = loadImg(BLOOD_ICON);
 const syringeImg = loadImg(ITEMS.syringe.icon);
 
@@ -1327,6 +1331,25 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { opts: { figure: p.figure, dir, headDir: dir, actions, gesture, frame }, yOff };
   }
 
+  /** The knife (Habbo's survival knife, one picture per way it can point) in a player's hand: while it's selected, and during a stab. */
+  function drawKnifeInHand(fx: number, fy: number, dir: number): void {
+    const n = nitroIfReady(KNIFE_NITRO);
+    if (!n) return;
+    const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0;
+    const hx = fx + (side * 14 + (side === 0 ? (dir === 0 ? 8 : -8) : 0)) * scale; // the hand, at hip height beside the body
+    const hy = fy - 25 * scale;
+    g.save();
+    g.imageSmoothingEnabled = false;
+    for (const s of spritesFor(n, dir)) {
+      if (s.isShadow) continue;
+      const k = scale * 0.9;
+      g.drawImage(s.image, s.sx, s.sy, s.sw, s.sh, hx - (s.sw * k) / 2, hy - (s.sh * k) / 2, s.sw * k, s.sh * k);
+    }
+    g.restore();
+  }
+  const holdsKnife = (p: Player, now: number): boolean =>
+    (p.uid === me.uid && selectedDef()?.useOnPlayer === "stab") || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
+
   /** A cigarette at the mouth and a thin stream of smoke rising from the tip. (fx, fy) = the player's feet, `dir` the way they face. */
   function drawCigarette(fx: number, fy: number, dir: number, now: number): void {
     const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0; // which side of the face the cigarette sticks out on
@@ -1960,6 +1983,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
           }
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now);
+          if (holdsKnife(p, now)) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
