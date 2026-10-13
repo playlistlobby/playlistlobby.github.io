@@ -1909,33 +1909,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       g.fillStyle = "#3b7de2";
       const b2 = P(0.64, 0.6);
       g.beginPath(); g.arc(b2.x, b2.y, 3 * scale, 0, Math.PI * 2); g.fill();
-    } else if (f.kind === "shelf_a" || f.kind === "shelf_b" || f.kind === "counter") {
-      // painted wooden shop furniture: shelf boards on both faces, and a till on the counter
-      const face = (a: Pt, b: Pt, v: number) => ({ from: { x: a.x, y: a.y + k.height * scale * v }, to: { x: b.x, y: b.y + k.height * scale * v } });
-      g.lineCap = "round";
-      const shelves = f.kind === "counter" ? [0.55] : [0.28, 0.55, 0.82];
-      for (const v of shelves) {
-        for (const [a, b] of [[D, C], [B, C]] as Array<[Pt, Pt]>) {
-          const l = face(a, b, v);
-          g.strokeStyle = "rgba(90,55,20,0.55)"; g.lineWidth = 2.2 * scale;
-          g.beginPath(); g.moveTo(l.from.x, l.from.y); g.lineTo(l.to.x, l.to.y); g.stroke();
-        }
-      }
-      if (f.kind !== "counter") {
-        // a few jars and boxes on the shelves
-        const cols = ["#e8695a", "#6fb3d8", "#f2c94c", "#8fcf7a"];
-        for (let s = 0; s < 3; s++) for (let i = 0; i < 3; i++) {
-          const u = 0.18 + i * 0.3, v = 0.28 + s * 0.27 - 0.1;
-          const p = { x: D.x + (C.x - D.x) * u, y: D.y + (C.y - D.y) * u + k.height * scale * v };
-          g.fillStyle = cols[(s * 3 + i + f.x + f.y) % cols.length];
-          g.fillRect(p.x - 3 * scale, p.y - 5 * scale, 6 * scale, 8 * scale);
-        }
-      } else {
-        const till = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 - 2 * scale };
-        g.fillStyle = "#6b6f78"; g.fillRect(till.x - 9 * scale, till.y - 11 * scale, 18 * scale, 11 * scale);
-        g.fillStyle = "#cfe9d4"; g.fillRect(till.x - 6 * scale, till.y - 15 * scale, 12 * scale, 5 * scale);
-        g.fillStyle = "#2f3340"; g.fillRect(till.x - 7 * scale, till.y - 7 * scale, 14 * scale, 3 * scale);
-      }
     } else if (f.kind === "toolbox") {
       // a red metal toolbox: a dark lid line, a handle on top and a latch on the front
       const c = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };

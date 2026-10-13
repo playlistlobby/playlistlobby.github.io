@@ -80,11 +80,6 @@ const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECE
 export const FURNI_KINDS: Record<string, FurniKind> = {
   ...shopKinds(),
   // the toolbox in every player room: click it and the furnishing menu opens (a plain painted box, no art file)
-  // the shop's furniture, painted boxes (a counter, shelves, and the low platforms the daily pieces stand on)
-  counter: { id: "counter", label: "Counter", icon: "🧾", w: 4, h: 1, height: 28, color: "#c79b62", placeable: false, fixed: true },
-  shelf_a: { id: "shelf_a", label: "Shelves", icon: "🗄️", w: 2, h: 1, height: 52, color: "#d8b07a", placeable: false, fixed: true },
-  shelf_b: { id: "shelf_b", label: "Shelves", icon: "🗄️", w: 1, h: 2, height: 52, color: "#d8b07a", placeable: false, fixed: true },
-  platform: { id: "platform", label: "Display", icon: "▫️", w: 3, h: 3, height: 5, color: "#ecd3a4", placeable: false, fixed: true, flat: true },
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish" },
   // the wardrobe in the shop room: click it and the clothing shop opens
   wardrobe: { id: "wardrobe", label: "Wardrobe", icon: "🚪", w: 2, h: 1, height: 90, color: "#6b5a48", placeable: false, nitro: "furni/uni_wardrobe.nitro", rotatable: true, fixed: true, opens: "shop" },
@@ -218,22 +213,14 @@ export const SHOP_SIZE = 11;
 export const DISPLAY_PREFIX = "shop_disp";
 export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
 
-/** The shop: a bright general store (think Nook's Cranny): a counter, shelves along the walls, the wardrobe, and today's four pieces each on a low display platform. */
+/** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
 export function shopDef(picks: string[]): RoomDef {
-  const furni: PlacedFurni[] = [
-    { id: "shop_shelf1", kind: "shelf_a", x: 3, y: 0, dir: 0 },
-    { id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 },
-    { id: "shop_counter", kind: "counter", x: 7, y: 0, dir: 0 },
-    { id: "shop_shelf2", kind: "shelf_b", x: 0, y: 2, dir: 0 },
-    { id: "shop_shelf3", kind: "shelf_b", x: 0, y: 5, dir: 0 },
-    { id: "shop_shelf4", kind: "shelf_b", x: 0, y: 8, dir: 0 },
-  ];
+  const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }];
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;
     const slot = SHOP_SLOTS[i];
     const dir = SHOP_PIECES.find((p) => SHOP_KIND_PREFIX + p.id === kind)?.showDir ?? 2;
     const fp = footprint(kind, dir);
-    furni.push({ id: `shop_plat${i}`, kind: "platform", x: slot.x, y: slot.y, dir: 0 });
     furni.push({ id: DISPLAY_PREFIX + i, kind, x: slot.x + Math.floor((3 - fp.w) / 2), y: slot.y + Math.floor((3 - fp.h) / 2), dir });
   });
   return {
