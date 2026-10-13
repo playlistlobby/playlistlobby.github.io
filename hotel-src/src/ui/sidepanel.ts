@@ -1,6 +1,6 @@
 import { h } from "./dom";
 import { showMenu } from "./contextMenu";
-import { BLOOD_ICON, findSlot, INV_SIZE, itemDef, ITEMS, MUSIC_ACCESS_KEY, onFurniIcon } from "../items";
+import { BLOOD_ICON, combine, findSlot, INV_SIZE, itemDef, ITEMS, MUSIC_ACCESS_KEY, onFurniIcon } from "../items";
 import { consumeSlot } from "../db";
 import { playSfx } from "../sfx";
 import { EMOTES, hasEmote } from "../emotes";
@@ -21,7 +21,9 @@ export interface PanelOpts {
   onSelect(slot: number | null): void;
   onEmote(id: string): void;
   /** an item that is used on yourself with one click (the syringe) */
-  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat"): void;
+  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat", slot: number): void;
+  /** one pocket item used on another (weed + paper, ...) */
+  onCombine(a: number, b: number): void;
   /** the knife was used on a dead cat in this slot */
   onCarve(slot: number): void;
   /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
@@ -109,7 +111,11 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
             if (k?.item === "knife") return opts.onCarve(i);
             return opts.say(findSlot(profile.inventory, "knife") >= 0 ? "Select your knife first, then click the cat." : "You've got nothing to cut it with.", "warn");
           }
-          if (def.useSelf) return opts.onUseSelf(def.useSelf);
+          if (selected !== null && selected !== i) {
+            const sel = profile.inventory[selected];
+            if (sel && slot && combine(sel, slot)) { const first = selected; setSelected(null); return opts.onCombine(first, i); }
+          }
+          if (def.useSelf) return opts.onUseSelf(def.useSelf, i);
           setSelected(selected === i ? null : i);
         },
         oncontextmenu: (e: MouseEvent) => {
@@ -117,7 +123,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           if (!def) return;
           showMenu(e.clientX, e.clientY, [
             ...(loaned ? [] : def.useSelf
-              ? [{ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!) }]
+              ? [{ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!, i) }]
               : def.droppable ? [] : def.useOnObject || def.useOnPlayer || def.furniture
               ? [{ label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
               : []),

@@ -38,7 +38,9 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink";
+  /** a growing kit: weed is planted, watered and harvested in it */
+  plant?: boolean;
   /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
   seat?: boolean;
   /** how far up (in 64px pixels) a sitting person is lifted onto the seat */
@@ -79,6 +81,12 @@ const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECE
 
 export const FURNI_KINDS: Record<string, FurniKind> = {
   ...shopKinds(),
+  // the growing kit (sold by 6ixty): an empty pot until you plant a seed in it
+  f_planter: { id: "f_planter", label: "Growing kit", icon: "🪴", w: 1, h: 1, height: 44, color: "#d8d8d8", placeable: false, nitro: "furni/mafia_c26_planter_white.nitro", rotatable: true, plant: true },
+  // the vending machine in the shop room
+  vending: { id: "vending", label: "Vending machine", icon: "🥤", w: 1, h: 1, height: 80, color: "#6b5a48", placeable: false, nitro: "furni/olympics_r16_vendingmchn.nitro", rotatable: true, fixed: true, opens: "vending" },
+  // the sink in every player room (like the bed: always there, movable, never removable): fills the watering can
+  sink: { id: "sink", label: "Sink", icon: "🚰", w: 1, h: 1, height: 36, color: "#555b66", placeable: false, nitro: "furni/hygge_c25_toiletsink.nitro", rotatable: true, fixed: true, opens: "sink" },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
   // the wardrobe in the shop room: click it and the clothing shop opens
@@ -106,6 +114,8 @@ export interface PlacedFurni {
   y: number;
   /** facing 0/2/4/6 (only matters for rotatable pieces) */
   dir?: number;
+  /** a growing kit with a seed in it (server times, ms): planted, last watered, and whether it ever ran dry */
+  plant?: { at: number; water: number; neglect: boolean };
 }
 
 export interface RugRect {
@@ -215,7 +225,7 @@ export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
 
 /** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
 export function shopDef(picks: string[]): RoomDef {
-  const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }];
+  const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }, { id: "shop_vending", kind: "vending", x: 3, y: 0, dir: 4 }];
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;
     const slot = SHOP_SLOTS[i];
@@ -231,7 +241,7 @@ export function shopDef(picks: string[]): RoomDef {
 }
 
 /** The built-in lobby pieces can't be picked up; the ones the admin added can. */
-export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id.startsWith("shop_");
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id === SINK_ID || id.startsWith("shop_");
 
 export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
   return onValue(ref(db, "lobby/furni"), (s) => {
@@ -250,6 +260,9 @@ export const BAG = { x: 7, y: 0, dir: 2 };
 /** The toolbox starts between the bed and the bag. */
 export const TOOLBOX_ID = "toolbox";
 export const TOOLBOX = { x: 6, y: 0, dir: 4 };
+/** The sink starts next to the door. */
+export const SINK_ID = "sink";
+export const SINK = { x: 2, y: 0, dir: 4 };
 /** The tile you stand on when you get out of bed (and where you start every login). */
 export const BED_SIDE = { x: 4, y: 1 };
 /** The tile the sleeper's head is on (the end of the bed by the pillow). */
@@ -263,11 +276,12 @@ export interface RoomMeta {
   w: number;
   h: number;
   theme?: Partial<RoomTheme>;
-  furni?: Record<string, { kind: string; x: number; y: number; dir?: number }>;
+  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean }>;
   /** where the owner moved the fixed pieces to (the bed can't be turned, so only its x/y count) */
   bed?: { x: number; y: number; dir?: number };
   bag?: { x: number; y: number; dir?: number };
   toolbox?: { x: number; y: number; dir?: number };
+  sink?: { x: number; y: number; dir?: number };
 }
 
 /** The tile the sleeper's head is on (the pillow end of the bed), and the tile beside the bed you step out onto. */
@@ -279,10 +293,10 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   // furniture of kinds that no longer exist (the old test cubes) is ignored; the bed is always there
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
-    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir }));
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect } } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
-  const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX);
-  furni.unshift({ id: BED_ID, kind: "bed", x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: "bag", x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir });
+  const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK);
+  furni.unshift({ id: BED_ID, kind: "bed", x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: "bag", x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir });
   const rug: RugRect | null = theme.rug
     ? { x0: Math.floor((ROOM_W - 4) / 2), y0: Math.floor((ROOM_H - 4) / 2), w: 4, h: 4 }
     : null;

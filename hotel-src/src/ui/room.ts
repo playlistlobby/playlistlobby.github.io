@@ -16,11 +16,11 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { BOOST_MS, canStab, canUseSyringe, carveCat, consumeSlot, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
+import { canStab, canUseSyringe, carveCat, combineSlots, consumeSlot, fillCan, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, waterPlant, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
 import { SIXTY, SIXTY_LINES, sixtyLook, watchSixtyLook } from "../npc";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
-import { BLOOD_ICON, findSlot, itemDef, ITEMS, SMOKE_MS } from "../items";
+import { BLOOD_ICON, findSlot, GROW_MS, itemDef, ITEMS, SMOKABLE, SMOKE_MS } from "../items";
 import { CdAudio, CdState, cdEnded, clearCdPlayer, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
@@ -53,12 +53,13 @@ import {
   watchLobbyFurni,
   watchMeta,
 } from "../rooms";
-import { loadNitro, nitroIfReady, spritesFor } from "../nitro";
+import { derive, loadNitro, NitroFurni, nitroIfReady, spritesFor } from "../nitro";
 import { onFurniShopChanged, picksToday, priceOf } from "../furniShop";
 import { FurniBuyApi, openFurniBuy } from "./furniBuy";
+import { openVending, VendingApi } from "./vendingShop";
 import { FurnishApi, mountFurnishUi } from "./furnish";
 import { canTurn, defaultDir, isFixedPiece, nextDir, movePiece, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
-import { Box, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
+import { Box, drawNitroSprites, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { fetchProfile, setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
 import { h, toast } from "./dom";
@@ -86,6 +87,59 @@ void loadNitro("furni/xmas_c20_woodenhouse.nitro").then((n) => {
   c.getContext("2d")!.drawImage(n.image, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
   toolIconImg.src = c.toDataURL("image/png");
 }).catch(() => undefined);
+
+/** the picture that floats over the vending machine: the basket icon from market_c19_basket.nitro */
+const basketIconImg = new Image();
+void loadNitro("furni/market_c19_basket.nitro").then((n) => {
+  if (!n) return;
+  const key = Object.keys(n.json.spritesheet.frames).find((k) => /_icon_a(.png)?$/.test(k));
+  const fr = key ? n.json.spritesheet.frames[key].frame : null;
+  if (!fr) return;
+  const c = document.createElement("canvas");
+  c.width = fr.w; c.height = fr.h;
+  c.getContext("2d")!.drawImage(n.image, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
+  basketIconImg.src = c.toDataURL("image/png");
+}).catch(() => undefined);
+
+/** The growing kit's art is a potted plant; the empty pot is the same sheet with everything above the rim wiped out. */
+let potArt: NitroFurni | null = null;
+void loadNitro("furni/mafia_c26_planter_white.nitro").then((n) => {
+  if (!n) return;
+  potArt = derive(n, (g) => {
+    for (const [key, f] of Object.entries(n.json.spritesheet.frames)) {
+      if (!/_64_a_/.test(key)) continue;
+      const { x, y, w, h } = f.frame;
+      if (w < 30 || h < 30) continue;
+      // the sprite is a plant that covers its own pot: wipe it and paint a bare pot (gold rim, dark soil, pale bowl, dark foot) in its place
+      g.clearRect(x, y, w, h);
+      const cx = w / 2 - 0.5, top = Math.round(h * 0.64);
+      const px = (ix: number, iy: number, c: string) => { g.fillStyle = c; g.fillRect(x + Math.round(ix), y + iy, 1, 1); };
+      for (let iy = top; iy < h; iy++) {
+        const t = (iy - top) / (h - top);
+        const hw = 16 - t * 6.5; // the bowl narrows towards the foot
+        for (let ix = Math.ceil(cx - hw); ix <= Math.floor(cx + hw); ix++) {
+          const edge = ix <= cx - hw + 1 || ix >= cx + hw - 1 || iy >= h - 1;
+          const foot = iy > h - 6;
+          const shade = ix < cx - hw * 0.35 ? "#ebe7e2" : ix < cx + hw * 0.3 ? "#d6d1cb" : "#b8b1aa";
+          px(ix, iy, edge ? "#5c554f" : foot ? "#5a3d2b" : shade);
+        }
+      }
+      for (let iy = top - 8; iy <= top + 6; iy++) for (let ix = 0; ix < w; ix++) {
+        const dx = (ix - cx) / 16.5, dy = (iy - (top - 1)) / 5.6;
+        if (dx * dx + dy * dy <= 1) px(ix, iy, "#e8a63a"); // the gold rim
+        const sx = (ix - cx) / 13.5, sy = (iy - (top - 1.6)) / 3.8;
+        if (sx * sx + sy * sy <= 1) px(ix, iy, sy < -0.2 ? "#3d2716" : "#4f321c"); // the dark soil
+        if (dx * dx + dy * dy <= 1 && dx * dx + dy * dy > 0.86 && iy < top) px(ix, iy, "#f6d27a"); // the rim's lit edge
+      }
+    }
+  });
+}).catch(() => undefined);
+const itemImgs = new Map<string, HTMLImageElement>();
+const itemImg = (id: string): HTMLImageElement => {
+  let im = itemImgs.get(id);
+  if (!im) { im = loadImg(itemDef(id)?.icon ?? ""); itemImgs.set(id, im); }
+  return im;
+};
 
 const STEP_MS = 480;
 const BUBBLE_MS = 6500;
@@ -144,7 +198,7 @@ type Pending =
   | { type: "stab"; uid: string; since: number; lastTry: number }
   | { type: "door"; since: number; lastTry: number; to?: ExtraDoor }
   | { type: "sixty"; since: number; lastTry: number; auto?: boolean }
-  | { type: "arcade" | "cd" | "bag" | "dumpster"; fid: string; since: number; lastTry: number };
+  | { type: "arcade" | "cd" | "bag" | "dumpster" | "use"; fid: string; since: number; lastTry: number; slot?: number | null };
 
 const cheb = (a: Pt, b: Pt) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
@@ -230,6 +284,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let extraDoorBoxes: Array<{ box: Box; door: ExtraDoor }> = [];
   let hoverExtra = -1;
   let furniBuyApi: FurniBuyApi | null = null;
+  let vendingApi: VendingApi | null = null;
   // the furnishing menu (toolbox): your room without you in it, pieces to drag around, storage
   let furnishOn = false;
   let furnishUi: FurnishApi | null = null;
@@ -318,7 +373,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     },
     onEmote: (id) => performEmote(id),
     onCarve: (slot) => { void carveDeadCat(slot); },
-    onUseSelf: (what) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "eat") void eatBurger(); else void useCigarette(); },
+    onUseSelf: (what, slot) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onCombine: (a, b) => { void combineSlots(me, a, b).then((note) => { panel.refresh(); say(note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
       icon: "🏠",
       title: "Room",
@@ -347,6 +403,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
     else if (hoverObj && isDisplayPiece(hoverObj.id)) text = `${FURNI_KINDS[hoverObj.kind!].label} · ${priceOf(hoverObj.kind!)} drops (click to buy)`;
     else if (hoverObj && hoverObj.kind === "wardrobe") text = "Wardrobe: the clothing shop";
+    else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
+    else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind ?? ""]?.plant) { const pf = def.furni.find((x) => x.id === hoverObj!.id); text = pf?.plant ? `Growing kit · ${Math.round(plantProgress(pf.plant) * 100)}% · water ${Math.round(plantWater(pf.plant) * 100)}%` : "Growing kit (empty): plant a seed"; }
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
     else if (hoverExtra >= 0 && def.extraDoors?.[hoverExtra]) text = `Door: ${def.extraDoors[hoverExtra].label}`;
     else if (hoverDoor) text = isOwnRoom ? "Door: to the basement" : def.doorTo ? "Door: back to the basement" : "Door: rooms";
@@ -567,7 +626,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     // an item that goes on a piece of furniture (the CD on the CD player)
     if (item?.useOnObject) {
-      if (obj && !target && obj.kind === item.useOnObject) startCd(obj.id);
+      if (obj && !target && obj.kind === item.useOnObject) { if (obj.kind === "cdplayer") startCd(obj.id); else startUse(obj.id, selectedSlot); }
       else {
         clearSelection();
         if (obj && !target) say("Nothing interesting happens.", "warn");
@@ -578,7 +637,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (obj.kind === "cdplayer") openCdPopup();
-      else if (obj.kind === "bag" || obj.kind === "wardrobe" || obj.kind === "toolbox") startBag(obj.id);
+      else if (obj.kind === "bag" || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending") startBag(obj.id);
+      else if (obj.kind === "sink" || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
       else if (FURNI_KINDS[obj.kind!]?.seat) sitAt(obj.id, t);
@@ -620,6 +680,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj && isDisplayPiece(obj.id)) opts.push({ label: "Buy", target: FURNI_KINDS[obj.kind!].label, action: () => openBuy(obj.kind!) });
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
     if (obj && FURNI_KINDS[obj.kind!]?.seat && !isDisplayPiece(obj.id)) opts.push({ label: "Sit", target: FURNI_KINDS[obj.kind!].label, action: () => sitAt(obj.id, tile) });
+    if (obj?.kind === "vending") opts.push({ label: "Shop", target: "Vending machine", action: () => startBag(obj.id) });
+    if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
     if (obj?.kind === "cdplayer") {
@@ -1031,6 +1093,64 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     update(ref(db, `rooms/${roomId}/players/${me.uid}`), { sit: true, dir: s.dir }).catch(() => undefined);
   }
 
+  /** Walk over to a piece you're using something on (or just tending); `slot` is the pocket item you had selected. */
+  function startUse(fid: string, slot: number | null): void {
+    pending = { type: "use", fid, since: performance.now(), lastTry: 0, slot };
+    clearSelection();
+  }
+
+  const planterStatus = (pl: { at: number; water: number; neglect: boolean }): string => {
+    const prog = plantProgress(pl), water = plantWater(pl);
+    const left = Math.max(0, GROW_MS * (1 - prog));
+    const mins = Math.ceil(left / 60000);
+    return prog >= 1 ? `It's ready to pick!${pl.neglect || water <= 0 ? " It looks a bit sad." : ""}` : `Growing: ${Math.round(prog * 100)}% (about ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`} to go). Water: ${Math.round(water * 100)}%.`;
+  };
+
+  /** Next to the sink or a growing kit: the sink fills a can; a kit gets a seed, water, or gets picked. */
+  async function interactWith(f: PlacedFurni, slot: number | null): Promise<void> {
+    const k = FURNI_KINDS[f.kind];
+    const held = slot !== null ? me.inventory[slot] : null;
+    try {
+      if (f.kind === "sink") {
+        const cs = held?.item === "wateringcan" ? slot! : findSlot(me.inventory, "wateringcan");
+        if (cs < 0 || cs === null) return say(findSlot(me.inventory, "wateringcan_full") >= 0 ? "Your watering can is already full." : "You have nowhere to put the water.", "warn");
+        await fillCan(me, cs);
+        panel.refresh();
+        playSfx("select", 0.4);
+        return say("You fill the watering can.");
+      }
+      if (!k?.plant) return;
+      if (!isOwnRoom) return say("That's not your plant.", "warn");
+      if (!f.plant) {
+        const ss = held?.item === "weedseed" ? slot! : findSlot(me.inventory, "weedseed");
+        if (ss < 0 || ss === null) return say("An empty growing kit. Select a weed seed, then click the kit to plant it.", "warn");
+        await plantSeed(me, def.id, f.id, ss);
+        panel.refresh();
+        return say("You push a seed into the soil. It needs water: 2 hours to grow, thirsty after 1.");
+      }
+      const prog = plantProgress(f.plant);
+      const canSlot = held?.item === "wateringcan_full" ? slot! : findSlot(me.inventory, "wateringcan_full");
+      if (held?.item === "wateringcan_full" || (prog < 1 && canSlot >= 0)) {
+        if (canSlot < 0 || canSlot === null) return say("You need a full watering can.", "warn");
+        await waterPlant(me, def.id, f.id, f.plant, canSlot);
+        panel.refresh();
+        playSfx("select", 0.4);
+        return say("You water the plant.");
+      }
+      if (prog >= 1) {
+        const r = await harvestPlant(me, def.id, f.id, f.plant);
+        panel.refresh();
+        playSfx("give", 0.6);
+        giftPop(r.ass ? "+3 Ass weed" : "+3 Weed", itemImg("weed"));
+        logAction(me, "room", `harvested ${r.ass ? "ass weed" : "weed"}`);
+        return say(r.ass ? "You pick it. It's ass weed: it ran dry on you." : "You pick the buds. Nice.");
+      }
+      say(planterStatus(f.plant));
+    } catch (err) {
+      say((err as Error).message || "That didn't work.", "warn");
+    }
+  }
+
   function startDumpster(fid: string): void {
     clearSelection();
     pending = { type: "dumpster", fid, since: performance.now(), lastTry: 0 };
@@ -1055,17 +1175,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const found = await searchDumpster(me, canId);
       panel.refresh();
       playSfx("give", 0.6);
-      if (found === "deadcat") {
-        giftPop("+1 Dead cat", deadcatImg);
-        say("Under the bin bags: a dead cat. Poor thing.");
-      } else if (found === "burger") {
-        giftPop("+1 Burger", burgerImg);
-        say("A burger, hardly bitten. Lucky you.");
-      } else {
-        giftPop("+1 Cigarette", cigaretteImg);
-        say("You find a cigarette that's hardly been smoked.");
-      }
-      logAction(me, "room", `searched a garbage can and found a ${found === "deadcat" ? "dead cat" : found}`);
+      const FOUND: Record<string, string> = { deadcat: "Under the bin bags: a dead cat. Poor thing.", burger: "A burger, hardly bitten. Lucky you.", weedseed: "A few little seeds in the muck. They might grow.", lighter: "A lighter, and it still works!" };
+      giftPop(`+1 ${itemDef(found)?.name ?? found}`, itemImg(found));
+      say(FOUND[found] ?? `You find a ${itemDef(found)?.name ?? found}.`);
+      logAction(me, "room", `searched a garbage can and found a ${found}`);
     } catch (err) {
       say((err as Error).message || "You find nothing but rot.", "warn");
     } finally {
@@ -1104,6 +1217,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function startBag(fid: string): void {
     clearSelection();
     pending = { type: "bag", fid, since: performance.now(), lastTry: 0 };
+  }
+
+  function openVendingShop(): void {
+    if (vendingApi) return;
+    vendingApi = openVending(stage, ctx, () => panel.refresh(), () => { vendingApi = null; });
   }
 
   function openBuy(kind: string): void {
@@ -1251,9 +1369,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (job.type === "bag") {
         const opens = FURNI_KINDS[f.kind].opens;
         if (opens === "furnish") enterFurnish();
+        else if (opens === "vending") openVendingShop();
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
       }
       else if (job.type === "dumpster") void searchTheDumpster(job.fid);
+      else if (job.type === "use") void interactWith(f, job.slot ?? null);
       else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
         collectBlood: async () => {
           try {
@@ -1523,26 +1643,27 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- smoking ------------------------------------------------------------------------------------------
   const isSmoking = (p: Player | undefined): boolean => !!p && typeof p.smoke === "number" && serverNow() - p.smoke < SMOKE_MS;
 
-  async function useCigarette(): Promise<void> {
+  /** Lights a cigarette, joint or blunt (you need a lighter; it isn't used up). */
+  async function lightUp(slot: number): Promise<void> {
     const p = mine();
     if (!p || p.lying) return;
+    const it = me.inventory[slot];
+    if (!it || !SMOKABLE[it.item] || it.lit) return;
     if (isSmoking(p)) return say("You're already smoking one.", "warn");
-    const slot = me.inventory.findIndex((s) => s?.item === "cigarette" && !s.lit);
-    if (slot < 0) return;
-    const t = serverNow();
+    if (findSlot(me.inventory, "lighter") < 0) return say("You need a lighter for that. The vending machine in the shop sells them.", "warn");
     try {
-      await update(ref(db, `users/${me.uid}`), { [`inventory/${slot}/lit`]: serverTimestamp() });
-      me.inventory[slot]!.lit = t;
+      const t = await lightItem(me, slot);
       p.smoke = t;
       void update(myRef, { smoke: serverTimestamp() }).catch(() => undefined);
       playSfx("light", 0.45);
-      logAction(me, "room", "lit a cigarette");
+      logAction(me, "room", `lit a ${it.item}`);
       panel.refresh();
       say("You light up.");
-    } catch {
-      say("The lighter won't catch. (the hotel refused it)", "warn");
+    } catch (err) {
+      say((err as Error).message || "The lighter won't catch.", "warn");
     }
   }
+
 
   /**
    * 6ixty's pill. Nothing happens for 5-10 seconds while the screen swims (more and more blur, you can still walk about). Then you say
@@ -1629,17 +1750,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** A cigarette that has burned for a minute becomes a butt in the inventory. */
   function burnDown(): void {
     me.inventory.forEach((s, i) => {
-      if (s?.item !== "cigarette" || !s.lit || serverNow() - s.lit < SMOKE_MS) return;
-      me.inventory[i] = { item: "cigbutt", qty: 1 };
-      // a finished cigarette: for two minutes a stab is worth double
-      const until = serverNow() + BOOST_MS;
+      const sm = s ? SMOKABLE[s.item] : undefined;
+      if (!s || !sm || !s.lit || serverNow() - s.lit < SMOKE_MS) return;
+      // a finished cigarette / joint / blunt: for a while a stab is worth more (ass weed only gives the cigarette bonus)
+      const bonus = s.ass ? SMOKABLE.cigarette : sm;
+      const until = serverNow() + bonus.boostMs;
       me.boostUntil = until;
-      void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 }, boostUntil: until }).catch(() => undefined);
+      me.boostMult = bonus.mult;
+      me.inventory[i] = { item: "cigbutt", qty: 1 };
+      void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 }, boostUntil: until, boostMult: bonus.mult }).catch(() => undefined);
       const p = mine();
       if (p) p.smoke = undefined;
       void update(myRef, { smoke: null }).catch(() => undefined);
       panel.refresh();
-      say("The cigarette burns down to a butt. You feel sharp: stabs give double blood for 2 minutes.");
+      say(`You finish the ${itemDef(s.item)?.name.toLowerCase() ?? "smoke"}. You feel sharp: stabs give x${bonus.mult} blood for ${Math.round(bonus.boostMs / 60000)} minutes.`);
     });
   }
 
@@ -1720,7 +1844,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       window.setTimeout(() => fade.remove(), WAKE_MS + 800);
     }
     // a cigarette still burning from before (you changed rooms) keeps smoking
-    const burning = me.inventory.find((s) => s?.item === "cigarette" && s.lit && serverNow() - s.lit < SMOKE_MS)?.lit;
+    const burning = me.inventory.find((s) => s && SMOKABLE[s.item] && s.lit && serverNow() - s.lit < SMOKE_MS)?.lit;
     if (burning) mineP.smoke = burning;
     void onDisconnect(myRef).remove();
     set(myRef, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, ts: serverTimestamp(), ...(burning ? { smoke: burning } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
@@ -1975,11 +2099,70 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.restore();
   }
 
-  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number }, now: number): Hitbox | null {
+  /** A growing kit: an empty pot; once planted the plant is revealed from the bottom up as it grows, with a growth bar and a water bar over it. */
+  function drawPlanter(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
+    const full = k.nitro ? nitroIfReady(k.nitro) : undefined;
+    if (!full) return null;
+    const dir = f.dir ?? 0;
+    const pot = drawNitroSprites(g, potArt ?? full, 1, 1, f.x, f.y, dir, k.nudge, toScreen, scale);
+    const pl = f.plant;
+    let box = pot;
+    if (pl) {
+      const prog = plantProgress(pl);
+      const water = plantWater(pl);
+      g.save();
+      const probe = drawNitroSpritesBox(full, f, dir);
+      if (probe) {
+        const hh = probe.y1 - probe.y0;
+        const shown = 0.34 + 0.66 * prog; // a seedling shows at once, the full plant when it's grown
+        g.beginPath();
+        g.rect(probe.x0 - 2, probe.y1 - hh * shown, probe.x1 - probe.x0 + 4, hh * shown + 2);
+        g.clip();
+        drawNitroSprites(g, full, 1, 1, f.x, f.y, dir, k.nudge, toScreen, scale);
+        box = probe;
+      }
+      g.restore();
+      if (box) {
+        const bw = 30 * scale, bh = 4 * scale, cx = (box.x0 + box.x1) / 2, y = box.y0 - 7 * scale;
+        const bar = (yy: number, frac: number, color: string) => {
+          g.fillStyle = "rgba(0,0,0,0.6)"; g.fillRect(cx - bw / 2 - scale, yy - scale, bw + 2 * scale, bh + 2 * scale);
+          g.fillStyle = "#222"; g.fillRect(cx - bw / 2, yy, bw, bh);
+          g.fillStyle = color; g.fillRect(cx - bw / 2, yy, bw * Math.max(0, Math.min(1, frac)), bh);
+        };
+        bar(y, prog, prog >= 1 ? "#9dff5a" : "#4fa93a"); // growth
+        bar(y + bh + 3 * scale, water, water > 0 ? "#4aa8e8" : "#7a2a2a"); // water
+        if (prog >= 1) {
+          const bounce = Math.sin(now / 260) * 2 * scale;
+          g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`; g.textAlign = "center"; g.textBaseline = "bottom";
+          g.lineWidth = 3; g.strokeStyle = "#000"; g.strokeText("ready!", cx, y - 3 * scale + bounce);
+          g.fillStyle = "#c8ff8a"; g.fillText("ready!", cx, y - 3 * scale + bounce);
+          g.textAlign = "start";
+        }
+      }
+    }
+    return box ? { id: "", ...box, depth: f.x + f.y } : null;
+  }
+  /** The screen box the full-grown plant art covers (without drawing it). */
+  function drawNitroSpritesBox(n: NitroFurni, f: { x: number; y: number }, dir: number): Box | null {
+    const k = FURNI_KINDS["f_planter"];
+    let box: Box | null = null;
+    const o = toScreen(iso(f.x + 0.5, f.y + 0.5));
+    for (const s of spritesFor(n, dir)) {
+      if (s.isShadow || s.sw <= 2 || s.sh <= 2) continue;
+      const left = o.x + (k.nudge?.x ?? 0) * scale + s.dx * scale, top = o.y + (k.nudge?.y ?? 0) * scale + s.dy * scale;
+      const b2 = { x0: left, y0: top, x1: left + s.sw * scale, y1: top + s.sh * scale };
+      box = box ? { x0: Math.min(box.x0, b2.x0), y0: Math.min(box.y0, b2.y0), x1: Math.max(box.x1, b2.x1), y1: Math.max(box.y1, b2.y1) } : b2;
+    }
+    return box;
+  }
+
+  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean } }, now: number): Hitbox | null {
+    const k = FURNI_KINDS[f.kind];
+    if (k.plant) return drawPlanter(f, now);
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
-      if (b && k.opens && (isOwnRoom || k.opens === "shop")) {
+      if (b && k.opens && k.opens !== "sink" && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -2007,9 +2190,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const showHanger = !me.seenDoor || hot;
-        const hint = k.opens === "furnish" ? toolIconImg : hangerImg; // the toolbox floats a little house, the bag a hanger
+        const hint = k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = scale * (k.opens === "furnish" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -2477,7 +2660,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && furnishOn) pieceBoxes.push({ id: f.id, box, depth: box.depth });
           if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop")) || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -2684,6 +2867,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     endPress();
     doorApi?.close();
     furniBuyApi?.close();
+    vendingApi?.close();
     pillCleanup?.();
     furnishUi?.dispose();
     closeCdPopup();
@@ -2711,6 +2895,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (roomId === LOBBY_ID) setAmbience(false);
       sixtyShop?.close();
       furniBuyApi?.close();
+      vendingApi?.close();
       exitFurnish();
       closeCdPopup();
       closeMenu();

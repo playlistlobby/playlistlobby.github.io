@@ -1,7 +1,7 @@
 import { get, onValue, ref, serverTimestamp, set, update } from "firebase/database";
 import { db, firebaseReady } from "./firebase";
 import { DEFAULT_FIGURE, Gender } from "./catalog";
-import { DISABLED_ITEMS, emptyInventory, findSlotAny, Inventory, ITEMS, parseInventory, SMOKE_MS, START_BLOOD } from "./items";
+import { combine, DISABLED_ITEMS, emptyInventory, findSlotAny, GROW_MS, InvItem, Inventory, ITEMS, parseInventory, SMOKE_MS, SMOKABLE, STACKABLE, START_BLOOD, WATER_MS } from "./items";
 
 export interface Outfit {
   figure: string;
@@ -33,6 +33,8 @@ export interface Profile {
   dumpsters: Record<string, number>;
   /** stabbing gives double blood until this time (server time, ms): set when a cigarette burns down */
   boostUntil: number;
+  /** how many times a stab is worth while the bonus lasts (2 cigarette, 3 joint, 4 blunt) */
+  boostMult: number;
   /** how many dead cats this player has cut open (the database rules count them to allow the +5) */
   catsCarved: number;
   /** furniture kept in the toolbox's storage: kind -> how many */
@@ -43,10 +45,14 @@ export interface Profile {
 export const STARTER_FURNITURE = ["f_sofa"];
 
 export const SIXTY_GIFT_DELAY_MS = 12 * 3_600_000;
-/** each garbage can can be searched once every 10 minutes: 40% a burger, 30% a cigarette, 30% a dead cat */
+/** each garbage can can be searched once every 10 minutes; every search rolls each of these on its own (so it can give several things, or nothing) */
 export const DUMPSTER_MS = 600_000;
-export const BURGER_CHANCE = 0.4;
-export const CAT_CHANCE = 0.3;
+export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
+  { item: "weedseed", chance: 0.5, label: "weed seed" },
+  { item: "burger", chance: 0.4, label: "burger" },
+  { item: "deadcat", chance: 0.3, label: "dead cat" },
+  { item: "lighter", chance: 0.05, label: "lighter" },
+];
 export const CAT_BLOOD = 2;
 /** after a cigarette is finished, a stab is worth double for this long */
 export const BOOST_MS = 120_000;
@@ -55,7 +61,7 @@ export const WARDROBE_SLOTS = 8;
 export const SYRINGE_BLOOD = 2;
 const DAY_MS = 86_400_000;
 /** Nobody starts with anything any more: 6ixty gives the knife (right away) and the syringe (12 hours later). */
-export const STARTER_ITEMS: string[] = ["lighter"];
+export const STARTER_ITEMS: string[] = []; // (the lighter used to start in everybody's pocket; now it's bought in the shop room or found in the bin)
 
 // ---- server clock -----------------------------------------------------------------
 // The database rules judge "today" with the server's clock, so the client must too.
@@ -93,7 +99,7 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
-  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsters: {}, boostUntil: 0, catsCarved: 0, storage: Object.fromEntries(STARTER_FURNITURE.map((k) => [k, 1])) };
+  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsters: {}, boostUntil: 0, boostMult: 2, catsCarved: 0, storage: Object.fromEntries(STARTER_FURNITURE.map((k) => [k, 1])) };
   // figure "" marks a player who hasn't been through the customizer yet.
   await set(ref(db, `users/${uid}`), {
     name,
@@ -127,6 +133,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     seenDoor: !!v.seenDoor,
     dumpsters: Object.fromEntries(Object.entries((v.dumpsters ?? {}) as Record<string, number>).map(([k, n]) => [k, Number(n) || 0])),
     boostUntil: Number(v.boostUntil) || 0,
+    boostMult: Math.min(4, Math.max(2, Number(v.boostMult) || 2)),
     catsCarved: Number(v.catsCarved) || 0,
     storage: Object.fromEntries(Object.entries((v.storage ?? {}) as Record<string, number>).filter(([, n]) => Number(n) > 0).map(([k, n]) => [k, Number(n)])),
     // accounts from before 6ixty already have their knife and syringe: they skip his introduction
@@ -141,7 +148,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
   const patch: Record<string, unknown> = {};
   // a cigarette lit more than a minute ago (the page was closed meanwhile) is a butt by now
   profile.inventory.forEach((s, i) => {
-    if (s?.item === "cigarette" && s.lit && Date.now() - s.lit > SMOKE_MS + 5000) {
+    if (s && SMOKABLE[s.item] && s.lit && Date.now() - s.lit > SMOKE_MS + 5000) {
       profile.inventory[i] = { item: "cigbutt", qty: 1 };
       patch[`inventory/${i}`] = { item: "cigbutt", qty: 1 };
     }
@@ -269,16 +276,145 @@ export const sixtySyringeReady = (p: Profile): boolean => p.sixty.knifeAt > 0 &&
 
 export const dumpsterWaitMs = (p: Profile, canId: string): number => Math.max(0, (p.dumpsters[canId] ?? 0) + DUMPSTER_MS - serverNow());
 
-/** Rummages through a garbage can: a burger (40%), a cigarette (30%) or a dead cat (30%) lands in the inventory. Each can: once every 10 minutes. */
-export async function searchDumpster(p: Profile, canId: string): Promise<"burger" | "cigarette" | "deadcat"> {
-  const free = p.inventory.findIndex((s) => s === null);
-  if (free < 0) throw new Error("Your inventory is full");
-  const r = Math.random();
-  const item = r < BURGER_CHANCE ? "burger" : r < 1 - CAT_CHANCE ? "cigarette" : "deadcat";
-  await update(ref(db, `users/${p.uid}`), { [`dumpsters/${canId}`]: serverTimestamp(), [`inventory/${free}`]: { item, qty: 1 } });
+// ---- the pocket: adding, stacking, trading items in one write --------------------------------------------------
+
+/** A copy of the inventory with something put in it (stacking where the item stacks); null if there's no room. */
+export function addToInv(inv: Inventory, give: InvItem): Inventory | null {
+  const out: Inventory = inv.map((s) => (s ? { ...s } : null));
+  if (STACKABLE.has(give.item) && !give.lit) {
+    const t = out.findIndex((s) => s && s.item === give.item && !s.lit && !s.inPlayer && !!s.ass === !!give.ass && s.qty + give.qty <= 999);
+    if (t >= 0) { out[t]!.qty += give.qty; return out; }
+  }
+  const f = out.findIndex((s) => s === null);
+  if (f < 0) return null;
+  out[f] = { ...give };
+  return out;
+}
+
+/** A copy of the inventory with one of the item in `slot` used up. */
+export function takeOneFrom(inv: Inventory, slot: number): Inventory {
+  const out: Inventory = inv.map((s) => (s ? { ...s } : null));
+  const s = out[slot];
+  if (!s) return out;
+  if (s.qty > 1) s.qty -= 1; else out[slot] = null;
+  return out;
+}
+
+/** Saves a new inventory (gaps closed) together with other changes, as one atomic write from the root. `extra` keys are full database paths. */
+export async function commitInv(p: Profile, next: Inventory, extra: Record<string, unknown> = {}): Promise<void> {
+  const kept = next.filter((s): s is InvItem => !!s);
+  const after: Inventory = next.map((_, i) => kept[i] ?? null);
+  const patch: Record<string, unknown> = {};
+  for (let i = 0; i < after.length; i++) if (JSON.stringify(after[i]) !== JSON.stringify(p.inventory[i] ?? null)) patch[`users/${p.uid}/inventory/${i}`] = after[i];
+  await update(ref(db), { ...patch, ...extra });
+  for (let i = 0; i < after.length; i++) p.inventory[i] = after[i];
+}
+
+/** Rummages through a garbage can: one thing out of a weighted pick (weed seed, burger, dead cat, lighter). Each can: once every 10 minutes. */
+export async function searchDumpster(p: Profile, canId: string): Promise<string> {
+  const total = DUMPSTER_DROPS.reduce((a, d) => a + d.chance, 0);
+  let r = Math.random() * total;
+  let item = DUMPSTER_DROPS[0].item;
+  for (const d of DUMPSTER_DROPS) { if (r < d.chance) { item = d.item; break; } r -= d.chance; }
+  const next = addToInv(p.inventory, { item, qty: 1 });
+  if (!next) throw new Error("Your inventory is full");
+  await commitInv(p, next, { [`users/${p.uid}/dumpsters/${canId}`]: serverTimestamp() });
   p.dumpsters[canId] = serverNow();
-  p.inventory[free] = { item, qty: 1 };
   return item;
+}
+
+/** Buys something from the vending machine (a stack of 15 cigarettes comes as one stack). */
+export async function buyStock(p: Profile, give: InvItem, price: number): Promise<void> {
+  if (p.blood < price) throw new Error(`You need ${price - p.blood} more drops`);
+  const next = addToInv(p.inventory, give);
+  if (!next) throw new Error("Your inventory is full");
+  await commitInv(p, next, { [`users/${p.uid}/blood`]: p.blood - price });
+  p.blood -= price;
+}
+
+/** Uses two pocket items on each other (weed + paper, ...): one of each is used up, the result goes in. Returns the message. */
+export async function combineSlots(p: Profile, a: number, b: number): Promise<string> {
+  const ia = p.inventory[a], ib = p.inventory[b];
+  if (!ia || !ib || a === b) throw new Error("Those don't go together.");
+  const res = combine(ia, ib);
+  if (!res) throw new Error("Those don't go together.");
+  let next = takeOneFrom(p.inventory, a);
+  next = takeOneFrom(next, a === b ? a : b);
+  // taking from a stack keeps its slot, taking the last one empties it: the slots haven't moved yet, so both indexes were valid
+  const added = addToInv(next, res.give);
+  if (!added) throw new Error("Your inventory is full");
+  await commitInv(p, added);
+  return res.note;
+}
+
+/** Fills the empty watering can in `slot` at the sink. */
+export async function fillCan(p: Profile, slot: number): Promise<void> {
+  if (p.inventory[slot]?.item !== "wateringcan") throw new Error("That can isn't empty.");
+  const next: Inventory = p.inventory.map((s) => (s ? { ...s } : null));
+  next[slot] = { item: "wateringcan_full", qty: 1 };
+  await commitInv(p, next);
+}
+
+/** Lights a cigarette, joint or blunt (a stack gives up one, which goes in its own slot). */
+export async function lightItem(p: Profile, slot: number): Promise<number> {
+  const s = p.inventory[slot];
+  if (!s || !SMOKABLE[s.item] || s.lit) throw new Error("That can't be lit.");
+  const t = serverNow();
+  let next: Inventory;
+  if (s.qty > 1) {
+    const one: InvItem = { ...s, qty: 1, lit: t };
+    const rest = p.inventory.map((x, i) => (i === slot && x ? { ...x, qty: x.qty - 1 } : x ? { ...x } : null));
+    const free = rest.findIndex((x) => x === null);
+    if (free < 0) throw new Error("Your inventory is full");
+    rest[free] = one;
+    next = rest;
+  } else {
+    next = p.inventory.map((x, i) => (i === slot && x ? { ...x, lit: t } : x ? { ...x } : null));
+  }
+  await commitInv(p, next);
+  return t;
+}
+
+// ---- growing weed in a growing kit ---------------------------------------------------------------------------
+const furniPath = (roomId: string, fid: string) => `roomsMeta/${roomId}/furni/${fid}`;
+export interface Plant { at: number; water: number; neglect: boolean }
+export const plantProgress = (pl: Plant): number => Math.min(1, (serverNow() - pl.at) / GROW_MS);
+export const plantWater = (pl: Plant): number => Math.max(0, 1 - (serverNow() - pl.water) / WATER_MS);
+
+/** Plants a seed from your pocket in an empty growing kit. */
+export async function plantSeed(p: Profile, roomId: string, fid: string, seedSlot: number): Promise<void> {
+  if (p.inventory[seedSlot]?.item !== "weedseed") throw new Error("That isn't a seed.");
+  await commitInv(p, takeOneFrom(p.inventory, seedSlot), {
+    [`${furniPath(roomId, fid)}/plantedAt`]: serverTimestamp(),
+    [`${furniPath(roomId, fid)}/wateredAt`]: serverTimestamp(),
+    [`${furniPath(roomId, fid)}/neglect`]: null,
+  });
+}
+
+/** Waters a planted kit with a full watering can (the can is empty afterwards). A plant that had run dry is remembered as neglected. */
+export async function waterPlant(p: Profile, roomId: string, fid: string, pl: Plant, canSlot: number): Promise<void> {
+  if (p.inventory[canSlot]?.item !== "wateringcan_full") throw new Error("That can is empty.");
+  const next: Inventory = p.inventory.map((s) => (s ? { ...s } : null));
+  next[canSlot] = { item: "wateringcan", qty: 1 };
+  const dry = serverNow() - pl.water > WATER_MS;
+  await commitInv(p, next, {
+    [`${furniPath(roomId, fid)}/wateredAt`]: serverTimestamp(),
+    ...(dry && !pl.neglect ? { [`${furniPath(roomId, fid)}/neglect`]: true } : {}),
+  });
+}
+
+/** Picks a grown plant: 3 weed ("ass weed" if it ever ran dry), and the kit is empty again. */
+export async function harvestPlant(p: Profile, roomId: string, fid: string, pl: Plant): Promise<{ ass: boolean }> {
+  if (serverNow() - pl.at < GROW_MS) throw new Error("It isn't ready yet.");
+  const ass = pl.neglect || serverNow() - pl.water > WATER_MS;
+  const next = addToInv(p.inventory, { item: "weed", qty: 3, ...(ass ? { ass: true } : {}) });
+  if (!next) throw new Error("Your inventory is full");
+  await commitInv(p, next, {
+    [`${furniPath(roomId, fid)}/plantedAt`]: null,
+    [`${furniPath(roomId, fid)}/wateredAt`]: null,
+    [`${furniPath(roomId, fid)}/neglect`]: null,
+  });
+  return { ass };
 }
 
 /** Cuts a dead cat open with the knife: +2 drops of blood, the cat is used up (the rules check you held one and count it). */
@@ -297,8 +433,8 @@ export async function carveCat(p: Profile, slot: number): Promise<void> {
   for (let i = 0; i < before.length; i++) p.inventory[i] = after[i] ?? null;
 }
 
-/** What a stab is worth right now: 1 drop, or 2 for two minutes after you finished a cigarette. */
-export const stabGain = (p: Profile): number => (p.boostUntil > serverNow() ? 2 : 1);
+/** What a stab is worth right now: 1 drop, or more for a while after you finished a cigarette (x2), joint (x3) or blunt (x4). */
+export const stabGain = (p: Profile): number => (p.boostUntil > serverNow() ? p.boostMult : 1);
 
 /** Banks the blood for stabbing `targetUid` (once per person per UTC day; the rules accept +1, or +2 while the cigarette bonus lasts). Returns what it was worth. */
 export async function rewardStab(p: Profile, targetUid: string): Promise<number> {

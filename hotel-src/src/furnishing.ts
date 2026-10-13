@@ -4,10 +4,10 @@ import { push, ref, update } from "firebase/database";
 import { db } from "./firebase";
 import type { Profile } from "./db";
 import { directionsOf, nitroIfReady } from "./nitro";
-import { BAG_ID, BED_ID, FURNI_KINDS, footprint, isDoorTile, MAX_FURNI, PlacedFurni, RoomDef, TOOLBOX_ID } from "./rooms";
+import { BAG_ID, BED_ID, SINK_ID, FURNI_KINDS, footprint, isDoorTile, MAX_FURNI, PlacedFurni, RoomDef, TOOLBOX_ID } from "./rooms";
 
 /** The pieces that are always in your room: movable, never removable. */
-export const FIXED_IDS = new Set([BED_ID, BAG_ID, TOOLBOX_ID]);
+export const FIXED_IDS = new Set([BED_ID, BAG_ID, TOOLBOX_ID, SINK_ID]);
 export const isFixedPiece = (id: string): boolean => FIXED_IDS.has(id);
 
 /** Which way a piece can be turned: the bed only faces one way; everything else turns by a quarter. */
@@ -99,7 +99,7 @@ export async function placeFromStorage(p: Profile, roomId: string, kind: string,
 
 /** Moves or turns a piece that is already in the room (the bed, bag and toolbox live under their own names). */
 export async function movePiece(roomId: string, f: PlacedFurni, spot: Spot): Promise<void> {
-  const path = f.id === BED_ID ? `${roomRef(roomId)}/bed` : f.id === BAG_ID ? `${roomRef(roomId)}/bag` : f.id === TOOLBOX_ID ? `${roomRef(roomId)}/toolbox` : `${roomRef(roomId)}/furni/${f.id}`;
+  const path = f.id === BED_ID ? `${roomRef(roomId)}/bed` : f.id === BAG_ID ? `${roomRef(roomId)}/bag` : f.id === TOOLBOX_ID ? `${roomRef(roomId)}/toolbox` : f.id === SINK_ID ? `${roomRef(roomId)}/sink` : `${roomRef(roomId)}/furni/${f.id}`;
   const dir = f.id === BED_ID ? 2 : spot.dir;
   await update(ref(db, path), { x: spot.x, y: spot.y, dir });
 }
@@ -107,6 +107,7 @@ export async function movePiece(roomId: string, f: PlacedFurni, spot: Spot): Pro
 /** Takes a piece out of the room into storage. */
 export async function storeFromRoom(p: Profile, roomId: string, f: PlacedFurni): Promise<void> {
   if (isFixedPiece(f.id)) throw new Error("That one stays in your room.");
+  if (f.plant) throw new Error("Harvest the plant first.");
   const n = storedCount(p, f.kind);
   if (n >= 99) throw new Error("Storage is full of those.");
   await update(ref(db), { [`${roomRef(roomId)}/furni/${f.id}`]: null, [`users/${p.uid}/storage/${f.kind}`]: n + 1 });
