@@ -1315,10 +1315,29 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     unsubs.push(social.subscribe(syncSleeper));
 
     const denied = () => kicked("You don't have access to that room.");
+    // what the database lists as standing here; people whose session has died (no heartbeat, or no presence any more) are hidden, not drawn as ghosts
+    const known = new Map<string, any>();
+    const visible = (uid: string): boolean => !social.presenceLoaded || social.isOnline(uid);
+    function applyVisibility(): void {
+      if (disposed) return;
+      let changed = false;
+      for (const [uid, v] of known) {
+        const p = players.get(uid);
+        const vis = visible(uid);
+        if (!vis && p && !p.sleeper) { players.delete(uid); if (hoverPlayer?.uid === uid) hoverPlayer = null; changed = true; }
+        else if (vis && !p) { players.set(uid, makePlayer(uid, v)); renderAvatar({ figure: v.figure, dir: 2 }); changed = true; }
+      }
+      if (changed) { renderOnline(); syncSleeper(); }
+    }
+    unsubs.push(social.subscribe(applyVisibility));
+    const ghostTimer = window.setInterval(applyVisibility, 30_000);
+    unsubs.push(() => window.clearInterval(ghostTimer));
     unsubs.push(
       onChildAdded(playersRef, (snap) => {
         if (snap.key === me.uid) return;
         const v = snap.val();
+        known.set(snap.key!, v);
+        if (!visible(snap.key!)) return;
         players.set(snap.key!, makePlayer(snap.key!, v));
         renderAvatar({ figure: v.figure, dir: 2 });
         renderOnline();
@@ -1326,6 +1345,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       onChildChanged(playersRef, (snap) => {
         if (snap.key === me.uid) return;
         const v = snap.val();
+        known.set(snap.key!, v);
         const p = players.get(snap.key!);
         if (!p) return;
         p.name = v.name;
@@ -1352,6 +1372,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           }
           return;
         }
+        known.delete(snap.key!);
         players.delete(snap.key!);
         if (hoverPlayer?.uid === snap.key) { hoverPlayer = null; updateHint(); }
         renderOnline();

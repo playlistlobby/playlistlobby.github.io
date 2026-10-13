@@ -31,7 +31,15 @@ export interface Presence {
   room: string;
   /** hasn't touched anything for a while (see idle.ts) */
   idle?: boolean;
+  /** last heartbeat (server time, ms); a session that stops sending them (a sleeping phone, a dead tab) counts as gone */
+  seen?: number;
+  since?: number;
 }
+
+/** No heartbeat for this long = the session is dead, whatever the database still says. */
+export const STALE_MS = 6 * 60_000;
+const HEARTBEAT_MS = 60_000;
+let beat: number | undefined;
 export interface DmMsg {
   id: string;
   from: string;
@@ -80,7 +88,9 @@ export async function publishProfile(p: Profile): Promise<void> {
 export function startPresence(p: Profile, room = ""): void {
   const r = ref(db, `presence/${p.uid}`);
   void onDisconnect(r).remove();
-  void set(r, { name: p.name, room, since: serverTimestamp() });
+  void set(r, { name: p.name, room, since: serverTimestamp(), seen: serverTimestamp() });
+  window.clearInterval(beat);
+  beat = window.setInterval(() => { void update(r, { seen: serverTimestamp() }).catch(() => undefined); }, HEARTBEAT_MS);
 }
 export function setPresenceRoom(p: Profile, room: string): void {
   void update(ref(db, `presence/${p.uid}`), { room }).catch(() => undefined);
@@ -89,6 +99,7 @@ export function setPresenceIdle(p: Profile, idle: boolean): void {
   void update(ref(db, `presence/${p.uid}`), { idle: idle ? true : null }).catch(() => undefined);
 }
 export function stopPresence(p: Profile): void {
+  window.clearInterval(beat);
   const r = ref(db, `presence/${p.uid}`);
   void onDisconnect(r).cancel();
   void remove(r).catch(() => undefined);
@@ -148,7 +159,13 @@ class SocialStore {
   get badgeCount(): number {
     return this.totalUnread + this.requests.size + this.knocks.size;
   }
-  isOnline = (uid: string) => this.presence.has(uid);
+  /** the presence list has arrived (until then nobody can be called gone) */
+  presenceLoaded = false;
+  private stale = (v: Presence): boolean => {
+    const t = v.seen ?? v.since;
+    return typeof t === "number" && serverNow() - t > STALE_MS;
+  };
+  isOnline = (uid: string) => { const v = this.presence.get(uid); return !!v && !this.stale(v); };
   isIdle = (uid: string) => !!this.presence.get(uid)?.idle;
   friendUids = () => new Set(this.friends.keys());
   roomOf = (uid: string) => this.presence.get(uid)?.room ?? "";
@@ -186,8 +203,9 @@ class SocialStore {
       }),
       onValue(ref(db, "presence"), (snap) => {
         const next = new Map<string, Presence>();
-        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) next.set(uid, { name: v.name, room: v.room ?? "", idle: v.idle === true });
+        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) next.set(uid, { name: v.name, room: v.room ?? "", idle: v.idle === true, seen: typeof v.seen === "number" ? v.seen : undefined, since: typeof v.since === "number" ? v.since : undefined });
         this.presence = next;
+        this.presenceLoaded = true;
         this.emit();
       }),
       onValue(ref(db, `knocks/${me.uid}`), (snap) => {
@@ -393,7 +411,7 @@ class SocialStore {
   /** How many players are in each room right now (from presence). */
   roomCounts(): Map<string, number> {
     const counts = new Map<string, number>();
-    this.presence.forEach((p) => p.room && counts.set(p.room, (counts.get(p.room) ?? 0) + 1));
+    this.presence.forEach((p, uid) => p.room && this.isOnline(uid) && counts.set(p.room, (counts.get(p.room) ?? 0) + 1));
     return counts;
   }
 }

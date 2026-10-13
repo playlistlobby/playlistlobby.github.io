@@ -127,7 +127,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
             { label: "Examine", target: def.name, action: () => opts.say(loaned ? `${def.examine} (It's in the player right now.)` : def.examine) },
           ]);
         },
-      }, def ? h("img", { src: def.icon, alt: def.name, draggable: false }) : null,
+      }, def ? h("img", { src: def.litIcon && slot?.lit ? def.litIcon : def.icon, alt: def.name, draggable: false }) : null,
         slot && slot.qty > 1 ? h("span", { class: "qty" }, String(slot.qty)) : null);
       grid.append(el);
     }

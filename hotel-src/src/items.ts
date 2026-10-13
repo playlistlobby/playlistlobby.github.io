@@ -16,6 +16,8 @@ export interface ItemDef {
   droppable?: boolean;
   /** select the knife, then click this: it can be cut open for blood (the dead cat) */
   carvable?: boolean;
+  /** picture while it's lit (the cigarette: the plain icon is the unlit one) */
+  litIcon?: string;
 }
 
 /** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
@@ -53,6 +55,7 @@ export const ITEMS: Record<string, ItemDef> = {
     name: "Cigarette",
     examine: "A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.",
     icon: assetUrl("items/cigarette.svg"),
+    litIcon: assetUrl("items/cigarette-lit.svg"),
     useSelf: "smoke",
   },
   cigbutt: {
@@ -61,6 +64,12 @@ export const ITEMS: Record<string, ItemDef> = {
     examine: "What's left. Right-click it to drop it.",
     icon: assetUrl("items/cigbutt.svg"),
     droppable: true,
+  },
+  lighter: {
+    id: "lighter",
+    name: "Lighter",
+    examine: "A cheap red lighter. It still works. It doesn't do anything yet, but everyone has one.",
+    icon: assetUrl("items/lighter.svg"),
   },
   deadcat: {
     id: "deadcat",

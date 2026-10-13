@@ -45,7 +45,7 @@ export const WARDROBE_SLOTS = 8;
 export const SYRINGE_BLOOD = 2;
 const DAY_MS = 86_400_000;
 /** Nobody starts with anything any more: 6ixty gives the knife (right away) and the syringe (12 hours later). */
-export const STARTER_ITEMS: string[] = [];
+export const STARTER_ITEMS: string[] = ["lighter"];
 
 // ---- server clock -----------------------------------------------------------------
 // The database rules judge "today" with the server's clock, so the client must too.
