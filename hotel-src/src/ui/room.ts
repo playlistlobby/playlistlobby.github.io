@@ -175,6 +175,8 @@ interface Player {
   sleeper?: boolean;
   /** when this player lit a cigarette (server time, ms); they smoke for SMOKE_MS */
   smoke?: number;
+  /** what they are smoking: "cigarette" (or nothing), "joint" or "blunt" */
+  smokeKind?: string;
   /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
   npc?: boolean;
   /** sitting on a chair or couch (shown to everyone through players/<uid>/sit) */
@@ -976,6 +978,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       uid, name: v.name ?? "?", figure: v.figure ?? me.figure, dir: v.dir ?? 2,
       from: p, to: p, stepStart: 0, path: [], dest: p, lastEmoteTs: v.emote?.ts ?? 0,
       smoke: typeof v.smoke === "number" ? v.smoke : undefined,
+      smokeKind: typeof v.smokeKind === "string" ? v.smokeKind : undefined,
       npc: v.sixty === true,
       sit: v.sit === true,
       faint: v.lay === true,
@@ -1659,7 +1662,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     try {
       const t = await lightItem(me, slot);
       p.smoke = t;
-      void update(myRef, { smoke: serverTimestamp() }).catch(() => undefined);
+      p.smokeKind = it.item;
+      void update(myRef, { smoke: serverTimestamp(), smokeKind: it.item }).catch(() => undefined);
       playSfx("light", 0.45);
       logAction(me, "room", `lit a ${it.item}`);
       panel.refresh();
@@ -1772,8 +1776,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         me.inventory[i] = { item: "cigbutt", qty: 1 };
         void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 } }).catch(() => undefined);
         const pl = mine();
-        if (pl) pl.smoke = undefined;
-        void update(myRef, { smoke: null }).catch(() => undefined);
+        if (pl) { pl.smoke = undefined; pl.smokeKind = undefined; }
+        void update(myRef, { smoke: null, smokeKind: null }).catch(() => undefined);
         panel.refresh();
         logAction(me, "room", `smoked ass ${s.item}`);
         say("That was ass weed… it hits you hard. Give it a moment…");
@@ -1787,8 +1791,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       me.inventory[i] = { item: "cigbutt", qty: 1 };
       void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 }, boostUntil: until, boostMult: bonus.mult }).catch(() => undefined);
       const p = mine();
-      if (p) p.smoke = undefined;
-      void update(myRef, { smoke: null }).catch(() => undefined);
+      if (p) { p.smoke = undefined; p.smokeKind = undefined; }
+      void update(myRef, { smoke: null, smokeKind: null }).catch(() => undefined);
       panel.refresh();
       say(`You finish the ${itemDef(s.item)?.name.toLowerCase() ?? "smoke"}. You feel sharp: stabs give x${bonus.mult} blood for ${Math.round(bonus.boostMs / 60000)} minutes.`);
     });
@@ -1871,10 +1875,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       window.setTimeout(() => fade.remove(), WAKE_MS + 800);
     }
     // a cigarette still burning from before (you changed rooms) keeps smoking
-    const burning = me.inventory.find((s) => s && SMOKABLE[s.item] && s.lit && serverNow() - s.lit < SMOKE_MS)?.lit;
-    if (burning) mineP.smoke = burning;
+    const burningItem = me.inventory.find((s) => s && SMOKABLE[s.item] && s.lit && serverNow() - s.lit < SMOKE_MS);
+    const burning = burningItem?.lit;
+    if (burning) { mineP.smoke = burning; mineP.smokeKind = burningItem!.item; }
     void onDisconnect(myRef).remove();
-    set(myRef, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, ts: serverTimestamp(), ...(burning ? { smoke: burning } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
+    set(myRef, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, ts: serverTimestamp(), ...(burning ? { smoke: burning, smokeKind: burningItem!.item } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
@@ -1940,6 +1945,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.name = v.name;
         p.figure = v.figure;
         p.smoke = typeof v.smoke === "number" ? v.smoke : undefined;
+        p.smokeKind = typeof v.smokeKind === "string" ? v.smokeKind : undefined;
         p.npc = v.sixty === true;
         p.sit = v.sit === true;
         p.faint = v.lay === true;
@@ -2092,7 +2098,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     (p.uid === me.uid && selectedDef()?.useOnPlayer === "stab") || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
 
   /** A cigarette at the mouth and a thin stream of smoke rising from the tip. (fx, fy) = the player's feet, `dir` the way they face. */
-  function drawCigarette(fx: number, fy: number, dir: number, now: number): void {
+  function drawCigarette(fx: number, fy: number, dir: number, now: number, kind?: string): void {
+    const blunt = kind === "blunt", joint = kind === "joint";
     const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0; // which side of the face the cigarette sticks out on
     const s = scale;
     const mx = fx + side * 5 * s;                 // the mouth
@@ -2105,12 +2112,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const away = dir === 6 || dir === 7 || dir === 0;
     if (!away) {
     // dark edge first so the white paper reads against a pale shirt or a hand
-    g.strokeStyle = "rgba(30,24,20,0.75)"; g.lineWidth = 4.2 * s;
+    // a joint is a cigarette with no orange filter; a blunt is the same shape in brown and a bit fatter
+    g.strokeStyle = "rgba(30,24,20,0.75)"; g.lineWidth = (blunt ? 5 : 4.2) * s;
     g.beginPath(); g.moveTo(mx, my); g.lineTo(tipx, tipy); g.stroke();
-    g.strokeStyle = "#fbf8f0"; g.lineWidth = 2.6 * s;
+    g.strokeStyle = blunt ? "#8b5a2b" : "#fbf8f0"; g.lineWidth = (blunt ? 3.4 : 2.6) * s;
     g.beginPath(); g.moveTo(mx, my); g.lineTo(tipx, tipy); g.stroke();
-    g.strokeStyle = "#d98a2b"; g.lineWidth = 2.6 * s; // the filter
-    g.beginPath(); g.moveTo(mx, my); g.lineTo(mx + (side || 1) * 3 * s, my + 0.7 * s); g.stroke();
+    if (!blunt && !joint) {
+      g.strokeStyle = "#d98a2b"; g.lineWidth = 2.6 * s; // the filter
+      g.beginPath(); g.moveTo(mx, my); g.lineTo(mx + (side || 1) * 3 * s, my + 0.7 * s); g.stroke();
+    }
     g.strokeStyle = "#ff6a1a"; g.lineWidth = 3 * s;
     g.beginPath(); g.moveTo(tipx - (side || 1) * 1.6 * s, tipy - 0.3 * s); g.lineTo(tipx, tipy); g.stroke();
     }
@@ -2818,7 +2828,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             g.drawImage(img, ax, ay, img.width * scale, img.height * scale);
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
           }
-          if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now);
+          if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
           if (knifeOut && !knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";

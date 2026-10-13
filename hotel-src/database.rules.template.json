@@ -400,6 +400,7 @@
             ".write": "@PW@ && auth.uid === $uid && @IN@",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
             "smoke": { ".validate": "newData.isNumber()" },
+            "smokeKind": { ".validate": "newData.isString() && (newData.val() === 'cigarette' || newData.val() === 'joint' || newData.val() === 'blunt')" },
             "sit": { ".validate": "newData.isBoolean()" },
             "lay": { ".validate": "newData.isBoolean()" },
             "sixty": { ".validate": "newData.val() === true && @ADMIN@" },

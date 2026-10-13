@@ -400,6 +400,7 @@
             ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid && ($room === 'lobby' || $room === 'shop' || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists())",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
             "smoke": { ".validate": "newData.isNumber()" },
+            "smokeKind": { ".validate": "newData.isString() && (newData.val() === 'cigarette' || newData.val() === 'joint' || newData.val() === 'blunt')" },
             "sit": { ".validate": "newData.isBoolean()" },
             "lay": { ".validate": "newData.isBoolean()" },
             "sixty": { ".validate": "newData.val() === true && auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'admin@users.bobba.invalid'" },
