@@ -74,6 +74,18 @@ import type { Ctx } from "../main";
 /** The hanger that floats above the bag of clothes in your own room (it's Habbo's own wardrobe icon). */
 const hangerImg = new Image();
 hangerImg.src = assetUrl("ui/hanger.png");
+/** the picture that floats over the toolbox: the little wooden house icon from xmas_c20_woodenhouse.nitro */
+const toolIconImg = new Image();
+void loadNitro("furni/xmas_c20_woodenhouse.nitro").then((n) => {
+  if (!n) return;
+  const key = Object.keys(n.json.spritesheet.frames).find((k) => /_icon_a(.png)?$/.test(k));
+  const fr = key ? n.json.spritesheet.frames[key].frame : null;
+  if (!fr) return;
+  const c = document.createElement("canvas");
+  c.width = fr.w; c.height = fr.h;
+  c.getContext("2d")!.drawImage(n.image, fr.x, fr.y, fr.w, fr.h, 0, 0, fr.w, fr.h);
+  toolIconImg.src = c.toDataURL("image/png");
+}).catch(() => undefined);
 
 const STEP_MS = 480;
 const BUBBLE_MS = 6500;
@@ -1847,7 +1859,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const k = FURNI_KINDS[f.kind];
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
-      if (b && k.opens && k.opens !== "furnish" && (isOwnRoom || k.opens === "shop")) {
+      if (b && k.opens && (isOwnRoom || k.opens === "shop")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -1875,16 +1887,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const showHanger = !me.seenDoor || hot;
-        if (showHanger && hangerImg.complete && hangerImg.naturalWidth) {
-          const hs = scale * (hot ? 0.5 : 0.42);
-          const hw = hangerImg.naturalWidth * hs;
-          const hh = hangerImg.naturalHeight * hs;
+        const hint = k.opens === "furnish" ? toolIconImg : hangerImg; // the toolbox floats a little house, the bag a hanger
+        if (showHanger && hint.complete && hint.naturalWidth) {
+          const hs = scale * (k.opens === "furnish" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hw = hint.naturalWidth * hs;
+          const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
           g.save();
           g.imageSmoothingEnabled = false;
           g.shadowColor = "rgba(255,226,140,0.7)";
           g.shadowBlur = (hot ? 6 : 3) * scale;
-          g.drawImage(hangerImg, cx - hw / 2, b.y0 - hh - 2 * scale + bob, hw, hh);
+          g.drawImage(hint, cx - hw / 2, b.y0 - hh - 2 * scale + bob, hw, hh);
           g.restore();
         }
         // while the hanger always shows, the click box covers it too
