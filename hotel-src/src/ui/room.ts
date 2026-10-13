@@ -1479,15 +1479,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0; // which side of the face the cigarette sticks out on
     const s = scale;
     const mx = fx + side * 5 * s;                 // the mouth
-    const my = fy - (FEET_Y - 36) * s;
-    const tipx = mx + (side || 1) * 8 * s;
-    const tipy = my + 2 * s;
+    const my = fy - (FEET_Y - 51) * s;
+    const tipx = mx + (side || 1) * 11 * s;
+    const tipy = my + 2.5 * s;
     g.save();
     g.lineCap = "round";
-    g.strokeStyle = "#f3efe6"; g.lineWidth = 2 * s;
+    // dark edge first so the white paper reads against a pale shirt or a hand
+    g.strokeStyle = "rgba(30,24,20,0.75)"; g.lineWidth = 4.2 * s;
     g.beginPath(); g.moveTo(mx, my); g.lineTo(tipx, tipy); g.stroke();
-    g.strokeStyle = "#ff7a2a"; g.lineWidth = 2.2 * s;
-    g.beginPath(); g.moveTo(tipx - (side || 1) * 1.2 * s, tipy - 0.2 * s); g.lineTo(tipx, tipy); g.stroke();
+    g.strokeStyle = "#fbf8f0"; g.lineWidth = 2.6 * s;
+    g.beginPath(); g.moveTo(mx, my); g.lineTo(tipx, tipy); g.stroke();
+    g.strokeStyle = "#d98a2b"; g.lineWidth = 2.6 * s; // the filter
+    g.beginPath(); g.moveTo(mx, my); g.lineTo(mx + (side || 1) * 3 * s, my + 0.7 * s); g.stroke();
+    g.strokeStyle = "#ff6a1a"; g.lineWidth = 3 * s;
+    g.beginPath(); g.moveTo(tipx - (side || 1) * 1.6 * s, tipy - 0.3 * s); g.lineTo(tipx, tipy); g.stroke();
     // smoke: a few soft puffs that drift up, widen and fade
     for (let i = 0; i < 6; i++) {
       const t = (now / 1900 + i / 6) % 1;
