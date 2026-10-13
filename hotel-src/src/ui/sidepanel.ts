@@ -21,7 +21,7 @@ export interface PanelOpts {
   onSelect(slot: number | null): void;
   onEmote(id: string): void;
   /** an item that is used on yourself with one click (the syringe) */
-  onUseSelf(what: "syringe" | "smoke" | "pill"): void;
+  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat"): void;
   /** the knife was used on a dead cat in this slot */
   onCarve(slot: number): void;
   /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
@@ -117,7 +117,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           if (!def) return;
           showMenu(e.clientX, e.clientY, [
             ...(loaned ? [] : def.useSelf
-              ? [{ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!) }]
+              ? [{ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!) }]
               : def.droppable ? [] : def.useOnObject || def.useOnPlayer || def.furniture
               ? [{ label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
               : []),

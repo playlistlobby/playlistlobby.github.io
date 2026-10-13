@@ -16,7 +16,7 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { canStab, canUseSyringe, carveCat, consumeSlot, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
+import { BOOST_MS, canStab, canUseSyringe, carveCat, consumeSlot, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, sixtyGiveSyringe, sixtySyringeReady, SYRINGE_BLOOD, serverNow } from "../db";
 import { SIXTY, SIXTY_LINES, sixtyLook, watchSixtyLook } from "../npc";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
@@ -171,6 +171,7 @@ const bloodImg = loadImg(BLOOD_ICON);
 const syringeImg = loadImg(ITEMS.syringe.icon);
 const cigaretteImg = loadImg(ITEMS.cigarette.icon);
 const deadcatImg = loadImg(ITEMS.deadcat.icon);
+const burgerImg = loadImg(ITEMS.burger.icon);
 
 /** Where the lying avatar's 110x64 picture sits relative to the bed-head tile's floor point (tuned by eye against the bed art). */
 const LAY_DX = -76;
@@ -317,7 +318,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     },
     onEmote: (id) => performEmote(id),
     onCarve: (slot) => { void carveDeadCat(slot); },
-    onUseSelf: (what) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else void useCigarette(); },
+    onUseSelf: (what) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "eat") void eatBurger(); else void useCigarette(); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
       icon: "🏠",
       title: "Room",
@@ -614,7 +615,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (obj?.kind === "dumpster") {
       opts.push({ label: "Search", target: "Dumpster", action: () => startDumpster(obj.id) });
-      opts.push({ label: "Examine", target: "Dumpster", action: () => say("An alley dumpster. It stinks. Somebody has to look inside, and it can be you every hour.") });
+      opts.push({ label: "Examine", target: "Dumpster", action: () => say("An alley dumpster. It stinks. Somebody has to look inside, and it can be you every ten minutes.") });
     }
     if (obj && isDisplayPiece(obj.id)) opts.push({ label: "Buy", target: FURNI_KINDS[obj.kind!].label, action: () => openBuy(obj.kind!) });
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
@@ -1036,13 +1037,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   let searching = false;
-  /** next to the dumpster: rummage through it (a cigarette or a dead cat, 50-50), once an hour */
-  async function searchTheDumpster(): Promise<void> {
+  /** next to a garbage can: rummage through it (a burger, a cigarette or a dead cat), each can once every 10 minutes */
+  async function searchTheDumpster(canId: string): Promise<void> {
     if (searching) return;
-    const wait = dumpsterWaitMs(me);
+    const wait = dumpsterWaitMs(me, canId);
     if (wait > 0) {
-      const mins = Math.ceil(wait / 60000);
-      return say(`You've already been through it. Nothing new yet: try again in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`, "warn");
+      const secs = Math.ceil(wait / 1000);
+      return say(`You've already been through this one. Nothing new yet: try again in ${secs >= 60 ? `${Math.ceil(secs / 60)}m` : `${secs}s`}.`, "warn");
     }
     if (me.inventory.every((s) => s !== null)) return say("Your inventory is full.", "warn");
     searching = true;
@@ -1051,17 +1052,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       playSfx("select", 0.4);
       await new Promise((r) => window.setTimeout(r, 900));
       if (disposed) return;
-      const found = await searchDumpster(me);
+      const found = await searchDumpster(me, canId);
       panel.refresh();
       playSfx("give", 0.6);
       if (found === "deadcat") {
         giftPop("+1 Dead cat", deadcatImg);
         say("Under the bin bags: a dead cat. Poor thing.");
+      } else if (found === "burger") {
+        giftPop("+1 Burger", burgerImg);
+        say("A burger, hardly bitten. Lucky you.");
       } else {
         giftPop("+1 Cigarette", cigaretteImg);
         say("You find a cigarette that's hardly been smoked.");
       }
-      logAction(me, "room", `searched the dumpster and found a ${found === "deadcat" ? "dead cat" : "cigarette"}`);
+      logAction(me, "room", `searched a garbage can and found a ${found === "deadcat" ? "dead cat" : found}`);
     } catch (err) {
       say((err as Error).message || "You find nothing but rot.", "warn");
     } finally {
@@ -1249,7 +1253,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (opens === "furnish") enterFurnish();
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
       }
-      else if (job.type === "dumpster") void searchTheDumpster();
+      else if (job.type === "dumpster") void searchTheDumpster(job.fid);
       else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
         collectBlood: async () => {
           try {
@@ -1394,6 +1398,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
   }
 
+  let lastStabGain = 1;
   async function executeStab(uid: string): Promise<void> {
     const p = mine();
     const target = players.get(uid);
@@ -1411,10 +1416,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         return say("Your stab missed. They may have just left.", "warn");
       }
       try {
-        await rewardStab(me, uid);
+        const gain = await rewardStab(me, uid);
+        lastStabGain = gain;
         ctx.refreshHeader();
         panel.refresh();
-        logAction(me, "stab", `stabbed ${target.name} (+1)`);
+        logAction(me, "stab", `stabbed ${target.name} (+${gain})`);
         say("You did what you had to do");
       } catch {
         say("The drop of blood slips through your fingers… (the hotel refused it)", "warn");
@@ -1608,17 +1614,32 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     at(buffer + 6500, () => { black.remove(); woozy = false; });
   }
 
+  /** Eat a burger from the inventory (no effect yet): you click it. */
+  async function eatBurger(): Promise<void> {
+    const slot = findSlot(me.inventory, "burger");
+    if (slot < 0) return say("You don't have a burger.", "warn");
+    try { await consumeSlot(me, slot); } catch { return say("The burger slips out of your hands. (the hotel refused it)", "warn"); }
+    clearSelection();
+    panel.refresh();
+    playSfx("select", 0.5);
+    logAction(me, "room", "ate a burger");
+    say("You eat the burger. Greasy. Good.");
+  }
+
   /** A cigarette that has burned for a minute becomes a butt in the inventory. */
   function burnDown(): void {
     me.inventory.forEach((s, i) => {
       if (s?.item !== "cigarette" || !s.lit || serverNow() - s.lit < SMOKE_MS) return;
       me.inventory[i] = { item: "cigbutt", qty: 1 };
-      void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 } }).catch(() => undefined);
+      // a finished cigarette: for two minutes a stab is worth double
+      const until = serverNow() + BOOST_MS;
+      me.boostUntil = until;
+      void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 }, boostUntil: until }).catch(() => undefined);
       const p = mine();
       if (p) p.smoke = undefined;
       void update(myRef, { smoke: null }).catch(() => undefined);
       panel.refresh();
-      say("The cigarette burns down to a butt.");
+      say("The cigarette burns down to a butt. You feel sharp: stabs give double blood for 2 minutes.");
     });
   }
 
@@ -2314,7 +2335,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const a = players.get(d.from);
         if (a && d.from === me.uid) {
           const f = feetOf(a, now);
-          floaters.push({ text: "+1", x: f.x, y: f.y - 70 * scale, born: now, color: "#ff5252" });
+          floaters.push({ text: `+${lastStabGain}`, x: f.x, y: f.y - 70 * scale, born: now, color: "#ff5252" });
         }
         dropFx.splice(i, 1);
       }

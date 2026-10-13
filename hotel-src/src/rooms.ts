@@ -87,7 +87,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
   // the Flappy Bird arcade machine (Habbo's cupcake-duck cabinet) in the basement: click it and you play Flappy Bird
   flappy: { id: "flappy", label: "Flappy Bird arcade", icon: "🐤", w: 1, h: 2, height: 80, color: "#2a2218", placeable: false, nitro: "furni/arcade_flappy.nitro", rotatable: true },
-  // the alley dumpster next to the Flappy Bird machine: search it (every hour) for a cigarette or a dead cat
+  // the alley dumpster next to the Flappy Bird machine: search it (every 10 minutes) for a cigarette or a dead cat
   dumpster: { id: "dumpster", label: "Dumpster", icon: "🗑️", w: 2, h: 1, height: 52, color: "#2c3a2c", placeable: false, nitro: "furni/alley_dumpster.nitro", rotatable: true },
   // the bed every player room has (a fixed piece: not in the furniture menu, not stored in the database)
   bed: { id: "bed", label: "Bed", icon: "🛏️", w: 1, h: 3, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/hween_c25_makeshiftbed.nitro", rotatable: true, fixed: true },
@@ -200,7 +200,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     theme: { ...GRIME_THEME },
     rug: null,
     // the Flappy Bird machine is part of the basement (it stands against the left wall, 8 tiles down from the back corner)
-    furni: [{ id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
+    furni: [{ id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, { id: "lobby3", kind: "dumpster", x: 0, y: 6, dir: 2 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
     doorX: DOOR_X,
     // the yellow door on the other side of 6ixty leads to the shop
     extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }],

@@ -13,7 +13,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke" | "pill";
+  useSelf?: "syringe" | "smoke" | "pill" | "eat";
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
   /** select the knife, then click this: it can be cut open for blood (the dead cat) */
@@ -35,6 +35,13 @@ export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
 export const SMOKE_MS = 60_000;
 
 export const ITEMS: Record<string, ItemDef> = {
+  burger: {
+    id: "burger",
+    name: "Burger",
+    examine: "A burger out of the bin. It's still warm. Click it to eat it.",
+    icon: assetUrl("items/burger.svg"),
+    useSelf: "eat",
+  },
   pill: {
     id: "pill",
     name: "Pill",

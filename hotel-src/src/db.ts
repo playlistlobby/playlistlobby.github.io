@@ -29,8 +29,10 @@ export interface Profile {
   seenDoor: boolean;
   /** how far the player is with 6ixty: knifeAt = when he gave the knife (0 = not met yet), syringeGiven = the second gift (12 hours later) */
   sixty: { knifeAt: number; syringeGiven: boolean };
-  /** when the dumpster was last searched (server time, ms; 0 = never) */
-  dumpsterAt: number;
+  /** when each garbage can was last searched (can id -> server time, ms) */
+  dumpsters: Record<string, number>;
+  /** stabbing gives double blood until this time (server time, ms): set when a cigarette burns down */
+  boostUntil: number;
   /** how many dead cats this player has cut open (the database rules count them to allow the +5) */
   catsCarved: number;
   /** furniture kept in the toolbox's storage: kind -> how many */
@@ -41,10 +43,13 @@ export interface Profile {
 export const STARTER_FURNITURE = ["f_sofa"];
 
 export const SIXTY_GIFT_DELAY_MS = 12 * 3_600_000;
-/** the dumpster can be searched once every hour; it gives a cigarette or a dead cat, 50-50 */
-export const DUMPSTER_MS = 3_600_000;
-export const CAT_CHANCE = 0.5;
-export const CAT_BLOOD = 5;
+/** each garbage can can be searched once every 10 minutes: 40% a burger, 30% a cigarette, 30% a dead cat */
+export const DUMPSTER_MS = 600_000;
+export const BURGER_CHANCE = 0.4;
+export const CAT_CHANCE = 0.3;
+export const CAT_BLOOD = 2;
+/** after a cigarette is finished, a stab is worth double for this long */
+export const BOOST_MS = 120_000;
 
 export const WARDROBE_SLOTS = 8;
 export const SYRINGE_BLOOD = 2;
@@ -88,7 +93,7 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
-  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsterAt: 0, catsCarved: 0, storage: Object.fromEntries(STARTER_FURNITURE.map((k) => [k, 1])) };
+  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsters: {}, boostUntil: 0, catsCarved: 0, storage: Object.fromEntries(STARTER_FURNITURE.map((k) => [k, 1])) };
   // figure "" marks a player who hasn't been through the customizer yet.
   await set(ref(db, `users/${uid}`), {
     name,
@@ -120,7 +125,8 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     syringeDay: v.syringeDay ?? 0,
     isAdmin,
     seenDoor: !!v.seenDoor,
-    dumpsterAt: Number(v.dumpsterAt) || 0,
+    dumpsters: Object.fromEntries(Object.entries((v.dumpsters ?? {}) as Record<string, number>).map(([k, n]) => [k, Number(n) || 0])),
+    boostUntil: Number(v.boostUntil) || 0,
     catsCarved: Number(v.catsCarved) || 0,
     storage: Object.fromEntries(Object.entries((v.storage ?? {}) as Record<string, number>).filter(([, n]) => Number(n) > 0).map(([k, n]) => [k, Number(n)])),
     // accounts from before 6ixty already have their knife and syringe: they skip his introduction
@@ -261,20 +267,21 @@ export async function sixtyGiveSyringe(p: Profile): Promise<void> {
 
 export const sixtySyringeReady = (p: Profile): boolean => p.sixty.knifeAt > 0 && !p.sixty.syringeGiven && serverNow() - p.sixty.knifeAt >= SIXTY_GIFT_DELAY_MS;
 
-export const dumpsterWaitMs = (p: Profile): number => Math.max(0, p.dumpsterAt + DUMPSTER_MS - serverNow());
+export const dumpsterWaitMs = (p: Profile, canId: string): number => Math.max(0, (p.dumpsters[canId] ?? 0) + DUMPSTER_MS - serverNow());
 
-/** Rummages through the dumpster: a cigarette or a dead cat (50-50) lands in the inventory. Once an hour. */
-export async function searchDumpster(p: Profile): Promise<"cigarette" | "deadcat"> {
+/** Rummages through a garbage can: a burger (40%), a cigarette (30%) or a dead cat (30%) lands in the inventory. Each can: once every 10 minutes. */
+export async function searchDumpster(p: Profile, canId: string): Promise<"burger" | "cigarette" | "deadcat"> {
   const free = p.inventory.findIndex((s) => s === null);
   if (free < 0) throw new Error("Your inventory is full");
-  const item = Math.random() < CAT_CHANCE ? "deadcat" : "cigarette";
-  await update(ref(db, `users/${p.uid}`), { dumpsterAt: serverTimestamp(), [`inventory/${free}`]: { item, qty: 1 } });
-  p.dumpsterAt = serverNow();
+  const r = Math.random();
+  const item = r < BURGER_CHANCE ? "burger" : r < 1 - CAT_CHANCE ? "cigarette" : "deadcat";
+  await update(ref(db, `users/${p.uid}`), { [`dumpsters/${canId}`]: serverTimestamp(), [`inventory/${free}`]: { item, qty: 1 } });
+  p.dumpsters[canId] = serverNow();
   p.inventory[free] = { item, qty: 1 };
   return item;
 }
 
-/** Cuts a dead cat open with the knife: +5 drops of blood, the cat is used up (the rules check you held one and count it). */
+/** Cuts a dead cat open with the knife: +2 drops of blood, the cat is used up (the rules check you held one and count it). */
 export async function carveCat(p: Profile, slot: number): Promise<void> {
   if (p.inventory[slot]?.item !== "deadcat") throw new Error("That isn't a dead cat");
   const before = p.inventory.slice();
@@ -290,12 +297,17 @@ export async function carveCat(p: Profile, slot: number): Promise<void> {
   for (let i = 0; i < before.length; i++) p.inventory[i] = after[i] ?? null;
 }
 
-/** Banks the drop of blood for stabbing `targetUid`. The rules only accept +1, once per person per UTC day. */
-export async function rewardStab(p: Profile, targetUid: string): Promise<void> {
+/** What a stab is worth right now: 1 drop, or 2 for two minutes after you finished a cigarette. */
+export const stabGain = (p: Profile): number => (p.boostUntil > serverNow() ? 2 : 1);
+
+/** Banks the blood for stabbing `targetUid` (once per person per UTC day; the rules accept +1, or +2 while the cigarette bonus lasts). Returns what it was worth. */
+export async function rewardStab(p: Profile, targetUid: string): Promise<number> {
   const day = todayStart();
-  await update(ref(db, `users/${p.uid}`), { blood: p.blood + 1, lastStabTarget: targetUid, [`stabs/${targetUid}`]: day });
-  p.blood += 1;
+  const gain = stabGain(p);
+  await update(ref(db, `users/${p.uid}`), { blood: p.blood + gain, lastStabTarget: targetUid, [`stabs/${targetUid}`]: day });
+  p.blood += gain;
   p.stabs[targetUid] = day;
+  return gain;
 }
 
 /** Buys a piece of furniture from the shop room: the drops are taken and the piece lands in the first free inventory slot, in one write. */
