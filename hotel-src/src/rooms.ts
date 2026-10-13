@@ -41,6 +41,8 @@ export interface FurniKind {
   opens?: "character" | "shop" | "furnish";
   /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
   seat?: boolean;
+  /** how far up (in 64px pixels) a sitting person is lifted onto the seat */
+  seatHeight?: number;
   /** lies flat on the floor: you can walk over it and it's drawn underneath everyone */
   flat?: boolean;
   /** nudges the art (64px pixels) if it doesn't sit right on its tiles */
@@ -57,13 +59,13 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 }
 
 /** Furniture that ships with the game and is sold in the shop room (10-25 drops). Each file is in public/furni/f_<id>.nitro. */
-export interface ShopPiece { id: string; label: string; icon: string; price: number; w: number; h: number; height: number; flat?: boolean; seat?: boolean }
+export interface ShopPiece { id: string; label: string; icon: string; price: number; w: number; h: number; height: number; flat?: boolean; seat?: boolean; seatHeight?: number }
 export const SHOP_PIECES: ShopPiece[] = [
   { id: "bloodfloor", label: "Blood streak", icon: "🩸", price: 10, w: 1, h: 3, height: 3, flat: true },
   { id: "toastfriend", label: "Toast friend", icon: "🍞", price: 10, w: 1, h: 1, height: 30 },
   { id: "bodybag", label: "Body bag", icon: "🧳", price: 12, w: 2, h: 1, height: 20 },
-  { id: "bench", label: "Grunge bench", icon: "🪑", price: 14, w: 3, h: 1, height: 36, seat: true },
-  { id: "sofa", label: "Old sofa", icon: "🛋️", price: 16, w: 2, h: 1, height: 44, seat: true },
+  { id: "bench", label: "Grunge bench", icon: "🪑", price: 14, w: 3, h: 1, height: 36, seat: true, seatHeight: 14 },
+  { id: "sofa", label: "Old sofa", icon: "🛋️", price: 16, w: 2, h: 1, height: 44, seat: true, seatHeight: 16 },
   { id: "cardtable", label: "Card table", icon: "🃏", price: 18, w: 3, h: 2, height: 34 },
   { id: "torturebed", label: "Restraint bed", icon: "⛓️", price: 20, w: 1, h: 3, height: 42 },
   { id: "fountain", label: "Fountain", icon: "⛲", price: 22, w: 2, h: 2, height: 50 },
@@ -72,7 +74,7 @@ export const SHOP_KIND_PREFIX = "f_";
 
 const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECES.map((p) => [SHOP_KIND_PREFIX + p.id, {
   id: SHOP_KIND_PREFIX + p.id, label: p.label, icon: p.icon, w: p.w, h: p.h, height: p.height, color: "#6b5a48", placeable: false,
-  nitro: `furni/${SHOP_KIND_PREFIX}${p.id}.nitro`, rotatable: true, ...(p.flat ? { flat: true } : {}), ...(p.seat ? { seat: true } : {}),
+  nitro: `furni/${SHOP_KIND_PREFIX}${p.id}.nitro`, rotatable: true, ...(p.flat ? { flat: true } : {}), ...(p.seat ? { seat: true, seatHeight: p.seatHeight ?? 14 } : {}),
 } as FurniKind]));
 
 export const FURNI_KINDS: Record<string, FurniKind> = {

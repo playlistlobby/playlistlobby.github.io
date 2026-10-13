@@ -45,6 +45,7 @@ import {
   removeFurni,
   RoomDef,
   ExtraDoor,
+  PlacedFurni,
   isDisplayPiece,
   isPublicRoom,
   SHOP_ID,
@@ -110,6 +111,10 @@ interface Player {
   smoke?: number;
   /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
   npc?: boolean;
+  /** sitting on a chair or couch (shown to everyone through players/<uid>/sit) */
+  sit?: boolean;
+  /** you clicked a seat: where to sit once you've walked there, and which way to face */
+  sitTo?: { x: number; y: number; dir: number };
 }
 
 interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean }
@@ -332,16 +337,22 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     blocked.clear();
     blocked.add(`${def.doorX},0`); // the door itself stands on this tile; you use it from beside or in front of it
     for (const d of def.extraDoors ?? []) blocked.add(`${d.x},0`);
+    seatTiles.clear();
     if (roomId === LOBBY_ID) blocked.add(`${SIXTY.x},${SIXTY.y}`); // 6ixty stands in the basement
     for (const f of def.furni) {
       const k = FURNI_KINDS[f.kind];
       if (k.flat) continue; // flat pieces (a label on the floor) can be walked over
       const fp = footprint(f.kind, f.dir);
-      for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) blocked.add(`${f.x + i},${f.y + j}`);
+      for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) {
+        blocked.add(`${f.x + i},${f.y + j}`);
+        if (k.seat && !isDisplayPiece(f.id)) seatTiles.set(`${f.x + i},${f.y + j}`, f);
+      }
     }
   }
   const bedPiece = () => def.furni.find((f) => f.id === BED_ID) ?? { ...BED, id: BED_ID, kind: "bed" };
   const headTile = (): Pt => bedHead(bedPiece());
+  /** every tile of every piece you can sit on -> the piece (the tiles are blocked for walking, but you may step onto one to sit) */
+  const seatTiles = new Map<string, PlacedFurni>();
   const walkable0 = (x: number, y: number) => x >= 0 && y >= 0 && x < def.w && y < def.h && !blocked.has(`${x},${y}`);
   /** the free tile nearest to a wanted one (the bed's side may have been moved against a wall) */
   function nearestWalkable(want: Pt): Pt {
@@ -358,7 +369,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** 8-directional BFS; diagonals can't cut corners. Returns tiles after `start`, [] if unreachable. */
   function findPath(start: Pt, goal: Pt): Pt[] {
-    if (!walkable(goal.x, goal.y) || (start.x === goal.x && start.y === goal.y)) return [];
+    const seatGoal = seatTiles.has(`${goal.x},${goal.y}`);
+    if ((!walkable(goal.x, goal.y) && !seatGoal) || (start.x === goal.x && start.y === goal.y)) return [];
+    const open = (x: number, y: number) => walkable(x, y) || (seatGoal && x === goal.x && y === goal.y);
     const key = (p: Pt) => p.y * def.w + p.x;
     const prev = new Map<number, Pt | null>([[key(start), null]]);
     const queue: Pt[] = [start];
@@ -368,7 +381,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       for (const [dx, dy] of DIRS) {
         const nx = cur.x + dx;
         const ny = cur.y + dy;
-        if (!walkable(nx, ny) || prev.has(ny * def.w + nx)) continue;
+        if (!open(nx, ny) || prev.has(ny * def.w + nx)) continue;
         if (dx !== 0 && dy !== 0 && (!walkable(cur.x + dx, cur.y) || !walkable(cur.x, cur.y + dy))) continue;
         prev.set(ny * def.w + nx, cur);
         queue.push({ x: nx, y: ny });
@@ -544,6 +557,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (obj.kind === "bag" || obj.kind === "wardrobe" || obj.kind === "toolbox") startBag(obj.id);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
+      else if (FURNI_KINDS[obj.kind!]?.seat) sitAt(obj.id, t);
       else startArcade(obj.id);
       return;
     }
@@ -581,6 +595,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (obj && isDisplayPiece(obj.id)) opts.push({ label: "Buy", target: FURNI_KINDS[obj.kind!].label, action: () => openBuy(obj.kind!) });
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
+    if (obj && FURNI_KINDS[obj.kind!]?.seat && !isDisplayPiece(obj.id)) opts.push({ label: "Sit", target: FURNI_KINDS[obj.kind!].label, action: () => sitAt(obj.id, tile) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
     if (obj?.kind === "cdplayer") {
@@ -871,6 +886,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       from: p, to: p, stepStart: 0, path: [], dest: p, lastEmoteTs: v.emote?.ts ?? 0,
       smoke: typeof v.smoke === "number" ? v.smoke : undefined,
       npc: v.sixty === true,
+      sit: v.sit === true,
     };
   }
 
@@ -892,6 +908,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function walkTo(dest: Pt): void {
     const p = mine();
     if (!p || frozen) return; // 6ixty doesn't walk
+    if (p.sit && !seatTiles.has(`${dest.x},${dest.y}`)) { p.sit = false; update(ref(db, `rooms/${roomId}/players/${me.uid}`), { sit: null }).catch(() => undefined); } // you get up when you walk
+    if (!seatTiles.has(`${dest.x},${dest.y}`)) p.sitTo = undefined;
     setDestination(p, dest);
     if (p.path.length === 0) return;
     update(ref(db, `rooms/${roomId}/players/${me.uid}`), { x: dest.x, y: dest.y, dir: dirOf(currentTile(p), p.path[0]) }).catch(console.warn);
@@ -948,6 +966,44 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     pending = { type: "stab", uid, since: performance.now(), lastTry: 0 };
     clearSelection(); // like OSRS, the item stops being a "selected" cursor once you commit to a target
     if (cheb(currentTile(mine()!), currentTile(target)) > 1) say(`You walk towards ${target.name}…`);
+  }
+
+  /** Sit on a chair or couch: walk onto the tile you clicked (or the nearest tile of the piece), then take the seat. */
+  function sitAt(fid: string, at: Pt | null): void {
+    const p = mine();
+    const f = def.furni.find((x) => x.id === fid);
+    if (!p || !f || frozen) return;
+    const k = FURNI_KINDS[f.kind];
+    if (!k?.seat) return;
+    clearSelection();
+    const fp = footprint(f.kind, f.dir);
+    const tiles: Pt[] = [];
+    for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) tiles.push({ x: f.x + i, y: f.y + j });
+    const taken = new Set<string>();
+    for (const o of players.values()) { if (o === p) continue; taken.add(`${currentTile(o).x},${currentTile(o).y}`); taken.add(`${o.dest.x},${o.dest.y}`); }
+    const free = tiles.filter((t) => !taken.has(`${t.x},${t.y}`));
+    if (!free.length) return say("Somebody is sitting there.", "warn");
+    const want = at ?? currentTile(p);
+    free.sort((a, b) => Math.hypot(a.x - want.x, a.y - want.y) - Math.hypot(b.x - want.x, b.y - want.y));
+    const seat = free[0];
+    pending = null;
+    if (p.sit && currentTile(p).x === seat.x && currentTile(p).y === seat.y) return;
+    p.sitTo = { x: seat.x, y: seat.y, dir: (f.dir ?? 0) };
+    if (currentTile(p).x === seat.x && currentTile(p).y === seat.y) return; // already on it: finishSit runs next frame
+    walkTo(seat);
+    if (!p.path.length) { p.sitTo = undefined; say("You can't get to that seat.", "warn"); }
+  }
+
+  /** When you've walked onto the seat you clicked, sit down (everyone else sees it through players/<uid>/sit). */
+  function finishSit(p: Player, now: number): void {
+    const s = p.sitTo;
+    if (!s || p.path.length || isMoving(p, now)) return;
+    p.sitTo = undefined;
+    const t = currentTile(p);
+    if (t.x !== s.x || t.y !== s.y) return; // the walk didn't get there
+    p.sit = true;
+    p.dir = s.dir;
+    update(ref(db, `rooms/${roomId}/players/${me.uid}`), { sit: true, dir: s.dir }).catch(() => undefined);
   }
 
   function startDumpster(fid: string): void {
@@ -1619,6 +1675,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.figure = v.figure;
         p.smoke = typeof v.smoke === "number" ? v.smoke : undefined;
         p.npc = v.sixty === true;
+        p.sit = v.sit === true;
+        if (p.sit && typeof v.dir === "number") p.dir = v.dir;
         if (v.x !== p.dest.x || v.y !== p.dest.y) setDestination(p, { x: v.x, y: v.y });
         const em = v.emote;
         if (em && typeof em.ts === "number" && em.ts !== p.lastEmoteTs) {
@@ -1689,6 +1747,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   // ---- render helpers ----------------------------------------------------------------
+  /** how far a sitting player is lifted: the height of the seat under them */
+  function sitLift(p: Player): number {
+    const t = currentTile(p);
+    const piece = seatTiles.get(`${t.x},${t.y}`);
+    return piece ? FURNI_KINDS[piece.kind].seatHeight ?? 14 : 0;
+  }
+
   function frameFor(p: Player, now: number): { opts: Parameters<typeof getCached>[0]; yOff: number } {
     const moving = isMoving(p, now);
     const talking = !!p.bubble && p.bubble.until > now;
@@ -1706,7 +1771,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     // smoking: the hand is up at the mouth (the "drink" arm pose with no cup; the cigarette itself is drawn on top)
     // (holding a knife: the arm is out in the "carry" pose, and the knife itself is drawn in that hand)
-    const actions = moving ? ["wlk"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && holdsKnife(p, now) ? ["crr=9999"] : ["std"]);
+    const sitting = !moving && !!p.sit && !em;
+    if (sitting) yOff = -sitLift(p);
+    const actions = moving ? ["wlk"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && holdsKnife(p, now) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
       ? Math.floor((now - p.stepStart) / (STEP_MS / 4)) % 4
@@ -2251,6 +2318,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (!started) return;
     for (const p of players.values()) advance(p, now);
+    { const mp = mine(); if (mp) finishSit(mp, now); }
     processPending(now);
     tickCd();
     updateEffects(now);
@@ -2286,6 +2354,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         draw: () => {
           const box = drawFurni(f, now);
           if (box && furnishOn) pieceBoxes.push({ id: f.id, box, depth: box.depth });
+          if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
           // the bag of clothes can be clicked in your own room only
           if (box && (INTERACTIVE_KINDS.has(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop")) || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
@@ -2401,7 +2470,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
       boxes.push({ id: p.uid, x0: feet.x - 22 * scale, x1: feet.x + 22 * scale, y0: feet.y - FEET_Y * scale, y1: feet.y + 8 * scale, depth: pos.x + pos.y });
       list.push({
-        depth: pos.x + pos.y + 0.5,
+        depth: pos.x + pos.y + 0.5 + (p.sit && !isMoving(p, now) ? 1.2 : 0),
         draw: () => {
           g.fillStyle = "rgba(0,0,0,0.18)";
           g.beginPath();
