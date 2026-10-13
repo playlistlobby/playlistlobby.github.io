@@ -611,7 +611,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (obj?.kind === "dumpster") {
       opts.push({ label: "Search", target: "Dumpster", action: () => startDumpster(obj.id) });
-      opts.push({ label: "Examine", target: "Dumpster", action: () => say("An alley dumpster. It stinks. Somebody has to look inside, and it can be you every three hours.") });
+      opts.push({ label: "Examine", target: "Dumpster", action: () => say("An alley dumpster. It stinks. Somebody has to look inside, and it can be you every hour.") });
     }
     if (obj && isDisplayPiece(obj.id)) opts.push({ label: "Buy", target: FURNI_KINDS[obj.kind!].label, action: () => openBuy(obj.kind!) });
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
@@ -1032,7 +1032,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   let searching = false;
-  /** next to the dumpster: rummage through it (a cigarette 75%, a dead cat 25%), once every 3 hours */
+  /** next to the dumpster: rummage through it (a cigarette or a dead cat, 50-50), once an hour */
   async function searchTheDumpster(): Promise<void> {
     if (searching) return;
     const wait = dumpsterWaitMs(me);

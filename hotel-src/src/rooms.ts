@@ -87,7 +87,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
   // the Flappy Bird arcade machine (Habbo's cupcake-duck cabinet) in the basement: click it and you play Flappy Bird
   flappy: { id: "flappy", label: "Flappy Bird arcade", icon: "🐤", w: 1, h: 2, height: 80, color: "#2a2218", placeable: false, nitro: "furni/arcade_flappy.nitro", rotatable: true },
-  // the alley dumpster next to the Flappy Bird machine: search it (every 3 hours) for a cigarette or a dead cat
+  // the alley dumpster next to the Flappy Bird machine: search it (every hour) for a cigarette or a dead cat
   dumpster: { id: "dumpster", label: "Dumpster", icon: "🗑️", w: 2, h: 1, height: 52, color: "#2c3a2c", placeable: false, nitro: "furni/alley_dumpster.nitro", rotatable: true },
   // the bed every player room has (a fixed piece: not in the furniture menu, not stored in the database)
   bed: { id: "bed", label: "Bed", icon: "🛏️", w: 1, h: 3, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/hween_c25_makeshiftbed.nitro", rotatable: true, fixed: true },

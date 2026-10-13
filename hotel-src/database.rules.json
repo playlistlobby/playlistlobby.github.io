@@ -25,7 +25,7 @@
           "$kind": { ".validate": "$kind.matches(/^[fx]_[a-z0-9_]{1,30}$/) && newData.isNumber() && newData.val() >= 1 && newData.val() <= 99" }
         },
         "dumpsterAt": {
-          ".validate": "newData.isNumber() && newData.val() === now && (!data.exists() || data.val() <= now - 10800000)"
+          ".validate": "newData.isNumber() && newData.val() === now && (!data.exists() || data.val() <= now - 3600000)"
         },
         "catsCarved": {
           ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1"

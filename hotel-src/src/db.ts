@@ -41,9 +41,9 @@ export interface Profile {
 export const STARTER_FURNITURE = ["f_sofa"];
 
 export const SIXTY_GIFT_DELAY_MS = 12 * 3_600_000;
-/** the dumpster can be searched once every 3 hours; it gives a cigarette (75%) or a dead cat (25%) */
-export const DUMPSTER_MS = 3 * 3_600_000;
-export const CAT_CHANCE = 0.25;
+/** the dumpster can be searched once every hour; it gives a cigarette or a dead cat, 50-50 */
+export const DUMPSTER_MS = 3_600_000;
+export const CAT_CHANCE = 0.5;
 export const CAT_BLOOD = 5;
 
 export const WARDROBE_SLOTS = 8;
@@ -263,7 +263,7 @@ export const sixtySyringeReady = (p: Profile): boolean => p.sixty.knifeAt > 0 &&
 
 export const dumpsterWaitMs = (p: Profile): number => Math.max(0, p.dumpsterAt + DUMPSTER_MS - serverNow());
 
-/** Rummages through the dumpster: a cigarette (75%) or a dead cat (25%) lands in the inventory. Once every 3 hours. */
+/** Rummages through the dumpster: a cigarette or a dead cat (50-50) lands in the inventory. Once an hour. */
 export async function searchDumpster(p: Profile): Promise<"cigarette" | "deadcat"> {
   const free = p.inventory.findIndex((s) => s === null);
   if (free < 0) throw new Error("Your inventory is full");
