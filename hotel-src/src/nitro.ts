@@ -167,7 +167,7 @@ export function spritesFor(n: NitroFurni, dir: number, frame = 0): SpriteDraw[] 
     if (!f) continue;
     out.push({
       layer, image: n.image, sx: f.frame.x, sy: f.frame.y, sw: f.frame.w, sh: f.frame.h,
-      dx: -a.x, dy: -a.y, flipH: !!a.flipH, isShadow: layer === "sd",
+      dx: a.flipH ? a.x - f.frame.w : -a.x, dy: -a.y, flipH: !!a.flipH, isShadow: layer === "sd", // a mirrored copy is mirrored about the anchor: the registration x is the original one
     });
   }
   return out;

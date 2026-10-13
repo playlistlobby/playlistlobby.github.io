@@ -3,6 +3,7 @@
 import { push, ref, update } from "firebase/database";
 import { db } from "./firebase";
 import type { Profile } from "./db";
+import { directionsOf, nitroIfReady } from "./nitro";
 import { BAG_ID, BED_ID, FURNI_KINDS, footprint, isDoorTile, MAX_FURNI, PlacedFurni, RoomDef, TOOLBOX_ID } from "./rooms";
 
 /** The pieces that are always in your room: movable, never removable. */
@@ -11,6 +12,26 @@ export const isFixedPiece = (id: string): boolean => FIXED_IDS.has(id);
 
 /** Which way a piece can be turned: the bed only faces one way; everything else turns by a quarter. */
 export const canTurn = (f: { id: string; kind: string }): boolean => f.id !== BED_ID && !!FURNI_KINDS[f.kind]?.rotatable;
+
+/** The facings a piece really has art for (a piece with two pictures turns between those two, not through four facings that look alike). */
+function artDirs(kind: string): number[] {
+  const path = FURNI_KINDS[kind]?.nitro;
+  const n = path ? nitroIfReady(path) : undefined;
+  const d = n ? directionsOf(n) : [];
+  return d.length ? d : [0, 2, 4, 6];
+}
+/** The next facing when you press Turn. */
+export function nextDir(kind: string, dir: number): number {
+  const have = artDirs(kind);
+  if (have.length >= 4) return (dir + 2) % 8;
+  const cur = have.includes(dir) ? dir : have.includes(dir % 4) ? dir % 4 : have[0];
+  return have[(have.indexOf(cur) + 1) % have.length];
+}
+/** The facing a new piece starts with: one that shows its front to the room (4 or 2 when it has them). */
+export function defaultDir(kind: string): number {
+  const have = artDirs(kind);
+  return have.includes(4) ? 4 : have.includes(2) ? 2 : have[0] ?? 0;
+}
 
 export type Spot = { x: number; y: number; dir: number };
 const key = (x: number, y: number) => `${x},${y}`;

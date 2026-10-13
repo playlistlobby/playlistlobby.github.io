@@ -59,16 +59,16 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 }
 
 /** Furniture that ships with the game and is sold in the shop room (10-25 drops). Each file is in public/furni/f_<id>.nitro. */
-export interface ShopPiece { id: string; label: string; icon: string; price: number; w: number; h: number; height: number; flat?: boolean; seat?: boolean; seatHeight?: number }
+export interface ShopPiece { id: string; label: string; icon: string; price: number; w: number; h: number; height: number; flat?: boolean; seat?: boolean; seatHeight?: number; /** the facing it has on its display platform in the shop */ showDir: number }
 export const SHOP_PIECES: ShopPiece[] = [
-  { id: "bloodfloor", label: "Blood streak", icon: "🩸", price: 10, w: 1, h: 3, height: 3, flat: true },
-  { id: "toastfriend", label: "Toast friend", icon: "🍞", price: 10, w: 1, h: 1, height: 30 },
-  { id: "bodybag", label: "Body bag", icon: "🧳", price: 12, w: 2, h: 1, height: 20 },
-  { id: "bench", label: "Grunge bench", icon: "🪑", price: 14, w: 3, h: 1, height: 36, seat: true, seatHeight: 14 },
-  { id: "sofa", label: "Old sofa", icon: "🛋️", price: 16, w: 2, h: 1, height: 44, seat: true, seatHeight: 16 },
-  { id: "cardtable", label: "Card table", icon: "🃏", price: 18, w: 3, h: 2, height: 34 },
-  { id: "torturebed", label: "Restraint bed", icon: "⛓️", price: 20, w: 1, h: 3, height: 42 },
-  { id: "fountain", label: "Fountain", icon: "⛲", price: 22, w: 2, h: 2, height: 50 },
+  { id: "bloodfloor", label: "Blood streak", icon: "🩸", price: 10, w: 1, h: 3, height: 3, flat: true, showDir: 2 },
+  { id: "toastfriend", label: "Toast friend", icon: "🍞", price: 10, w: 1, h: 1, height: 30, showDir: 2 },
+  { id: "bodybag", label: "Body bag", icon: "🧳", price: 12, w: 2, h: 1, height: 20, showDir: 4 },
+  { id: "bench", label: "Grunge bench", icon: "🪑", price: 14, w: 3, h: 1, height: 36, seat: true, seatHeight: 14, showDir: 4 },
+  { id: "sofa", label: "Old sofa", icon: "🛋️", price: 16, w: 2, h: 1, height: 44, seat: true, seatHeight: 16, showDir: 4 },
+  { id: "cardtable", label: "Card table", icon: "🃏", price: 18, w: 3, h: 2, height: 34, showDir: 2 },
+  { id: "torturebed", label: "Restraint bed", icon: "⛓️", price: 20, w: 1, h: 3, height: 42, showDir: 2 },
+  { id: "fountain", label: "Fountain", icon: "⛲", price: 22, w: 2, h: 2, height: 50, showDir: 2 },
 ];
 export const SHOP_KIND_PREFIX = "f_";
 
@@ -80,6 +80,11 @@ const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECE
 export const FURNI_KINDS: Record<string, FurniKind> = {
   ...shopKinds(),
   // the toolbox in every player room: click it and the furnishing menu opens (a plain painted box, no art file)
+  // the shop's furniture, painted boxes (a counter, shelves, and the low platforms the daily pieces stand on)
+  counter: { id: "counter", label: "Counter", icon: "🧾", w: 4, h: 1, height: 28, color: "#c79b62", placeable: false, fixed: true },
+  shelf_a: { id: "shelf_a", label: "Shelves", icon: "🗄️", w: 2, h: 1, height: 52, color: "#d8b07a", placeable: false, fixed: true },
+  shelf_b: { id: "shelf_b", label: "Shelves", icon: "🗄️", w: 1, h: 2, height: 52, color: "#d8b07a", placeable: false, fixed: true },
+  platform: { id: "platform", label: "Display", icon: "▫️", w: 3, h: 3, height: 5, color: "#ecd3a4", placeable: false, fixed: true, flat: true },
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish" },
   // the wardrobe in the shop room: click it and the clothing shop opens
   wardrobe: { id: "wardrobe", label: "Wardrobe", icon: "🚪", w: 2, h: 1, height: 90, color: "#6b5a48", placeable: false, nitro: "furni/uni_wardrobe.nitro", rotatable: true, fixed: true, opens: "shop" },
@@ -208,16 +213,31 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
 }
 
 /** Where the four daily pieces stand in the shop room (every piece is placed facing the same way, each in its own 3x3 corner). */
-export const SHOP_SLOTS: Pt2[] = [{ x: 1, y: 2 }, { x: 5, y: 2 }, { x: 1, y: 5 }, { x: 5, y: 5 }];
+export const SHOP_SLOTS: Pt2[] = [{ x: 2, y: 3 }, { x: 7, y: 3 }, { x: 2, y: 7 }, { x: 7, y: 7 }];
+export const SHOP_SIZE = 11;
 export const DISPLAY_PREFIX = "shop_disp";
 export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
 
-/** The shop: a clean white room with the wardrobe on the back wall and today's pieces on display. */
+/** The shop: a bright general store (think Nook's Cranny): a counter, shelves along the walls, the wardrobe, and today's four pieces each on a low display platform. */
 export function shopDef(picks: string[]): RoomDef {
-  const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }];
-  picks.slice(0, 4).forEach((kind, i) => { if (FURNI_KINDS[kind]) furni.push({ id: DISPLAY_PREFIX + i, kind, x: SHOP_SLOTS[i].x, y: SHOP_SLOTS[i].y, dir: 6 }); });
+  const furni: PlacedFurni[] = [
+    { id: "shop_shelf1", kind: "shelf_a", x: 3, y: 0, dir: 0 },
+    { id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 },
+    { id: "shop_counter", kind: "counter", x: 7, y: 0, dir: 0 },
+    { id: "shop_shelf2", kind: "shelf_b", x: 0, y: 2, dir: 0 },
+    { id: "shop_shelf3", kind: "shelf_b", x: 0, y: 5, dir: 0 },
+    { id: "shop_shelf4", kind: "shelf_b", x: 0, y: 8, dir: 0 },
+  ];
+  picks.slice(0, 4).forEach((kind, i) => {
+    if (!FURNI_KINDS[kind]) return;
+    const slot = SHOP_SLOTS[i];
+    const dir = SHOP_PIECES.find((p) => SHOP_KIND_PREFIX + p.id === kind)?.showDir ?? 2;
+    const fp = footprint(kind, dir);
+    furni.push({ id: `shop_plat${i}`, kind: "platform", x: slot.x, y: slot.y, dir: 0 });
+    furni.push({ id: DISPLAY_PREFIX + i, kind, x: slot.x + Math.floor((3 - fp.w) / 2), y: slot.y + Math.floor((3 - fp.h) / 2), dir });
+  });
   return {
-    id: SHOP_ID, name: "Shop", ownerUid: null, ownerName: null, access: "open", w: 8, h: 8,
+    id: SHOP_ID, name: "Shop", ownerUid: null, ownerName: null, access: "open", w: SHOP_SIZE, h: SHOP_SIZE,
     theme: { floorA: "#e6e2d8", floorB: "#efece4", wall: "#f3f3f3", rug: false, rugColor: "#000000" },
     rug: null, furni, doorX: DOOR_X, doorTo: LOBBY_ID,
   };
