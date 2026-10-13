@@ -719,20 +719,48 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** Walks next to a tile (or a player's tile), returns true once adjacent. */
-  function approach(p: Player, goal: Pt, now: number, tries: { lastTry: number }): "arrived" | "walking" | "unreachable" {
+  function approach(p: Player, goal: Pt | Pt[], now: number, tries: { lastTry: number }): "arrived" | "walking" | "unreachable" {
+    const goals = Array.isArray(goal) ? goal : [goal]; // every tile the target covers (a big machine covers two)
     const mt = currentTile(p);
-    if (cheb(mt, goal) <= 1) return "arrived";
+    const key = (t: Pt) => `${t.x},${t.y}`;
+    // tiles other players stand on or are heading to: we don't stop on top of anybody
+    const taken = new Set<string>();
+    for (const o of players.values()) {
+      if (o === p || o.lying) continue;
+      taken.add(key(currentTile(o)));
+      taken.add(key(o.dest));
+    }
+    const touching = (t: Pt) => goals.some((g) => cheb(t, g) <= 1);
+    if (touching(mt) && !taken.has(key(mt))) return "arrived"; // beside it, on a tile of our own
     if (now - tries.lastTry < 450) return "walking";
     tries.lastTry = now;
+
+    // free tiles next to any part of the target; if the crowd has taken them all, share one rather than give up
+    const candidates = (avoidPlayers: boolean): Pt[] => {
+      const seen = new Map<string, Pt>();
+      for (const g of goals) for (const [dx, dy] of DIRS) {
+        const n = { x: g.x + dx, y: g.y + dy };
+        if (!walkable(n.x, n.y) || goals.some((q) => q.x === n.x && q.y === n.y)) continue;
+        if (avoidPlayers && taken.has(key(n))) continue;
+        seen.set(key(n), n);
+      }
+      return [...seen.values()];
+    };
+    let tiles = candidates(true);
+    if (tiles.length === 0) tiles = candidates(false);
+    if (tiles.length === 0) return touching(mt) ? "arrived" : "unreachable";
+
+    // the closest one to walk to (shortest path), and among equals the one nearest the target
     let best: Pt | null = null;
     let bestLen = Infinity;
-    for (const [dx, dy] of DIRS) {
-      const n = { x: goal.x + dx, y: goal.y + dy };
-      if (!walkable(n.x, n.y)) continue;
+    let bestNear = Infinity;
+    for (const n of tiles) {
       const len = n.x === mt.x && n.y === mt.y ? 0 : findPath(mt, n).length || Infinity;
-      if (len < bestLen) { best = n; bestLen = len; }
+      const near = Math.min(...goals.map((g) => Math.hypot(g.x - n.x, g.y - n.y)));
+      if (len < bestLen || (len === bestLen && near < bestNear)) { best = n; bestLen = len; bestNear = near; }
     }
     if (!best || bestLen === Infinity) return "unreachable";
+    if (bestLen === 0) return "arrived";
     walkTo(best);
     return "walking";
   }
@@ -789,11 +817,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const job = pending;
     const f = def.furni.find((x) => x.id === job.fid);
     if (!f) { pending = null; return; }
-    const r = approach(p, { x: f.x, y: f.y }, now, job);
+    const fp = footprint(f.kind, f.dir);
+    const covered: Pt[] = [];
+    for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) covered.push({ x: f.x + i, y: f.y + j });
+    const r = approach(p, covered, now, job);
     if (r === "unreachable") { pending = null; return say("You can't get to it.", "warn"); }
     if (r === "arrived") {
       pending = null;
-      p.dir = dirOf(currentTile(p), { x: f.x, y: f.y });
+      const me0 = currentTile(p);
+      const face = covered.reduce((a, b) => (Math.hypot(b.x - me0.x, b.y - me0.y) < Math.hypot(a.x - me0.x, a.y - me0.y) ? b : a)); // face the nearest part of it
+      p.dir = dirOf(me0, face);
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
       if (job.type === "cd") void executeInsert();
       else if (job.type === "bag") ctx.navigate("customize");
