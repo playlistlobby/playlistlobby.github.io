@@ -2,6 +2,7 @@ import { h } from "./dom";
 import { showMenu } from "./contextMenu";
 import { BLOOD_ICON, INV_SIZE, ITEMS, MUSIC_ACCESS_KEY } from "../items";
 import { consumeSlot } from "../db";
+import { playSfx } from "../sfx";
 import { EMOTES, hasEmote } from "../emotes";
 import { fmtTime, player, TRACKS } from "../music";
 import type { Ctx } from "../main";
@@ -98,6 +99,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
         title: def ? (loaned ? `${def.name} (in the player)` : def.name) : "",
         onclick: () => {
           if (!def) return;
+          playSfx("select", 0.35);
           if (loaned) return opts.say(`Your ${def.name} is in the player. It'll be back when it's done.`, "warn");
           if (def.useSelf) return opts.onUseSelf(def.useSelf);
           setSelected(selected === i ? null : i);
@@ -112,7 +114,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
               ? [{ label: selected === i ? "Cancel use" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
               : []),
             ...(def.droppable ? [{ label: "Drop", target: def.name, action: () => {
-              void consumeSlot(profile, i).then(() => { if (selected === i) setSelected(null); renderInventory(); opts.say(`You drop the ${def.name.toLowerCase()}.`); }, () => opts.say("It won't go.", "warn"));
+              void consumeSlot(profile, i).then(() => { setSelected(null); renderInventory(); opts.say(`You drop the ${def.name.toLowerCase()}.`); }, () => opts.say("It won't go.", "warn"));
             } }] : []),
             { label: "Examine", target: def.name, action: () => opts.say(loaned ? `${def.examine} (It's in the player right now.)` : def.examine) },
           ]);

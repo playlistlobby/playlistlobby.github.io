@@ -5,6 +5,7 @@ import { Access, LOBBY_ID, normAccess, ownRoomId, RoomMeta, watchAllRooms } from
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import { findSlot } from "../items";
+import { compactInventory } from "../db";
 import type { Ctx } from "../main";
 
 export interface DoorApi {
@@ -60,6 +61,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   };
 
   function enter(roomId: string, label: string): void {
+    playSfx("doorOpen", 0.6);
     logAction(me, "visit", `went to ${label}`);
     close();
     ctx.navigate("room", { roomId });
@@ -92,6 +94,8 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     try {
       await social.lockpick(r.owner, slot, had - 1); // opens the lock and uses up the pick in one write
       if (had > 1) me.inventory[slot]!.qty = had - 1; else me.inventory[slot] = null;
+      void compactInventory(me).catch(() => undefined); // and the items after it move up
+      playSfx("pickLock", 0.55);
       toast("Click. The lock gives way.");
       enter(r.roomId, `${r.ownerName}'s room (picked the lock)`);
     } catch {

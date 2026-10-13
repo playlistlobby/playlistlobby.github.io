@@ -120,6 +120,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     patch.blood = START_BLOOD;
   }
   if (v.createdAt === undefined) patch.createdAt = serverTimestamp();
+  Object.assign(patch, compactedPatch(profile)); // close any gaps left in the inventory (older accounts)
   // everyone has the starter items (they're never used up: the CD comes back, the syringe is a daily tool)
   for (const item of STARTER_ITEMS) {
     if (findSlotAny(profile.inventory, item) >= 0) continue;
@@ -170,7 +171,7 @@ export async function giveItem(p: Profile, item: string, extra: Record<string, u
   return free;
 }
 
-/** Uses up one of the item in a slot (or empties the slot). */
+/** Uses up one of the item in a slot (or empties the slot, and the items after it move up to fill the gap). */
 export async function consumeSlot(p: Profile, slot: number): Promise<void> {
   const s = p.inventory[slot];
   if (!s) return;
@@ -180,7 +181,31 @@ export async function consumeSlot(p: Profile, slot: number): Promise<void> {
   } else {
     await update(ref(db, `users/${p.uid}`), { [`inventory/${slot}`]: null });
     p.inventory[slot] = null;
+    await compactInventory(p);
   }
+}
+
+/**
+ * The inventory never has gaps: every item moves up to fill an empty slot before it. Returns the database changes
+ * that make it so (and rearranges `p.inventory` to match); empty when there was nothing to close.
+ */
+export function compactedPatch(p: { inventory: Inventory }): Record<string, unknown> {
+  const items = p.inventory.filter((s): s is NonNullable<typeof s> => !!s);
+  const patch: Record<string, unknown> = {};
+  for (let i = 0; i < p.inventory.length; i++) {
+    const want = items[i] ?? null;
+    const had = p.inventory[i];
+    if (JSON.stringify(want) === JSON.stringify(had)) continue;
+    patch[`inventory/${i}`] = want;
+    p.inventory[i] = want;
+  }
+  return patch;
+}
+
+/** Closes any gaps in the inventory and saves it. */
+export async function compactInventory(p: Profile): Promise<void> {
+  const patch = compactedPatch(p);
+  if (Object.keys(patch).length) await update(ref(db, `users/${p.uid}`), patch);
 }
 
 /** 6ixty's first gift: the knife. Starts the 12-hour wait for the second gift. */

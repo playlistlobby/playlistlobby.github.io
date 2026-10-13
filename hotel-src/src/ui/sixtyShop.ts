@@ -40,7 +40,7 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
                 await buyInventoryItem(me, id, price);
                 ctx.refreshHeader();
                 logAction(me, "buy", `bought a ${it.name} from 6ixty for ${price}`);
-                playSfx("cash", 0.45);
+                playSfx("coins", 0.5);
                 toast(`${it.name} added to your inventory.`);
                 onChange();
                 render();

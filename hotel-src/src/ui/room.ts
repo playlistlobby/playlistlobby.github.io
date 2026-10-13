@@ -55,6 +55,8 @@ import { mountSidePanel } from "./sidepanel";
 import { mountRoomPanel } from "./roomPanel";
 import { DoorApi, openDoor } from "./door";
 import { assetUrl } from "../assetUrl";
+import { playSfx } from "../sfx";
+import { setAmbience } from "../ambience";
 import type { Ctx } from "../main";
 
 /** The hanger that floats above the bag of clothes in your own room (it's Habbo's own wardrobe icon). */
@@ -790,6 +792,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
         if (isOwnRoom) {
           // arrived at your own room's door: down to the basement
+          playSfx("doorOpen", 0.6);
           if (!me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); }
           logAction(me, "visit", "went to the basement");
           ctx.navigate("room", { roomId: LOBBY_ID });
@@ -1062,12 +1065,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (me.sixty.knifeAt === 0) {
         try { await sixtyGiveKnife(me); } catch { return sixtySay(SIXTY_LINES.full); }
         panel.refresh();
+        playSfx("give", 0.6);
         logAction(me, "room", "got the knife from 6ixty");
         sixtySay(SIXTY_LINES.knife, 2600);
         sixtyAfter(2900, () => sixtySay(SIXTY_LINES.tomorrow, 6500));
       } else if (sixtySyringeReady(me)) {
         try { await sixtyGiveSyringe(me); } catch { return sixtySay(SIXTY_LINES.full); }
         panel.refresh();
+        playSfx("give", 0.6);
         logAction(me, "room", "got the syringe from 6ixty");
         sixtySay(SIXTY_LINES.syringe, 2600);
         sixtyAfter(1800, openSixtyWindow);
@@ -1095,6 +1100,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       me.inventory[slot]!.lit = t;
       p.smoke = t;
       void update(myRef, { smoke: serverTimestamp() }).catch(() => undefined);
+      playSfx("light", 0.45);
       logAction(me, "room", "lit a cigarette");
       panel.refresh();
       say("You light up.");
@@ -1200,6 +1206,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
+    if (roomId === LOBBY_ID) setAmbience(true); // the basement hums: the sound fades in as you arrive
     if (roomId === LOBBY_ID || asSixty) {
       // 6ixty's look (the admin can change it); as 6ixty you wear it too
       unsubs.push(watchSixtyLook((l) => {
@@ -1712,6 +1719,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const b = players.get(fx.to);
       if (!fx.impact && t >= 0.3) {
         fx.impact = true;
+        if (active) playSfx("stab", 0.5); // the blade lands (everyone in the room hears it)
         if (b) {
           const f = feetOf(b, now);
           for (let k = 0; k < 9; k++) {
@@ -2063,6 +2071,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     window.removeEventListener("keydown", onKey);
     window.removeEventListener("keydown", onRotateKey);
     unsubs.forEach((u) => u());
+    if (roomId === LOBBY_ID) setAmbience(false);
     endPress();
     doorApi?.close();
     closeCdPopup();
@@ -2080,12 +2089,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     dispose,
     show() {
       active = true;
+      if (roomId === LOBBY_ID) setAmbience(true);
       panel.refresh();
       layout();
       ctx.refreshHeader();
     },
     hide() {
       active = false;
+      if (roomId === LOBBY_ID) setAmbience(false);
       sixtyShop?.close();
       closeCdPopup();
       closeMenu();
