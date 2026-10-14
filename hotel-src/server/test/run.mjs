@@ -171,7 +171,7 @@ console.log("--- the mixer");
 
 console.log("--- selling weed");
 {
-  const a = await fresh("t_sell", { inventory: { 0: { item: "weed", qty: 3 }, 1: { item: "weed", qty: 2, ass: true }, 2: { item: "knife", qty: 1 } } });
+  const a = await fresh("t_sell", { inventory: { 0: { item: "weed", qty: 3 }, 1: { item: "weed", qty: 2, ass: true }, 2: { item: "knife", qty: 1 }, 3: { item: "weedseed", qty: 5 } } });
   await act(a, "sync");
   bad("he only buys weed", await act(a, "sellWeed", { slot: 2, qty: 1 }));
   const r1 = await act(a, "sellWeed", { slot: 0, qty: 2 });
@@ -180,6 +180,9 @@ console.log("--- selling weed");
   const r2 = await act(a, "sellWeed", { slot: 1, qty: 99 });
   ok("sell all the ass weed", r2);
   check("paid 6 more (3 each, capped at what you have)", r2.state.blood === 18);
+  const r3 = await act(a, "sellWeed", { slot: 2, qty: 5 });
+  ok("sell the 5 weed seeds", r3);
+  check("2 each: 10 more", r3.state.blood === 28);
 }
 
 console.log("--- the floor: drop and pick up");

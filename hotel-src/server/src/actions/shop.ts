@@ -63,17 +63,18 @@ export const buyFurni: Action = {
 /** What 6ixty pays for weed, per piece. */
 export const WEED_PRICE = 6;
 export const ASS_WEED_PRICE = 3;
+export const SEED_PRICE = 2;
 
-/** Selling weed to 6ixty: 6 drops for good weed, 3 for ass weed. */
+/** Selling to 6ixty: 6 drops for good weed, 3 for ass weed, 2 for a weed seed. */
 export const sellWeed: Action = {
   async run(c, a) {
     const w = await c.user();
     const slot = Number(a.slot);
     if (!Number.isInteger(slot) || slot < 0 || slot > 27) return fail("Bad slot.");
     const it = w.s.inventory[slot];
-    if (!it || it.item !== "weed" || it.lit || it.inPlayer) return fail("He only buys weed.");
+    if (!it || (it.item !== "weed" && it.item !== "weedseed") || it.lit || it.inPlayer) return fail("He only buys weed and seeds.");
     const qty = Math.max(1, Math.min(Math.floor(Number(a.qty) || 1), it.qty));
-    const gain = qty * (it.ass ? ASS_WEED_PRICE : WEED_PRICE);
+    const gain = qty * (it.item === "weedseed" ? SEED_PRICE : it.ass ? ASS_WEED_PRICE : WEED_PRICE);
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, qty);
     w.s.blood += gain;
     return { gain, qty };
