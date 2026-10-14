@@ -98,7 +98,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the landlord's counter in the corner of the shop room
   counter: { id: "counter", label: "Counter", icon: "🧾", w: 1, h: 2, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/f_counter.nitro", rotatable: true, fixed: true },
   // the wardrobe in the shop room: click it and the clothing shop opens
-  wardrobe: { id: "wardrobe", label: "Wardrobe", icon: "🚪", w: 2, h: 1, height: 90, color: "#6b5a48", placeable: false, nitro: "furni/uni_wardrobe.nitro", rotatable: true, fixed: true, opens: "shop" },
+  wardrobe: { id: "wardrobe", label: "Wardrobe", icon: "🚪", w: 2, h: 1, height: 90, color: "#6b5a48", placeable: false, nitro: "furni/skin_bag_plain.nitro", rotatable: true, fixed: true, opens: "shop" },
   arcade: { id: "arcade", label: "Arcade machine", icon: "🕹️", w: 1, h: 1, height: 78, color: "#26327a", placeable: false },
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
   // the Flappy Bird arcade machine (Habbo's cupcake-duck cabinet) in the basement: click it and you play Flappy Bird
@@ -246,7 +246,7 @@ export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
 /** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
 export function shopDef(picks: string[]): RoomDef {
   const furni: PlacedFurni[] = [
-    { id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }, { id: "shop_vending", kind: "vending", x: 8, y: 0, dir: 4 },
+    { id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 4 }, { id: "shop_vending", kind: "vending", x: 8, y: 0, dir: 4 },
     // the landlord's counter in the right corner: he stands behind it (see LANDLORD in npc.ts)
     { id: "shop_counter", kind: "counter", x: 13, y: 1, dir: 2 },
   ];

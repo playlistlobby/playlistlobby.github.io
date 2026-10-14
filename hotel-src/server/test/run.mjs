@@ -546,10 +546,11 @@ console.log("--- the landlord's bed and wardrobe");
   ok("a coat rack", w1);
   const m3 = await owner("GET", `roomsMeta/${room}/bag`);
   check("it hangs on the back wall, facing the room, at the right end", m3.y === 0 && m3.dir === 4 && m3.x === 7, JSON.stringify(m3));
-  const w2 = await act(a, "roomSkins", { bag: "tall" });
-  ok("a tall wardrobe", w2);
+  bad("the tall wardrobe is gone from the game", await act(a, "roomSkins", { bag: "tall" }));
+  const w2 = await act(a, "roomSkins", { bag: "plain" });
+  ok("a wardrobe again, from the coat rack", w2);
   const m4 = await owner("GET", `roomsMeta/${room}/bag`);
-  check("two tiles wide, so it starts at 6", m4.y === 0 && m4.dir === 4 && m4.x === 6, JSON.stringify(m4));
+  check("it goes to the nearest free wall place (the back wall has no room left of the toolbox, so the left wall corner at 0,0)", m4.x === 0 && m4.y === 0 && m4.dir === 2, JSON.stringify(m4));
 }
 
 console.log("--- kodimagnyl, the lean and the super pill");

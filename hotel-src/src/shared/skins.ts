@@ -29,7 +29,6 @@ export const BAG_SKINS: RoomSkin[] = [
   { id: "mess", label: "Mess wardrobe", price: 15, w: 2, h: 1, height: 29 },
   { id: "plain", label: "Wardrobe", price: 20, w: 2, h: 1, height: 90 },
   { id: "ducket", label: "Ducket wardrobe", price: 25, w: 2, h: 1, height: 90 },
-  { id: "tall", label: "Tall wardrobe", price: 30, w: 2, h: 1, height: 82, wall: true, lift: 0 },
 ];
 
 export const skinsOf = (part: SkinPart): RoomSkin[] => (part === "bed" ? BED_SKINS : BAG_SKINS);
