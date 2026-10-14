@@ -74,7 +74,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the growing kit (sold by 6ixty): an empty pot until you plant a seed in it
   f_planter: { id: "f_planter", label: "Growing kit", icon: "🪴", w: 1, h: 1, height: 44, color: "#d8d8d8", placeable: false, nitro: "furni/mafia_c26_planter_white.nitro", rotatable: true, plant: true },
   // the mixer (sold by the vending machine): put it down in your room, tap it, and mix two things into something new
-  f_mixer: { id: "f_mixer", label: "Mixer", icon: "🧪", w: 1, h: 1, height: 36, color: "#6b6b7a", placeable: false, nitro: "furni/f_mixer.nitro", rotatable: true, opens: "mixer" },
+  f_mixer: { id: "f_mixer", label: "Mixer", icon: "🧪", w: 1, h: 1, height: 46, color: "#6b6b7a", placeable: false, nitro: "furni/f_mixer.nitro", rotatable: true, opens: "mixer" },
   // the vending machine in the shop room
   vending: { id: "vending", label: "Vending machine", icon: "🥤", w: 1, h: 1, height: 80, color: "#6b5a48", placeable: false, nitro: "furni/olympics_r16_vendingmchn.nitro", rotatable: true, fixed: true, opens: "vending" },
   // the sink in every player room (like the bed: always there, movable, never removable): fills the watering can

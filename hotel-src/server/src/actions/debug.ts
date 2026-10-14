@@ -1,4 +1,4 @@
-// Test commands (/giveblud, /weed). Only the admin account may use them (and anyone in the local emulator).
+// Test commands (/giveblud, /weed). /giveblud is open to everyone for now; /weed is for the admin account only (and anyone in the local emulator).
 import { Action, int } from "./util";
 import { fail } from "../ctx";
 import { isEmulator } from "../env";
@@ -6,7 +6,9 @@ import { addToInv } from "../../../src/shared/economy";
 
 export const debug: Action = {
   async run(c, a) {
-    if (!c.isAdmin && !isEmulator(c.env)) fail("Unknown command.");
+    const trusted = c.isAdmin || isEmulator(c.env);
+    // TEMP: /giveblud is open to every player for now (remove this line's exception when it should be admin only again)
+    if (!trusted && a.cmd !== "blood") fail("Unknown command.");
     const w = await c.user();
     if (a.cmd === "blood") {
       const n = int(a.n, 1, 1000, "amount");
