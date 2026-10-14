@@ -1415,7 +1415,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const covered: Pt[] = [];
     for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) covered.push({ x: f.x + i, y: f.y + j });
     const r = approach(p, covered, now, job);
-    if (r === "unreachable") { pending = null; return say("You can't get to it.", "warn"); }
+    if (r === "unreachable") {
+      pending = null;
+      // the toolbox opens its furnishing menu even when something is in the way: the menu is the point, not standing next to it
+      if (job.type === "bag" && FURNI_KINDS[f.kind].opens === "furnish") { enterFurnish(); return; }
+      return say("You can't get to it.", "warn");
+    }
     if (r === "arrived") {
       pending = null;
       const me0 = currentTile(p);
