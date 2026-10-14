@@ -16,7 +16,7 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { canStab, carveCat, combineSlots, consumeSlot, fillCan, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, waterPlant, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, setTutorial, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
+import { addToInv, commitInv, canStab, carveCat, combineSlots, consumeSlot, fillCan, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, waterPlant, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, setTutorial, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
@@ -2216,6 +2216,23 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     syncSleeper();
   }
 
+  /** TEMP-GIVEWEED: /weed gives a rolling kit: one weed, one ass weed, a blunt wrap and joint paper (for testing only). */
+  async function giveWeedKit(): Promise<void> {
+    let inv = me.inventory;
+    for (const give of [{ item: "weed", qty: 1 }, { item: "weed", qty: 1, ass: true }, { item: "bluntwrap", qty: 1 }, { item: "jointpaper", qty: 1 }]) {
+      const next = addToInv(inv, give);
+      if (!next) return say("Your inventory is full.", "warn");
+      inv = next;
+    }
+    try {
+      await commitInv(me, inv);
+      panel.refresh();
+      say("(test) You got one weed, one ass weed, a blunt wrap and joint paper.");
+    } catch {
+      say("The hotel refused that. (test command)", "warn");
+    }
+  }
+
   /** TEMP-GIVEBLUD: /giveblud 25 adds 25 drops of blood (for testing only). */
   async function giveBlud(n: number): Promise<void> {
     if (!(n > 0)) return say("Usage: /giveblud 25", "warn");
@@ -2235,6 +2252,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     input.value = "";
     if (text.startsWith("/")) {
       // TEMP-GIVEBLUD: testing command, remove together with the 'testBlood' rule in database.rules.template.json
+      if (/^\/weed$/i.test(text)) { void giveWeedKit(); return; } // TEMP-GIVEWEED: testing command, remove when asked
       const gift = /^\/giveblud\s+(\d{1,4})$/i.exec(text);
       if (gift) { void giveBlud(Math.min(1000, Number(gift[1]))); return; }
       const id = text.slice(1).toLowerCase();
