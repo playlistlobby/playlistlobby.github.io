@@ -15,7 +15,7 @@ export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string
   { item: "deadcat", chance: 0.3, label: "dead cat" },
   { item: "lighter", chance: 0.05, label: "lighter" },
 ];
-export const CAT_BLOOD = 2;
+export const CAT_BLOOD = 3;
 export const SYRINGE_BLOOD = 1;
 /** the syringe draws 1 drop from yourself and 1 from a body bag, each once every 20 minutes */
 export const SYRINGE_CD_MS = 20 * 60_000;

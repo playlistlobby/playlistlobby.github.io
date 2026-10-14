@@ -816,7 +816,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   };
   window.addEventListener("keydown", onKey);
   window.addEventListener("keydown", onRotateKey);
-  const onPocket = () => { panel.refresh(); ctx.refreshHeader(); mixerApi?.refresh(); };
+  const onPocket = () => { panel.refresh(); ctx.refreshHeader(); mixerApi?.refresh(); tutorialGuide(); };
   window.addEventListener("pocket-changed", onPocket);
 
   function rotateTool(): void {
@@ -1250,6 +1250,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const FOUND: Record<string, string> = { deadcat: "Under the bin bags: a dead cat. Poor thing.", burger: "A burger, hardly bitten. Lucky you.", weedseed: "A few little seeds in the muck. They might grow.", lighter: "A lighter, and it still works!" };
       giftPop(`+1 ${itemDef(found)?.name ?? found}`, itemImg(found));
       say(FOUND[found] ?? `You find a ${itemDef(found)?.name ?? found}.`);
+      if (found === "deadcat" && me.catsCarved < 2) say("Tap the glowing knife, then the glowing cat.");
       logAction(me, "room", `searched a garbage can and found a ${found}`);
     } catch (err) {
       say((err as Error).message || "You find nothing but rot.", "warn");
@@ -1819,9 +1820,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- the introduction (in the private copy of the basement) ---------------------------------------------
   /** points the player at the next thing: the knife (and the guy) in the pocket, then the pill */
   function tutorialGuide(): void {
-    if (!isTut || disposed) return;
+    if (disposed) return;
     const knife = findSlot(me.inventory, "knife");
     const pill = findSlot(me.inventory, "pill");
+    if (!isTut) {
+      // the first two dead cats you carry: the cat and the knife glow (tap the knife, then the cat)
+      const cat = findSlot(me.inventory, "deadcat");
+      if (me.catsCarved < 2 && cat >= 0 && knife >= 0) panel.guide(selectedSlot === knife ? [cat] : [cat, knife]);
+      else panel.guide(null);
+      return;
+    }
     if (me.tutorial === 1 && knife >= 0 && selectedSlot !== knife) panel.guide(knife);
     else if (me.tutorial === 3 && pill >= 0) panel.guide(pill);
     else panel.guide(null);

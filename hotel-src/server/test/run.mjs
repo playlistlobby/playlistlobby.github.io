@@ -349,7 +349,7 @@ console.log("--- smoking, bins, syringe, cats, flappy");
   check("stab bonus x2", f.state.boostMult === 2 && f.state.boostUntil > Date.now());
   const cat = await act(a, "carve", { slot: (await state(a)).inventory.findIndex((x) => x && x.item === "deadcat") });
   ok("carve a cat", cat);
-  check("+2 blood", cat.state.blood === 2);
+  check("+3 blood", cat.state.blood === 3);
   const sy = await act(a, "syringe", { who: "self" });
   ok("syringe on yourself", sy);
   bad("syringe again right away", await act(a, "syringe", { who: "self" }));

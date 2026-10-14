@@ -12,7 +12,7 @@ type Tab = "inventory" | "emotes" | "music" | "room";
 export interface PanelApi {
   setSelected(slot: number | null): void;
   /** the introduction points at one pocket item: opens the inventory and makes that slot glow (null = stop) */
-  guide(slot: number | null): void;
+  guide(slot: number | number[] | null): void;
   /** call after the profile changed (inventory, blood, stab status) */
   refresh(): void;
   dispose(): void;
@@ -47,7 +47,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   /** on phones the panel starts as a bare tab strip; tapping the open tab again folds it away */
   let collapsed = isMobile();
   let selected: number | null = null;
-  let guided: number | null = null;
+  let guided: number[] = [];
   /** the red Drop button was pressed: every item glows and tapping one asks to drop it */
   let dropMode = false;
   let unsubMusic: (() => void) | null = null;
@@ -125,7 +125,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
       const def = slot ? itemDef(slot.item) ?? null : null;
       const loaned = !!slot?.inPlayer; // e.g. the CD is sitting in the CD player right now
       const el = h("div", {
-        class: "inv-slot" + (selected === i ? " selected" : "") + (guided === i && def ? " guide" : "") + (dropMode && def && !loaned && !slot?.lit && !NO_DROP.has(slot!.item) ? " drop-glow" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
+        class: "inv-slot" + (selected === i ? " selected" : "") + (guided.includes(i) && def ? " guide" : "") + (dropMode && def && !loaned && !slot?.lit && !NO_DROP.has(slot!.item) ? " drop-glow" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
         title: def ? (loaned ? `${def.name} (in the player)` : def.name) : "",
         onclick: (e: MouseEvent) => {
           if (!def) return;
@@ -238,8 +238,11 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   return {
     setSelected(slot) { selected = slot; if (tab === "inventory") renderInventory(); },
     guide(slot) {
-      guided = slot;
-      if (slot !== null && (tab !== "inventory" || collapsed)) { tab = "inventory"; collapsed = false; render(); } else if (tab === "inventory") renderInventory();
+      const next = slot === null ? [] : Array.isArray(slot) ? slot : [slot];
+      const changed = JSON.stringify(next) !== JSON.stringify(guided);
+      guided = next;
+      // a new thing to point at opens the inventory; the same one just keeps glowing
+      if (changed && next.length && (tab !== "inventory" || collapsed)) { tab = "inventory"; collapsed = false; render(); } else if (tab === "inventory") renderInventory();
     },
     refresh: render,
     dispose() {
