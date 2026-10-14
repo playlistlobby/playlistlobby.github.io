@@ -1,11 +1,9 @@
 import { h, toast } from "./dom";
-import { ref, update } from "firebase/database";
-import { db } from "../firebase";
 import { social, TradeInvite } from "../social";
 import { BLOOD_ICON, INV_SIZE, itemDef } from "../items";
 import {
-  canReceive, cancelTrade, claimTheirs, createTrade, emptyOffer, escrowMine, forgetTrade, freeQty, nextStep, offerAdd, offerBlood, offerRemove,
-  otherOf, recoverTrades, refundMine, setConfirm, setReady, Trade, TradeItem, TradeOffer, tradable, unlock, watchTrade, writeOffer,
+  canReceive, cancelTrade, createTrade, emptyOffer, finishTrade, forgetTrade, freeQty, offerAdd, offerBlood, offerRemove,
+  otherOf, setConfirm, setReady, Trade, TradeItem, TradeOffer, tradable, unlock, watchTrade, writeOffer,
 } from "../trade";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
@@ -23,8 +21,6 @@ export function mountTrades(ctx: Ctx): () => void {
   const popups = h("div", { class: "trade-popups" });
   document.body.append(popups);
   const windows = new Map<string, () => void>();
-
-  void recoverTrades(me).then((n) => { if (n) { ctx.refreshHeader(); pocketChanged(); toast("A trade you left half-way was finished."); } }).catch(() => undefined);
 
   const cards = new Map<string, HTMLElement>();
   const showInvite = (k: TradeInvite) => {
@@ -85,7 +81,7 @@ function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
     const myReady = !!t.ready[me.uid], theirReady = !!t.ready[other];
     const myConfirm = !!t.confirm[me.uid], theirConfirm = !!t.confirm[other];
     const locked = myReady && theirReady;
-    const handover = locked && myConfirm && theirConfirm;
+    const handover = locked && myConfirm && theirConfirm && !note;
     const over = t.status !== "open";
     const editable = !locked && !over;
     const status = (r: boolean, c: boolean) => (c ? "confirmed ✓" : r ? "accepted ✓" : "");
@@ -120,7 +116,7 @@ function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
     } else {
       buttons.push(h("button", { class: "btn primary", onclick: () => void setReady(me, t!, !myReady) }, myReady ? "Take back accept" : "Accept"));
     }
-    if (!over && !(t.escrowed[me.uid] && t.escrowed[other])) buttons.push(h("button", { class: "btn danger", onclick: () => void doCancel() }, "Cancel trade"));
+    if (!over) buttons.push(h("button", { class: "btn danger", onclick: () => void doCancel() }, "Cancel trade"));
 
     body.replaceChildren(
       h("div", { class: "trade-head" }, h("strong", {}, `Trade with ${name(other)}`), h("button", { class: "btn small", onclick: () => void doCancel(true) }, "✕")),
@@ -149,31 +145,38 @@ function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
   async function doCancel(closeToo = false): Promise<void> {
     if (!t) return close();
     if (t.status !== "open") return close();
-    if (t.escrowed[me.uid] && t.escrowed[otherOf(t, me.uid)]) return; // it's being handed over: it will finish by itself
     try { await cancelTrade(t); } catch { toast("Couldn't cancel.", "err"); }
     if (closeToo) close();
   }
 
-  /** What has to happen next for me (escrow my offer, claim theirs, give my box back); each is tried once per window. */
+  /** Both have confirmed: the server swaps everything (it checks both pockets first). Either side asks; the second ask changes nothing. */
   function drive(): void {
     if (!t || closed) return;
-    const s = nextStep(me, t);
-    const run = (key: string, job: () => Promise<void>, onErr?: (e: unknown) => void) => {
-      if (acted.has(key)) return;
-      acted.add(key);
-      void job().catch((e) => { acted.delete(key); onErr?.(e); });
-    };
-    if (s === "escrow") run("escrow", async () => { await escrowMine(me, t!); ctx.refreshHeader(); pocketChanged(); }, (e) => { toast((e as Error).message, "err"); void cancelTrade(t!); });
-    else if (s === "claim") run("claim", async () => { await claimTheirs(me, t!); ctx.refreshHeader(); pocketChanged(); playSfx("coins", 0.5); logAction(me, "trade", `traded with ${name(otherOf(t!, me.uid))}`); }, (e) => { note = (e as Error).message; render(); });
-    else if (s === "refund") run("refund", async () => { await refundMine(me, t!); ctx.refreshHeader(); pocketChanged(); }, (e) => { note = (e as Error).message; render(); });
-    else if (s === "cancel-stale") run("stale", async () => { await cancelTrade(t!); });
-    // both have taken their things: the trade is over (whoever finishes second normally marks it, this covers a missed write)
-    if (t.status === "open" && t.claimed[t.a] && t.claimed[t.b] && !acted.has("done")) { acted.add("done"); void update(ref(db, `trades/${id}`), { status: "done" }).catch(() => acted.delete("done")); }
-    if (t.status === "done" && !t.escrow[otherOf(t, me.uid)] && t.claimed[me.uid]) {
-      void forgetTrade(me, id);
-      if (!acted.has("bye")) { acted.add("bye"); toast("Trade complete."); window.setTimeout(() => close(), 900); }
+    if (t.status === "open" && t.ready[t.a] && t.ready[t.b] && t.confirm[t.a] && t.confirm[t.b] && !acted.has("finish")) {
+      acted.add("finish");
+      const tt = t;
+      void finishTrade(me, tt).then(() => { ctx.refreshHeader(); pocketChanged(); }).catch((e) => {
+        note = (e as Error).message || "The trade couldn't finish.";
+        render();
+        void unlock(tt).then(() => acted.delete("finish")); // back to editing, with the reason shown
+      });
     }
-    if (t.status === "cancelled" && !t.escrow[me.uid]) { void forgetTrade(me, id); if (!acted.has("bye")) { acted.add("bye"); toast("The trade was called off."); window.setTimeout(() => close(), 600); } }
+    if (t.status === "done" && !acted.has("bye")) {
+      acted.add("bye");
+      ctx.refreshHeader();
+      pocketChanged();
+      playSfx("coins", 0.5);
+      logAction(me, "trade", `traded with ${name(otherOf(t, me.uid))}`);
+      void forgetTrade(me, id);
+      toast("Trade complete.");
+      window.setTimeout(() => close(), 900);
+    }
+    if (t.status === "cancelled" && !acted.has("bye")) {
+      acted.add("bye");
+      void forgetTrade(me, id);
+      toast("The trade was called off.");
+      window.setTimeout(() => close(), 600);
+    }
   }
 
   const off = watchTrade(id, (next) => {

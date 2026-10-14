@@ -2,11 +2,11 @@ import { get, onValue, push, ref, remove, set, update, Unsubscribe } from "fireb
 import { db } from "./firebase";
 import type { Profile } from "./db";
 
-/** open = anyone walks in; knock = friends walk in, everyone else knocks and waits; closed = friends only, no knocking. */
-export type Access = "open" | "knock" | "closed";
+/** open = anyone walks in; knock = friends walk in, everyone else knocks and waits; closed = friends only, no knocking; none = nobody (not even friends). */
+export type Access = "open" | "knock" | "closed" | "none";
 
 /** Older rooms may still say friends/invite; they mean knock/closed. */
-export const normAccess = (a: string | undefined): Access => (a === "open" ? "open" : a === "closed" || a === "invite" ? "closed" : "knock");
+export const normAccess = (a: string | undefined): Access => (a === "none" ? "none" : a === "open" ? "open" : a === "closed" || a === "invite" ? "closed" : "knock");
 
 export interface RoomTheme {
   floorA: string;
@@ -38,7 +38,7 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "intercom";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
@@ -60,41 +60,9 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
   return k.rotatable && (dir === 2 || dir === 6) ? { w: k.h, h: k.w } : { w: k.w, h: k.h };
 }
 
-/** Furniture that ships with the game and is sold in the shop room (10-25 drops). Each file is in public/furni/f_<id>.nitro. */
-export interface ShopPiece { id: string; label: string; icon: string; price: number; w: number; h: number; height: number; flat?: boolean; seat?: boolean; seatHeight?: number; /** the facing it has on its display platform in the shop */ showDir: number }
-export const SHOP_PIECES: ShopPiece[] = [
-  { id: "bloodfloor", label: "Blood streak", icon: "🩸", price: 10, w: 1, h: 3, height: 3, flat: true, showDir: 2 },
-  { id: "toastfriend", label: "Toast friend", icon: "🍞", price: 10, w: 1, h: 1, height: 30, showDir: 2 },
-  { id: "bodybag", label: "Body bag", icon: "🧳", price: 12, w: 2, h: 1, height: 20, showDir: 4 },
-  { id: "bench", label: "Grunge bench", icon: "🪑", price: 14, w: 3, h: 1, height: 36, seat: true, seatHeight: 14, showDir: 4 },
-  { id: "sofa", label: "Old sofa", icon: "🛋️", price: 16, w: 2, h: 1, height: 44, seat: true, seatHeight: 16, showDir: 4 },
-  { id: "cardtable", label: "Card table", icon: "🃏", price: 18, w: 3, h: 2, height: 34, showDir: 2 },
-  { id: "torturebed", label: "Restraint bed", icon: "⛓️", price: 20, w: 1, h: 3, height: 42, showDir: 2 },
-  { id: "fountain", label: "Fountain", icon: "⛲", price: 22, w: 2, h: 2, height: 50, showDir: 2 },
-  // the second batch (from Swf/Furniture/New)
-  { id: "nokiaphone", label: "Nokia phone", icon: "📱", price: 10, w: 1, h: 1, height: 10, showDir: 4 },
-  { id: "telephone", label: "Telephone", icon: "☎️", price: 11, w: 1, h: 1, height: 30, showDir: 2 },
-  { id: "phonecam", label: "Phone cam", icon: "📷", price: 12, w: 1, h: 1, height: 34, showDir: 4 },
-  { id: "creepydoll", label: "Creepy doll", icon: "🪆", price: 12, w: 1, h: 1, height: 30, showDir: 4 },
-  { id: "saintta", label: "Saint Ta", icon: "🎅", price: 13, w: 1, h: 1, height: 30, showDir: 4 },
-  { id: "shark", label: "Shark", icon: "🦈", price: 14, w: 1, h: 1, height: 30, showDir: 2 },
-  { id: "horse", label: "Horse", icon: "🐴", price: 16, w: 1, h: 1, height: 70, showDir: 4 },
-  { id: "prizemoney", label: "Prize money", icon: "💰", price: 15, w: 1, h: 1, height: 3, flat: true, showDir: 2 },
-  { id: "label", label: "Label", icon: "🏷️", price: 10, w: 1, h: 1, height: 3, flat: true, showDir: 2 },
-  { id: "ritualcircle", label: "Ritual circle", icon: "⭕", price: 17, w: 2, h: 2, height: 3, flat: true, showDir: 2 },
-  { id: "bloodbath", label: "Blood bath", icon: "🛁", price: 19, w: 1, h: 1, height: 86, showDir: 2 },
-  { id: "norjasofa", label: "Norja couch", icon: "🛋️", price: 18, w: 2, h: 1, height: 32, seat: true, seatHeight: 14, showDir: 4 },
-  { id: "collsofa", label: "Collector sofa", icon: "🛋️", price: 21, w: 2, h: 1, height: 45, seat: true, seatHeight: 16, showDir: 4 },
-  { id: "lounger", label: "Red chaise", icon: "🛋️", price: 17, w: 2, h: 1, height: 32, showDir: 4 },
-  { id: "jetsettub", label: "Jetset tub", icon: "🛁", price: 20, w: 1, h: 2, height: 34, showDir: 2 },
-  { id: "gargoyle", label: "Gargoyle fountain", icon: "⛲", price: 23, w: 2, h: 1, height: 96, showDir: 2 },
-  { id: "floatbed", label: "Float bed", icon: "🛏️", price: 19, w: 2, h: 1, height: 20, showDir: 2 },
-  { id: "bunnybed", label: "Big bunny bed", icon: "🐰", price: 22, w: 1, h: 3, height: 51, showDir: 2 },
-  { id: "hotdogbed", label: "Hot dog bed", icon: "🌭", price: 22, w: 1, h: 3, height: 42, showDir: 2 },
-  { id: "melodybed", label: "My Melody bed", icon: "🎀", price: 25, w: 2, h: 3, height: 64, showDir: 2 },
-  { id: "royalbed", label: "Canopy bed", icon: "🛏️", price: 25, w: 2, h: 3, height: 51, showDir: 2 },
-];
-export const SHOP_KIND_PREFIX = "f_";
+import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
+export type { ShopPiece } from "./shared/furniture";
+export { SHOP_KIND_PREFIX, SHOP_PIECES };
 
 const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECES.map((p) => [SHOP_KIND_PREFIX + p.id, {
   id: SHOP_KIND_PREFIX + p.id, label: p.label, icon: p.icon, w: p.w, h: p.h, height: p.height, color: "#6b5a48", placeable: false,
@@ -109,6 +77,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   vending: { id: "vending", label: "Vending machine", icon: "🥤", w: 1, h: 1, height: 80, color: "#6b5a48", placeable: false, nitro: "furni/olympics_r16_vendingmchn.nitro", rotatable: true, fixed: true, opens: "vending" },
   // the sink in every player room (like the bed: always there, movable, never removable): fills the watering can
   sink: { id: "sink", label: "Sink", icon: "🚰", w: 1, h: 1, height: 36, color: "#555b66", placeable: false, nitro: "furni/hygge_c25_toiletsink.nitro", rotatable: true, fixed: true, opens: "sink" },
+  // the door intercom next to the door of every player room: click it to choose who may come in
+  intercom: { id: "intercom", label: "Door intercom", icon: "📟", w: 1, h: 1, height: 30, color: "#7a5a2a", placeable: false, nitro: "furni/dimmer_steampunk.nitro", rotatable: true, fixed: true, opens: "intercom", nudge: { x: 30, y: -50 } },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
   // the wardrobe in the shop room: click it and the clothing shop opens
@@ -257,7 +227,7 @@ export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
 
 /** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
 export function shopDef(picks: string[]): RoomDef {
-  const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }, { id: "shop_vending", kind: "vending", x: 3, y: 0, dir: 4 }];
+  const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }, { id: "shop_vending", kind: "vending", x: 8, y: 0, dir: 4 }];
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;
     const slot = SHOP_SLOTS[i];
@@ -273,7 +243,7 @@ export function shopDef(picks: string[]): RoomDef {
 }
 
 /** The built-in lobby pieces can't be picked up; the ones the admin added can. */
-export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id === SINK_ID || id.startsWith("shop_");
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id === SINK_ID || id === INTERCOM_ID || id.startsWith("shop_");
 
 export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
   return onValue(ref(db, "lobby/furni"), (s) => {
@@ -295,6 +265,9 @@ export const TOOLBOX = { x: 6, y: 0, dir: 4 };
 /** The sink starts in the far left corner of the room, facing the camera. */
 export const SINK_ID = "sink";
 export const SINK = { x: 0, y: 7, dir: 4 };
+/** The door intercom hangs on the back wall right next to the door. */
+export const INTERCOM_ID = "intercom";
+export const INTERCOM = { x: 2, y: 0, dir: 4 };
 /** The tile you stand on when you get out of bed (and where you start every login). */
 export const BED_SIDE = { x: 4, y: 1 };
 /** The tile the sleeper's head is on (the end of the bed by the pillow). */
@@ -314,6 +287,7 @@ export interface RoomMeta {
   bag?: { x: number; y: number; dir?: number };
   toolbox?: { x: number; y: number; dir?: number };
   sink?: { x: number; y: number; dir?: number };
+  intercom?: { x: number; y: number; dir?: number };
 }
 
 /** The tile the sleeper's head is on (the pillow end of the bed), and the tile beside the bed you step out onto. */
@@ -327,8 +301,8 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
     .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect } } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
-  const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK);
-  furni.unshift({ id: BED_ID, kind: "bed", x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: "bag", x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir });
+  const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), intercom = at(meta.intercom, INTERCOM);
+  furni.unshift({ id: BED_ID, kind: "bed", x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: "bag", x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, { id: INTERCOM_ID, kind: "intercom", x: intercom.x, y: intercom.y, dir: intercom.dir });
   const rug: RugRect | null = theme.rug
     ? { x0: Math.floor((ROOM_W - 4) / 2), y0: Math.floor((ROOM_H - 4) / 2), w: 4, h: 4 }
     : null;
@@ -384,7 +358,8 @@ export const removeFurni = (id: string, fid: string) => remove(ref(db, `${furniP
 /** Can this player walk straight in? Mirrors the database rules so we can say no politely instead of failing.
  *  Open rooms and friends' rooms: yes. Anyone else needs to be let in (a roomInvites entry), which a knock asks for. */
 export async function canEnter(meta: RoomMeta, uid: string, friendUids: Set<string>): Promise<boolean> {
-  if (meta.owner === uid || meta.access === "open" || friendUids.has(meta.owner)) return true;
+  if (meta.owner === uid || meta.access === "open") return true;
+  if (meta.access !== "none" && friendUids.has(meta.owner)) return true;
   const inv = await get(ref(db, `roomInvites/u_${meta.owner}/${uid}`));
   return inv.exists();
 }

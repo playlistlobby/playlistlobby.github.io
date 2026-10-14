@@ -1,0 +1,46 @@
+// The public face of the server: CORS, who is asking, then hand the request to the economy.
+import { verifyToken } from "./auth";
+import type { Env } from "./env";
+export { Economy } from "./economy";
+
+const MAX_BODY = 4_000;
+
+function cors(env: Env, origin: string | null): Record<string, string> {
+  const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
+  const ok = origin && allowed.includes(origin);
+  return {
+    "access-control-allow-origin": ok ? origin! : allowed[0],
+    "access-control-allow-headers": "authorization, content-type",
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-max-age": "86400",
+    vary: "origin",
+  };
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const origin = request.headers.get("origin");
+    const headers = cors(env, origin);
+    const reply = (v: unknown, status = 200) => new Response(JSON.stringify(v), { status, headers: { ...headers, "content-type": "application/json" } });
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
+    const url = new URL(request.url);
+    if (url.pathname === "/" || url.pathname === "/health") return reply({ ok: true });
+    if (url.pathname !== "/act" || request.method !== "POST") return reply({ ok: false, error: "Not found." }, 404);
+    // browsers from other sites can't read the answer (CORS), and the token is required anyway; still refuse unknown origins outright
+    if (origin && !env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).includes(origin)) return reply({ ok: false, error: "Not allowed." }, 403);
+
+    const auth = request.headers.get("authorization") ?? "";
+    let caller;
+    try { caller = await verifyToken(auth.replace(/^Bearer\s+/i, ""), env); } catch { return reply({ ok: false, error: "Please log in again." }, 401); }
+
+    const raw = await request.text();
+    if (raw.length > MAX_BODY) return reply({ ok: false, error: "Too big." }, 413);
+    let parsed: { a?: unknown; args?: unknown };
+    try { parsed = JSON.parse(raw); } catch { return reply({ ok: false, error: "Bad request." }, 400); }
+    if (typeof parsed.a !== "string") return reply({ ok: false, error: "Bad request." }, 400);
+
+    const stub = env.ECONOMY.get(env.ECONOMY.idFromName("main"));
+    const r = await stub.fetch("https://economy/act", { method: "POST", body: JSON.stringify({ caller, action: parsed.a, args: parsed.args ?? {} }) });
+    return new Response(r.body, { status: r.status, headers: { ...headers, "content-type": "application/json" } });
+  },
+} satisfies ExportedHandler<Env>;

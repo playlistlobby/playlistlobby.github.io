@@ -15,8 +15,8 @@ const SOUNDS = { wing: "sfx_wing", point: "sfx_point", hit: "sfx_hit", die: "sfx
 const BEST_KEY = "6ixplanet-flappy-best";
 
 /** every this many pipes there is a DROP_CHANCE chance that a drop of blood hangs in the next gap */
-const DROP_EVERY = 25;
-const DROP_CHANCE = 0.25;
+const DROP_EVERY = 15;
+const DROP_CHANCE = 0.5;
 interface Pipe { x: number; gap: number; passed: boolean; drop?: boolean }
 interface Float { text: string; x: number; y: number; t: number }
 interface State { state: "ready" | "play" | "over"; y: number; v: number; t: number; score: number; best: number; groundX: number; pipes: Pipe[]; flash: number; newBest: boolean }
@@ -29,7 +29,7 @@ export const flappy: ArcadeGame = {
   mount(host, api) {
     const canvas = h("canvas", { "aria-label": "Flappy Bird. Tap or press space to flap." });
     const stage = h("div", { class: "fb-stage" }, canvas);
-    host.append(stage, h("div", { class: "hint" }, api.collectBlood ? "Tap, click or press Space to flap. Every 25 pipes there may be a drop of blood to catch." : "Tap, click or press Space to flap."));
+    host.append(stage);
     const g = canvas.getContext("2d")!;
 
     const img: Record<string, HTMLImageElement> = {};
@@ -97,7 +97,7 @@ export const flappy: ArcadeGame = {
         if (p.x + FB.PIPE_W < 0) { p.x += span; p.gap = gapY(); p.passed = false; p.drop = false; }
         if (!p.passed && p.x + FB.PIPE_W / 2 <= FB.BX + 17) {
           p.passed = true; fb.score++; sfx("point", 0.6);
-          // every 25th pipe: a one-in-four chance that a drop of blood hangs in the gap of the next pipe
+          // every 15th pipe: a one-in-two chance that a drop of blood hangs in the gap of the next pipe
           if (api.collectBlood && fb.score % DROP_EVERY === 0 && Math.random() < DROP_CHANCE) {
             const next = fb.pipes.filter((q) => !q.passed && q.x > p.x).sort((a, b) => a.x - b.x)[0];
             if (next) next.drop = true;

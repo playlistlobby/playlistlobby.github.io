@@ -35,7 +35,7 @@ export function openVending(host: HTMLElement, ctx: Ctx, onChange: () => void, o
           title: affordable ? "" : `You need ${price - me.blood} more drops`,
           onclick: async () => {
             try {
-              await buyStock(me, { item: s.item, qty: s.qty }, price);
+              await buyStock(me, s.id);
               ctx.refreshHeader();
               logAction(me, "buy", `bought ${s.label} from the vending machine for ${price}`);
               playSfx("coins", 0.5);

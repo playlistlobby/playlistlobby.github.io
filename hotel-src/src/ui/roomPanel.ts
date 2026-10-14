@@ -14,6 +14,7 @@ import {
   LOBBY_ID,
 } from "../rooms";
 import { social } from "../social";
+import { storeFromRoom } from "../furnishing";
 import type { Ctx } from "../main";
 
 export interface RoomHooks {
@@ -27,11 +28,12 @@ export interface RoomHooks {
   onDefChange(fn: () => void): () => void;
 }
 
-const ACCESS_LABEL: Record<Access, string> = { open: "Open to all", knock: "Knock to enter", closed: "Friends only" };
+const ACCESS_LABEL: Record<Access, string> = { open: "Open to all", knock: "Knock to enter", closed: "Friends only", none: "No one" };
 const ACCESS_HELP: Record<Access, string> = {
   open: "Anyone can walk in.",
   knock: "Friends walk in. Everyone else knocks and you let them in from your friends menu.",
   closed: "Only friends can come in. Strangers can't knock.",
+  none: "Nobody can come in, not even friends.",
 };
 
 /** The "Room" tab: owners edit their room here, everyone else sees who owns it. */
@@ -59,7 +61,9 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
       picked?.rotatable ? h("div", { class: "row" }, h("button", { class: "btn small", onclick: () => { hooks.rotateTool(); render(); } }, `⟳ Turn (R) · facing ${hooks.getToolDir()}`)) : null,
       h("div", { class: "hint" }, kinds.length === 0 ? "No furniture is available yet. New pieces will show up here." : tool ? "Click in the room to use the tool. Esc to stop." : "Pick a piece, then click a tile in the room."),
       clearable.length ? h("button", { class: "btn small", onclick: () => {
-        if (confirm(admin ? "Remove everything you added to the basement?" : "Remove all furniture from this room?")) for (const f of clearable) void removeFurni(def.id, f.id);
+        if (confirm(admin ? "Remove everything you added to the basement?" : "Put all furniture from this room into your toolbox storage?")) {
+          for (const f of clearable) void (admin ? removeFurni(def.id, f.id) : storeFromRoom(ctx.profile, def.id, f)).catch(() => undefined);
+        }
       } }, "Clear room") : null);
   }
 
@@ -100,7 +104,7 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
 
       h("div", { class: "rp-sec" },
         h("div", { class: "rp-label" }, "Who can come in"),
-        h("div", { class: "rp-chips" }, ...(["open", "knock", "closed"] as Access[]).map((a) =>
+        h("div", { class: "rp-chips" }, ...(["open", "knock", "closed", "none"] as Access[]).map((a) =>
           h("button", { class: "chip" + (def.access === a ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { access: a })) }, ACCESS_LABEL[a]))),
         h("div", { class: "hint" }, ACCESS_HELP[def.access])),
 

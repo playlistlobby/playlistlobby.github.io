@@ -1,0 +1,21 @@
+name = "sixplanet-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Production values. `wrangler dev` reads server/.dev.vars on top of these (see .dev.vars.example for the emulator setup).
+[vars]
+FIREBASE_PROJECT_ID = "playlist-lobby"
+DB_URL = "https://playlist-lobby-default-rtdb.europe-west1.firebasedatabase.app"
+ALLOWED_ORIGINS = "https://playlistlobby.github.io,http://127.0.0.1:5173,http://localhost:5173"
+ADMIN_EMAIL = "admin@users.bobba.invalid"
+
+# One Durable Object holds the per-player and per-room locks, so two requests can never change the same pocket at the same time.
+[[durable_objects.bindings]]
+name = "ECONOMY"
+class_name = "Economy"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Economy"]
+
+# Secret (set once, never committed):  npx wrangler secret put FIREBASE_SA_JSON < service-account.json

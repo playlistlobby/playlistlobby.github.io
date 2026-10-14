@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local work against the Firebase emulators (npm run emulators in the project root).
+ENV=emulator
+FIREBASE_PROJECT_ID=demo-hotel
+DB_URL=http://127.0.0.1:9000
+DB_NS=demo-hotel-default-rtdb

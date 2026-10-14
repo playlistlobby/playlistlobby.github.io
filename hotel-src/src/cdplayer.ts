@@ -1,6 +1,6 @@
-import { onValue, ref, remove, serverTimestamp, set, update, Unsubscribe } from "firebase/database";
+import { onValue, ref, remove, Unsubscribe } from "firebase/database";
 import { db } from "./firebase";
-import { serverNow } from "./db";
+import { call, serverNow } from "./db";
 import type { Profile } from "./db";
 import { assetUrl } from "./assetUrl";
 
@@ -51,29 +51,21 @@ export function trackDurationMs(track: CdTrack): Promise<number> {
   });
 }
 
-/** Puts the CD in `slot` into the player. Throws if the player is busy (the rules refuse a second CD). */
+/** Puts the CD in `slot` into the player (the server checks it is a CD and the player is free). */
 export async function insertCd(me: Profile, slot: number, trackId = DEFAULT_CD_TRACK): Promise<CdState> {
   const track = CD_TRACKS[trackId];
   const duration = await trackDurationMs(track);
-  const state = { by: me.uid, byName: me.name, track: track.id, title: track.title, startedAt: serverTimestamp(), endsAt: Math.round(serverNow() + duration) };
-  await set(cdRef, state);
-  const item = me.inventory[slot];
-  if (item) {
-    await update(ref(db, `users/${me.uid}/inventory/${slot}`), { inPlayer: true });
-    item.inPlayer = true;
-  }
-  return { ...state, startedAt: serverNow() };
+  const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, durationMs: Math.round(duration) });
+  return { by: me.uid, byName: me.name, track: track.id, title: track.title, startedAt: Number(r.startedAt) || serverNow(), endsAt: Number(r.endsAt) || Math.round(serverNow() + duration) };
 }
 
 /** Stops the CD early (only the person who inserted it may), or clears it once it has finished (anyone). */
 export const clearCdPlayer = (): Promise<void> => remove(cdRef);
 
-/** Hands a loaned-out CD back to its owner's inventory. */
+/** Hands a loaned-out CD back to its owner's inventory (the server does it). */
 export async function returnCd(me: Profile): Promise<boolean> {
-  const slot = me.inventory.findIndex((s) => s?.item === "cd" && s.inPlayer);
-  if (slot < 0) return false;
-  await update(ref(db, `users/${me.uid}/inventory/${slot}`), { inPlayer: null });
-  delete me.inventory[slot]!.inPlayer;
+  if (!me.inventory.some((s) => s?.item === "cd" && s.inPlayer)) return false;
+  await call(me, "cdReturn");
   return true;
 }
 

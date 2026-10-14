@@ -5,7 +5,7 @@ import { Access, LOBBY_ID, normAccess, ownRoomId, RoomMeta, watchAllRooms } from
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import { findSlot } from "../items";
-import { compactInventory } from "../db";
+import { call } from "../db";
 import type { Ctx } from "../main";
 
 export interface DoorApi {
@@ -88,13 +88,10 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
 
   /** Uses a lockpick: you're in without knocking, even in a closed room. The pick is used up. */
   async function pickLock(r: Row): Promise<void> {
-    const slot = findSlot(me.inventory, "lockpick");
-    if (slot < 0) return;
-    const had = me.inventory[slot]!.qty;
+    if (findSlot(me.inventory, "lockpick") < 0) return;
     try {
-      await social.lockpick(r.owner, slot, had - 1); // opens the lock and uses up the pick in one write
-      if (had > 1) me.inventory[slot]!.qty = had - 1; else me.inventory[slot] = null;
-      void compactInventory(me).catch(() => undefined); // and the items after it move up
+      await call(me, "lockpick", { owner: r.owner }); // the server uses up the pick and opens the lock in one write
+      social.armLockpickCleanup(r.owner);
       playSfx("pickLock", 0.55);
       toast("Click. The lock gives way.");
       enter(r.roomId, `${r.ownerName}'s room (picked the lock)`);
@@ -104,6 +101,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   }
 
   function actionFor(r: Row): HTMLElement {
+    if (r.access === "none") return h("span", { class: "door-actions" }, h("button", { class: "btn small", disabled: true }, "Closed"), hasPick() ? h("button", { class: "btn small", title: "Use a lockpick (once)", onclick: (e: Event) => { if (chosen(e)) void pickLock(r); } }, "🔓 Pick") : null);
     if (r.friend || r.access === "open") return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Visit");
     const pick = hasPick() ? h("button", { class: "btn small", title: "Use a lockpick (once)", onclick: (e: Event) => { if (chosen(e)) void pickLock(r); } }, "🔓 Pick") : null;
     let main: HTMLElement;

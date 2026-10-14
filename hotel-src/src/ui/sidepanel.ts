@@ -1,9 +1,9 @@
 import { h } from "./dom";
 import { showMenu, MenuOption } from "./contextMenu";
 import { BLOOD_ICON, combine, findSlot, INV_SIZE, itemDef, ITEMS, MUSIC_ACCESS_KEY, onFurniIcon } from "../items";
-import { consumeSlot } from "../db";
 import { playSfx } from "../sfx";
 import { EMOTES, hasEmote } from "../emotes";
+import { NO_DROP } from "../shared/items";
 import { fmtTime, player, TRACKS } from "../music";
 import type { Ctx } from "../main";
 
@@ -125,7 +125,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
       const def = slot ? itemDef(slot.item) ?? null : null;
       const loaned = !!slot?.inPlayer; // e.g. the CD is sitting in the CD player right now
       const el = h("div", {
-        class: "inv-slot" + (selected === i ? " selected" : "") + (guided === i && def ? " guide" : "") + (dropMode && def && !loaned && !slot?.lit ? " drop-glow" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
+        class: "inv-slot" + (selected === i ? " selected" : "") + (guided === i && def ? " guide" : "") + (dropMode && def && !loaned && !slot?.lit && !NO_DROP.has(slot!.item) ? " drop-glow" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
         title: def ? (loaned ? `${def.name} (in the player)` : def.name) : "",
         onclick: (e: MouseEvent) => {
           if (!def) return;
@@ -133,6 +133,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           if (dropMode) {
             if (loaned) return opts.say(`Your ${def.name} is in the player right now.`, "warn");
             if (slot?.lit) return opts.say("Let it burn out first.", "warn");
+            if (NO_DROP.has(slot!.item)) return opts.say("You can't drop that.", "warn");
             dropMode = false;
             renderInventory();
             return opts.onDropPick(i);

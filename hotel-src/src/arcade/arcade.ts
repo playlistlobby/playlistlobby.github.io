@@ -46,7 +46,10 @@ export function openArcade(gameId?: string, extra: { collectBlood?: () => Promis
   const title = h("div", { class: "arcade-title" }, "🕹️ Arcade");
   const back = h("button", { class: "btn small hidden", onclick: () => showList() }, "← Games");
   const closeBtn = h("button", { class: "btn small", onclick: () => close() }, "Close");
-  const screen = h("div", { class: "arcade-screen" }, h("div", { class: "arcade-head" }, title, h("div", { class: "row" }, back, closeBtn)), body);
+  // a cabinet made for one game (Flappy Bird): the window is just the game with a close button; the title and info sit underneath it
+  const solo = !!gameId && GAMES.some((g) => g.id === gameId && !g.comingSoon);
+  const closeFloat = h("button", { class: "btn small arcade-x", title: "Close", onclick: () => close() }, "✕");
+  const screen = h("div", { class: "arcade-screen" + (solo ? " solo" : "") }, h("div", { class: "arcade-head" }, title, h("div", { class: "row" }, back, closeBtn)), body, ...(solo ? [closeFloat] : []));
   const root = h("div", { class: "arcade-overlay", onmousedown: (e: MouseEvent) => { if (e.target === root) close(); } }, screen);
   overlay = root;
   document.body.append(root);

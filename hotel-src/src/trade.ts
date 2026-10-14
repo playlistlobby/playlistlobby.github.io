@@ -1,16 +1,15 @@
-// Trading between two players. Players can't write to each other's pockets, so the hand-over goes through a box in the trade itself:
-//  1. both accept, both confirm;  2. each side moves its offer out of its pocket into `escrow/<uid>` (one atomic write);
-//  3. each side claims the other's escrow (one atomic write that also empties that escrow).
-// If anybody goes away half-way, `recoverTrades` finishes the claim (or gives the escrow back) the next time they sign in.
-import { get, onValue, ref, remove, serverTimestamp, update, Unsubscribe } from "firebase/database";
+// Trading between two players. The two of them agree on offers in trades/<id> (each writes only their own offer and their own accept /
+// confirm). When both have accepted and confirmed, the game server swaps everything in ONE atomic write after checking both pockets
+// (src/api.ts "tradeFinish"), so nothing is ever in the middle: nobody can lose or duplicate anything.
+import { onValue, ref, remove, serverTimestamp, update, Unsubscribe } from "firebase/database";
 import { db } from "./firebase";
-import { addToInv, commitInv, serverNow } from "./db";
+import { addToInv, call } from "./db";
 import type { Profile } from "./db";
 import type { Inventory } from "./items";
+import { NO_DROP } from "./shared/items";
 
 export interface TradeItem { item: string; qty: number; ass?: boolean }
 export interface TradeOffer { blood: number; items: Record<string, TradeItem> }
-export interface Escrow { blood: number; items: TradeItem[] }
 export interface Trade {
   id: string;
   a: string;
@@ -21,9 +20,6 @@ export interface Trade {
   offer: Record<string, TradeOffer>;
   ready: Record<string, boolean>;
   confirm: Record<string, boolean>;
-  escrowed: Record<string, boolean>;
-  claimed: Record<string, boolean>;
-  escrow: Record<string, Escrow>;
 }
 
 export const otherOf = (t: Trade, uid: string): string => (t.a === uid ? t.b : t.a);
@@ -38,13 +34,9 @@ export function parseTrade(id: string, v: any): Trade | null {
     for (const [slot, it] of Object.entries<any>(o?.items ?? {})) if (it && typeof it.item === "string") items[slot] = { item: it.item, qty: Number(it.qty) || 1, ...(it.ass ? { ass: true } : {}) };
     offer[u] = { blood: Number(o?.blood) || 0, items };
   }
-  const escrow: Record<string, Escrow> = {};
-  for (const [u, e] of Object.entries<any>(v.escrow ?? {})) {
-    escrow[u] = { blood: Number(e?.blood) || 0, items: Object.values<any>(e?.items ?? {}).filter((it) => it && typeof it.item === "string").map((it) => cleanItem({ item: it.item, qty: Number(it.qty) || 1, ass: !!it.ass })) };
-  }
   return {
     id, a: v.a, b: v.b, names: v.names ?? {}, status: v.status === "cancelled" ? "cancelled" : v.status === "done" ? "done" : "open", ts: Number(v.ts) || 0,
-    offer, ready: flags(v.ready), confirm: flags(v.confirm), escrowed: flags(v.escrowed), claimed: flags(v.claimed), escrow,
+    offer, ready: flags(v.ready), confirm: flags(v.confirm),
   };
 }
 
@@ -56,7 +48,7 @@ export function watchTrade(id: string, cb: (t: Trade | null) => void): Unsubscri
 export const emptyOffer = (): TradeOffer => ({ blood: 0, items: {} });
 
 /** Can this pocket item be traded at all? (Not one that's lit or loaned out to the CD player.) */
-export const tradable = (s: Inventory[number]): boolean => !!s && !s.lit && !s.inPlayer;
+export const tradable = (s: Inventory[number]): boolean => !!s && !s.lit && !s.inPlayer && !NO_DROP.has(s.item);
 
 /** How many of the item in pocket slot `slot` are not yet in your offer. */
 export const freeQty = (p: Profile, offer: TradeOffer, slot: number): number => {
@@ -137,101 +129,12 @@ export function canReceive(p: Profile, t: Trade): boolean {
   return true;
 }
 
-// ---- the hand-over ------------------------------------------------------------------------------------------------
-/** Step 2: your offer leaves your pocket and waits in the trade's box. */
-export async function escrowMine(p: Profile, t: Trade): Promise<void> {
-  const offer = t.offer[p.uid] ?? emptyOffer();
-  if (offer.blood > p.blood) throw new Error("You don't have that much blood any more.");
-  const next: Inventory = p.inventory.map((s) => (s ? { ...s } : null));
-  const list: TradeItem[] = [];
-  for (const [k, it] of Object.entries(offer.items)) {
-    const s = next[Number(k)];
-    if (!s || s.item !== it.item || s.qty < it.qty || !tradable(s) || !!s.ass !== !!it.ass) throw new Error("Something in your pocket changed, so the trade was called off.");
-    if (s.qty > it.qty) s.qty -= it.qty; else next[Number(k)] = null;
-    list.push(cleanItem(it));
-  }
-  await commitInv(p, next, {
-    [`users/${p.uid}/blood`]: p.blood - offer.blood,
-    [`${tradePath(t.id)}/escrow/${p.uid}`]: { blood: offer.blood, ...(list.length ? { items: Object.fromEntries(list.map((x, i) => [String(i), x])) } : {}) },
-    [`${tradePath(t.id)}/escrowed/${p.uid}`]: true,
-  });
-  p.blood -= offer.blood;
-}
-
-/** Step 3: take what the other player left in the box (one write that also empties their box). */
-export async function claimTheirs(p: Profile, t: Trade): Promise<void> {
-  const other = otherOf(t, p.uid);
-  const esc = t.escrow[other];
-  if (!esc) return;
-  let next: Inventory = p.inventory;
-  for (const it of esc.items) {
-    const added = addToInv(next, { item: it.item, qty: it.qty, ...(it.ass ? { ass: true } : {}) });
-    if (!added) throw new Error("Make room in your pockets to finish the trade.");
-    next = added;
-  }
-  await commitInv(p, next, {
-    ...(esc.blood > 0 ? { [`users/${p.uid}/blood`]: p.blood + esc.blood, [`users/${p.uid}/tradeClaim`]: { trade: t.id, from: other } } : {}),
-    [`${tradePath(t.id)}/escrow/${other}`]: null,
-    [`${tradePath(t.id)}/claimed/${p.uid}`]: true,
-    ...(t.claimed[other] || !t.escrow[p.uid] ? { [`${tradePath(t.id)}/status`]: "done" } : {}),
-  });
-  p.blood += esc.blood;
-}
-
-/** A called-off trade: your own box goes back into your pocket. */
-export async function refundMine(p: Profile, t: Trade): Promise<void> {
-  const esc = t.escrow[p.uid];
-  if (!esc) return;
-  let next: Inventory = p.inventory;
-  for (const it of esc.items) {
-    const added = addToInv(next, { item: it.item, qty: it.qty, ...(it.ass ? { ass: true } : {}) });
-    if (!added) throw new Error("Make room in your pockets to get your things back.");
-    next = added;
-  }
-  await commitInv(p, next, {
-    ...(esc.blood > 0 ? { [`users/${p.uid}/blood`]: p.blood + esc.blood, [`users/${p.uid}/tradeClaim`]: { trade: t.id, from: p.uid } } : {}),
-    [`${tradePath(t.id)}/escrow/${p.uid}`]: null,
-  });
-  p.blood += esc.blood;
+/** Both have confirmed: ask the server to swap everything. (Either side may ask; the second ask changes nothing.) */
+export async function finishTrade(p: Profile, t: Trade): Promise<void> {
+  await call(p, "tradeFinish", { id: t.id });
 }
 
 export const forgetTrade = (p: Profile, id: string): Promise<void> => remove(ref(db, `userTrades/${p.uid}/${id}`)).catch(() => undefined);
-
-/** What should happen next for this player in this trade (the window and the login check both ask). */
-export type Step = "escrow" | "claim" | "refund" | "cancel-stale" | "forget" | "wait";
-export function nextStep(p: Profile, t: Trade): Step {
-  const me = p.uid, other = otherOf(t, me);
-  if (t.status === "cancelled") return t.escrow[me] ? "refund" : "forget";
-  if (t.status === "done") return t.escrow[other] && !t.claimed[me] ? "claim" : "forget";
-  const bothConfirmed = t.confirm[me] && t.confirm[other];
-  if (t.escrowed[me] && t.escrowed[other]) return t.claimed[me] ? "wait" : "claim";
-  if (bothConfirmed && !t.escrowed[me]) return "escrow";
-  if (serverNow() - t.ts > 30 * 60_000 && !t.escrowed[other]) return "cancel-stale";
-  return "wait";
-}
-
-/** At sign-in: finish or undo any trade that was left half-way. Returns how many were dealt with. */
-export async function recoverTrades(p: Profile): Promise<number> {
-  const snap = await get(ref(db, `userTrades/${p.uid}`));
-  let n = 0;
-  for (const id of Object.keys((snap.val() ?? {}) as Record<string, unknown>)) {
-    try {
-      const ts = await get(ref(db, `trades/${id}`));
-      const t = ts.exists() ? parseTrade(id, ts.val()) : null;
-      if (!t) { await forgetTrade(p, id); continue; }
-      let step = nextStep(p, t);
-      if (step === "escrow") step = "cancel-stale"; // the other side is long gone: don't start a hand-over now
-      if (step === "claim") { await claimTheirs(p, t); n++; }
-      else if (step === "refund") { await refundMine(p, t); n++; }
-      else if (step === "cancel-stale") { await cancelTrade(t); const again = parseTrade(id, (await get(ref(db, `trades/${id}`))).val()); if (again?.escrow[p.uid]) await refundMine(p, again); n++; }
-      if (step === "forget" || step === "refund" || step === "claim") {
-        const fresh = parseTrade(id, (await get(ref(db, `trades/${id}`))).val());
-        if (fresh && (fresh.status !== "open" || (fresh.claimed[p.uid] && !fresh.escrow[p.uid]))) await forgetTrade(p, id);
-      }
-    } catch { /* try again next time */ }
-  }
-  return n;
-}
 
 /** Starts a trade: the invited player accepts, creating the trade and a pointer for each of them. */
 export async function createTrade(me: Profile, inviterUid: string, inviterName: string): Promise<string> {

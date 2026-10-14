@@ -16,7 +16,7 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
-import { addToInv, commitInv, canStab, carveCat, combineSlots, consumeSlot, fillCan, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, waterPlant, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, setTutorial, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
+import { canStab, carveCat, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
@@ -63,6 +63,7 @@ import { derive, loadNitro, NitroFurni, nitroIfReady, spritesFor } from "../nitr
 import { onFurniShopChanged, picksToday, priceOf } from "../furniShop";
 import { FurniBuyApi, openFurniBuy } from "./furniBuy";
 import { openVending, VendingApi } from "./vendingShop";
+import { IntercomApi, openIntercom } from "./intercom";
 import { FurnishApi, mountFurnishUi } from "./furnish";
 import { canTurn, defaultDir, isFixedPiece, nextDir, movePiece, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
 import { Box, drawNitroSprites, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
@@ -300,6 +301,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let hoverExtra = -1;
   let furniBuyApi: FurniBuyApi | null = null;
   let vendingApi: VendingApi | null = null;
+  let intercomApi: IntercomApi | null = null;
   // the furnishing menu (toolbox): your room without you in it, pieces to drag around, storage
   let furnishOn = false;
   let furnishUi: FurnishApi | null = null;
@@ -423,6 +425,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "wardrobe") text = "Wardrobe: the clothing shop";
     else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
+    else if (hoverObj && hoverObj.kind === "intercom") text = "Door intercom: who may come in";
     else if (hoverObj && isBodyBag(hoverObj.kind)) text = "Body bag: use a syringe on it";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind ?? ""]?.plant) { const pf = def.furni.find((x) => x.id === hoverObj!.id); text = pf?.plant ? `Growing kit · ${Math.round(plantProgress(pf.plant) * 100)}% · water ${Math.round(plantWater(pf.plant) * 100)}%` : "Growing kit (empty): plant a seed"; }
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
@@ -604,7 +607,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (tool === "pickup") {
         const f = furniAtTile(t);
         if (f && isFixedLobbyPiece(f.id)) say("That one is part of the lobby itself.", "warn");
-        else if (f) void removeFurni(def.id, f.id).catch(() => toast("Couldn't pick that up", "err"));
+        else if (f) void pickUpPiece(f);
       } else tryPlace(tool, t);
       return;
     }
@@ -669,7 +672,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (obj.kind === "cdplayer") openCdPopup();
-      else if (obj.kind === "bag" || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending") startBag(obj.id);
+      else if (obj.kind === "bag" || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "intercom") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
@@ -711,6 +714,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "vending") opts.push({ label: "Shop", target: "Vending machine", action: () => startBag(obj.id) });
     if (obj && isBodyBag(obj.kind) && !isDisplayPiece(obj.id)) opts.push({ label: "Draw blood", target: "Body bag", action: () => startUse(obj.id, null) });
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
+    if (obj?.kind === "intercom") opts.push({ label: "Use", target: "Door intercom", action: () => startBag(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
     if (obj?.kind === "cdplayer") {
@@ -723,11 +727,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (ed) opts.push({ label: "Open", target: `${ed.door.label} door`, action: () => { clearSelection(); pending = { type: "door", since: performance.now(), lastTry: 0, to: ed.door }; } });
     const furni = tile ? furniAtTile(tile) : undefined;
     if (!forTap && furni && isOwner() && furni.kind !== "arcade" && !isFixedLobbyPiece(furni.id)) {
-      opts.push({ label: "Pick up", target: FURNI_KINDS[furni.kind].label, action: () => void removeFurni(def.id, furni.id).catch(() => undefined) });
+      opts.push({ label: "Pick up", target: FURNI_KINDS[furni.kind].label, action: () => void pickUpPiece(furni) });
     }
     // walking is the default for an empty floor tile; on a door or a piece of furniture the tap means that thing, not "walk"
     if (tile && walkable(tile.x, tile.y) && !obj && !onDoor && !ed) opts.push({ label: "Walk here", action: () => { pending = null; walkTo(tile); } });
     return opts;
+  }
+
+  /** Picks a piece of furniture up: in your own room it goes into the toolbox's storage (the server does it); the admin removes the basement's extras. */
+  async function pickUpPiece(f: PlacedFurni): Promise<void> {
+    try {
+      if (def.id === LOBBY_ID) await removeFurni(def.id, f.id);
+      else await storeFromRoom(me, def.id, f);
+      panel.refresh();
+    } catch (err) { toast((err as Error).message || "Couldn't pick that up", "err"); }
   }
 
   /** The menu you get from a right-click or a long press. */
@@ -908,7 +921,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const spot: Spot = { x: Math.min(f.x, def.w - fp.w), y: Math.min(f.y, def.h - fp.h), dir };
     const why = whyNot(def, f.kind, spot, f.id, othersOccupy());
     if (why) return say(why, "warn");
-    void movePiece(def.id, f, spot).catch(() => say("Couldn't turn that.", "warn"));
+    void movePiece(def.id, f, spot, me).catch((err) => say((err as Error).message || "Couldn't turn that.", "warn"));
   }
 
   const pieceAtPointer = (m: Pt, t: Pt | null) => {
@@ -948,7 +961,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!f || !d.moved) return;
     const why = whyNot(def, f.kind, d.spot, f.id, othersOccupy());
     if (why) return say(why, "warn");
-    void movePiece(def.id, f, d.spot).catch(() => say("Couldn't move that.", "warn"));
+    void movePiece(def.id, f, d.spot, me).catch((err) => say((err as Error).message || "Couldn't move that.", "warn"));
   };
   canvas.addEventListener("pointerup", fzRelease);
   canvas.addEventListener("pointercancel", () => { fzDrag = null; });
@@ -1215,7 +1228,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       playSfx("select", 0.4);
       await new Promise((r) => window.setTimeout(r, 900));
       if (disposed) return;
-      const found = await searchDumpster(me, canId);
+      const found = await searchDumpster(me, canId, roomId);
       panel.refresh();
       playSfx("give", 0.6);
       const FOUND: Record<string, string> = { deadcat: "Under the bin bags: a dead cat. Poor thing.", burger: "A burger, hardly bitten. Lucky you.", weedseed: "A few little seeds in the muck. They might grow.", lighter: "A lighter, and it still works!" };
@@ -1432,6 +1445,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const opens = FURNI_KINDS[f.kind].opens;
         if (opens === "furnish") enterFurnish();
         else if (opens === "vending") openVendingShop();
+        else if (opens === "intercom") { if (!intercomApi) intercomApi = openIntercom(stage, def.id, () => def.access, () => { intercomApi = null; }); }
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
       }
       else if (job.type === "dumpster") void searchTheDumpster(job.fid);
@@ -1439,7 +1453,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
         collectBlood: async () => {
           try {
-            await rewardFlappyDrop(me);
+            await rewardFlappyDrop(me, roomId);
             ctx.refreshHeader();
             logAction(me, "room", "caught a drop of blood in Flappy Bird (+1)");
             return true;
@@ -1599,7 +1613,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         return say("Your stab missed. They may have just left.", "warn");
       }
       try {
-        const gain = await rewardStab(me, uid);
+        const gain = await rewardStab(me, uid, roomId);
         lastStabGain = gain;
         ctx.refreshHeader();
         panel.refresh();
@@ -1651,7 +1665,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!tile) return say("There's no room to put it down here.", "warn");
     const name = itemDef(s.item)?.name ?? s.item;
     try {
-      await dropItem(me, roomId, slot, qty, tile, [...drops.values()].filter((d) => d.by === me.uid));
+      await dropItem(me, roomId, slot, qty, tile);
       panel.refresh();
       playSfx("select", 0.5);
       logAction(me, "drop", `dropped ${qty} ${name}`);
@@ -1691,7 +1705,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         await push(ref(db, `rooms/${roomId}/events`), { type: "syringe", from: me.uid, to: me.uid, ts: serverTimestamp() });
       } catch { /* the animation is optional; the blood isn't */ }
       try {
-        await rewardSyringe(me, who);
+        await rewardSyringe(me, who, roomId);
         ctx.refreshHeader();
         panel.refresh();
         logAction(me, "syringe", `drew blood with the syringe from ${who === "bag" ? "a body bag" : "themselves"} (+${SYRINGE_BLOOD})`);
@@ -1754,8 +1768,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         sixtySay(SIXTY_LINES.knife, 2600);
       } else if (jobReady(me)) {
         // the lighter job, part 1: money for a lighter
-        const price = Math.max(1, itemEntry("lighter").price);
-        try { await sixtyJobMoney(me, price); } catch { return sixtySay(SIXTY_LINES.full); }
+        let price = 0;
+        try { price = await sixtyJobMoney(me); } catch { return sixtySay(SIXTY_LINES.full); }
         ctx.refreshHeader();
         playSfx("give", 0.6);
         giftPop(`+${price} Blood`, bloodImg);
@@ -1799,7 +1813,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   async function talkIntro(): Promise<void> {
     const st = me.tutorial;
     if (st === 0) {
-      try { await sixtyGiveKnife(me, 1); } catch { return sixtySay(SIXTY_LINES.full); }
+      try { await sixtyGiveKnife(me); } catch { return sixtySay(SIXTY_LINES.full); }
       panel.refresh();
       playSfx("give", 0.6);
       giftPop("+1 Knife", knifeImg);
@@ -1894,9 +1908,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!p || p.lying || faintUntil || woozy) return;
     const slot = findSlot(me.inventory, "pill");
     if (slot < 0) return say("You don't have a pill.", "warn");
-    try { await consumeSlot(me, slot); } catch { return say("The pill slips out of your fingers. (the hotel refused it)", "warn"); }
+    try { await swallowPill(me, slot); } catch { return say("The pill slips out of your fingers. (the hotel refused it)", "warn"); } // (the server also ends the introduction here: the door leads to the real basement from now on)
     clearSelection();
-    if (me.tutorial === 3) void setTutorial(me, 4); // the introduction is over: the door leads to the real basement from now on
     panel.guide(null);
     panel.refresh();
     logAction(me, "room", "swallowed a pill");
@@ -1967,7 +1980,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   async function eatBurger(): Promise<void> {
     const slot = findSlot(me.inventory, "burger");
     if (slot < 0) return say("You don't have a burger.", "warn");
-    try { await consumeSlot(me, slot); } catch { return say("The burger slips out of your hands. (the hotel refused it)", "warn"); }
+    try { await eatItem(me, slot); } catch { return say("The burger slips out of your hands. (the hotel refused it)", "warn"); }
     clearSelection();
     panel.refresh();
     playSfx("select", 0.5);
@@ -1975,36 +1988,27 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     say("You eat the burger. Greasy. Good.");
   }
 
-  /** A cigarette that has burned for a minute becomes a butt in the inventory. */
+  /** A cigarette that has burned for a minute becomes a butt (the server checks the time and gives the stab bonus, or knocks you out for ass weed). */
+  const finishing = new Set<number>();
   function burnDown(): void {
     me.inventory.forEach((s, i) => {
       const sm = s ? SMOKABLE[s.item] : undefined;
-      if (!s || !sm || !s.lit || serverNow() - s.lit < SMOKE_MS) return;
-      // a finished cigarette / joint / blunt: for a while a stab is worth more (ass weed knocks you out instead)
-      if (s.ass && s.item !== "cigarette") {
-        // ass weed: no boost, it just knocks you out like the pill
-        me.inventory[i] = { item: "cigbutt", qty: 1 };
-        void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 } }).catch(() => undefined);
-        const pl = mine();
-        if (pl) { pl.smoke = undefined; pl.smokeKind = undefined; }
+      if (!s || !sm || !s.lit || serverNow() - s.lit < SMOKE_MS || finishing.has(i)) return;
+      finishing.add(i);
+      const name = itemDef(s.item)?.name.toLowerCase() ?? "smoke";
+      void finishSmoke(me, i).then((r) => {
+        const p = mine();
+        if (p) { p.smoke = undefined; p.smokeKind = undefined; }
         void update(myRef, { smoke: null, smokeKind: null }).catch(() => undefined);
         panel.refresh();
-        logAction(me, "room", `smoked ass ${s.item}`);
-        say("That was ass weed… it hits you hard. Give it a moment…");
-        startWoozy();
-        return;
-      }
-      const bonus = sm;
-      const until = serverNow() + bonus.boostMs;
-      me.boostUntil = until;
-      me.boostMult = bonus.mult;
-      me.inventory[i] = { item: "cigbutt", qty: 1 };
-      void update(ref(db, `users/${me.uid}`), { [`inventory/${i}`]: { item: "cigbutt", qty: 1 }, boostUntil: until, boostMult: bonus.mult }).catch(() => undefined);
-      const p = mine();
-      if (p) { p.smoke = undefined; p.smokeKind = undefined; }
-      void update(myRef, { smoke: null, smokeKind: null }).catch(() => undefined);
-      panel.refresh();
-      say(`You finish the ${itemDef(s.item)?.name.toLowerCase() ?? "smoke"}. You feel sharp: stabs give x${bonus.mult} blood for ${Math.round(bonus.boostMs / 60000)} minutes.`);
+        if (r.passOut) {
+          logAction(me, "room", `smoked ass ${s.item}`);
+          say("That was ass weed… it hits you hard. Give it a moment…");
+          startWoozy();
+        } else {
+          say(`You finish the ${name}. You feel sharp: stabs give x${r.mult ?? sm.mult} blood for ${Math.round((r.boostMs ?? sm.boostMs) / 60000)} minutes.`);
+        }
+      }).catch(() => undefined).finally(() => window.setTimeout(() => finishing.delete(i), 4000));
     });
   }
 
@@ -2121,7 +2125,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const sixtyCalls = (): boolean => (isTut ? me.tutorial === 0 : sixtyWants()); // (in the introduction he only whispers before you have the knife)
       sixtyAfter(2200, () => { if (sixtyCalls() && !sixtyBusy) sixtySay(SIXTY_LINES.psst, 4500); });
       // you walk over to him by yourself when you come down (the admin plays him and stays put)
-      if (!asSixty) sixtyAfter(900, () => { if (!pending && !mine()?.lying) startSixty(true); });
+      if (!asSixty && isTut) sixtyAfter(900, () => { if (!pending && !mine()?.lying) startSixty(true); }); // only the introduction walks you over
       const psst = window.setInterval(() => {
         if (sixtyCalls() && !sixtyBusy && !sixtyShop && !(sixtyBubble && sixtyBubble.until > performance.now())) sixtySay(SIXTY_LINES.psst, 4500);
       }, 14_000);
@@ -2232,33 +2236,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     syncSleeper();
   }
 
-  /** TEMP-GIVEWEED: /weed gives a rolling kit: one weed, one ass weed, a blunt wrap and joint paper (for testing only). */
-  async function giveWeedKit(): Promise<void> {
-    let inv = me.inventory;
-    for (const give of [{ item: "weed", qty: 1 }, { item: "weed", qty: 1, ass: true }, { item: "bluntwrap", qty: 1 }, { item: "jointpaper", qty: 1 }]) {
-      const next = addToInv(inv, give);
-      if (!next) return say("Your inventory is full.", "warn");
-      inv = next;
-    }
+  /** TEMP test commands (/giveblud 25, /weed): only the admin account gets anything from the server. */
+  async function testCommand(cmd: "blood" | "weed", n?: number): Promise<void> {
     try {
-      await commitInv(me, inv);
-      panel.refresh();
-      say("(test) You got one weed, one ass weed, a blunt wrap and joint paper.");
-    } catch {
-      say("The hotel refused that. (test command)", "warn");
-    }
-  }
-
-  /** TEMP-GIVEBLUD: /giveblud 25 adds 25 drops of blood (for testing only). */
-  async function giveBlud(n: number): Promise<void> {
-    if (!(n > 0)) return say("Usage: /giveblud 25", "warn");
-    try {
-      await update(ref(db, `users/${me.uid}`), { blood: me.blood + n, testBlood: serverTimestamp() });
-      me.blood += n;
+      const note = await debugCommand(me, cmd, n);
       ctx.refreshHeader();
-      say(`(test) You got ${n} drops of blood.`);
-    } catch {
-      say("The hotel refused that. (test command)", "warn");
+      panel.refresh();
+      say(note || "(test) Done.");
+    } catch (err) {
+      say((err as Error).message || "Unknown command.", "warn");
     }
   }
 
@@ -2268,9 +2254,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     input.value = "";
     if (text.startsWith("/")) {
       // TEMP-GIVEBLUD: testing command, remove together with the 'testBlood' rule in database.rules.template.json
-      if (/^\/weed$/i.test(text)) { void giveWeedKit(); return; } // TEMP-GIVEWEED: testing command, remove when asked
+      if (/^\/weed$/i.test(text)) { void testCommand("weed"); return; } // TEMP: testing command (admin only), remove when asked
       const gift = /^\/giveblud\s+(\d{1,4})$/i.exec(text);
-      if (gift) { void giveBlud(Math.min(1000, Number(gift[1]))); return; }
+      if (gift) { void testCommand("blood", Math.min(1000, Number(gift[1]))); return; }
       const id = text.slice(1).toLowerCase();
       if (EMOTE_BY_ID[id]) return performEmote(id);
       return say(`Unknown command. Emotes: ${Object.keys(EMOTE_BY_ID).map((e) => "/" + e).join(" ")}`, "warn");
@@ -2442,7 +2428,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (k.plant) return drawPlanter(f, now);
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
-      if (b && k.opens && k.opens !== "sink" && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
+      if (b && k.opens && k.opens !== "sink" && k.opens !== "intercom" && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -3202,6 +3188,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     doorApi?.close();
     furniBuyApi?.close();
     vendingApi?.close();
+    intercomApi?.close();
     dropConfirmApi?.close();
     pillCleanup?.();
     furnishUi?.dispose();
