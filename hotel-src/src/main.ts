@@ -26,7 +26,7 @@ import { watchShopConfig } from "./shopConfig";
 import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns, watchDesigns } from "./designs";
 import { watchFurni } from "./furniDefs";
 import { watchFurniShop } from "./furniShop";
-import { publishProfile, social, startPresence, stopPresence } from "./social";
+import { otherWindowOpen, publishProfile, releasePresence, social, startPresence, stopPresence, watchSession } from "./social";
 
 export const APP_NAME = "6ixPlanet";
 export const STAFF_NOTICE = "Staff can see chat, private messages and activity on 6ixPlanet.";
@@ -144,6 +144,17 @@ function showAuth(): void {
           useEmulator ? h("p", { class: "notice" }, "(running against local Firebase emulators)") : null))));
 }
 
+/** An account is only played from one window at a time; this window is shut out. (No sign-out: the sign-in is shared with the other window.) */
+function showLocked(why: "busy" | "taken"): void {
+  clear();
+  app.append(h("div", { class: "center-screen" }, h("div", { class: "panel auth" },
+    h("h1", {}, "Already open"),
+    h("p", {}, why === "busy"
+      ? "This account is open in another window or device. 6ixPlanet can only be played from one place at a time. Close it there, then try again."
+      : "This account was opened in another window, so this one has been stopped. 6ixPlanet can only be played from one place at a time."),
+    h("div", { class: "row" }, h("button", { class: "btn primary", onclick: () => location.reload() }, "Try again")))));
+}
+
 // ---- the signed-in app ------------------------------------------------------------------
 
 async function showHotel(user: User): Promise<void> {
@@ -182,6 +193,23 @@ async function showHotel(user: User): Promise<void> {
     return;
   }
   const p = profile;
+  // one window per account: a second window can't get in while the first is open (two windows could drop the same item twice)
+  if (await otherWindowOpen(p.uid)) {
+    stopShop(); stopDesigns(); stopFurni();
+    return showLocked("busy");
+  }
+  startPresence(p); // takes the seat right away
+  const stopSeatWatch = watchSession(p.uid, () => {
+    // another window took the seat in the same moment: this one stops
+    stopSeatWatch();
+    shellCleanup?.();
+    shellCleanup = null;
+    roomApi?.dispose();
+    roomApi = null;
+    releasePresence(p.uid);
+    stopShop(); stopDesigns(); stopFurni();
+    showLocked("taken");
+  });
   let bar: TopBarApi | null = null;
   let roomApi: RoomApi | null = null;
   let roomMounted = "";

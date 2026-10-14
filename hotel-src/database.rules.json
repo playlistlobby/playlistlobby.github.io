@@ -146,6 +146,7 @@
         "idle": { ".validate": "newData.isBoolean()" },
         "since": { ".validate": "newData.isNumber()" },
         "seen": { ".validate": "newData.isNumber()" },
+        "sid": { ".validate": "newData.isString() && newData.val().length <= 40" },
         "$other": { ".validate": false }
       }
     },

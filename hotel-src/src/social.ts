@@ -92,10 +92,40 @@ export async function publishProfile(p: Profile): Promise<void> {
 }
 
 // ---- presence -----------------------------------------------------------------------
+/** A random id for this page load. The account's presence carries the id of the window that is signed in: one window per account. */
+export const SESSION_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+/** another window's seat counts as taken while its heartbeat is newer than this */
+const SEAT_STALE_MS = 3 * 60_000;
+
+/** Is this account already open in another live window (or device)? A page that is just being reloaded lets go of its seat a moment later, so a taken seat is checked twice. */
+export async function otherWindowOpen(uid: string): Promise<boolean> {
+  const taken = async (): Promise<boolean> => {
+    const v = (await get(ref(db, `presence/${uid}`))).val() as { sid?: unknown; seen?: unknown } | null;
+    return !!v && typeof v.sid === "string" && v.sid !== SESSION_ID && typeof v.seen === "number" && serverNow() - v.seen < SEAT_STALE_MS;
+  };
+  if (!(await taken())) return false;
+  await new Promise((r) => window.setTimeout(r, 2500));
+  return taken();
+}
+
+/** Calls `onTaken` if another window takes this account's seat (two windows opening at the very same moment). */
+export function watchSession(uid: string, onTaken: () => void): Unsubscribe {
+  return onValue(ref(db, `presence/${uid}/sid`), (snap) => {
+    const v = snap.val();
+    if (typeof v === "string" && v !== SESSION_ID) onTaken();
+  });
+}
+
+/** This window gave up its seat without leaving: stop the heartbeat and the clean-up that would wipe the other window's presence. */
+export function releasePresence(uid: string): void {
+  window.clearInterval(beat);
+  void onDisconnect(ref(db, `presence/${uid}`)).cancel();
+}
+
 export function startPresence(p: Profile, room = ""): void {
   const r = ref(db, `presence/${p.uid}`);
   void onDisconnect(r).remove();
-  void set(r, { name: p.name, room, since: serverTimestamp(), seen: serverTimestamp() });
+  void set(r, { name: p.name, room, since: serverTimestamp(), seen: serverTimestamp(), sid: SESSION_ID });
   window.clearInterval(beat);
   beat = window.setInterval(() => { void update(r, { seen: serverTimestamp() }).catch(() => undefined); }, HEARTBEAT_MS);
 }
