@@ -1,7 +1,7 @@
 import { h } from "./dom";
-import { furniIcon, onFurniIcon } from "../items";
+import { furniIcon, itemDef, onFurniIcon } from "../items";
 import { FURNI_KINDS } from "../rooms";
-import { freeSlots, isFixedPiece, canTurn, MAX_FURNI, placedCount, storedCount } from "../furnishing";
+import { freeSlots, isFixedPiece, canTurn, isFurnitureKey, isStorable, MAX_FURNI, parseStoreKey, placedCount, storedCount } from "../furnishing";
 import type { Profile } from "../db";
 import type { PlacedFurni, RoomDef } from "../rooms";
 
@@ -18,8 +18,8 @@ export interface FurnishHost {
   store(): void;
   startPlacing(source: "inv" | "storage", kind: string, slot?: number): void;
   cancelPlacing(): void;
-  storeFromInventory(slot: number): void;
-  takeFromStorage(kind: string): void;
+  storeFromInventory(slot: number, qty?: number): void;
+  takeFromStorage(kind: string, qty?: number): void;
 }
 
 export interface FurnishApi {
@@ -65,22 +65,35 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
     }
 
     tray.style.display = placing ? "none" : ""; // while you're choosing where to put a piece down, the tray steps out of the way so the whole room shows
-    const stored = Object.entries(p.storage).filter(([k, n]) => n > 0 && FURNI_KINDS[k]);
-    const carried = p.inventory.map((s, slot) => ({ s, slot })).filter((e): e is { s: NonNullable<typeof e.s>; slot: number } => !!e.s && !!FURNI_KINDS[e.s.item] && /^[fx]_/.test(e.s.item));
+    const stored = Object.entries(p.storage).filter(([k, n]) => n > 0 && (FURNI_KINDS[k] || itemDef(parseStoreKey(k).item)));
+    const carried = p.inventory.map((s, slot) => ({ s, slot })).filter((e): e is { s: NonNullable<typeof e.s>; slot: number } => !!e.s && ((!!FURNI_KINDS[e.s.item] && /^[fx]_/.test(e.s.item)) || (!!itemDef(e.s.item) && isStorable(e.s))));
+    // a thing (cigarettes, weed, a lighter...): not placed in the room, only stored and taken out, one or all of them at a time
+    const thingCell = (key: string, count: number, buttons: Array<{ label: string; run: () => void }>) => {
+      const { item, ass } = parseStoreKey(key);
+      const d = itemDef(item)!;
+      return h("div", { class: "fz-cell", title: d.name + (ass ? " (ass)" : "") },
+        h("div", { class: "fz-pick thing" }, h("img", { src: d.icon, alt: d.name, draggable: false }), ...(count > 1 ? [h("span", { class: "qty" }, String(count))] : []), ...(ass ? [h("span", { class: "ass-tag" }, "ass")] : [])),
+        h("div", { class: "fz-name" }, d.name),
+        h("div", { class: "fz-btns" }, ...buttons.map((b) => h("button", { class: "btn small fz-mini", onclick: b.run }, b.label))));
+    };
     const cell = (kind: string, count: number, onPlace: () => void, secondary: { label: string; run: () => void }) =>
       h("div", { class: "fz-cell" + (placing?.kind === kind ? " on" : ""), title: FURNI_KINDS[kind].label },
         h("button", { class: "fz-pick", onclick: onPlace }, h("img", { src: furniIcon(kind), alt: FURNI_KINDS[kind].label, draggable: false }), ...(count > 1 ? [h("span", { class: "qty" }, String(count))] : [])),
         h("div", { class: "fz-name" }, FURNI_KINDS[kind].label),
         h("button", { class: "btn small fz-mini", onclick: secondary.run }, secondary.label));
     const cells = tab === "storage"
-      ? stored.map(([kind, n]) => cell(kind, n, () => fh.startPlacing("storage", kind), { label: "Take", run: () => fh.takeFromStorage(kind) }))
-      : carried.map(({ s, slot }) => cell(s.item, 1, () => fh.startPlacing("inv", s.item, slot), { label: "Store", run: () => fh.storeFromInventory(slot) }));
+      ? stored.map(([kind, n]) => isFurnitureKey(kind)
+        ? cell(kind, n, () => fh.startPlacing("storage", kind), { label: "Take", run: () => fh.takeFromStorage(kind) })
+        : thingCell(kind, n, [{ label: "Take", run: () => fh.takeFromStorage(kind) }, ...(n > 1 ? [{ label: "All", run: () => fh.takeFromStorage(kind, n) }] : [])]))
+      : carried.map(({ s, slot }) => isFurnitureKey(s.item) && /^[fx]_/.test(s.item)
+        ? cell(s.item, 1, () => fh.startPlacing("inv", s.item, slot), { label: "Store", run: () => fh.storeFromInventory(slot) })
+        : thingCell(s.ass ? `ass_${s.item}` : s.item, s.qty, [{ label: "Store", run: () => fh.storeFromInventory(slot) }, ...(s.qty > 1 ? [{ label: "All", run: () => fh.storeFromInventory(slot, s.qty) }] : [])]));
     tray.replaceChildren(
       h("div", { class: "fz-tabs" },
         h("button", { class: "tab" + (tab === "storage" ? " on" : ""), onclick: () => { tab = "storage"; render(); } }, `Storage (${stored.reduce((a, [, n]) => a + n, 0)})`),
         h("button", { class: "tab" + (tab === "inventory" ? " on" : ""), onclick: () => { tab = "inventory"; render(); } }, `Carrying (${carried.length})`),
-        h("span", { class: "hint" }, tab === "storage" ? `Free pockets: ${freeSlots(p)}` : "Store pieces to keep your pockets free.")),
-      h("div", { class: "fz-list" }, ...(cells.length ? cells : [h("div", { class: "hint" }, tab === "storage" ? "Nothing in storage. Pick a piece up with Store, or put a carried piece into storage from the Carrying tab." : "You aren't carrying any furniture. Buy some in the shop (the yellow door in the basement).")])));
+        h("span", { class: "hint" }, tab === "storage" ? `Free pockets: ${freeSlots(p)}` : "Store pieces and things (cigarettes, weed...) to keep your pockets free.")),
+      h("div", { class: "fz-list" }, ...(cells.length ? cells : [h("div", { class: "hint" }, tab === "storage" ? "Nothing in storage. Pick a piece up with Store, or put what you carry into storage from the Carrying tab." : "You aren't carrying anything you can store. Furniture comes from the shop (the yellow door in the basement).")])));
     void storedCount;
   }
   render();

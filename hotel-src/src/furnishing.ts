@@ -2,7 +2,9 @@
 // Everything here is one atomic database write, so a piece is never in two places (or none) if the connection drops.
 import { push, ref, update } from "firebase/database";
 import { db } from "./firebase";
+import { addToInv, commitInv, takeQtyFrom } from "./db";
 import type { Profile } from "./db";
+import { itemDef, STACKABLE } from "./items";
 import { directionsOf, nitroIfReady } from "./nitro";
 import { BAG_ID, BED_ID, SINK_ID, FURNI_KINDS, footprint, isDoorTile, MAX_FURNI, PlacedFurni, RoomDef, TOOLBOX_ID } from "./rooms";
 
@@ -59,6 +61,18 @@ export function whyNot(def: RoomDef, kind: string, spot: Spot, ignoreId: string 
   return null;
 }
 
+/** What the toolbox keeps: furniture, and everything else you carry (cigarettes, weed, a lighter...). Ass weed is kept apart as "ass_<item>". */
+export const storeKeyOf = (s: { item: string; ass?: boolean }): string => (s.ass ? `ass_${s.item}` : s.item);
+export function parseStoreKey(key: string): { item: string; ass?: boolean } {
+  return key.startsWith("ass_") && itemDef(key.slice(4)) ? { item: key.slice(4), ass: true } : { item: key };
+}
+/** furniture pieces are placed from storage; everything else is just taken back out */
+export const isFurnitureKey = (key: string): boolean => !!FURNI_KINDS[key];
+/** things in your pocket that can go into the toolbox: not a lit smoke, not a CD that is in the player */
+export const isStorable = (s: { lit?: number; inPlayer?: boolean } | null | undefined): boolean => !!s && !s.lit && !s.inPlayer;
+export const STORAGE_MAX_PIECES = 99;
+export const STORAGE_MAX_ITEMS = 9999;
+
 export const freeSlots = (p: Profile): number => p.inventory.filter((s) => s === null).length;
 export const storedCount = (p: Profile, kind: string): number => p.storage[kind] ?? 0;
 export const placedCount = (def: RoomDef): number => def.furni.filter((f) => !isFixedPiece(f.id)).length;
@@ -114,27 +128,35 @@ export async function storeFromRoom(p: Profile, roomId: string, f: PlacedFurni):
   p.storage[f.kind] = n + 1;
 }
 
-/** Moves a carried piece into storage. */
-export async function storeFromInventory(p: Profile, slot: number): Promise<void> {
+/** Puts what you carry into the toolbox: a piece of furniture, or `qty` of an item (a whole stack of cigarettes, say). */
+export async function storeFromInventory(p: Profile, slot: number, qty = 1): Promise<void> {
   const s = p.inventory[slot];
   if (!s) return;
-  const n = storedCount(p, s.item);
-  if (n >= 99) throw new Error("Storage is full of those.");
-  const { patch, after } = withoutSlot(p, slot);
-  await update(ref(db), { ...patch, [`users/${p.uid}/storage/${s.item}`]: n + 1 });
-  p.storage[s.item] = n + 1;
-  for (let i = 0; i < after.length; i++) p.inventory[i] = after[i];
+  if (s.lit) throw new Error("Wait for it to burn out first.");
+  if (s.inPlayer) throw new Error("That's in the player right now.");
+  const take = Math.max(1, Math.min(Math.floor(qty) || 1, s.qty));
+  const key = storeKeyOf(s);
+  const n = storedCount(p, key);
+  if (n + take > (isFurnitureKey(key) ? STORAGE_MAX_PIECES : STORAGE_MAX_ITEMS)) throw new Error("Storage is full of those.");
+  await commitInv(p, takeQtyFrom(p.inventory, slot, take), { [`users/${p.uid}/storage/${key}`]: n + take });
+  p.storage[key] = n + take;
 }
 
-/** Takes a stored piece back into your pocket. */
-export async function takeFromStorage(p: Profile, kind: string): Promise<void> {
-  const n = storedCount(p, kind);
+/** Takes things back out of the toolbox into your pocket (`qty` of them; stackable items share a slot, the rest need one slot each). */
+export async function takeFromStorage(p: Profile, key: string, qty = 1): Promise<void> {
+  const n = storedCount(p, key);
   if (n < 1) return;
-  const free = p.inventory.findIndex((s) => s === null);
-  if (free < 0) throw new Error("Your inventory is full.");
-  await update(ref(db), { [`users/${p.uid}/storage/${kind}`]: n > 1 ? n - 1 : null, [`users/${p.uid}/inventory/${free}`]: { item: kind, qty: 1 } });
-  if (n > 1) p.storage[kind] = n - 1; else delete p.storage[kind];
-  p.inventory[free] = { item: kind, qty: 1 };
+  const take = Math.max(1, Math.min(Math.floor(qty) || 1, n));
+  const { item, ass } = parseStoreKey(key);
+  let inv = p.inventory;
+  const parts = STACKABLE.has(item) ? [take] : Array.from({ length: take }, () => 1);
+  for (const q of parts) {
+    const next = addToInv(inv, { item, qty: q, ...(ass ? { ass: true } : {}) });
+    if (!next) throw new Error("Your inventory is full.");
+    inv = next;
+  }
+  await commitInv(p, inv, { [`users/${p.uid}/storage/${key}`]: n - take > 0 ? n - take : null });
+  if (n - take > 0) p.storage[key] = n - take; else delete p.storage[key];
 }
 
 export { MAX_FURNI };

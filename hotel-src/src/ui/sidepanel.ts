@@ -26,6 +26,8 @@ export interface PanelOpts {
   onUseSelf(what: "syringe" | "smoke" | "pill" | "eat", slot: number): void;
   /** one pocket item used on another (weed + paper, ...) */
   onCombine(a: number, b: number): void;
+  /** Drop mode: an item was picked to be put on the floor */
+  onDropPick(slot: number): void;
   /** the knife was used on a dead cat in this slot */
   onCarve(slot: number): void;
   /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
@@ -46,6 +48,8 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   let collapsed = isMobile();
   let selected: number | null = null;
   let guided: number | null = null;
+  /** the red Drop button was pressed: every item glows and tapping one asks to drop it */
+  let dropMode = false;
   let unsubMusic: (() => void) | null = null;
   let roomCleanup: (() => void) | null = null;
 
@@ -59,6 +63,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
       h("button", { class: "osrs-tab" + (tab === id && !collapsed ? " on" : ""), title, onclick: () => {
         if (isMobile() && tab === id) collapsed = !collapsed;
         else { tab = id; collapsed = false; }
+        dropMode = false;
         render();
       } }, icon);
     tabsEl.replaceChildren(
@@ -103,11 +108,18 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
       const def = slot ? itemDef(slot.item) ?? null : null;
       const loaned = !!slot?.inPlayer; // e.g. the CD is sitting in the CD player right now
       const el = h("div", {
-        class: "inv-slot" + (selected === i ? " selected" : "") + (guided === i && def ? " guide" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
+        class: "inv-slot" + (selected === i ? " selected" : "") + (guided === i && def ? " guide" : "") + (dropMode && def && !loaned && !slot?.lit ? " drop-glow" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
         title: def ? (loaned ? `${def.name} (in the player)` : def.name) : "",
         onclick: () => {
           if (!def) return;
           playSfx("select", 0.35);
+          if (dropMode) {
+            if (loaned) return opts.say(`Your ${def.name} is in the player right now.`, "warn");
+            if (slot?.lit) return opts.say("Let it burn out first.", "warn");
+            dropMode = false;
+            renderInventory();
+            return opts.onDropPick(i);
+          }
           if (loaned) return opts.say(`Your ${def.name} is in the player. It'll be back when it's done.`, "warn");
           if (def.carvable) {
             const k = selected !== null ? profile.inventory[selected] : null;
@@ -131,9 +143,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
               ? [{ label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
               : []),
             ...(def.carvable && findSlot(profile.inventory, "knife") >= 0 ? [{ label: "Use knife", target: def.name, action: () => opts.onCarve(i) }] : []),
-            ...(def.droppable ? [{ label: "Drop", target: def.name, action: () => {
-              void consumeSlot(profile, i).then(() => { setSelected(null); renderInventory(); opts.say(`You drop the ${def.name.toLowerCase()}.`); }, () => opts.say("It won't go.", "warn"));
-            } }] : []),
+            ...(def.droppable ? [{ label: "Drop", target: def.name, action: () => opts.onDropPick(i) }] : []),
             { label: "Examine", target: def.name, action: () => opts.say(loaned ? `${def.examine} (It's in the player right now.)` : def.examine) },
           ]);
         },
@@ -144,7 +154,10 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
 
     body.replaceChildren(
       h("div", { class: "osrs-title" }, "Inventory"),
-      grid);
+      grid,
+      h("div", { class: "inv-foot drop-foot" },
+        dropMode ? h("div", { class: "hint" }, "Tap the item you want to put on the floor.") : null,
+        h("button", { class: "btn small drop-btn", onclick: () => { dropMode = !dropMode; if (dropMode) { selected = null; opts.onSelect(null); } renderInventory(); } }, dropMode ? "Cancel" : "Drop")));
   }
 
   // ---- music ---------------------------------------------------------------------------

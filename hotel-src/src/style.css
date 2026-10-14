@@ -203,6 +203,21 @@ button, input, select { font-family: var(--font); }
 .inv-slot.selected { border-color: #2a64d6; box-shadow: 0 0 0 2px rgba(42, 100, 214, .55); background: linear-gradient(#e6efff, #c5d9fa); }
 .inv-slot.guide { border-color: #ffc933; animation: guideglow 1s ease-in-out infinite; z-index: 1; }
 @keyframes guideglow { 0%, 100% { box-shadow: 0 0 4px 1px rgba(255, 201, 51, .55); } 50% { box-shadow: 0 0 16px 6px rgba(255, 201, 51, 1); } }
+.inv-slot.drop-glow { border-color: #ff4d4d; animation: dropglow 1s ease-in-out infinite; z-index: 1; }
+@keyframes dropglow { 0%, 100% { box-shadow: 0 0 4px 1px rgba(255, 60, 60, .5); } 50% { box-shadow: 0 0 14px 5px rgba(255, 60, 60, 1); } }
+.drop-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+.drop-foot .drop-btn { flex: 0 0 auto; }
+.btn.drop-btn { background: linear-gradient(#ff6b6b, #c62828); border-color: #8e1b1b; color: #fff; font-weight: 700; padding: 3px 18px; }
+.drop-overlay { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(0, 0, 0, .45); }
+.drop-win { width: min(300px, 90%); padding: 12px 14px; border-radius: 12px; background: #f3f5f9; color: #1b2233; box-shadow: 0 8px 28px rgba(0, 0, 0, .55); display: grid; gap: 10px; }
+.drop-title { font-weight: 700; font-size: 15px; }
+.drop-item { display: flex; gap: 10px; align-items: center; }
+.drop-item img { width: 44px; height: 44px; object-fit: contain; image-rendering: pixelated; background: #e4e7ec; border-radius: 8px; padding: 3px; }
+.drop-how { display: flex; align-items: center; gap: 8px; }
+.drop-qty { width: 90px; padding: 4px 8px; font-size: 16px; border: 1px solid #aab2c0; border-radius: 6px; text-align: center; }
+.drop-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+.btn.drop-yes { background: linear-gradient(#58d68d, #1e9e55); border-color: #14753f; color: #fff; font-weight: 700; min-width: 90px; }
+.btn.drop-no { background: linear-gradient(#ff6b6b, #c62828); border-color: #8e1b1b; color: #fff; font-weight: 700; min-width: 90px; }
 .inv-slot.loaned { opacity: .4; filter: grayscale(.6); cursor: not-allowed; }
 .inv-slot img { width: 80%; height: 80%; image-rendering: pixelated; user-select: none; }
 .inv-slot .qty { position: absolute; top: 1px; left: 3px; color: #a67800; font-size: 11px; font-weight: 700; }
@@ -337,6 +352,9 @@ button, input, select { font-family: var(--font); }
 .fz-pick .qty { position: absolute; right: 2px; bottom: 0; font-size: 11px; font-weight: 700; color: #ffe27a; }
 .fz-name { font-size: 9px; text-align: center; line-height: 1.1; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fz-mini { padding: 0 8px; font-size: 10px; line-height: 16px; }
+.fz-btns { display: flex; gap: 3px; }
+.fz-pick.thing { cursor: default; }
+.fz-pick .ass-tag { position: absolute; left: 1px; top: 0; font-size: 8px; font-weight: 700; color: #ffb4a0; }
 .blackout { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity .3s ease; z-index: 9999; pointer-events: all; }
 .furni-buy { width: 250px; }
 .furni-buy-body { display: flex; gap: 10px; align-items: center; }

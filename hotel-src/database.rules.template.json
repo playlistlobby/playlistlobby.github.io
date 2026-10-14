@@ -22,7 +22,7 @@
           ".validate": "newData.isNumber() && newData.val() === now && (!data.exists() || data.val() <= now - 20000)"
         },
         "storage": {
-          "$kind": { ".validate": "$kind.matches(/^[fx]_[a-z0-9_]{1,30}$/) && newData.isNumber() && newData.val() >= 1 && newData.val() <= 99" }
+          "$kind": { ".validate": "$kind.matches(/^[a-z0-9_]{1,30}$/) && newData.isNumber() && newData.val() >= 1 && newData.val() <= 9999 && (newData.val() <= 99 || !$kind.matches(/^[fx]_/))" }
         },
         "dumpsterAt": {
           ".validate": "newData.isNumber() && newData.val() === now && (!data.exists() || data.val() <= now - 3600000)"
@@ -420,6 +420,25 @@
           "$msg": {
             ".write": "@PW@ && @IN@ && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
             ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0"
+          }
+        },
+        "drops": {
+          "$tile": {
+            ".write": "@PW@ && @IN@ && ((!data.exists() && newData.exists() && newData.child('by').val() === auth.uid) || (data.exists() && !newData.exists()))",
+            ".validate": "newData.hasChildren(['item', 'qty', 'x', 'y', 'by', 'byName', 'at']) && $tile.matches(/^[0-9]{1,2}_[0-9]{1,2}$/) && ((($room === 'lobby' || $room === 'shop' || $room.matches(/^tut_/)) && newData.child('exp').exists()) || (!($room === 'lobby' || $room === 'shop' || $room.matches(/^tut_/)) && !newData.child('exp').exists()))",
+            "item": { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9_]{1,40}$/)" },
+            "qty": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999" },
+            "ass": { ".validate": "newData.isBoolean()" },
+            "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16 && $tile.matches(/^[0-9]+_[0-9]+$/) && $tile.beginsWith(newData.val() + '_')" },
+            "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16 && $tile.endsWith('_' + newData.val())" },
+            "by": { ".validate": "newData.val() === auth.uid" },
+            "byName": { ".validate": "newData.isString() && newData.val().length <= 16" },
+            "at": { ".validate": "newData.isNumber() && newData.val() === now" },
+            "exp": {
+              ".write": "@PW@ && @IN@ && data.exists() && newData.exists() && data.parent().child('by').val() === auth.uid && newData.val() < data.val()",
+              ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 305000"
+            },
+            "$other": { ".validate": false }
           }
         },
         "cdplayer": {

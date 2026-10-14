@@ -352,6 +352,15 @@ export function takeOneFrom(inv: Inventory, slot: number): Inventory {
   return out;
 }
 
+/** A copy of the inventory with `qty` of the item in `slot` used up (the slot empties when it's all gone). */
+export function takeQtyFrom(inv: Inventory, slot: number, qty: number): Inventory {
+  const out: Inventory = inv.map((s) => (s ? { ...s } : null));
+  const s = out[slot];
+  if (!s) return out;
+  if (s.qty > qty) s.qty -= qty; else out[slot] = null;
+  return out;
+}
+
 /** Saves a new inventory (gaps closed) together with other changes, as one atomic write from the root. `extra` keys are full database paths. */
 export async function commitInv(p: Profile, next: Inventory, extra: Record<string, unknown> = {}): Promise<void> {
   const kept = next.filter((s): s is InvItem => !!s);
