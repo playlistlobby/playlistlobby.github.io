@@ -5,6 +5,7 @@ import { Caller } from "./auth";
 import { Ctx, GameError } from "./ctx";
 import { Env } from "./env";
 import { Rtdb } from "./rtdb";
+import { FLOOR_SPAWN_CHANCE, FLOOR_SPAWN_ITEMS, FLOOR_SPAWN_MAX, FLOOR_SPAWN_MS } from "../../src/shared/economy";
 
 interface Bucket { tokens: number; at: number }
 const RATE_PER_SEC = 8;
@@ -14,7 +15,41 @@ export class Economy {
   private tails = new Map<string, Promise<void>>();
   private buckets = new Map<string, Bucket>();
 
-  constructor(_state: DurableObjectState, private env: Env) {}
+  constructor(private state: DurableObjectState, private env: Env) {}
+
+  /** The clock for floor spawns: once somebody has played, an alarm goes off every 10 minutes for good. */
+  private async ensureAlarm(): Promise<void> {
+    try { if ((await this.state.storage.getAlarm()) === null) await this.state.storage.setAlarm(Date.now() + FLOOR_SPAWN_MS); } catch { /* the next request tries again */ }
+  }
+
+  /** Every 10 minutes: a 25% chance that a weed seed or a cigarette turns up on the floor of the public room (2 at most lying there). */
+  async alarm(): Promise<void> {
+    await this.state.storage.setAlarm(Date.now() + FLOOR_SPAWN_MS);
+    if (Math.random() >= FLOOR_SPAWN_CHANCE) return;
+    const release = await this.lock("room:lobby"); // the same lock drop / pickup use for this room
+    try {
+      const db = new Rtdb(this.env);
+      const now = Date.now();
+      const drops = (await db.get<Record<string, { by?: string; exp?: number }>>("rooms/lobby/drops")) ?? {};
+      const lying = Object.values(drops).filter((d) => d.by === "world" && (!d.exp || d.exp > now)).length;
+      if (lying >= FLOOR_SPAWN_MAX) return;
+      // somewhere in the middle of the room, away from the walls (the machines, bins and doors stand there), and not on anything the admin put down
+      const extras = (await db.get<Record<string, { x?: number; y?: number }>>("lobby/furni")) ?? {};
+      const blocked = new Set<string>();
+      for (const f of Object.values(extras)) for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) blocked.add(`${(f.x ?? -9) + dx}_${(f.y ?? -9) + dy}`);
+      const tiles: string[] = [];
+      for (let x = 2; x <= 10; x++) for (let y = 2; y <= 10; y++) if (!drops[`${x}_${y}`] && !blocked.has(`${x}_${y}`)) tiles.push(`${x}_${y}`);
+      if (tiles.length === 0) return;
+      const key = tiles[Math.floor(Math.random() * tiles.length)];
+      const [x, y] = key.split("_").map(Number);
+      const item = FLOOR_SPAWN_ITEMS[Math.floor(Math.random() * FLOOR_SPAWN_ITEMS.length)];
+      await db.patch({ [`rooms/lobby/drops/${key}`]: { item, qty: 1, x, y, by: "world", byName: "the floor", at: now } });
+    } catch (e) {
+      console.error("floor spawn failed", e);
+    } finally {
+      release();
+    }
+  }
 
   /** Waits for the previous holder of `key`, and returns what releases it. */
   private async lock(key: string): Promise<() => void> {
@@ -43,6 +78,7 @@ export class Economy {
   async fetch(request: Request): Promise<Response> {
     let body: { caller: Caller; action: string; args: unknown };
     try { body = (await request.json()) as typeof body; } catch { return json({ ok: false, error: "Bad request." }, 400); }
+    void this.ensureAlarm();
     const { caller, action } = body;
     const args = (body.args && typeof body.args === "object" ? body.args : {}) as Record<string, unknown>;
     const def = Object.prototype.hasOwnProperty.call(ACTIONS, action) ? ACTIONS[action] : undefined;

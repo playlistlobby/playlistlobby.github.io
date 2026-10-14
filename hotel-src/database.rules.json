@@ -435,7 +435,7 @@
     "roomsMeta": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
       "$room": {
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && $room === 'u_' + auth.uid && !newData.child('furni').exists()",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && $room === 'u_' + auth.uid && !newData.child('furni').exists() && !newData.child('skins').exists()",
         ".validate": "newData.hasChildren(['owner', 'ownerName', 'name', 'access', 'w', 'h'])",
         "owner": {
           ".validate": "newData.val() === $room.replace('u_', '')"
@@ -458,8 +458,18 @@
         "h": {
           ".validate": "newData.isNumber() && newData.val() >= 6 && newData.val() <= 16"
         },
+        "skins": {
+          "bed": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9]{1,16}$/)"
+          },
+          "bag": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9]{1,16}$/)"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
         "theme": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
           "floorA": {
             ".validate": "newData.isString() && newData.val().matches(/^#[0-9a-fA-F]{6}$/)"
           },
@@ -488,10 +498,10 @@
         "bed": {
           ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -503,10 +513,10 @@
         "bag": {
           ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -518,10 +528,25 @@
         "toolbox": {
           ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+          },
+          "dir": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "boombox": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -533,10 +558,10 @@
         "sink": {
           ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -580,10 +605,10 @@
         "intercom": {
           ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 8"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -631,6 +656,15 @@
             "fast": {
               ".validate": "newData.isNumber()"
             },
+            "bed": {
+              ".validate": "newData.isBoolean()"
+            },
+            "fastMult": {
+              ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 4"
+            },
+            "cup": {
+              ".validate": "newData.isNumber()"
+            },
             "chem": {
               ".validate": "newData.isNumber()"
             }
@@ -652,7 +686,7 @@
           }
         },
         "cdplayer": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && $room === 'lobby' && data.exists() && !newData.exists() && data.child('endsAt').val() < now"
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.exists() && !newData.exists() && data.child('endsAt').val() < now && !data.child('pausedAt').exists()"
         },
         "events": {
           ".indexOn": [

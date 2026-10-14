@@ -7,10 +7,10 @@ import { call } from "./db";
 import type { Profile } from "./db";
 import { itemDef, STACKABLE } from "./items";
 import { directionsOf, nitroIfReady } from "./nitro";
-import { BAG_ID, BED_ID, SINK_ID, INTERCOM_ID, FURNI_KINDS, footprint, isDoorTile, MAX_FURNI, PlacedFurni, RoomDef, TOOLBOX_ID } from "./rooms";
+import { BAG_ID, BED_ID, BOOMBOX_ID, SINK_ID, FURNI_KINDS, footprint, isDoorTile, MAX_FURNI, PlacedFurni, RoomDef, TOOLBOX_ID } from "./rooms";
 
 /** The pieces that are always in your room: movable, never removable. */
-export const FIXED_IDS = new Set([BED_ID, BAG_ID, TOOLBOX_ID, SINK_ID, INTERCOM_ID]);
+export const FIXED_IDS = new Set([BED_ID, BAG_ID, TOOLBOX_ID, SINK_ID, BOOMBOX_ID]);
 export const isFixedPiece = (id: string): boolean => FIXED_IDS.has(id);
 
 /** Which way a piece can be turned: the bed only faces one way; everything else turns by a quarter. */
@@ -45,6 +45,7 @@ export function whyNot(def: RoomDef, kind: string, spot: Spot, ignoreId: string 
   if (!k) return "That piece doesn't exist.";
   const fp = footprint(kind, spot.dir);
   if (spot.x < 0 || spot.y < 0 || spot.x + fp.w > def.w || spot.y + fp.h > def.h) return "That doesn't fit in the room.";
+  if (k.wall && !((spot.dir === 4 && spot.y === 0) || (spot.dir === 2 && spot.x === 0))) return "That one hangs on a wall: put it against the back wall or the left wall.";
   const taken = new Set<string>();
   for (const f of def.furni) {
     if (f.id === ignoreId || FURNI_KINDS[f.kind]?.flat) continue;
@@ -62,6 +63,21 @@ export function whyNot(def: RoomDef, kind: string, spot: Spot, ignoreId: string 
   return null;
 }
 
+/** Where a wall item goes when the pointer is on tile t: it snaps to the nearest wall (the back wall facing 4, the left wall facing 2) and slides along it. */
+export function wallSpot(def: RoomDef, kind: string, t: { x: number; y: number }): Spot {
+  const onBack = t.y <= t.x;
+  const dir = onBack ? 4 : 2;
+  const fp = footprint(kind, dir);
+  return onBack ? { x: Math.max(0, Math.min(t.x, def.w - fp.w)), y: 0, dir } : { x: 0, y: Math.max(0, Math.min(t.y, def.h - fp.h)), dir };
+}
+/** Turning a wall item takes it round the corner to the other wall. */
+export function turnedWallSpot(def: RoomDef, kind: string, f: { x: number; y: number; dir?: number }): Spot {
+  const toLeft = (f.dir ?? 4) === 4;
+  const dir = toLeft ? 2 : 4;
+  const fp = footprint(kind, dir);
+  return toLeft ? { x: 0, y: Math.max(0, Math.min(f.x, def.h - fp.h)), dir } : { x: Math.max(0, Math.min(f.y, def.w - fp.w)), y: 0, dir };
+}
+
 /** What the toolbox keeps: furniture, and everything else you carry (cigarettes, weed, a lighter...). Ass weed is kept apart as "ass_<item>". */
 export const storeKeyOf = (s: { item: string; ass?: boolean }): string => (s.ass ? `ass_${s.item}` : s.item);
 export function parseStoreKey(key: string): { item: string; ass?: boolean } {
@@ -70,7 +86,7 @@ export function parseStoreKey(key: string): { item: string; ass?: boolean } {
 /** furniture pieces are placed from storage; everything else is just taken back out */
 export const isFurnitureKey = (key: string): boolean => !!FURNI_KINDS[key];
 /** things in your pocket that can go into the toolbox: not a lit smoke, not a CD that is in the player */
-export const isStorable = (s: { lit?: number; inPlayer?: boolean } | null | undefined): boolean => !!s && !s.lit && !s.inPlayer;
+export const isStorable = (s: { lit?: number; inPlayer?: boolean | string } | null | undefined): boolean => !!s && !s.lit && !s.inPlayer;
 export const STORAGE_MAX_PIECES = 99;
 export const STORAGE_MAX_ITEMS = 9999;
 
@@ -95,7 +111,7 @@ export async function placeFromStorage(p: Profile, _roomId: string, kind: string
 /** Moves or turns a piece that is already in the room. The bed, bag, toolbox and sink live under their own names (looks only); every other piece goes through the server. */
 export async function movePiece(roomId: string, f: PlacedFurni, spot: Spot, p?: Profile): Promise<void> {
   if (isFixedPiece(f.id)) {
-    const path = f.id === BED_ID ? `${roomRef(roomId)}/bed` : f.id === BAG_ID ? `${roomRef(roomId)}/bag` : f.id === TOOLBOX_ID ? `${roomRef(roomId)}/toolbox` : f.id === INTERCOM_ID ? `${roomRef(roomId)}/intercom` : `${roomRef(roomId)}/sink`;
+    const path = f.id === BED_ID ? `${roomRef(roomId)}/bed` : f.id === BAG_ID ? `${roomRef(roomId)}/bag` : f.id === TOOLBOX_ID ? `${roomRef(roomId)}/toolbox` : f.id === BOOMBOX_ID ? `${roomRef(roomId)}/boombox` : `${roomRef(roomId)}/sink`;
     await update(ref(db, path), { x: spot.x, y: spot.y, dir: f.id === BED_ID ? 2 : spot.dir });
     return;
   }

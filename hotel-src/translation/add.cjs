@@ -1,0 +1,83 @@
+// Small additions and edits to the finished Danish list (da.json), by English text.
+const fs = require("fs");
+const file = __dirname + "/da.json";
+const d = JSON.parse(fs.readFileSync(file, "utf8"));
+const byEn = new Map(Object.entries(d).map(([id, v]) => [v.en, id]));
+const set = (en, da, where = "") => {
+  const id = byEn.get(en);
+  if (id) { d[id].da = da; return; }
+  const nid = "N" + String(Object.keys(d).filter((k) => k.startsWith("N")).length + 1).padStart(3, "0");
+  d[nid] = { en, da, where };
+  byEn.set(en, nid);
+};
+
+// edits asked for
+set("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.", "En cigaret. Klik for at tænde den med en lighter.");
+// texts the first pass missed
+set("A red and white pill from 6ixty. Swallow it and you pass out; you wake up in your own room. He doesn't say what's in it.", "En rød og hvid pille fra 6ixty. Sluk den og du besvimer; du vågner i dit eget værelse. Han siger ikke hvad der er i den.", "src/items.ts:185");
+set("Clothes you make yourself live in the Studio tab; set their price there.", "Tøj du laver selv ligger i Studio-fanen; sæt prisen der.", "src/ui/adminShop.ts:184");
+set("Two parts use the same layer; only the first of each layer is imported. Give one a different garment number.", "To dele bruger det samme lag; kun den første af hvert lag bliver importeret. Giv en et andet tøjnummer.", "src/ui/studioNitro.ts:123");
+set("They go live straight away. Free ones are available to everyone; priced ones go on sale in the shop.", "De går live med det samme. Gratis ting er til rådighed for alle; ting med pris kommer til salg i shoppen.", "src/ui/studioNitro.ts:135");
+set("ready!", "klar!", "src/ui/room.ts:2640");
+
+set('item', 'ting', 'src/ui/room.ts:729');
+set('{label} door', '{label} dør', 'src/ui/room.ts:746');
+set('muted', 'slukket', 'src/ui/room.ts:1550');
+set('Importing…', 'Importerer…', 'src/ui/studio.ts:237');
+set('Saving…', 'Gemmer…', 'src/ui/studio.ts:351');
+set('Reading…', 'Læser…', 'src/ui/studioNitro.ts:38');
+set("Say something, or try /dance. Tap the floor to walk.", "Sig noget. Tryk på gulvet for at gå.");
+set("Score: 0   Best: {best}", "Score: 0   Bedste: {best}");
+set("Score: {points}   Best: {best}", "Score: {points}   Bedste: {best}");
+set("{name}: no clothing frames found. {…}", "{name}: ingen tøj-frames fundet. {…}");
+set("{size} message{…} · last {…}", "{size} beskeder · sidste {…}");
+set("New: {id}", "Ny: {id}");
+set("Facing {d}", "Retning {d}");
+set("put in the shop at {price}", "sat i shoppen til {price}");
+set("Updated {length} item{…}", "Opdaterede {length} ting");
+set("· {colors} colour{…}", "· {colors} farver");
+set("put {label} in furniture slot {…}", "satte {label} i møbelplads {…}");
+set("Slot {…}", "Plads {…}");
+set("Everyone sees the same four. They change at midnight (UTC). {…}", "Alle ser de samme fire. De skifter ved midnat (UTC). {…}");
+set("reset the price of {label}", "nulstillede prisen på {label}");
+set("Export failed: {message}", "Eksport fejlede: {message}");
+set("Color {…}", "Farve {…}");
+set("Buy & wear — 🩸 {cost}", "Køb & tag på — {cost}");
+set("Buy for {price}", "Køb for {price}");
+set("Buy {label}", "Køb {label}");
+set("{w}×{h} tiles{…}", "{w}×{h} felter{…}");
+set("Free pockets: {freeSlots}", "Frie lommer: {freeSlots}");
+set("Place {…}: click a tile{…}", "Stil {…}: klik på et felt{…}");
+set("Use {name} → {label}", "Brug {name} → {label}");
+set("Use {name} → {name}", "Brug {name} → {name}");
+set("dropped by {byName}", "droppet af {byName}");
+set("Door: {label}", "Dør: {label}");
+set("{name} · by {ownerName}", "{name} · af {ownerName}");
+set("It's ready to pick!{…}", "Den er klar til at plukke!{…}");
+set("Put in by {byName}", "Lagt i af {byName}");
+set("{…} minute{…}", "{…} min");
+set("and {…}", "og {…}");
+set("Unknown command. Emotes: {…}", "Ukendt kommando. Emotes: {…}");
+set("⟳ Turn (R) · facing {…}", "Drej (R) · retning {…}");
+set("Owned by {…}", "Ejes af {…}");
+set("Skipped {length}: {…}{…}", "Sprang {length} over: {…}{…}");
+set("Based on {type}-{id} · layers: {…}", "Baseret på {type}-{id} · lag: {…}");
+set("Garment {num}", "Tøj {num}");
+set("Import {length} garment{…}", "Importér {length} stykker tøj");
+set("Trade with {name}", "Byt med {name}");
+set("Boombox: use a CD on it", "Boombox: brug en CD på den");
+set("Resume", "Fortsæt");
+set("Play from start", "Spil fra start");
+set("Eject", "Skub ud");
+set("Nothing is playing.", "Intet spiller.", "server/src/actions/cd.ts");
+set("Only the one who put the CD in (or the room's owner) can do that.", "Kun den der satte CD'en i (eller værelsets ejer) kan det.", "server/src/actions/cd.ts");
+set("There's no music player there.", "Der er ingen musikafspiller der.", "server/src/actions/cd.ts");
+set("You already bought your CD.", "Du har allerede købt din CD.", "server/src/actions/shop.ts");
+set("Owned", "Købt", "src/ui/sixtyShop.ts");
+set("A CD with a song on it. Use it on the boombox in your room (or the CD player in the basement) and the song plays for everyone there. It comes back when it's done.", "En CD med en sang på. Brug den på boomboxen i dit værelse (eller CD afspilleren i kælderen), så spiller sangen for alle derinde. Den kommer tilbage når den er færdig.", "src/items.ts");
+set("🎲 Randomize", "Randomize");
+set("Door: locked", "Dør: låst", "src/ui/room.ts");
+set("The door is locked. Finish what Sixty wants first.", "Døren er låst. Gør færdig hvad Sixty vil have først.", "src/ui/room.ts");
+set("You have nothing that mixes (weed, ass weed, cigarettes, pills, kodimagnyl, a full watering can).", "Du har intet der kan mixes (weed, ass weed, cigaretter, piller, kodimagnyl, en fyldt vandkande).", "src/ui/mixer.ts");
+fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
+console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

@@ -1,10 +1,11 @@
 // Buying from 6ixty, the vending machine and the shop room's daily pieces. The server decides what is on sale and for how much.
-import { Action, text } from "./util";
+import { Action, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
-import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, takeQtyFrom } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, ITEM_IDS, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPicksToday, furniPrice, SHIPPED_DIMS, SHOP_KIND_PREFIX } from "../../../src/shared/furniture";
 import { todayStartAt } from "../../../src/shared/economy";
+import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, skinOf, skinOwnedKey, SkinPart } from "../../../src/shared/skins";
 
 /** 6ixty's shelf: his stock plus whatever else the admin switched on (never the leftovers: butts and dead cats). */
 export const buySixty: Action = {
@@ -15,11 +16,13 @@ export const buySixty: Action = {
     const entry = await c.itemEntry(id);
     if (!entry.on) fail("He doesn't sell that.");
     const w = await c.user();
+    if (id === "cd" && w.s.owned.item_cd) fail("You already bought your CD."); // one CD per player, ever (it comes back after it has played)
     if (w.s.blood < entry.price) fail(`You need ${entry.price - w.s.blood} more drops`);
     const next = addToInv(w.s.inventory, { item: id, qty: 1 });
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;
     w.s.blood -= entry.price;
+    if (id === "cd") w.s.owned.item_cd = true;
     return { price: entry.price };
   },
 };
@@ -60,6 +63,115 @@ export const buyFurni: Action = {
   },
 };
 
+
+/** The landlord (in the shop room): the next of three room upgrades makes your room bigger. They have to be bought in order. */
+export const buyRoomUpgrade: Action = {
+  async run(c) {
+    await requireInRoom(c, "shop");
+    const w = await c.user();
+    const next = ROOM_UPGRADES[w.s.roomLevel];
+    if (!next) fail("Your room is as big as it gets.");
+    if (w.s.blood < next!.price) fail(`You need ${next!.price - w.s.blood} more drops`);
+    const room = `u_${c.uid}`;
+    if (!(await c.db.get<unknown>(`roomsMeta/${room}/owner`))) fail("You haven't got a room yet.");
+    w.s.blood -= next!.price;
+    w.s.roomLevel += 1;
+    c.extra[`roomsMeta/${room}/w`] = next!.size;
+    c.extra[`roomsMeta/${room}/h`] = next!.size;
+    return { size: next!.size, price: next!.price };
+  },
+};
+
+/** The landlord again: new colours for your floor, walls and carpet, 2 drops for each part that really changes. Patterns are gone: a colour replaces them. */
+export const roomColors: Action = {
+  async run(c, a) {
+    await requireInRoom(c, "shop");
+    const hex = /^#[0-9a-fA-F]{6}$/;
+    const pick = (v: unknown, what: string): string | undefined => (v === undefined ? undefined : text(v, hex, what).toLowerCase());
+    const floor = pick(a.floor, "floor colour"), wall = pick(a.wall, "wall colour");
+    const rug = a.rug === "none" ? null : pick(a.rug, "carpet colour");
+    const room = `u_${c.uid}`;
+    if (!(await c.db.get<unknown>(`roomsMeta/${room}/owner`))) fail("You haven't got a room yet.");
+    const cur = (await c.db.get<Record<string, any>>(`roomsMeta/${room}/theme`)) ?? {};
+    const same = (x: unknown, y: string) => String(x ?? "").toLowerCase() === y;
+    let parts = 0;
+    const put = (k: string, v: unknown) => { c.extra[`roomsMeta/${room}/theme/${k}`] = v; };
+    if (floor !== undefined && (!same(cur.floorA ?? "#a99a6a", floor) || cur.floorTex)) { parts++; put("floorA", floor); put("floorB", lighterHex(floor)); put("floorTex", null); }
+    if (wall !== undefined && (!same(cur.wall ?? "#b9c9cf", wall) || cur.wallTex)) { parts++; put("wall", wall); put("wallTex", null); }
+    if (rug === null) { if (cur.rug ?? true) { parts++; put("rug", false); } }
+    else if (rug !== undefined && (!(cur.rug ?? true) || !same(cur.rugColor ?? "#c9544f", rug))) { parts++; put("rug", true); put("rugColor", rug); }
+    if (parts === 0) fail("Nothing to change.");
+    const price = parts * RECOLOR_PRICE;
+    const w = await c.user();
+    if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
+    w.s.blood -= price;
+    return { price, parts };
+  },
+};
+
+/** The landlord's furniture: a new look for your bed and for your bag of clothes (a wardrobe). Bought once, then swapped for free; "default" goes back to the plain one. */
+export const roomSkins: Action = {
+  async run(c, a) {
+    await requireInRoom(c, "shop");
+    const room = `u_${c.uid}`;
+    const meta = await c.db.get<any>(`roomsMeta/${room}`);
+    if (!meta?.owner) fail("You haven't got a room yet.");
+    const size = await roomSize(c, room);
+    const w = await c.user();
+    let price = 0, parts = 0;
+    for (const part of ["bed", "bag"] as SkinPart[]) {
+      if (a[part] === undefined) continue;
+      const id = a[part] === "default" ? null : text(a[part], /^[a-z0-9]{1,16}$/, "look");
+      if (id !== null && !skinOf(part, id)) fail("That isn't for sale.");
+      if (id === (meta.skins?.[part] ?? null)) continue;
+      if (id !== null) {
+        const key = skinOwnedKey(part, id);
+        if (!w.s.owned[key]) { price += skinOf(part, id)!.price; w.s.owned[key] = true; }
+      }
+      parts++;
+      c.extra[`roomsMeta/${room}/skins/${part}`] = id;
+      // the new one may be bigger: keep it inside the room
+      const pos = { ...DEFAULT_PIECE_POS[part], ...(meta[part] ?? {}) };
+      if (skinOf(part, id)?.wall) {
+        // a wall item hangs on a wall: on the back wall facing the room, at the far right end
+        const fpw = skinFootprint(part, id, 4);
+        c.extra[`roomsMeta/${room}/${part}/x`] = Math.max(2, size.w - fpw.w);
+        c.extra[`roomsMeta/${room}/${part}/y`] = 0;
+        c.extra[`roomsMeta/${room}/${part}/dir`] = 4;
+        continue;
+      }
+      if (part === "bag") {
+        // a floor wardrobe goes against the wall in the nearest place where nothing stands (it used to land on top of the toolbox)
+        const taken = new Set<string>();
+        const cover = (x: number, y: number, w: number, h: number): void => { for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) taken.add(`${x + i},${y + j}`); };
+        const bedPos = { ...DEFAULT_PIECE_POS.bed, ...(meta.bed ?? {}) };
+        const bedFp = skinFootprint("bed", meta.skins?.bed, 2);
+        cover(bedPos.x, bedPos.y, bedFp.w, bedFp.h);
+        for (const k of ["toolbox", "sink", "boombox"] as const) { const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
+        const dimsOf = await c.furniMeta();
+        for (const f of Object.values<any>(meta.furni ?? {})) {
+          const d = SHIPPED_DIMS[f?.kind] ?? dimsOf[f?.kind] ?? { w: 1, h: 1 };
+          const swap = f?.dir === 2 || f?.dir === 6;
+          cover(Number(f?.x) || 0, Number(f?.y) || 0, swap ? d.h : d.w, swap ? d.w : d.h);
+        }
+        const spot = nearestWallSpot(size, taken, skinFootprint("bag", id, 4), pos);
+        if (spot) {
+          c.extra[`roomsMeta/${room}/bag/x`] = spot.x;
+          c.extra[`roomsMeta/${room}/bag/y`] = spot.y;
+          c.extra[`roomsMeta/${room}/bag/dir`] = spot.dir;
+          continue;
+        }
+      }
+      const fp = skinFootprint(part, id, part === "bed" ? 2 : pos.dir);
+      const x = Math.max(0, Math.min(pos.x, size.w - fp.w)), y = Math.max(0, Math.min(pos.y, size.h - fp.h));
+      if (x !== pos.x || y !== pos.y) { c.extra[`roomsMeta/${room}/${part}/x`] = x; c.extra[`roomsMeta/${room}/${part}/y`] = y; }
+    }
+    if (parts === 0) fail("Nothing to change.");
+    if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
+    w.s.blood -= price;
+    return { price, parts };
+  },
+};
 
 /** Selling to 6ixty: weed, ass weed, seeds and what the mixer makes (prices in shared/items.ts sellPrice). */
 export const sellWeed: Action = {

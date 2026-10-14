@@ -38,7 +38,7 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "intercom" | "mixer";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
@@ -47,6 +47,8 @@ export interface FurniKind {
   seatHeight?: number;
   /** lies flat on the floor: you can walk over it and it's drawn underneath everyone */
   flat?: boolean;
+  /** a wall item: hangs on the back wall (facing 4) or the left wall (facing 2); its x/y is the wall tile it hangs next to */
+  wall?: boolean;
   /** nudges the art (64px pixels) if it doesn't sit right on its tiles */
   nudge?: { x: number; y: number };
   /** can be turned to face another way when placed (its footprint swaps when it faces 2 or 6) */
@@ -61,6 +63,7 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 }
 
 import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
+import { BAG_SKINS, BED_SKINS } from "./shared/skins";
 export type { ShopPiece } from "./shared/furniture";
 export { SHOP_KIND_PREFIX, SHOP_PIECES };
 
@@ -69,20 +72,31 @@ const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECE
   nitro: `furni/${SHOP_KIND_PREFIX}${p.id}.nitro`, rotatable: true, ...(p.flat ? { flat: true } : {}), ...(p.seat ? { seat: true, seatHeight: p.seatHeight ?? 14 } : {}),
 } as FurniKind]));
 
+/** The looks the landlord sells for the bed (bed_<id>) and the bag of clothes (bag_<id>): fixed pieces, never placed from a toolbox. */
+const skinKinds = (): Record<string, FurniKind> => Object.fromEntries([
+  ...BED_SKINS.map((s) => [`bed_${s.id}`, { id: `bed_${s.id}`, label: s.label, icon: "🛏️", w: s.w, h: s.h, height: s.height, color: "#6b5a48", placeable: false, nitro: `furni/skin_bed_${s.id}.nitro`, rotatable: true, fixed: true } as FurniKind]),
+  ...BAG_SKINS.map((s) => [`bag_${s.id}`, { id: `bag_${s.id}`, label: s.label, icon: "🚪", w: s.w, h: s.h, height: s.height, color: "#6b5a48", placeable: false, nitro: `furni/skin_bag_${s.id}.nitro`, rotatable: true, fixed: true, opens: "character", ...(s.wall ? { flat: true, wall: true, nudge: { x: 0, y: -(s.lift ?? 0) } } : {}) } as FurniKind]),
+]);
+/** the bag of clothes, or one of the wardrobes you can swap it for */
+export const isBagKind = (kind: string | undefined): boolean => kind === "bag" || (!!kind && kind.startsWith("bag_"));
+
 export const FURNI_KINDS: Record<string, FurniKind> = {
   ...shopKinds(),
+  ...skinKinds(),
   // the growing kit (sold by 6ixty): an empty pot until you plant a seed in it
-  f_planter: { id: "f_planter", label: "Growing kit", icon: "🪴", w: 1, h: 1, height: 44, color: "#d8d8d8", placeable: false, nitro: "furni/mafia_c26_planter_white.nitro", rotatable: true, plant: true },
+  f_planter: { id: "f_planter", label: "Growing kit", icon: "🪴", w: 1, h: 1, height: 36, color: "#d8d8d8", placeable: false, nitro: "furni/f_flowerpot.nitro", rotatable: true, plant: true },
   // the mixer (sold by the vending machine): put it down in your room, tap it, and mix two things into something new
   f_mixer: { id: "f_mixer", label: "Mixer", icon: "🧪", w: 1, h: 1, height: 46, color: "#6b6b7a", placeable: false, nitro: "furni/f_mixer.nitro", rotatable: true, opens: "mixer" },
   // the vending machine in the shop room
   vending: { id: "vending", label: "Vending machine", icon: "🥤", w: 1, h: 1, height: 80, color: "#6b5a48", placeable: false, nitro: "furni/olympics_r16_vendingmchn.nitro", rotatable: true, fixed: true, opens: "vending" },
   // the sink in every player room (like the bed: always there, movable, never removable): fills the watering can
   sink: { id: "sink", label: "Sink", icon: "🚰", w: 1, h: 1, height: 36, color: "#555b66", placeable: false, nitro: "furni/hygge_c25_toiletsink.nitro", rotatable: true, fixed: true, opens: "sink" },
-  // the door intercom next to the door of every player room: click it to choose who may come in
-  intercom: { id: "intercom", label: "Door intercom", icon: "📟", w: 1, h: 1, height: 30, color: "#7a5a2a", placeable: false, nitro: "furni/dimmer_steampunk.nitro", rotatable: true, fixed: true, opens: "intercom", nudge: { x: 30, y: -50 } },
+  // the silver boombox every player room starts with: use a CD on it (6ixty sells one) and the song plays in the room
+  boombox: { id: "boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true, fixed: true },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
+  // the landlord's counter in the corner of the shop room
+  counter: { id: "counter", label: "Counter", icon: "🧾", w: 1, h: 2, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/f_counter.nitro", rotatable: true, fixed: true },
   // the wardrobe in the shop room: click it and the clothing shop opens
   wardrobe: { id: "wardrobe", label: "Wardrobe", icon: "🚪", w: 2, h: 1, height: 90, color: "#6b5a48", placeable: false, nitro: "furni/uni_wardrobe.nitro", rotatable: true, fixed: true, opens: "shop" },
   arcade: { id: "arcade", label: "Arcade machine", icon: "🕹️", w: 1, h: 1, height: 78, color: "#26327a", placeable: false },
@@ -98,7 +112,9 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "flappy", "dumpster"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "flappy", "dumpster"]);
+/** the CD player in the basement or a boombox: both play the CD you use on them */
+export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox";
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
 export const isBodyBag = (kind: string | undefined): boolean => !!kind && /bodybag/.test(kind);
 
@@ -222,14 +238,18 @@ export function tutDef(uid: string): RoomDef {
 }
 
 /** Where the four daily pieces stand in the shop room (every piece is placed facing the same way, each in its own 3x3 corner). */
-export const SHOP_SLOTS: Pt2[] = [{ x: 2, y: 3 }, { x: 7, y: 3 }, { x: 2, y: 7 }, { x: 7, y: 7 }];
-export const SHOP_SIZE = 11;
+export const SHOP_SLOTS: Pt2[] = [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 3, y: 9 }, { x: 9, y: 9 }];
+export const SHOP_SIZE = 15;
 export const DISPLAY_PREFIX = "shop_disp";
 export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
 
 /** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
 export function shopDef(picks: string[]): RoomDef {
-  const furni: PlacedFurni[] = [{ id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }, { id: "shop_vending", kind: "vending", x: 8, y: 0, dir: 4 }];
+  const furni: PlacedFurni[] = [
+    { id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 0 }, { id: "shop_vending", kind: "vending", x: 8, y: 0, dir: 4 },
+    // the landlord's counter in the right corner: he stands behind it (see LANDLORD in npc.ts)
+    { id: "shop_counter", kind: "counter", x: 13, y: 1, dir: 2 },
+  ];
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;
     const slot = SHOP_SLOTS[i];
@@ -245,7 +265,7 @@ export function shopDef(picks: string[]): RoomDef {
 }
 
 /** The built-in lobby pieces can't be picked up; the ones the admin added can. */
-export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id === SINK_ID || id === INTERCOM_ID || id.startsWith("shop_");
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id === SINK_ID || id === BOOMBOX_ID || id.startsWith("shop_");
 
 export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
   return onValue(ref(db, "lobby/furni"), (s) => {
@@ -265,11 +285,11 @@ export const BAG = { x: 7, y: 0, dir: 2 };
 export const TOOLBOX_ID = "toolbox";
 export const TOOLBOX = { x: 6, y: 0, dir: 4 };
 /** The sink starts in the far left corner of the room, facing the camera. */
+export const BOOMBOX_ID = "boombox";
+export const BOOMBOX = { x: 0, y: 3, dir: 4 };
+
 export const SINK_ID = "sink";
 export const SINK = { x: 0, y: 7, dir: 4 };
-/** The door intercom hangs on the back wall right next to the door. */
-export const INTERCOM_ID = "intercom";
-export const INTERCOM = { x: 2, y: 0, dir: 4 };
 /** The tile you stand on when you get out of bed (and where you start every login). */
 export const BED_SIDE = { x: 4, y: 1 };
 /** The tile the sleeper's head is on (the end of the bed by the pillow). */
@@ -289,12 +309,17 @@ export interface RoomMeta {
   bag?: { x: number; y: number; dir?: number };
   toolbox?: { x: number; y: number; dir?: number };
   sink?: { x: number; y: number; dir?: number };
-  intercom?: { x: number; y: number; dir?: number };
+  boombox?: { x: number; y: number; dir?: number };
+  /** the looks bought from the landlord (the server writes these): ids from shared/skins.ts */
+  skins?: { bed?: string; bag?: string };
 }
 
 /** The tile the sleeper's head is on (the pillow end of the bed), and the tile beside the bed you step out onto. */
 export const bedHead = (bed: { x: number; y: number }) => ({ x: bed.x, y: bed.y });
 export const bedSide = (bed: { x: number; y: number }) => ({ x: bed.x + 1, y: bed.y + 1 });
+
+/** the kind a fixed piece is drawn as: the plain one, or the look the player bought */
+const skinKind = (part: "bed" | "bag", skin: string | undefined): string => (skin && FURNI_KINDS[part + "_" + skin] ? part + "_" + skin : part);
 
 export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   const theme: RoomTheme = { ...DEFAULT_THEME, ...(meta.theme ?? {}) };
@@ -303,12 +328,15 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
     .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect } } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
-  const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), intercom = at(meta.intercom, INTERCOM);
-  furni.unshift({ id: BED_ID, kind: "bed", x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: "bag", x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, { id: INTERCOM_ID, kind: "intercom", x: intercom.x, y: intercom.y, dir: intercom.dir });
+  const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), boombox = at(meta.boombox, BOOMBOX);
+  furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, { id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir });
+  // the landlord makes rooms bigger (the server writes w and h)
+  const side = (n: unknown) => (typeof n === "number" && n >= ROOM_W && n <= 14 ? Math.floor(n) : ROOM_W);
+  const w = side(meta.w), h = side(meta.h);
   const rug: RugRect | null = theme.rug
-    ? { x0: Math.floor((ROOM_W - 4) / 2), y0: Math.floor((ROOM_H - 4) / 2), w: 4, h: 4 }
+    ? { x0: Math.floor((w - 4) / 2), y0: Math.floor((h - 4) / 2), w: 4, h: 4 }
     : null;
-  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: normAccess(meta.access), w: ROOM_W, h: ROOM_H, theme, rug, furni, doorX: DOOR_X };
+  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: normAccess(meta.access), w, h, theme, rug, furni, doorX: DOOR_X };
 }
 
 // ---- database helpers ----------------------------------------------------------------

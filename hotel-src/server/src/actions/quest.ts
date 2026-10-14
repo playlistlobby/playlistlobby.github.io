@@ -51,10 +51,7 @@ export const sixty: Action = {
       case "jobReward": {
         if (s.tutorial !== 5) fail("He has nothing for you right now.");
         if (findSlot(s.inventory, "lighter") < 0) fail("You haven't got a lighter.");
-        const next = addToInv(s.inventory, { item: "syringe", qty: 1 });
-        if (!next) fail("Your inventory is full");
-        s.inventory = next!;
-        s.blood += JOB_REWARD;
+        s.blood += JOB_REWARD; // just the 5 drops (no syringe any more)
         s.tutorial = 6;
         return {};
       }

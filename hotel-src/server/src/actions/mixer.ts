@@ -28,6 +28,7 @@ export const mix: Action = {
     if (!r) fail("Those don't mix.");
     let next = takeOneFrom(w.s.inventory, ia);
     next = takeOneFrom(next, ib);
+    if (r!.back) { const withBack = addToInv(next, r!.back); if (!withBack) fail("Your inventory is full."); next = withBack!; } // (the emptied can: its old slot is free)
     w.s.inventory = next;
     c.extra[`${path}/mixJob`] = { item: r!.give.item, qty: r!.give.qty, doneAt: c.now + MIX_MS };
     return { note: "The mixer starts up. It needs 10 minutes.", doneAt: c.now + MIX_MS };

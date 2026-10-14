@@ -2,6 +2,7 @@
 import { auth, useEmulator } from "./firebase";
 import { API_URL } from "./apiConfig";
 import type { Snapshot } from "./shared/economy";
+import { trServer } from "./daRuntime";
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
@@ -30,6 +31,8 @@ export async function act<T = Record<string, any>>(action: string, args: object 
   let r = await call(action, args, false);
   if (r.status === 401) r = await call(action, args, true); // the login token may just have expired
   const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; state?: Snapshot; data?: T } | null;
-  if (!j || !j.ok || !j.state) throw new ApiError(j?.error ?? "The server had a problem. Try again.", r.status);
-  return { state: j.state, data: (j.data ?? {}) as T };
+  if (!j || !j.ok || !j.state) throw new ApiError(trServer(j?.error ?? "The server had a problem. Try again."), r.status);
+  const data = (j.data ?? {}) as Record<string, unknown>;
+  if (typeof data.note === "string") data.note = trServer(data.note); // the server writes its notes in English
+  return { state: j.state, data: data as T };
 }

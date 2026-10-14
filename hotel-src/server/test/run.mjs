@@ -93,7 +93,7 @@ console.log("--- the introduction and the lighter job");
   ok("buy a lighter from the vending machine", await act(u, "buyVending", { id: "lighter" }));
   const jr = await act(u, "sixty", { step: "jobReward" });
   ok("reward with the lighter", jr);
-  check("syringe and 5 blood", total(jr.state.inventory, "syringe") === 1 && jr.state.blood === 7 - 2 + 5);
+  check("just the 5 blood, no syringe", total(jr.state.inventory, "syringe") === 0 && jr.state.blood === 7 - 2 + 5);
 }
 
 console.log("--- shops can't be fooled");
@@ -185,10 +185,12 @@ console.log("--- the mixer");
   const lit2 = await act(a, "light", { slot: slotOf(fin.state, "blunt_chem") });
   ok("light the research blunt", lit2);
   const litSlot2 = lit2.state.inventory.findIndex((x) => x && x.lit);
-  await owner("PATCH", `users/${a.uid}/inventory/${litSlot2}`, { lit: Date.now() - 70_000 });
+  await owner("PATCH", `users/${a.uid}/inventory/${litSlot2}`, { lit: Date.now() - 1_000 });
+  bad("a research blunt is not done after 1 second", await act(a, "finishSmoke", { slot: litSlot2 }));
+  await owner("PATCH", `users/${a.uid}/inventory/${litSlot2}`, { lit: Date.now() - 7_000 });
   const fin2 = await act(a, "finishSmoke", { slot: litSlot2 });
   ok("finish the research blunt", fin2);
-  check("the same, and 30 seconds of flashing and smoke", fin2.state.speedUntil - Date.now() > 100_000 && fin2.state.chemUntil - Date.now() > 20_000 && fin2.state.chemUntil - Date.now() <= 31_000, JSON.stringify([fin2.state.speedUntil - Date.now(), fin2.state.chemUntil - Date.now()]));
+  check("5 seconds of smoke, then 90 seconds of speed, double blood and flashing", fin2.state.speedUntil - Date.now() > 80_000 && fin2.state.speedUntil - Date.now() <= 91_000 && fin2.state.chemUntil - Date.now() > 80_000 && fin2.state.chemUntil - Date.now() <= 91_000 && fin2.state.boostUntil - Date.now() > 80_000 && fin2.state.boostUntil - Date.now() <= 91_000, JSON.stringify([fin2.state.speedUntil - Date.now(), fin2.state.chemUntil - Date.now(), fin2.state.boostUntil - Date.now()]));
 }
 
 console.log("--- selling weed");
@@ -272,7 +274,7 @@ console.log("--- bulk drops go short (5+ in a public room)");
 
 console.log("--- player rooms keep drops, the toolbox and furniture");
 {
-  const a = await fresh("t_room", { inventory: { 0: { item: "cigarette", qty: 15 }, 1: { item: "weed", qty: 2, ass: true }, 2: { item: "f_telephone", qty: 1 }, 3: { item: "lockpick", qty: 1 } } });
+  const a = await fresh("t_room", { inventory: { 0: { item: "cigarette", qty: 15 }, 1: { item: "weed", qty: 2, ass: true }, 2: { item: "f_telephone", qty: 1 }, 3: { item: "lighter", qty: 1 } } });
   await act(a, "sync");
   const room = `u_${a.uid}`;
   await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_room", name: "t_room's room", access: "knock", w: 8, h: 8 });
@@ -446,6 +448,247 @@ console.log("--- looks and clothes");
   ok("buy a premium hairstyle", buy);
   check("the server charged 4 (not what the browser says)", buy.state.blood === 6 && buy.state.owned.hr_9999 === true);
   ok("now it can be worn", await act(a, "setLook", { figure: "hr-9999-1.hd-190-1", gender: "M" }));
+}
+
+console.log("--- the landlord's room upgrades");
+{
+  const a = await fresh("t_land", { blood: 200 });
+  await act(a, "sync");
+  const room = `u_${a.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_land", name: "t_land's room", access: "knock", w: 8, h: 8 });
+  bad("you have to be in the shop", await act(a, "buyRoomUpgrade", {}));
+  await stand(a, "shop", 5, 5);
+  const u1 = await act(a, "buyRoomUpgrade", {});
+  ok("buy the first upgrade", u1);
+  check("25 drops, level 1", u1.state.blood === 175 && u1.state.roomLevel === 1, JSON.stringify([u1.state.blood, u1.state.roomLevel]));
+  const m1 = await owner("GET", `roomsMeta/${room}`);
+  check("the room is 10x10", m1.w === 10 && m1.h === 10, JSON.stringify([m1.w, m1.h]));
+  await stand(a, room, 3, 3);
+  ok("furniture fits in the bigger room", await act(a, "furniPlace", { source: "storage", kind: "f_sofa", x: 8, y: 8, dir: 0 }));
+  const u2 = await act(a, "buyRoomUpgrade", {});
+  ok("buy the second", u2);
+  check("50 drops, 12x12", u2.state.blood === 125 && (await owner("GET", `roomsMeta/${room}/w`)) === 12);
+  await stand(a, "shop", 5, 5);
+  const u3 = await act(a, "buyRoomUpgrade", {});
+  ok("buy the third", u3);
+  check("80 drops, 14x14", u3.state.blood === 45 && (await owner("GET", `roomsMeta/${room}/h`)) === 14);
+  bad("there is no fourth upgrade", await act(a, "buyRoomUpgrade", {}));
+  const poor = await fresh("t_land2", { blood: 30 });
+  await act(poor, "sync");
+  await owner("PUT", `roomsMeta/u_${poor.uid}`, { owner: poor.uid, ownerName: "x", name: "x room", access: "knock", w: 8, h: 8 });
+  await stand(poor, "shop", 5, 5);
+  ok("25 drops is enough for the first", await act(poor, "buyRoomUpgrade", {}));
+  bad("5 drops is not enough for the second", await act(poor, "buyRoomUpgrade", {}));
+}
+
+console.log("--- the landlord's colours");
+{
+  const a = await fresh("t_paint", { blood: 20 });
+  await act(a, "sync");
+  const room = `u_${a.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_paint", name: "t_paint's room", access: "knock", w: 8, h: 8, theme: { floorA: "#8d7a5f", floorB: "#95826a", wall: "#a8aeb0", rug: false, rugColor: "#c9544f", floorTex: "tiles2" } });
+  bad("you have to be in the shop", await act(a, "roomColors", { floor: "#a2713f" }));
+  await stand(a, "shop", 5, 5);
+  bad("a bad colour", await act(a, "roomColors", { floor: "red" }));
+  bad("nothing picked", await act(a, "roomColors", {}));
+  bad("the same walls again is nothing to pay for", await act(a, "roomColors", { wall: "#a8aeb0" }));
+  const p1 = await act(a, "roomColors", { floor: "#a2713f" });
+  ok("a new floor", p1);
+  check("2 drops", p1.state.blood === 18, String(p1.state.blood));
+  const th = await owner("GET", `roomsMeta/${room}/theme`);
+  check("floor colour set, pattern gone", th.floorA === "#a2713f" && th.floorB && th.floorTex === undefined, JSON.stringify(th));
+  const p2 = await act(a, "roomColors", { floor: "#a2713f", wall: "#d9a38a", rug: "#4f7bc9" });
+  ok("walls and carpet (the floor is the same, so it is free)", p2);
+  check("4 more drops", p2.state.blood === 14, String(p2.state.blood));
+  const th2 = await owner("GET", `roomsMeta/${room}/theme`);
+  check("walls and carpet are set", th2.wall === "#d9a38a" && th2.rug === true && th2.rugColor === "#4f7bc9", JSON.stringify(th2));
+  const p3 = await act(a, "roomColors", { rug: "none" });
+  ok("take the carpet away", p3);
+  check("2 more drops, carpet off", p3.state.blood === 12 && (await owner("GET", `roomsMeta/${room}/theme/rug`)) === false);
+  const poor = await fresh("t_paint2", { blood: 3 });
+  await act(poor, "sync");
+  await owner("PUT", `roomsMeta/u_${poor.uid}`, { owner: poor.uid, ownerName: "x", name: "x room", access: "knock", w: 8, h: 8, theme: { floorA: "#8d7a5f", floorB: "#95826a", wall: "#a8aeb0", rug: false, rugColor: "#c9544f" } });
+  await stand(poor, "shop", 5, 5);
+  bad("3 drops can't pay for 3 parts (6)", await act(poor, "roomColors", { floor: "#a2713f", wall: "#d9a38a", rug: "#4f7bc9" }));
+  check("and nothing was changed", (await owner("GET", `roomsMeta/u_${poor.uid}/theme/floorA`)) === "#8d7a5f");
+}
+
+console.log("--- the landlord's bed and wardrobe");
+{
+  const a = await fresh("t_skin", { blood: 100 });
+  await act(a, "sync");
+  const room = `u_${a.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_skin", name: "t_skin's room", access: "knock", w: 8, h: 8, bag: { x: 7, y: 7, dir: 2 } });
+  bad("you have to be in the shop", await act(a, "roomSkins", { bed: "gold" }));
+  await stand(a, "shop", 5, 5);
+  bad("a look that isn't sold", await act(a, "roomSkins", { bed: "diamond" }));
+  bad("nothing picked", await act(a, "roomSkins", {}));
+  bad("the plain bed is what you have", await act(a, "roomSkins", { bed: "default" }));
+  const s1 = await act(a, "roomSkins", { bed: "gold", bag: "plain" });
+  ok("buy the gold bed and a wardrobe", s1);
+  check("40 + 20 = 60 drops", s1.state.blood === 40, String(s1.state.blood));
+  const m = await owner("GET", `roomsMeta/${room}`);
+  check("the looks are stored", m.skins && m.skins.bed === "gold" && m.skins.bag === "plain", JSON.stringify(m.skins));
+  // a floor wardrobe goes against a wall, in the nearest place where nothing stands (the toolbox is at 6,0, the door at 1,0, the bed along y 0)
+  const bagCovers = (b) => (b.dir === 2 || b.dir === 6 ? [[b.x, b.y], [b.x, b.y + 1]] : [[b.x, b.y], [b.x + 1, b.y]]);
+  check("the wardrobe stands against a wall", (m.bag.x === 0 || m.bag.y === 0) && (m.bag.dir === 2 || m.bag.dir === 4), JSON.stringify(m.bag));
+  check("and not on the toolbox, the sink, the boombox or the bed", !bagCovers(m.bag).some(([x, y]) => (x === 6 && y === 0) || (x === 0 && (y === 7 || y === 3)) || (y === 0 && x >= 3 && x <= 5)), JSON.stringify(m.bag));
+  check("it is the nearest such place (0,5 turned to the left wall)", m.bag.x === 0 && m.bag.y === 5 && m.bag.dir === 2, JSON.stringify(m.bag));
+  const s2 = await act(a, "roomSkins", { bed: "default" });
+  ok("back to the plain bed is free", s2);
+  check("no charge", s2.state.blood === 40);
+  const s3 = await act(a, "roomSkins", { bed: "gold" });
+  ok("the gold bed again is free (already bought)", s3);
+  check("still 40", s3.state.blood === 40);
+  bad("the gothic bed is 60, too much now", await act(a, "roomSkins", { bed: "gothic" }));
+  // wall items hang on the back wall
+  const w1 = await act(a, "roomSkins", { bag: "coatrack" });
+  ok("a coat rack", w1);
+  const m3 = await owner("GET", `roomsMeta/${room}/bag`);
+  check("it hangs on the back wall, facing the room, at the right end", m3.y === 0 && m3.dir === 4 && m3.x === 7, JSON.stringify(m3));
+  const w2 = await act(a, "roomSkins", { bag: "tall" });
+  ok("a tall wardrobe", w2);
+  const m4 = await owner("GET", `roomsMeta/${room}/bag`);
+  check("two tiles wide, so it starts at 6", m4.y === 0 && m4.dir === 4 && m4.x === 6, JSON.stringify(m4));
+}
+
+console.log("--- kodimagnyl, the lean and the super pill");
+{
+  const slotOf = (st, item, ass) => st.inventory.findIndex((x) => x && x.item === item && !!x.ass === !!ass);
+  const a = await fresh("t_kodi", { blood: 30, inventory: { 0: { item: "pill", qty: 1 }, 1: { item: "wateringcan_full", qty: 1 } } });
+  await act(a, "sync");
+  await stand(a, "shop", 5, 5);
+  const v = await act(a, "buyVending", { id: "kodimagnyl" });
+  ok("buy kodimagnyl from the vending machine", v);
+  check("4 drops", v.state.blood === 26, String(v.state.blood));
+  check("it stacks", total(v.state.inventory, "kodimagnyl") === 1);
+  const v2 = await act(a, "buyVending", { id: "kodimagnyl" });
+  check("two now, in one slot", total(v2.state.inventory, "kodimagnyl") === 2 && v2.state.inventory.filter((x) => x && x.item === "kodimagnyl").length === 1);
+  // kodimagnyl + water: codeine, and the can comes back empty
+  const cd = await act(a, "combine", { a: slotOf(v2.state, "kodimagnyl"), b: slotOf(v2.state, "wateringcan_full") });
+  ok("kodimagnyl and the full can make codeine", cd);
+  check("one codeine, an empty can, one kodimagnyl left", total(cd.state.inventory, "codeine") === 1 && total(cd.state.inventory, "wateringcan") === 1 && total(cd.state.inventory, "wateringcan_full") === 0 && total(cd.state.inventory, "kodimagnyl") === 1);
+  bad("an empty can doesn't work", await act(a, "combine", { a: slotOf(cd.state, "kodimagnyl"), b: slotOf(cd.state, "wateringcan") }));
+  // the super pill is made in the mixer: pill + kodimagnyl
+  const room = `u_${a.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_kodi", name: "t_kodi's room", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 2, y: 2 } } });
+  await stand(a, room, 4, 4);
+  const mx = await act(a, "mix", { fid: "mx", a: slotOf(cd.state, "pill"), b: slotOf(cd.state, "kodimagnyl") });
+  ok("pill + kodimagnyl in the mixer", mx);
+  await owner("PATCH", `roomsMeta/${room}/furni/mx/mixJob`, { doneAt: Date.now() - 1000 });
+  const col = await act(a, "mixCollect", { fid: "mx" });
+  ok("collect", col);
+  check("a super pill", total(col.state.inventory, "superpill") === 1);
+  // the lean in the mixer too: kodimagnyl + a full watering can, and the can is back empty at once
+  {
+    const l = await fresh("t_lean", { inventory: { 0: { item: "kodimagnyl", qty: 1 }, 1: { item: "wateringcan_full", qty: 1 } } });
+    await act(l, "sync");
+    await owner("PUT", `roomsMeta/u_${l.uid}`, { owner: l.uid, ownerName: "t_lean", name: "t_lean's room", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 2, y: 2 } } });
+    await stand(l, `u_${l.uid}`, 4, 4);
+    const lm = await act(l, "mix", { fid: "mx", a: 0, b: 1 });
+    ok("kodimagnyl + full can in the mixer", lm);
+    check("the can came back empty, the kodimagnyl is gone", total(lm.state.inventory, "wateringcan") === 1 && total(lm.state.inventory, "wateringcan_full") === 0 && total(lm.state.inventory, "kodimagnyl") === 0);
+    await owner("PATCH", `roomsMeta/u_${l.uid}/furni/mx/mixJob`, { doneAt: Date.now() - 1000 });
+    const lc = await act(l, "mixCollect", { fid: "mx" });
+    check("and the lean comes out", total(lc.state.inventory, "codeine") === 1);
+  }
+  // swallowing it: 4x for a minute
+  const sp = await act(a, "consume", { slot: slotOf(col.state, "superpill") });
+  ok("swallow the super pill", sp);
+  check("4x speed for about a minute", sp.state.speedMult === 4 && sp.state.speedUntil - Date.now() > 50_000 && sp.state.speedUntil - Date.now() <= 61_000, JSON.stringify([sp.state.speedMult, sp.state.speedUntil - Date.now()]));
+  // drinking the lean: an hour, the cup for 2 minutes, bins give two things and reload in 5 minutes
+  const dr = await act(a, "consume", { slot: slotOf(sp.state, "codeine") });
+  ok("drink the codeine", dr);
+  check("an hour of lean and 2 minutes of cup", dr.state.leanUntil - Date.now() > 3_500_000 && dr.state.cupUntil - Date.now() > 100_000 && dr.state.cupUntil - Date.now() <= 121_000, JSON.stringify([dr.state.leanUntil - Date.now(), dr.state.cupUntil - Date.now()]));
+  bad("you can't drink a lighter", await act(a, "consume", { slot: 0 }));
+  await stand(a, "lobby", 5, 5);
+  const s1 = await act(a, "dumpster", { can: "lobby2", room: "lobby" });
+  ok("search a bin with the lean", s1);
+  check("two things came out", (s1.data.items ?? []).length === 2, JSON.stringify(s1.data));
+  await owner("PATCH", `users/${a.uid}/dumpsters`, { lobby2: Date.now() - 6 * 60_000 });
+  ok("the same bin again after 6 minutes (it reloads in 5 with the lean)", await act(a, "dumpster", { can: "lobby2", room: "lobby" }));
+  await owner("PATCH", `users/${a.uid}/dumpsters`, { lobby2: Date.now() - 3 * 60_000 });
+  bad("not after 3 minutes", await act(a, "dumpster", { can: "lobby2", room: "lobby" }));
+  // without the lean: one thing, 10 minutes
+  const plain = await fresh("t_kodi2");
+  await act(plain, "sync");
+  await stand(plain, "lobby", 5, 5);
+  const p1 = await act(plain, "dumpster", { can: "lobby2", room: "lobby" });
+  ok("search a bin without the lean", p1);
+  check("one thing", (p1.data.items ?? []).length === 1);
+  await owner("PATCH", `users/${plain.uid}/dumpsters`, { lobby2: Date.now() - 6 * 60_000 });
+  bad("6 minutes is not enough without the lean", await act(plain, "dumpster", { can: "lobby2", room: "lobby" }));
+  // 6ixty buys them
+  const sell = await fresh("t_kodi3", { inventory: { 0: { item: "codeine", qty: 1 }, 1: { item: "superpill", qty: 1 }, 2: { item: "kodimagnyl", qty: 1 } } });
+  await act(sell, "sync");
+  const s8 = await act(sell, "sellWeed", { slot: 0, qty: 1 });
+  ok("sell the lean", s8);
+  check("8 drops", s8.state.blood === 8, String(s8.state.blood));
+  const s12 = await act(sell, "sellWeed", { slot: slotOf(s8.state, "superpill"), qty: 1 });
+  ok("sell the super pill", s12);
+  check("12 more", s12.state.blood === 20, String(s12.state.blood));
+  bad("he doesn't buy the plain kodimagnyl", await act(sell, "sellWeed", { slot: slotOf(s12.state, "kodimagnyl"), qty: 1 }));
+}
+
+console.log("--- the CD and the boombox");
+{
+  const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
+  const a = await fresh("t_cd", { blood: 5 });
+  await act(a, "sync");
+  const room = `u_${a.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_cd", name: "t_cd room", access: "open", w: 8, h: 8 });
+  const b1 = await act(a, "buySixty", { item: "cd" });
+  ok("buy the CD from 6ixty", b1);
+  check("1 drop", b1.state.blood === 4 && total(b1.state.inventory, "cd") === 1, String(b1.state.blood));
+  bad("it can't be bought twice", await act(a, "buySixty", { item: "cd" }));
+  bad("the player needs you in the room", await act(a, "cdInsert", { slot: slotOf(b1.state, "cd"), room, durationMs: 180000 }));
+  await stand(a, room, 4, 4);
+  const ins = await act(a, "cdInsert", { slot: slotOf(b1.state, "cd"), room, durationMs: 180000 });
+  ok("put the CD in the boombox", ins);
+  const st0 = await owner("GET", `rooms/${room}/cdplayer`);
+  check("the song is playing", st0 && st0.by === a.uid && st0.title === "Freakme" && st0.endsAt - st0.startedAt === 180000, JSON.stringify(st0));
+  check("the CD is loaned to this room", ins.state.inventory.some((x) => x && x.item === "cd" && x.inPlayer === room));
+  // a visitor can't use the boombox while it plays, and can't control it
+  const v = await fresh("t_cd2", { inventory: { 0: { item: "cd", qty: 1 } } });
+  await act(v, "sync");
+  await stand(v, room, 2, 2);
+  bad("busy", await act(v, "cdInsert", { slot: 0, room, durationMs: 100000 }));
+  bad("a visitor can't pause it", await act(v, "cdControl", { room, op: "pause" }));
+  ok("the inserter pauses it", await act(a, "cdControl", { room, op: "pause" }));
+  const st1 = await owner("GET", `rooms/${room}/cdplayer`);
+  check("paused", typeof st1.pausedAt === "number");
+  bad("still busy while paused", await act(v, "cdInsert", { slot: 0, room, durationMs: 100000 }));
+  await owner("PATCH", `rooms/${room}/cdplayer`, { pausedAt: Date.now() - 5_000, startedAt: Date.now() - 65_000 });
+  ok("play on", await act(a, "cdControl", { room, op: "play" }));
+  const st2 = await owner("GET", `rooms/${room}/cdplayer`);
+  const into = Date.now() - st2.startedAt;
+  check("it carries on from where it stopped (about 60 s in)", st2.pausedAt === undefined && into > 55_000 && into < 66_000, JSON.stringify([st2.pausedAt, into]));
+  ok("play from the start", await act(a, "cdControl", { room, op: "restart" }));
+  const st3 = await owner("GET", `rooms/${room}/cdplayer`);
+  check("back at the start", Date.now() - st3.startedAt < 5_000);
+  const ej = await act(a, "cdControl", { room, op: "eject" });
+  ok("eject", ej);
+  check("the song is off and the CD is free", (await owner("GET", `rooms/${room}/cdplayer`)) === null && !ej.state.inventory.some((x) => x && x.item === "cd" && x.inPlayer));
+  // the room's owner can eject somebody else's CD
+  ok("a visitor puts theirs in", await act(v, "cdInsert", { slot: 0, room, durationMs: 100000 }));
+  ok("the owner ejects it", await act(a, "cdControl", { room, op: "eject" }));
+  const vs = await state(v);
+  check("the visitor has the CD back", vs.inventory.some((x) => x && x.item === "cd" && !x.inPlayer));
+  ok("nothing playing: nothing to control", { ok: (await act(a, "cdControl", { room, op: "pause" })).ok === false });
+}
+
+console.log("--- /give");
+{
+  const g = await fresh("t_give");
+  await act(g, "sync");
+  const r1 = await act(g, "debug", { cmd: "give", item: "weed", qty: 3 });
+  ok("give weed", r1);
+  check("3 weed in one stack", total(r1.state.inventory, "weed") === 3);
+  const r2 = await act(g, "debug", { cmd: "give", item: "f_sofa", qty: 2 });
+  check("two sofas, a slot each", total(r2.state.inventory, "f_sofa") === 2 && r2.state.inventory.filter((x) => x && x.item === "f_sofa").length === 2);
+  const r3 = await act(g, "debug", { cmd: "give", item: "codeine", qty: 1 });
+  check("anything: codeine", total(r3.state.inventory, "codeine") === 1);
+  bad("an item that does not exist", await act(g, "debug", { cmd: "give", item: "unicorn", qty: 1 }));
 }
 
 console.log(`\n${fails ? `${fails} FAILED, ${passes} passed` : `all ${passes} passed`}`);

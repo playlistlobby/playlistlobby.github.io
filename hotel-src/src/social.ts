@@ -446,13 +446,6 @@ class SocialStore {
     return () => { window.clearTimeout(timer); offInvite(); offKnock(); };
   }
 
-  /** A lockpick (used up by the server) lets me into someone's room until I disconnect: the invite goes away when I do. */
-  armLockpickCleanup(owner: string): void {
-    const me = this.me;
-    if (!me) return;
-    void onDisconnect(ref(db, `roomInvites/${ownRoomId(owner)}/${me.uid}`)).remove();
-  }
-
   /** Owner: let a knocker in (they get access until I log off) or send them away. */
   async answerKnock(visitor: string, allow: boolean): Promise<void> {
     const me = this.me!;

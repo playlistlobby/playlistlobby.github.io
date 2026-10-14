@@ -1,6 +1,6 @@
 // The toolbox in your own room: storing things, and putting furniture down / moving it / taking it back. A piece exists in exactly one place
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
-import { Action, ID_RE, int, requireOwnRoom, text } from "./util";
+import { Action, ID_RE, int, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, MAX_FURNI, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
@@ -57,10 +57,10 @@ export const takeItem: Action = {
 };
 
 const DIRS = [0, 2, 4, 6];
-function fits(dims: { w: number; h: number }, x: number, y: number, dir: number): boolean {
+function fits(dims: { w: number; h: number }, x: number, y: number, dir: number, size: { w: number; h: number }): boolean {
   const swap = dir === 2 || dir === 6;
   const w = swap ? dims.h : dims.w, h = swap ? dims.w : dims.h;
-  return x >= 0 && y >= 0 && x + w <= 8 && y + h <= 8;
+  return x >= 0 && y >= 0 && x + w <= size.w && y + h <= size.h;
 }
 const newRowId = (now: number): string => `f${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
@@ -71,6 +71,7 @@ export const furniPlace: Action = {
     const w = await c.user();
     const dir = int(a.dir ?? 0, 0, 6, "facing");
     if (!DIRS.includes(dir)) fail("Bad facing.");
+    const size = await roomSize(c, room);
     const rows = (await c.db.get<Record<string, unknown>>(`roomsMeta/${room}/furni`)) ?? {};
     if (Object.keys(rows).length >= MAX_FURNI) fail("The room is full of furniture.");
     let kind: string;
@@ -81,14 +82,14 @@ export const furniPlace: Action = {
       kind = it!.item;
       const dims = await c.placeableDims(kind);
       if (!dims) fail("That can't be put down.");
-      if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir)) fail("That doesn't fit in the room.");
+      if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir, size)) fail("That doesn't fit in the room.");
       w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1);
     } else {
       kind = text(a.kind, KEY_RE, "piece");
       if ((w.s.storage[kind] ?? 0) < 1) fail("There's none of that in storage.");
       const dims = await c.placeableDims(kind);
       if (!dims) fail("That can't be put down.");
-      if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir)) fail("That doesn't fit in the room.");
+      if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir, size)) fail("That doesn't fit in the room.");
       if (w.s.storage[kind] > 1) w.s.storage[kind] -= 1; else delete w.s.storage[kind];
     }
     c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}) };
@@ -108,7 +109,7 @@ export const furniMove: Action = {
     const dir = int(a.dir ?? 0, 0, 6, "facing");
     if (!DIRS.includes(dir)) fail("Bad facing.");
     const x = int(a.x, 0, 15, "spot"), y = int(a.y, 0, 15, "spot");
-    if (!fits(dims!, x, y, dir)) fail("That doesn't fit in the room.");
+    if (!fits(dims!, x, y, dir, await roomSize(c, room))) fail("That doesn't fit in the room.");
     c.extra[`roomsMeta/${room}/furni/${id}/x`] = x;
     c.extra[`roomsMeta/${room}/furni/${id}/y`] = y;
     c.extra[`roomsMeta/${room}/furni/${id}/dir`] = dir || null;

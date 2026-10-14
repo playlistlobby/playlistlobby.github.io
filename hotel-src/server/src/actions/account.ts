@@ -3,7 +3,7 @@ import { Action, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { STARTER_FURNITURE, STARTER_ITEMS, START_BLOOD } from "../../../src/shared/economy";
 import { addToInv } from "../../../src/shared/economy";
-import { DISABLED_ITEMS, ITEM_IDS, SMOKABLE, SMOKE_MS } from "../../../src/shared/items";
+import { DISABLED_ITEMS, ITEM_IDS, SMOKABLE, smokeMsOf } from "../../../src/shared/items";
 
 const CLOTHING_SLOTS = new Set(["hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", "cp", "ca", "lg", "sh", "wa"]);
 
@@ -23,7 +23,7 @@ export const sync: Action = {
       for (const item of starters) { const next = addToInv(s.inventory, { item, qty: 1 }); if (next) s.inventory = next; }
     }
     // a cigarette lit long ago (the page was closed meanwhile) is a butt by now
-    s.inventory = s.inventory.map((it) => (it && SMOKABLE[it.item] && it.lit && c.now - it.lit > SMOKE_MS + 5000 ? { item: "cigbutt", qty: 1 } : it));
+    s.inventory = s.inventory.map((it) => (it && SMOKABLE[it.item] && it.lit && c.now - it.lit > smokeMsOf(it.item) + 5000 ? { item: "cigbutt", qty: 1 } : it));
     if (raw.blood === undefined) s.blood = START_BLOOD;
     if (raw.createdAt === undefined) c.extra[`users/${c.uid}/createdAt`] = c.now;
     return {};

@@ -1,0 +1,5872 @@
+{
+ "T0001": {
+  "en": "6ixPlanet",
+  "da": "6ixPlanet",
+  "where": "index.html:7"
+ },
+ "T0002": {
+  "en": "Bad look.",
+  "da": "Fym?",
+  "where": "server/src/actions/account.ts:37"
+ },
+ "T0003": {
+  "en": "That isn't clothing.",
+  "da": "Det der er ikke tøj...",
+  "where": "server/src/actions/account.ts:43"
+ },
+ "T0004": {
+  "en": "You don't own all of that yet.",
+  "da": "Du ejer ikke dette endu..",
+  "where": "server/src/actions/account.ts:46"
+ },
+ "T0005": {
+  "en": "Nothing to buy.",
+  "da": "Intet til salg",
+  "where": "server/src/actions/account.ts:60"
+ },
+ "T0006": {
+  "en": "Bad item.",
+  "da": "Fungerer ikke..",
+  "where": "server/src/actions/account.ts:65"
+ },
+ "T0007": {
+  "en": "That isn't for sale.",
+  "da": "Dette er ikke til salg..",
+  "where": "server/src/actions/account.ts:67  |  server/src/actions/shop.ts:123"
+ },
+ "T0008": {
+  "en": "Not enough drops of blood",
+  "da": "Du for broke..",
+  "where": "server/src/actions/account.ts:71"
+ },
+ "T0009": {
+  "en": "That isn't a CD you can use.",
+  "da": "Denne CD er ikke brugbar.",
+  "where": "server/src/actions/cd.ts:14"
+ },
+ "T0010": {
+  "en": "The CD player is busy.",
+  "da": "CD afspilleren er igang med noget",
+  "where": "server/src/actions/cd.ts:16"
+ },
+ "T0011": {
+  "en": "(test) You got {n} drops of blood.",
+  "da": "Du fik {n} bloddråber!",
+  "where": "server/src/actions/debug.ts:17"
+ },
+ "T0012": {
+  "en": "(test) You got one weed, one ass weed, a blunt wrap and joint paper.",
+  "da": "Du fik det weed shi",
+  "where": "server/src/actions/debug.ts:27"
+ },
+ "T0013": {
+  "en": "There's no item called that.",
+  "da": "Findes ikke",
+  "where": "server/src/actions/debug.ts:32"
+ },
+ "T0014": {
+  "en": "(test) You got {given} x {item}{…}{…}.",
+  "da": "You got {given} x {item}{…}{…}.",
+  "where": "server/src/actions/debug.ts:46"
+ },
+ "T0015": {
+  "en": "(your pockets are full)",
+  "da": "(Dine lommer er fulde)",
+  "where": "server/src/actions/debug.ts:46"
+ },
+ "T0016": {
+  "en": "That's too far away to put it down.",
+  "da": "Det er for langt væk.",
+  "where": "server/src/actions/floor.ts:17"
+ },
+ "T0017": {
+  "en": "You haven't got that many.",
+  "da": "Du har ikke så mange.",
+  "where": "server/src/actions/floor.ts:26  |  server/src/actions/toolbox.ts:23"
+ },
+ "T0018": {
+  "en": "Something is already lying there.",
+  "da": "Der ligger allerede noget der..",
+  "where": "server/src/actions/floor.ts:30"
+ },
+ "T0019": {
+  "en": "Somebody else got it first.",
+  "da": "Du var for langsom..",
+  "where": "server/src/actions/floor.ts:50"
+ },
+ "T0020": {
+  "en": "It's too far away.",
+  "da": "Det er for langt væk bruh",
+  "where": "server/src/actions/floor.ts:52"
+ },
+ "T0021": {
+  "en": "There's no mixer there.",
+  "da": "Der er ikke en mixer her bruh",
+  "where": "server/src/actions/mixer.ts:14"
+ },
+ "T0022": {
+  "en": "The mixer is busy.",
+  "da": "Mixeren gør allerede sin ting",
+  "where": "server/src/actions/mixer.ts:21"
+ },
+ "T0023": {
+  "en": "Pick two different things.",
+  "da": "Vælg to forskellige ting.",
+  "where": "server/src/actions/mixer.ts:24"
+ },
+ "T0024": {
+  "en": "The mixer starts up. It needs 10 minutes.",
+  "da": "Mixeren starter, det tager 10 minutter.",
+  "where": "server/src/actions/mixer.ts:33"
+ },
+ "T0025": {
+  "en": "There's nothing in the mixer.",
+  "da": "Der er ikke noget i den mixer.",
+  "where": "server/src/actions/mixer.ts:41"
+ },
+ "T0026": {
+  "en": "He already gave you one.",
+  "da": "Han har allerede givet dig en.",
+  "where": "server/src/actions/quest.ts:14"
+ },
+ "T0027": {
+  "en": "Your inventory is full",
+  "da": "Du har ikke mere plads bruh",
+  "where": "server/src/actions/quest.ts:18  |  server/src/actions/quest.ts:38  |  server/src/actions/rewards.ts:109  |  server/src/actions/rewards.ts:156  (+6 more)"
+ },
+ "T0028": {
+  "en": "You've done that.",
+  "da": "Du been done dattt...",
+  "where": "server/src/actions/quest.ts:26"
+ },
+ "T0029": {
+  "en": "You aren't in the right place.",
+  "da": "Du er ikke det rigtige sted bruh...",
+  "where": "server/src/actions/quest.ts:29"
+ },
+ "T0030": {
+  "en": "He has nothing for you right now.",
+  "da": "Han har ikke noget til dig lige nu big bruh..",
+  "where": "server/src/actions/quest.ts:36  |  server/src/actions/quest.ts:44  |  server/src/actions/quest.ts:52"
+ },
+ "T0031": {
+  "en": "He doesn't have a job for you yet.",
+  "da": "Han har ikke et job til dig endu..",
+  "where": "server/src/actions/quest.ts:45"
+ },
+ "T0032": {
+  "en": "You haven't got a lighter.",
+  "da": "Du har ikke en ligter bro..",
+  "where": "server/src/actions/quest.ts:53"
+ },
+ "T0033": {
+  "en": "Unknown step.",
+  "da": "Idefk",
+  "where": "server/src/actions/quest.ts:59"
+ },
+ "T0034": {
+  "en": "They're too far away.",
+  "da": "De er for langt væk",
+  "where": "server/src/actions/rewards.ts:22"
+ },
+ "T0035": {
+  "en": "They aren't a player.",
+  "da": "De er ikke en real player...",
+  "where": "server/src/actions/rewards.ts:23"
+ },
+ "T0036": {
+  "en": "You've already stabbed them today.",
+  "da": "Du har allerede stabbet dem idag..",
+  "where": "server/src/actions/rewards.ts:28"
+ },
+ "T0037": {
+  "en": "There's nothing left in the bag for now. Try again in {mins}.",
+  "da": "Der er ik noget her lige nu. Prøv igen om {mins}",
+  "where": "server/src/actions/rewards.ts:44"
+ },
+ "T0038": {
+  "en": "Your arm needs {mins} to recover.",
+  "da": "Din arm skal bruge {mins} til at recover lil bro.",
+  "where": "server/src/actions/rewards.ts:44"
+ },
+ "T0039": {
+  "en": "There's no body bag here.",
+  "da": "Der er ikke en body bag her.",
+  "where": "server/src/actions/rewards.ts:49"
+ },
+ "T0040": {
+  "en": "Too soon.",
+  "da": "Vent lidt.",
+  "where": "server/src/actions/rewards.ts:63"
+ },
+ "T0041": {
+  "en": "That isn't a dead cat",
+  "da": "Dette er ikke en død kat",
+  "where": "server/src/actions/rewards.ts:75"
+ },
+ "T0042": {
+  "en": "There's no bin here.",
+  "da": "Der er ingen skraldespand her.",
+  "where": "server/src/actions/rewards.ts:89"
+ },
+ "T0043": {
+  "en": "That isn't a bin.",
+  "da": "Det er ikke en skraldespand.",
+  "where": "server/src/actions/rewards.ts:92"
+ },
+ "T0044": {
+  "en": "That bin was searched a moment ago. Try again in {mins}.",
+  "da": "Du har allerede skraldet her, prøv igen om {mins}",
+  "where": "server/src/actions/rewards.ts:96"
+ },
+ "T0045": {
+  "en": "You can't swallow that.",
+  "da": "Det kan du ikke sluge bruh.",
+  "where": "server/src/actions/rewards.ts:138"
+ },
+ "T0046": {
+  "en": "That can't be lit.",
+  "da": "Den kan ikke tændes.",
+  "where": "server/src/actions/rewards.ts:149"
+ },
+ "T0047": {
+  "en": "That isn't lit.",
+  "da": "Den er ikke tændt.",
+  "where": "server/src/actions/rewards.ts:174"
+ },
+ "T0048": {
+  "en": "It's still burning.",
+  "da": "Den ryger stadig",
+  "where": "server/src/actions/rewards.ts:176"
+ },
+ "T0049": {
+  "en": "Those don't go together.",
+  "da": "Fungerer ikke sammen",
+  "where": "server/src/actions/rewards.ts:194  |  server/src/actions/rewards.ts:196  |  server/src/actions/mixer.ts:26"
+ },
+ "T0050": {
+  "en": "That can isn't empty.",
+  "da": "Den kande er ikke tom.",
+  "where": "server/src/actions/rewards.ts:212"
+ },
+ "T0051": {
+  "en": "That isn't a growing kit.",
+  "da": "Det er ikke et growth kit.",
+  "where": "server/src/actions/rewards.ts:224"
+ },
+ "T0052": {
+  "en": "Something is already growing there.",
+  "da": "Der gror allerede noget der.",
+  "where": "server/src/actions/rewards.ts:231"
+ },
+ "T0053": {
+  "en": "That isn't a seed.",
+  "da": "Det er ikke et frø.",
+  "where": "server/src/actions/rewards.ts:234"
+ },
+ "T0054": {
+  "en": "There's nothing planted there.",
+  "da": "Der er ikke plantet noget der.",
+  "where": "server/src/actions/rewards.ts:246  |  server/src/actions/rewards.ts:262"
+ },
+ "T0055": {
+  "en": "That can is empty.",
+  "da": "Den kande er tom.",
+  "where": "server/src/actions/rewards.ts:249"
+ },
+ "T0056": {
+  "en": "It isn't ready yet.",
+  "da": "Den er ikke klar endnu.",
+  "where": "server/src/actions/rewards.ts:263"
+ },
+ "T0057": {
+  "en": "It's your own room.",
+  "da": "Det er dit eget værelse.",
+  "where": "server/src/actions/rewards.ts:280"
+ },
+ "T0058": {
+  "en": "You don't have a lockpick.",
+  "da": "Du har ikke en dirk.",
+  "where": "server/src/actions/rewards.ts:284"
+ },
+ "T0059": {
+  "en": "He doesn't sell that.",
+  "da": "Han sælger ikke det der.",
+  "where": "server/src/actions/shop.ts:15  |  server/src/actions/shop.ts:17"
+ },
+ "T0060": {
+  "en": "The machine doesn't have that.",
+  "da": "Maskinen har ikke den.",
+  "where": "server/src/actions/shop.ts:32"
+ },
+ "T0061": {
+  "en": "That isn't in the shop today.",
+  "da": "Den er ikke i shoppen i dag.",
+  "where": "server/src/actions/shop.ts:52"
+ },
+ "T0062": {
+  "en": "Your room is as big as it gets.",
+  "da": "Dit værelse kan ikke blive større.",
+  "where": "server/src/actions/shop.ts:71"
+ },
+ "T0063": {
+  "en": "You haven't got a room yet.",
+  "da": "Du har ikke et værelse endnu.",
+  "where": "server/src/actions/shop.ts:74  |  server/src/actions/shop.ts:92  |  server/src/actions/shop.ts:116"
+ },
+ "T0064": {
+  "en": "Nothing to change.",
+  "da": "Intet at ændre.",
+  "where": "server/src/actions/shop.ts:101  |  server/src/actions/shop.ts:145"
+ },
+ "T0065": {
+  "en": "Bad slot.",
+  "da": "Forkert plads.",
+  "where": "server/src/actions/shop.ts:157"
+ },
+ "T0066": {
+  "en": "He doesn't buy that.",
+  "da": "Han køber ikke det der.",
+  "where": "server/src/actions/shop.ts:160"
+ },
+ "T0067": {
+  "en": "That can't be stored.",
+  "da": "Det kan ikke gemmes.",
+  "where": "server/src/actions/toolbox.ts:25"
+ },
+ "T0068": {
+  "en": "Storage is full of those.",
+  "da": "Der er fuldt af dem i kassen.",
+  "where": "server/src/actions/toolbox.ts:27  |  server/src/actions/toolbox.ts:131"
+ },
+ "T0069": {
+  "en": "That doesn't exist any more.",
+  "da": "Den findes ikke mere.",
+  "where": "server/src/actions/toolbox.ts:45"
+ },
+ "T0070": {
+  "en": "Bad facing.",
+  "da": "Forkert retning.",
+  "where": "server/src/actions/toolbox.ts:73  |  server/src/actions/toolbox.ts:110"
+ },
+ "T0071": {
+  "en": "The room is full of furniture.",
+  "da": "Værelset er fyldt med møbler.",
+  "where": "server/src/actions/toolbox.ts:76"
+ },
+ "T0072": {
+  "en": "That can't be put down.",
+  "da": "Den kan ikke stilles ned.",
+  "where": "server/src/actions/toolbox.ts:84  |  server/src/actions/toolbox.ts:91"
+ },
+ "T0073": {
+  "en": "That piece isn't in your room.",
+  "da": "Det møbel er ikke i dit værelse.",
+  "where": "server/src/actions/toolbox.ts:106  |  server/src/actions/toolbox.ts:126"
+ },
+ "T0074": {
+  "en": "That piece doesn't exist any more.",
+  "da": "Det møbel findes ikke mere.",
+  "where": "server/src/actions/toolbox.ts:108"
+ },
+ "T0075": {
+  "en": "Collect what's in the mixer first.",
+  "da": "Hent det der er i mixeren først.",
+  "where": "server/src/actions/toolbox.ts:128"
+ },
+ "T0076": {
+  "en": "That trade is gone.",
+  "da": "Det byt er væk.",
+  "where": "server/src/actions/trade.ts:27  |  server/src/actions/trade.ts:33"
+ },
+ "T0077": {
+  "en": "That isn't your trade.",
+  "da": "Det er ikke dit byt.",
+  "where": "server/src/actions/trade.ts:35"
+ },
+ "T0078": {
+  "en": "That trade was called off.",
+  "da": "Det byt blev aflyst.",
+  "where": "server/src/actions/trade.ts:37"
+ },
+ "T0079": {
+  "en": "Both of you have to accept and confirm first.",
+  "da": "I skal begge acceptere og bekræfte først.",
+  "where": "server/src/actions/trade.ts:39"
+ },
+ "T0080": {
+  "en": "They",
+  "da": "Deres",
+  "where": "server/src/actions/trade.ts:42  |  server/src/actions/trade.ts:43"
+ },
+ "T0081": {
+  "en": "Somebody doesn't have that much blood any more.",
+  "da": "En af jer har ikke så meget blod mere.",
+  "where": "server/src/actions/trade.ts:48"
+ },
+ "T0082": {
+  "en": "Something in a pocket changed, so the trade can't finish. Change your offer and try again.",
+  "da": "Noget i en lomme ændrede sig, så byttet ikke kan gennemføres. Ret dit tilbud og prøv igen.",
+  "where": "server/src/actions/trade.ts:52"
+ },
+ "T0083": {
+  "en": "{…} pocket hasn't got room for all of it. Make some space.",
+  "da": "{…} lomme har ikke plads til det hele. Gør plads.",
+  "where": "server/src/actions/trade.ts:65"
+ },
+ "T0084": {
+  "en": "Your",
+  "da": "Din",
+  "where": "server/src/actions/trade.ts:65"
+ },
+ "T0085": {
+  "en": "Bad {what}.",
+  "da": "Forkert {what}.",
+  "where": "server/src/actions/util.ts:11  |  server/src/actions/util.ts:15"
+ },
+ "T0086": {
+  "en": "Unknown room.",
+  "da": "Ukendt værelse.",
+  "where": "server/src/actions/util.ts:31"
+ },
+ "T0087": {
+  "en": "You aren't in that room.",
+  "da": "Du er ikke i det værelse.",
+  "where": "server/src/actions/util.ts:38"
+ },
+ "T0088": {
+  "en": "That player doesn't exist.",
+  "da": "Den spiller findes ikke.",
+  "where": "server/src/ctx.ts:91"
+ },
+ "T0089": {
+  "en": "The game server isn't set up yet.",
+  "da": "Spilserveren er ikke sat op endnu.",
+  "where": "src/api.ts:13"
+ },
+ "T0090": {
+  "en": "Please log in again.",
+  "da": "Log ind igen.",
+  "where": "src/api.ts:19"
+ },
+ "T0091": {
+  "en": "Can't reach the game server. Check your connection.",
+  "da": "Kan ikke nå spilserveren. Tjek din forbindelse.",
+  "where": "src/api.ts:25"
+ },
+ "T0092": {
+  "en": "The server had a problem. Try again.",
+  "da": "Serveren fik et problem. Prøv igen.",
+  "where": "src/api.ts:34"
+ },
+ "T0093": {
+  "en": "Blood Catch",
+  "da": "Blood Catch",
+  "where": "src/arcade/arcade.ts:31"
+ },
+ "T0094": {
+  "en": "Catch the falling drops.",
+  "da": "Fang de faldende dråber.",
+  "where": "src/arcade/arcade.ts:31"
+ },
+ "T0095": {
+  "en": "Lobby Pong",
+  "da": "Lobby Pong",
+  "where": "src/arcade/arcade.ts:32"
+ },
+ "T0096": {
+  "en": "Two players, one ball.",
+  "da": "To spillere, én bold.",
+  "where": "src/arcade/arcade.ts:32"
+ },
+ "T0097": {
+  "en": "🕹️ Arcade",
+  "da": "Arcade",
+  "where": "src/arcade/arcade.ts:46  |  src/arcade/arcade.ts:64"
+ },
+ "T0098": {
+  "en": "← Games",
+  "da": "← Spil",
+  "where": "src/arcade/arcade.ts:47"
+ },
+ "T0099": {
+  "en": "Coming soon",
+  "da": "Kommer snart",
+  "where": "src/arcade/arcade.ts:71"
+ },
+ "T0100": {
+  "en": "Flappy Bird",
+  "da": "Flappy bird mf",
+  "where": "src/arcade/flappy.ts:28"
+ },
+ "T0101": {
+  "en": "Tap to flap. Don't touch the pipes.",
+  "da": "Tryk for at flappe. Rør ikke rørene.",
+  "where": "src/arcade/flappy.ts:30"
+ },
+ "T0102": {
+  "en": "Flappy Bird. Tap or press space to flap.",
+  "da": "Flappy Bird. Tryk eller tryk mellemrum for at flappe.",
+  "where": "src/arcade/flappy.ts:115"
+ },
+ "T0103": {
+  "en": "refused",
+  "da": "refused",
+  "where": "src/arcade/flappy.ts:146"
+ },
+ "T0104": {
+  "en": "SCORE",
+  "da": "SCORE",
+  "where": "src/arcade/flappy.ts:147"
+ },
+ "T0105": {
+  "en": "BEST",
+  "da": "BEDSTE",
+  "where": "src/arcade/flappy.ts:152"
+ },
+ "T0106": {
+  "en": "NEW",
+  "da": "NY",
+  "where": "src/arcade/snake.ts:10"
+ },
+ "T0107": {
+  "en": "Snake",
+  "da": "Snake",
+  "where": "src/arcade/snake.ts:12"
+ },
+ "T0108": {
+  "en": "Eat, grow, don't bite yourself. Arrow keys or WASD.",
+  "da": "Spis, vokse, bid ikke dig selv. Piletaster eller WASD.",
+  "where": "src/arcade/snake.ts:15"
+ },
+ "T0109": {
+  "en": "Score: 0",
+  "da": "Score: 0",
+  "where": "src/arcade/snake.ts:16"
+ },
+ "T0110": {
+  "en": "Press any arrow key to start",
+  "da": "Tryk på en piletast for at starte",
+  "where": "src/arcade/snake.ts:52"
+ },
+ "T0111": {
+  "en": "Game over. Press any arrow key to play again.",
+  "da": "Game over. Tryk på en piletast for at spille igen.",
+  "where": "src/auth.ts:29  |  src/auth.ts:30  |  src/auth.ts:31"
+ },
+ "T0112": {
+  "en": "Wrong username or password.",
+  "da": "Forkert brugernavn eller adgangskode.",
+  "where": "src/auth.ts:32"
+ },
+ "T0113": {
+  "en": "That username is taken.",
+  "da": "Det brugernavn er optaget.",
+  "where": "src/auth.ts:33  |  src/auth.ts:73"
+ },
+ "T0114": {
+  "en": "Password must be at least 6 characters.",
+  "da": "Adgangskoden skal være mindst 6 tegn.",
+  "where": "src/auth.ts:34"
+ },
+ "T0115": {
+  "en": "Usernames can only use letters, numbers, . _ -",
+  "da": "Brugernavne kan kun bruge bogstaver, tal, . _ -",
+  "where": "src/auth.ts:35"
+ },
+ "T0116": {
+  "en": "Too many attempts, try again in a moment.",
+  "da": "For mange forsøg, prøv igen om lidt.",
+  "where": "src/auth.ts:36"
+ },
+ "T0117": {
+  "en": "Can't reach Firebase. Check your connection / config.",
+  "da": "Kan ikke nå Firebase. Tjek din forbindelse / config.",
+  "where": "src/auth.ts:45"
+ },
+ "T0118": {
+  "en": "Username must be 3-16 characters: letters, numbers, . _ -",
+  "da": "Brugernavn skal være 3-16 tegn: bogstaver, tal, . _ -",
+  "where": "src/auth.ts:46"
+ },
+ "T0119": {
+  "en": "That username is reserved.",
+  "da": "Det brugernavn er reserveret.",
+  "where": "src/auth.ts:72"
+ },
+ "T0120": {
+  "en": "You're not signed in.",
+  "da": "Du er ikke logget ind.",
+  "where": "src/catalog.ts:16"
+ },
+ "T0121": {
+  "en": "Face & skin",
+  "da": "Ansigt & hud",
+  "where": "src/catalog.ts:18"
+ },
+ "T0122": {
+  "en": "Hats",
+  "da": "Hatte",
+  "where": "src/catalog.ts:19"
+ },
+ "T0123": {
+  "en": "Head items",
+  "da": "Hovedting",
+  "where": "src/catalog.ts:21"
+ },
+ "T0124": {
+  "en": "Face items",
+  "da": "Ansigtsting",
+  "where": "src/catalog.ts:22"
+ },
+ "T0125": {
+  "en": "Shirts",
+  "da": "Trøjer",
+  "where": "src/catalog.ts:23"
+ },
+ "T0126": {
+  "en": "Jackets",
+  "da": "Jakker",
+  "where": "src/catalog.ts:24"
+ },
+ "T0127": {
+  "en": "Prints",
+  "da": "Prints",
+  "where": "src/catalog.ts:25"
+ },
+ "T0128": {
+  "en": "Chest items",
+  "da": "Brystting",
+  "where": "src/catalog.ts:26"
+ },
+ "T0129": {
+  "en": "Trousers",
+  "da": "Bukser",
+  "where": "src/catalog.ts:28"
+ },
+ "T0130": {
+  "en": "Belts",
+  "da": "Bælter",
+  "where": "src/cdplayer.ts:17  |  server/src/actions/cd.ts:19"
+ },
+ "T0131": {
+  "en": "Stand-in track",
+  "da": "Midlertidigt nummer",
+  "where": "src/db.ts:160"
+ },
+ "T0132": {
+  "en": "Couldn't create the profile.",
+  "da": "Kunne ikke oprette profilen.",
+  "where": "src/designs.ts:100"
+ },
+ "T0141": {
+  "en": "Stripes",
+  "da": "Striber",
+  "where": "src/designTools.ts:25"
+ },
+ "T0142": {
+  "en": "Checks",
+  "da": "Tern",
+  "where": "src/designTools.ts:25"
+ },
+ "T0143": {
+  "en": "Dots",
+  "da": "Prikker",
+  "where": "src/designTools.ts:25"
+ },
+ "T0144": {
+  "en": "Diagonal",
+  "da": "Diagonal",
+  "where": "src/designTools.ts:25"
+ },
+ "T0145": {
+  "en": "Zigzag",
+  "da": "Zigzag",
+  "where": "src/emotes.ts:29"
+ },
+ "T0133": {
+  "en": "couldn't decode an image",
+  "da": "kunne ikke læse et billede",
+  "where": "src/designs.ts:197"
+ },
+ "T0134": {
+  "en": "design {id} has no sheet",
+  "da": "design {id} har ikke noget ark",
+  "where": "src/designs.ts:270"
+ },
+ "T0135": {
+  "en": "{dir} design {id} has no sheet",
+  "da": "{dir} design {id} har ikke noget ark",
+  "where": "src/designs.ts:346"
+ },
+ "T0136": {
+  "en": "That item doesn't exist.",
+  "da": "Den ting findes ikke.",
+  "where": "src/designs.ts:366"
+ },
+ "T0137": {
+  "en": "That item has no sprite frames to start from. Try another one.",
+  "da": "Den ting har ingen sprite frames at starte fra. Prøv en anden.",
+  "where": "src/designs.ts:377"
+ },
+ "T0138": {
+  "en": "This design's sprite sheet is missing.",
+  "da": "Dette designs sprite-ark mangler.",
+  "where": "src/designs.ts:465"
+ },
+ "T0139": {
+  "en": "This design has no frames.",
+  "da": "Dette design har ingen frames.",
+  "where": "src/designs.ts:468"
+ },
+ "T0140": {
+  "en": "The sprite sheet is too big to store ({…} KB, the limit is about {…} KB). Use fewer or smaller frames.",
+  "da": "Sprite-arket er for stort til at gemme ({…} KB, grænsen er cirka {…} KB). Brug færre eller mindre frames.",
+  "where": "src/designTools.ts:25"
+ },
+ "T0146": {
+  "en": "Wave",
+  "da": "Vink",
+  "where": "src/emotes.ts:29"
+ },
+ "T0147": {
+  "en": "Say hi.",
+  "da": "Sig hejjj",
+  "where": "src/emotes.ts:30"
+ },
+ "T0148": {
+  "en": "Smile",
+  "da": "Smile :DD",
+  "where": "src/emotes.ts:30"
+ },
+ "T0149": {
+  "en": "A friendly grin.",
+  "da": "En venligt smil",
+  "where": "src/emotes.ts:31"
+ },
+ "T0150": {
+  "en": "Sad",
+  "da": "Down bad",
+  "where": "src/emotes.ts:31"
+ },
+ "T0151": {
+  "en": "Bit of a downer.",
+  "da": "Lidt nedtur.",
+  "where": "src/emotes.ts:32"
+ },
+ "T0152": {
+  "en": "Jump",
+  "da": "Hop",
+  "where": "src/emotes.ts:32"
+ },
+ "T0153": {
+  "en": "Hop on the spot.",
+  "da": "Hop på stedet.",
+  "where": "src/emotes.ts:34"
+ },
+ "T0154": {
+  "en": "Angry",
+  "da": "Sur",
+  "where": "src/emotes.ts:34"
+ },
+ "T0155": {
+  "en": "Steam comes out of your ears.",
+  "da": "Der kommer damp ud af ørerne.",
+  "where": "src/emotes.ts:36"
+ },
+ "T0156": {
+  "en": "Surprised",
+  "da": "Overrasket",
+  "where": "src/emotes.ts:36"
+ },
+ "T0157": {
+  "en": "Didn't see that coming.",
+  "da": "Så ikke den komme.",
+  "where": "src/emotes.ts:37"
+ },
+ "T0158": {
+  "en": "Sleep",
+  "da": "Sov",
+  "where": "src/emotes.ts:37"
+ },
+ "T0159": {
+  "en": "Eyes shut, zzz.",
+  "da": "Øjne lukket, zzz.",
+  "where": "src/emotes.ts:38"
+ },
+ "T0160": {
+  "en": "Laugh",
+  "da": "Grin",
+  "where": "src/emotes.ts:38"
+ },
+ "T0161": {
+  "en": "Crack up.",
+  "da": "Brist ud i grin.",
+  "where": "src/emotes.ts:39"
+ },
+ "T0162": {
+  "en": "Love",
+  "da": "Kærlighed",
+  "where": "src/emotes.ts:39"
+ },
+ "T0163": {
+  "en": "Hearts everywhere.",
+  "da": "Hjerter overalt.",
+  "where": "src/emotes.ts:40"
+ },
+ "T0164": {
+  "en": "Cheer",
+  "da": "Jubel",
+  "where": "src/emotes.ts:40"
+ },
+ "T0165": {
+  "en": "Hands up, confetti.",
+  "da": "Hænderne i vejret, konfetti.",
+  "where": "src/emotes.ts:41"
+ },
+ "T0166": {
+  "en": "Spin",
+  "da": "Snurr",
+  "where": "src/emotes.ts:41"
+ },
+ "T0167": {
+  "en": "Round and round.",
+  "da": "Rundt og rundt.",
+  "where": "src/emotes.ts:42"
+ },
+ "T0168": {
+  "en": "Dance",
+  "da": "Dans",
+  "where": "src/emotes.ts:42"
+ },
+ "T0169": {
+  "en": "Bust a move.",
+  "da": "Vis dine moves.",
+  "where": "src/furniDefs.ts:100  |  src/nitroClothing.ts:53"
+ },
+ "T0170": {
+  "en": "{name}: no JSON or image inside.",
+  "da": "{name}: ingen JSON eller billede indeni.",
+  "where": "src/furniDefs.ts:102"
+ },
+ "T0171": {
+  "en": "{name}: this doesn't look like a furniture file.",
+  "da": "{name}: det her ligner ikke en møbelfil.",
+  "where": "src/furniDefs.ts:104"
+ },
+ "T0172": {
+  "en": "{name}: no 64px furniture sprites found (is this a clothing file? Use the Clothing tab).",
+  "da": "{name}: ingen 64px møbel-sprites fundet (er det en tøjfil? Brug Tøj-fanen).",
+  "where": "src/furniDefs.ts:152"
+ },
+ "T0173": {
+  "en": "The artwork is too big to store ({…} KB, the limit is about {…} KB).",
+  "da": "Kunstværket er for stort til at gemme ({…} KB, grænsen er cirka {…} KB).",
+  "where": "src/furniDefs.ts:153"
+ },
+ "T0174": {
+  "en": "The furniture description is too large to store.",
+  "da": "Møbelbeskrivelsen er for stor til at gemme.",
+  "where": "src/furnishing.ts:45"
+ },
+ "T0175": {
+  "en": "That piece doesn't exist.",
+  "da": "Det møbel findes ikke.",
+  "where": "src/furnishing.ts:47  |  server/src/actions/toolbox.ts:85  |  server/src/actions/toolbox.ts:92  |  server/src/actions/toolbox.ts:112"
+ },
+ "T0176": {
+  "en": "That doesn't fit in the room.",
+  "da": "Det kan ikke være i værelset.",
+  "where": "src/furnishing.ts:48"
+ },
+ "T0177": {
+  "en": "That one hangs on a wall: put it against the back wall or the left wall.",
+  "da": "Den hænger på en væg: sæt den op mod bagvæggen eller venstre væg.",
+  "where": "src/furnishing.ts:59"
+ },
+ "T0178": {
+  "en": "Something is already there.",
+  "da": "Der er allerede noget der.",
+  "where": "src/furnishing.ts:101  |  src/drops.ts:61  |  server/src/actions/rewards.ts:125  |  server/src/actions/floor.ts:21  (+2 more)"
+ },
+ "T0179": {
+  "en": "You aren't carrying that.",
+  "da": "Du bærer ikke på den.",
+  "where": "src/furnishing.ts:107  |  server/src/actions/toolbox.ts:41  |  server/src/actions/toolbox.ts:89"
+ },
+ "T0180": {
+  "en": "There's none of that in storage.",
+  "da": "Der er ingen af dem i kassen.",
+  "where": "src/furnishing.ts:118"
+ },
+ "T0181": {
+  "en": "Not signed in.",
+  "da": "Ikke logget ind.",
+  "where": "src/furnishing.ts:124"
+ },
+ "T0182": {
+  "en": "That one stays in your room.",
+  "da": "Den bliver i dit værelse.",
+  "where": "src/furnishing.ts:125  |  server/src/actions/toolbox.ts:127"
+ },
+ "T0183": {
+  "en": "Harvest the plant first.",
+  "da": "Høst planten først.",
+  "where": "src/furnishing.ts:133  |  server/src/actions/toolbox.ts:20"
+ },
+ "T0184": {
+  "en": "Wait for it to burn out first.",
+  "da": "Vent til den er brændt ud først.",
+  "where": "src/furnishing.ts:134  |  src/drops.ts:64  |  server/src/actions/floor.ts:24  |  server/src/actions/toolbox.ts:21"
+ },
+ "T0185": {
+  "en": "That's in the player right now.",
+  "da": "Den er i afspilleren lige nu.",
+  "where": "src/items.ts:38"
+ },
+ "T0186": {
+  "en": "Weed seed",
+  "da": "Weed frø",
+  "where": "src/items.ts:39"
+ },
+ "T0187": {
+  "en": "A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 20 minutes and needs one watering once it gets thirsty.",
+  "da": "Weed frø, kan plantes på dit værelse med et growth kit",
+  "where": "src/items.ts:45"
+ },
+ "T0188": {
+  "en": "Weed",
+  "da": "Weed",
+  "where": "src/items.ts:46"
+ },
+ "T0189": {
+  "en": "A bud. Select it, then click joint paper or a blunt wrap to roll it, or a cigarette to crumble it in.",
+  "da": "Du kan rulle den med pf eller blunt papter",
+  "where": "src/items.ts:51"
+ },
+ "T0190": {
+  "en": "Weed mix",
+  "da": "Mixx",
+  "where": "src/items.ts:52"
+ },
+ "T0191": {
+  "en": "Tobacco and weed mixed together (made in the mixer). It works like weed: roll it in joint paper or a blunt wrap.",
+  "da": "Det weed og tobacco, du er broke as fucc",
+  "where": "src/items.ts:57"
+ },
+ "T0192": {
+  "en": "Mid weed",
+  "da": "Mid weed",
+  "where": "src/items.ts:58"
+ },
+ "T0193": {
+  "en": "Good weed and bad weed mixed together: not great, not terrible. Roll it in joint paper or a blunt wrap.",
+  "da": "Mix af mid og loud, det shi fint nok, middd.....",
+  "where": "src/items.ts:63"
+ },
+ "T0194": {
+  "en": "THC-A",
+  "da": "THC-A",
+  "where": "src/items.ts:64"
+ },
+ "T0195": {
+  "en": "Weed with a pill ground into it. Roll it and smoke it: for 2 minutes you walk twice as fast and stabs give double blood.",
+  "da": "Weed med en pill? Fuck laver du?",
+  "where": "src/items.ts:69"
+ },
+ "T0196": {
+  "en": "Research chemical",
+  "da": "Research chemical",
+  "where": "src/items.ts:70"
+ },
+ "T0197": {
+  "en": "A pill ground into tobacco. Roll it and smoke it: you walk twice as fast and stab for double blood for 2 minutes, and for 30 seconds you flash and smoke pours off you.",
+  "da": "Pille og tobak? Fuck er der galt med dig?",
+  "where": "src/items.ts:75  |  src/shared/items.ts:79"
+ },
+ "T0198": {
+  "en": "Joint paper",
+  "da": "Joint papir",
+  "where": "src/items.ts:76"
+ },
+ "T0199": {
+  "en": "Rolling paper. Select weed (or mix), then click the paper to roll a joint.",
+  "da": "Du kan lave en joint med weed i :D",
+  "where": "src/items.ts:81  |  src/shared/items.ts:80"
+ },
+ "T0200": {
+  "en": "Blunt wrap",
+  "da": "Blunt wrap",
+  "where": "src/items.ts:82"
+ },
+ "T0201": {
+  "en": "A tobacco leaf wrap. Select weed (or mix), then click the wrap to roll a blunt.",
+  "da": "Du kan rulle en blunt med weed i.",
+  "where": "src/items.ts:87"
+ },
+ "T0202": {
+  "en": "Joint",
+  "da": "Joint",
+  "where": "src/items.ts:88"
+ },
+ "T0203": {
+  "en": "A joint. Click it to light up (you need a lighter). Once it's finished, stabbing gives triple blood for 2 minutes.",
+  "da": "En joint. Klik for at tænde den (du skal bruge en lighter). Når den er færdig giver stab tredobbelt blod i 2 minutter.",
+  "where": "src/items.ts:94"
+ },
+ "T0204": {
+  "en": "Blunt",
+  "da": "Blunt",
+  "where": "src/items.ts:95"
+ },
+ "T0205": {
+  "en": "A fat blunt. Click it to light up (you need a lighter). Once it's finished, stabbing gives four times the blood for 3 minutes.",
+  "da": "En fed blunt. Klik for at tænde den (du skal bruge en lighter). Når den er færdig giver stab 4 gange så meget blod i 3 minutter.",
+  "where": "src/items.ts:101"
+ },
+ "T0206": {
+  "en": "Mid joint",
+  "da": "Mid joint",
+  "where": "src/items.ts:102"
+ },
+ "T0207": {
+  "en": "A joint rolled from mid weed. Click it to light up (you need a lighter). Stabs give double blood for 2 minutes.",
+  "da": "En joint af mid weed. Klik for at tænde den (du skal bruge en lighter). Dobbelt blod på stab i 2 minutter.",
+  "where": "src/items.ts:108"
+ },
+ "T0208": {
+  "en": "THC-A joint",
+  "da": "THC-A joint",
+  "where": "src/items.ts:109"
+ },
+ "T0209": {
+  "en": "A joint of thc-a. Click it to light up (you need a lighter). For 2 minutes you walk twice as fast and stabs give double blood.",
+  "da": "En joint med thc-a. Klik for at tænde den (du skal bruge en lighter). I 2 minutter går du dobbelt så hurtigt og stab giver dobbelt blod.",
+  "where": "src/items.ts:115"
+ },
+ "T0210": {
+  "en": "Research joint",
+  "da": "Research joint",
+  "where": "src/items.ts:116"
+ },
+ "T0211": {
+  "en": "A joint of research chemical. Light it up: after 5 seconds you get 90 seconds of double speed and double blood, and you flash while smoke pours off you.",
+  "da": "En joint med research chemical. Tænd den: efter 5 sekunder får du 90 sekunder med dobbelt fart og dobbelt blod, og du blinker mens røg vælter ud af dig.",
+  "where": "src/items.ts:122"
+ },
+ "T0212": {
+  "en": "Mid blunt",
+  "da": "Mid blunt",
+  "where": "src/items.ts:123"
+ },
+ "T0213": {
+  "en": "A blunt rolled from mid weed. Click it to light up (you need a lighter). Stabs give double blood for 2 minutes.",
+  "da": "En blunt af mid weed. Klik for at tænde den (du skal bruge en lighter). Dobbelt blod på stab i 2 minutter.",
+  "where": "src/items.ts:129"
+ },
+ "T0214": {
+  "en": "THC-A blunt",
+  "da": "THC-A blunt",
+  "where": "src/items.ts:130"
+ },
+ "T0215": {
+  "en": "A blunt of thc-a. Click it to light up (you need a lighter). For 2 minutes you walk twice as fast and stabs give double blood.",
+  "da": "En blunt med thc-a. Klik for at tænde den (du skal bruge en lighter). I 2 minutter går du dobbelt så hurtigt og stab giver dobbelt blod.",
+  "where": "src/items.ts:136"
+ },
+ "T0216": {
+  "en": "Research blunt",
+  "da": "Research blunt",
+  "where": "src/items.ts:137"
+ },
+ "T0217": {
+  "en": "A blunt of research chemical. Light it up: after 5 seconds you get 90 seconds of double speed and double blood, and you flash while smoke pours off you.",
+  "da": "En blunt med research chemical. Tænd den: efter 5 sekunder får du 90 sekunder med dobbelt fart og dobbelt blod, og du blinker mens røg vælter ud af dig.",
+  "where": "src/items.ts:143  |  src/shared/items.ts:84"
+ },
+ "T0218": {
+  "en": "Kodimagnyl",
+  "da": "Kodimagnyl",
+  "where": "src/items.ts:144"
+ },
+ "T0219": {
+  "en": "People mix this with water for some reason.",
+  "da": "Folk blander den med vand af en eller anden grund.",
+  "where": "src/items.ts:149"
+ },
+ "T0220": {
+  "en": "Codeine",
+  "da": "Codeine",
+  "where": "src/items.ts:150"
+ },
+ "T0221": {
+  "en": "The lean. Drink it: for an hour garbage cans give twice as much and can be searched twice as often. You hold the cup for 2 minutes.",
+  "da": "Lean. Drik den: i en time giver skraldecontainere dobbelt så meget og kan søges dobbelt så ofte. Du holder koppen i 2 minutter.",
+  "where": "src/items.ts:156"
+ },
+ "T0222": {
+  "en": "Super pill",
+  "da": "Super pille",
+  "where": "src/items.ts:157"
+ },
+ "T0223": {
+  "en": "A pill pressed together with kodimagnyl. Swallow it and you run 4 times faster for a minute.",
+  "da": "En pille presset sammen med kodimagnyl. Sluk den og du løber 4 gange så hurtigt i et minut.",
+  "where": "src/items.ts:163  |  src/shared/items.ts:82"
+ },
+ "T0224": {
+  "en": "Watering can",
+  "da": "Vandkande",
+  "where": "src/items.ts:164"
+ },
+ "T0225": {
+  "en": "An empty watering can. Select it, then click the sink in your room to fill it.",
+  "da": "En tom vandkande. Vælg den, klik så på håndvasken i dit værelse for at fylde den.",
+  "where": "src/items.ts:170"
+ },
+ "T0226": {
+  "en": "Watering can (full)",
+  "da": "Vandkande (fuld)",
+  "where": "src/items.ts:171"
+ },
+ "T0227": {
+  "en": "A full watering can. Select it, then click a planted growing kit to water the plant.",
+  "da": "En fuld vandkande. Vælg den, klik så på et plantet growth kit for at vande planten.",
+  "where": "src/items.ts:177"
+ },
+ "T0228": {
+  "en": "Burger",
+  "da": "Burger",
+  "where": "src/items.ts:178"
+ },
+ "T0229": {
+  "en": "A burger out of the bin. It's still warm. Click it to eat it.",
+  "da": "En burger fra skraldespanden. Den er stadig varm. Klik for at spise den.",
+  "where": "src/items.ts:184"
+ },
+ "T0230": {
+  "en": "Pill",
+  "da": "Pille",
+  "where": "src/items.ts:185"
+ },
+ "T0231": {
+  "en": "Syringe",
+  "da": "Sprøjte",
+  "where": "src/items.ts:191"
+ },
+ "T0232": {
+  "en": "A clean syringe. Click it to draw blood from yourself, or click a body bag with it: 1 drop from each, once every 20 minutes.",
+  "da": "En ren sprøjte. Klik for at tappe blod fra dig selv, eller klik på en body bag med den: 1 dråbe fra hver, en gang hvert 20. minut.",
+  "where": "src/items.ts:192"
+ },
+ "T0233": {
+  "en": "CD",
+  "da": "CD",
+  "where": "src/items.ts:198"
+ },
+ "T0234": {
+  "en": "A scratched CD with a handwritten label. Use it on the CD player in the basement so everyone can hear it. It comes back when it's done.",
+  "da": "En ridset CD med håndskrevet label. Brug den på CD afspilleren i kælderen så alle kan høre den. Den kommer tilbage når den er færdig.",
+  "where": "src/items.ts:199"
+ },
+ "T0235": {
+  "en": "Lockpick",
+  "da": "Dirk",
+  "where": "src/items.ts:205"
+ },
+ "T0236": {
+  "en": "A bent piece of wire. It works once: it lets you into the room of someone who isn't your friend. Use it from the door menu.",
+  "da": "Et bøjet stykke ståltråd. Virker kun én gang: lader dig ind i værelset hos en der ikke er din ven. Brug den fra dørmenuen.",
+  "where": "src/items.ts:206"
+ },
+ "T0237": {
+  "en": "Cigarette",
+  "da": "Cigaret",
+  "where": "src/items.ts:211"
+ },
+ "T0238": {
+  "en": "A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.",
+  "da": "En cigaret. Klik for at tænde den med en lighter.",
+  "where": "src/items.ts:212"
+ },
+ "T0239": {
+  "en": "Cigarette butt",
+  "da": "Cigaretskod",
+  "where": "src/items.ts:219"
+ },
+ "T0240": {
+  "en": "What's left. Right-click it to drop it.",
+  "da": "Det der er tilbage. Højreklik for at droppe den.",
+  "where": "src/items.ts:220"
+ },
+ "T0241": {
+  "en": "Lighter",
+  "da": "Lighter",
+  "where": "src/items.ts:226  |  src/shared/items.ts:78"
+ },
+ "T0242": {
+  "en": "A cheap lighter. You need one to light a cigarette, joint or blunt. It lasts. Sold in the shop room's vending machine.",
+  "da": "En billig lighter. Du skal bruge en for at tænde cigaret, joint eller blunt. Den holder. Sælges i vending machinen i shoppen.",
+  "where": "src/items.ts:227"
+ },
+ "T0243": {
+  "en": "Dead cat",
+  "da": "Død kat",
+  "where": "src/items.ts:232"
+ },
+ "T0244": {
+  "en": "Somebody threw it out. Its blood hasn't all gone cold yet. Select your knife, then click the cat.",
+  "da": "Nogen smed den ud. Blodet er ikke helt koldt endnu. Vælg din kniv, klik så på katten.",
+  "where": "src/items.ts:233"
+ },
+ "T0245": {
+  "en": "Knife",
+  "da": "Kniv",
+  "where": "src/items.ts:239"
+ },
+ "T0246": {
+  "en": "A small, sharp knife. Use it on another player: you can stab each person once a day, and every stab draws a drop of blood.",
+  "da": "En lille, skarp kniv. Brug den på en anden spiller: du kan stikke hver person en gang om dagen, og hvert stik giver en dråbe blod.",
+  "where": "src/items.ts:240"
+ },
+ "T0247": {
+  "en": "{label}: furniture. Click it, then a free spot in your own room to put it down. Your toolbox can also store it.",
+  "da": "{label}: møbel. Klik på det, så et ledigt sted i dit eget værelse for at stille det ned. Din værktøjskasse kan også gemme det.",
+  "where": "src/items.ts:278"
+ },
+ "T0248": {
+  "en": "Staff can see chat, private messages and activity on 6ixPlanet.",
+  "da": "Staff kan se chat, private beskeder og aktivitet på 6ixPlanet.",
+  "where": "src/main.ts:33"
+ },
+ "T0249": {
+  "en": "Almost there",
+  "da": "Næsten der",
+  "where": "src/main.ts:74"
+ },
+ "T0250": {
+  "en": "6ixPlanet needs a Firebase project. Add your config to",
+  "da": "6ixPlanet needs a Firebase project. Add your config to",
+  "where": "src/main.ts:75"
+ },
+ "T0251": {
+  "en": "Firebase console → create a project → add a Web app, copy its config",
+  "da": "Firebase console → create a project → add a Web app, copy its config",
+  "where": "src/main.ts:77"
+ },
+ "T0252": {
+  "en": "Build → Realtime Database → create a database",
+  "da": "Build → Realtime Database → create a database",
+  "where": "src/main.ts:78"
+ },
+ "T0253": {
+  "en": "Or run the local emulators:",
+  "da": "Or run the local emulators:",
+  "where": "src/main.ts:79"
+ },
+ "T0254": {
+  "en": "npm run dev:emu",
+  "da": "npm run dev:emu",
+  "where": "src/main.ts:81"
+ },
+ "T0255": {
+  "en": "required",
+  "da": "påkrævet",
+  "where": "src/main.ts:81"
+ },
+ "T0256": {
+  "en": "Log in",
+  "da": "Log ind",
+  "where": "src/main.ts:95  |  src/main.ts:96  |  src/main.ts:103"
+ },
+ "T0257": {
+  "en": "No account? Register",
+  "da": "Ingen konto? Opret en",
+  "where": "src/main.ts:97  |  src/main.ts:101"
+ },
+ "T0258": {
+  "en": "Create account",
+  "da": "Opret konto",
+  "where": "src/main.ts:98  |  src/main.ts:102"
+ },
+ "T0259": {
+  "en": "Have an account? Log in",
+  "da": "Har du en konto? Log ind",
+  "where": "src/main.ts:101"
+ },
+ "T0260": {
+  "en": "6+ characters",
+  "da": "6+ tegn",
+  "where": "src/main.ts:102"
+ },
+ "T0261": {
+  "en": "Password",
+  "da": "Adgangskode",
+  "where": "src/main.ts:103"
+ },
+ "T0262": {
+  "en": "Sign in to hang out.",
+  "da": "Log ind for at hænge ud.",
+  "where": "src/main.ts:130"
+ },
+ "T0263": {
+  "en": "(running against local Firebase emulators)",
+  "da": "(running against local Firebase emulators)",
+  "where": "src/main.ts:142"
+ },
+ "T0264": {
+  "en": "Already open",
+  "da": "Allerede åben",
+  "where": "src/main.ts:145"
+ },
+ "T0265": {
+  "en": "This account is open in another window or device. 6ixPlanet can only be played from one place at a time. Close it there, then try again.",
+  "da": "Denne konto er åben i et andet vindue eller en anden enhed. 6ixPlanet kan kun spilles ét sted ad gangen. Luk det der, og prøv igen.",
+  "where": "src/main.ts:152"
+ },
+ "T0266": {
+  "en": "This account was opened in another window, so this one has been stopped. 6ixPlanet can only be played from one place at a time.",
+  "da": "Denne konto blev åbnet i et andet vindue, så dette er stoppet. 6ixPlanet kan kun spilles ét sted ad gangen.",
+  "where": "src/main.ts:154"
+ },
+ "T0267": {
+  "en": "Try again",
+  "da": "Prøv igen",
+  "where": "src/main.ts:155"
+ },
+ "T0268": {
+  "en": "Loading your character…",
+  "da": "Henter din karakter…",
+  "where": "src/main.ts:156"
+ },
+ "T0269": {
+  "en": "Couldn't load",
+  "da": "Kunne ikke indlæse",
+  "where": "src/main.ts:162"
+ },
+ "T0270": {
+  "en": "Retry",
+  "da": "Prøv igen",
+  "where": "src/main.ts:190"
+ },
+ "T0271": {
+  "en": "6ixty's room",
+  "da": "6ixtys værelse",
+  "where": "src/main.ts:192"
+ },
+ "T0272": {
+  "en": "Hotel jingle (placeholder)",
+  "da": "Hotel jingle (midlertidig)",
+  "where": "src/music.ts:12"
+ },
+ "T0273": {
+  "en": "This looks like furniture: use the Furniture tab.",
+  "da": "Det her ligner et møbel: brug Møbel-fanen.",
+  "where": "src/nitroClothing.ts:76"
+ },
+ "T0274": {
+  "en": "Imported",
+  "da": "Importeret",
+  "where": "src/nitroClothing.ts:126"
+ },
+ "T0275": {
+  "en": "6ixty",
+  "da": "6ixty",
+  "where": "src/npc.ts:8"
+ },
+ "T0276": {
+  "en": "looking for more space? or a fresh coat of paint?",
+  "da": "leder du efter mere plads? eller en frisk omgang maling?",
+  "where": "src/npc.ts:24"
+ },
+ "T0277": {
+  "en": "LegendGamer2015",
+  "da": "LegendGamer2015",
+  "where": "src/npc.ts:58"
+ },
+ "T0278": {
+  "en": "you earned your first blood. come back in about {when}, I will have another job.",
+  "da": "du tjente dit første blod. kom tilbage om cirka {when}, så har jeg et andet job.",
+  "where": "src/npc.ts:66"
+ },
+ "T0279": {
+  "en": "now go over and use the knife on that guy.",
+  "da": "gå nu over og brug kniven på ham der.",
+  "where": "src/npc.ts:69"
+ },
+ "T0280": {
+  "en": "the knife. that guy. go.",
+  "da": "kniven. ham der. afsted.",
+  "where": "src/npc.ts:70"
+ },
+ "T0281": {
+  "en": "good job.",
+  "da": "godt klaret.",
+  "where": "src/npc.ts:71"
+ },
+ "T0282": {
+  "en": "eat this pill.",
+  "da": "spis den her pille.",
+  "where": "src/npc.ts:72"
+ },
+ "T0283": {
+  "en": "eat the pill.",
+  "da": "spis pillen.",
+  "where": "src/npc.ts:73"
+ },
+ "T0284": {
+  "en": "psst",
+  "da": "psst",
+  "where": "src/npc.ts:74"
+ },
+ "T0285": {
+  "en": "take this",
+  "da": "tag den her",
+  "where": "src/npc.ts:75"
+ },
+ "T0286": {
+  "en": "that is what a lighter costs. go buy one in the shop, the yellow door.",
+  "da": "det er hvad en lighter koster. gå og køb en i shoppen, den gule dør.",
+  "where": "src/npc.ts:76"
+ },
+ "T0287": {
+  "en": "bring it back to me when you have it.",
+  "da": "bring den tilbage til mig når du har den.",
+  "where": "src/npc.ts:77"
+ },
+ "T0288": {
+  "en": "no lighter yet. the shop, the yellow door.",
+  "da": "ingen lighter endnu. shoppen, den gule dør.",
+  "where": "src/npc.ts:78"
+ },
+ "T0289": {
+  "en": "good. that is your pay.",
+  "da": "godt. det er din løn.",
+  "where": "src/npc.ts:79"
+ },
+ "T0290": {
+  "en": "what do you need?",
+  "da": "hvad skal du bruge?",
+  "where": "src/npc.ts:80"
+ },
+ "T0291": {
+  "en": "your pockets are full. clear some space.",
+  "da": "dine lommer er fulde. ryd noget plads.",
+  "where": "src/npc.ts:81"
+ },
+ "T0292": {
+  "en": "Growing kit",
+  "da": "Growth kit",
+  "where": "src/rooms.ts:87"
+ },
+ "T0293": {
+  "en": "Sink",
+  "da": "Håndvask",
+  "where": "src/rooms.ts:93"
+ },
+ "T0294": {
+  "en": "Toolbox",
+  "da": "Værktøjskasse",
+  "where": "src/rooms.ts:97"
+ },
+ "T0295": {
+  "en": "Counter",
+  "da": "Disk",
+  "where": "src/rooms.ts:103"
+ },
+ "T0296": {
+  "en": "Arcade machine",
+  "da": "Arkademaskine",
+  "where": "src/rooms.ts:165"
+ },
+ "T0297": {
+  "en": "CD player",
+  "da": "CD afspiller",
+  "where": "src/rooms.ts:166"
+ },
+ "T0298": {
+  "en": "Flappy Bird arcade",
+  "da": "Flappy Bird arkade",
+  "where": "src/rooms.ts:167"
+ },
+ "T0299": {
+  "en": "Dumpster",
+  "da": "Skraldecontainer",
+  "where": "src/rooms.ts:168"
+ },
+ "T0300": {
+  "en": "Sand",
+  "da": "Sand",
+  "where": "src/rooms.ts:169"
+ },
+ "T0301": {
+  "en": "Oak",
+  "da": "Eg",
+  "where": "src/rooms.ts:170"
+ },
+ "T0302": {
+  "en": "Slate",
+  "da": "Skifer",
+  "where": "src/rooms.ts:171"
+ },
+ "T0303": {
+  "en": "Checker",
+  "da": "Skakternet",
+  "where": "src/rooms.ts:172"
+ },
+ "T0304": {
+  "en": "Moss",
+  "da": "Mos",
+  "where": "src/rooms.ts:179"
+ },
+ "T0305": {
+  "en": "Rose",
+  "da": "Rosa",
+  "where": "src/rooms.ts:179"
+ },
+ "T0306": {
+  "en": "Ocean",
+  "da": "Hav",
+  "where": "src/rooms.ts:179"
+ },
+ "T0307": {
+  "en": "Cream",
+  "da": "Creme",
+  "where": "src/rooms.ts:179"
+ },
+ "T0308": {
+  "en": "Fuzzy",
+  "da": "Fuzzy",
+  "where": "src/rooms.ts:182"
+ },
+ "T0309": {
+  "en": "Tiles",
+  "da": "Fliser",
+  "where": "src/rooms.ts:182"
+ },
+ "T0310": {
+  "en": "Planks",
+  "da": "Planker",
+  "where": "src/rooms.ts:182"
+ },
+ "T0311": {
+  "en": "Slabs",
+  "da": "Sten",
+  "where": "src/rooms.ts:183"
+ },
+ "T0312": {
+  "en": "Red brick",
+  "da": "Rød mursten",
+  "where": "src/rooms.ts:183"
+ },
+ "T0313": {
+  "en": "White brick",
+  "da": "Hvid mursten",
+  "where": "src/rooms.ts:184"
+ },
+ "T0314": {
+  "en": "Teal tiles",
+  "da": "Turkise fliser",
+  "where": "src/rooms.ts:184"
+ },
+ "T0315": {
+  "en": "Chocolate",
+  "da": "Chokolade",
+  "where": "src/rooms.ts:184"
+ },
+ "T0316": {
+  "en": "Wood",
+  "da": "Træ",
+  "where": "src/rooms.ts:185"
+ },
+ "T0317": {
+  "en": "Pink plaid",
+  "da": "Pink tern",
+  "where": "src/rooms.ts:185"
+ },
+ "T0318": {
+  "en": "Brown plaid",
+  "da": "Brun tern",
+  "where": "src/rooms.ts:185"
+ },
+ "T0319": {
+  "en": "Green plaid",
+  "da": "Grøn tern",
+  "where": "src/rooms.ts:186"
+ },
+ "T0320": {
+  "en": "Bright stripes",
+  "da": "Skarpe striber",
+  "where": "src/rooms.ts:186"
+ },
+ "T0321": {
+  "en": "Blue stripes",
+  "da": "Blå striber",
+  "where": "src/rooms.ts:186"
+ },
+ "T0322": {
+  "en": "Orange stripes",
+  "da": "Orange striber",
+  "where": "src/rooms.ts:187"
+ },
+ "T0323": {
+  "en": "Pink zigzag",
+  "da": "Pink zigzag",
+  "where": "src/rooms.ts:187"
+ },
+ "T0324": {
+  "en": "Yellow zigzag",
+  "da": "Gul zigzag",
+  "where": "src/rooms.ts:187"
+ },
+ "T0325": {
+  "en": "Blue zigzag",
+  "da": "Blå zigzag",
+  "where": "src/rooms.ts:188"
+ },
+ "T0326": {
+  "en": "Purple rings",
+  "da": "Lilla ringe",
+  "where": "src/rooms.ts:188"
+ },
+ "T0327": {
+  "en": "Green rings",
+  "da": "Grønne ringe",
+  "where": "src/rooms.ts:189"
+ },
+ "T0328": {
+  "en": "Yellow rings",
+  "da": "Gule ringe",
+  "where": "src/rooms.ts:189"
+ },
+ "T0329": {
+  "en": "Blue rings",
+  "da": "Blå ringe",
+  "where": "src/rooms.ts:189"
+ },
+ "T0330": {
+  "en": "Brown rings",
+  "da": "Brune ringe",
+  "where": "src/rooms.ts:189"
+ },
+ "T0331": {
+  "en": "Hearts",
+  "da": "Hjerter",
+  "where": "src/rooms.ts:358"
+ },
+ "T0332": {
+  "en": "Clouds",
+  "da": "Skyer",
+  "where": "src/shared/economy.ts:15"
+ },
+ "T0333": {
+  "en": "Groovy green",
+  "da": "Groovy grøn",
+  "where": "src/shared/economy.ts:16"
+ },
+ "T0334": {
+  "en": "Groovy blue",
+  "da": "Groovy blå",
+  "where": "src/shared/furniture.ts:5"
+ },
+ "T0335": {
+  "en": "{name}'s room",
+  "da": "{name}s værelse",
+  "where": "src/shared/furniture.ts:6"
+ },
+ "T0336": {
+  "en": "weed seed",
+  "da": "weed frø",
+  "where": "src/shared/furniture.ts:8"
+ },
+ "T0337": {
+  "en": "dead cat",
+  "da": "død kat",
+  "where": "src/shared/furniture.ts:9"
+ },
+ "T0338": {
+  "en": "Blood streak",
+  "da": "Blodstribe",
+  "where": "src/shared/furniture.ts:10"
+ },
+ "T0339": {
+  "en": "Toast friend",
+  "da": "Toast ven",
+  "where": "src/shared/furniture.ts:11"
+ },
+ "T0340": {
+  "en": "Body bag",
+  "da": "Body bag",
+  "where": "src/shared/furniture.ts:12"
+ },
+ "T0341": {
+  "en": "Grunge bench",
+  "da": "Grunge bænk",
+  "where": "src/shared/furniture.ts:14"
+ },
+ "T0342": {
+  "en": "Old sofa",
+  "da": "Gammel sofa",
+  "where": "src/shared/furniture.ts:15"
+ },
+ "T0343": {
+  "en": "Card table",
+  "da": "Kortbord",
+  "where": "src/shared/furniture.ts:16"
+ },
+ "T0344": {
+  "en": "Restraint bed",
+  "da": "Fikseringsseng",
+  "where": "src/shared/furniture.ts:17"
+ },
+ "T0345": {
+  "en": "Fountain",
+  "da": "Springvand",
+  "where": "src/shared/furniture.ts:18"
+ },
+ "T0346": {
+  "en": "Nokia phone",
+  "da": "Nokia telefon",
+  "where": "src/shared/furniture.ts:19"
+ },
+ "T0347": {
+  "en": "Telephone",
+  "da": "Telefon",
+  "where": "src/shared/furniture.ts:20"
+ },
+ "T0348": {
+  "en": "Phone cam",
+  "da": "Telefonkamera",
+  "where": "src/shared/furniture.ts:21"
+ },
+ "T0349": {
+  "en": "Creepy doll",
+  "da": "Uhyggelig dukke",
+  "where": "src/shared/furniture.ts:22"
+ },
+ "T0350": {
+  "en": "Saint Ta",
+  "da": "Sankt Ta",
+  "where": "src/shared/furniture.ts:23"
+ },
+ "T0351": {
+  "en": "Shark",
+  "da": "Haj",
+  "where": "src/shared/furniture.ts:24"
+ },
+ "T0352": {
+  "en": "Horse",
+  "da": "Hest",
+  "where": "src/shared/furniture.ts:25"
+ },
+ "T0353": {
+  "en": "Prize money",
+  "da": "Præmiepenge",
+  "where": "src/shared/furniture.ts:26"
+ },
+ "T0354": {
+  "en": "Label",
+  "da": "Label",
+  "where": "src/shared/furniture.ts:27"
+ },
+ "T0355": {
+  "en": "Ritual circle",
+  "da": "Ritualcirkel",
+  "where": "src/shared/furniture.ts:28"
+ },
+ "T0356": {
+  "en": "Blood bath",
+  "da": "Blodbad",
+  "where": "src/shared/furniture.ts:29"
+ },
+ "T0357": {
+  "en": "Norja couch",
+  "da": "Norja sofa",
+  "where": "src/shared/furniture.ts:30"
+ },
+ "T0358": {
+  "en": "Collector sofa",
+  "da": "Samler sofa",
+  "where": "src/shared/furniture.ts:31"
+ },
+ "T0359": {
+  "en": "Red chaise",
+  "da": "Rød chaiselong",
+  "where": "src/shared/furniture.ts:32"
+ },
+ "T0360": {
+  "en": "Jetset tub",
+  "da": "Jetset badekar",
+  "where": "src/shared/furniture.ts:33"
+ },
+ "T0361": {
+  "en": "Gargoyle fountain",
+  "da": "Gargoyle springvand",
+  "where": "src/shared/furniture.ts:34"
+ },
+ "T0362": {
+  "en": "Float bed",
+  "da": "Flydeseng",
+  "where": "src/shared/items.ts:81"
+ },
+ "T0363": {
+  "en": "Big bunny bed",
+  "da": "Stor kanin seng",
+  "where": "src/shared/items.ts:130"
+ },
+ "T0364": {
+  "en": "Hot dog bed",
+  "da": "Hotdog seng",
+  "where": "src/shared/items.ts:136"
+ },
+ "T0365": {
+  "en": "My Melody bed",
+  "da": "My Melody seng",
+  "where": "src/shared/items.ts:137"
+ },
+ "T0366": {
+  "en": "Canopy bed",
+  "da": "Himmelseng",
+  "where": "src/shared/items.ts:144"
+ },
+ "T0367": {
+  "en": "Cigarettes (15)",
+  "da": "Cigaretter (15)",
+  "where": "src/shared/items.ts:145"
+ },
+ "T0368": {
+  "en": "You crush the kodimagnyl into the water. It turns purple: codeine. The can is empty again.",
+  "da": "Du knuser kodimagnylen ned i vandet. Det bliver lilla: codeine. Kanden er tom igen.",
+  "where": "src/shared/items.ts:146"
+ },
+ "T0369": {
+  "en": "You roll a joint.",
+  "da": "Du ruller en joint.",
+  "where": "src/shared/items.ts:147"
+ },
+ "T0370": {
+  "en": "You roll a blunt.",
+  "da": "Du ruller en blunt.",
+  "where": "src/shared/items.ts:148"
+ },
+ "T0371": {
+  "en": "You crumble the weed into the tobacco: 2 weed mix.",
+  "da": "Du smuldrer weeden ned i tobakken: 2 weed mix.",
+  "where": "src/shared/skins.ts:22"
+ },
+ "T0372": {
+  "en": "Good weed and bad weed, mixed up: 2 mid weed.",
+  "da": "God weed og dårlig weed blandet: 2 mid weed.",
+  "where": "src/shared/skins.ts:23"
+ },
+ "T0373": {
+  "en": "The pill dissolves into the weed: 1 thc-a.",
+  "da": "Pillen opløses i weeden: 1 thc-a.",
+  "where": "src/shared/skins.ts:24"
+ },
+ "T0374": {
+  "en": "You grind the pill into the tobacco: 1 research chemical.",
+  "da": "Du maler pillen ned i tobakken: 1 research chemical.",
+  "where": "src/shared/skins.ts:25"
+ },
+ "T0375": {
+  "en": "Two pills, pressed into one: 1 super pill.",
+  "da": "To piller, presset til én: 1 super pille.",
+  "where": "src/shared/skins.ts:28"
+ },
+ "T0376": {
+  "en": "Lodge bed",
+  "da": "Hytte seng",
+  "where": "src/shared/skins.ts:29"
+ },
+ "T0377": {
+  "en": "Bunny bed",
+  "da": "Kanin seng",
+  "where": "src/shared/skins.ts:31"
+ },
+ "T0378": {
+  "en": "Gold bed",
+  "da": "Guld seng",
+  "where": "src/shared/skins.ts:32"
+ },
+ "T0379": {
+  "en": "Gothic bed",
+  "da": "Gotisk seng",
+  "where": "src/social.ts:342"
+ },
+ "T0380": {
+  "en": "Coat rack",
+  "da": "Knagerække",
+  "where": "src/social.ts:344"
+ },
+ "T0381": {
+  "en": "Mess wardrobe",
+  "da": "Rodet skab",
+  "where": "src/social.ts:346"
+ },
+ "T0382": {
+  "en": "Wardrobe",
+  "da": "Garderobe",
+  "where": "src/social.ts:347"
+ },
+ "T0383": {
+  "en": "Ducket wardrobe",
+  "da": "Ducket garderobe",
+  "where": "src/social.ts:350"
+ },
+ "T0384": {
+  "en": "Tall wardrobe",
+  "da": "Højt skab",
+  "where": "src/social.ts:353"
+ },
+ "T0385": {
+  "en": "Type a username first.",
+  "da": "Skriv et brugernavn først.",
+  "where": "src/templateExport.ts:87"
+ },
+ "T0386": {
+  "en": "Nobody is called \"{name}\".",
+  "da": "Ingen hedder \"{name}\".",
+  "where": "src/templateExport.ts:108"
+ },
+ "T0387": {
+  "en": "That's you!",
+  "da": "Det er dig!",
+  "where": "src/ui/admin.ts:16"
+ },
+ "T0388": {
+  "en": "You're already friends.",
+  "da": "I er allerede venner.",
+  "where": "src/ui/admin.ts:16"
+ },
+ "T0389": {
+  "en": "You and {name} are now friends.",
+  "da": "Du og {name} er venner nu.",
+  "where": "src/ui/admin.ts:16"
+ },
+ "T0390": {
+  "en": "Friend request sent to {name}.",
+  "da": "Venneanmodning sendt til {name}.",
+  "where": "src/ui/admin.ts:16  |  src/ui/room.ts:733  |  src/rooms.ts:227  |  src/rooms.ts:257"
+ },
+ "T0391": {
+  "en": "couldn't decode an atlas",
+  "da": "kunne ikke læse et atlas",
+  "where": "src/ui/admin.ts:16"
+ },
+ "T0392": {
+  "en": "Item icons as SVG (editable, 16x16 pixel grid) and as 256px PNG previews.",
+  "da": "Ting-ikoner som SVG (kan redigeres, 16x16 pixelgrid) og som 256px PNG-forhåndsvisninger.",
+  "where": "src/ui/admin.ts:16"
+ },
+ "T0393": {
+  "en": "Players",
+  "da": "Spillere",
+  "where": "src/ui/admin.ts:58"
+ },
+ "T0394": {
+  "en": "Messages",
+  "da": "Beskeder",
+  "where": "src/ui/admin.ts:73"
+ },
+ "T0395": {
+  "en": "Activity",
+  "da": "Aktivitet",
+  "where": "src/ui/admin.ts:80"
+ },
+ "T0396": {
+  "en": "Shop",
+  "da": "Shop",
+  "where": "src/ui/admin.ts:81"
+ },
+ "T0397": {
+  "en": "Studio",
+  "da": "Studio",
+  "where": "src/ui/admin.ts:81"
+ },
+ "T0398": {
+  "en": "Settings",
+  "da": "Indstillinger",
+  "where": "src/ui/admin.ts:91  |  src/main.ts:129"
+ },
+ "T0399": {
+  "en": "Admin. Players are told on the sign-in screen that staff can see chat, private messages and activity. Treat what you see here as private.",
+  "da": "Admin. Spillere får at vide på login-skærmen at staff kan se chat, private beskeder og aktivitet. Behandl det du ser her som privat.",
+  "where": "src/ui/admin.ts:91"
+ },
+ "T0400": {
+  "en": "Loading players…",
+  "da": "Henter spillere…",
+  "where": "src/ui/admin.ts:91"
+ },
+ "T0401": {
+  "en": "Search by username…",
+  "da": "Søg på brugernavn…",
+  "where": "src/ui/admin.ts:91"
+ },
+ "T0402": {
+  "en": "Refreshed",
+  "da": "Opdateret",
+  "where": "src/ui/admin.ts:91"
+ },
+ "T0403": {
+  "en": "Refresh",
+  "da": "Opdater",
+  "where": "src/ui/admin.ts:107"
+ },
+ "T0404": {
+  "en": "Username",
+  "da": "Brugernavn",
+  "where": "src/ui/admin.ts:107"
+ },
+ "T0405": {
+  "en": "Drops",
+  "da": "Dråber",
+  "where": "src/ui/admin.ts:108"
+ },
+ "T0406": {
+  "en": "Items owned",
+  "da": "Ting ejet",
+  "where": "src/ui/admin.ts:112"
+ },
+ "T0407": {
+  "en": "Stabs today",
+  "da": "Stab i dag",
+  "where": "src/ui/admin.ts:114"
+ },
+ "T0408": {
+  "en": "Joined",
+  "da": "Tilmeldt",
+  "where": "src/ui/admin.ts:115"
+ },
+ "T0409": {
+  "en": "{…}{…} (slot {…})",
+  "da": "{…}{…} (plads {…})",
+  "where": "src/ui/admin.ts:116"
+ },
+ "T0410": {
+  "en": "(in the CD player)",
+  "da": "(i CD afspilleren)",
+  "where": "src/ui/admin.ts:116"
+ },
+ "T0411": {
+  "en": "{…} ({fmtDate})",
+  "da": "{…} ({fmtDate})",
+  "where": "src/ui/admin.ts:117"
+ },
+ "T0412": {
+  "en": "Gender {gender} · joined {fmtDate} · {blood} drops",
+  "da": "Køn {gender} · tilmeldt {fmtDate} · {blood} dråber",
+  "where": "src/ui/admin.ts:118"
+ },
+ "T0413": {
+  "en": "Inventory:",
+  "da": "Inventar:",
+  "where": "src/ui/admin.ts:139"
+ },
+ "T0414": {
+  "en": "Owned:",
+  "da": "Ejer:",
+  "where": "src/ui/admin.ts:139"
+ },
+ "T0415": {
+  "en": "Wardrobe:",
+  "da": "Garderobe:",
+  "where": "src/ui/admin.ts:154"
+ },
+ "T0416": {
+  "en": "{length} saved outfits",
+  "da": "{length} gemte outfits",
+  "where": "src/ui/admin.ts:158  |  src/ui/admin.ts:238"
+ },
+ "T0417": {
+  "en": "Syringe:",
+  "da": "Sprøjte:",
+  "where": "src/ui/admin.ts:158  |  src/ui/admin.ts:238"
+ },
+ "T0418": {
+  "en": "Has stabbed:",
+  "da": "Har stukket:",
+  "where": "src/ui/admin.ts:162"
+ },
+ "T0419": {
+  "en": "Public chat",
+  "da": "Offentlig chat",
+  "where": "src/ui/admin.ts:167"
+ },
+ "T0420": {
+  "en": "Private messages",
+  "da": "Private beskeder",
+  "where": "src/ui/admin.ts:181"
+ },
+ "T0421": {
+  "en": "Filter by name or text…",
+  "da": "Filtrer på navn eller tekst…",
+  "where": "src/ui/admin.ts:207"
+ },
+ "T0422": {
+  "en": "Time",
+  "da": "Tid",
+  "where": "src/ui/admin.ts:209"
+ },
+ "T0423": {
+  "en": "User",
+  "da": "Bruger",
+  "where": "src/ui/admin.ts:221"
+ },
+ "T0424": {
+  "en": "Basement chat, last 300 messages, live",
+  "da": "Kælder-chat, sidste 300 beskeder, live",
+  "where": "src/ui/admin.ts:222"
+ },
+ "T0425": {
+  "en": "Couldn't read the chat",
+  "da": "Kunne ikke læse chatten",
+  "where": "src/ui/admin.ts:233"
+ },
+ "T0426": {
+  "en": "Filter by name…",
+  "da": "Filtrer på navn…",
+  "where": "src/ui/admin.ts:234"
+ },
+ "T0427": {
+  "en": "No private messages yet.",
+  "da": "Ingen private beskeder endnu.",
+  "where": "src/ui/admin.ts:238"
+ },
+ "T0428": {
+  "en": "Pick a conversation.",
+  "da": "Vælg en samtale.",
+  "where": "src/ui/admin.ts:238"
+ },
+ "T0429": {
+  "en": "Every private conversation between players, live",
+  "da": "Alle private samtaler mellem spillere, live",
+  "where": "src/ui/admin.ts:241"
+ },
+ "T0430": {
+  "en": "Couldn't read private messages",
+  "da": "Kunne ikke læse private beskeder",
+  "where": "src/ui/admin.ts:246"
+ },
+ "T0431": {
+  "en": "All actions",
+  "da": "Alle handlinger",
+  "where": "src/ui/admin.ts:252"
+ },
+ "T0432": {
+  "en": "Filter by name or detail…",
+  "da": "Filtrer på navn eller detalje…",
+  "where": "src/ui/admin.ts:253"
+ },
+ "T0433": {
+  "en": "Action",
+  "da": "Handling",
+  "where": "src/ui/admin.ts:254"
+ },
+ "T0434": {
+  "en": "Detail",
+  "da": "Detalje",
+  "where": "src/ui/admin.ts:258"
+ },
+ "T0435": {
+  "en": "Last 500 actions, newest first, live",
+  "da": "Sidste 500 handlinger, nyeste først, live",
+  "where": "src/ui/admin.ts:259"
+ },
+ "T0436": {
+  "en": "Couldn't read the action log",
+  "da": "Kunne ikke læse handlingsloggen",
+  "where": "src/ui/admin.ts:265"
+ },
+ "T0437": {
+  "en": "current password",
+  "da": "nuværende adgangskode",
+  "where": "src/ui/admin.ts:270"
+ },
+ "T0438": {
+  "en": "new password (6+ characters)",
+  "da": "ny adgangskode (6+ tegn)",
+  "where": "src/ui/admin.ts:271"
+ },
+ "T0439": {
+  "en": "new password again",
+  "da": "ny adgangskode igen",
+  "where": "src/ui/admin.ts:272"
+ },
+ "T0440": {
+  "en": "Admin password",
+  "da": "Admin adgangskode",
+  "where": "src/ui/adminFurni.ts:74"
+ },
+ "T0441": {
+  "en": "Anyone who knows this password can read every private message. If it's still the one you started with, change it before inviting people.",
+  "da": "Alle der kender denne adgangskode kan læse alle private beskeder. Hvis det stadig er den du startede med, så skift den før du inviterer folk.",
+  "where": "src/ui/adminFurni.ts:77"
+ },
+ "T0442": {
+  "en": "The new passwords don't match.",
+  "da": "De nye adgangskoder er ikke ens.",
+  "where": "src/ui/adminFurni.ts:85"
+ },
+ "T0443": {
+  "en": "Password changed.",
+  "da": "Adgangskode ændret.",
+  "where": "src/ui/adminFurni.ts:103"
+ },
+ "T0444": {
+  "en": "Current password is wrong.",
+  "da": "Nuværende adgangskode er forkert.",
+  "where": "src/ui/adminFurni.ts:125  |  src/ui/studioHub.ts:18  |  src/ui/adminShop.ts:53  |  src/ui/shop.ts:20  (+2 more)"
+ },
+ "T0445": {
+  "en": "Change password",
+  "da": "Skift adgangskode",
+  "where": "src/ui/adminFurni.ts:131"
+ },
+ "T0446": {
+  "en": "· flat",
+  "da": "· flad",
+  "where": "src/ui/adminFurni.ts:136"
+ },
+ "T0447": {
+  "en": "Furniture uploaded here can be placed in the basement (Room tab > the 🏠 tab while you stand in it). Turn on \"players can place it\" to let everyone use it in their own rooms.",
+  "da": "Møbler uploadet her kan stilles i kælderen (Værelse-fanen mens du står i den). Slå \"spillere kan placere den\" til så alle kan bruge den i deres eget værelse.",
+  "where": "src/ui/adminFurni.ts:137"
+ },
+ "T0448": {
+  "en": "Couldn't load this piece's art.",
+  "da": "Kunne ikke hente dette møbels grafik.",
+  "where": "src/ui/adminFurni.ts:138"
+ },
+ "T0449": {
+  "en": "Furniture",
+  "da": "Møbler",
+  "where": "src/ui/adminFurni.ts:143"
+ },
+ "T0450": {
+  "en": "New art loaded. Save to keep it.",
+  "da": "Ny grafik indlæst. Gem for at beholde den.",
+  "where": "src/ui/adminFurni.ts:148"
+ },
+ "T0451": {
+  "en": "‹ Furniture",
+  "da": "‹ Møbler",
+  "where": "src/ui/adminFurni.ts:149"
+ },
+ "T0452": {
+  "en": "{length} more file{…} waiting",
+  "da": "{length} flere filer venter",
+  "where": "src/ui/adminFurni.ts:150"
+ },
+ "T0453": {
+  "en": "A piece called {id} already exists. Saving replaces its art.",
+  "da": "Et møbel der hedder {id} findes allerede. Gem erstatter dets grafik.",
+  "where": "src/ui/adminFurni.ts:151"
+ },
+ "T0454": {
+  "en": "The grid shows the tiles it occupies. If the art floats or sinks, nudge it.",
+  "da": "Gitteret viser de felter det fylder. Hvis grafikken svæver eller synker, så ryk den.",
+  "where": "src/ui/adminFurni.ts:152"
+ },
+ "T0455": {
+  "en": "Tiles wide",
+  "da": "Felter bred",
+  "where": "src/ui/adminFurni.ts:156"
+ },
+ "T0456": {
+  "en": "Tiles deep",
+  "da": "Felter dyb",
+  "where": "src/ui/adminFurni.ts:165  |  src/ui/roomPanel.ts:103"
+ },
+ "T0457": {
+  "en": "Flat on the floor (walkable)",
+  "da": "Fladt på gulvet (kan gås på)",
+  "where": "src/ui/adminFurni.ts:167"
+ },
+ "T0458": {
+  "en": "Players can place it",
+  "da": "Spillere kan placere den",
+  "where": ""
+ },
+ "T0459": {
+  "en": "Nudge x / y",
+  "da": "Ryk x / y",
+  "where": "src/ui/adminShop.ts:28"
+ },
+ "T0460": {
+  "en": "Replace the art:",
+  "da": "Erstat grafikken:",
+  "where": "src/ui/adminShop.ts:31"
+ },
+ "T0461": {
+  "en": "Save",
+  "da": "Gem",
+  "where": "src/ui/adminShop.ts:32"
+ },
+ "T0462": {
+  "en": "Delete \"{name}\"? It disappears from every room.",
+  "da": "Slet \"{name}\"? Det forsvinder fra alle værelser.",
+  "where": "src/ui/adminShop.ts:35"
+ },
+ "T0463": {
+  "en": "This takes EVERYTHING off sale (all clothing, emotes, items, the jukebox pass and your own designs). Prices are kept, so you can switch things back on one by one.\n\nType  clear  to confirm:",
+  "da": "Det her tager ALT ud af salg (alt tøj, emotes, ting, jukebox-adgang og dine egne designs). Priser bliver gemt, så du kan slå ting til igen ét ad gangen.\n\nSkriv  clear  for at bekræfte:",
+  "where": "src/ui/adminShop.ts:37"
+ },
+ "T0464": {
+  "en": "Nothing changed. You have to type \"clear\".",
+  "da": "Intet ændret. Du skal skrive \"clear\".",
+  "where": "src/ui/adminShop.ts:38"
+ },
+ "T0465": {
+  "en": "cleared the shop (everything off sale)",
+  "da": "ryddede shoppen (alt er ude af salg)",
+  "where": "src/ui/adminShop.ts:39"
+ },
+ "T0466": {
+  "en": "The shop is empty.",
+  "da": "Shoppen er tom.",
+  "where": "src/ui/adminShop.ts:40"
+ },
+ "T0467": {
+  "en": "Clear the shop",
+  "da": "Ryd shoppen",
+  "where": "src/ui/adminShop.ts:44"
+ },
+ "T0468": {
+  "en": "Forget every shop change you made (prices, what's on sale) and go back to the defaults?",
+  "da": "Glem alle shop-ændringer du har lavet (priser, hvad der er til salg) og gå tilbage til standard?",
+  "where": "src/ui/adminShop.ts:75"
+ },
+ "T0469": {
+  "en": "Shop reset to defaults.",
+  "da": "Shop nulstillet til standard.",
+  "where": "src/ui/adminShop.ts:75"
+ },
+ "T0470": {
+  "en": "Reset to defaults",
+  "da": "Nulstil til standard",
+  "where": "src/ui/adminShop.ts:75"
+ },
+ "T0471": {
+  "en": "Clear the shop takes everything off sale in one go.",
+  "da": "Ryd shoppen tager alt ud af salg på én gang.",
+  "where": "src/ui/adminShop.ts:75"
+ },
+ "T0472": {
+  "en": "Couldn't save (are you still signed in as admin?)",
+  "da": "Kunne ikke gemme (er du stadig logget ind som admin?)",
+  "where": "src/ui/adminShop.ts:75"
+ },
+ "T0473": {
+  "en": "All items",
+  "da": "Alle ting",
+  "where": "src/ui/adminShop.ts:95"
+ },
+ "T0474": {
+  "en": "In the shop",
+  "da": "I shoppen",
+  "where": "src/ui/adminShop.ts:102"
+ },
+ "T0475": {
+  "en": "Not in the shop",
+  "da": "Ikke i shoppen",
+  "where": "src/ui/adminShop.ts:102"
+ },
+ "T0476": {
+  "en": "Free (everyone owns)",
+  "da": "Gratis (alle ejer den)",
+  "where": "src/ui/adminShop.ts:127"
+ },
+ "T0477": {
+  "en": "Club only",
+  "da": "Kun klub",
+  "where": "src/ui/adminShop.ts:134"
+ },
+ "T0478": {
+  "en": "None of the ticked items can be changed (club, built-in free and Studio items can't).",
+  "da": "Ingen af de valgte ting kan ændres (klub, indbyggede gratis og Studio ting kan ikke).",
+  "where": "src/ui/adminShop.ts:151"
+ },
+ "T0479": {
+  "en": "{…}: {length} clothing items",
+  "da": "{…}: {length} tøjting",
+  "where": "src/ui/adminShop.ts:155"
+ },
+ "T0480": {
+  "en": "made starter (free for everyone)",
+  "da": "gjort til starter (gratis for alle)",
+  "where": "src/ui/adminShop.ts:157"
+ },
+ "T0481": {
+  "en": "Starter: free for everyone, never sold",
+  "da": "Starter: gratis for alle, aldrig til salg",
+  "where": "src/ui/adminShop.ts:158"
+ },
+ "T0482": {
+  "en": "{…} {type}-{id} a starter item",
+  "da": "{…} {type}-{id} en starter ting",
+  "where": "src/ui/adminShop.ts:167"
+ },
+ "T0483": {
+  "en": "{…} {type}-{id} {…} the shop",
+  "da": "{…} {type}-{id} {…} shoppen",
+  "where": "src/ui/adminShop.ts:177"
+ },
+ "T0484": {
+  "en": "set {type}-{id} to {n} drops",
+  "da": "satte {type}-{id} til {n} dråber",
+  "where": "src/ui/adminShop.ts:178"
+ },
+ "T0485": {
+  "en": "drops",
+  "da": "dråber",
+  "where": "src/ui/adminShop.ts:180"
+ },
+ "T0486": {
+  "en": "club item: can't be sold",
+  "da": "klub ting: kan ikke sælges",
+  "where": "src/ui/adminShop.ts:181"
+ },
+ "T0487": {
+  "en": "{length} items · {size} selected",
+  "da": "{length} ting · {size} valgt",
+  "where": "src/ui/adminShop.ts:182"
+ },
+ "T0488": {
+  "en": "Ticked items:",
+  "da": "Valgte ting:",
+  "where": "src/ui/adminShop.ts:182"
+ },
+ "T0489": {
+  "en": "Select this page",
+  "da": "Vælg denne side",
+  "where": "src/ui/adminShop.ts:183"
+ },
+ "T0490": {
+  "en": "Put in shop at",
+  "da": "Sæt i shoppen til",
+  "where": "src/ui/adminShop.ts:184"
+ },
+ "T0491": {
+  "en": "Remove from shop",
+  "da": "Fjern fra shoppen",
+  "where": "src/ui/adminShop.ts:205"
+ },
+ "T0492": {
+  "en": "Free for everyone, never sold",
+  "da": "Gratis for alle, aldrig til salg",
+  "where": "src/ui/adminShop.ts:208"
+ },
+ "T0493": {
+  "en": "Make starter",
+  "da": "Gør til starter",
+  "where": "src/ui/adminShop.ts:212"
+ },
+ "T0494": {
+  "en": "Reset to default",
+  "da": "Nulstil til standard",
+  "where": "src/ui/adminShop.ts:213"
+ },
+ "T0495": {
+  "en": "{label} ({priceOf})",
+  "da": "{label} ({priceOf})",
+  "where": "src/ui/adminShop.ts:213"
+ },
+ "T0496": {
+  "en": "{priceOf} drops",
+  "da": "{priceOf} dråber",
+  "where": "src/ui/adminShop.ts:216"
+ },
+ "T0497": {
+  "en": "Shop room: today's four pieces",
+  "da": "Shop-rummet: dagens fire møbler",
+  "where": "src/ui/adminShop.ts:216"
+ },
+ "T0498": {
+  "en": "You changed today's pick: it stays until midnight.",
+  "da": "Du ændrede dagens valg: det bliver til midnat.",
+  "where": "src/ui/adminShop.ts:217"
+ },
+ "T0499": {
+  "en": "Today's pick is random (the same for everyone).",
+  "da": "Dagens valg er tilfældigt (det samme for alle).",
+  "where": "src/ui/adminShop.ts:219"
+ },
+ "T0500": {
+  "en": "rerolled the shop's furniture",
+  "da": "rerollede shoppens møbler",
+  "where": "src/ui/adminShop.ts:221"
+ },
+ "T0501": {
+  "en": "Reroll",
+  "da": "Reroll",
+  "where": "src/ui/adminShop.ts:225"
+ },
+ "T0502": {
+  "en": "Back to the random pick",
+  "da": "Tilbage til det tilfældige valg",
+  "where": "src/ui/adminShop.ts:226"
+ },
+ "T0503": {
+  "en": "Prices (10-25 drops by default)",
+  "da": "Priser (10-25 dråber som standard)",
+  "where": "src/ui/adminShop.ts:245"
+ },
+ "T0504": {
+  "en": "Piece",
+  "da": "Møbel",
+  "where": "src/ui/adminShop.ts:246"
+ },
+ "T0505": {
+  "en": "set {label} to {n} drops",
+  "da": "satte {label} til {n} dråber",
+  "where": "src/ui/adminShop.ts:247"
+ },
+ "T0506": {
+  "en": "Default",
+  "da": "Standard",
+  "where": "src/ui/adminShop.ts:248"
+ },
+ "T0507": {
+  "en": "{…} the {name} {…} 6ixty's shelf",
+  "da": "{…} {name} {…} 6ixtys hylde",
+  "where": "src/ui/adminShop.ts:252"
+ },
+ "T0508": {
+  "en": "6ixty sells it",
+  "da": "6ixty sælger den",
+  "where": "src/ui/adminShop.ts:257"
+ },
+ "T0509": {
+  "en": "set the {name} to {n} drops",
+  "da": "satte {name} til {n} dråber",
+  "where": "src/ui/adminShop.ts:259"
+ },
+ "T0510": {
+  "en": "New players start with one in their inventory",
+  "da": "Nye spillere starter med en i deres inventar",
+  "where": "src/ui/adminShop.ts:259"
+ },
+ "T0511": {
+  "en": "{…} the {name} a starter item",
+  "da": "{…} {name} en starter ting",
+  "where": "src/ui/adminShop.ts:259"
+ },
+ "T0512": {
+  "en": "6ixty sells what is ticked here (the shop window opens when a player talks to him). Tick \"starter\" and every NEW player starts with one in their inventory (players who already have an account aren't given one). The knife and the syringe come from 6ixty himself: the knife the first time you meet him, the syringe 12 hours later.",
+  "da": "6ixty sælger det der er sat flueben ved her (shop-vinduet åbner når en spiller taler med ham). Sæt flueben ved \"starter\" og hver NY spiller starter med en i deres inventar (spillere der allerede har en konto får ikke en). Kniven kommer fra 6ixty selv, første gang du møder ham.",
+  "where": "src/ui/adminShop.ts:259"
+ },
+ "T0513": {
+  "en": "Item",
+  "da": "Ting",
+  "where": "src/ui/adminShop.ts:268"
+ },
+ "T0514": {
+  "en": "What it does",
+  "da": "Hvad den gør",
+  "where": "src/ui/contextMenu.ts:22"
+ },
+ "T0515": {
+  "en": "On the shelf",
+  "da": "På hylden",
+  "where": "src/ui/contextMenu.ts:28  |  src/ui/door.ts:164  |  src/ui/sidepanel.ts:114  |  src/ui/sidepanel.ts:171  (+3 more)"
+ },
+ "T0516": {
+  "en": "Starter",
+  "da": "Starter",
+  "where": "src/ui/door.ts:46  |  src/ui/room.ts:744"
+ },
+ "T0517": {
+  "en": "Download item icons (.zip)",
+  "da": "Download ting-ikoner (.zip)",
+  "where": "src/ui/door.ts:47"
+ },
+ "T0518": {
+  "en": "Choose Option",
+  "da": "Vælg",
+  "where": "src/ui/door.ts:96"
+ },
+ "T0519": {
+  "en": "Cancel",
+  "da": "Annuller",
+  "where": "src/ui/door.ts:97"
+ },
+ "T0520": {
+  "en": "Door",
+  "da": "Dør",
+  "where": "src/ui/door.ts:99"
+ },
+ "T0521": {
+  "en": "🚪 Where to?",
+  "da": "Hvorhen?",
+  "where": "src/ui/door.ts:104  |  src/ui/door.ts:112"
+ },
+ "T0522": {
+  "en": "Click. The lock gives way.",
+  "da": "Klik. Låsen giver efter.",
+  "where": "src/ui/door.ts:104  |  src/ui/door.ts:106"
+ },
+ "T0523": {
+  "en": "{ownerName}'s room (picked the lock)",
+  "da": "{ownerName}s værelse (dirket op)",
+  "where": "src/ui/door.ts:104  |  src/ui/door.ts:106"
+ },
+ "T0524": {
+  "en": "The lock won't give.",
+  "da": "Låsen giver ikke efter.",
+  "where": "src/ui/door.ts:105"
+ },
+ "T0525": {
+  "en": "Closed",
+  "da": "Lukket",
+  "where": "src/ui/door.ts:105"
+ },
+ "T0526": {
+  "en": "Use a lockpick (once)",
+  "da": "Brug en dirk (én gang)",
+  "where": "src/ui/door.ts:110"
+ },
+ "T0527": {
+  "en": "🔓 Pick",
+  "da": "Dirk op",
+  "where": "src/ui/door.ts:123"
+ },
+ "T0528": {
+  "en": "{ownerName}'s room",
+  "da": "{ownerName}s værelse",
+  "where": "src/ui/door.ts:123"
+ },
+ "T0529": {
+  "en": "Visit",
+  "da": "Besøg",
+  "where": "src/ui/door.ts:135"
+ },
+ "T0530": {
+  "en": "Knock",
+  "da": "Bank på",
+  "where": "src/ui/door.ts:136"
+ },
+ "T0531": {
+  "en": "· idle",
+  "da": "· inaktiv",
+  "where": "src/ui/door.ts:137"
+ },
+ "T0532": {
+  "en": "· {count} inside",
+  "da": "· {count} inde",
+  "where": "src/ui/door.ts:145"
+ },
+ "T0533": {
+  "en": "🕳 Basement",
+  "da": "Kælderen",
+  "where": "src/ui/door.ts:146"
+ },
+ "T0534": {
+  "en": "🏠 My room",
+  "da": "Mit værelse",
+  "where": "src/ui/door.ts:148"
+ },
+ "T0535": {
+  "en": "Visit a player's room",
+  "da": "Besøg en spillers værelse",
+  "where": "src/ui/door.ts:152"
+ },
+ "T0536": {
+  "en": "Find",
+  "da": "Find",
+  "where": "src/ui/door.ts:154"
+ },
+ "T0537": {
+  "en": "Nobody is called \"{search}\".",
+  "da": "Ingen hedder \"{search}\".",
+  "where": "src/ui/door.ts:162"
+ },
+ "T0538": {
+  "en": "{name} hasn't set up a room yet.",
+  "da": "{name} har ikke lavet et værelse endnu.",
+  "where": "src/ui/door.ts:163"
+ },
+ "T0539": {
+  "en": "No rooms to visit right now. Search for a friend by username above.",
+  "da": "Ingen værelser at besøge lige nu. Søg efter en ven på brugernavn ovenfor.",
+  "where": "src/ui/door.ts:168"
+ },
+ "T0540": {
+  "en": "Username…",
+  "da": "Brugernavn…",
+  "where": "src/ui/door.ts:168"
+ },
+ "T0541": {
+  "en": "Knocking on {ownerName}'s door…",
+  "da": "Banker på {ownerName}s dør…",
+  "where": "src/ui/door.ts:183"
+ },
+ "T0542": {
+  "en": "They'll see your request in their friends menu. Hang tight.",
+  "da": "De ser din anmodning i deres venner-menu. Vent lidt.",
+  "where": "src/ui/door.ts:183"
+ },
+ "T0543": {
+  "en": "{ownerName} didn't let you in.",
+  "da": "{ownerName} lukkede dig ikke ind.",
+  "where": "src/ui/door.ts:196"
+ },
+ "T0544": {
+  "en": "No answer from {ownerName}.",
+  "da": "Intet svar fra {ownerName}.",
+  "where": "src/ui/dropConfirm.ts:12"
+ },
+ "T0545": {
+  "en": "{ownerName} let you in.",
+  "da": "{ownerName} lukkede dig ind.",
+  "where": "src/ui/dropConfirm.ts:16"
+ },
+ "T0546": {
+  "en": "{ownerName}'s room (let in)",
+  "da": "{ownerName}s værelse (lukket ind)",
+  "where": "src/ui/dropConfirm.ts:19  |  src/ui/dropConfirm.ts:20"
+ },
+ "T0547": {
+  "en": "Couldn't knock. They may have just closed their door.",
+  "da": "Kunne ikke banke på. De har måske lige lukket deres dør.",
+  "where": "src/ui/dropConfirm.ts:21"
+ },
+ "T0548": {
+  "en": "How many",
+  "da": "Hvor mange",
+  "where": "src/ui/dropConfirm.ts:21"
+ },
+ "T0549": {
+  "en": "Yes",
+  "da": "Ja",
+  "where": "src/ui/dropConfirm.ts:22"
+ },
+ "T0550": {
+  "en": "Drop item",
+  "da": "Drop ting",
+  "where": "src/ui/dropConfirm.ts:30"
+ },
+ "T0551": {
+  "en": "You have {qty}.",
+  "da": "Du har {qty}.",
+  "where": "src/ui/editor.ts:144  |  src/ui/landlord.ts:175"
+ },
+ "T0552": {
+  "en": "It lands on the floor.",
+  "da": "Den lander på gulvet.",
+  "where": "src/ui/editor.ts:168"
+ },
+ "T0553": {
+  "en": "How many?",
+  "da": "Hvor mange?",
+  "where": "src/ui/editor.ts:168"
+ },
+ "T0554": {
+  "en": "Type a number from 1 to {qty}.",
+  "da": "Skriv et tal fra 1 til {qty}.",
+  "where": "src/ui/editor.ts:214"
+ },
+ "T0555": {
+  "en": "None",
+  "da": "Ingen",
+  "where": "src/ui/editor.ts:223"
+ },
+ "T0556": {
+  "en": "You own everything in this category 🎉",
+  "da": "Du ejer alt i denne kategori",
+  "where": "src/ui/editor.ts:228"
+ },
+ "T0557": {
+  "en": "Nothing here yet — visit the shop!",
+  "da": "Intet her endnu: besøg shoppen!",
+  "where": "src/ui/editor.ts:228"
+ },
+ "T0558": {
+  "en": "6ixty's look saved!",
+  "da": "6ixtys look gemt!",
+  "where": "src/ui/editor.ts:232"
+ },
+ "T0559": {
+  "en": "Look saved!",
+  "da": "Look gemt!",
+  "where": "src/ui/editor.ts:235  |  src/main.ts:356"
+ },
+ "T0560": {
+  "en": "Save 6ixty's look",
+  "da": "Gem 6ixtys look",
+  "where": "src/ui/editor.ts:244"
+ },
+ "T0561": {
+  "en": "Save look",
+  "da": "Gem look",
+  "where": "src/ui/editor.ts:257"
+ },
+ "T0562": {
+  "en": "You haven't saved the new look. Go back without saving?",
+  "da": "Du har ikke gemt det nye look. Gå tilbage uden at gemme?",
+  "where": "src/ui/editor.ts:263"
+ },
+ "T0563": {
+  "en": "Go back",
+  "da": "Gå tilbage",
+  "where": "src/ui/editor.ts:263"
+ },
+ "T0564": {
+  "en": "Try items on, then buy the ones you like.",
+  "da": "Prøv ting på, køb så dem du kan lide.",
+  "where": "src/ui/furniBuy.ts:24"
+ },
+ "T0565": {
+  "en": "Bought {length} item{…} and put them on!",
+  "da": "Købte {length} ting og tog dem på!",
+  "where": "src/ui/furniBuy.ts:32"
+ },
+ "T0566": {
+  "en": "Buy & wear",
+  "da": "Køb & tag på",
+  "where": "src/ui/furniBuy.ts:32"
+ },
+ "T0567": {
+  "en": "Need 🩸 {…} more",
+  "da": "Mangler {…}",
+  "where": "src/ui/furniBuy.ts:45"
+ },
+ "T0568": {
+  "en": "· you can sit on it",
+  "da": "· du kan sidde på den",
+  "where": "src/ui/furniBuy.ts:50"
+ },
+ "T0569": {
+  "en": "You need {short} more drop{…}.",
+  "da": "Du mangler {short} dråber.",
+  "where": "src/ui/furnish.ts:48"
+ },
+ "T0570": {
+  "en": "It goes into your inventory.",
+  "da": "Den går i dit inventar.",
+  "where": "src/ui/furnish.ts:48"
+ },
+ "T0571": {
+  "en": "{label} is in your inventory.",
+  "da": "{label} er i dit inventar.",
+  "where": "src/ui/furnish.ts:54"
+ },
+ "T0572": {
+  "en": "The hotel refused that.",
+  "da": "Hotellet afviste det.",
+  "where": "src/ui/furnish.ts:55  |  src/ui/furnish.ts:61"
+ },
+ "T0573": {
+  "en": "Furnishing",
+  "da": "Indretning",
+  "where": "src/ui/furnish.ts:60"
+ },
+ "T0574": {
+  "en": "{placedCount}/{MAX_FURNI} placed",
+  "da": "{placedCount}/{MAX_FURNI} sat",
+  "where": "src/ui/furnish.ts:62"
+ },
+ "T0575": {
+  "en": "Tap a spot in the room to put it down.",
+  "da": "Tryk et sted i værelset for at stille den ned.",
+  "where": "src/ui/furnish.ts:64"
+ },
+ "T0576": {
+  "en": "⟳ Turn",
+  "da": "Drej",
+  "where": "src/ui/furnish.ts:74  |  src/ui/sixtyShop.ts:32  |  src/ui/trade.ts:67  |  src/ui/dropConfirm.ts:21  (+4 more)"
+ },
+ "T0577": {
+  "en": "Drag it to move it.",
+  "da": "Træk den for at flytte den.",
+  "where": "src/ui/furnish.ts:86  |  src/ui/furnish.ts:87"
+ },
+ "T0578": {
+  "en": "📦 Store",
+  "da": "Gem",
+  "where": "src/ui/furnish.ts:87  |  src/ui/furnish.ts:90  |  src/ui/trade.ts:127"
+ },
+ "T0579": {
+  "en": "Tap a piece to select it, then drag it. Tap a piece below to put it down.",
+  "da": "Tryk på et møbel for at vælge det, og træk det så. Tryk på et møbel nedenfor for at stille det ned.",
+  "where": "src/ui/furnish.ts:89  |  src/ui/furnish.ts:90"
+ },
+ "T0580": {
+  "en": "(ass)",
+  "da": "(ass)",
+  "where": "src/ui/furnish.ts:93"
+ },
+ "T0581": {
+  "en": "Take",
+  "da": "Tag",
+  "where": "src/ui/furnish.ts:94"
+ },
+ "T0582": {
+  "en": "All",
+  "da": "Alle",
+  "where": "src/ui/furnish.ts:95"
+ },
+ "T0583": {
+  "en": "Store",
+  "da": "Gem",
+  "where": "src/ui/furnish.ts:96"
+ },
+ "T0584": {
+  "en": "Storage ({…})",
+  "da": "Kasse ({…})",
+  "where": "src/ui/furnish.ts:96"
+ },
+ "T0585": {
+  "en": "Carrying ({length})",
+  "da": "Bærer ({length})",
+  "where": "src/ui/ios.ts:32"
+ },
+ "T0586": {
+  "en": "Store pieces and things (cigarettes, weed...) to keep your pockets free.",
+  "da": "Gem møbler og ting (cigaretter, weed...) så dine lommer er frie.",
+  "where": "src/ui/ios.ts:33"
+ },
+ "T0587": {
+  "en": "Nothing in storage. Pick a piece up with Store, or put what you carry into storage from the Carrying tab.",
+  "da": "Intet i kassen. Tag et møbel op med Gem, eller læg det du bærer i kassen fra Bærer-fanen.",
+  "where": "src/ui/keyboard.ts:10"
+ },
+ "T0588": {
+  "en": "You aren't carrying anything you can store. Furniture comes from the shop (the yellow door in the basement).",
+  "da": "Du bærer ikke på noget du kan gemme. Møbler kommer fra shoppen (den gule dør i kælderen).",
+  "where": "src/ui/landlord.ts:34  |  src/ui/landlord.ts:35  |  src/npc.ts:18"
+ },
+ "T0589": {
+  "en": "<svg width=\"13\" height=\"10\" viewBox=\"0 0 13 10\"><path d=\"M6.5 2.2c1.9 0 3.6.7 4.9 1.9l1-1C10.8 1.6 8.8.8 6.5.8S2.2 1.6.6 3.1l1 1C2.9 2.9 4.6 2.2 6.5 2.2zm0 2.6c1.2 0 2.2.4 3 1.2l1-1C9.4 4 8 3.4 6.5 3.4S3.6 4 2.5 5l1 1c.8-.8 1.8-1.2 3-1.2zm0 2.6c-.5 0-.9.2-1.2.5L6.5 9.2l1.2-1.3c-.3-.3-.7-.5-1.2-.5z\" fill=\"#fff\"/></svg>",
+  "da": "<svg width=\"13\" height=\"10\" viewBox=\"0 0 13 10\"><path d=\"M6.5 2.2c1.9 0 3.6.7 4.9 1.9l1-1C10.8 1.6 8.8.8 6.5.8S2.2 1.6.6 3.1l1 1C2.9 2.9 4.6 2.2 6.5 2.2zm0 2.6c1.2 0 2.2.4 3 1.2l1-1C9.4 4 8 3.4 6.5 3.4S3.6 4 2.5 5l1 1c.8-.8 1.8-1.2 3-1.2zm0 2.6c-.5 0-.9.2-1.2.5L6.5 9.2l1.2-1.3c-.3-.3-.7-.5-1.2-.5z\" fill=\"#fff\"/></svg>",
+  "where": "src/ui/landlord.ts:82"
+ },
+ "T0590": {
+  "en": "<svg width=\"23\" height=\"11\" viewBox=\"0 0 23 11\"><rect x=\".6\" y=\".6\" width=\"19\" height=\"9.8\" rx=\"1.6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><rect x=\"2\" y=\"2\" width=\"16.2\" height=\"7\" rx=\".6\" fill=\"#fff\"/><rect x=\"20.4\" y=\"3.4\" width=\"1.8\" height=\"4.2\" rx=\".6\" fill=\"#fff\"/></svg>",
+  "da": "<svg width=\"23\" height=\"11\" viewBox=\"0 0 23 11\"><rect x=\".6\" y=\".6\" width=\"19\" height=\"9.8\" rx=\"1.6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><rect x=\"2\" y=\"2\" width=\"16.2\" height=\"7\" rx=\".6\" fill=\"#fff\"/><rect x=\"20.4\" y=\"3.4\" width=\"1.8\" height=\"4.2\" rx=\".6\" fill=\"#fff\"/></svg>",
+  "where": "src/ui/landlord.ts:107"
+ },
+ "T0591": {
+  "en": "(pointer: coarse)",
+  "da": "(pointer: coarse)",
+  "where": "src/ui/landlord.ts:109  |  src/ui/room.ts:727  |  src/rooms.ts:107"
+ },
+ "T0592": {
+  "en": "Landlord",
+  "da": "Udlejer",
+  "where": "src/ui/landlord.ts:109"
+ },
+ "T0593": {
+  "en": "Any colour",
+  "da": "Enhver farve",
+  "where": "src/ui/landlord.ts:110  |  src/rooms.ts:109"
+ },
+ "T0594": {
+  "en": "Bed & wardrobe · you pay for a look once",
+  "da": "Seng & garderobe · du betaler kun én gang for et look",
+  "where": "src/ui/landlord.ts:120"
+ },
+ "T0595": {
+  "en": "Bed",
+  "da": "Seng",
+  "where": "src/ui/landlord.ts:123  |  src/ui/landlord.ts:162  |  src/ui/landlord.ts:188  |  src/ui/room.ts:2019"
+ },
+ "T0596": {
+  "en": "Plain bed",
+  "da": "Almindelig seng",
+  "where": "src/ui/landlord.ts:126"
+ },
+ "T0597": {
+  "en": "Bag of clothes",
+  "da": "Tøjpose",
+  "where": "src/ui/landlord.ts:126  |  src/ui/landlord.ts:191"
+ },
+ "T0598": {
+  "en": "Done. That was {paid} drops.",
+  "da": "Færdig. Det var {paid} dråber.",
+  "where": "src/ui/landlord.ts:126"
+ },
+ "T0599": {
+  "en": "Couldn't do that.",
+  "da": "Kunne ikke gøre det.",
+  "where": "src/ui/landlord.ts:128  |  src/ui/landlord.ts:193"
+ },
+ "T0600": {
+  "en": "Pick a look to preview",
+  "da": "Vælg et look for at se det",
+  "where": "src/ui/landlord.ts:128"
+ },
+ "T0601": {
+  "en": "Apply ({price} drops)",
+  "da": "Brug ({price} dråber)",
+  "where": "src/ui/landlord.ts:143"
+ },
+ "T0602": {
+  "en": "Apply (free)",
+  "da": "Brug (gratis)",
+  "where": "src/ui/landlord.ts:144"
+ },
+ "T0603": {
+  "en": "You don't have enough drops for that.",
+  "da": "Du har ikke nok dråber til det.",
+  "where": "src/ui/landlord.ts:148"
+ },
+ "T0604": {
+  "en": "A bigger piece moves over if it wouldn't fit where the old one stood.",
+  "da": "Et større møbel flytter sig hvis det ikke kan være hvor det gamle stod.",
+  "where": "src/ui/landlord.ts:150"
+ },
+ "T0605": {
+  "en": "Your room is {size} × {size}.",
+  "da": "Dit værelse er {size} × {size}.",
+  "where": "src/ui/landlord.ts:154"
+ },
+ "T0606": {
+  "en": "Room upgrades",
+  "da": "Værelse opgraderinger",
+  "where": "src/ui/landlord.ts:160"
+ },
+ "T0607": {
+  "en": "{size} × {size} room",
+  "da": "{size} × {size} værelse",
+  "where": "src/ui/landlord.ts:167"
+ },
+ "T0608": {
+  "en": "✓ bought",
+  "da": "købt",
+  "where": "src/ui/landlord.ts:169"
+ },
+ "T0609": {
+  "en": "Buy the smaller one first",
+  "da": "Køb den mindre først",
+  "where": "src/ui/landlord.ts:171"
+ },
+ "T0610": {
+  "en": "Your room is now {s} × {s}.",
+  "da": "Dit værelse er nu {s} × {s}.",
+  "where": "src/ui/landlord.ts:173"
+ },
+ "T0611": {
+  "en": "Colours · {RECOLOR_PRICE} drops for each part you change",
+  "da": "Farver · {RECOLOR_PRICE} dråber for hver del du ændrer",
+  "where": "src/ui/landlord.ts:185"
+ },
+ "T0612": {
+  "en": "Floor",
+  "da": "Gulv",
+  "where": "src/ui/landlord.ts:191"
+ },
+ "T0613": {
+  "en": "Walls",
+  "da": "Vægge",
+  "where": "src/ui/landlord.ts:193"
+ },
+ "T0614": {
+  "en": "Carpet",
+  "da": "Tæppe",
+  "where": "src/ui/landlord.ts:197"
+ },
+ "T0615": {
+  "en": "Your room has its new colours. That was {paid} drops.",
+  "da": "Dit værelse har fået nye farver. Det var {paid} dråber.",
+  "where": "src/ui/messenger.ts:18"
+ },
+ "T0616": {
+  "en": "Pick a colour to preview",
+  "da": "Vælg en farve for at se den",
+  "where": "src/ui/messenger.ts:26"
+ },
+ "T0617": {
+  "en": "Tap colours to see them in the picture. Nothing is paid until you press Apply.",
+  "da": "Tryk på farver for at se dem i billedet. Intet betales før du trykker Brug.",
+  "where": "src/ui/messenger.ts:34"
+ },
+ "T0618": {
+  "en": "Bed & wardrobe",
+  "da": "Seng & garderobe",
+  "where": "src/ui/messenger.ts:43"
+ },
+ "T0619": {
+  "en": "👥 Friends",
+  "da": "Venner",
+  "where": "src/ui/messenger.ts:50"
+ },
+ "T0620": {
+  "en": "Add friend by username",
+  "da": "Tilføj ven med brugernavn",
+  "where": "src/ui/messenger.ts:51"
+ },
+ "T0621": {
+  "en": "Couldn't send that request.",
+  "da": "Kunne ikke sende den anmodning.",
+  "where": "src/ui/messenger.ts:51  |  src/ui/messenger.ts:190"
+ },
+ "T0622": {
+  "en": "👥 Friends ({onlineCount}/{length})",
+  "da": "Venner ({onlineCount}/{length})",
+  "where": "src/ui/messenger.ts:51  |  src/ui/messenger.ts:190"
+ },
+ "T0623": {
+  "en": "{name} is at your door",
+  "da": "{name} er ved din dør",
+  "where": "src/ui/messenger.ts:51  |  src/ui/messenger.ts:190"
+ },
+ "T0624": {
+  "en": "Let them in",
+  "da": "Luk dem ind",
+  "where": "src/ui/messenger.ts:52"
+ },
+ "T0625": {
+  "en": "{name} can come in until you log off.",
+  "da": "{name} kan komme ind indtil du logger af.",
+  "where": "src/ui/messenger.ts:56  |  src/ui/trade.ts:32  |  src/ui/trade.ts:117"
+ },
+ "T0626": {
+  "en": "Couldn't let them in.",
+  "da": "Kunne ikke lukke dem ind.",
+  "where": "src/ui/messenger.ts:56"
+ },
+ "T0627": {
+  "en": "Let in",
+  "da": "Luk ind",
+  "where": "src/ui/messenger.ts:56"
+ },
+ "T0628": {
+  "en": "Send them away",
+  "da": "Send dem væk",
+  "where": "src/ui/messenger.ts:57  |  src/ui/trade.ts:33"
+ },
+ "T0629": {
+  "en": "Accept",
+  "da": "Acceptér",
+  "where": "src/ui/messenger.ts:60"
+ },
+ "T0630": {
+  "en": "You and {name} are friends now.",
+  "da": "Du og {name} er venner nu.",
+  "where": "src/ui/messenger.ts:61  |  src/ui/messenger.ts:178"
+ },
+ "T0631": {
+  "en": "Couldn't accept that.",
+  "da": "Kunne ikke acceptere det.",
+  "where": "src/ui/messenger.ts:67  |  src/ui/topbar.ts:28"
+ },
+ "T0632": {
+  "en": "Decline",
+  "da": "Afvis",
+  "where": "src/ui/messenger.ts:67  |  src/ui/trade.ts:108  |  src/arcade/arcade.ts:48  |  src/arcade/arcade.ts:51"
+ },
+ "T0633": {
+  "en": "{fromName} invited you to \"{roomName}\"",
+  "da": "{fromName} inviterede dig til \"{roomName}\"",
+  "where": "src/ui/messenger.ts:68"
+ },
+ "T0634": {
+  "en": "Join",
+  "da": "Kom med",
+  "where": "src/ui/messenger.ts:72"
+ },
+ "T0635": {
+  "en": "Friends",
+  "da": "Venner",
+  "where": "src/ui/messenger.ts:73"
+ },
+ "T0636": {
+  "en": "Close",
+  "da": "Luk",
+  "where": "src/ui/messenger.ts:74"
+ },
+ "T0637": {
+  "en": "Add",
+  "da": "Tilføj",
+  "where": "src/ui/messenger.ts:77"
+ },
+ "T0638": {
+  "en": "Room requests ({length})",
+  "da": "Værelse anmodninger ({length})",
+  "where": "src/ui/messenger.ts:86"
+ },
+ "T0639": {
+  "en": "Room invites",
+  "da": "Værelse invitationer",
+  "where": "src/ui/messenger.ts:86"
+ },
+ "T0640": {
+  "en": "Friend requests ({length})",
+  "da": "Venneanmodninger ({length})",
+  "where": "src/ui/messenger.ts:86"
+ },
+ "T0641": {
+  "en": "No friends yet. Add someone by username, or tap a player in a room.",
+  "da": "Ingen venner endnu. Tilføj nogen med brugernavn, eller tryk på en spiller i et værelse.",
+  "where": "src/ui/messenger.ts:86  |  src/ui/admin.ts:91"
+ },
+ "T0642": {
+  "en": "Idle",
+  "da": "Inaktiv",
+  "where": "src/ui/messenger.ts:86  |  src/ui/door.ts:111"
+ },
+ "T0643": {
+  "en": "In the basement",
+  "da": "I kælderen",
+  "where": "src/ui/messenger.ts:92  |  src/ui/admin.ts:158  |  src/ui/room.ts:716"
+ },
+ "T0644": {
+  "en": "In a room",
+  "da": "I et værelse",
+  "where": "src/ui/messenger.ts:93"
+ },
+ "T0645": {
+  "en": "Online",
+  "da": "Online",
+  "where": "src/ui/messenger.ts:93"
+ },
+ "T0646": {
+  "en": "Offline",
+  "da": "Offline",
+  "where": "src/ui/messenger.ts:94"
+ },
+ "T0647": {
+  "en": "Message",
+  "da": "Besked",
+  "where": "src/ui/messenger.ts:95"
+ },
+ "T0648": {
+  "en": "Go to the basement",
+  "da": "Gå til kælderen",
+  "where": "src/ui/messenger.ts:114"
+ },
+ "T0649": {
+  "en": "Follow into their room",
+  "da": "Følg ind i deres værelse",
+  "where": "src/ui/messenger.ts:125"
+ },
+ "T0650": {
+  "en": "Remove friend",
+  "da": "Fjern ven",
+  "where": "src/ui/messenger.ts:131"
+ },
+ "T0651": {
+  "en": "Remove {name} from your friends?",
+  "da": "Fjern {name} fra dine venner?",
+  "where": "src/ui/messenger.ts:176"
+ },
+ "T0652": {
+  "en": "Message {name}…",
+  "da": "Skriv til {name}…",
+  "where": "src/ui/messenger.ts:179  |  src/ui/messenger.ts:192"
+ },
+ "T0653": {
+  "en": "That message didn't go through.",
+  "da": "Den besked gik ikke igennem.",
+  "where": "src/ui/messenger.ts:188"
+ },
+ "T0654": {
+  "en": "Say hi!",
+  "da": "Sig hej!",
+  "where": "src/ui/messenger.ts:191"
+ },
+ "T0655": {
+  "en": "invited you to",
+  "da": "inviterede dig til",
+  "where": "src/ui/mixer.ts:23  |  src/ui/mixer.ts:24  |  src/ui/room.ts:736  |  src/shared/items.ts:83  (+1 more)"
+ },
+ "T0656": {
+  "en": "Later",
+  "da": "Senere",
+  "where": "src/ui/mixer.ts:43"
+ },
+ "T0657": {
+  "en": "is knocking on your door.",
+  "da": "banker på din dør.",
+  "where": "src/ui/mixer.ts:43"
+ },
+ "T0658": {
+  "en": "Send away",
+  "da": "Send væk",
+  "where": "src/ui/mixer.ts:46"
+ },
+ "T0659": {
+  "en": "Mixer",
+  "da": "Mixer",
+  "where": "src/ui/mixer.ts:46"
+ },
+ "T0660": {
+  "en": "Your batch is ready!",
+  "da": "Din batch er klar!",
+  "where": "src/ui/mixer.ts:54"
+ },
+ "T0661": {
+  "en": "The mixer is working…",
+  "da": "Mixeren arbejder…",
+  "where": "src/ui/mixer.ts:56  |  server/src/actions/mixer.ts:42"
+ },
+ "T0662": {
+  "en": "Tap Collect.",
+  "da": "Tryk Hent.",
+  "where": "src/ui/mixer.ts:58"
+ },
+ "T0663": {
+  "en": "{clock} left. You can leave: it keeps going.",
+  "da": "{clock} tilbage. Du kan gå: den kører videre.",
+  "where": "src/ui/mixer.ts:74"
+ },
+ "T0664": {
+  "en": "You collect {…} {…}.",
+  "da": "Du henter {…} {…}.",
+  "where": "src/ui/mixer.ts:74"
+ },
+ "T0665": {
+  "en": "It isn't done yet.",
+  "da": "Den er ikke færdig endnu.",
+  "where": "src/ui/mixer.ts:91  |  src/ui/mixer.ts:103  |  server/src/actions/mixer.ts:28"
+ },
+ "T0666": {
+  "en": "Collect",
+  "da": "Hent",
+  "where": "src/ui/mixer.ts:100"
+ },
+ "T0667": {
+  "en": "Tap two things to mix. Every batch takes 10 minutes.",
+  "da": "Tryk på to ting for at mixe. Hver batch tager 10 minutter.",
+  "where": "src/ui/mixer.ts:105"
+ },
+ "T0668": {
+  "en": "You have nothing that mixes (weed, ass weed, cigarettes, pills).",
+  "da": "Du har intet der kan mixes (weed, ass weed, cigaretter, piller).",
+  "where": "src/ui/onboarding.ts:24"
+ },
+ "T0669": {
+  "en": "Those don't mix.",
+  "da": "De kan ikke mixes.",
+  "where": "src/ui/onboarding.ts:35"
+ },
+ "T0670": {
+  "en": "The mixer starts up.",
+  "da": "Mixeren starter.",
+  "where": "src/ui/onboarding.ts:67"
+ },
+ "T0671": {
+  "en": "Start mixing (10 min)",
+  "da": "Start mixing (10 min)",
+  "where": "src/ui/onboarding.ts:71  |  src/ui/furnish.ts:49"
+ },
+ "T0672": {
+  "en": "Step {n} of 2",
+  "da": "Trin {n} af 2",
+  "where": "src/ui/onboarding.ts:72"
+ },
+ "T0673": {
+  "en": "Next: pick your room",
+  "da": "Næste: vælg dit værelse",
+  "where": "src/ui/onboarding.ts:76"
+ },
+ "T0674": {
+  "en": "Couldn't save your avatar.",
+  "da": "Kunne ikke gemme din avatar.",
+  "where": "src/ui/onboarding.ts:77"
+ },
+ "T0675": {
+  "en": "Done",
+  "da": "Færdig",
+  "where": "src/ui/onboarding.ts:81  |  src/ui/editor.ts:71"
+ },
+ "T0676": {
+  "en": "Next",
+  "da": "Næste",
+  "where": "src/ui/onboarding.ts:82"
+ },
+ "T0677": {
+  "en": "Choose your avatar",
+  "da": "Vælg din avatar",
+  "where": "src/ui/onboarding.ts:83  |  src/ui/editor.ts:72"
+ },
+ "T0678": {
+  "en": "Hi {name}! Shuffle until you like what you see. You can change everything later from the bag of clothes in your room.",
+  "da": "Hej {name}! Shuffle til du kan lide det du ser. Du kan ændre alt senere fra tøjposen i dit værelse.",
+  "where": "src/ui/onboarding.ts:92"
+ },
+ "T0679": {
+  "en": "Turn left",
+  "da": "Drej til venstre",
+  "where": "src/ui/onboarding.ts:100"
+ },
+ "T0680": {
+  "en": "🎲 Randomize",
+  "da": "Randomize",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9"
+ },
+ "T0681": {
+  "en": "Turn right",
+  "da": "Drej til højre",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9"
+ },
+ "T0682": {
+  "en": "Wake up",
+  "da": "Vågn op",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9"
+ },
+ "T0683": {
+  "en": "Couldn't wake up.",
+  "da": "Kunne ikke vågne op.",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9"
+ },
+ "T0684": {
+  "en": "Body",
+  "da": "Krop",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9  |  src/catalog.ts:27"
+ },
+ "T0685": {
+  "en": "Left sleeve",
+  "da": "Venstre ærme",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9  |  src/catalog.ts:17"
+ },
+ "T0686": {
+  "en": "Right sleeve",
+  "da": "Højre ærme",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9"
+ },
+ "T0687": {
+  "en": "Legs",
+  "da": "Ben",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9"
+ },
+ "T0688": {
+  "en": "Shoes",
+  "da": "Sko",
+  "where": "src/ui/painter.ts:7  |  src/ui/studioNitro.ts:9"
+ },
+ "T0689": {
+  "en": "Hair",
+  "da": "Hår",
+  "where": "src/ui/painter.ts:8  |  src/ui/studioNitro.ts:9  |  src/catalog.ts:20"
+ },
+ "T0690": {
+  "en": "Hair (back)",
+  "da": "Hår (bagved)",
+  "where": "src/ui/painter.ts:8  |  src/ui/studioNitro.ts:9"
+ },
+ "T0691": {
+  "en": "Hat",
+  "da": "Hat",
+  "where": "src/ui/painter.ts:8  |  src/ui/studioNitro.ts:9"
+ },
+ "T0692": {
+  "en": "Head item",
+  "da": "Hovedting",
+  "where": "src/ui/painter.ts:8"
+ },
+ "T0693": {
+  "en": "Glasses",
+  "da": "Briller",
+  "where": "src/ui/painter.ts:8"
+ },
+ "T0694": {
+  "en": "Face item",
+  "da": "Ansigtsting",
+  "where": "src/ui/painter.ts:8  |  src/ui/studioNitro.ts:9"
+ },
+ "T0695": {
+  "en": "Jacket",
+  "da": "Jakke",
+  "where": "src/ui/painter.ts:8  |  src/ui/studioNitro.ts:9"
+ },
+ "T0696": {
+  "en": "Jacket, left sleeve",
+  "da": "Jakke, venstre ærme",
+  "where": "src/ui/painter.ts:8  |  src/ui/studioNitro.ts:9"
+ },
+ "T0697": {
+  "en": "Jacket, right sleeve",
+  "da": "Jakke, højre ærme",
+  "where": "src/ui/painter.ts:9  |  src/ui/studioNitro.ts:9"
+ },
+ "T0698": {
+  "en": "Print",
+  "da": "Print",
+  "where": "src/ui/painter.ts:9"
+ },
+ "T0699": {
+  "en": "Chest item",
+  "da": "Brystting",
+  "where": "src/ui/painter.ts:9"
+ },
+ "T0700": {
+  "en": "Belt",
+  "da": "Bælte",
+  "where": "src/ui/painter.ts:13"
+ },
+ "T0701": {
+  "en": "Head",
+  "da": "Hoved",
+  "where": "src/ui/painter.ts:14"
+ },
+ "T0702": {
+  "en": "Body skin",
+  "da": "Kropshud",
+  "where": "src/ui/painter.ts:15"
+ },
+ "T0703": {
+  "en": "Face",
+  "da": "Ansigt",
+  "where": "src/ui/painter.ts:16"
+ },
+ "T0704": {
+  "en": "Down-right (default)",
+  "da": "Ned til højre (standard)",
+  "where": "src/ui/painter.ts:17  |  src/ui/door.ts:169"
+ },
+ "T0705": {
+  "en": "Front",
+  "da": "Front",
+  "where": "src/ui/painter.ts:48"
+ },
+ "T0706": {
+  "en": "Right",
+  "da": "Højre",
+  "where": "src/ui/painter.ts:94"
+ },
+ "T0707": {
+  "en": "Up-right",
+  "da": "Op til højre",
+  "where": "src/ui/painter.ts:94"
+ },
+ "T0708": {
+  "en": "Back",
+  "da": "Bagfra",
+  "where": "src/ui/painter.ts:94"
+ },
+ "T0709": {
+  "en": "Colour",
+  "da": "Farve",
+  "where": "src/ui/painter.ts:94"
+ },
+ "T0710": {
+  "en": "Pencil",
+  "da": "Blyant",
+  "where": "src/ui/painter.ts:95"
+ },
+ "T0711": {
+  "en": "Eraser",
+  "da": "Viskelæder",
+  "where": "src/ui/painter.ts:95"
+ },
+ "T0712": {
+  "en": "Fill",
+  "da": "Fyld",
+  "where": "src/ui/painter.ts:96"
+ },
+ "T0713": {
+  "en": "Pick a colour",
+  "da": "Vælg en farve",
+  "where": "src/ui/painter.ts:96"
+ },
+ "T0714": {
+  "en": "Lighten",
+  "da": "Lysere",
+  "where": "src/ui/painter.ts:97"
+ },
+ "T0715": {
+  "en": "Darken",
+  "da": "Mørkere",
+  "where": "src/ui/painter.ts:98"
+ },
+ "T0716": {
+  "en": "Undo",
+  "da": "Fortryd",
+  "where": "src/ui/painter.ts:99"
+ },
+ "T0717": {
+  "en": "Redo",
+  "da": "Gentag",
+  "where": "src/ui/painter.ts:100"
+ },
+ "T0718": {
+  "en": "Pixel grid",
+  "da": "Pixelgitter",
+  "where": "src/ui/painter.ts:101"
+ },
+ "T0719": {
+  "en": "Show the original art faintly underneath",
+  "da": "Vis den originale grafik svagt nedenunder",
+  "where": "src/ui/painter.ts:101  |  src/ui/adminShop.ts:179"
+ },
+ "T0720": {
+  "en": "Zoom out",
+  "da": "Zoom ud",
+  "where": "src/ui/painter.ts:102"
+ },
+ "T0721": {
+  "en": "Zoom in",
+  "da": "Zoom ind",
+  "where": "src/ui/painter.ts:102  |  src/ui/adminShop.ts:160  |  src/ui/landlord.ts:127  |  src/ui/landlord.ts:192"
+ },
+ "T0722": {
+  "en": "Empty this frame",
+  "da": "Tøm denne frame",
+  "where": "src/ui/painter.ts:124"
+ },
+ "T0723": {
+  "en": "Clear",
+  "da": "Ryd",
+  "where": "src/ui/painter.ts:129"
+ },
+ "T0724": {
+  "en": "Back to the original art for this frame",
+  "da": "Tilbage til den originale grafik for denne frame",
+  "where": "src/ui/painter.ts:129"
+ },
+ "T0725": {
+  "en": "Reset",
+  "da": "Nulstil",
+  "where": "src/ui/painter.ts:129"
+ },
+ "T0726": {
+  "en": "Nothing to paint here.",
+  "da": "Intet at male her.",
+  "where": "src/ui/room.ts:341"
+ },
+ "T0727": {
+  "en": "· tinted by the player's colour: paint in white/grey",
+  "da": "· farves af spillerens farve: mal i hvid/grå",
+  "where": "src/ui/room.ts:342"
+ },
+ "T0728": {
+  "en": "· real colours",
+  "da": "· rigtige farver",
+  "where": "src/ui/room.ts:342"
+ },
+ "T0729": {
+  "en": "· edited",
+  "da": "· redigeret",
+  "where": "src/ui/room.ts:344  |  src/ui/room.ts:2452"
+ },
+ "T0730": {
+  "en": "Who's in this room",
+  "da": "Hvem er i dette værelse",
+  "where": "src/ui/room.ts:345  |  src/ui/room.ts:2449"
+ },
+ "T0731": {
+  "en": "Main Lobby",
+  "da": "Hovedlobbyen",
+  "where": "src/ui/room.ts:425"
+ },
+ "T0732": {
+  "en": "Loading room…",
+  "da": "Henter værelse…",
+  "where": "src/ui/room.ts:425"
+ },
+ "T0733": {
+  "en": "Say something, or try /dance. Tap the floor to walk.",
+  "da": "Sig noget. Tryk på gulvet for at gå.",
+  "where": "src/ui/room.ts:426  |  src/ui/room.ts:427  |  src/ui/room.ts:713  |  src/ui/room.ts:740"
+ },
+ "T0734": {
+  "en": "Send",
+  "da": "Send",
+  "where": "src/ui/room.ts:430"
+ },
+ "T0735": {
+  "en": "Pick up furniture: click it",
+  "da": "Saml møbel op: klik på det",
+  "where": "src/ui/room.ts:430"
+ },
+ "T0736": {
+  "en": "(R turns it)",
+  "da": "(R drejer det)",
+  "where": "src/ui/room.ts:431"
+ },
+ "T0737": {
+  "en": "Use {name} →",
+  "da": "Brug {name} →",
+  "where": "src/ui/room.ts:432"
+ },
+ "T0738": {
+  "en": "Your bed: get up",
+  "da": "Din seng: stå op",
+  "where": "src/ui/room.ts:432"
+ },
+ "T0739": {
+  "en": "Your bed: lie down",
+  "da": "Din seng: læg dig ned",
+  "where": "src/ui/room.ts:433"
+ },
+ "T0740": {
+  "en": "Landlord: bigger rooms, room colours",
+  "da": "Udlejer: større værelser, værelsefarver",
+  "where": "src/ui/room.ts:434"
+ },
+ "T0741": {
+  "en": "{…}{…}{…} · {…} (click to pick up)",
+  "da": "{…}{…}{…} · {…} (klik for at samle op)",
+  "where": "src/ui/room.ts:436"
+ },
+ "T0742": {
+  "en": "On the floor",
+  "da": "På gulvet",
+  "where": "src/ui/room.ts:437"
+ },
+ "T0743": {
+  "en": "{label} · {priceOf} drops (click to buy)",
+  "da": "{label} · {priceOf} dråber (klik for at købe)",
+  "where": "src/ui/room.ts:438"
+ },
+ "T0744": {
+  "en": "Wardrobe: the clothing shop",
+  "da": "Garderobe: tøjshoppen",
+  "where": "src/ui/room.ts:439"
+ },
+ "T0745": {
+  "en": "Sink: fill your watering can",
+  "da": "Håndvask: fyld din vandkande",
+  "where": "src/ui/room.ts:439"
+ },
+ "T0746": {
+  "en": "Mixer: mix two things",
+  "da": "Mixer: mix to ting",
+  "where": "src/ui/room.ts:442"
+ },
+ "T0747": {
+  "en": "Body bag: use a syringe on it",
+  "da": "Body bag: brug en sprøjte på den",
+  "where": "src/ui/room.ts:442"
+ },
+ "T0748": {
+  "en": "Growing kit · {…}% · water {…}%",
+  "da": "Growth kit · {…}% · vand {…}%",
+  "where": "src/ui/room.ts:442"
+ },
+ "T0749": {
+  "en": "Growing kit (empty): plant a seed",
+  "da": "Growth kit (tom): plant et frø",
+  "where": "src/ui/room.ts:442"
+ },
+ "T0750": {
+  "en": "Door: to the basement",
+  "da": "Dør: til kælderen",
+  "where": "src/ui/room.ts:624"
+ },
+ "T0751": {
+  "en": "Door: back to your room",
+  "da": "Dør: tilbage til dit værelse",
+  "where": "src/ui/room.ts:662"
+ },
+ "T0752": {
+  "en": "Door: back to the basement",
+  "da": "Dør: tilbage til kælderen",
+  "where": "src/ui/room.ts:668  |  server/src/actions/rewards.ts:16"
+ },
+ "T0753": {
+  "en": "Door: rooms",
+  "da": "Dør: værelser",
+  "where": "src/ui/room.ts:682"
+ },
+ "T0754": {
+  "en": "That one is part of the lobby itself.",
+  "da": "Den er en del af lobbyen selv.",
+  "where": "src/ui/room.ts:711  |  src/ui/room.ts:723  |  src/ui/room.ts:726"
+ },
+ "T0755": {
+  "en": "You can only put furniture down in your own room.",
+  "da": "Du kan kun stille møbler ned i dit eget værelse.",
+  "where": "src/ui/room.ts:714"
+ },
+ "T0756": {
+  "en": "You can't stab yourself.",
+  "da": "Du kan ikke stikke dig selv.",
+  "where": "src/ui/room.ts:715"
+ },
+ "T0757": {
+  "en": "Nothing interesting happens.",
+  "da": "Der sker ikke noget spændende.",
+  "where": "src/ui/room.ts:715"
+ },
+ "T0758": {
+  "en": "Talk",
+  "da": "Tal",
+  "where": "src/ui/room.ts:715"
+ },
+ "T0759": {
+  "en": "Stab",
+  "da": "Stik",
+  "where": "src/ui/room.ts:717"
+ },
+ "T0760": {
+  "en": "Invite to trade",
+  "da": "Inviter til byt",
+  "where": "src/ui/room.ts:720  |  src/ui/room.ts:721"
+ },
+ "T0761": {
+  "en": "You ask {name} to trade. They have to accept.",
+  "da": "Du spørger {name} om et byt. De skal acceptere.",
+  "where": "src/ui/room.ts:720  |  src/rooms.ts:100"
+ },
+ "T0762": {
+  "en": "Couldn't send that trade invite.",
+  "da": "Kunne ikke sende den byt invitation.",
+  "where": "src/ui/room.ts:721  |  src/arcade/flappy.ts:26"
+ },
+ "T0763": {
+  "en": "Add friend",
+  "da": "Tilføj ven",
+  "where": "src/ui/room.ts:724"
+ },
+ "T0764": {
+  "en": "Play",
+  "da": "Spil",
+  "where": "src/ui/room.ts:727"
+ },
+ "T0765": {
+  "en": "Change look",
+  "da": "Skift look",
+  "where": "src/ui/room.ts:727"
+ },
+ "T0766": {
+  "en": "Get up",
+  "da": "Stå op",
+  "where": "src/ui/room.ts:728"
+ },
+ "T0767": {
+  "en": "Lie down",
+  "da": "Læg dig ned",
+  "where": "src/ui/room.ts:728  |  src/rooms.ts:105"
+ },
+ "T0768": {
+  "en": "Search",
+  "da": "Søg",
+  "where": "src/ui/room.ts:729  |  src/ui/room.ts:749"
+ },
+ "T0769": {
+  "en": "Pick up",
+  "da": "Saml op",
+  "where": "src/ui/room.ts:729"
+ },
+ "T0770": {
+  "en": "Buy",
+  "da": "Køb",
+  "where": "src/ui/room.ts:730"
+ },
+ "T0771": {
+  "en": "Open the shop",
+  "da": "Åbn shoppen",
+  "where": "src/ui/room.ts:731"
+ },
+ "T0772": {
+  "en": "Sit",
+  "da": "Sæt dig",
+  "where": "src/ui/room.ts:731  |  src/shared/skins.ts:30  |  src/rooms.ts:99"
+ },
+ "T0773": {
+  "en": "Tend",
+  "da": "Pas",
+  "where": "src/ui/room.ts:732"
+ },
+ "T0774": {
+  "en": "Mix",
+  "da": "Mix",
+  "where": "src/ui/room.ts:734  |  src/shared/furniture.ts:7"
+ },
+ "T0775": {
+  "en": "Furnish",
+  "da": "Indret",
+  "where": "src/ui/room.ts:735"
+ },
+ "T0776": {
+  "en": "Change clothes",
+  "da": "Skift tøj",
+  "where": "src/ui/room.ts:736"
+ },
+ "T0777": {
+  "en": "Open",
+  "da": "Åbn",
+  "where": "src/ui/room.ts:737"
+ },
+ "T0778": {
+  "en": "Walk here",
+  "da": "Gå herhen",
+  "where": "src/ui/room.ts:737  |  src/rooms.ts:95"
+ },
+ "T0779": {
+  "en": "Couldn't pick that up",
+  "da": "Kunne ikke samle den op",
+  "where": "src/ui/room.ts:738"
+ },
+ "T0780": {
+  "en": "That's the limit: {MAX_FURNI} pieces per room.",
+  "da": "Det er grænsen: {MAX_FURNI} møbler pr. værelse.",
+  "where": "src/ui/room.ts:740  |  src/ui/room.ts:741  |  src/rooms.ts:101"
+ },
+ "T0781": {
+  "en": "Keep the doorway clear.",
+  "da": "Hold døråbningen fri.",
+  "where": "src/ui/room.ts:744  |  src/ui/room.ts:746"
+ },
+ "T0782": {
+  "en": "There's no room for that there.",
+  "da": "Der er ikke plads til den der.",
+  "where": "src/ui/room.ts:746"
+ },
+ "T0783": {
+  "en": "Someone is standing there.",
+  "da": "Nogen står der.",
+  "where": "src/ui/room.ts:752"
+ },
+ "T0784": {
+  "en": "Couldn't place that.",
+  "da": "Kunne ikke placere den.",
+  "where": "src/ui/room.ts:762"
+ },
+ "T0785": {
+  "en": "Couldn't put that down.",
+  "da": "Kunne ikke stille den ned.",
+  "where": "src/ui/room.ts:844  |  src/ui/room.ts:918"
+ },
+ "T0786": {
+  "en": "Couldn't turn that.",
+  "da": "Kunne ikke dreje den.",
+  "where": "src/ui/room.ts:850  |  src/furnishing.ts:58"
+ },
+ "T0787": {
+  "en": "Couldn't move that.",
+  "da": "Kunne ikke flytte den.",
+  "where": "src/ui/room.ts:851"
+ },
+ "T0788": {
+  "en": "You haven't unlocked {name}. You can buy it in the shop.",
+  "da": "Du har ikke låst {name} op. Du kan købe den i shoppen.",
+  "where": "src/ui/room.ts:854  |  src/furnishing.ts:60"
+ },
+ "T0789": {
+  "en": "Your emote didn't go through.",
+  "da": "Din emote gik ikke igennem.",
+  "where": "src/ui/room.ts:858"
+ },
+ "T0790": {
+  "en": "You need a knife for that.",
+  "da": "Du skal bruge en kniv til det.",
+  "where": "src/ui/room.ts:929"
+ },
+ "T0791": {
+  "en": "He isn't getting up.",
+  "da": "Han rejser sig ikke.",
+  "where": "src/ui/room.ts:943"
+ },
+ "T0792": {
+  "en": "You've already stabbed {name} today. You can stab them again in {…}.",
+  "da": "Du har allerede stukket {name} i dag. Du kan stikke dem igen om {…}.",
+  "where": "src/ui/room.ts:983"
+ },
+ "T0793": {
+  "en": "You walk towards {name}…",
+  "da": "Du går hen mod {name}…",
+  "where": "src/ui/room.ts:1117"
+ },
+ "T0794": {
+  "en": "Somebody is sitting there.",
+  "da": "Nogen sidder der.",
+  "where": "src/ui/room.ts:1120"
+ },
+ "T0795": {
+  "en": "You can't get to that seat.",
+  "da": "Du kan ikke nå det sæde.",
+  "where": "src/ui/room.ts:1129  |  server/src/actions/quest.ts:27  |  server/src/actions/rewards.ts:26"
+ },
+ "T0796": {
+  "en": "THIRSTY: water it now!",
+  "da": "TØRSTIG: vand den nu!",
+  "where": "src/ui/room.ts:1130  |  src/ui/room.ts:1942"
+ },
+ "T0797": {
+  "en": "water bar {…}%",
+  "da": "vandbar {…}%",
+  "where": "src/ui/room.ts:1133"
+ },
+ "T0798": {
+  "en": "It looks a bit sad.",
+  "da": "Den ser lidt trist ud.",
+  "where": "src/ui/room.ts:1137"
+ },
+ "T0799": {
+  "en": "Growing: {…}% (about {mins}m to go). {…}{…}.",
+  "da": "Gror: {…}% (cirka {mins}m tilbage). {…}{…}.",
+  "where": "src/ui/room.ts:1154"
+ },
+ "T0800": {
+  "en": "Your watering can is already full.",
+  "da": "Din vandkande er allerede fuld.",
+  "where": "src/ui/room.ts:1163"
+ },
+ "T0801": {
+  "en": "You have nowhere to put the water.",
+  "da": "Du har ingen steder at putte vandet.",
+  "where": "src/ui/room.ts:1188"
+ },
+ "T0802": {
+  "en": "You fill the watering can.",
+  "da": "Du fylder vandkanden.",
+  "where": "src/ui/room.ts:1188"
+ },
+ "T0803": {
+  "en": "That's not your plant.",
+  "da": "Det er ikke din plante.",
+  "where": "src/ui/room.ts:1189"
+ },
+ "T0804": {
+  "en": "An empty growing kit. Select a weed seed, then click the kit to plant it.",
+  "da": "Et tomt growth kit. Vælg et weed frø, klik så på kittet for at plante det.",
+  "where": "src/ui/room.ts:1189"
+ },
+ "T0805": {
+  "en": "You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering once it gets thirsty (after 5 minutes).",
+  "da": "Du skubber et frø ned i jorden. Det tager 20 minutter at gro, og det skal have vand én gang når det bliver tørstigt (efter 5 minutter).",
+  "where": "src/ui/room.ts:1200"
+ },
+ "T0806": {
+  "en": "You need a full watering can.",
+  "da": "Du skal bruge en fuld vandkande.",
+  "where": "src/ui/room.ts:1200"
+ },
+ "T0807": {
+  "en": "It's already been watered. It'll grow fine now.",
+  "da": "Den er allerede vandet. Nu gror den fint.",
+  "where": "src/ui/room.ts:1204"
+ },
+ "T0808": {
+  "en": "It isn't thirsty yet. Wait until its water bar is empty.",
+  "da": "Den er ikke tørstig endnu. Vent til vandbaren er tom.",
+  "where": "src/ui/room.ts:1207"
+ },
+ "T0809": {
+  "en": "You water the plant.",
+  "da": "Du vander planten.",
+  "where": "src/ui/room.ts:1210"
+ },
+ "T0810": {
+  "en": "+3 Ass weed",
+  "da": "+3 Ass weed",
+  "where": "src/ui/room.ts:1213"
+ },
+ "T0811": {
+  "en": "+3 Weed",
+  "da": "+3 Weed",
+  "where": "src/ui/room.ts:1218"
+ },
+ "T0812": {
+  "en": "You pick it. It's ass weed: it never got its water.",
+  "da": "Du plukker den. Det er ass weed: den fik aldrig sit vand.",
+  "where": "src/ui/room.ts:1219  |  server/src/actions/rewards.ts:251"
+ },
+ "T0813": {
+  "en": "You pick the buds. Nice.",
+  "da": "Du plukker toppene. Nice.",
+  "where": "src/ui/room.ts:1220  |  server/src/actions/rewards.ts:252"
+ },
+ "T0814": {
+  "en": "That didn't work.",
+  "da": "Det virkede ikke.",
+  "where": "src/ui/room.ts:1224"
+ },
+ "T0815": {
+  "en": "You've already been through this one. Nothing new yet: try again in {…}.",
+  "da": "Du har allerede været igennem den her. Intet nyt endnu: prøv igen om {…}.",
+  "where": "src/ui/room.ts:1230"
+ },
+ "T0816": {
+  "en": "Your inventory is full.",
+  "da": "Dit inventar er fuldt.",
+  "where": "src/ui/room.ts:1230"
+ },
+ "T0817": {
+  "en": "You dig through the dumpster…",
+  "da": "Du roder i containeren…",
+  "where": "src/ui/room.ts:1232"
+ },
+ "T0818": {
+  "en": "Under the bin bags: a dead cat. Poor thing.",
+  "da": "Under skraldeposerne: en død kat. Stakkel.",
+  "where": "src/ui/room.ts:1232"
+ },
+ "T0819": {
+  "en": "A burger, hardly bitten. Lucky you.",
+  "da": "En burger, næsten urørt. Heldige dig.",
+  "where": "src/ui/room.ts:1236"
+ },
+ "T0820": {
+  "en": "A few little seeds in the muck. They might grow.",
+  "da": "Et par små frø i mudderet. De gror måske.",
+  "where": "src/ui/room.ts:1252"
+ },
+ "T0821": {
+  "en": "A lighter, and it still works!",
+  "da": "En lighter, og den virker stadig!",
+  "where": "src/ui/room.ts:1254  |  server/src/actions/floor.ts:55  |  server/src/actions/toolbox.ts:50  |  server/src/actions/debug.ts:23  (+1 more)"
+ },
+ "T0822": {
+  "en": "A blister of blue pills: kodimagnyl.",
+  "da": "Et strip blå piller: kodimagnyl.",
+  "where": "src/ui/room.ts:1257"
+ },
+ "T0823": {
+  "en": "You find a {…}.",
+  "da": "Du finder en {…}.",
+  "where": "src/ui/room.ts:1265"
+ },
+ "T0824": {
+  "en": "The lean pays off: you find a {…} as well.",
+  "da": "Leanen betaler sig: du finder også en {…}.",
+  "where": "src/ui/room.ts:1265"
+ },
+ "T0825": {
+  "en": "Tap the glowing knife, then the glowing cat.",
+  "da": "Tryk på den lysende kniv, så på den lysende kat.",
+  "where": "src/ui/room.ts:1265"
+ },
+ "T0826": {
+  "en": "You find nothing but rot.",
+  "da": "Du finder ikke andet end affald.",
+  "where": "src/ui/room.ts:1265"
+ },
+ "T0827": {
+  "en": "You open the cat up with your knife. It's still a little warm. (+{CAT_BLOOD})",
+  "da": "Du skærer katten op med din kniv. Den er stadig lidt varm. (+{CAT_BLOOD})",
+  "where": "src/ui/room.ts:1265"
+ },
+ "T0828": {
+  "en": "The cat slips away… (the hotel refused it)",
+  "da": "Katten glider væk… (hotellet afviste det)",
+  "where": "src/ui/room.ts:1267"
+ },
+ "T0829": {
+  "en": "You lose track of what you were doing.",
+  "da": "Du mister overblikket over hvad du lavede.",
+  "where": "src/ui/room.ts:1270"
+ },
+ "T0830": {
+  "en": "You can't get to the door.",
+  "da": "Du kan ikke nå døren.",
+  "where": "src/ui/room.ts:1272"
+ },
+ "T0831": {
+  "en": "They've left the room.",
+  "da": "De har forladt værelset.",
+  "where": "src/ui/room.ts:1275"
+ },
+ "T0832": {
+  "en": "You can't reach them.",
+  "da": "Du kan ikke nå dem.",
+  "where": "src/ui/room.ts:1298"
+ },
+ "T0833": {
+  "en": "You can't get to him.",
+  "da": "Du kan ikke nå ham.",
+  "where": "src/ui/room.ts:1300"
+ },
+ "T0834": {
+  "en": "It's gone.",
+  "da": "Den er væk.",
+  "where": "src/ui/room.ts:1393"
+ },
+ "T0835": {
+  "en": "You can't get to it.",
+  "da": "Du kan ikke nå den.",
+  "where": "src/ui/room.ts:1400"
+ },
+ "T0836": {
+  "en": "Mute",
+  "da": "Sluk lyden",
+  "where": "src/ui/room.ts:1423  |  server/src/actions/rewards.ts:21"
+ },
+ "T0837": {
+  "en": "⏏ Take my CD back",
+  "da": "Tag min CD tilbage",
+  "where": "src/ui/room.ts:1425"
+ },
+ "T0838": {
+  "en": "Nothing playing",
+  "da": "Intet spiller",
+  "where": "src/ui/room.ts:1437  |  src/ui/room.ts:1451"
+ },
+ "T0839": {
+  "en": "Use a CD from your inventory on the player.",
+  "da": "Brug en CD fra dit inventar på afspilleren.",
+  "where": "src/ui/room.ts:1464  |  server/src/actions/floor.ts:51"
+ },
+ "T0840": {
+  "en": "Click anywhere to hear the CD player (your browser holds back sound until you interact with the page).",
+  "da": "Klik et sted for at høre CD afspilleren (din browser holder lyden tilbage til du bruger siden).",
+  "where": "src/ui/room.ts:1467  |  src/ui/room.ts:1487"
+ },
+ "T0841": {
+  "en": "💿 CD player",
+  "da": "CD afspiller",
+  "where": "src/ui/room.ts:1537"
+ },
+ "T0842": {
+  "en": "Quieter",
+  "da": "Lavere",
+  "where": "src/ui/room.ts:1538"
+ },
+ "T0843": {
+  "en": "Louder",
+  "da": "Højere",
+  "where": "src/ui/room.ts:1544"
+ },
+ "T0844": {
+  "en": "Volume is just for you. Other players keep their own.",
+  "da": "Lyden er kun for dig. Andre spillere har deres egen.",
+  "where": "src/ui/room.ts:1545"
+ },
+ "T0845": {
+  "en": "Your CD is already in the player.",
+  "da": "Din CD er allerede i afspilleren.",
+  "where": "src/ui/room.ts:1550"
+ },
+ "T0846": {
+  "en": "The CD player is busy playing {byName}'s CD.",
+  "da": "CD afspilleren spiller {byName}s CD.",
+  "where": "src/ui/room.ts:1559"
+ },
+ "T0847": {
+  "en": "You walk over to the CD player…",
+  "da": "Du går hen til CD afspilleren…",
+  "where": "src/ui/room.ts:1578"
+ },
+ "T0848": {
+  "en": "You slide the CD into the player. Music starts up. ♪ It will pop back into your inventory when it's finished.",
+  "da": "Du skubber CD'en ind i afspilleren. Musikken starter. Den hopper tilbage i dit inventar når den er færdig.",
+  "where": "src/ui/room.ts:1583"
+ },
+ "T0849": {
+  "en": "The CD player spits your CD back out. Someone else got there first.",
+  "da": "CD afspilleren spytter din CD ud igen. Nogen andre var først.",
+  "where": "src/ui/room.ts:1585"
+ },
+ "T0850": {
+  "en": "You press eject.",
+  "da": "Du trykker eject.",
+  "where": "src/ui/room.ts:1587"
+ },
+ "T0851": {
+  "en": "The eject button doesn't respond.",
+  "da": "Eject-knappen reagerer ikke.",
+  "where": "src/ui/room.ts:1595"
+ },
+ "T0852": {
+  "en": "Your CD pops out of the player and back into your inventory.",
+  "da": "Din CD hopper ud af afspilleren og tilbage i dit inventar.",
+  "where": "src/ui/room.ts:1596  |  src/ui/room.ts:1608"
+ },
+ "T0853": {
+  "en": "You've already stabbed {name} today.",
+  "da": "Du har allerede stukket {name} i dag.",
+  "where": "src/ui/room.ts:1599"
+ },
+ "T0854": {
+  "en": "Your stab missed. They may have just left.",
+  "da": "Dit stik missede. De er måske lige gået.",
+  "where": "src/ui/room.ts:1612"
+ },
+ "T0855": {
+  "en": "You did what you had to do",
+  "da": "Du gjorde det du skulle",
+  "where": "src/ui/room.ts:1614"
+ },
+ "T0856": {
+  "en": "The drop of blood slips through your fingers… (the hotel refused it)",
+  "da": "Blodet glider mellem dine fingre… (hotellet afviste det)",
+  "where": "src/ui/room.ts:1624"
+ },
+ "T0857": {
+  "en": "Finish furnishing first.",
+  "da": "Gør indretningen færdig først.",
+  "where": "src/ui/room.ts:1626"
+ },
+ "T0858": {
+  "en": "That isn't in your pocket any more.",
+  "da": "Den er ikke i din lomme mere.",
+  "where": "src/ui/room.ts:1638"
+ },
+ "T0859": {
+  "en": "There's no room to put it down here.",
+  "da": "Der er ikke plads til at stille den ned her.",
+  "where": "src/ui/room.ts:1658"
+ },
+ "T0860": {
+  "en": "You drop {…}{…}.",
+  "da": "Du dropper {…}{…}.",
+  "where": "src/ui/room.ts:1666"
+ },
+ "T0861": {
+  "en": "the",
+  "da": "den",
+  "where": "src/ui/room.ts:1674  |  src/ui/room.ts:1954"
+ },
+ "T0862": {
+  "en": "It won't go. (the hotel refused it)",
+  "da": "Den vil ikke. (hotellet afviste det)",
+  "where": "src/ui/room.ts:1676"
+ },
+ "T0863": {
+  "en": "You pick up {…}{…}.",
+  "da": "Du samler {…}{…} op.",
+  "where": "src/ui/room.ts:1701"
+ },
+ "T0864": {
+  "en": "You couldn't pick that up.",
+  "da": "Du kunne ikke samle den op.",
+  "where": "src/ui/room.ts:1716"
+ },
+ "T0865": {
+  "en": "A body bag. You'd need a syringe to get anything out of it.",
+  "da": "En body bag. Du skal bruge en sprøjte for at få noget ud af den.",
+  "where": "src/ui/room.ts:1718"
+ },
+ "T0866": {
+  "en": "You don't have a syringe.",
+  "da": "Du har ikke en sprøjte.",
+  "where": "src/ui/room.ts:1725"
+ },
+ "T0867": {
+  "en": "There's nothing left in the bag for now. Try again in {waitText}.",
+  "da": "Der er ikke mere i posen lige nu. Prøv igen om {waitText}.",
+  "where": "src/ui/room.ts:1725  |  src/ui/room.ts:1738"
+ },
+ "T0868": {
+  "en": "Your arm needs {waitText} to recover.",
+  "da": "Din arm skal bruge {waitText} for at komme sig.",
+  "where": "src/ui/room.ts:1727"
+ },
+ "T0869": {
+  "en": "You find a vein that still works and draw a little blood. (+{SYRINGE_BLOOD})",
+  "da": "Du finder en åre der stadig virker og tapper lidt blod. (+{SYRINGE_BLOOD})",
+  "where": "src/ui/room.ts:1738"
+ },
+ "T0870": {
+  "en": "You slide the needle in and draw some blood. It fills the barrel nicely. (+{SYRINGE_BLOOD})",
+  "da": "Du stikker nålen ind og tapper noget blod. Sprøjten fyldes pænt. (+{SYRINGE_BLOOD})",
+  "where": "src/ui/room.ts:1740"
+ },
+ "T0871": {
+  "en": "The needle slips and the blood goes to waste… (the hotel refused it)",
+  "da": "Nålen glider og blodet går til spilde… (hotellet afviste det)",
+  "where": "src/ui/room.ts:1749"
+ },
+ "T0872": {
+  "en": "+1 Knife",
+  "da": "+1 Kniv",
+  "where": "src/ui/room.ts:1749  |  server/src/actions/rewards.ts:42"
+ },
+ "T0873": {
+  "en": "+{price} Blood",
+  "da": "+{price} Blod",
+  "where": "src/ui/room.ts:1751"
+ },
+ "T0874": {
+  "en": "+{JOB_REWARD} Blood",
+  "da": "+{JOB_REWARD} Blod",
+  "where": "src/ui/room.ts:1751"
+ },
+ "T0875": {
+  "en": "come back in about {waitText}. I'll have another job for you.",
+  "da": "kom tilbage om cirka {waitText}. så har jeg et andet job til dig.",
+  "where": "src/ui/room.ts:1765"
+ },
+ "T0876": {
+  "en": "Tap the glowing knife in your pocket, then tap LegendGamer2015.",
+  "da": "Tryk på den lysende kniv i din lomme, tryk så på LegendGamer2015.",
+  "where": "src/ui/room.ts:1765"
+ },
+ "T0877": {
+  "en": "+1 Pill",
+  "da": "+1 Pille",
+  "where": "src/ui/room.ts:1767"
+ },
+ "T0878": {
+  "en": "Tap the glowing pill in your pocket to swallow it.",
+  "da": "Tryk på den lysende pille i din lomme for at sluge den.",
+  "where": "src/ui/room.ts:1852  |  src/ui/room.ts:1911"
+ },
+ "T0879": {
+  "en": "The drops slip through your fingers… (the hotel refused it)",
+  "da": "Dråberne glider mellem dine fingre… (hotellet afviste det)",
+  "where": "src/ui/room.ts:1861"
+ },
+ "T0880": {
+  "en": "You're already smoking one.",
+  "da": "Du ryger allerede en.",
+  "where": "src/ui/room.ts:1872"
+ },
+ "T0881": {
+  "en": "You need a lighter for that. The vending machine in the shop sells them.",
+  "da": "Du skal bruge en lighter til det. Vending machinen i shoppen sælger dem.",
+  "where": "src/ui/room.ts:1876"
+ },
+ "T0882": {
+  "en": "You light up.",
+  "da": "Du tænder.",
+  "where": "src/ui/room.ts:1914  |  src/ui/room.ts:2287"
+ },
+ "T0883": {
+  "en": "The lighter won't catch.",
+  "da": "Lighteren vil ikke tage.",
+  "where": "src/ui/room.ts:1926"
+ },
+ "T0884": {
+  "en": "You swallow the super pill. The world slows down. You're running 4 times faster for a minute.",
+  "da": "Du sluger super pillen. Verden går langsomt. Du løber 4 gange så hurtigt i et minut.",
+  "where": "src/ui/room.ts:1929  |  src/ui/room.ts:2288"
+ },
+ "T0885": {
+  "en": "You drink the lean. Slow and heavy. For an hour the bins give twice as much, twice as often.",
+  "da": "Du drikker leanen. Langsomt og tungt. I en time giver containerne dobbelt så meget, dobbelt så ofte.",
+  "where": "src/ui/room.ts:1948"
+ },
+ "T0886": {
+  "en": "You don't have a pill.",
+  "da": "Du har ikke en pille.",
+  "where": "src/ui/room.ts:1973  |  server/src/actions/rewards.ts:151"
+ },
+ "T0887": {
+  "en": "The pill slips out of your fingers. (the hotel refused it)",
+  "da": "Pillen glider ud af dine fingre. (hotellet afviste det)",
+  "where": "src/ui/room.ts:1974  |  server/src/actions/rewards.ts:150"
+ },
+ "T0888": {
+  "en": "You swallow the pill. Give it a moment…",
+  "da": "Du sluger pillen. Giv det et øjeblik…",
+  "where": "src/ui/room.ts:1983"
+ },
+ "T0889": {
+  "en": "Faaaahhhh shii",
+  "da": "Faaaahhhh shii",
+  "where": "src/ui/room.ts:1985"
+ },
+ "T0890": {
+  "en": "opacity 1.4s ease",
+  "da": "opacity 1.4s ease",
+  "where": "src/ui/room.ts:2012"
+ },
+ "T0891": {
+  "en": "You don't have a burger.",
+  "da": "Du har ikke en burger.",
+  "where": "src/ui/room.ts:2017"
+ },
+ "T0892": {
+  "en": "The burger slips out of your hands. (the hotel refused it)",
+  "da": "Burgeren glider ud af dine hænder. (hotellet afviste det)",
+  "where": "src/ui/room.ts:2026  |  server/src/actions/quest.ts:69"
+ },
+ "T0893": {
+  "en": "You eat the burger. Greasy. Good.",
+  "da": "Du spiser burgeren. Fedtet. Godt.",
+  "where": "src/ui/room.ts:2027"
+ },
+ "T0894": {
+  "en": "{…} seconds",
+  "da": "{…} sekunder",
+  "where": "src/ui/room.ts:2032"
+ },
+ "T0895": {
+  "en": "{…} minutes",
+  "da": "{…} minutter",
+  "where": "src/ui/room.ts:2069"
+ },
+ "T0896": {
+  "en": "That was ass weed… it hits you hard. Give it a moment…",
+  "da": "Det var ass weed… det rammer dig hårdt. Giv det et øjeblik…",
+  "where": "src/ui/room.ts:2074"
+ },
+ "T0897": {
+  "en": "You finish the {name}. You feel sharp: stabs give x{…} blood for {fmtDuration}{…}.",
+  "da": "Du er færdig med {name}. Du føler dig skarp: stab giver x{…} blod i {fmtDuration}{…}.",
+  "where": "src/ui/room.ts:2098  |  server/src/actions/quest.ts:80"
+ },
+ "T0898": {
+  "en": "In room ({length})",
+  "da": "I værelset ({length})",
+  "where": "src/ui/room.ts:2099"
+ },
+ "T0899": {
+  "en": "You can't be in that room.",
+  "da": "Du kan ikke være i det værelse.",
+  "where": "src/ui/room.ts:2104"
+ },
+ "T0900": {
+  "en": "You don't have access to that room.",
+  "da": "Du har ikke adgang til det værelse.",
+  "where": "src/ui/room.ts:2108"
+ },
+ "T0901": {
+  "en": "{…} stabs you with a knife. It doesn't hurt a bit.",
+  "da": "{…} stikker dig med en kniv. Det gør slet ikke ondt.",
+  "where": "src/ui/room.ts:2108"
+ },
+ "T0902": {
+  "en": "Someone",
+  "da": "Nogen",
+  "where": "src/ui/room.ts:2123"
+ },
+ "T0903": {
+  "en": "(test) Done.",
+  "da": "(test) Færdig.",
+  "where": "src/ui/room.ts:2135"
+ },
+ "T0904": {
+  "en": "Unknown command.",
+  "da": "Ukendt kommando.",
+  "where": "src/ui/room.ts:2170"
+ },
+ "T0905": {
+  "en": "Usage: /give <item> [amount] [ass]. Examples: /give weed 3, /give joint paper, /give kodimagnyl 2, /give f_sofa",
+  "da": "Brug: /give <ting> [antal] [ass]. Eksempler: /give weed 3, /give joint paper, /give kodimagnyl 2, /give f_sofa",
+  "where": "src/ui/room.ts:2233"
+ },
+ "T0906": {
+  "en": "Slow down a little…",
+  "da": "Slap lidt af…",
+  "where": "src/ui/room.ts:2290"
+ },
+ "T0907": {
+  "en": "{name} 💤",
+  "da": "{name} zzz",
+  "where": "src/ui/room.ts:2386"
+ },
+ "T0908": {
+  "en": "That room doesn't exist.",
+  "da": "Det værelse findes ikke.",
+  "where": "src/ui/room.ts:2386"
+ },
+ "T0909": {
+  "en": "{ownerName}'s room is closed. Knock on its door from the basement to ask.",
+  "da": "{ownerName}s værelse er lukket. Bank på døren fra kælderen for at spørge.",
+  "where": "src/ui/room.ts:2403  |  src/ui/room.ts:2427"
+ },
+ "T0910": {
+  "en": "This room was deleted.",
+  "da": "Dette værelse blev slettet.",
+  "where": "src/ui/room.ts:2405  |  src/ui/room.ts:2429  |  server/src/actions/debug.ts:12  |  server/src/actions/debug.ts:48"
+ },
+ "T0911": {
+  "en": "You can't be in that room any more.",
+  "da": "Du kan ikke være i det værelse mere.",
+  "where": "src/ui/room.ts:2417"
+ },
+ "T0912": {
+  "en": "Couldn't open that room.",
+  "da": "Kunne ikke åbne det værelse.",
+  "where": "src/ui/room.ts:2441"
+ },
+ "T0913": {
+  "en": "Open to all",
+  "da": "Åben for alle",
+  "where": "src/ui/room.ts:2444"
+ },
+ "T0914": {
+  "en": "Knock to enter",
+  "da": "Bank på for at komme ind",
+  "where": "src/ui/room.ts:3336"
+ },
+ "T0915": {
+  "en": "Friends only",
+  "da": "Kun venner",
+  "where": "src/ui/room.ts:3484  |  server/src/actions/rewards.ts:281"
+ },
+ "T0916": {
+  "en": "No one",
+  "da": "Ingen",
+  "where": "src/ui/room.ts:3485"
+ },
+ "T0917": {
+  "en": "Anyone can walk in.",
+  "da": "Alle kan gå ind.",
+  "where": "src/ui/room.ts:3490"
+ },
+ "T0918": {
+  "en": "Friends walk in. Everyone else knocks and you let them in from your friends menu.",
+  "da": "Venner går ind. Alle andre banker på og du lukker dem ind fra din venner-menu.",
+  "where": "src/ui/room.ts:3492"
+ },
+ "T0919": {
+  "en": "Only friends can come in. Strangers can't knock.",
+  "da": "Kun venner kan komme ind. Fremmede kan ikke banke på.",
+  "where": "src/ui/room.ts:3494"
+ },
+ "T0920": {
+  "en": "Nobody can come in, not even friends.",
+  "da": "Ingen kan komme ind, ikke engang venner.",
+  "where": "src/ui/roomPanel.ts:31"
+ },
+ "T0921": {
+  "en": "The hotel refused that change.",
+  "da": "Hotellet afviste den ændring.",
+  "where": "src/ui/roomPanel.ts:31"
+ },
+ "T0922": {
+  "en": "{label} ({w}×{h})",
+  "da": "{label} ({w}×{h})",
+  "where": "src/ui/roomPanel.ts:31"
+ },
+ "T0923": {
+  "en": "Furniture ({length}/{MAX_FURNI})",
+  "da": "Møbler ({length}/{MAX_FURNI})",
+  "where": "src/ui/roomPanel.ts:31"
+ },
+ "T0924": {
+  "en": "🧹 Pick up",
+  "da": "Saml op",
+  "where": "src/ui/roomPanel.ts:33"
+ },
+ "T0925": {
+  "en": "No furniture is available yet. New pieces will show up here.",
+  "da": "Ingen møbler er tilgængelige endnu. Nye møbler dukker op her.",
+  "where": "src/ui/roomPanel.ts:34"
+ },
+ "T0926": {
+  "en": "Click in the room to use the tool. Esc to stop.",
+  "da": "Klik i værelset for at bruge værktøjet. Esc for at stoppe.",
+  "where": "src/ui/roomPanel.ts:35"
+ },
+ "T0927": {
+  "en": "Pick a piece, then click a tile in the room.",
+  "da": "Vælg et møbel, klik så på et felt i værelset.",
+  "where": "src/ui/roomPanel.ts:36"
+ },
+ "T0928": {
+  "en": "Remove everything you added to the basement?",
+  "da": "Fjern alt du tilføjede til kælderen?",
+  "where": "src/ui/roomPanel.ts:46"
+ },
+ "T0929": {
+  "en": "Put all furniture from this room into your toolbox storage?",
+  "da": "Læg alle møbler fra dette værelse i din værktøjskasse?",
+  "where": "src/ui/roomPanel.ts:49"
+ },
+ "T0930": {
+  "en": "Clear room",
+  "da": "Ryd værelset",
+  "where": "src/ui/roomPanel.ts:57"
+ },
+ "T0931": {
+  "en": "Basement",
+  "da": "Kælder",
+  "where": "src/ui/roomPanel.ts:60"
+ },
+ "T0932": {
+  "en": "Admin: add furniture uploaded in Admin > Studio > Furniture. The built-in pieces stay.",
+  "da": "Admin: tilføj møbler uploadet i Admin > Studio > Møbler. De indbyggede møbler bliver.",
+  "where": "src/ui/roomPanel.ts:62"
+ },
+ "T0933": {
+  "en": "Room",
+  "da": "Værelse",
+  "where": "src/ui/roomPanel.ts:62"
+ },
+ "T0934": {
+  "en": "My room",
+  "da": "Mit værelse",
+  "where": "src/ui/roomPanel.ts:62"
+ },
+ "T0935": {
+  "en": "Room names need 3+ characters.",
+  "da": "Værelsesnavne skal være 3+ tegn.",
+  "where": "src/ui/roomPanel.ts:64"
+ },
+ "T0936": {
+  "en": "Who can come in",
+  "da": "Hvem kan komme ind",
+  "where": "src/ui/roomPanel.ts:64"
+ },
+ "T0937": {
+  "en": "Colours",
+  "da": "Farver",
+  "where": "src/ui/roomPanel.ts:67"
+ },
+ "T0938": {
+  "en": "Floor, walls and carpet colours are sold by the landlord in the shop: 2 drops for each, and you see a preview first.",
+  "da": "Gulv-, væg- og tæppefarver sælges af udlejeren i shoppen: 2 dråber for hver, og du ser en forhåndsvisning først.",
+  "where": "src/ui/roomPanel.ts:75  |  src/rooms.ts:215"
+ },
+ "T0939": {
+  "en": "Arrange your room with the toolbox in it: click the toolbox. Buy furniture in the shop (the yellow door in the basement).",
+  "da": "Indret dit værelse med værktøjskassen i det: klik på værktøjskassen. Køb møbler i shoppen (den gule dør i kælderen).",
+  "where": "src/ui/roomPanel.ts:76"
+ },
+ "T0940": {
+  "en": "Invite friends",
+  "da": "Inviter venner",
+  "where": "src/ui/roomPanel.ts:82  |  src/ui/landlord.ts:196  |  src/ui/room.ts:406"
+ },
+ "T0941": {
+  "en": "Add friends in the Friends panel first.",
+  "da": "Tilføj venner i Venner-panelet først.",
+  "where": "src/ui/roomPanel.ts:94"
+ },
+ "T0942": {
+  "en": "Invited {name}.",
+  "da": "Inviterede {name}.",
+  "where": "src/ui/roomPanel.ts:101"
+ },
+ "T0943": {
+  "en": "Couldn't send that invite.",
+  "da": "Kunne ikke sende den invitation.",
+  "where": "src/ui/roomPanel.ts:106"
+ },
+ "T0944": {
+  "en": "Invited ✓",
+  "da": "Inviteret",
+  "where": "src/ui/roomPanel.ts:112"
+ },
+ "T0945": {
+  "en": "Invite",
+  "da": "Inviter",
+  "where": "src/ui/roomPanel.ts:113"
+ },
+ "T0946": {
+  "en": "Furniture is sold in the shop room: take the yellow door in the basement (to the right of 6ixty). Four pieces a day.",
+  "da": "Møbler sælges i shop-rummet: tag den gule dør i kælderen (til højre for 6ixty). Fire møbler om dagen.",
+  "where": "src/ui/roomPanel.ts:117"
+ },
+ "T0947": {
+  "en": "{…}h {…}m",
+  "da": "{…}t {…}m",
+  "where": "src/ui/roomPanel.ts:127"
+ },
+ "T0948": {
+  "en": "(max-width: 900px)",
+  "da": "(max-width: 900px)",
+  "where": "src/ui/roomPanel.ts:129"
+ },
+ "T0949": {
+  "en": "Inventory",
+  "da": "Inventar",
+  "where": "src/ui/roomPanel.ts:139"
+ },
+ "T0950": {
+  "en": "Emotes",
+  "da": "Emotes",
+  "where": "src/ui/roomPanel.ts:139"
+ },
+ "T0951": {
+  "en": "{name}: {desc}  (/{id})",
+  "da": "{name}: {desc}  (/{id})",
+  "where": "src/ui/roomPanel.ts:141"
+ },
+ "T0952": {
+  "en": "{name}: locked. Buy it in the shop for {price} drops.",
+  "da": "{name}: låst. Køb den i shoppen for {price} dråber.",
+  "where": "src/ui/roomPanel.ts:141"
+ },
+ "T0953": {
+  "en": "Click one to perform it, or type /name in chat (like /dance). Walking cancels it.",
+  "da": "Klik på en for at udføre den, eller skriv /navn i chatten (som /dance). At gå afbryder den.",
+  "where": "src/ui/shop.ts:31"
+ },
+ "T0954": {
+  "en": "Get more in the shop",
+  "da": "Få flere i shoppen",
+  "where": "src/ui/sidepanel.ts:40  |  src/ui/room.ts:1133  |  src/ui/room.ts:1746  |  server/src/actions/rewards.ts:10"
+ },
+ "T0955": {
+  "en": "Knife: click it, then a player (or a dead cat). CD: click it, then the CD player. Syringe: just click it.",
+  "da": "Kniv: klik på den, så en spiller (eller en død kat). CD: klik på den, så CD afspilleren. Sprøjte: bare klik på den.",
+  "where": "src/ui/sidepanel.ts:46"
+ },
+ "T0956": {
+  "en": "Now click a free spot in your room to put it down (R turns it).",
+  "da": "Klik nu på et ledigt sted i dit værelse for at stille den ned (R drejer den).",
+  "where": "src/ui/sidepanel.ts:71  |  src/ui/sidepanel.ts:167"
+ },
+ "T0957": {
+  "en": "Now click the CD player in the basement.",
+  "da": "Klik nu på CD afspilleren i kælderen.",
+  "where": "src/ui/sidepanel.ts:72  |  src/ui/sidepanel.ts:88"
+ },
+ "T0958": {
+  "en": "Now click a player to use it on them.",
+  "da": "Klik nu på en spiller for at bruge den på dem.",
+  "where": "src/ui/sidepanel.ts:83"
+ },
+ "T0959": {
+  "en": "Light up",
+  "da": "Tænd",
+  "where": "src/ui/sidepanel.ts:83"
+ },
+ "T0960": {
+  "en": "Swallow",
+  "da": "Slug",
+  "where": "src/ui/sidepanel.ts:91"
+ },
+ "T0961": {
+  "en": "Eat",
+  "da": "Spis",
+  "where": "src/ui/sidepanel.ts:92"
+ },
+ "T0962": {
+  "en": "Drink",
+  "da": "Drik",
+  "where": "src/ui/sidepanel.ts:98"
+ },
+ "T0963": {
+  "en": "Draw blood",
+  "da": "Tap blod",
+  "where": "src/ui/sidepanel.ts:100"
+ },
+ "T0964": {
+  "en": "Place",
+  "da": "Stil",
+  "where": "src/ui/sidepanel.ts:100"
+ },
+ "T0965": {
+  "en": "Use knife",
+  "da": "Brug kniv",
+  "where": "src/ui/sidepanel.ts:100"
+ },
+ "T0966": {
+  "en": "{name} (in the player)",
+  "da": "{name} (i afspilleren)",
+  "where": "src/ui/sidepanel.ts:110"
+ },
+ "T0967": {
+  "en": "Your {name} is in the player right now.",
+  "da": "Din {name} er i afspilleren lige nu.",
+  "where": "src/ui/sidepanel.ts:110"
+ },
+ "T0968": {
+  "en": "Let it burn out first.",
+  "da": "Lad den brænde ud først.",
+  "where": "src/ui/sidepanel.ts:110"
+ },
+ "T0969": {
+  "en": "You can't drop that.",
+  "da": "Det kan du ikke droppe.",
+  "where": "src/ui/sidepanel.ts:110"
+ },
+ "T0970": {
+  "en": "Your {name} is in the player. It'll be back when it's done.",
+  "da": "Din {name} er i afspilleren. Den er tilbage når den er færdig.",
+  "where": "src/ui/sidepanel.ts:110  |  src/ui/room.ts:734"
+ },
+ "T0971": {
+  "en": "You've got nothing to cut it with.",
+  "da": "Du har ikke noget at skære den med.",
+  "where": "src/ui/sidepanel.ts:114"
+ },
+ "T0972": {
+  "en": "Tap the item you want to put on the floor.",
+  "da": "Tryk på tingen du vil lægge på gulvet.",
+  "where": "src/ui/sidepanel.ts:116"
+ },
+ "T0973": {
+  "en": "Drop",
+  "da": "Drop",
+  "where": "src/ui/sidepanel.ts:130"
+ },
+ "T0974": {
+  "en": "Music",
+  "da": "Musik",
+  "where": "src/ui/sidepanel.ts:135"
+ },
+ "T0975": {
+  "en": "🔒 You don't have a jukebox pass.",
+  "da": "Du har ikke et jukebox pas.",
+  "where": "src/ui/sidepanel.ts:136  |  src/drops.ts:63  |  server/src/actions/floor.ts:23"
+ },
+ "T0976": {
+  "en": "Buy music access in the shop to stream tracks while you hang out.",
+  "da": "Køb musikadgang i shoppen for at streame numre mens du hænger ud.",
+  "where": "src/ui/sidepanel.ts:137  |  src/drops.ts:62  |  server/src/actions/floor.ts:22"
+ },
+ "T0977": {
+  "en": "Open shop",
+  "da": "Åbn shoppen",
+  "where": "src/ui/sidepanel.ts:142"
+ },
+ "T0978": {
+  "en": "Couldn't load that track.",
+  "da": "Kunne ikke hente det nummer.",
+  "where": "src/ui/sidepanel.ts:153  |  src/ui/room.ts:1284  |  server/src/actions/rewards.ts:76"
+ },
+ "T0979": {
+  "en": "Now playing",
+  "da": "Spiller nu",
+  "where": "src/ui/sidepanel.ts:170"
+ },
+ "T0980": {
+  "en": "Paused",
+  "da": "Pause",
+  "where": "src/ui/sidepanel.ts:171  |  src/ui/dropConfirm.ts:16"
+ },
+ "T0981": {
+  "en": "Pick a track to start streaming.",
+  "da": "Vælg et nummer for at starte streaming.",
+  "where": "src/ui/sidepanel.ts:180  |  src/ui/sidepanel.ts:210"
+ },
+ "T0982": {
+  "en": "⏸ Pause",
+  "da": "Pause",
+  "where": "src/ui/sidepanel.ts:182"
+ },
+ "T0983": {
+  "en": "▶ Play",
+  "da": "Afspil",
+  "where": "src/ui/sidepanel.ts:183"
+ },
+ "T0984": {
+  "en": "Volume",
+  "da": "Lyd",
+  "where": "src/ui/sidepanel.ts:184"
+ },
+ "T0985": {
+  "en": "6ixty's shop",
+  "da": "6ixtys shop",
+  "where": "src/ui/sidepanel.ts:202"
+ },
+ "T0986": {
+  "en": "6ixty pays you {gain} drops.",
+  "da": "6ixty betaler dig {gain} dråber.",
+  "where": "src/ui/sidepanel.ts:203"
+ },
+ "T0987": {
+  "en": "He pays {each} drops each.",
+  "da": "Han betaler {each} dråber stykket.",
+  "where": "src/ui/sidepanel.ts:203"
+ },
+ "T0988": {
+  "en": "Sell 1 ({each})",
+  "da": "Sælg 1 ({each})",
+  "where": "src/ui/sidepanel.ts:203"
+ },
+ "T0989": {
+  "en": "All ({…})",
+  "da": "Alle ({…})",
+  "where": "src/ui/sidepanel.ts:204"
+ },
+ "T0990": {
+  "en": "Nothing on the shelf right now.",
+  "da": "Intet på hylden lige nu.",
+  "where": "src/ui/sidepanel.ts:204"
+ },
+ "T0991": {
+  "en": "{name} added to your inventory.",
+  "da": "{name} lagt i dit inventar.",
+  "where": "src/ui/sidepanel.ts:210  |  src/ui/room.ts:741  |  src/ui/room.ts:1582"
+ },
+ "T0992": {
+  "en": "Sell to 6ixty:",
+  "da": "Sælg til 6ixty:",
+  "where": "src/ui/sixtyShop.ts:18"
+ },
+ "T0993": {
+  "en": "Paint",
+  "da": "Mal",
+  "where": "src/ui/sixtyShop.ts:39"
+ },
+ "T0994": {
+  "en": "Import",
+  "da": "Importér",
+  "where": "src/ui/sixtyShop.ts:46"
+ },
+ "T0995": {
+  "en": "Pattern",
+  "da": "Mønster",
+  "where": "src/ui/sixtyShop.ts:47"
+ },
+ "T0996": {
+  "en": "Details",
+  "da": "Detaljer",
+  "where": "src/ui/sixtyShop.ts:48"
+ },
+ "T0997": {
+  "en": "Template",
+  "da": "Skabelon",
+  "where": "src/ui/sixtyShop.ts:51"
+ },
+ "T0998": {
+  "en": "Something went wrong.",
+  "da": "Noget gik galt.",
+  "where": "src/ui/sixtyShop.ts:68"
+ },
+ "T0999": {
+  "en": "{price} drops",
+  "da": "{price} dråber",
+  "where": "src/ui/sixtyShop.ts:77"
+ },
+ "T1000": {
+  "en": "No designs yet. Press New design to make your first one.",
+  "da": "Ingen designs endnu. Tryk Nyt design for at lave dit første.",
+  "where": "src/ui/studio.ts:19"
+ },
+ "T1001": {
+  "en": "＋ New design",
+  "da": "Nyt design",
+  "where": "src/ui/studio.ts:19"
+ },
+ "T1002": {
+  "en": "Designs start from an existing garment, so they come with the right layers and animations.",
+  "da": "Designs starter fra et eksisterende stykke tøj, så de kommer med de rigtige lag og animationer.",
+  "where": "src/ui/studio.ts:19"
+ },
+ "T1003": {
+  "en": "Name your design",
+  "da": "Navngiv dit design",
+  "where": "src/ui/studio.ts:19  |  src/ui/studio.ts:312  |  src/ui/adminFurni.ts:145"
+ },
+ "T1004": {
+  "en": "My design",
+  "da": "Mit design",
+  "where": "src/ui/studio.ts:19  |  src/ui/studio.ts:324"
+ },
+ "T1005": {
+  "en": "Any gender",
+  "da": "Alle køn",
+  "where": "src/ui/studio.ts:46  |  src/ui/adminFurni.ts:56  |  src/auth.ts:38"
+ },
+ "T1006": {
+  "en": "Boys",
+  "da": "Drenge",
+  "where": "src/ui/studio.ts:79  |  src/ui/landlord.ts:165"
+ },
+ "T1007": {
+  "en": "Girls",
+  "da": "Piger",
+  "where": "src/ui/studio.ts:85"
+ },
+ "T1008": {
+  "en": "Unisex",
+  "da": "Unisex",
+  "where": "src/ui/studio.ts:89"
+ },
+ "T1009": {
+  "en": "Find by id…",
+  "da": "Find med id…",
+  "where": "src/ui/studio.ts:91"
+ },
+ "T1010": {
+  "en": "Getting the artwork ready…",
+  "da": "Gør grafikken klar…",
+  "where": "src/ui/studio.ts:117"
+ },
+ "T1011": {
+  "en": "· tintable",
+  "da": "· kan farves",
+  "where": "src/ui/studio.ts:117  |  src/ui/studio.ts:131"
+ },
+ "T1012": {
+  "en": "{…} / {pages} · {length} garments",
+  "da": "{…} / {pages} · {length} stykker tøj",
+  "where": "src/ui/studio.ts:120  |  src/ui/adminShop.ts:73"
+ },
+ "T1013": {
+  "en": "‹ Designs",
+  "da": "‹ Designs",
+  "where": "src/ui/studio.ts:120  |  src/ui/studio.ts:301  |  src/ui/studioNitro.ts:117  |  src/ui/adminShop.ts:73"
+ },
+ "T1014": {
+  "en": "Pick a garment to start from",
+  "da": "Vælg et stykke tøj at starte fra",
+  "where": "src/ui/studio.ts:120  |  src/ui/studio.ts:301  |  src/ui/studioNitro.ts:117  |  src/ui/adminShop.ts:73"
+ },
+ "T1015": {
+  "en": "This design isn't tinted: it shows the colours you paint.",
+  "da": "Dette design er ikke farvet: det viser de farver du maler.",
+  "where": "src/ui/studio.ts:120  |  src/ui/studio.ts:301  |  src/ui/studioNitro.ts:117  |  src/ui/adminShop.ts:73"
+ },
+ "T1016": {
+  "en": "Preview colour",
+  "da": "Forhåndsvis farve",
+  "where": "src/ui/studio.ts:122  |  src/ui/adminShop.ts:76"
+ },
+ "T1017": {
+  "en": "Drop PNG files or a ZIP here, or",
+  "da": "Slip PNG filer eller en ZIP her, eller",
+  "where": "src/ui/studio.ts:132"
+ },
+ "T1018": {
+  "en": "{replaced} frame{…} replaced, {added} added.",
+  "da": "{replaced} frames erstattet, {added} tilføjet.",
+  "where": "src/ui/studio.ts:149"
+ },
+ "T1019": {
+  "en": "Import your art",
+  "da": "Importér din grafik",
+  "where": "src/ui/studio.ts:152"
+ },
+ "T1020": {
+  "en": "Need the frame files first? The Template tab downloads them for this design.",
+  "da": "Har du brug for frame-filerne først? Skabelon-fanen downloader dem til dette design.",
+  "where": "src/ui/studio.ts:156  |  src/ui/studio.ts:368  |  src/ui/studioNitro.ts:30"
+ },
+ "T1021": {
+  "en": "Pattern fill",
+  "da": "Mønsterfyld",
+  "where": "src/ui/studio.ts:156"
+ },
+ "T1022": {
+  "en": "Lays a pattern over the whole garment (every pose), keeping its shading. Apply more than once to layer patterns, or use Reset all to start over.",
+  "da": "Lægger et mønster over hele tøjet (alle positurer) og beholder skyggerne. Brug det flere gange for at lægge mønstre i lag, eller brug Nulstil alle for at starte forfra.",
+  "where": "src/ui/studio.ts:212"
+ },
+ "T1023": {
+  "en": "Or use your own tile image:",
+  "da": "Eller brug dit eget flisebillede:",
+  "where": "src/ui/studio.ts:215"
+ },
+ "T1024": {
+  "en": "Size",
+  "da": "Størrelse",
+  "where": "src/ui/studio.ts:231"
+ },
+ "T1025": {
+  "en": "Strength",
+  "da": "Styrke",
+  "where": "src/ui/studio.ts:237"
+ },
+ "T1026": {
+  "en": "Pattern applied.",
+  "da": "Mønster tilføjet.",
+  "where": "src/ui/studio.ts:241"
+ },
+ "T1027": {
+  "en": "Apply to every frame",
+  "da": "Brug på hver frame",
+  "where": "src/ui/studio.ts:248"
+ },
+ "T1028": {
+  "en": "Back to the original art.",
+  "da": "Tilbage til den originale grafik.",
+  "where": "src/ui/studio.ts:251"
+ },
+ "T1029": {
+  "en": "Reset all frames",
+  "da": "Nulstil alle frames",
+  "where": "src/ui/studio.ts:284"
+ },
+ "T1030": {
+  "en": "Untitled",
+  "da": "Uden titel",
+  "where": "src/ui/studio.ts:285"
+ },
+ "T1031": {
+  "en": "Name",
+  "da": "Navn",
+  "where": "src/ui/studio.ts:287"
+ },
+ "T1032": {
+  "en": "For",
+  "da": "Til",
+  "where": "src/ui/studio.ts:288"
+ },
+ "T1033": {
+  "en": "Players pick the colour",
+  "da": "Spillere vælger farven",
+  "where": "src/ui/studio.ts:289"
+ },
+ "T1034": {
+  "en": "Reuse standing art when walking",
+  "da": "Genbrug stå-grafik når man går",
+  "where": "src/ui/studio.ts:294"
+ },
+ "T1035": {
+  "en": "Price (drops)",
+  "da": "Pris (dråber)",
+  "where": "src/ui/studio.ts:295"
+ },
+ "T1036": {
+  "en": "For sale in the shop",
+  "da": "Til salg i shoppen",
+  "where": "src/ui/studio.ts:296"
+ },
+ "T1037": {
+  "en": "Price 0 = free for everyone (it shows up in the character picker and the random avatar). A price above 0 needs \"for sale\" ticked, otherwise nobody can get it.",
+  "da": "Pris 0 = gratis for alle (den vises i karaktervælgeren og i den tilfældige avatar). En pris over 0 kræver at \"til salg\" er sat, ellers kan ingen få den.",
+  "where": "src/ui/studio.ts:296"
+ },
+ "T1038": {
+  "en": "Download frames (.zip)",
+  "da": "Download frames (.zip)",
+  "where": "src/ui/studio.ts:299"
+ },
+ "T1039": {
+  "en": "Tip: the file names carry the pose, layer, direction and frame. Directions 4-6 don't have files because the game mirrors 2-0 for them.",
+  "da": "Tip: filnavnene indeholder positur, lag, retning og frame. Retning 4-6 har ikke filer fordi spillet spejler 2-0 til dem.",
+  "where": "src/ui/studio.ts:314  |  src/ui/adminFurni.ts:147  |  src/ui/roomPanel.ts:97"
+ },
+ "T1040": {
+  "en": "Published. Players have it now.",
+  "da": "Udgivet. Spillere har den nu.",
+  "where": "src/ui/studio.ts:315"
+ },
+ "T1041": {
+  "en": "Draft saved.",
+  "da": "Kladde gemt.",
+  "where": "src/ui/studio.ts:316"
+ },
+ "T1042": {
+  "en": "Leave without saving? Unsaved changes are lost.",
+  "da": "Gå uden at gemme? Ugemte ændringer går tabt.",
+  "where": "src/ui/studio.ts:317"
+ },
+ "T1043": {
+  "en": "Walk",
+  "da": "Gå",
+  "where": "src/ui/studio.ts:318  |  src/ui/adminShop.ts:221  |  src/ui/adminShop.ts:259"
+ },
+ "T1044": {
+  "en": "Boy",
+  "da": "Dreng",
+  "where": "src/ui/studio.ts:319"
+ },
+ "T1045": {
+  "en": "Girl",
+  "da": "Pige",
+  "where": "src/ui/studio.ts:320"
+ },
+ "T1046": {
+  "en": "Publish",
+  "da": "Udgiv",
+  "where": "src/ui/studio.ts:331"
+ },
+ "T1047": {
+  "en": "Save as draft",
+  "da": "Gem som kladde",
+  "where": "src/ui/studio.ts:332"
+ },
+ "T1048": {
+  "en": "Delete \"{name}\" for everyone? Players wearing it will lose it.",
+  "da": "Slet \"{name}\" for alle? Spillere der har den på mister den.",
+  "where": "src/ui/studio.ts:351"
+ },
+ "T1049": {
+  "en": "Delete",
+  "da": "Slet",
+  "where": "src/ui/studio.ts:358"
+ },
+ "T1050": {
+  "en": "Publish makes it visible to players (as free, or on sale if you set a price in Details). A draft is only visible to you.",
+  "da": "Udgiv gør den synlig for spillere (som gratis, eller til salg hvis du sætter en pris i Detaljer). En kladde er kun synlig for dig.",
+  "where": "src/ui/studio.ts:358"
+ },
+ "T1051": {
+  "en": "Clothing",
+  "da": "Tøj",
+  "where": "src/ui/studio.ts:368"
+ },
+ "T1052": {
+  "en": "Jacket L",
+  "da": "Jakke V",
+  "where": "src/ui/studio.ts:375"
+ },
+ "T1053": {
+  "en": "Jacket R",
+  "da": "Jakke H",
+  "where": "src/ui/studio.ts:378  |  src/ui/onboarding.ts:57  |  src/ui/editor.ts:197"
+ },
+ "T1054": {
+  "en": "Filter by id or layer (ch, lg, sleeve)…",
+  "da": "Filtrer på id eller lag (ch, lg, sleeve)…",
+  "where": "src/ui/studio.ts:378  |  src/ui/onboarding.ts:57  |  src/ui/editor.ts:197"
+ },
+ "T1055": {
+  "en": "{length} frames · {length} parts",
+  "da": "{length} frames · {length} dele",
+  "where": "src/ui/studio.ts:383"
+ },
+ "T1056": {
+  "en": "Remove",
+  "da": "Fjern",
+  "where": "src/ui/studio.ts:384"
+ },
+ "T1057": {
+  "en": "Tick shown",
+  "da": "Vælg viste",
+  "where": "src/ui/studio.ts:387"
+ },
+ "T1058": {
+  "en": "Untick shown",
+  "da": "Fravælg viste",
+  "where": "src/ui/studio.ts:394  |  src/ui/adminFurni.ts:169"
+ },
+ "T1059": {
+  "en": "Use",
+  "da": "Brug",
+  "where": "src/ui/studio.ts:397"
+ },
+ "T1060": {
+  "en": "Layer",
+  "da": "Lag",
+  "where": "src/ui/studioHub.ts:18  |  src/ui/adminShop.ts:53  |  src/ui/shop.ts:20"
+ },
+ "T1061": {
+  "en": "Part id",
+  "da": "Del id",
+  "where": "src/ui/studioNitro.ts:9"
+ },
+ "T1062": {
+  "en": "Frames",
+  "da": "Frames",
+  "where": "src/ui/studioNitro.ts:9"
+ },
+ "T1063": {
+  "en": "Garment #",
+  "da": "Tøj #",
+  "where": "src/ui/studioNitro.ts:38"
+ },
+ "T1064": {
+  "en": "body part, skipped",
+  "da": "kropsdel, sprunget over",
+  "where": "src/ui/studioNitro.ts:88"
+ },
+ "T1065": {
+  "en": "{…} ({type})",
+  "da": "{…} ({type})",
+  "where": "src/ui/studioNitro.ts:91"
+ },
+ "T1066": {
+  "en": "{…} · {…} frames",
+  "da": "{…} · {…} frames",
+  "where": "src/ui/studioNitro.ts:92"
+ },
+ "T1067": {
+  "en": "players pick the colour (art is grey/white)",
+  "da": "spillere vælger farven (grafikken er grå/hvid)",
+  "where": "src/ui/studioNitro.ts:94"
+ },
+ "T1068": {
+  "en": "Price",
+  "da": "Pris",
+  "where": "src/ui/studioNitro.ts:94"
+ },
+ "T1069": {
+  "en": "(0 = free for everyone)",
+  "da": "(0 = gratis for alle)",
+  "where": "src/ui/studioNitro.ts:96  |  src/ui/sidepanel.ts:114  |  src/ui/room.ts:735"
+ },
+ "T1070": {
+  "en": "Garments to import ({length})",
+  "da": "Tøj at importere ({length})",
+  "where": "src/ui/studioNitro.ts:96"
+ },
+ "T1071": {
+  "en": "Tick at least one part to build a garment.",
+  "da": "Vælg mindst én del for at bygge et stykke tøj.",
+  "where": "src/ui/studioNitro.ts:96"
+ },
+ "T1072": {
+  "en": "Importing {…}/{length}: {name}…",
+  "da": "Importerer {…}/{length}: {name}…",
+  "where": "src/ui/studioNitro.ts:96"
+ },
+ "T1073": {
+  "en": "Imported {done} garment{…}.",
+  "da": "Importerede {done} stykker tøj.",
+  "where": "src/ui/studioNitro.ts:96"
+ },
+ "T1074": {
+  "en": "Drops of blood",
+  "da": "Bloddråber",
+  "where": "src/ui/studioNitro.ts:100"
+ },
+ "T1075": {
+  "en": "Menu",
+  "da": "Menu",
+  "where": "src/ui/studioNitro.ts:104"
+ },
+ "T1076": {
+  "en": "🛠 Admin",
+  "da": "Admin",
+  "where": "src/ui/studioNitro.ts:122"
+ },
+ "T1077": {
+  "en": "🔇 Sounds: off",
+  "da": "Lyde: fra",
+  "where": "src/ui/studioNitro.ts:123"
+ },
+ "T1078": {
+  "en": "🔊 Sounds: on",
+  "da": "Lyde: til",
+  "where": "src/ui/studioNitro.ts:126"
+ },
+ "T1079": {
+  "en": "Log out",
+  "da": "Log ud",
+  "where": "src/ui/studioNitro.ts:127"
+ },
+ "T1080": {
+  "en": "drops of blood",
+  "da": "bloddråber",
+  "where": "src/ui/studioNitro.ts:127"
+ },
+ "T1081": {
+  "en": "wants to trade with you.",
+  "da": "vil bytte med dig.",
+  "where": "src/ui/studioNitro.ts:132"
+ },
+ "T1082": {
+  "en": "Couldn't start that trade.",
+  "da": "Kunne ikke starte det byt.",
+  "where": "src/ui/studioNitro.ts:135"
+ },
+ "T1083": {
+  "en": "Trade",
+  "da": "Byt",
+  "where": "src/ui/studioNitro.ts:136"
+ },
+ "T1084": {
+  "en": "Opening the trade…",
+  "da": "Åbner byttet…",
+  "where": "src/ui/studioNitro.ts:147"
+ },
+ "T1085": {
+  "en": "confirmed ✓",
+  "da": "bekræftet",
+  "where": "src/ui/studioNitro.ts:160"
+ },
+ "T1086": {
+  "en": "accepted ✓",
+  "da": "accepteret",
+  "where": "src/ui/topbar.ts:29  |  src/ui/topbar.ts:30  |  src/ui/trade.ts:72"
+ },
+ "T1087": {
+  "en": "Tap something in your pocket below.",
+  "da": "Tryk på noget i din lomme nedenfor.",
+  "where": "src/ui/topbar.ts:34"
+ },
+ "T1088": {
+  "en": "Nothing yet.",
+  "da": "Intet endnu.",
+  "where": "src/ui/topbar.ts:38"
+ },
+ "T1089": {
+  "en": "Handing over…",
+  "da": "Rækker over…",
+  "where": "src/ui/topbar.ts:41  |  src/ui/topbar.ts:42"
+ },
+ "T1090": {
+  "en": "Waiting for {name} to confirm…",
+  "da": "Venter på at {name} bekræfter…",
+  "where": "src/ui/topbar.ts:41  |  src/ui/topbar.ts:42"
+ },
+ "T1091": {
+  "en": "Confirm trade",
+  "da": "Bekræft byt",
+  "where": "src/ui/topbar.ts:43  |  src/main.ts:193"
+ },
+ "T1092": {
+  "en": "Change offer",
+  "da": "Ret tilbud",
+  "where": "src/ui/topbar.ts:62"
+ },
+ "T1093": {
+  "en": "Take back accept",
+  "da": "Tag accept tilbage",
+  "where": "src/ui/trade.ts:30"
+ },
+ "T1094": {
+  "en": "Cancel trade",
+  "da": "Annuller byt",
+  "where": "src/ui/trade.ts:32"
+ },
+ "T1095": {
+  "en": "{name}'s offer",
+  "da": "{name}s tilbud",
+  "where": "src/ui/trade.ts:59"
+ },
+ "T1096": {
+  "en": "Your offer",
+  "da": "Dit tilbud",
+  "where": "src/ui/trade.ts:77"
+ },
+ "T1097": {
+  "en": "Your pocket",
+  "da": "Din lomme",
+  "where": "src/ui/trade.ts:87"
+ },
+ "T1098": {
+  "en": "Not enough room in your pocket for what you'd get. Free up some slots (or ask them to offer less).",
+  "da": "Ikke plads nok i din lomme til det du ville få. Frigør nogle pladser (eller bed dem tilbyde mindre).",
+  "where": "src/ui/trade.ts:87"
+ },
+ "T1099": {
+  "en": "The hotel refused that offer.",
+  "da": "Hotellet afviste det tilbud.",
+  "where": "src/ui/trade.ts:95"
+ },
+ "T1100": {
+  "en": "Make room in your pocket first.",
+  "da": "Gør plads i din lomme først.",
+  "where": "src/ui/trade.ts:95"
+ },
+ "T1101": {
+  "en": "Couldn't confirm.",
+  "da": "Kunne ikke bekræfte.",
+  "where": "src/ui/trade.ts:110"
+ },
+ "T1102": {
+  "en": "Couldn't cancel.",
+  "da": "Kunne ikke annullere.",
+  "where": "src/ui/trade.ts:113"
+ },
+ "T1103": {
+  "en": "The trade couldn't finish.",
+  "da": "Byttet kunne ikke gennemføres.",
+  "where": "src/ui/trade.ts:114"
+ },
+ "T1104": {
+  "en": "Trade complete.",
+  "da": "Byt gennemført.",
+  "where": "src/ui/trade.ts:115"
+ },
+ "T1105": {
+  "en": "The trade was called off.",
+  "da": "Byttet blev aflyst.",
+  "where": "src/ui/trade.ts:117"
+ },
+ "T1106": {
+  "en": "Vending machine",
+  "da": "Vending machine",
+  "where": "src/ui/trade.ts:119"
+ },
+ "T1107": {
+  "en": "{qty} in a pack.",
+  "da": "{qty} i en pakke.",
+  "where": "src/ui/trade.ts:123"
+ },
+ "T1108": {
+  "en": "You need {…} more drops",
+  "da": "Du mangler {…} dråber",
+  "where": "src/ui/trade.ts:124"
+ },
+ "T1109": {
+  "en": "{label} added to your inventory.",
+  "da": "{label} lagt i dit inventar.",
+  "where": "src/ui/trade.ts:126"
+ },
+ "T1110": {
+  "en": "This browser can't open compressed ZIP files. Use PNG files instead.",
+  "da": "Denne browser kan ikke åbne komprimerede ZIP filer. Brug PNG filer i stedet.",
+  "where": "src/ui/trade.ts:131"
+ },
+ "T1111": {
+  "en": "That doesn't look like a ZIP file.",
+  "da": "Det ligner ikke en ZIP fil.",
+  "where": "src/ui/trade.ts:138"
+ },
+ "T1112": {
+  "en": "The ZIP file is damaged.",
+  "da": "ZIP filen er beskadiget.",
+  "where": "src/ui/trade.ts:142"
+ },
+ "N001": {
+  "en": "A red and white pill from 6ixty. Swallow it and you pass out; you wake up in your own room. He doesn't say what's in it.",
+  "da": "En rød og hvid pille fra 6ixty. Sluk den og du besvimer; du vågner i dit eget værelse. Han siger ikke hvad der er i den.",
+  "where": "src/items.ts:185"
+ },
+ "N002": {
+  "en": "Clothes you make yourself live in the Studio tab; set their price there.",
+  "da": "Tøj du laver selv ligger i Studio-fanen; sæt prisen der.",
+  "where": "src/ui/adminShop.ts:184"
+ },
+ "N003": {
+  "en": "Two parts use the same layer; only the first of each layer is imported. Give one a different garment number.",
+  "da": "To dele bruger det samme lag; kun den første af hvert lag bliver importeret. Giv en et andet tøjnummer.",
+  "where": "src/ui/studioNitro.ts:123"
+ },
+ "N004": {
+  "en": "They go live straight away. Free ones are available to everyone; priced ones go on sale in the shop.",
+  "da": "De går live med det samme. Gratis ting er til rådighed for alle; ting med pris kommer til salg i shoppen.",
+  "where": "src/ui/studioNitro.ts:135"
+ },
+ "N005": {
+  "en": "ready!",
+  "da": "klar!",
+  "where": "src/ui/room.ts:2640"
+ },
+ "N006": {
+  "en": "item",
+  "da": "ting",
+  "where": "src/ui/room.ts:729"
+ },
+ "N007": {
+  "en": "{label} door",
+  "da": "{label} dør",
+  "where": "src/ui/room.ts:746"
+ },
+ "N008": {
+  "en": "muted",
+  "da": "slukket",
+  "where": "src/ui/room.ts:1550"
+ },
+ "N009": {
+  "en": "Importing…",
+  "da": "Importerer…",
+  "where": "src/ui/studio.ts:237"
+ },
+ "N010": {
+  "en": "Saving…",
+  "da": "Gemmer…",
+  "where": "src/ui/studio.ts:351"
+ },
+ "N011": {
+  "en": "Reading…",
+  "da": "Læser…",
+  "where": "src/ui/studioNitro.ts:38"
+ },
+ "N012": {
+  "en": "Score: 0   Best: {best}",
+  "da": "Score: 0   Bedste: {best}",
+  "where": ""
+ },
+ "N013": {
+  "en": "Score: {points}   Best: {best}",
+  "da": "Score: {points}   Bedste: {best}",
+  "where": ""
+ },
+ "N014": {
+  "en": "{name}: no clothing frames found. {…}",
+  "da": "{name}: ingen tøj-frames fundet. {…}",
+  "where": ""
+ },
+ "N015": {
+  "en": "{size} message{…} · last {…}",
+  "da": "{size} beskeder · sidste {…}",
+  "where": ""
+ },
+ "N016": {
+  "en": "New: {id}",
+  "da": "Ny: {id}",
+  "where": ""
+ },
+ "N017": {
+  "en": "Facing {d}",
+  "da": "Retning {d}",
+  "where": ""
+ },
+ "N018": {
+  "en": "put in the shop at {price}",
+  "da": "sat i shoppen til {price}",
+  "where": ""
+ },
+ "N019": {
+  "en": "Updated {length} item{…}",
+  "da": "Opdaterede {length} ting",
+  "where": ""
+ },
+ "N020": {
+  "en": "· {colors} colour{…}",
+  "da": "· {colors} farver",
+  "where": ""
+ },
+ "N021": {
+  "en": "put {label} in furniture slot {…}",
+  "da": "satte {label} i møbelplads {…}",
+  "where": ""
+ },
+ "N022": {
+  "en": "Slot {…}",
+  "da": "Plads {…}",
+  "where": ""
+ },
+ "N023": {
+  "en": "Everyone sees the same four. They change at midnight (UTC). {…}",
+  "da": "Alle ser de samme fire. De skifter ved midnat (UTC). {…}",
+  "where": ""
+ },
+ "N024": {
+  "en": "reset the price of {label}",
+  "da": "nulstillede prisen på {label}",
+  "where": ""
+ },
+ "N025": {
+  "en": "Export failed: {message}",
+  "da": "Eksport fejlede: {message}",
+  "where": ""
+ },
+ "N026": {
+  "en": "Color {…}",
+  "da": "Farve {…}",
+  "where": ""
+ },
+ "N027": {
+  "en": "Buy & wear — 🩸 {cost}",
+  "da": "Køb & tag på — {cost}",
+  "where": ""
+ },
+ "N028": {
+  "en": "Buy for {price}",
+  "da": "Køb for {price}",
+  "where": ""
+ },
+ "N029": {
+  "en": "Buy {label}",
+  "da": "Køb {label}",
+  "where": ""
+ },
+ "N030": {
+  "en": "{w}×{h} tiles{…}",
+  "da": "{w}×{h} felter{…}",
+  "where": ""
+ },
+ "N031": {
+  "en": "Free pockets: {freeSlots}",
+  "da": "Frie lommer: {freeSlots}",
+  "where": ""
+ },
+ "N032": {
+  "en": "Place {…}: click a tile{…}",
+  "da": "Stil {…}: klik på et felt{…}",
+  "where": ""
+ },
+ "N033": {
+  "en": "Use {name} → {label}",
+  "da": "Brug {name} → {label}",
+  "where": ""
+ },
+ "N034": {
+  "en": "Use {name} → {name}",
+  "da": "Brug {name} → {name}",
+  "where": ""
+ },
+ "N035": {
+  "en": "dropped by {byName}",
+  "da": "droppet af {byName}",
+  "where": ""
+ },
+ "N036": {
+  "en": "Door: {label}",
+  "da": "Dør: {label}",
+  "where": ""
+ },
+ "N037": {
+  "en": "{name} · by {ownerName}",
+  "da": "{name} · af {ownerName}",
+  "where": ""
+ },
+ "N038": {
+  "en": "It's ready to pick!{…}",
+  "da": "Den er klar til at plukke!{…}",
+  "where": ""
+ },
+ "N039": {
+  "en": "Put in by {byName}",
+  "da": "Lagt i af {byName}",
+  "where": ""
+ },
+ "N040": {
+  "en": "{…} minute{…}",
+  "da": "{…} min",
+  "where": ""
+ },
+ "N041": {
+  "en": "and {…}",
+  "da": "og {…}",
+  "where": ""
+ },
+ "N042": {
+  "en": "Unknown command. Emotes: {…}",
+  "da": "Ukendt kommando. Emotes: {…}",
+  "where": ""
+ },
+ "N043": {
+  "en": "⟳ Turn (R) · facing {…}",
+  "da": "Drej (R) · retning {…}",
+  "where": ""
+ },
+ "N044": {
+  "en": "Owned by {…}",
+  "da": "Ejes af {…}",
+  "where": ""
+ },
+ "N045": {
+  "en": "Skipped {length}: {…}{…}",
+  "da": "Sprang {length} over: {…}{…}",
+  "where": ""
+ },
+ "N046": {
+  "en": "Based on {type}-{id} · layers: {…}",
+  "da": "Baseret på {type}-{id} · lag: {…}",
+  "where": ""
+ },
+ "N047": {
+  "en": "Garment {num}",
+  "da": "Tøj {num}",
+  "where": ""
+ },
+ "N048": {
+  "en": "Import {length} garment{…}",
+  "da": "Importér {length} stykker tøj",
+  "where": ""
+ },
+ "N049": {
+  "en": "Trade with {name}",
+  "da": "Byt med {name}",
+  "where": ""
+ },
+ "N050": {
+  "en": "Boombox: use a CD on it",
+  "da": "Boombox: brug en CD på den",
+  "where": ""
+ },
+ "N051": {
+  "en": "Resume",
+  "da": "Fortsæt",
+  "where": ""
+ },
+ "N052": {
+  "en": "Play from start",
+  "da": "Spil fra start",
+  "where": ""
+ },
+ "N053": {
+  "en": "Eject",
+  "da": "Skub ud",
+  "where": ""
+ },
+ "N054": {
+  "en": "Nothing is playing.",
+  "da": "Intet spiller.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N055": {
+  "en": "Only the one who put the CD in (or the room's owner) can do that.",
+  "da": "Kun den der satte CD'en i (eller værelsets ejer) kan det.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N056": {
+  "en": "There's no music player there.",
+  "da": "Der er ingen musikafspiller der.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N057": {
+  "en": "You already bought your CD.",
+  "da": "Du har allerede købt din CD.",
+  "where": "server/src/actions/shop.ts"
+ },
+ "N058": {
+  "en": "Owned",
+  "da": "Købt",
+  "where": "src/ui/sixtyShop.ts"
+ },
+ "N059": {
+  "en": "A CD with a song on it. Use it on the boombox in your room (or the CD player in the basement) and the song plays for everyone there. It comes back when it's done.",
+  "da": "En CD med en sang på. Brug den på boomboxen i dit værelse (eller CD afspilleren i kælderen), så spiller sangen for alle derinde. Den kommer tilbage når den er færdig.",
+  "where": "src/items.ts"
+ },
+ "N060": {
+  "en": "Door: locked",
+  "da": "Dør: låst",
+  "where": "src/ui/room.ts"
+ },
+ "N061": {
+  "en": "The door is locked. Finish what Sixty wants first.",
+  "da": "Døren er låst. Gør færdig hvad Sixty vil have først.",
+  "where": "src/ui/room.ts"
+ },
+ "N062": {
+  "en": "You have nothing that mixes (weed, ass weed, cigarettes, pills, kodimagnyl, a full watering can).",
+  "da": "Du har intet der kan mixes (weed, ass weed, cigaretter, piller, kodimagnyl, en fyldt vandkande).",
+  "where": "src/ui/mixer.ts"
+ }
+}

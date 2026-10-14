@@ -1,6 +1,6 @@
 // Isometric room drawing shared by the live room (ui/room.ts) and the first-run room picker previews.
 import { assetUrl } from "./assetUrl";
-import { footprint, FURNI_KINDS, RoomDef, RoomTheme } from "./rooms";
+import { footprint, FURNI_KINDS, PlacedFurni, RoomDef, RoomTheme } from "./rooms";
 import { derive, loadNitro, nitroIfReady, NitroFurni, spritesFor } from "./nitro";
 
 export const TILE_W = 64;
@@ -410,6 +410,8 @@ export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: 
   const n = k?.nitro ? nitroIfReady(k.nitro) : undefined;
   if (!n) return null;
   const fp = footprint(kindId, dir);
+  // a wall item hangs on the wall plane, not on the floor tile: the back wall is the line y = 0, the left wall x = 0
+  if (k.wall) { if (dir === 2) tx -= 0.5; else ty -= 0.5; }
   return drawNitroSprites(g, n, fp.w, fp.h, tx, ty, dir, k.nudge, toScreen, scale, alpha);
 }
 
@@ -523,5 +525,9 @@ export function renderRoomPreview(def: RoomDef, width: number): HTMLCanvasElemen
   [...def.furni].filter((f) => !FURNI_KINDS[f.kind].nitro)
     .sort((a, b) => a.x + FURNI_KINDS[a.kind].w + a.y + FURNI_KINDS[a.kind].h - (b.x + FURNI_KINDS[b.kind].w + b.y + FURNI_KINDS[b.kind].h))
     .forEach((f) => drawFurniBase(g, f.kind, f.x, f.y, toScreen, scale));
+  // the pieces drawn from .nitro art (once their sprites are loaded: ensureFurniSprites)
+  const depthOf = (f: PlacedFurni) => f.x + FURNI_KINDS[f.kind].w + f.y + FURNI_KINDS[f.kind].h;
+  [...def.furni].filter((f) => FURNI_KINDS[f.kind].nitro).sort((a, b) => depthOf(a) - depthOf(b))
+    .forEach((f) => drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale));
   return out;
 }

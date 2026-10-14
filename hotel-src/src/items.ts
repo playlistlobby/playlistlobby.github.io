@@ -4,7 +4,7 @@ import { loadNitro } from "./nitro";
 import { DISABLED_ITEMS, ITEM_ID_LIST, parseInventoryWith } from "./shared/items";
 export {
   combine, DEFAULT_ITEM_PRICE, DISABLED_ITEMS, emptyInventory, findSlot, findSlotAny, GROW_MS, INV_COLS, INV_SIZE, isFurniItem, ITEM_DEFAULTS,
-  MUSIC_ACCESS_KEY, MUSIC_ACCESS_PRICE, SIXTY_STOCK, SMOKABLE, SMOKE_MS, STACKABLE, START_BLOOD, VENDING_STOCK, WATER_MS,
+  MUSIC_ACCESS_KEY, MUSIC_ACCESS_PRICE, SIXTY_STOCK, SMOKABLE, SMOKE_MS, smokeMsOf, STACKABLE, START_BLOOD, VENDING_STOCK, WATER_MS,
 } from "./shared/items";
 export type { InvItem, Inventory } from "./shared/items";
 import { isFurniItem } from "./shared/items";
@@ -20,7 +20,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke" | "pill" | "eat";
+  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume";
   /** select it, then click a piece of furniture of this kind (the sink, the growing kit) */
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
@@ -113,7 +113,7 @@ export const ITEMS: Record<string, ItemDef> = {
   joint_chem: {
     id: "joint_chem",
     name: "Research joint",
-    examine: "A joint of research chemical. Light it up: 2 minutes of double speed and double blood, and for 30 seconds you flash and smoke pours off you.",
+    examine: "A joint of research chemical. Light it up: after 5 seconds you get 90 seconds of double speed and double blood, and you flash while smoke pours off you.",
     icon: assetUrl("items/joint_chem.svg"),
     useSelf: "smoke",
   },
@@ -134,9 +134,29 @@ export const ITEMS: Record<string, ItemDef> = {
   blunt_chem: {
     id: "blunt_chem",
     name: "Research blunt",
-    examine: "A blunt of research chemical. Light it up: 2 minutes of double speed and double blood, and for 30 seconds you flash and smoke pours off you.",
+    examine: "A blunt of research chemical. Light it up: after 5 seconds you get 90 seconds of double speed and double blood, and you flash while smoke pours off you.",
     icon: assetUrl("items/blunt_chem.svg"),
     useSelf: "smoke",
+  },
+  kodimagnyl: {
+    id: "kodimagnyl",
+    name: "Kodimagnyl",
+    examine: "People mix this with water for some reason.",
+    icon: assetUrl("items/kodimagnyl.svg"),
+  },
+  codeine: {
+    id: "codeine",
+    name: "Codeine",
+    examine: "The lean. Drink it: for an hour garbage cans give twice as much and can be searched twice as often. You hold the cup for 2 minutes.",
+    icon: assetUrl("items/codeine.svg"),
+    useSelf: "consume",
+  },
+  superpill: {
+    id: "superpill",
+    name: "Super pill",
+    examine: "A pill pressed together with kodimagnyl. Swallow it and you run 4 times faster for a minute.",
+    icon: assetUrl("items/superpill.svg"),
+    useSelf: "consume",
   },
   wateringcan: {
     id: "wateringcan",
@@ -176,8 +196,8 @@ export const ITEMS: Record<string, ItemDef> = {
   cd: {
     id: "cd",
     name: "CD",
-    examine: "A scratched CD with a handwritten label. Use it on the CD player in the basement so everyone can hear it. It comes back when it's done.",
-    icon: assetUrl("items/cd.svg"),
+    examine: "A CD with a song on it. Use it on the boombox in your room (or the CD player in the basement) and the song plays for everyone there. It comes back when it's done.",
+    icon: assetUrl("items/cd.png"),
     useOnObject: "cdplayer",
   },
   lockpick: {

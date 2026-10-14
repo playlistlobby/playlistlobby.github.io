@@ -57,7 +57,7 @@ export function sweepExpired(roomId: string, drops: Iterable<Drop>): void {
 }
 
 /** Why something can't be put on the floor (null = it can). */
-export function whyNotDrop(s: { item?: string; lit?: number; inPlayer?: boolean } | null | undefined): string | null {
+export function whyNotDrop(s: { item?: string; lit?: number; inPlayer?: boolean | string } | null | undefined): string | null {
   if (!s) return "You aren't carrying that.";
   if (s.item && NO_DROP.has(s.item)) return "You can't drop that.";
   if (s.lit) return "Let it burn out first.";

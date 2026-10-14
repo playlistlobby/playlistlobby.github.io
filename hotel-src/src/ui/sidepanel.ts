@@ -3,6 +3,7 @@ import { showMenu, MenuOption } from "./contextMenu";
 import { BLOOD_ICON, combine, findSlot, INV_SIZE, itemDef, ITEMS, MUSIC_ACCESS_KEY, onFurniIcon } from "../items";
 import { playSfx } from "../sfx";
 import { EMOTES, hasEmote } from "../emotes";
+import { assetUrl } from "../assetUrl";
 import { NO_DROP } from "../shared/items";
 import { fmtTime, player, TRACKS } from "../music";
 import type { Ctx } from "../main";
@@ -23,7 +24,7 @@ export interface PanelOpts {
   onSelect(slot: number | null): void;
   onEmote(id: string): void;
   /** an item that is used on yourself with one click (the syringe) */
-  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat", slot: number): void;
+  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat" | "consume", slot: number): void;
   /** one pocket item used on another (weed + paper, ...) */
   onCombine(a: number, b: number): void;
   /** Drop mode: an item was picked to be put on the floor */
@@ -65,10 +66,10 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
         else { tab = id; collapsed = false; }
         dropMode = false;
         render();
-      } }, icon);
+      } }, h("img", { class: "tab-ico", src: /\.png$/.test(icon) ? icon : "", alt: title, draggable: false }));
     tabsEl.replaceChildren(
-      mk("inventory", "🎒", "Inventory"),
-      mk("emotes", "😀", "Emotes"),
+      mk("inventory", assetUrl("osrs/tab_inventory.png"), "Inventory"),
+      mk("emotes", assetUrl("osrs/tab_emotes.png"), "Emotes"),
       ...(opts.roomTab ? [mk("room", opts.roomTab.icon, opts.roomTab.title)] : []));
   }
 
@@ -81,7 +82,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           class: "emote-cell" + (owned ? "" : " locked"),
           title: owned ? `${e.name}: ${e.desc}  (/${e.id})` : `${e.name}: locked. Buy it in the shop for ${e.price} drops.`,
           onclick: () => opts.onEmote(e.id),
-        }, h("span", { class: "emote-icon" }, e.icon), h("span", { class: "emote-name" }, e.name), owned ? null : h("span", { class: "emote-lock" }, "🔒"));
+        }, h("span", { class: "emote-icon" }, h("img", { src: e.icon, alt: "", draggable: false })), h("span", { class: "emote-name" }, e.name), owned ? null : h("span", { class: "emote-lock" }, "🔒"));
       }));
     body.replaceChildren(
       h("div", { class: "osrs-title" }, "Emotes"),
@@ -106,7 +107,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     if (!slot || !def || slot.inPlayer) return [];
     const out: MenuOption[] = [];
     if (def.useSelf && !slot.lit) {
-      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!, i) });
+      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : def.useSelf === "consume" ? (slot.item === "codeine" ? "Drink" : "Swallow") : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!, i) });
     }
     const combinable = profile.inventory.some((o, j) => j !== i && !!o && (combine(slot, o) || combine(o, slot)));
     if (def.furniture || def.useOnObject || def.useOnPlayer || combinable) {

@@ -19,17 +19,21 @@ export const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
 
 export const isPublicRoom = (id: string): boolean => id === "lobby" || id === "shop" || id.startsWith("tut_");
 
-/** How big a room is (the shared rooms are fixed; every player room is 8x8). */
-export function roomSize(c: Ctx, roomId: string): { w: number; h: number } {
+/** How big a room is (the shared rooms are fixed; a player room is 8x8 until the landlord makes it bigger: the server writes its size). */
+export async function roomSize(c: Ctx, roomId: string): Promise<{ w: number; h: number }> {
   if (roomId === "lobby" || roomId === `tut_${c.uid}`) return { w: 12, h: 12 };
-  if (roomId === "shop") return { w: 11, h: 11 };
-  if (/^u_[A-Za-z0-9]{1,40}$/.test(roomId)) return { w: 8, h: 8 };
+  if (roomId === "shop") return { w: 15, h: 15 };
+  if (/^u_[A-Za-z0-9]{1,40}$/.test(roomId)) {
+    const m = await c.db.get<{ w?: number; h?: number }>(`roomsMeta/${roomId}`);
+    const side = (n: unknown) => (typeof n === "number" && n >= 8 && n <= 14 ? Math.floor(n) : 8);
+    return { w: side(m?.w), h: side(m?.h) };
+  }
   return fail("Unknown room.");
 }
 
 /** The caller must be standing in that room (their player node is there). Returns where they stand. */
 export async function requireInRoom(c: Ctx, roomId: string): Promise<{ x: number; y: number } | null> {
-  roomSize(c, roomId);
+  await roomSize(c, roomId);
   const node = await c.db.get<{ x?: number; y?: number }>(`rooms/${roomId}/players/${c.uid}`);
   if (!node) return fail("You aren't in that room.");
   return typeof node.x === "number" && typeof node.y === "number" ? { x: node.x, y: node.y } : null;

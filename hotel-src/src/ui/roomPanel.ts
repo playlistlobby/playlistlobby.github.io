@@ -109,27 +109,8 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
         h("div", { class: "hint" }, ACCESS_HELP[def.access])),
 
       h("div", { class: "rp-sec" },
-        h("div", { class: "rp-label" }, "Floor"),
-        h("div", { class: "rp-chips" }, ...FLOOR_PRESETS.map((f) =>
-          h("button", {
-            class: "chip swatch2" + (def.theme.floorA === f.a && def.theme.floorB === f.b ? " on" : ""),
-            title: f.name,
-            style: { background: `linear-gradient(135deg, ${f.a} 50%, ${f.b} 50%)` },
-            onclick: () => void safe(updateRoom(def.id, { "theme/floorA": f.a, "theme/floorB": f.b })),
-          }))),
-        h("div", { class: "rp-label" }, "Floor pattern"),
-        h("div", { class: "rp-chips" },
-          h("button", { class: "chip" + (!def.theme.floorTex ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { "theme/floorTex": null })) }, "Plain"),
-          ...FLOOR_TEXTURES.map((t) =>
-            h("button", { class: "chip" + (def.theme.floorTex === t.id ? " on" : ""), onclick: () => void safe(updateRoom(def.id, { "theme/floorTex": t.id })) }, t.name))),
-        h("div", { class: "rp-label" }, "Walls"),
-        h("div", { class: "rp-chips" }, ...WALL_COLORS.map((c) =>
-          h("button", {
-            class: "chip swatch2" + (def.theme.wall === c ? " on" : ""),
-            style: { background: c },
-            onclick: () => void safe(updateRoom(def.id, { "theme/wall": c, "theme/wallTex": null })),
-          }))),
-      ),
+        h("div", { class: "rp-label" }, "Colours"),
+        h("div", { class: "hint" }, "Floor, walls and carpet colours are sold by the landlord in the shop: 2 drops for each, and you see a preview first.")),
 
       h("div", { class: "rp-sec" },
         h("div", { class: "rp-label" }, "Furniture"),

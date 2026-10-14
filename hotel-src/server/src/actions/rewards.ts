@@ -2,9 +2,9 @@
 import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from "./util";
 import { fail } from "../ctx";
 import {
-  addToInv, CAT_BLOOD, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, stabGainAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, CAT_BLOOD, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
-import { combine, findSlot, GROW_MS, SMOKABLE, SMOKE_MS, WATER_MS } from "../../../src/shared/items";
+import { combine, findSlot, GROW_MS, SMOKABLE, smokeMsOf, WATER_MS } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
 const mins = (ms: number): string => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
@@ -92,16 +92,50 @@ export const dumpster: Action = {
     if (can !== "lobby2" && can !== "lobby3" && extras[can]?.kind !== "dumpster") fail("That isn't a bin.");
     const w = await c.user();
     const last = w.s.dumpsters[can] ?? 0;
-    if (c.now - last < DUMPSTER_MS) fail(`That bin was searched a moment ago. Try again in ${mins(DUMPSTER_MS - (c.now - last))}.`);
+    const reload = c.now < w.s.leanUntil ? DUMPSTER_MS / 2 : DUMPSTER_MS; // the lean halves the wait
+    if (c.now - last < reload) fail(`That bin was searched a moment ago. Try again in ${mins(reload - (c.now - last))}.`);
     const total = DUMPSTER_DROPS.reduce((n, d) => n + d.chance, 0);
-    let r = Math.random() * total;
-    let item = DUMPSTER_DROPS[0].item;
-    for (const d of DUMPSTER_DROPS) { if (r < d.chance) { item = d.item; break; } r -= d.chance; }
-    const next = addToInv(w.s.inventory, { item, qty: 1 });
-    if (!next) fail("Your inventory is full");
-    w.s.inventory = next!;
+    const pick = (): string => {
+      let r = Math.random() * total;
+      for (const d of DUMPSTER_DROPS) { if (r < d.chance) return d.item; r -= d.chance; }
+      return DUMPSTER_DROPS[0].item;
+    };
+    // the lean: twice as much from every search
+    const picks = c.now < w.s.leanUntil ? 2 : 1;
+    const items: string[] = [];
+    for (let i = 0; i < picks; i++) {
+      const item = pick();
+      const next = addToInv(w.s.inventory, { item, qty: 1 });
+      if (!next) { if (items.length === 0) fail("Your inventory is full"); break; }
+      w.s.inventory = next;
+      items.push(item);
+    }
     w.s.dumpsters[can] = c.now;
-    return { item };
+    return { item: items[0], items };
+  },
+};
+
+/** Swallowing the super pill (4x speed for a minute) or drinking the lean (the cup in your hand for 2 minutes, an hour of better bins). */
+export const consume: Action = {
+  async run(c, a) {
+    const w = await c.user();
+    const s = w.s;
+    const slot = int(a.slot, 0, 27, "slot");
+    const it = s.inventory[slot];
+    if (!it || it.inPlayer || it.lit) fail("You aren't carrying that.");
+    if (it!.item === "superpill") {
+      s.inventory = takeOneFrom(s.inventory, slot);
+      s.speedUntil = c.now + SUPERPILL_MS;
+      s.speedMult = SUPERPILL_MULT;
+      return { kind: "superpill", speedMs: SUPERPILL_MS, speedMult: SUPERPILL_MULT };
+    }
+    if (it!.item === "codeine") {
+      s.inventory = takeOneFrom(s.inventory, slot);
+      s.leanUntil = c.now + LEAN_MS;
+      s.cupUntil = c.now + LEAN_CUP_MS;
+      return { kind: "codeine", leanMs: LEAN_MS, cupMs: LEAN_CUP_MS };
+    }
+    return fail("You can't swallow that.");
   },
 };
 
@@ -114,7 +148,7 @@ export const light: Action = {
     const it = s.inventory[slot];
     if (!it || !SMOKABLE[it.item] || it.lit) fail("That can't be lit.");
     if (findSlot(s.inventory, "lighter") < 0) fail("You need a lighter for that. The vending machine in the shop sells them.");
-    if (s.inventory.some((x) => x && SMOKABLE[x.item] && x.lit && c.now - x.lit < SMOKE_MS)) fail("You're already smoking one.");
+    if (s.inventory.some((x) => x && SMOKABLE[x.item] && x.lit && c.now - x.lit < smokeMsOf(x.item))) fail("You're already smoking one.");
     let next: Inventory;
     if (it!.qty > 1) {
       next = s.inventory.map((x, i) => (i === slot && x ? { ...x, qty: x.qty - 1 } : x ? { ...x } : null));
@@ -138,13 +172,14 @@ export const finishSmoke: Action = {
     const it = s.inventory[slot];
     const sm = it ? SMOKABLE[it.item] : undefined;
     if (!it || !sm || !it.lit) fail("That isn't lit.");
-    if (c.now - it!.lit! < SMOKE_MS - 3000) fail("It's still burning.");
+    const burn = smokeMsOf(it!.item);
+    if (c.now - it!.lit! < burn - Math.min(3000, burn * 0.4)) fail("It's still burning.");
     const ass = !!it!.ass && it!.item !== "cigarette";
     s.inventory = s.inventory.map((x, i) => (i === slot ? { item: "cigbutt", qty: 1 } : x));
     if (ass) return { passOut: true };
     s.boostUntil = c.now + sm!.boostMs;
     s.boostMult = sm!.mult;
-    if (sm!.speedMs) s.speedUntil = c.now + sm!.speedMs;
+    if (sm!.speedMs) { s.speedUntil = c.now + sm!.speedMs; s.speedMult = 2; }
     if (sm!.chemMs) s.chemUntil = c.now + sm!.chemMs;
     return { mult: sm!.mult, boostMs: sm!.boostMs, speedMs: sm!.speedMs ?? 0, chemMs: sm!.chemMs ?? 0 };
   },
@@ -161,7 +196,8 @@ export const combineItems: Action = {
     if (!res) fail("Those don't go together.");
     let next = takeOneFrom(w.s.inventory, ia);
     next = takeOneFrom(next, ib);
-    const added = addToInv(next, res!.give);
+    let added = addToInv(next, res!.give);
+    if (added && res!.back) added = addToInv(added, res!.back); // the watering can comes back empty
     if (!added) fail("Your inventory is full");
     w.s.inventory = added!;
     return { note: res!.note };
@@ -237,17 +273,3 @@ export const harvest: Action = {
   },
 };
 
-/** A lockpick lets you into someone's room until you disconnect (the invite is removed by the browser when you leave). */
-export const lockpick: Action = {
-  async run(c, a) {
-    const owner = text(a.owner, ID_RE, "player");
-    if (owner === c.uid) fail("It's your own room.");
-    if (!(await c.db.get(`roomsMeta/u_${owner}/owner`))) fail("That room doesn't exist.");
-    const w = await c.user();
-    const slot = findSlot(w.s.inventory, "lockpick");
-    if (slot < 0) fail("You don't have a lockpick.");
-    w.s.inventory = takeOneFrom(w.s.inventory, slot);
-    c.extra[`roomInvites/u_${owner}/${c.uid}`] = true;
-    return {};
-  },
-};

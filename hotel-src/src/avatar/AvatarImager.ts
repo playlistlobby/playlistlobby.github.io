@@ -3,6 +3,8 @@
 // customLibs lets 6ixPlanet's Studio add its own clothing libraries (lib name -> loader returning {data, atlas}), see src/designs.ts.
 import AvatarInfo, { Direction, FigurePart } from "./AvatarInfo";
 import AvatarChunk from "./AvatarChunk";
+/** pieces that have separate front and back pictures and may leave one of them out (waist/back items such as tails, glasses, face and head items) */
+const VIEW_ONLY_PARTS = new Set(["wa", "ca", "ea", "fa", "he"]);
 export default class AvatarImager {
     ready: boolean;
     offsets: any;
@@ -263,6 +265,21 @@ export default class AvatarImager {
                 tempCanvas.height = avatarInfo.rectHeight;
 
                 const chunksPromises = [];
+
+                // Tails, glasses and the like are drawn for the front (3) and the back (7) on their own. When one of the two is missing on purpose
+                // (a tail has no front picture: it is behind you; glasses have no back picture), the loop below would borrow the other view's picture
+                // (the 3 <-> 7 swap), and the tail ended up on your chest or the glasses on the back of your head. Those pieces are simply left out instead.
+                for (let i = chunks.length - 1; i >= 0; i--) {
+                    const chunk = chunks[i];
+                    if (!VIEW_ONLY_PARTS.has(chunk.type) || (chunk.direction !== 3 && chunk.direction !== 7)) continue;
+                    const data = this.offsets[chunk.lib].data;
+                    if (data == null || (data[chunk.getResourceName()] != null && !data[chunk.getResourceName()].flipped)) continue;
+                    const mine = chunk.resDirection;
+                    chunk.resDirection = chunk.direction === 3 ? 7 : 3;
+                    const otherViewExists = data[chunk.getResourceName()] != null && !data[chunk.getResourceName()].flipped;
+                    chunk.resDirection = mine;
+                    if (otherViewExists) chunks.splice(i, 1);
+                }
 
                 for (let chunk of chunks) {
                     if (this.offsets[chunk.lib].data != null && this.offsets[chunk.lib].data[chunk.getResourceName()] != null && !this.offsets[chunk.lib].data[chunk.getResourceName()].flipped) {

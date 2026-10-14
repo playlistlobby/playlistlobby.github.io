@@ -12,7 +12,7 @@ export const drop: Action = {
   async run(c, a) {
     const room = text(a.room, ROOM_RE, "room");
     const stand = await requireInRoom(c, room);
-    const size = roomSize(c, room);
+    const size = await roomSize(c, room);
     const x = int(a.x, 0, size.w - 1, "spot"), y = int(a.y, 0, size.h - 1, "spot");
     if (stand && cheb(stand, { x, y }) > 3) fail("That's too far away to put it down.");
     const w = await c.user();

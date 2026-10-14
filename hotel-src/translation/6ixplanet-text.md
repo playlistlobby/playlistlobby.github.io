@@ -1,0 +1,2516 @@
+# 6ixPlanet: all the text in the game
+
+Fill in the Danish for each line. Keep anything in {curly brackets} exactly as it is (it is replaced by a name or a number in the game).
+
+## index.html
+
+- **T0001** 6ixPlanet
+  - Danish: 
+
+## server/src/actions/account.ts
+
+- **T0002** Bad look.
+  - Danish: 
+- **T0003** That isn't clothing.
+  - Danish: 
+- **T0004** You don't own all of that yet.
+  - Danish: 
+- **T0005** Nothing to buy.
+  - Danish: 
+- **T0006** Bad item.
+  - Danish: 
+- **T0007** That isn't for sale.
+  - Danish: 
+- **T0008** Not enough drops of blood
+  - Danish: 
+
+## server/src/actions/cd.ts
+
+- **T0009** That isn't a CD you can use.
+  - Danish: 
+- **T0010** The CD player is busy.
+  - Danish: 
+
+## server/src/actions/debug.ts
+
+- **T0011** (test) You got {n} drops of blood.
+  - Danish: 
+- **T0012** (test) You got one weed, one ass weed, a blunt wrap and joint paper.
+  - Danish: 
+- **T0013** There's no item called that.
+  - Danish: 
+- **T0014** (test) You got {given} x {item}{…}{…}.
+  - Danish: 
+- **T0015** (your pockets are full)
+  - Danish: 
+
+## server/src/actions/floor.ts
+
+- **T0016** That's too far away to put it down.
+  - Danish: 
+- **T0017** You haven't got that many.
+  - Danish: 
+- **T0018** Something is already lying there.
+  - Danish: 
+- **T0019** Somebody else got it first.
+  - Danish: 
+- **T0020** It's too far away.
+  - Danish: 
+
+## server/src/actions/mixer.ts
+
+- **T0021** There's no mixer there.
+  - Danish: 
+- **T0022** The mixer is busy.
+  - Danish: 
+- **T0023** Pick two different things.
+  - Danish: 
+- **T0024** The mixer starts up. It needs 10 minutes.
+  - Danish: 
+- **T0025** There's nothing in the mixer.
+  - Danish: 
+
+## server/src/actions/quest.ts
+
+- **T0026** He already gave you one.
+  - Danish: 
+- **T0027** Your inventory is full
+  - Danish: 
+- **T0028** You've done that.
+  - Danish: 
+- **T0029** You aren't in the right place.
+  - Danish: 
+- **T0030** He has nothing for you right now.
+  - Danish: 
+- **T0031** He doesn't have a job for you yet.
+  - Danish: 
+- **T0032** You haven't got a lighter.
+  - Danish: 
+- **T0033** Unknown step.
+  - Danish: 
+
+## server/src/actions/rewards.ts
+
+- **T0034** They're too far away.
+  - Danish: 
+- **T0035** They aren't a player.
+  - Danish: 
+- **T0036** You've already stabbed them today.
+  - Danish: 
+- **T0037** There's nothing left in the bag for now. Try again in {mins}.
+  - Danish: 
+- **T0038** Your arm needs {mins} to recover.
+  - Danish: 
+- **T0039** There's no body bag here.
+  - Danish: 
+- **T0040** Too soon.
+  - Danish: 
+- **T0041** That isn't a dead cat
+  - Danish: 
+- **T0042** There's no bin here.
+  - Danish: 
+- **T0043** That isn't a bin.
+  - Danish: 
+- **T0044** That bin was searched a moment ago. Try again in {mins}.
+  - Danish: 
+- **T0045** You can't swallow that.
+  - Danish: 
+- **T0046** That can't be lit.
+  - Danish: 
+- **T0047** That isn't lit.
+  - Danish: 
+- **T0048** It's still burning.
+  - Danish: 
+- **T0049** Those don't go together.
+  - Danish: 
+- **T0050** That can isn't empty.
+  - Danish: 
+- **T0051** That isn't a growing kit.
+  - Danish: 
+- **T0052** Something is already growing there.
+  - Danish: 
+- **T0053** That isn't a seed.
+  - Danish: 
+- **T0054** There's nothing planted there.
+  - Danish: 
+- **T0055** That can is empty.
+  - Danish: 
+- **T0056** It isn't ready yet.
+  - Danish: 
+
+## server/src/actions/shop.ts
+
+- **T0057** He doesn't sell that.
+  - Danish: 
+- **T0058** The machine doesn't have that.
+  - Danish: 
+- **T0059** That isn't in the shop today.
+  - Danish: 
+- **T0060** Your room is as big as it gets.
+  - Danish: 
+- **T0061** You haven't got a room yet.
+  - Danish: 
+- **T0062** Nothing to change.
+  - Danish: 
+- **T0063** Bad slot.
+  - Danish: 
+- **T0064** He doesn't buy that.
+  - Danish: 
+
+## server/src/actions/toolbox.ts
+
+- **T0065** That can't be stored.
+  - Danish: 
+- **T0066** Storage is full of those.
+  - Danish: 
+- **T0067** That doesn't exist any more.
+  - Danish: 
+- **T0068** Bad facing.
+  - Danish: 
+- **T0069** The room is full of furniture.
+  - Danish: 
+- **T0070** That can't be put down.
+  - Danish: 
+- **T0071** That piece isn't in your room.
+  - Danish: 
+- **T0072** That piece doesn't exist any more.
+  - Danish: 
+- **T0073** Collect what's in the mixer first.
+  - Danish: 
+
+## server/src/actions/trade.ts
+
+- **T0074** That trade is gone.
+  - Danish: 
+- **T0075** That isn't your trade.
+  - Danish: 
+- **T0076** That trade was called off.
+  - Danish: 
+- **T0077** Both of you have to accept and confirm first.
+  - Danish: 
+- **T0078** They
+  - Danish: 
+- **T0079** Somebody doesn't have that much blood any more.
+  - Danish: 
+- **T0080** Something in a pocket changed, so the trade can't finish. Change your offer and try again.
+  - Danish: 
+- **T0081** {…} pocket hasn't got room for all of it. Make some space.
+  - Danish: 
+- **T0082** Your
+  - Danish: 
+
+## server/src/actions/util.ts
+
+- **T0083** Bad {what}.
+  - Danish: 
+- **T0084** Unknown room.
+  - Danish: 
+- **T0085** You aren't in that room.
+  - Danish: 
+
+## server/src/ctx.ts
+
+- **T0086** That player doesn't exist.
+  - Danish: 
+
+## src/api.ts
+
+- **T0087** The game server isn't set up yet.
+  - Danish: 
+- **T0088** Please log in again.
+  - Danish: 
+- **T0089** Can't reach the game server. Check your connection.
+  - Danish: 
+- **T0090** The server had a problem. Try again.
+  - Danish: 
+
+## src/arcade/arcade.ts
+
+- **T0091** Blood Catch
+  - Danish: 
+- **T0092** Catch the falling drops.
+  - Danish: 
+- **T0093** Lobby Pong
+  - Danish: 
+- **T0094** Two players, one ball.
+  - Danish: 
+- **T0095** 🕹️ Arcade
+  - Danish: 
+- **T0096** ← Games
+  - Danish: 
+- **T0097** Coming soon
+  - Danish: 
+
+## src/arcade/flappy.ts
+
+- **T0098** Tap to flap. Don't touch the pipes.
+  - Danish: 
+- **T0099** Flappy Bird. Tap or press space to flap.
+  - Danish: 
+- **T0100** refused
+  - Danish: 
+- **T0101** SCORE
+  - Danish: 
+- **T0102** BEST
+  - Danish: 
+- **T0103** NEW
+  - Danish: 
+
+## src/arcade/snake.ts
+
+- **T0104** Snake
+  - Danish: 
+- **T0105** Eat, grow, don't bite yourself. Arrow keys or WASD.
+  - Danish: 
+- **T0106** Score: 0
+  - Danish: 
+- **T0107** Press any arrow key to start
+  - Danish: 
+- **T0108** Score: 0   Best: {best}
+  - Danish: 
+- **T0109** Score: {points}   Best: {best}
+  - Danish: 
+- **T0110** Game over. Press any arrow key to play again.
+  - Danish: 
+
+## src/auth.ts
+
+- **T0111** Wrong username or password.
+  - Danish: 
+- **T0112** That username is taken.
+  - Danish: 
+- **T0113** Password must be at least 6 characters.
+  - Danish: 
+- **T0114** Usernames can only use letters, numbers, . _ -
+  - Danish: 
+- **T0115** Too many attempts, try again in a moment.
+  - Danish: 
+- **T0116** Can't reach Firebase. Check your connection / config.
+  - Danish: 
+- **T0117** Username must be 3-16 characters: letters, numbers, . _ -
+  - Danish: 
+- **T0118** That username is reserved.
+  - Danish: 
+- **T0119** You're not signed in.
+  - Danish: 
+
+## src/catalog.ts
+
+- **T0120** Face & skin
+  - Danish: 
+- **T0121** Hats
+  - Danish: 
+- **T0122** Head items
+  - Danish: 
+- **T0123** Face items
+  - Danish: 
+- **T0124** Shirts
+  - Danish: 
+- **T0125** Jackets
+  - Danish: 
+- **T0126** Prints
+  - Danish: 
+- **T0127** Chest items
+  - Danish: 
+- **T0128** Trousers
+  - Danish: 
+- **T0129** Belts
+  - Danish: 
+
+## src/cdplayer.ts
+
+- **T0130** Stand-in track
+  - Danish: 
+
+## src/db.ts
+
+- **T0131** Couldn't create the profile.
+  - Danish: 
+
+## src/designTools.ts
+
+- **T0140** Stripes
+  - Danish: 
+- **T0141** Checks
+  - Danish: 
+- **T0142** Dots
+  - Danish: 
+- **T0143** Diagonal
+  - Danish: 
+- **T0144** Zigzag
+  - Danish: 
+
+## src/designs.ts
+
+- **T0132** couldn't decode an image
+  - Danish: 
+- **T0133** design {id} has no sheet
+  - Danish: 
+- **T0134** {dir} design {id} has no sheet
+  - Danish: 
+- **T0135** That item doesn't exist.
+  - Danish: 
+- **T0136** That item has no sprite frames to start from. Try another one.
+  - Danish: 
+- **T0137** This design's sprite sheet is missing.
+  - Danish: 
+- **T0138** This design has no frames.
+  - Danish: 
+- **T0139** The sprite sheet is too big to store ({…} KB, the limit is about {…} KB). Use fewer or smaller frames.
+  - Danish: 
+
+## src/emotes.ts
+
+- **T0145** Wave
+  - Danish: 
+- **T0146** Say hi.
+  - Danish: 
+- **T0147** Smile
+  - Danish: 
+- **T0148** A friendly grin.
+  - Danish: 
+- **T0149** Sad
+  - Danish: 
+- **T0150** Bit of a downer.
+  - Danish: 
+- **T0151** Jump
+  - Danish: 
+- **T0152** Hop on the spot.
+  - Danish: 
+- **T0153** Angry
+  - Danish: 
+- **T0154** Steam comes out of your ears.
+  - Danish: 
+- **T0155** Surprised
+  - Danish: 
+- **T0156** Didn't see that coming.
+  - Danish: 
+- **T0157** Sleep
+  - Danish: 
+- **T0158** Eyes shut, zzz.
+  - Danish: 
+- **T0159** Laugh
+  - Danish: 
+- **T0160** Crack up.
+  - Danish: 
+- **T0161** Love
+  - Danish: 
+- **T0162** Hearts everywhere.
+  - Danish: 
+- **T0163** Cheer
+  - Danish: 
+- **T0164** Hands up, confetti.
+  - Danish: 
+- **T0165** Spin
+  - Danish: 
+- **T0166** Round and round.
+  - Danish: 
+- **T0167** Dance
+  - Danish: 
+- **T0168** Bust a move.
+  - Danish: 
+- **T0169** emote_{id}
+  - Danish: 
+
+## src/furniDefs.ts
+
+- **T0170** {name}: no JSON or image inside.
+  - Danish: 
+- **T0171** {name}: this doesn't look like a furniture file.
+  - Danish: 
+- **T0172** {name}: no 64px furniture sprites found (is this a clothing file? Use the Clothing tab).
+  - Danish: 
+- **T0173** The artwork is too big to store ({…} KB, the limit is about {…} KB).
+  - Danish: 
+- **T0174** The furniture description is too large to store.
+  - Danish: 
+
+## src/furnishing.ts
+
+- **T0175** That piece doesn't exist.
+  - Danish: 
+- **T0176** That doesn't fit in the room.
+  - Danish: 
+- **T0177** That one hangs on a wall: put it against the back wall or the left wall.
+  - Danish: 
+- **T0178** Something is already there.
+  - Danish: 
+- **T0179** You aren't carrying that.
+  - Danish: 
+- **T0180** There's none of that in storage.
+  - Danish: 
+- **T0181** Not signed in.
+  - Danish: 
+- **T0182** That one stays in your room.
+  - Danish: 
+- **T0183** Harvest the plant first.
+  - Danish: 
+- **T0184** Wait for it to burn out first.
+  - Danish: 
+- **T0185** That's in the player right now.
+  - Danish: 
+
+## src/items.ts
+
+- **T0186** Weed seed
+  - Danish: 
+- **T0187** A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 20 minutes and needs one watering once it gets thirsty.
+  - Danish: 
+- **T0188** Weed
+  - Danish: 
+- **T0189** A bud. Select it, then click joint paper or a blunt wrap to roll it, or a cigarette to crumble it in.
+  - Danish: 
+- **T0190** Weed mix
+  - Danish: 
+- **T0191** Tobacco and weed mixed together (made in the mixer). It works like weed: roll it in joint paper or a blunt wrap.
+  - Danish: 
+- **T0192** Mid weed
+  - Danish: 
+- **T0193** Good weed and bad weed mixed together: not great, not terrible. Roll it in joint paper or a blunt wrap.
+  - Danish: 
+- **T0194** THC-A
+  - Danish: 
+- **T0195** Weed with a pill ground into it. Roll it and smoke it: for 2 minutes you walk twice as fast and stabs give double blood.
+  - Danish: 
+- **T0196** Research chemical
+  - Danish: 
+- **T0197** A pill ground into tobacco. Roll it and smoke it: you walk twice as fast and stab for double blood for 2 minutes, and for 30 seconds you flash and smoke pours off you.
+  - Danish: 
+- **T0198** Joint paper
+  - Danish: 
+- **T0199** Rolling paper. Select weed (or mix), then click the paper to roll a joint.
+  - Danish: 
+- **T0200** Blunt wrap
+  - Danish: 
+- **T0201** A tobacco leaf wrap. Select weed (or mix), then click the wrap to roll a blunt.
+  - Danish: 
+- **T0202** Joint
+  - Danish: 
+- **T0203** A joint. Click it to light up (you need a lighter). Once it's finished, stabbing gives triple blood for 2 minutes.
+  - Danish: 
+- **T0204** Blunt
+  - Danish: 
+- **T0205** A fat blunt. Click it to light up (you need a lighter). Once it's finished, stabbing gives four times the blood for 3 minutes.
+  - Danish: 
+- **T0206** Mid joint
+  - Danish: 
+- **T0207** A joint rolled from mid weed. Click it to light up (you need a lighter). Stabs give double blood for 2 minutes.
+  - Danish: 
+- **T0208** THC-A joint
+  - Danish: 
+- **T0209** A joint of thc-a. Click it to light up (you need a lighter). For 2 minutes you walk twice as fast and stabs give double blood.
+  - Danish: 
+- **T0210** Research joint
+  - Danish: 
+- **T0211** A joint of research chemical. Light it up: after 5 seconds you get 90 seconds of double speed and double blood, and you flash while smoke pours off you.
+  - Danish: 
+- **T0212** Mid blunt
+  - Danish: 
+- **T0213** A blunt rolled from mid weed. Click it to light up (you need a lighter). Stabs give double blood for 2 minutes.
+  - Danish: 
+- **T0214** THC-A blunt
+  - Danish: 
+- **T0215** A blunt of thc-a. Click it to light up (you need a lighter). For 2 minutes you walk twice as fast and stabs give double blood.
+  - Danish: 
+- **T0216** Research blunt
+  - Danish: 
+- **T0217** A blunt of research chemical. Light it up: after 5 seconds you get 90 seconds of double speed and double blood, and you flash while smoke pours off you.
+  - Danish: 
+- **T0218** Kodimagnyl
+  - Danish: 
+- **T0219** People mix this with water for some reason.
+  - Danish: 
+- **T0220** Codeine
+  - Danish: 
+- **T0221** The lean. Drink it: for an hour garbage cans give twice as much and can be searched twice as often. You hold the cup for 2 minutes.
+  - Danish: 
+- **T0222** Super pill
+  - Danish: 
+- **T0223** A pill pressed together with kodimagnyl. Swallow it and you run 4 times faster for a minute.
+  - Danish: 
+- **T0224** Watering can
+  - Danish: 
+- **T0225** An empty watering can. Select it, then click the sink in your room to fill it.
+  - Danish: 
+- **T0226** Watering can (full)
+  - Danish: 
+- **T0227** A full watering can. Select it, then click a planted growing kit to water the plant.
+  - Danish: 
+- **T0228** Burger
+  - Danish: 
+- **T0229** A burger out of the bin. It's still warm. Click it to eat it.
+  - Danish: 
+- **T0230** Pill
+  - Danish: 
+- **T0231** A red and white pill from 6ixty. Swallow it and you pass out; you wake up in your own room. He doesn't say what's in it.
+  - Danish: 
+- **T0232** Syringe
+  - Danish: 
+- **T0233** A clean syringe. Click it to draw blood from yourself, or click a body bag with it: 1 drop from each, once every 20 minutes.
+  - Danish: 
+- **T0234** CD
+  - Danish: 
+- **T0235** A scratched CD with a handwritten label. Use it on the CD player in the basement so everyone can hear it. It comes back when it's done.
+  - Danish: 
+- **T0236** Lockpick
+  - Danish: 
+- **T0237** A bent piece of wire. It works once: it lets you into the room of someone who isn't your friend. Use it from the door menu.
+  - Danish: 
+- **T0238** Cigarette
+  - Danish: 
+- **T0239** A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.
+  - Danish: 
+- **T0240** Cigarette butt
+  - Danish: 
+- **T0241** What's left. Right-click it to drop it.
+  - Danish: 
+- **T0242** Lighter
+  - Danish: 
+- **T0243** A cheap lighter. You need one to light a cigarette, joint or blunt. It lasts. Sold in the shop room's vending machine.
+  - Danish: 
+- **T0244** Dead cat
+  - Danish: 
+- **T0245** Somebody threw it out. Its blood hasn't all gone cold yet. Select your knife, then click the cat.
+  - Danish: 
+- **T0246** Knife
+  - Danish: 
+- **T0247** A small, sharp knife. Use it on another player: you can stab each person once a day, and every stab draws a drop of blood.
+  - Danish: 
+- **T0248** {label}: furniture. Click it, then a free spot in your own room to put it down. Your toolbox can also store it.
+  - Danish: 
+
+## src/main.ts
+
+- **T0249** Staff can see chat, private messages and activity on 6ixPlanet.
+  - Danish: 
+- **T0250** Almost there
+  - Danish: 
+- **T0251** 6ixPlanet needs a Firebase project. Add your config to
+  - Danish: 
+- **T0252** Firebase console → create a project → add a Web app, copy its config
+  - Danish: 
+- **T0253** Build → Authentication → enable the Email/Password provider (usernames are mapped onto it; no real emails are used)
+  - Danish: 
+- **T0254** Build → Realtime Database → create a database
+  - Danish: 
+- **T0255** Or run the local emulators:
+  - Danish: 
+- **T0256** npm run dev:emu
+  - Danish: 
+- **T0257** required
+  - Danish: 
+- **T0258** Log in
+  - Danish: 
+- **T0259** No account? Register
+  - Danish: 
+- **T0260** Create account
+  - Danish: 
+- **T0261** Have an account? Log in
+  - Danish: 
+- **T0262** 6+ characters
+  - Danish: 
+- **T0263** Password
+  - Danish: 
+- **T0264** Sign in to hang out.
+  - Danish: 
+- **T0265** (running against local Firebase emulators)
+  - Danish: 
+- **T0266** Already open
+  - Danish: 
+- **T0267** This account is open in another window or device. 6ixPlanet can only be played from one place at a time. Close it there, then try again.
+  - Danish: 
+- **T0268** This account was opened in another window, so this one has been stopped. 6ixPlanet can only be played from one place at a time.
+  - Danish: 
+- **T0269** Try again
+  - Danish: 
+- **T0270** Loading your character…
+  - Danish: 
+- **T0271** Couldn't load
+  - Danish: 
+- **T0272** Retry
+  - Danish: 
+
+## src/music.ts
+
+- **T0273** Hotel jingle (placeholder)
+  - Danish: 
+
+## src/nitro.ts
+
+- **T0274** no sprite sheet for {kind}
+  - Danish: 
+
+## src/nitroClothing.ts
+
+- **T0275** {name}: no clothing frames found. {…}
+  - Danish: 
+- **T0276** This looks like furniture: use the Furniture tab.
+  - Danish: 
+- **T0277** Imported
+  - Danish: 
+
+## src/npc.ts
+
+- **T0278** 6ixty
+  - Danish: 
+- **T0279** looking for more space? or a fresh coat of paint?
+  - Danish: 
+- **T0280** LegendGamer2015
+  - Danish: 
+- **T0281** you earned your first blood. come back in about {when}, I will have another job.
+  - Danish: 
+- **T0282** now go over and use the knife on that guy.
+  - Danish: 
+- **T0283** the knife. that guy. go.
+  - Danish: 
+- **T0284** good job.
+  - Danish: 
+- **T0285** eat this pill.
+  - Danish: 
+- **T0286** eat the pill.
+  - Danish: 
+- **T0287** psst
+  - Danish: 
+- **T0288** take this
+  - Danish: 
+- **T0289** that is what a lighter costs. go buy one in the shop, the yellow door.
+  - Danish: 
+- **T0290** bring it back to me when you have it.
+  - Danish: 
+- **T0291** no lighter yet. the shop, the yellow door.
+  - Danish: 
+- **T0292** good. that is your pay.
+  - Danish: 
+- **T0293** what do you need?
+  - Danish: 
+- **T0294** your pockets are full. clear some space.
+  - Danish: 
+
+## src/rooms.ts
+
+- **T0295** Growing kit
+  - Danish: 
+- **T0296** Sink
+  - Danish: 
+- **T0297** Counter
+  - Danish: 
+- **T0298** Flappy Bird arcade
+  - Danish: 
+- **T0299** Sand
+  - Danish: 
+- **T0300** Oak
+  - Danish: 
+- **T0301** Slate
+  - Danish: 
+- **T0302** Checker
+  - Danish: 
+- **T0303** Moss
+  - Danish: 
+- **T0304** Rose
+  - Danish: 
+- **T0305** Ocean
+  - Danish: 
+- **T0306** Cream
+  - Danish: 
+- **T0307** Fuzzy
+  - Danish: 
+- **T0308** Tiles
+  - Danish: 
+- **T0309** Planks
+  - Danish: 
+- **T0310** Slabs
+  - Danish: 
+- **T0311** Red brick
+  - Danish: 
+- **T0312** White brick
+  - Danish: 
+- **T0313** Teal tiles
+  - Danish: 
+- **T0314** Chocolate
+  - Danish: 
+- **T0315** Wood
+  - Danish: 
+- **T0316** Pink plaid
+  - Danish: 
+- **T0317** Brown plaid
+  - Danish: 
+- **T0318** Green plaid
+  - Danish: 
+- **T0319** Bright stripes
+  - Danish: 
+- **T0320** Blue stripes
+  - Danish: 
+- **T0321** Orange stripes
+  - Danish: 
+- **T0322** Pink zigzag
+  - Danish: 
+- **T0323** Yellow zigzag
+  - Danish: 
+- **T0324** Blue zigzag
+  - Danish: 
+- **T0325** Purple rings
+  - Danish: 
+- **T0326** Green rings
+  - Danish: 
+- **T0327** Yellow rings
+  - Danish: 
+- **T0328** Blue rings
+  - Danish: 
+- **T0329** Brown rings
+  - Danish: 
+- **T0330** Hearts
+  - Danish: 
+- **T0331** Clouds
+  - Danish: 
+- **T0332** Groovy green
+  - Danish: 
+- **T0333** Groovy blue
+  - Danish: 
+- **T0334** {name}'s room
+  - Danish: 
+
+## src/shared/economy.ts
+
+- **T0335** weed seed
+  - Danish: 
+- **T0336** dead cat
+  - Danish: 
+
+## src/shared/furniture.ts
+
+- **T0337** Blood streak
+  - Danish: 
+- **T0338** Toast friend
+  - Danish: 
+- **T0339** Grunge bench
+  - Danish: 
+- **T0340** Old sofa
+  - Danish: 
+- **T0341** Card table
+  - Danish: 
+- **T0342** Restraint bed
+  - Danish: 
+- **T0343** Fountain
+  - Danish: 
+- **T0344** Nokia phone
+  - Danish: 
+- **T0345** Telephone
+  - Danish: 
+- **T0346** Phone cam
+  - Danish: 
+- **T0347** Creepy doll
+  - Danish: 
+- **T0348** Saint Ta
+  - Danish: 
+- **T0349** Shark
+  - Danish: 
+- **T0350** Horse
+  - Danish: 
+- **T0351** Prize money
+  - Danish: 
+- **T0352** Label
+  - Danish: 
+- **T0353** Ritual circle
+  - Danish: 
+- **T0354** Blood bath
+  - Danish: 
+- **T0355** Norja couch
+  - Danish: 
+- **T0356** Collector sofa
+  - Danish: 
+- **T0357** Red chaise
+  - Danish: 
+- **T0358** Jetset tub
+  - Danish: 
+- **T0359** Gargoyle fountain
+  - Danish: 
+- **T0360** Float bed
+  - Danish: 
+- **T0361** Big bunny bed
+  - Danish: 
+- **T0362** Hot dog bed
+  - Danish: 
+- **T0363** My Melody bed
+  - Danish: 
+- **T0364** Canopy bed
+  - Danish: 
+
+## src/shared/items.ts
+
+- **T0365** Cigarettes (15)
+  - Danish: 
+- **T0366** You crush the kodimagnyl into the water. It turns purple: codeine. The can is empty again.
+  - Danish: 
+- **T0367** You roll a joint.
+  - Danish: 
+- **T0368** You roll a blunt.
+  - Danish: 
+- **T0369** You crumble the weed into the tobacco: 2 weed mix.
+  - Danish: 
+- **T0370** Good weed and bad weed, mixed up: 2 mid weed.
+  - Danish: 
+- **T0371** The pill dissolves into the weed: 1 thc-a.
+  - Danish: 
+- **T0372** You grind the pill into the tobacco: 1 research chemical.
+  - Danish: 
+- **T0373** Two pills, pressed into one: 1 super pill.
+  - Danish: 
+
+## src/shared/skins.ts
+
+- **T0374** Lodge bed
+  - Danish: 
+- **T0375** Bunny bed
+  - Danish: 
+- **T0376** Gold bed
+  - Danish: 
+- **T0377** Gothic bed
+  - Danish: 
+- **T0378** Coat rack
+  - Danish: 
+- **T0379** Mess wardrobe
+  - Danish: 
+- **T0380** Ducket wardrobe
+  - Danish: 
+- **T0381** Tall wardrobe
+  - Danish: 
+
+## src/social.ts
+
+- **T0382** Type a username first.
+  - Danish: 
+- **T0383** Nobody is called "{name}".
+  - Danish: 
+- **T0384** That's you!
+  - Danish: 
+- **T0385** You're already friends.
+  - Danish: 
+- **T0386** You and {name} are now friends.
+  - Danish: 
+- **T0387** Friend request sent to {name}.
+  - Danish: 
+
+## src/templateExport.ts
+
+- **T0388** couldn't decode an atlas
+  - Danish: 
+- **T0389** Item icons as SVG (editable, 16x16 pixel grid) and as 256px PNG previews.
+  - Danish: 
+
+## src/ui/admin.ts
+
+- **T0390** Players
+  - Danish: 
+- **T0391** Messages
+  - Danish: 
+- **T0392** Activity
+  - Danish: 
+- **T0393** Shop
+  - Danish: 
+- **T0394** Studio
+  - Danish: 
+- **T0395** Settings
+  - Danish: 
+- **T0396** Admin. Players are told on the sign-in screen that staff can see chat, private messages and activity. Treat what you see here as private.
+  - Danish: 
+- **T0397** Loading players…
+  - Danish: 
+- **T0398** Search by username…
+  - Danish: 
+- **T0399** Refreshed
+  - Danish: 
+- **T0400** Refresh
+  - Danish: 
+- **T0401** Username
+  - Danish: 
+- **T0402** Drops
+  - Danish: 
+- **T0403** Items owned
+  - Danish: 
+- **T0404** Stabs today
+  - Danish: 
+- **T0405** Joined
+  - Danish: 
+- **T0406** {…}{…} (slot {…})
+  - Danish: 
+- **T0407** (in the CD player)
+  - Danish: 
+- **T0408** Gender {gender} · joined {fmtDate} · {blood} drops
+  - Danish: 
+- **T0409** uid {uid}
+  - Danish: 
+- **T0410** Inventory:
+  - Danish: 
+- **T0411** Owned:
+  - Danish: 
+- **T0412** Wardrobe:
+  - Danish: 
+- **T0413** {length} saved outfits
+  - Danish: 
+- **T0414** Syringe:
+  - Danish: 
+- **T0415** Has stabbed:
+  - Danish: 
+- **T0416** Public chat
+  - Danish: 
+- **T0417** Private messages
+  - Danish: 
+- **T0418** Filter by name or text…
+  - Danish: 
+- **T0419** Time
+  - Danish: 
+- **T0420** User
+  - Danish: 
+- **T0421** Basement chat, last 300 messages, live
+  - Danish: 
+- **T0422** Couldn't read the chat
+  - Danish: 
+- **T0423** Filter by name…
+  - Danish: 
+- **T0424** {size} message{…} · last {…}
+  - Danish: 
+- **T0425** No private messages yet.
+  - Danish: 
+- **T0426** Pick a conversation.
+  - Danish: 
+- **T0427** Every private conversation between players, live
+  - Danish: 
+- **T0428** Couldn't read private messages
+  - Danish: 
+- **T0429** All actions
+  - Danish: 
+- **T0430** Filter by name or detail…
+  - Danish: 
+- **T0431** Action
+  - Danish: 
+- **T0432** Detail
+  - Danish: 
+- **T0433** Last 500 actions, newest first, live
+  - Danish: 
+- **T0434** Couldn't read the action log
+  - Danish: 
+- **T0435** current password
+  - Danish: 
+- **T0436** new password (6+ characters)
+  - Danish: 
+- **T0437** new password again
+  - Danish: 
+- **T0438** Admin password
+  - Danish: 
+- **T0439** Anyone who knows this password can read every private message. If it's still the one you started with, change it before inviting people.
+  - Danish: 
+- **T0440** The new passwords don't match.
+  - Danish: 
+- **T0441** Password changed.
+  - Danish: 
+- **T0442** Current password is wrong.
+  - Danish: 
+- **T0443** Change password
+  - Danish: 
+
+## src/ui/adminFurni.ts
+
+- **T0444** · flat
+  - Danish: 
+- **T0445** Furniture uploaded here can be placed in the basement (Room tab > the 🏠 tab while you stand in it). Turn on "players can place it" to let everyone use it in their own rooms.
+  - Danish: 
+- **T0446** s were
+  - Danish: 
+- **T0447** Couldn't load this piece's art.
+  - Danish: 
+- **T0448** Furniture
+  - Danish: 
+- **T0449** New art loaded. Save to keep it.
+  - Danish: 
+- **T0450** ‹ Furniture
+  - Danish: 
+- **T0451** New: {id}
+  - Danish: 
+- **T0452** {length} more file{…} waiting
+  - Danish: 
+- **T0453** A piece called {id} already exists. Saving replaces its art.
+  - Danish: 
+- **T0454** Facing {d}
+  - Danish: 
+- **T0455** The grid shows the tiles it occupies. If the art floats or sinks, nudge it.
+  - Danish: 
+- **T0456** Tiles wide
+  - Danish: 
+- **T0457** Tiles deep
+  - Danish: 
+- **T0458** Flat on the floor (walkable)
+  - Danish: 
+- **T0459** Players can place it
+  - Danish: 
+- **T0460** Nudge x / y
+  - Danish: 
+- **T0461** Replace the art:
+  - Danish: 
+- **T0462** Save
+  - Danish: 
+- **T0463** Delete "{name}"? It disappears from every room.
+  - Danish: 
+
+## src/ui/adminShop.ts
+
+- **T0464** This takes EVERYTHING off sale (all clothing, emotes, items, the jukebox pass and your own designs). Prices are kept, so you can switch things back on one by one.
+
+Type  clear  to confirm:
+  - Danish: 
+- **T0465** Nothing changed. You have to type "clear".
+  - Danish: 
+- **T0466** cleared the shop (everything off sale)
+  - Danish: 
+- **T0467** The shop is empty.
+  - Danish: 
+- **T0468** Clear the shop
+  - Danish: 
+- **T0469** Forget every shop change you made (prices, what's on sale) and go back to the defaults?
+  - Danish: 
+- **T0470** Shop reset to defaults.
+  - Danish: 
+- **T0471** Reset to defaults
+  - Danish: 
+- **T0472** Clear the shop takes everything off sale in one go.
+  - Danish: 
+- **T0473** Couldn't save (are you still signed in as admin?)
+  - Danish: 
+- **T0474** All items
+  - Danish: 
+- **T0475** In the shop
+  - Danish: 
+- **T0476** Not in the shop
+  - Danish: 
+- **T0477** Free (everyone owns)
+  - Danish: 
+- **T0478** Club only
+  - Danish: 
+- **T0479** None of the ticked items can be changed (club, built-in free and Studio items can't).
+  - Danish: 
+- **T0480** {…}: {length} clothing items
+  - Danish: 
+- **T0481** made starter (free for everyone)
+  - Danish: 
+- **T0482** put in the shop at {price}
+  - Danish: 
+- **T0483** Updated {length} item{…}
+  - Danish: 
+- **T0484** Starter: free for everyone, never sold
+  - Danish: 
+- **T0485** {…} {type}-{id} a starter item
+  - Danish: 
+- **T0486** · {colors} colour{…}
+  - Danish: 
+- **T0487** {…} {type}-{id} {…} the shop
+  - Danish: 
+- **T0488** set {type}-{id} to {n} drops
+  - Danish: 
+- **T0489** drops
+  - Danish: 
+- **T0490** club item: can't be sold
+  - Danish: 
+- **T0491** {length} items · {size} selected
+  - Danish: 
+- **T0492** Ticked items:
+  - Danish: 
+- **T0493** Select this page
+  - Danish: 
+- **T0494** Put in shop at
+  - Danish: 
+- **T0495** Remove from shop
+  - Danish: 
+- **T0496** Free for everyone, never sold
+  - Danish: 
+- **T0497** Make starter
+  - Danish: 
+- **T0498** Reset to default
+  - Danish: 
+- **T0499** Clothes you make yourself live in the Studio tab; set their price there.
+  - Danish: 
+- **T0500** put {label} in furniture slot {…}
+  - Danish: 
+- **T0501** Slot {…}
+  - Danish: 
+- **T0502** {priceOf} drops
+  - Danish: 
+- **T0503** Shop room: today's four pieces
+  - Danish: 
+- **T0504** Everyone sees the same four. They change at midnight (UTC). {…}
+  - Danish: 
+- **T0505** You changed today's pick: it stays until midnight.
+  - Danish: 
+- **T0506** Today's pick is random (the same for everyone).
+  - Danish: 
+- **T0507** rerolled the shop's furniture
+  - Danish: 
+- **T0508** Reroll
+  - Danish: 
+- **T0509** Back to the random pick
+  - Danish: 
+- **T0510** Prices (10-25 drops by default)
+  - Danish: 
+- **T0511** Piece
+  - Danish: 
+- **T0512** set {label} to {n} drops
+  - Danish: 
+- **T0513** reset the price of {label}
+  - Danish: 
+- **T0514** Default
+  - Danish: 
+- **T0515** {…} the {name} {…} 6ixty's shelf
+  - Danish: 
+- **T0516** 6ixty sells it
+  - Danish: 
+- **T0517** set the {name} to {n} drops
+  - Danish: 
+- **T0518** New players start with one in their inventory
+  - Danish: 
+- **T0519** {…} the {name} a starter item
+  - Danish: 
+- **T0520** 6ixty sells what is ticked here (the shop window opens when a player talks to him). Tick "starter" and every NEW player starts with one in their inventory (players who already have an account aren't given one). The knife and the syringe come from 6ixty himself: the knife the first time you meet him, the syringe 12 hours later.
+  - Danish: 
+- **T0521** Item
+  - Danish: 
+- **T0522** What it does
+  - Danish: 
+- **T0523** On the shelf
+  - Danish: 
+- **T0524** Starter
+  - Danish: 
+- **T0525** Export failed: {message}
+  - Danish: 
+- **T0526** Download item icons (.zip)
+  - Danish: 
+
+## src/ui/contextMenu.ts
+
+- **T0527** Choose Option
+  - Danish: 
+- **T0528** Cancel
+  - Danish: 
+
+## src/ui/door.ts
+
+- **T0529** Door
+  - Danish: 
+- **T0530** 🚪 Where to?
+  - Danish: 
+- **T0531** Closed
+  - Danish: 
+- **T0532** {ownerName}'s room
+  - Danish: 
+- **T0533** Visit
+  - Danish: 
+- **T0534** Knock
+  - Danish: 
+- **T0535** · idle
+  - Danish: 
+- **T0536** · {count} inside
+  - Danish: 
+- **T0537** 🕳 Basement
+  - Danish: 
+- **T0538** 🏠 My room
+  - Danish: 
+- **T0539** Visit a player's room
+  - Danish: 
+- **T0540** Find
+  - Danish: 
+- **T0541** Nobody is called "{search}".
+  - Danish: 
+- **T0542** {name} hasn't set up a room yet.
+  - Danish: 
+- **T0543** No rooms to visit right now. Search for a friend by username above.
+  - Danish: 
+- **T0544** Username…
+  - Danish: 
+- **T0545** Knocking on {ownerName}'s door…
+  - Danish: 
+- **T0546** They'll see your request in their friends menu. Hang tight.
+  - Danish: 
+- **T0547** {ownerName} didn't let you in.
+  - Danish: 
+- **T0548** No answer from {ownerName}.
+  - Danish: 
+- **T0549** {ownerName} let you in.
+  - Danish: 
+- **T0550** {ownerName}'s room (let in)
+  - Danish: 
+- **T0551** Couldn't knock. They may have just closed their door.
+  - Danish: 
+
+## src/ui/dropConfirm.ts
+
+- **T0552** How many
+  - Danish: 
+- **T0553** Yes
+  - Danish: 
+- **T0554** Drop item
+  - Danish: 
+- **T0555** You have {qty}.
+  - Danish: 
+- **T0556** It lands on the floor.
+  - Danish: 
+- **T0557** How many?
+  - Danish: 
+- **T0558** Type a number from 1 to {qty}.
+  - Danish: 
+
+## src/ui/editor.ts
+
+- **T0559** Color {…}
+  - Danish: 
+- **T0560** None
+  - Danish: 
+- **T0561** You own everything in this category 🎉
+  - Danish: 
+- **T0562** Nothing here yet — visit the shop!
+  - Danish: 
+- **T0563** 6ixty's look saved!
+  - Danish: 
+- **T0564** Look saved!
+  - Danish: 
+- **T0565** Save 6ixty's look
+  - Danish: 
+- **T0566** Save look
+  - Danish: 
+- **T0567** You haven't saved the new look. Go back without saving?
+  - Danish: 
+- **T0568** Go back
+  - Danish: 
+- **T0569** Try items on, then buy the ones you like.
+  - Danish: 
+- **T0570** Bought {length} item{…} and put them on!
+  - Danish: 
+- **T0571** Buy & wear
+  - Danish: 
+- **T0572** Buy & wear — 🩸 {cost}
+  - Danish: 
+- **T0573** Need 🩸 {…} more
+  - Danish: 
+
+## src/ui/furniBuy.ts
+
+- **T0574** Buy for {price}
+  - Danish: 
+- **T0575** Buy {label}
+  - Danish: 
+- **T0576** {w}×{h} tiles{…}
+  - Danish: 
+- **T0577** · you can sit on it
+  - Danish: 
+- **T0578** You need {short} more drop{…}.
+  - Danish: 
+- **T0579** It goes into your inventory.
+  - Danish: 
+- **T0580** {label} is in your inventory.
+  - Danish: 
+- **T0581** The hotel refused that.
+  - Danish: 
+
+## src/ui/furnish.ts
+
+- **T0582** Furnishing
+  - Danish: 
+- **T0583** {placedCount}/{MAX_FURNI} placed
+  - Danish: 
+- **T0584** Tap a spot in the room to put it down.
+  - Danish: 
+- **T0585** ⟳ Turn
+  - Danish: 
+- **T0586** Drag it to move it.
+  - Danish: 
+- **T0587** 📦 Store
+  - Danish: 
+- **T0588** Tap a piece to select it, then drag it. Tap a piece below to put it down.
+  - Danish: 
+- **T0589** (ass)
+  - Danish: 
+- **T0590** Take
+  - Danish: 
+- **T0591** All
+  - Danish: 
+- **T0592** Store
+  - Danish: 
+- **T0593** Storage ({…})
+  - Danish: 
+- **T0594** Carrying ({length})
+  - Danish: 
+- **T0595** Free pockets: {freeSlots}
+  - Danish: 
+- **T0596** Store pieces and things (cigarettes, weed...) to keep your pockets free.
+  - Danish: 
+- **T0597** Nothing in storage. Pick a piece up with Store, or put what you carry into storage from the Carrying tab.
+  - Danish: 
+- **T0598** You aren't carrying anything you can store. Furniture comes from the shop (the yellow door in the basement).
+  - Danish: 
+
+## src/ui/ios.ts
+
+- **T0599** <svg width="13" height="10" viewBox="0 0 13 10"><path d="M6.5 2.2c1.9 0 3.6.7 4.9 1.9l1-1C10.8 1.6 8.8.8 6.5.8S2.2 1.6.6 3.1l1 1C2.9 2.9 4.6 2.2 6.5 2.2zm0 2.6c1.2 0 2.2.4 3 1.2l1-1C9.4 4 8 3.4 6.5 3.4S3.6 4 2.5 5l1 1c.8-.8 1.8-1.2 3-1.2zm0 2.6c-.5 0-.9.2-1.2.5L6.5 9.2l1.2-1.3c-.3-.3-.7-.5-1.2-.5z" fill="#fff"/></svg>
+  - Danish: 
+- **T0600** <svg width="23" height="11" viewBox="0 0 23 11"><rect x=".6" y=".6" width="19" height="9.8" rx="1.6" fill="none" stroke="#fff" stroke-width="1.2"/><rect x="2" y="2" width="16.2" height="7" rx=".6" fill="#fff"/><rect x="20.4" y="3.4" width="1.8" height="4.2" rx=".6" fill="#fff"/></svg>
+  - Danish: 
+
+## src/ui/keyboard.ts
+
+- **T0601** (pointer: coarse)
+  - Danish: 
+
+## src/ui/landlord.ts
+
+- **T0602** Landlord
+  - Danish: 
+- **T0603** Any colour
+  - Danish: 
+- **T0604** Bed & wardrobe · you pay for a look once
+  - Danish: 
+- **T0605** Bed
+  - Danish: 
+- **T0606** Plain bed
+  - Danish: 
+- **T0607** Bag of clothes
+  - Danish: 
+- **T0608** Done. That was {paid} drops.
+  - Danish: 
+- **T0609** Couldn't do that.
+  - Danish: 
+- **T0610** Pick a look to preview
+  - Danish: 
+- **T0611** Apply ({price} drops)
+  - Danish: 
+- **T0612** Apply (free)
+  - Danish: 
+- **T0613** You don't have enough drops for that.
+  - Danish: 
+- **T0614** A bigger piece moves over if it wouldn't fit where the old one stood.
+  - Danish: 
+- **T0615** Your room is {size} × {size}.
+  - Danish: 
+- **T0616** Room upgrades
+  - Danish: 
+- **T0617** {size} × {size} room
+  - Danish: 
+- **T0618** ✓ bought
+  - Danish: 
+- **T0619** Buy the smaller one first
+  - Danish: 
+- **T0620** Your room is now {s} × {s}.
+  - Danish: 
+- **T0621** Colours · {RECOLOR_PRICE} drops for each part you change
+  - Danish: 
+- **T0622** Floor
+  - Danish: 
+- **T0623** Walls
+  - Danish: 
+- **T0624** Carpet
+  - Danish: 
+- **T0625** Your room has its new colours. That was {paid} drops.
+  - Danish: 
+- **T0626** Pick a colour to preview
+  - Danish: 
+- **T0627** Tap colours to see them in the picture. Nothing is paid until you press Apply.
+  - Danish: 
+- **T0628** Bed & wardrobe
+  - Danish: 
+
+## src/ui/messenger.ts
+
+- **T0629** 👥 Friends
+  - Danish: 
+- **T0630** Add friend by username
+  - Danish: 
+- **T0631** Couldn't send that request.
+  - Danish: 
+- **T0632** 👥 Friends ({onlineCount}/{length})
+  - Danish: 
+- **T0633** {name} is at your door
+  - Danish: 
+- **T0634** Let them in
+  - Danish: 
+- **T0635** {name} can come in until you log off.
+  - Danish: 
+- **T0636** Couldn't let them in.
+  - Danish: 
+- **T0637** Let in
+  - Danish: 
+- **T0638** Send them away
+  - Danish: 
+- **T0639** Accept
+  - Danish: 
+- **T0640** You and {name} are friends now.
+  - Danish: 
+- **T0641** Couldn't accept that.
+  - Danish: 
+- **T0642** Decline
+  - Danish: 
+- **T0643** {fromName} invited you to "{roomName}"
+  - Danish: 
+- **T0644** Join
+  - Danish: 
+- **T0645** Friends
+  - Danish: 
+- **T0646** Close
+  - Danish: 
+- **T0647** Add
+  - Danish: 
+- **T0648** Room requests ({length})
+  - Danish: 
+- **T0649** Room invites
+  - Danish: 
+- **T0650** Friend requests ({length})
+  - Danish: 
+- **T0651** No friends yet. Add someone by username, or tap a player in a room.
+  - Danish: 
+- **T0652** Idle
+  - Danish: 
+- **T0653** In the basement
+  - Danish: 
+- **T0654** In a room
+  - Danish: 
+- **T0655** Online
+  - Danish: 
+- **T0656** Offline
+  - Danish: 
+- **T0657** Message
+  - Danish: 
+- **T0658** Go to the basement
+  - Danish: 
+- **T0659** Follow into their room
+  - Danish: 
+- **T0660** Remove friend
+  - Danish: 
+- **T0661** Remove {name} from your friends?
+  - Danish: 
+- **T0662** Message {name}…
+  - Danish: 
+- **T0663** That message didn't go through.
+  - Danish: 
+- **T0664** Say hi!
+  - Danish: 
+- **T0665** invited you to
+  - Danish: 
+- **T0666** Later
+  - Danish: 
+- **T0667** is knocking on your door.
+  - Danish: 
+- **T0668** Send away
+  - Danish: 
+
+## src/ui/mixer.ts
+
+- **T0669** Mixer
+  - Danish: 
+- **T0670** Your batch is ready!
+  - Danish: 
+- **T0671** The mixer is working…
+  - Danish: 
+- **T0672** Tap Collect.
+  - Danish: 
+- **T0673** {clock} left. You can leave: it keeps going.
+  - Danish: 
+- **T0674** You collect {…} {…}.
+  - Danish: 
+- **T0675** It isn't done yet.
+  - Danish: 
+- **T0676** Collect
+  - Danish: 
+- **T0677** Tap two things to mix. Every batch takes 10 minutes.
+  - Danish: 
+- **T0678** You have nothing that mixes (weed, ass weed, cigarettes, pills).
+  - Danish: 
+- **T0679** Those don't mix.
+  - Danish: 
+- **T0680** The mixer starts up.
+  - Danish: 
+- **T0681** Start mixing (10 min)
+  - Danish: 
+
+## src/ui/onboarding.ts
+
+- **T0682** Step {n} of 2
+  - Danish: 
+- **T0683** Next: pick your room
+  - Danish: 
+- **T0684** Couldn't save your avatar.
+  - Danish: 
+- **T0685** Done
+  - Danish: 
+- **T0686** Next
+  - Danish: 
+- **T0687** Choose your avatar
+  - Danish: 
+- **T0688** Hi {name}! Shuffle until you like what you see. You can change everything later from the bag of clothes in your room.
+  - Danish: 
+- **T0689** Turn left
+  - Danish: 
+- **T0690** 🎲 Randomize
+  - Danish: 
+- **T0691** Turn right
+  - Danish: 
+- **T0692** Wake up
+  - Danish: 
+- **T0693** Couldn't wake up.
+  - Danish: 
+
+## src/ui/painter.ts
+
+- **T0694** Body
+  - Danish: 
+- **T0695** Left sleeve
+  - Danish: 
+- **T0696** Right sleeve
+  - Danish: 
+- **T0697** Legs
+  - Danish: 
+- **T0698** Shoes
+  - Danish: 
+- **T0699** Hair
+  - Danish: 
+- **T0700** Hair (back)
+  - Danish: 
+- **T0701** Hat
+  - Danish: 
+- **T0702** Head item
+  - Danish: 
+- **T0703** Glasses
+  - Danish: 
+- **T0704** Face item
+  - Danish: 
+- **T0705** Jacket
+  - Danish: 
+- **T0706** Jacket, left sleeve
+  - Danish: 
+- **T0707** Jacket, right sleeve
+  - Danish: 
+- **T0708** Print
+  - Danish: 
+- **T0709** Chest item
+  - Danish: 
+- **T0710** Belt
+  - Danish: 
+- **T0711** Head
+  - Danish: 
+- **T0712** Body skin
+  - Danish: 
+- **T0713** Face
+  - Danish: 
+- **T0714** Down-right (default)
+  - Danish: 
+- **T0715** Front
+  - Danish: 
+- **T0716** Right
+  - Danish: 
+- **T0717** Up-right
+  - Danish: 
+- **T0718** Back
+  - Danish: 
+- **T0719** Colour
+  - Danish: 
+- **T0720** Pencil
+  - Danish: 
+- **T0721** Eraser
+  - Danish: 
+- **T0722** Fill
+  - Danish: 
+- **T0723** Pick a colour
+  - Danish: 
+- **T0724** Lighten
+  - Danish: 
+- **T0725** Darken
+  - Danish: 
+- **T0726** Undo
+  - Danish: 
+- **T0727** Redo
+  - Danish: 
+- **T0728** Pixel grid
+  - Danish: 
+- **T0729** Show the original art faintly underneath
+  - Danish: 
+- **T0730** Zoom out
+  - Danish: 
+- **T0731** Zoom in
+  - Danish: 
+- **T0732** Empty this frame
+  - Danish: 
+- **T0733** Clear
+  - Danish: 
+- **T0734** Back to the original art for this frame
+  - Danish: 
+- **T0735** Reset
+  - Danish: 
+- **T0736** Nothing to paint here.
+  - Danish: 
+- **T0737** {…} · {width}×{height}px{…}{…}
+  - Danish: 
+- **T0738** · tinted by the player's colour: paint in white/grey
+  - Danish: 
+- **T0739** · real colours
+  - Danish: 
+- **T0740** · edited
+  - Danish: 
+
+## src/ui/room.ts
+
+- **T0741** Who's in this room
+  - Danish: 
+- **T0742** Main Lobby
+  - Danish: 
+- **T0743** Loading room…
+  - Danish: 
+- **T0744** Say something, or try /dance. Tap the floor to walk.
+  - Danish: 
+- **T0745** Send
+  - Danish: 
+- **T0746** Pick up furniture: click it
+  - Danish: 
+- **T0747** Place {…}: click a tile{…}
+  - Danish: 
+- **T0748** (R turns it)
+  - Danish: 
+- **T0749** Use {name} → {label}
+  - Danish: 
+- **T0750** Use {name} →
+  - Danish: 
+- **T0751** Use {name} → {name}
+  - Danish: 
+- **T0752** Your bed: get up
+  - Danish: 
+- **T0753** Your bed: lie down
+  - Danish: 
+- **T0754** Landlord: bigger rooms, room colours
+  - Danish: 
+- **T0755** {…}{…}{…} · {…} (click to pick up)
+  - Danish: 
+- **T0756** dropped by {byName}
+  - Danish: 
+- **T0757** On the floor
+  - Danish: 
+- **T0758** {label} · {priceOf} drops (click to buy)
+  - Danish: 
+- **T0759** Wardrobe: the clothing shop
+  - Danish: 
+- **T0760** Sink: fill your watering can
+  - Danish: 
+- **T0761** Mixer: mix two things
+  - Danish: 
+- **T0762** Body bag: use a syringe on it
+  - Danish: 
+- **T0763** Growing kit · {…}% · water {…}%
+  - Danish: 
+- **T0764** Growing kit (empty): plant a seed
+  - Danish: 
+- **T0765** Door: {label}
+  - Danish: 
+- **T0766** Door: to the basement
+  - Danish: 
+- **T0767** Door: back to your room
+  - Danish: 
+- **T0768** Door: back to the basement
+  - Danish: 
+- **T0769** Door: rooms
+  - Danish: 
+- **T0770** {name} · by {ownerName}
+  - Danish: 
+- **T0771** That one is part of the lobby itself.
+  - Danish: 
+- **T0772** You can only put furniture down in your own room.
+  - Danish: 
+- **T0773** You can't stab yourself.
+  - Danish: 
+- **T0774** Nothing interesting happens.
+  - Danish: 
+- **T0775** Talk
+  - Danish: 
+- **T0776** Stab
+  - Danish: 
+- **T0777** Invite to trade
+  - Danish: 
+- **T0778** You ask {name} to trade. They have to accept.
+  - Danish: 
+- **T0779** Couldn't send that trade invite.
+  - Danish: 
+- **T0780** Add friend
+  - Danish: 
+- **T0781** Play
+  - Danish: 
+- **T0782** Arcade machine
+  - Danish: 
+- **T0783** Flappy Bird
+  - Danish: 
+- **T0784** Change look
+  - Danish: 
+- **T0785** Get up
+  - Danish: 
+- **T0786** Lie down
+  - Danish: 
+- **T0787** Search
+  - Danish: 
+- **T0788** Dumpster
+  - Danish: 
+- **T0789** Pick up
+  - Danish: 
+- **T0790** item
+  - Danish: 
+- **T0791** Buy
+  - Danish: 
+- **T0792** Open the shop
+  - Danish: 
+- **T0793** Wardrobe
+  - Danish: 
+- **T0794** Sit
+  - Danish: 
+- **T0795** Body bag
+  - Danish: 
+- **T0796** Tend
+  - Danish: 
+- **T0797** Mix
+  - Danish: 
+- **T0798** Furnish
+  - Danish: 
+- **T0799** Toolbox
+  - Danish: 
+- **T0800** Change clothes
+  - Danish: 
+- **T0801** CD player
+  - Danish: 
+- **T0802** Open
+  - Danish: 
+- **T0803** {label} door
+  - Danish: 
+- **T0804** Walk here
+  - Danish: 
+- **T0805** Couldn't pick that up
+  - Danish: 
+- **T0806** That's the limit: {MAX_FURNI} pieces per room.
+  - Danish: 
+- **T0807** Keep the doorway clear.
+  - Danish: 
+- **T0808** There's no room for that there.
+  - Danish: 
+- **T0809** Someone is standing there.
+  - Danish: 
+- **T0810** Couldn't place that.
+  - Danish: 
+- **T0811** Couldn't put that down.
+  - Danish: 
+- **T0812** Couldn't turn that.
+  - Danish: 
+- **T0813** Couldn't move that.
+  - Danish: 
+- **T0814** You haven't unlocked {name}. You can buy it in the shop.
+  - Danish: 
+- **T0815** Your emote didn't go through.
+  - Danish: 
+- **T0816** You need a knife for that.
+  - Danish: 
+- **T0817** He isn't getting up.
+  - Danish: 
+- **T0818** You've already stabbed {name} today. You can stab them again in {…}.
+  - Danish: 
+- **T0819** You walk towards {name}…
+  - Danish: 
+- **T0820** Somebody is sitting there.
+  - Danish: 
+- **T0821** You can't get to that seat.
+  - Danish: 
+- **T0822** THIRSTY: water it now!
+  - Danish: 
+- **T0823** water bar {…}%
+  - Danish: 
+- **T0824** It's ready to pick!{…}
+  - Danish: 
+- **T0825** It looks a bit sad.
+  - Danish: 
+- **T0826** Growing: {…}% (about {mins}m to go). {…}{…}.
+  - Danish: 
+- **T0827** Your watering can is already full.
+  - Danish: 
+- **T0828** You have nowhere to put the water.
+  - Danish: 
+- **T0829** You fill the watering can.
+  - Danish: 
+- **T0830** That's not your plant.
+  - Danish: 
+- **T0831** An empty growing kit. Select a weed seed, then click the kit to plant it.
+  - Danish: 
+- **T0832** You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering once it gets thirsty (after 5 minutes).
+  - Danish: 
+- **T0833** You need a full watering can.
+  - Danish: 
+- **T0834** It's already been watered. It'll grow fine now.
+  - Danish: 
+- **T0835** It isn't thirsty yet. Wait until its water bar is empty.
+  - Danish: 
+- **T0836** You water the plant.
+  - Danish: 
+- **T0837** +3 Ass weed
+  - Danish: 
+- **T0838** +3 Weed
+  - Danish: 
+- **T0839** You pick it. It's ass weed: it never got its water.
+  - Danish: 
+- **T0840** You pick the buds. Nice.
+  - Danish: 
+- **T0841** That didn't work.
+  - Danish: 
+- **T0842** You've already been through this one. Nothing new yet: try again in {…}.
+  - Danish: 
+- **T0843** Your inventory is full.
+  - Danish: 
+- **T0844** You dig through the dumpster…
+  - Danish: 
+- **T0845** Under the bin bags: a dead cat. Poor thing.
+  - Danish: 
+- **T0846** A burger, hardly bitten. Lucky you.
+  - Danish: 
+- **T0847** A few little seeds in the muck. They might grow.
+  - Danish: 
+- **T0848** A lighter, and it still works!
+  - Danish: 
+- **T0849** A blister of blue pills: kodimagnyl.
+  - Danish: 
+- **T0850** You find a {…}.
+  - Danish: 
+- **T0851** The lean pays off: you find a {…} as well.
+  - Danish: 
+- **T0852** Tap the glowing knife, then the glowing cat.
+  - Danish: 
+- **T0853** You find nothing but rot.
+  - Danish: 
+- **T0854** You open the cat up with your knife. It's still a little warm. (+{CAT_BLOOD})
+  - Danish: 
+- **T0855** The cat slips away… (the hotel refused it)
+  - Danish: 
+- **T0856** You lose track of what you were doing.
+  - Danish: 
+- **T0857** You can't get to the door.
+  - Danish: 
+- **T0858** They've left the room.
+  - Danish: 
+- **T0859** You can't reach them.
+  - Danish: 
+- **T0860** You can't get to him.
+  - Danish: 
+- **T0861** It's gone.
+  - Danish: 
+- **T0862** You can't get to it.
+  - Danish: 
+- **T0863** Mute
+  - Danish: 
+- **T0864** ⏏ Take my CD back
+  - Danish: 
+- **T0865** Nothing playing
+  - Danish: 
+- **T0866** Put in by {byName}
+  - Danish: 
+- **T0867** Use a CD from your inventory on the player.
+  - Danish: 
+- **T0868** muted
+  - Danish: 
+- **T0869** Click anywhere to hear the CD player (your browser holds back sound until you interact with the page).
+  - Danish: 
+- **T0870** 💿 CD player
+  - Danish: 
+- **T0871** Quieter
+  - Danish: 
+- **T0872** Louder
+  - Danish: 
+- **T0873** Volume is just for you. Other players keep their own.
+  - Danish: 
+- **T0874** Your CD is already in the player.
+  - Danish: 
+- **T0875** The CD player is busy playing {byName}'s CD.
+  - Danish: 
+- **T0876** You walk over to the CD player…
+  - Danish: 
+- **T0877** You slide the CD into the player. Music starts up. ♪ It will pop back into your inventory when it's finished.
+  - Danish: 
+- **T0878** The CD player spits your CD back out. Someone else got there first.
+  - Danish: 
+- **T0879** You press eject.
+  - Danish: 
+- **T0880** The eject button doesn't respond.
+  - Danish: 
+- **T0881** Your CD pops out of the player and back into your inventory.
+  - Danish: 
+- **T0882** You've already stabbed {name} today.
+  - Danish: 
+- **T0883** Your stab missed. They may have just left.
+  - Danish: 
+- **T0884** You did what you had to do
+  - Danish: 
+- **T0885** The drop of blood slips through your fingers… (the hotel refused it)
+  - Danish: 
+- **T0886** Finish furnishing first.
+  - Danish: 
+- **T0887** That isn't in your pocket any more.
+  - Danish: 
+- **T0888** There's no room to put it down here.
+  - Danish: 
+- **T0889** You drop {…}{…}.
+  - Danish: 
+- **T0890** the
+  - Danish: 
+- **T0891** It won't go. (the hotel refused it)
+  - Danish: 
+- **T0892** You pick up {…}{…}.
+  - Danish: 
+- **T0893** You couldn't pick that up.
+  - Danish: 
+- **T0894** A body bag. You'd need a syringe to get anything out of it.
+  - Danish: 
+- **T0895** You don't have a syringe.
+  - Danish: 
+- **T0896** There's nothing left in the bag for now. Try again in {waitText}.
+  - Danish: 
+- **T0897** Your arm needs {waitText} to recover.
+  - Danish: 
+- **T0898** You find a vein that still works and draw a little blood. (+{SYRINGE_BLOOD})
+  - Danish: 
+- **T0899** You slide the needle in and draw some blood. It fills the barrel nicely. (+{SYRINGE_BLOOD})
+  - Danish: 
+- **T0900** The needle slips and the blood goes to waste… (the hotel refused it)
+  - Danish: 
+- **T0901** +1 Knife
+  - Danish: 
+- **T0902** +{price} Blood
+  - Danish: 
+- **T0903** +{JOB_REWARD} Blood
+  - Danish: 
+- **T0904** come back in about {waitText}. I'll have another job for you.
+  - Danish: 
+- **T0905** Tap the glowing knife in your pocket, then tap LegendGamer2015.
+  - Danish: 
+- **T0906** +1 Pill
+  - Danish: 
+- **T0907** Tap the glowing pill in your pocket to swallow it.
+  - Danish: 
+- **T0908** The drops slip through your fingers… (the hotel refused it)
+  - Danish: 
+- **T0909** You're already smoking one.
+  - Danish: 
+- **T0910** You need a lighter for that. The vending machine in the shop sells them.
+  - Danish: 
+- **T0911** You light up.
+  - Danish: 
+- **T0912** The lighter won't catch.
+  - Danish: 
+- **T0913** You swallow the super pill. The world slows down. You're running 4 times faster for a minute.
+  - Danish: 
+- **T0914** You drink the lean. Slow and heavy. For an hour the bins give twice as much, twice as often.
+  - Danish: 
+- **T0915** You don't have a pill.
+  - Danish: 
+- **T0916** The pill slips out of your fingers. (the hotel refused it)
+  - Danish: 
+- **T0917** You swallow the pill. Give it a moment…
+  - Danish: 
+- **T0918** Faaaahhhh shii
+  - Danish: 
+- **T0919** opacity 1.4s ease
+  - Danish: 
+- **T0920** You don't have a burger.
+  - Danish: 
+- **T0921** The burger slips out of your hands. (the hotel refused it)
+  - Danish: 
+- **T0922** You eat the burger. Greasy. Good.
+  - Danish: 
+- **T0923** {…} minute{…}
+  - Danish: 
+- **T0924** {…} seconds
+  - Danish: 
+- **T0925** {…} minutes
+  - Danish: 
+- **T0926** That was ass weed… it hits you hard. Give it a moment…
+  - Danish: 
+- **T0927** You finish the {name}. You feel sharp: stabs give x{…} blood for {fmtDuration}{…}.
+  - Danish: 
+- **T0928** and {…}
+  - Danish: 
+- **T0929** In room ({length})
+  - Danish: 
+- **T0930** You can't be in that room.
+  - Danish: 
+- **T0931** You don't have access to that room.
+  - Danish: 
+- **T0932** {…} stabs you with a knife. It doesn't hurt a bit.
+  - Danish: 
+- **T0933** Someone
+  - Danish: 
+- **T0934** (test) Done.
+  - Danish: 
+- **T0935** Unknown command.
+  - Danish: 
+- **T0936** Usage: /give <item> [amount] [ass]. Examples: /give weed 3, /give joint paper, /give kodimagnyl 2, /give f_sofa
+  - Danish: 
+- **T0937** Slow down a little…
+  - Danish: 
+- **T0938** Unknown command. Emotes: {…}
+  - Danish: 
+- **T0939** ready!
+  - Danish: 
+- **T0940** {…}px Verdana, sans-serif
+  - Danish: 
+- **T0941** That room doesn't exist.
+  - Danish: 
+- **T0942** {ownerName}'s room is closed. Knock on its door from the basement to ask.
+  - Danish: 
+- **T0943** This room was deleted.
+  - Danish: 
+- **T0944** You can't be in that room any more.
+  - Danish: 
+- **T0945** Couldn't open that room.
+  - Danish: 
+
+## src/ui/roomPanel.ts
+
+- **T0946** Open to all
+  - Danish: 
+- **T0947** Knock to enter
+  - Danish: 
+- **T0948** Friends only
+  - Danish: 
+- **T0949** No one
+  - Danish: 
+- **T0950** Anyone can walk in.
+  - Danish: 
+- **T0951** Friends walk in. Everyone else knocks and you let them in from your friends menu.
+  - Danish: 
+- **T0952** Only friends can come in. Strangers can't knock.
+  - Danish: 
+- **T0953** Nobody can come in, not even friends.
+  - Danish: 
+- **T0954** The hotel refused that change.
+  - Danish: 
+- **T0955** Furniture ({length}/{MAX_FURNI})
+  - Danish: 
+- **T0956** 🧹 Pick up
+  - Danish: 
+- **T0957** ⟳ Turn (R) · facing {…}
+  - Danish: 
+- **T0958** No furniture is available yet. New pieces will show up here.
+  - Danish: 
+- **T0959** Click in the room to use the tool. Esc to stop.
+  - Danish: 
+- **T0960** Pick a piece, then click a tile in the room.
+  - Danish: 
+- **T0961** Remove everything you added to the basement?
+  - Danish: 
+- **T0962** Put all furniture from this room into your toolbox storage?
+  - Danish: 
+- **T0963** Clear room
+  - Danish: 
+- **T0964** Basement
+  - Danish: 
+- **T0965** Admin: add furniture uploaded in Admin > Studio > Furniture. The built-in pieces stay.
+  - Danish: 
+- **T0966** Room
+  - Danish: 
+- **T0967** Owned by {…}
+  - Danish: 
+- **T0968** My room
+  - Danish: 
+- **T0969** Room names need 3+ characters.
+  - Danish: 
+- **T0970** Who can come in
+  - Danish: 
+- **T0971** Colours
+  - Danish: 
+- **T0972** Floor, walls and carpet colours are sold by the landlord in the shop: 2 drops for each, and you see a preview first.
+  - Danish: 
+- **T0973** Arrange your room with the toolbox in it: click the toolbox. Buy furniture in the shop (the yellow door in the basement).
+  - Danish: 
+- **T0974** Invite friends
+  - Danish: 
+- **T0975** Add friends in the Friends panel first.
+  - Danish: 
+- **T0976** Invited {name}.
+  - Danish: 
+- **T0977** Couldn't send that invite.
+  - Danish: 
+- **T0978** Invited ✓
+  - Danish: 
+- **T0979** Invite
+  - Danish: 
+
+## src/ui/shop.ts
+
+- **T0980** Furniture is sold in the shop room: take the yellow door in the basement (to the right of 6ixty). Four pieces a day.
+  - Danish: 
+
+## src/ui/sidepanel.ts
+
+- **T0981** {…}h {…}m
+  - Danish: 
+- **T0982** (max-width: 900px)
+  - Danish: 
+- **T0983** Inventory
+  - Danish: 
+- **T0984** Emotes
+  - Danish: 
+- **T0985** {name}: locked. Buy it in the shop for {price} drops.
+  - Danish: 
+- **T0986** Click one to perform it, or type /name in chat (like /dance). Walking cancels it.
+  - Danish: 
+- **T0987** Get more in the shop
+  - Danish: 
+- **T0988** Knife: click it, then a player (or a dead cat). CD: click it, then the CD player. Syringe: just click it.
+  - Danish: 
+- **T0989** Now click a free spot in your room to put it down (R turns it).
+  - Danish: 
+- **T0990** Now click the CD player in the basement.
+  - Danish: 
+- **T0991** Now click a player to use it on them.
+  - Danish: 
+- **T0992** Light up
+  - Danish: 
+- **T0993** Swallow
+  - Danish: 
+- **T0994** Eat
+  - Danish: 
+- **T0995** Drink
+  - Danish: 
+- **T0996** Draw blood
+  - Danish: 
+- **T0997** Place
+  - Danish: 
+- **T0998** Use knife
+  - Danish: 
+- **T0999** {name} (in the player)
+  - Danish: 
+- **T1000** Your {name} is in the player right now.
+  - Danish: 
+- **T1001** Let it burn out first.
+  - Danish: 
+- **T1002** You can't drop that.
+  - Danish: 
+- **T1003** Your {name} is in the player. It'll be back when it's done.
+  - Danish: 
+- **T1004** You've got nothing to cut it with.
+  - Danish: 
+- **T1005** Tap the item you want to put on the floor.
+  - Danish: 
+- **T1006** Drop
+  - Danish: 
+- **T1007** Music
+  - Danish: 
+- **T1008** 🔒 You don't have a jukebox pass.
+  - Danish: 
+- **T1009** Buy music access in the shop to stream tracks while you hang out.
+  - Danish: 
+- **T1010** Open shop
+  - Danish: 
+- **T1011** Couldn't load that track.
+  - Danish: 
+- **T1012** Now playing
+  - Danish: 
+- **T1013** Paused
+  - Danish: 
+- **T1014** Pick a track to start streaming.
+  - Danish: 
+- **T1015** ⏸ Pause
+  - Danish: 
+- **T1016** ▶ Play
+  - Danish: 
+- **T1017** Volume
+  - Danish: 
+
+## src/ui/sixtyShop.ts
+
+- **T1018** 6ixty's shop
+  - Danish: 
+- **T1019** 6ixty pays you {gain} drops.
+  - Danish: 
+- **T1020** He pays {each} drops each.
+  - Danish: 
+- **T1021** Sell 1 ({each})
+  - Danish: 
+- **T1022** All ({…})
+  - Danish: 
+- **T1023** Nothing on the shelf right now.
+  - Danish: 
+- **T1024** {name} added to your inventory.
+  - Danish: 
+- **T1025** Sell to 6ixty:
+  - Danish: 
+
+## src/ui/studio.ts
+
+- **T1026** Paint
+  - Danish: 
+- **T1027** Import
+  - Danish: 
+- **T1028** Pattern
+  - Danish: 
+- **T1029** Details
+  - Danish: 
+- **T1030** Template
+  - Danish: 
+- **T1031** Something went wrong.
+  - Danish: 
+- **T1032** {price} drops
+  - Danish: 
+- **T1033** No designs yet. Press New design to make your first one.
+  - Danish: 
+- **T1034** ＋ New design
+  - Danish: 
+- **T1035** Designs start from an existing garment, so they come with the right layers and animations.
+  - Danish: 
+- **T1036** Name your design
+  - Danish: 
+- **T1037** My design
+  - Danish: 
+- **T1038** Any gender
+  - Danish: 
+- **T1039** Boys
+  - Danish: 
+- **T1040** Girls
+  - Danish: 
+- **T1041** Unisex
+  - Danish: 
+- **T1042** Find by id…
+  - Danish: 
+- **T1043** Getting the artwork ready…
+  - Danish: 
+- **T1044** · tintable
+  - Danish: 
+- **T1045** {…} / {pages} · {length} garments
+  - Danish: 
+- **T1046** ‹ Designs
+  - Danish: 
+- **T1047** Pick a garment to start from
+  - Danish: 
+- **T1048** This design isn't tinted: it shows the colours you paint.
+  - Danish: 
+- **T1049** Preview colour
+  - Danish: 
+- **T1050** Drop PNG files or a ZIP here, or
+  - Danish: 
+- **T1051** Importing…
+  - Danish: 
+- **T1052** {replaced} frame{…} replaced, {added} added.
+  - Danish: 
+- **T1053** Skipped {length}: {…}{…}
+  - Danish: 
+- **T1054** Import your art
+  - Danish: 
+- **T1055** Need the frame files first? The Template tab downloads them for this design.
+  - Danish: 
+- **T1056** Pattern fill
+  - Danish: 
+- **T1057** Lays a pattern over the whole garment (every pose), keeping its shading. Apply more than once to layer patterns, or use Reset all to start over.
+  - Danish: 
+- **T1058** Or use your own tile image:
+  - Danish: 
+- **T1059** Size
+  - Danish: 
+- **T1060** Strength
+  - Danish: 
+- **T1061** Pattern applied.
+  - Danish: 
+- **T1062** Apply to every frame
+  - Danish: 
+- **T1063** Back to the original art.
+  - Danish: 
+- **T1064** Reset all frames
+  - Danish: 
+- **T1065** Untitled
+  - Danish: 
+- **T1066** Name
+  - Danish: 
+- **T1067** For
+  - Danish: 
+- **T1068** Players pick the colour
+  - Danish: 
+- **T1069** Reuse standing art when walking
+  - Danish: 
+- **T1070** Price (drops)
+  - Danish: 
+- **T1071** For sale in the shop
+  - Danish: 
+- **T1072** Price 0 = free for everyone (it shows up in the character picker and the random avatar). A price above 0 needs "for sale" ticked, otherwise nobody can get it.
+  - Danish: 
+- **T1073** Based on {type}-{id} · layers: {…}
+  - Danish: 
+- **T1074** Download frames (.zip)
+  - Danish: 
+- **T1075** Tip: the file names carry the pose, layer, direction and frame. Directions 4-6 don't have files because the game mirrors 2-0 for them.
+  - Danish: 
+- **T1076** Saving…
+  - Danish: 
+- **T1077** Published. Players have it now.
+  - Danish: 
+- **T1078** Draft saved.
+  - Danish: 
+- **T1079** Leave without saving? Unsaved changes are lost.
+  - Danish: 
+- **T1080** {slotLabel} · design {id}
+  - Danish: 
+- **T1081** Walk
+  - Danish: 
+- **T1082** Boy
+  - Danish: 
+- **T1083** Girl
+  - Danish: 
+- **T1084** Publish
+  - Danish: 
+- **T1085** Save as draft
+  - Danish: 
+- **T1086** Delete "{name}" for everyone? Players wearing it will lose it.
+  - Danish: 
+- **T1087** Delete
+  - Danish: 
+- **T1088** Publish makes it visible to players (as free, or on sale if you set a price in Details). A draft is only visible to you.
+  - Danish: 
+
+## src/ui/studioHub.ts
+
+- **T1089** Clothing
+  - Danish: 
+
+## src/ui/studioNitro.ts
+
+- **T1090** Jacket L
+  - Danish: 
+- **T1091** Jacket R
+  - Danish: 
+- **T1092** Reading…
+  - Danish: 
+- **T1093** Filter by id or layer (ch, lg, sleeve)…
+  - Danish: 
+- **T1094** {length} frames · {length} parts
+  - Danish: 
+- **T1095** Remove
+  - Danish: 
+- **T1096** Tick shown
+  - Danish: 
+- **T1097** Untick shown
+  - Danish: 
+- **T1098** Use
+  - Danish: 
+- **T1099** Layer
+  - Danish: 
+- **T1100** Part id
+  - Danish: 
+- **T1101** Frames
+  - Danish: 
+- **T1102** Garment #
+  - Danish: 
+- **T1103** body part, skipped
+  - Danish: 
+- **T1104** Garment {num}
+  - Danish: 
+- **T1105** {…} · {…} frames
+  - Danish: 
+- **T1106** Two parts use the same layer; only the first of each layer is imported. Give one a different garment number.
+  - Danish: 
+- **T1107** players pick the colour (art is grey/white)
+  - Danish: 
+- **T1108** Price
+  - Danish: 
+- **T1109** (0 = free for everyone)
+  - Danish: 
+- **T1110** Garments to import ({length})
+  - Danish: 
+- **T1111** Import {length} garment{…}
+  - Danish: 
+- **T1112** They go live straight away. Free ones are available to everyone; priced ones go on sale in the shop.
+  - Danish: 
+- **T1113** Tick at least one part to build a garment.
+  - Danish: 
+- **T1114** Importing {…}/{length}: {name}…
+  - Danish: 
+- **T1115** Imported {done} garment{…}.
+  - Danish: 
+
+## src/ui/topbar.ts
+
+- **T1116** Drops of blood
+  - Danish: 
+- **T1117** Menu
+  - Danish: 
+- **T1118** 🛠 Admin
+  - Danish: 
+- **T1119** 🔇 Sounds: off
+  - Danish: 
+- **T1120** 🔊 Sounds: on
+  - Danish: 
+- **T1121** Log out
+  - Danish: 
+- **T1122** drops of blood
+  - Danish: 
+
+## src/ui/trade.ts
+
+- **T1123** wants to trade with you.
+  - Danish: 
+- **T1124** Couldn't start that trade.
+  - Danish: 
+- **T1125** Trade
+  - Danish: 
+- **T1126** Opening the trade…
+  - Danish: 
+- **T1127** confirmed ✓
+  - Danish: 
+- **T1128** accepted ✓
+  - Danish: 
+- **T1129** Tap something in your pocket below.
+  - Danish: 
+- **T1130** Nothing yet.
+  - Danish: 
+- **T1131** Handing over…
+  - Danish: 
+- **T1132** Waiting for {name} to confirm…
+  - Danish: 
+- **T1133** Confirm trade
+  - Danish: 
+- **T1134** Change offer
+  - Danish: 
+- **T1135** Take back accept
+  - Danish: 
+- **T1136** Cancel trade
+  - Danish: 
+- **T1137** Trade with {name}
+  - Danish: 
+- **T1138** {name}'s offer
+  - Danish: 
+- **T1139** Your offer
+  - Danish: 
+- **T1140** Your pocket
+  - Danish: 
+- **T1141** Not enough room in your pocket for what you'd get. Free up some slots (or ask them to offer less).
+  - Danish: 
+- **T1142** The hotel refused that offer.
+  - Danish: 
+- **T1143** Make room in your pocket first.
+  - Danish: 
+- **T1144** Couldn't confirm.
+  - Danish: 
+- **T1145** Couldn't cancel.
+  - Danish: 
+- **T1146** The trade couldn't finish.
+  - Danish: 
+- **T1147** Trade complete.
+  - Danish: 
+- **T1148** The trade was called off.
+  - Danish: 
+
+## src/ui/vendingShop.ts
+
+- **T1149** Vending machine
+  - Danish: 
+- **T1150** {qty} in a pack.
+  - Danish: 
+- **T1151** You need {…} more drops
+  - Danish: 
+- **T1152** {label} added to your inventory.
+  - Danish: 
+
+## src/unzip.ts
+
+- **T1153** This browser can't open compressed ZIP files. Use PNG files instead.
+  - Danish: 
+- **T1154** That doesn't look like a ZIP file.
+  - Danish: 
+- **T1155** The ZIP file is damaged.
+  - Danish: 

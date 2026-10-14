@@ -179,7 +179,11 @@ button, input, select { font-family: var(--font); }
 .online .me { color: #ffe27a; }
 .room-title { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, .55); color: #fff; padding: 3px 12px; border-radius: 12px; font-size: 12px; pointer-events: none; white-space: nowrap; }
 .action-hint { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, .75); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 5px; border: 1px solid rgba(255, 255, 255, .3); pointer-events: none; }
-.chat-log { position: absolute; left: 10px; bottom: 10px; width: min(380px, 55%); max-height: 34%; overflow-y: auto; background: rgba(0, 0, 0, .55); color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
+/* the chat on the picture: no background and never in the way of a tap; only the last 3 lines, more (10) while you're typing */
+.chat-log { position: absolute; left: 10px; bottom: 10px; width: min(380px, 55%); max-height: 34%; overflow: hidden; pointer-events: none; color: #fff; padding: 0; font-size: 12px; display: flex; flex-direction: column; justify-content: flex-end; text-shadow: 0 0 3px #000, 0 1px 2px #000, 1px 0 2px #000, -1px 0 2px #000; }
+.chat-log:not(.open) .line:not(:nth-last-child(-n+3)) { display: none; }
+.chat-log.open .line:not(:nth-last-child(-n+10)) { display: none; }
+.chat-bar .btn.cooling { min-width: 54px; opacity: .85; }
 .chat-log:empty { display: none; }
 .chat-log .line { padding: 1px 0; word-break: break-word; }
 .chat-log .line b.me { color: #ffe27a; }
@@ -196,8 +200,8 @@ button, input, select { font-family: var(--font); }
 .osrs-tabs { background: linear-gradient(#bccadf, #8aa2c6); border-bottom: 1px solid #3b4f72; gap: 0; padding: 7px 8px; }
 .osrs-body { padding: 8px; background: repeating-linear-gradient(90deg, #eef1f5 0 5px, #f4f6f9 5px 10px); }
 .osrs-title { text-align: center; font: 700 15px var(--font); color: #4c566c; margin-bottom: 6px; text-shadow: 0 1px 0 #fff; }
-.inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #fff; padding: 5px; border: 1px solid #b6bcc6; border-radius: 8px; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .15); }
-.inv-slot { aspect-ratio: 1; display: grid; place-items: center; position: relative; background: linear-gradient(#f7f8fa, #e4e7ec); border: 1px solid #bcc2cc; border-radius: 6px; }
+.inv-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; background: #fff; padding: 5px; border: 1px solid #b6bcc6; border-radius: 8px; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .15); }
+.inv-slot { aspect-ratio: 1; min-width: 0; min-height: 0; overflow: hidden; display: grid; place-items: center; position: relative; background: linear-gradient(#f7f8fa, #e4e7ec); border: 1px solid #bcc2cc; border-radius: 6px; }
 .inv-slot.filled { cursor: pointer; }
 .inv-slot.filled:hover { background: linear-gradient(#fff, #dde6f5); }
 .inv-slot.selected { border-color: #2a64d6; box-shadow: 0 0 0 2px rgba(42, 100, 214, .55); background: linear-gradient(#e6efff, #c5d9fa); }
@@ -219,16 +223,20 @@ button, input, select { font-family: var(--font); }
 .drop-buttons { display: flex; gap: 10px; justify-content: flex-end; }
 .btn.drop-yes { background: linear-gradient(#58d68d, #1e9e55); border-color: #14753f; color: #fff; font-weight: 700; min-width: 90px; }
 .btn.drop-no { background: linear-gradient(#ff6b6b, #c62828); border-color: #8e1b1b; color: #fff; font-weight: 700; min-width: 90px; }
-.mixer-body { display: grid; gap: 8px; }
-.mixer-grid { display: grid; grid-template-columns: repeat(5, 48px); gap: 5px; justify-content: center; }
-.mixer-grid .inv-slot { width: 48px; height: 48px; padding: 0; cursor: pointer; }
+.cd-popup.mixer { width: 260px; max-width: calc(100% - 12px); box-sizing: border-box; }
+.mixer-body { display: grid; gap: 8px; min-width: 0; }
+.mixer-body .hint { text-align: center; }
+/* four things to a row; a row that is not full stays in the middle (they used to be five fixed cells, wider than the window) */
+.mixer-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.mixer-grid .inv-slot { width: 52px; height: 52px; padding: 0; cursor: pointer; }
+.mixer-grid .inv-slot .ass-tag { position: absolute; left: 3px; bottom: 1px; font-size: 9px; font-weight: 700; color: #c0392b; }
 .mixer-bar { height: 10px; border-radius: 6px; background: rgba(255, 255, 255, .15); overflow: hidden; }
 .mixer-bar-fill { height: 100%; background: linear-gradient(#7fe08a, #2ea84a); transition: width .9s linear; }
 .mixer-line { text-align: center; font-weight: 700; }
 .mixer-result { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 28px; font-weight: 700; }
 .mixer-result img { width: 26px; height: 26px; image-rendering: pixelated; }
 .inv-slot.loaned { opacity: .4; filter: grayscale(.6); cursor: not-allowed; }
-.inv-slot img { width: 80%; height: 80%; image-rendering: pixelated; user-select: none; }
+.inv-slot img { position: absolute; inset: 10%; width: 80%; height: 80%; max-width: 80%; max-height: 80%; object-fit: contain; image-rendering: pixelated; user-select: none; } /* absolute: the picture's own size can never stretch the slot (Firefox / Safari did that with big source images) */
 .inv-slot .qty { position: absolute; top: 1px; left: 3px; color: #a67800; font-size: 11px; font-weight: 700; }
 .inv-foot { margin-top: 8px; display: grid; gap: 4px; font-size: 12px; color: var(--ink); }
 .blood-line { color: #c4231a; font-weight: 700; }
@@ -245,7 +253,9 @@ button, input, select { font-family: var(--font); }
 .emote-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .emote-cell { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 2px; cursor: pointer; background: linear-gradient(#fff, #e6e9ee); border: 1px solid #b6bcc6; border-radius: 6px; color: var(--ink); font: inherit; }
 .emote-cell:hover { background: linear-gradient(#fff, #d6e3fa); }
-.emote-icon { font-size: 22px; line-height: 1; }
+.emote-icon { display: flex; align-items: center; justify-content: center; height: 34px; }
+.emote-icon img { max-height: 34px; max-width: 40px; width: auto; height: auto; image-rendering: pixelated; }
+.tab-ico { height: 30px; width: auto; max-width: 38px; image-rendering: pixelated; vertical-align: middle; pointer-events: none; }
 .emote-name { font-size: 11px; font-weight: 700; }
 .emote-cell.locked { opacity: .55; }
 .emote-lock { position: absolute; top: 1px; right: 3px; font-size: 10px; }
@@ -549,16 +559,22 @@ html.kb .side-host { display: none; }
   .room-main { display: contents; }
   .stage { order: 1; min-height: 200px; }
   .chat-bar { order: 2; padding-right: 8px; }
-  .side-host { order: 3; width: 100%; max-height: 46vh; overflow: auto; }
+  .side-host { order: 3; width: 100%; max-height: 34vh; overflow: auto; }
   .osrs-tab { font-size: 18px; padding: 6px 0; }
-  .inv-grid { grid-template-columns: repeat(7, 1fr); }
+  .inv-grid { grid-template-columns: repeat(7, 34px); gap: 3px; justify-content: center; padding: 4px; }
+  .osrs-title { display: none; }
+  .osrs-body { padding: 5px; }
+  .osrs-tab { padding: 3px 0; }
+  .tab-ico { height: 24px; }
+  .btn.drop-btn { min-width: 90px; padding: 3px 20px; min-height: 26px; font-size: 13px; }
+  .drop-foot { margin-top: 4px; }
   .emote-grid { grid-template-columns: repeat(4, 1fr); }
   .online { top: 6px; right: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
   .online > div { display: none; }
   .online.open > div { display: block; }
   .room-title { top: 6px; left: 6px; transform: none; font-size: 11px; max-width: calc(100% - 100px); overflow: hidden; text-overflow: ellipsis; }
   .action-hint { top: 34px; }
-  .chat-log { max-height: 30%; width: calc(100% - 20px); font-size: 13px; }
+  .chat-log { max-height: 22%; width: calc(100% - 20px); font-size: 12px; }
   .cd-popup { top: 40px; right: 6px; }
 }
 
@@ -568,9 +584,9 @@ html.kb .side-host { display: none; }
   .friends-toggle { display: none; }
   .messenger { left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; }
   .friends-col { width: 100%; align-items: stretch; }
-  .friends-panel { width: 100%; max-height: 72vh; border-radius: 12px 12px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+  .friends-panel { width: 100%; max-height: 48vh; border-radius: 12px 12px 0 0; padding-bottom: env(safe-area-inset-bottom); }
   .chat-windows { width: 100%; }
-  .chat-window { width: 100%; height: 62vh; border-radius: 12px 12px 0 0; }
+  .chat-window { width: 100%; height: 40vh; border-radius: 12px 12px 0 0; }
   .chat-windows .chat-window:not(:last-child) { display: none; }
   .invite-popups { left: 10px; right: 10px; top: 100px; }
   .invite-card { max-width: none; }
@@ -654,3 +670,19 @@ html.kb .side-host { display: none; }
 .trade-cell.blood { background: rgba(160, 20, 30, .35); }
 .trade-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center; }
 .hint.warn { color: #ffb3b3; }
+
+/* ---- the landlord (room upgrades + tints) ---- */
+.cd-popup.landlord { width: 270px; max-height: calc(100% - 60px); overflow-y: auto; }
+.landlord-body { display: grid; gap: 6px; }
+.ll-label { font-weight: 700; font-size: 12px; margin-top: 4px; color: #ffe27a; }
+.ll-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ll-row.owned .ll-name { opacity: .7; }
+.ll-done { color: #8fe08f; font-weight: 700; font-size: 12px; }
+.lang-item { display: flex; align-items: center; gap: 8px; }
+.flag-ico { display: inline-block; line-height: 0; }
+.flag-ico svg { width: 24px; height: 17px; display: block; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .3); }
+.tint-picker { width: 30px; height: 22px; padding: 0; border: 1px solid #aab0ba; border-radius: 5px; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); cursor: pointer; }
+.tint-picker::-webkit-color-swatch-wrapper { padding: 0; opacity: 0; }
+.ll-part { font-size: 11px; font-weight: 700; color: #b6c2e0; margin-top: 2px; }
+.ll-preview { display: flex; justify-content: center; background: radial-gradient(#e9eef6, #c9d3e3); border-radius: 8px; padding: 4px 0; min-height: 60px; }
+.ll-preview canvas { max-width: 100%; height: auto; }

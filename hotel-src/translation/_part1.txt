@@ -1,0 +1,332 @@
+T0042|There's no bin|Der er ingen skraldespand her.
+T0043|That isn't a bin|Det er ikke en skraldespand.
+T0045|You can't swallow|Det kan du ikke sluge bruh.
+T0046|That can't be lit|Den kan ikke tændes.
+T0047|That isn't lit|Den er ikke tændt.
+T0050|That can isn't empty|Den kande er ikke tom.
+T0051|That isn't a growing kit|Det er ikke et growth kit.
+T0052|Something is already growing|Der gror allerede noget der.
+T0053|That isn't a seed|Det er ikke et frø.
+T0054|There's nothing planted|Der er ikke plantet noget der.
+T0055|That can is empty|Den kande er tom.
+T0056|It isn't ready yet|Den er ikke klar endnu.
+T0057|It's your own room|Det er dit eget værelse.
+T0058|You don't have a lockpick|Du har ikke en dirk.
+T0059|He doesn't sell that|Han sælger ikke det der.
+T0060|The machine doesn't have that|Maskinen har ikke den.
+T0061|That isn't in the shop today|Den er ikke i shoppen i dag.
+T0062|Your room is as big|Dit værelse kan ikke blive større.
+T0063|You haven't got a room yet|Du har ikke et værelse endnu.
+T0064|Nothing to change|Intet at ændre.
+T0065|Bad slot|Forkert plads.
+T0066|He doesn't buy that|Han køber ikke det der.
+T0067|That can't be stored|Det kan ikke gemmes.
+T0068|Storage is full|Der er fuldt af dem i kassen.
+T0069|That doesn't exist any more|Den findes ikke mere.
+T0070|Bad facing|Forkert retning.
+T0071|The room is full of furniture|Værelset er fyldt med møbler.
+T0072|That can't be put down|Den kan ikke stilles ned.
+T0073|That piece isn't in your room|Det møbel er ikke i dit værelse.
+T0074|That piece doesn't exist|Det møbel findes ikke mere.
+T0075|Collect what's in the mixer|Hent det der er i mixeren først.
+T0076|That trade is gone|Det byt er væk.
+T0077|That isn't your trade|Det er ikke dit byt.
+T0078|That trade was called off|Det byt blev aflyst.
+T0079|Both of you have to accept|I skal begge acceptere og bekræfte først.
+T0080|They|Deres
+T0081|Somebody doesn't have that much blood|En af jer har ikke så meget blod mere.
+T0082|Something in a pocket changed|Noget i en lomme ændrede sig, så byttet ikke kan gennemføres. Ret dit tilbud og prøv igen.
+T0083|{…} pocket hasn't got room|{…} lomme har ikke plads til det hele. Gør plads.
+T0084|Your|Din
+T0085|Bad {what}|Forkert {what}.
+T0086|Unknown room|Ukendt værelse.
+T0087|You aren't in that room|Du er ikke i det værelse.
+T0088|That player doesn't exist|Den spiller findes ikke.
+T0089|The game server isn't set up|Spilserveren er ikke sat op endnu.
+T0090|Please log in again|Log ind igen.
+T0091|Can't reach the game server|Kan ikke nå spilserveren. Tjek din forbindelse.
+T0092|The server had a problem|Serveren fik et problem. Prøv igen.
+T0093|Blood Catch|Blood Catch
+T0094|Catch the falling drops|Fang de faldende dråber.
+T0095|Lobby Pong|Lobby Pong
+T0096|Two players, one ball|To spillere, én bold.
+T0097|🕹️ Arcade|Arcade
+T0098|← Games|← Spil
+T0099|Coming soon|Kommer snart
+T0101|Tap to flap|Tryk for at flappe. Rør ikke rørene.
+T0102|Flappy Bird. Tap or press space|Flappy Bird. Tryk eller tryk mellemrum for at flappe.
+T0103|refused|refused
+T0104|SCORE|SCORE
+T0105|BEST|BEDSTE
+T0106|NEW|NY
+T0107|Snake|Snake
+T0108|Eat, grow|Spis, vokse, bid ikke dig selv. Piletaster eller WASD.
+T0109|Score: 0|Score: 0
+T0110|Press any arrow key to start|Tryk på en piletast for at starte
+T0111|Game over|Game over. Tryk på en piletast for at spille igen.
+T0112|Wrong username or password|Forkert brugernavn eller adgangskode.
+T0113|That username is taken|Det brugernavn er optaget.
+T0114|Password must be at least 6|Adgangskoden skal være mindst 6 tegn.
+T0115|Usernames can only use|Brugernavne kan kun bruge bogstaver, tal, . _ -
+T0116|Too many attempts|For mange forsøg, prøv igen om lidt.
+T0117|Can't reach Firebase|Kan ikke nå Firebase. Tjek din forbindelse / config.
+T0118|Username must be 3-16|Brugernavn skal være 3-16 tegn: bogstaver, tal, . _ -
+T0119|That username is reserved|Det brugernavn er reserveret.
+T0120|You're not signed in|Du er ikke logget ind.
+T0121|Face & skin|Ansigt & hud
+T0122|Hats|Hatte
+T0123|Head items|Hovedting
+T0124|Face items|Ansigtsting
+T0125|Shirts|Trøjer
+T0126|Jackets|Jakker
+T0127|Prints|Prints
+T0128|Chest items|Brystting
+T0129|Trousers|Bukser
+T0130|Belts|Bælter
+T0131|Stand-in track|Midlertidigt nummer
+T0132|Couldn't create the profile|Kunne ikke oprette profilen.
+T0133|couldn't decode an image|kunne ikke læse et billede
+T0134|design {id} has no sheet|design {id} har ikke noget ark
+T0135|{dir} design {id} has no sheet|{dir} design {id} har ikke noget ark
+T0136|That item doesn't exist|Den ting findes ikke.
+T0137|That item has no sprite frames|Den ting har ingen sprite frames at starte fra. Prøv en anden.
+T0138|This design's sprite sheet is missing|Dette designs sprite-ark mangler.
+T0139|This design has no frames|Dette design har ingen frames.
+T0140|The sprite sheet is too big|Sprite-arket er for stort til at gemme ({…} KB, grænsen er cirka {…} KB). Brug færre eller mindre frames.
+T0141|Stripes|Striber
+T0142|Checks|Tern
+T0143|Dots|Prikker
+T0144|Diagonal|Diagonal
+T0145|Zigzag|Zigzag
+T0151|Bit of a downer|Lidt nedtur.
+T0152|Jump|Hop
+T0153|Hop on the spot|Hop på stedet.
+T0154|Angry|Sur
+T0155|Steam comes out|Der kommer damp ud af ørerne.
+T0156|Surprised|Overrasket
+T0157|Didn't see that coming|Så ikke den komme.
+T0158|Sleep|Sov
+T0159|Eyes shut|Øjne lukket, zzz.
+T0160|Laugh|Grin
+T0161|Crack up|Brist ud i grin.
+T0162|Love|Kærlighed
+T0163|Hearts everywhere|Hjerter overalt.
+T0164|Cheer|Jubel
+T0165|Hands up, confetti|Hænderne i vejret, konfetti.
+T0166|Spin|Snurr
+T0167|Round and round|Rundt og rundt.
+T0168|Dance|Dans
+T0169|Bust a move|Vis dine moves.
+T0170|{name}: no JSON|{name}: ingen JSON eller billede indeni.
+T0171|{name}: this doesn't look like a furniture|{name}: det her ligner ikke en møbelfil.
+T0172|{name}: no 64px furniture|{name}: ingen 64px møbel-sprites fundet (er det en tøjfil? Brug Tøj-fanen).
+T0173|The artwork is too big|Kunstværket er for stort til at gemme ({…} KB, grænsen er cirka {…} KB).
+T0174|The furniture description|Møbelbeskrivelsen er for stor til at gemme.
+T0175|That piece doesn't exist|Det møbel findes ikke.
+T0176|That doesn't fit in the room|Det kan ikke være i værelset.
+T0177|That one hangs on a wall|Den hænger på en væg: sæt den op mod bagvæggen eller venstre væg.
+T0178|Something is already there|Der er allerede noget der.
+T0179|You aren't carrying that|Du bærer ikke på den.
+T0180|There's none of that in storage|Der er ingen af dem i kassen.
+T0181|Not signed in|Ikke logget ind.
+T0182|That one stays in your room|Den bliver i dit værelse.
+T0183|Harvest the plant first|Høst planten først.
+T0184|Wait for it to burn out|Vent til den er brændt ud først.
+T0185|That's in the player right now|Den er i afspilleren lige nu.
+T0186|Weed seed|Weed frø
+T0188|Weed|Weed
+T0196|Research chemical|Research chemical
+T0198|Joint paper|Joint papir
+T0200|Blunt wrap|Blunt wrap
+T0201|A tobacco leaf wrap|Du kan rulle en blunt med weed i.
+T0202|Joint|Joint
+T0203|A joint. Click it|En joint. Klik for at tænde den (du skal bruge en lighter). Når den er færdig giver stab tredobbelt blod i 2 minutter.
+T0204|Blunt|Blunt
+T0205|A fat blunt|En fed blunt. Klik for at tænde den (du skal bruge en lighter). Når den er færdig giver stab 4 gange så meget blod i 3 minutter.
+T0206|Mid joint|Mid joint
+T0207|A joint rolled from mid weed|En joint af mid weed. Klik for at tænde den (du skal bruge en lighter). Dobbelt blod på stab i 2 minutter.
+T0208|THC-A joint|THC-A joint
+T0209|A joint of thc-a|En joint med thc-a. Klik for at tænde den (du skal bruge en lighter). I 2 minutter går du dobbelt så hurtigt og stab giver dobbelt blod.
+T0210|Research joint|Research joint
+T0211|A joint of research chemical|En joint med research chemical. Tænd den: efter 5 sekunder får du 90 sekunder med dobbelt fart og dobbelt blod, og du blinker mens røg vælter ud af dig.
+T0212|Mid blunt|Mid blunt
+T0213|A blunt rolled from mid weed|En blunt af mid weed. Klik for at tænde den (du skal bruge en lighter). Dobbelt blod på stab i 2 minutter.
+T0214|THC-A blunt|THC-A blunt
+T0215|A blunt of thc-a|En blunt med thc-a. Klik for at tænde den (du skal bruge en lighter). I 2 minutter går du dobbelt så hurtigt og stab giver dobbelt blod.
+T0216|Research blunt|Research blunt
+T0217|A blunt of research chemical|En blunt med research chemical. Tænd den: efter 5 sekunder får du 90 sekunder med dobbelt fart og dobbelt blod, og du blinker mens røg vælter ud af dig.
+T0218|Kodimagnyl|Kodimagnyl
+T0219|People mix this with water|Folk blander den med vand af en eller anden grund.
+T0220|Codeine|Codeine
+T0221|The lean|Lean. Drik den: i en time giver skraldecontainere dobbelt så meget og kan søges dobbelt så ofte. Du holder koppen i 2 minutter.
+T0222|Super pill|Super pille
+T0223|A pill pressed together|En pille presset sammen med kodimagnyl. Sluk den og du løber 4 gange så hurtigt i et minut.
+T0224|Watering can|Vandkande
+T0225|An empty watering can|En tom vandkande. Vælg den, klik så på håndvasken i dit værelse for at fylde den.
+T0226|Watering can (full)|Vandkande (fuld)
+T0227|A full watering can|En fuld vandkande. Vælg den, klik så på et plantet growth kit for at vande planten.
+T0228|Burger|Burger
+T0229|A burger out of the bin|En burger fra skraldespanden. Den er stadig varm. Klik for at spise den.
+T0230|Pill|Pille
+T0231|Syringe|Sprøjte
+T0232|A clean syringe|En ren sprøjte. Klik for at tappe blod fra dig selv, eller klik på en body bag med den: 1 dråbe fra hver, en gang hvert 20. minut.
+T0233|CD|CD
+T0234|A scratched CD|En ridset CD med håndskrevet label. Brug den på CD afspilleren i kælderen så alle kan høre den. Den kommer tilbage når den er færdig.
+T0235|Lockpick|Dirk
+T0236|A bent piece of wire|Et bøjet stykke ståltråd. Virker kun én gang: lader dig ind i værelset hos en der ikke er din ven. Brug den fra dørmenuen.
+T0237|Cigarette|Cigaret
+T0238|A cigarette. Click it|En cigaret. Klik for at tænde den: du holder den og ryger i et minut, så er det kun en skod.
+T0239|Cigarette butt|Cigaretskod
+T0240|What's left|Det der er tilbage. Højreklik for at droppe den.
+T0241|Lighter|Lighter
+T0242|A cheap lighter|En billig lighter. Du skal bruge en for at tænde cigaret, joint eller blunt. Den holder. Sælges i vending machinen i shoppen.
+T0243|Dead cat|Død kat
+T0244|Somebody threw it out|Nogen smed den ud. Blodet er ikke helt koldt endnu. Vælg din kniv, klik så på katten.
+T0245|Knife|Kniv
+T0246|A small, sharp knife|En lille, skarp kniv. Brug den på en anden spiller: du kan stikke hver person en gang om dagen, og hvert stik giver en dråbe blod.
+T0247|{label}: furniture|{label}: møbel. Klik på det, så et ledigt sted i dit eget værelse for at stille det ned. Din værktøjskasse kan også gemme det.
+T0248|Staff can see chat|Staff kan se chat, private beskeder og aktivitet på 6ixPlanet.
+T0249|Almost there|Næsten der
+T0250|6ixPlanet needs a Firebase|6ixPlanet needs a Firebase project. Add your config to
+T0251|Firebase console|Firebase console → create a project → add a Web app, copy its config
+T0252|Build → Realtime Database|Build → Realtime Database → create a database
+T0253|Or run the local emulators|Or run the local emulators:
+T0254|npm run dev:emu|npm run dev:emu
+T0255|required|påkrævet
+T0256|Log in|Log ind
+T0257|No account? Register|Ingen konto? Opret en
+T0258|Create account|Opret konto
+T0259|Have an account? Log in|Har du en konto? Log ind
+T0260|6+ characters|6+ tegn
+T0261|Password|Adgangskode
+T0262|Sign in to hang out|Log ind for at hænge ud.
+T0263|(running against local Firebase|(running against local Firebase emulators)
+T0264|Already open|Allerede åben
+T0265|This account is open in another window or device|Denne konto er åben i et andet vindue eller en anden enhed. 6ixPlanet kan kun spilles ét sted ad gangen. Luk det der, og prøv igen.
+T0266|This account was opened in another window|Denne konto blev åbnet i et andet vindue, så dette er stoppet. 6ixPlanet kan kun spilles ét sted ad gangen.
+T0267|Try again|Prøv igen
+T0268|Loading your character|Henter din karakter…
+T0269|Couldn't load|Kunne ikke indlæse
+T0270|Retry|Prøv igen
+T0271|6ixty's room|6ixtys værelse
+T0272|Hotel jingle|Hotel jingle (midlertidig)
+T0273|This looks like furniture|Det her ligner et møbel: brug Møbel-fanen.
+T0274|Imported|Importeret
+T0275|6ixty|6ixty
+T0276|looking for more space|leder du efter mere plads? eller en frisk omgang maling?
+T0277|LegendGamer2015|LegendGamer2015
+T0278|you earned your first blood|du tjente dit første blod. kom tilbage om cirka {when}, så har jeg et andet job.
+T0279|now go over and use the knife|gå nu over og brug kniven på ham der.
+T0280|the knife. that guy. go|kniven. ham der. afsted.
+T0281|good job|godt klaret.
+T0282|eat this pill|spis den her pille.
+T0283|eat the pill|spis pillen.
+T0284|psst|psst
+T0285|take this|tag den her
+T0286|that is what a lighter costs|det er hvad en lighter koster. gå og køb en i shoppen, den gule dør.
+T0287|bring it back to me|bring den tilbage til mig når du har den.
+T0288|no lighter yet|ingen lighter endnu. shoppen, den gule dør.
+T0289|good. that is your pay|godt. det er din løn.
+T0290|what do you need|hvad skal du bruge?
+T0291|your pockets are full|dine lommer er fulde. ryd noget plads.
+T0292|Growing kit|Growth kit
+T0293|Sink|Håndvask
+T0294|Toolbox|Værktøjskasse
+T0295|Counter|Disk
+T0296|Arcade machine|Arkademaskine
+T0297|CD player|CD afspiller
+T0298|Flappy Bird arcade|Flappy Bird arkade
+T0299|Dumpster|Skraldecontainer
+T0300|Sand|Sand
+T0301|Oak|Eg
+T0302|Slate|Skifer
+T0303|Checker|Skakternet
+T0304|Moss|Mos
+T0305|Rose|Rosa
+T0306|Ocean|Hav
+T0307|Cream|Creme
+T0308|Fuzzy|Fuzzy
+T0309|Tiles|Fliser
+T0310|Planks|Planker
+T0311|Slabs|Sten
+T0312|Red brick|Rød mursten
+T0313|White brick|Hvid mursten
+T0314|Teal tiles|Turkise fliser
+T0315|Chocolate|Chokolade
+T0316|Wood|Træ
+T0317|Pink plaid|Pink tern
+T0318|Brown plaid|Brun tern
+T0319|Green plaid|Grøn tern
+T0320|Bright stripes|Skarpe striber
+T0321|Blue stripes|Blå striber
+T0322|Orange stripes|Orange striber
+T0323|Pink zigzag|Pink zigzag
+T0324|Yellow zigzag|Gul zigzag
+T0325|Blue zigzag|Blå zigzag
+T0326|Purple rings|Lilla ringe
+T0327|Green rings|Grønne ringe
+T0328|Yellow rings|Gule ringe
+T0329|Blue rings|Blå ringe
+T0330|Brown rings|Brune ringe
+T0331|Hearts|Hjerter
+T0332|Clouds|Skyer
+T0333|Groovy green|Groovy grøn
+T0334|Groovy blue|Groovy blå
+T0335|{name}'s room|{name}s værelse
+T0336|weed seed|weed frø
+T0337|dead cat|død kat
+T0338|Blood streak|Blodstribe
+T0339|Toast friend|Toast ven
+T0340|Body bag|Body bag
+T0341|Grunge bench|Grunge bænk
+T0342|Old sofa|Gammel sofa
+T0343|Card table|Kortbord
+T0344|Restraint bed|Fikseringsseng
+T0345|Fountain|Springvand
+T0346|Nokia phone|Nokia telefon
+T0347|Telephone|Telefon
+T0348|Phone cam|Telefonkamera
+T0349|Creepy doll|Uhyggelig dukke
+T0350|Saint Ta|Sankt Ta
+T0351|Shark|Haj
+T0352|Horse|Hest
+T0353|Prize money|Præmiepenge
+T0354|Label|Label
+T0355|Ritual circle|Ritualcirkel
+T0356|Blood bath|Blodbad
+T0357|Norja couch|Norja sofa
+T0358|Collector sofa|Samler sofa
+T0359|Red chaise|Rød chaiselong
+T0360|Jetset tub|Jetset badekar
+T0361|Gargoyle fountain|Gargoyle springvand
+T0362|Float bed|Flydeseng
+T0363|Big bunny bed|Stor kanin seng
+T0364|Hot dog bed|Hotdog seng
+T0365|My Melody bed|My Melody seng
+T0366|Canopy bed|Himmelseng
+T0367|Cigarettes (15)|Cigaretter (15)
+T0368|You crush the kodimagnyl|Du knuser kodimagnylen ned i vandet. Det bliver lilla: codeine. Kanden er tom igen.
+T0369|You roll a joint|Du ruller en joint.
+T0370|You roll a blunt|Du ruller en blunt.
+T0371|You crumble the weed|Du smuldrer weeden ned i tobakken: 2 weed mix.
+T0372|Good weed and bad weed|God weed og dårlig weed blandet: 2 mid weed.
+T0373|The pill dissolves|Pillen opløses i weeden: 1 thc-a.
+T0374|You grind the pill|Du maler pillen ned i tobakken: 1 research chemical.
+T0375|Two pills, pressed|To piller, presset til én: 1 super pille.
+T0376|Lodge bed|Hytte seng
+T0377|Bunny bed|Kanin seng
+T0378|Gold bed|Guld seng
+T0379|Gothic bed|Gotisk seng
+T0380|Coat rack|Knagerække
+T0381|Mess wardrobe|Rodet skab
+T0382|Wardrobe|Garderobe
+T0383|Ducket wardrobe|Ducket garderobe
+T0384|Tall wardrobe|Højt skab
+T0385|Type a username first|Skriv et brugernavn først.
+T0386|Nobody is called|Ingen hedder "{name}".
+T0387|That's you|Det er dig!
+T0388|You're already friends|I er allerede venner.
+T0389|You and {name} are now friends|Du og {name} er venner nu.
+T0390|Friend request sent|Venneanmodning sendt til {name}.
+T0391|couldn't decode an atlas|kunne ikke læse et atlas
+T0392|Item icons as SVG|Ting-ikoner som SVG (kan redigeres, 16x16 pixelgrid) og som 256px PNG-forhåndsvisninger.

@@ -1,0 +1,383 @@
+T0730|Who's in this room|Hvem er i dette værelse
+T0731|Main Lobby|Hovedlobbyen
+T0732|Loading room|Henter værelse…
+T0733|Say something, or try /dance|Sig noget, eller prøv /dance. Tryk på gulvet for at gå.
+T0734|Send|Send
+T0735|Pick up furniture: click it|Saml møbel op: klik på det
+T0736|(R turns it)|(R drejer det)
+T0737|Use {name} →|Brug {name} →
+T0738|Your bed: get up|Din seng: stå op
+T0739|Your bed: lie down|Din seng: læg dig ned
+T0740|Landlord: bigger rooms|Udlejer: større værelser, værelsefarver
+T0741|{…}{…}{…} · {…} (click to pick up)|{…}{…}{…} · {…} (klik for at samle op)
+T0742|On the floor|På gulvet
+T0743|{label} · {priceOf} drops|{label} · {priceOf} dråber (klik for at købe)
+T0744|Wardrobe: the clothing shop|Garderobe: tøjshoppen
+T0745|Sink: fill your watering can|Håndvask: fyld din vandkande
+T0746|Mixer: mix two things|Mixer: mix to ting
+T0747|Body bag: use a syringe|Body bag: brug en sprøjte på den
+T0748|Growing kit · {…}%|Growth kit · {…}% · vand {…}%
+T0749|Growing kit (empty)|Growth kit (tom): plant et frø
+T0750|Door: to the basement|Dør: til kælderen
+T0751|Door: back to your room|Dør: tilbage til dit værelse
+T0752|Door: back to the basement|Dør: tilbage til kælderen
+T0753|Door: rooms|Dør: værelser
+T0754|That one is part of the lobby|Den er en del af lobbyen selv.
+T0755|You can only put furniture down|Du kan kun stille møbler ned i dit eget værelse.
+T0756|You can't stab yourself|Du kan ikke stikke dig selv.
+T0757|Nothing interesting happens|Der sker ikke noget spændende.
+T0758|Talk|Tal
+T0759|Stab|Stik
+T0760|Invite to trade|Inviter til byt
+T0761|You ask {name} to trade|Du spørger {name} om et byt. De skal acceptere.
+T0762|Couldn't send that trade invite|Kunne ikke sende den byt invitation.
+T0763|Add friend|Tilføj ven
+T0764|Play|Spil
+T0765|Change look|Skift look
+T0766|Get up|Stå op
+T0767|Lie down|Læg dig ned
+T0768|Search|Søg
+T0769|Pick up|Saml op
+T0770|Buy|Køb
+T0771|Open the shop|Åbn shoppen
+T0772|Sit|Sæt dig
+T0773|Tend|Pas
+T0774|Mix|Mix
+T0775|Furnish|Indret
+T0776|Change clothes|Skift tøj
+T0777|Open|Åbn
+T0778|Walk here|Gå herhen
+T0779|Couldn't pick that up|Kunne ikke samle den op
+T0780|That's the limit|Det er grænsen: {MAX_FURNI} møbler pr. værelse.
+T0781|Keep the doorway clear|Hold døråbningen fri.
+T0782|There's no room for that there|Der er ikke plads til den der.
+T0783|Someone is standing there|Nogen står der.
+T0784|Couldn't place that|Kunne ikke placere den.
+T0785|Couldn't put that down|Kunne ikke stille den ned.
+T0786|Couldn't turn that|Kunne ikke dreje den.
+T0787|Couldn't move that|Kunne ikke flytte den.
+T0788|You haven't unlocked {name}|Du har ikke låst {name} op. Du kan købe den i shoppen.
+T0789|Your emote didn't go through|Din emote gik ikke igennem.
+T0790|You need a knife for that|Du skal bruge en kniv til det.
+T0791|He isn't getting up|Han rejser sig ikke.
+T0792|You've already stabbed {name} today. You can|Du har allerede stukket {name} i dag. Du kan stikke dem igen om {…}.
+T0793|You walk towards {name}|Du går hen mod {name}…
+T0794|Somebody is sitting there|Nogen sidder der.
+T0795|You can't get to that seat|Du kan ikke nå det sæde.
+T0796|THIRSTY: water it now|TØRSTIG: vand den nu!
+T0797|water bar {…}%|vandbar {…}%
+T0798|It looks a bit sad|Den ser lidt trist ud.
+T0799|Growing: {…}%|Gror: {…}% (cirka {mins}m tilbage). {…}{…}.
+T0800|Your watering can is already full|Din vandkande er allerede fuld.
+T0801|You have nowhere to put the water|Du har ingen steder at putte vandet.
+T0802|You fill the watering can|Du fylder vandkanden.
+T0803|That's not your plant|Det er ikke din plante.
+T0804|An empty growing kit|Et tomt growth kit. Vælg et weed frø, klik så på kittet for at plante det.
+T0805|You push a seed into the soil|Du skubber et frø ned i jorden. Det tager 20 minutter at gro, og det skal have vand én gang når det bliver tørstigt (efter 5 minutter).
+T0806|You need a full watering can|Du skal bruge en fuld vandkande.
+T0807|It's already been watered|Den er allerede vandet. Nu gror den fint.
+T0808|It isn't thirsty yet|Den er ikke tørstig endnu. Vent til vandbaren er tom.
+T0809|You water the plant|Du vander planten.
+T0810|+3 Ass weed|+3 Ass weed
+T0811|+3 Weed|+3 Weed
+T0812|You pick it. It's ass weed|Du plukker den. Det er ass weed: den fik aldrig sit vand.
+T0813|You pick the buds|Du plukker toppene. Nice.
+T0814|That didn't work|Det virkede ikke.
+T0815|You've already been through this one|Du har allerede været igennem den her. Intet nyt endnu: prøv igen om {…}.
+T0816|Your inventory is full|Dit inventar er fuldt.
+T0817|You dig through the dumpster|Du roder i containeren…
+T0818|Under the bin bags|Under skraldeposerne: en død kat. Stakkel.
+T0819|A burger, hardly bitten|En burger, næsten urørt. Heldige dig.
+T0820|A few little seeds|Et par små frø i mudderet. De gror måske.
+T0821|A lighter, and it still works|En lighter, og den virker stadig!
+T0822|A blister of blue pills|Et strip blå piller: kodimagnyl.
+T0823|You find a {…}|Du finder en {…}.
+T0824|The lean pays off|Leanen betaler sig: du finder også en {…}.
+T0825|Tap the glowing knife, then|Tryk på den lysende kniv, så på den lysende kat.
+T0826|You find nothing but rot|Du finder ikke andet end affald.
+T0827|You open the cat up|Du skærer katten op med din kniv. Den er stadig lidt varm. (+{CAT_BLOOD})
+T0828|The cat slips away|Katten glider væk… (hotellet afviste det)
+T0829|You lose track|Du mister overblikket over hvad du lavede.
+T0830|You can't get to the door|Du kan ikke nå døren.
+T0831|They've left the room|De har forladt værelset.
+T0832|You can't reach them|Du kan ikke nå dem.
+T0833|You can't get to him|Du kan ikke nå ham.
+T0834|It's gone|Den er væk.
+T0835|You can't get to it|Du kan ikke nå den.
+T0836|Mute|Sluk lyden
+T0837|⏏ Take my CD back|Tag min CD tilbage
+T0838|Nothing playing|Intet spiller
+T0839|Use a CD from your inventory|Brug en CD fra dit inventar på afspilleren.
+T0840|Click anywhere to hear|Klik et sted for at høre CD afspilleren (din browser holder lyden tilbage til du bruger siden).
+T0841|💿 CD player|CD afspiller
+T0842|Quieter|Lavere
+T0843|Louder|Højere
+T0844|Volume is just for you|Lyden er kun for dig. Andre spillere har deres egen.
+T0845|Your CD is already in the player|Din CD er allerede i afspilleren.
+T0846|The CD player is busy playing|CD afspilleren spiller {byName}s CD.
+T0847|You walk over to the CD player|Du går hen til CD afspilleren…
+T0848|You slide the CD into the player|Du skubber CD'en ind i afspilleren. Musikken starter. Den hopper tilbage i dit inventar når den er færdig.
+T0849|The CD player spits your CD|CD afspilleren spytter din CD ud igen. Nogen andre var først.
+T0850|You press eject|Du trykker eject.
+T0851|The eject button doesn't respond|Eject-knappen reagerer ikke.
+T0852|Your CD pops out|Din CD hopper ud af afspilleren og tilbage i dit inventar.
+T0853|You've already stabbed {name} today.|Du har allerede stukket {name} i dag.
+T0854|Your stab missed|Dit stik missede. De er måske lige gået.
+T0855|You did what you had to do|Du gjorde det du skulle
+T0856|The drop of blood slips|Blodet glider mellem dine fingre… (hotellet afviste det)
+T0857|Finish furnishing first|Gør indretningen færdig først.
+T0858|That isn't in your pocket|Den er ikke i din lomme mere.
+T0859|There's no room to put it down|Der er ikke plads til at stille den ned her.
+T0860|You drop {…}|Du dropper {…}{…}.
+T0861|the|den
+T0862|It won't go|Den vil ikke. (hotellet afviste det)
+T0863|You pick up {…}|Du samler {…}{…} op.
+T0864|You couldn't pick that up|Du kunne ikke samle den op.
+T0865|A body bag. You'd need a syringe|En body bag. Du skal bruge en sprøjte for at få noget ud af den.
+T0866|You don't have a syringe|Du har ikke en sprøjte.
+T0867|There's nothing left in the bag|Der er ikke mere i posen lige nu. Prøv igen om {waitText}.
+T0868|Your arm needs {waitText}|Din arm skal bruge {waitText} for at komme sig.
+T0869|You find a vein|Du finder en åre der stadig virker og tapper lidt blod. (+{SYRINGE_BLOOD})
+T0870|You slide the needle in|Du stikker nålen ind og tapper noget blod. Sprøjten fyldes pænt. (+{SYRINGE_BLOOD})
+T0871|The needle slips|Nålen glider og blodet går til spilde… (hotellet afviste det)
+T0872|+1 Knife|+1 Kniv
+T0873|+{price} Blood|+{price} Blod
+T0874|+{JOB|+{JOB_REWARD} Blod
+T0875|come back in about {waitText}|kom tilbage om cirka {waitText}. så har jeg et andet job til dig.
+T0876|Tap the glowing knife in your pocket|Tryk på den lysende kniv i din lomme, tryk så på LegendGamer2015.
+T0877|+1 Pill|+1 Pille
+T0878|Tap the glowing pill|Tryk på den lysende pille i din lomme for at sluge den.
+T0879|The drops slip through|Dråberne glider mellem dine fingre… (hotellet afviste det)
+T0880|You're already smoking one|Du ryger allerede en.
+T0881|You need a lighter for that|Du skal bruge en lighter til det. Vending machinen i shoppen sælger dem.
+T0882|You light up|Du tænder.
+T0883|The lighter won't catch|Lighteren vil ikke tage.
+T0884|You swallow the super pill|Du sluger super pillen. Verden går langsomt. Du løber 4 gange så hurtigt i et minut.
+T0885|You drink the lean|Du drikker leanen. Langsomt og tungt. I en time giver containerne dobbelt så meget, dobbelt så ofte.
+T0886|You don't have a pill|Du har ikke en pille.
+T0887|The pill slips out|Pillen glider ud af dine fingre. (hotellet afviste det)
+T0888|You swallow the pill|Du sluger pillen. Giv det et øjeblik…
+T0889|Faaaahhhh shii|Faaaahhhh shii
+T0890|opacity 1.4s ease|opacity 1.4s ease
+T0891|You don't have a burger|Du har ikke en burger.
+T0892|The burger slips|Burgeren glider ud af dine hænder. (hotellet afviste det)
+T0893|You eat the burger|Du spiser burgeren. Fedtet. Godt.
+T0894|{…} seconds|{…} sekunder
+T0895|{…} minutes|{…} minutter
+T0896|That was ass weed|Det var ass weed… det rammer dig hårdt. Giv det et øjeblik…
+T0897|You finish the {name}|Du er færdig med {name}. Du føler dig skarp: stab giver x{…} blod i {fmtDuration}{…}.
+T0898|In room ({length})|I værelset ({length})
+T0899|You can't be in that room.|Du kan ikke være i det værelse.
+T0900|You don't have access|Du har ikke adgang til det værelse.
+T0901|{…} stabs you|{…} stikker dig med en kniv. Det gør slet ikke ondt.
+T0902|Someone|Nogen
+T0903|(test) Done|(test) Færdig.
+T0904|Unknown command|Ukendt kommando.
+T0905|Usage: /give|Brug: /give <ting> [antal] [ass]. Eksempler: /give weed 3, /give joint paper, /give kodimagnyl 2, /give f_sofa
+T0906|Slow down a little|Slap lidt af…
+T0907|{name} 💤|{name} zzz
+T0908|That room doesn't exist|Det værelse findes ikke.
+T0909|{ownerName}'s room is closed|{ownerName}s værelse er lukket. Bank på døren fra kælderen for at spørge.
+T0910|This room was deleted|Dette værelse blev slettet.
+T0911|You can't be in that room any more|Du kan ikke være i det værelse mere.
+T0912|Couldn't open that room|Kunne ikke åbne det værelse.
+T0913|Open to all|Åben for alle
+T0914|Knock to enter|Bank på for at komme ind
+T0915|Friends only|Kun venner
+T0916|No one|Ingen
+T0917|Anyone can walk in|Alle kan gå ind.
+T0918|Friends walk in|Venner går ind. Alle andre banker på og du lukker dem ind fra din venner-menu.
+T0919|Only friends can come in|Kun venner kan komme ind. Fremmede kan ikke banke på.
+T0920|Nobody can come in|Ingen kan komme ind, ikke engang venner.
+T0921|The hotel refused that change|Hotellet afviste den ændring.
+T0922|{label} ({w}×{h})|{label} ({w}×{h})
+T0923|Furniture ({length}|Møbler ({length}/{MAX_FURNI})
+T0924|🧹 Pick up|Saml op
+T0925|No furniture is available yet|Ingen møbler er tilgængelige endnu. Nye møbler dukker op her.
+T0926|Click in the room to use the tool|Klik i værelset for at bruge værktøjet. Esc for at stoppe.
+T0927|Pick a piece, then click a tile|Vælg et møbel, klik så på et felt i værelset.
+T0928|Remove everything you added|Fjern alt du tilføjede til kælderen?
+T0929|Put all furniture from this room|Læg alle møbler fra dette værelse i din værktøjskasse?
+T0930|Clear room|Ryd værelset
+T0931|Basement|Kælder
+T0932|Admin: add furniture uploaded|Admin: tilføj møbler uploadet i Admin > Studio > Møbler. De indbyggede møbler bliver.
+T0933|Room|Værelse
+T0934|My room|Mit værelse
+T0935|Room names need 3+|Værelsesnavne skal være 3+ tegn.
+T0936|Who can come in|Hvem kan komme ind
+T0937|Colours|Farver
+T0938|Floor, walls and carpet colours|Gulv-, væg- og tæppefarver sælges af udlejeren i shoppen: 2 dråber for hver, og du ser en forhåndsvisning først.
+T0939|Arrange your room with the toolbox|Indret dit værelse med værktøjskassen i det: klik på værktøjskassen. Køb møbler i shoppen (den gule dør i kælderen).
+T0940|Invite friends|Inviter venner
+T0941|Add friends in the Friends panel|Tilføj venner i Venner-panelet først.
+T0942|Invited {name}|Inviterede {name}.
+T0943|Couldn't send that invite|Kunne ikke sende den invitation.
+T0944|Invited ✓|Inviteret
+T0945|Invite|Inviter
+T0946|Furniture is sold in the shop room|Møbler sælges i shop-rummet: tag den gule dør i kælderen (til højre for 6ixty). Fire møbler om dagen.
+T0947|{…}h {…}m|{…}t {…}m
+T0948|(max-width: 900px)|(max-width: 900px)
+T0949|Inventory|Inventar
+T0950|Emotes|Emotes
+T0951|{name}: {desc}|{name}: {desc}  (/{id})
+T0952|{name}: locked|{name}: låst. Køb den i shoppen for {price} dråber.
+T0953|Click one to perform it|Klik på en for at udføre den, eller skriv /navn i chatten (som /dance). At gå afbryder den.
+T0954|Get more in the shop|Få flere i shoppen
+T0955|Knife: click it, then a player|Kniv: klik på den, så en spiller (eller en død kat). CD: klik på den, så CD afspilleren. Sprøjte: bare klik på den.
+T0956|Now click a free spot|Klik nu på et ledigt sted i dit værelse for at stille den ned (R drejer den).
+T0957|Now click the CD player|Klik nu på CD afspilleren i kælderen.
+T0958|Now click a player to use it|Klik nu på en spiller for at bruge den på dem.
+T0959|Light up|Tænd
+T0960|Swallow|Slug
+T0961|Eat|Spis
+T0962|Drink|Drik
+T0963|Draw blood|Tap blod
+T0964|Place|Stil
+T0965|Use knife|Brug kniv
+T0966|{name} (in the player)|{name} (i afspilleren)
+T0967|Your {name} is in the player right now|Din {name} er i afspilleren lige nu.
+T0968|Let it burn out first|Lad den brænde ud først.
+T0969|You can't drop that|Det kan du ikke droppe.
+T0970|Your {name} is in the player. It'll|Din {name} er i afspilleren. Den er tilbage når den er færdig.
+T0971|You've got nothing to cut it with|Du har ikke noget at skære den med.
+T0972|Tap the item you want to put|Tryk på tingen du vil lægge på gulvet.
+T0973|Drop|Drop
+T0974|Music|Musik
+T0975|🔒 You don't have a jukebox pass|Du har ikke et jukebox pas.
+T0976|Buy music access|Køb musikadgang i shoppen for at streame numre mens du hænger ud.
+T0977|Open shop|Åbn shoppen
+T0978|Couldn't load that track|Kunne ikke hente det nummer.
+T0979|Now playing|Spiller nu
+T0980|Paused|Pause
+T0981|Pick a track to start streaming|Vælg et nummer for at starte streaming.
+T0982|⏸ Pause|Pause
+T0983|▶ Play|Afspil
+T0984|Volume|Lyd
+T0985|6ixty's shop|6ixtys shop
+T0986|6ixty pays you {gain}|6ixty betaler dig {gain} dråber.
+T0987|He pays {each} drops each|Han betaler {each} dråber stykket.
+T0988|Sell 1 ({each})|Sælg 1 ({each})
+T0989|All ({…})|Alle ({…})
+T0990|Nothing on the shelf right now|Intet på hylden lige nu.
+T0991|{name} added to your inventory|{name} lagt i dit inventar.
+T0992|Sell to 6ixty:|Sælg til 6ixty:
+T0993|Paint|Mal
+T0994|Import|Importér
+T0995|Pattern|Mønster
+T0996|Details|Detaljer
+T0997|Template|Skabelon
+T0998|Something went wrong|Noget gik galt.
+T0999|{price} drops|{price} dråber
+T1000|No designs yet|Ingen designs endnu. Tryk Nyt design for at lave dit første.
+T1001|＋ New design|Nyt design
+T1002|Designs start from an existing garment|Designs starter fra et eksisterende stykke tøj, så de kommer med de rigtige lag og animationer.
+T1003|Name your design|Navngiv dit design
+T1004|My design|Mit design
+T1005|Any gender|Alle køn
+T1006|Boys|Drenge
+T1007|Girls|Piger
+T1008|Unisex|Unisex
+T1009|Find by id|Find med id…
+T1010|Getting the artwork ready|Gør grafikken klar…
+T1011|· tintable|· kan farves
+T1012|{…} / {pages}|{…} / {pages} · {length} stykker tøj
+T1013|‹ Designs|‹ Designs
+T1014|Pick a garment to start from|Vælg et stykke tøj at starte fra
+T1015|This design isn't tinted|Dette design er ikke farvet: det viser de farver du maler.
+T1016|Preview colour|Forhåndsvis farve
+T1017|Drop PNG files or a ZIP here|Slip PNG filer eller en ZIP her, eller
+T1018|{replaced} frame{…} replaced|{replaced} frames erstattet, {added} tilføjet.
+T1019|Import your art|Importér din grafik
+T1020|Need the frame files first|Har du brug for frame-filerne først? Skabelon-fanen downloader dem til dette design.
+T1021|Pattern fill|Mønsterfyld
+T1022|Lays a pattern over the whole garment|Lægger et mønster over hele tøjet (alle positurer) og beholder skyggerne. Brug det flere gange for at lægge mønstre i lag, eller brug Nulstil alle for at starte forfra.
+T1023|Or use your own tile image|Eller brug dit eget flisebillede:
+T1024|Size|Størrelse
+T1025|Strength|Styrke
+T1026|Pattern applied|Mønster tilføjet.
+T1027|Apply to every frame|Brug på hver frame
+T1028|Back to the original art|Tilbage til den originale grafik.
+T1029|Reset all frames|Nulstil alle frames
+T1030|Untitled|Uden titel
+T1031|Name|Navn
+T1032|For|Til
+T1033|Players pick the colour|Spillere vælger farven
+T1034|Reuse standing art|Genbrug stå-grafik når man går
+T1035|Price (drops)|Pris (dråber)
+T1036|For sale in the shop|Til salg i shoppen
+T1037|Price 0 = free for everyone|Pris 0 = gratis for alle (den vises i karaktervælgeren og i den tilfældige avatar). En pris over 0 kræver at "til salg" er sat, ellers kan ingen få den.
+T1038|Download frames|Download frames (.zip)
+T1039|Tip: the file names carry|Tip: filnavnene indeholder positur, lag, retning og frame. Retning 4-6 har ikke filer fordi spillet spejler 2-0 til dem.
+T1040|Published. Players have it now|Udgivet. Spillere har den nu.
+T1041|Draft saved|Kladde gemt.
+T1042|Leave without saving|Gå uden at gemme? Ugemte ændringer går tabt.
+T1043|Walk|Gå
+T1044|Boy|Dreng
+T1045|Girl|Pige
+T1046|Publish|Udgiv
+T1047|Save as draft|Gem som kladde
+T1048|Delete "{name}" for everyone|Slet "{name}" for alle? Spillere der har den på mister den.
+T1049|Delete|Slet
+T1050|Publish makes it visible|Udgiv gør den synlig for spillere (som gratis, eller til salg hvis du sætter en pris i Detaljer). En kladde er kun synlig for dig.
+T1051|Clothing|Tøj
+T1052|Jacket L|Jakke V
+T1053|Jacket R|Jakke H
+T1054|Filter by id or layer|Filtrer på id eller lag (ch, lg, sleeve)…
+T1055|{length} frames · {length} parts|{length} frames · {length} dele
+T1056|Remove|Fjern
+T1057|Tick shown|Vælg viste
+T1058|Untick shown|Fravælg viste
+T1059|Use|Brug
+T1060|Layer|Lag
+T1061|Part id|Del id
+T1062|Frames|Frames
+T1063|Garment #|Tøj #
+T1064|body part, skipped|kropsdel, sprunget over
+T1065|{…} ({type})|{…} ({type})
+T1066|{…} · {…} frames|{…} · {…} frames
+T1067|players pick the colour (art|spillere vælger farven (grafikken er grå/hvid)
+T1068|Price|Pris
+T1069|(0 = free for everyone)|(0 = gratis for alle)
+T1070|Garments to import|Tøj at importere ({length})
+T1071|Tick at least one part|Vælg mindst én del for at bygge et stykke tøj.
+T1072|Importing {…}/{length}|Importerer {…}/{length}: {name}…
+T1073|Imported {done} garment|Importerede {done} stykker tøj.
+T1074|Drops of blood|Bloddråber
+T1075|Menu|Menu
+T1076|🛠 Admin|Admin
+T1077|🔇 Sounds: off|Lyde: fra
+T1078|🔊 Sounds: on|Lyde: til
+T1079|Log out|Log ud
+T1080|drops of blood|bloddråber
+T1081|wants to trade with you|vil bytte med dig.
+T1082|Couldn't start that trade|Kunne ikke starte det byt.
+T1083|Trade|Byt
+T1084|Opening the trade|Åbner byttet…
+T1085|confirmed ✓|bekræftet
+T1086|accepted ✓|accepteret
+T1087|Tap something in your pocket|Tryk på noget i din lomme nedenfor.
+T1088|Nothing yet|Intet endnu.
+T1089|Handing over|Rækker over…
+T1090|Waiting for {name} to confirm|Venter på at {name} bekræfter…
+T1091|Confirm trade|Bekræft byt
+T1092|Change offer|Ret tilbud
+T1093|Take back accept|Tag accept tilbage
+T1094|Cancel trade|Annuller byt
+T1095|{name}'s offer|{name}s tilbud
+T1096|Your offer|Dit tilbud
+T1097|Your pocket|Din lomme
+T1098|Not enough room in your pocket|Ikke plads nok i din lomme til det du ville få. Frigør nogle pladser (eller bed dem tilbyde mindre).
+T1099|The hotel refused that offer|Hotellet afviste det tilbud.
+T1100|Make room in your pocket first|Gør plads i din lomme først.
+T1101|Couldn't confirm|Kunne ikke bekræfte.
+T1102|Couldn't cancel|Kunne ikke annullere.
+T1103|The trade couldn't finish|Byttet kunne ikke gennemføres.
+T1104|Trade complete|Byt gennemført.
+T1105|The trade was called off|Byttet blev aflyst.
+T1106|Vending machine|Vending machine
+T1107|{qty} in a pack|{qty} i en pakke.
+T1108|You need {…} more drops|Du mangler {…} dråber
+T1109|{label} added to your inventory|{label} lagt i dit inventar.
+T1110|This browser can't open compressed|Denne browser kan ikke åbne komprimerede ZIP filer. Brug PNG filer i stedet.
+T1111|That doesn't look like a ZIP|Det ligner ikke en ZIP fil.
+T1112|The ZIP file is damaged|ZIP filen er beskadiget.

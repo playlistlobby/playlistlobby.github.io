@@ -1,14 +1,15 @@
-// Test commands (/giveblud, /weed). /giveblud is open to everyone for now; /weed is for the admin account only (and anyone in the local emulator).
-import { Action, int } from "./util";
+// Test commands (/giveblud, /weed, /give). /giveblud and /give are open to everyone for now (TEMP); /weed is for the admin account only (and anyone in the local emulator).
+import { Action, int, text } from "./util";
 import { fail } from "../ctx";
 import { isEmulator } from "../env";
 import { addToInv } from "../../../src/shared/economy";
+import { STACKABLE } from "../../../src/shared/items";
 
 export const debug: Action = {
   async run(c, a) {
     const trusted = c.isAdmin || isEmulator(c.env);
-    // TEMP: /giveblud is open to every player for now (remove this line's exception when it should be admin only again)
-    if (!trusted && a.cmd !== "blood") fail("Unknown command.");
+    // TEMP: /giveblud and /give are open to every player for now; only /weed stays admin-only (put the check back on all commands when it should be admin only again)
+    if (!trusted && a.cmd === "weed") fail("Unknown command.");
     const w = await c.user();
     if (a.cmd === "blood") {
       const n = int(a.n, 1, 1000, "amount");
@@ -24,6 +25,25 @@ export const debug: Action = {
       }
       w.s.inventory = inv;
       return { note: "(test) You got one weed, one ass weed, a blunt wrap and joint paper." };
+    }
+    if (a.cmd === "give") {
+      // any item the game knows: ordinary items, shop furniture (f_...) and Studio pieces (x_...)
+      const item = text(a.item, /^[a-z0-9_]{1,40}$/, "item");
+      if (!(await c.validItem())(item)) fail("There's no item called that.");
+      const qty = int(a.qty ?? 1, 1, 99, "amount");
+      let inv = w.s.inventory;
+      let given = 0;
+      const ass = a.ass === true && item !== "cigarette";
+      const parts = STACKABLE.has(item) ? [qty] : Array.from({ length: qty }, () => 1);
+      for (const q of parts) {
+        const next = addToInv(inv, { item, qty: q, ...(ass ? { ass: true } : {}) });
+        if (!next) break;
+        inv = next;
+        given += q;
+      }
+      if (given === 0) fail("Your inventory is full.");
+      w.s.inventory = inv;
+      return { note: `(test) You got ${given} x ${item}${ass ? " (ass)" : ""}${given < qty ? " (your pockets are full)" : ""}.` };
     }
     return fail("Unknown command.");
   },

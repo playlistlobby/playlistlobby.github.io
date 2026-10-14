@@ -71,7 +71,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
     const recipe = a && b ? mixRecipe(a, b) : null;
     const result = recipe ? itemDef(recipe.give.item) : null;
     body.replaceChildren(
-      h("div", { class: "hint" }, cells.length ? "Tap two things to mix. Every batch takes 10 minutes." : "You have nothing that mixes (weed, ass weed, cigarettes, pills)."),
+      h("div", { class: "hint" }, cells.length ? "Tap two things to mix. Every batch takes 10 minutes." : "You have nothing that mixes (weed, ass weed, cigarettes, pills, kodimagnyl, a full watering can)."),
       h("div", { class: "mixer-grid" }, ...cells.map(({ s, slot }) => {
         const d = itemDef(s!.item)!;
         const on = slot === first || slot === second;

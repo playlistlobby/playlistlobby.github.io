@@ -23,7 +23,7 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
 
   function render(): void {
     if (closed) return;
-    // his shelf: whatever the admin has switched on (Admin > Shop > 6ixty stock); lockpick and cigarette are on by default
+    // his shelf: whatever the admin has switched on (Admin > Shop > 6ixty stock); the cigarette is on by default
     const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => itemDef(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "deadcat" && itemEntry(id).on);
     // selling: he buys weed, seeds and what the mixer makes (prices: sellPrice)
     const sells = me.inventory.map((s, slot) => ({ s, slot })).filter((e) => e.s && sellPrice(e.s.item, e.s.ass) !== null && !e.s.lit);
@@ -51,14 +51,15 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
       ...(stock.length === 0 ? [h("div", { class: "hint" }, "Nothing on the shelf right now.")] : stock.map((id) => {
         const it = itemDef(id)!;
         const price = itemEntry(id).price;
-        const affordable = me.blood >= price;
+        const bought = id === "cd" && !!me.owned.item_cd; // one CD per player
+        const affordable = me.blood >= price && !bought;
         return h("div", { class: "sixty-row" },
           h("img", { src: it.icon, alt: it.name, class: "sixty-ico" }),
           h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, it.name), h("div", { class: "hint" }, it.examine)),
           h("button", {
             class: "btn small primary",
             disabled: !affordable,
-            title: affordable ? "" : `You need ${price - me.blood} more drops`,
+            title: bought ? "You already bought your CD." : affordable ? "" : `You need ${price - me.blood} more drops`,
             onclick: async () => {
               try {
                 await buyInventoryItem(me, id, price);
@@ -72,7 +73,7 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
                 toast((err as Error).message, "err");
               }
             },
-          }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${price}`));
+          }, ...(bought ? ["Owned"] : [h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${price}`])));
       })),
       ...(sellRows.length ? [h("div", { class: "hint pad" }, "Sell to 6ixty:"), ...sellRows] : []));
   }

@@ -1,0 +1,339 @@
+T0393|Players|Spillere
+T0394|Messages|Beskeder
+T0395|Activity|Aktivitet
+T0396|Shop|Shop
+T0397|Studio|Studio
+T0398|Settings|Indstillinger
+T0399|Admin. Players are told|Admin. Spillere får at vide på login-skærmen at staff kan se chat, private beskeder og aktivitet. Behandl det du ser her som privat.
+T0400|Loading players|Henter spillere…
+T0401|Search by username|Søg på brugernavn…
+T0402|Refreshed|Opdateret
+T0403|Refresh|Opdater
+T0404|Username|Brugernavn
+T0405|Drops|Dråber
+T0406|Items owned|Ting ejet
+T0407|Stabs today|Stab i dag
+T0408|Joined|Tilmeldt
+T0409|{…}{…} (slot|{…}{…} (plads {…})
+T0410|(in the CD player)|(i CD afspilleren)
+T0411|{…} ({fmtDate})|{…} ({fmtDate})
+T0412|Gender {gender}|Køn {gender} · tilmeldt {fmtDate} · {blood} dråber
+T0413|Inventory:|Inventar:
+T0414|Owned:|Ejer:
+T0415|Wardrobe:|Garderobe:
+T0416|{length} saved outfits|{length} gemte outfits
+T0417|Syringe:|Sprøjte:
+T0418|Has stabbed:|Har stukket:
+T0419|Public chat|Offentlig chat
+T0420|Private messages|Private beskeder
+T0421|Filter by name or text|Filtrer på navn eller tekst…
+T0422|Time|Tid
+T0423|User|Bruger
+T0424|Basement chat|Kælder-chat, sidste 300 beskeder, live
+T0425|Couldn't read the chat|Kunne ikke læse chatten
+T0426|Filter by name…|Filtrer på navn…
+T0427|No private messages yet|Ingen private beskeder endnu.
+T0428|Pick a conversation|Vælg en samtale.
+T0429|Every private conversation|Alle private samtaler mellem spillere, live
+T0430|Couldn't read private messages|Kunne ikke læse private beskeder
+T0431|All actions|Alle handlinger
+T0432|Filter by name or detail|Filtrer på navn eller detalje…
+T0433|Action|Handling
+T0434|Detail|Detalje
+T0435|Last 500 actions|Sidste 500 handlinger, nyeste først, live
+T0436|Couldn't read the action log|Kunne ikke læse handlingsloggen
+T0437|current password|nuværende adgangskode
+T0438|new password (6+|ny adgangskode (6+ tegn)
+T0439|new password again|ny adgangskode igen
+T0440|Admin password|Admin adgangskode
+T0441|Anyone who knows this password|Alle der kender denne adgangskode kan læse alle private beskeder. Hvis det stadig er den du startede med, så skift den før du inviterer folk.
+T0442|The new passwords don't match|De nye adgangskoder er ikke ens.
+T0443|Password changed|Adgangskode ændret.
+T0444|Current password is wrong|Nuværende adgangskode er forkert.
+T0445|Change password|Skift adgangskode
+T0446|· flat|· flad
+T0447|Furniture uploaded here|Møbler uploadet her kan stilles i kælderen (Værelse-fanen mens du står i den). Slå "spillere kan placere den" til så alle kan bruge den i deres eget værelse.
+T0448|Couldn't load this piece's art|Kunne ikke hente dette møbels grafik.
+T0449|Furniture|Møbler
+T0450|New art loaded|Ny grafik indlæst. Gem for at beholde den.
+T0451|‹ Furniture|‹ Møbler
+T0452|{length} more file|{length} flere filer venter
+T0453|A piece called {id}|Et møbel der hedder {id} findes allerede. Gem erstatter dets grafik.
+T0454|The grid shows the tiles|Gitteret viser de felter det fylder. Hvis grafikken svæver eller synker, så ryk den.
+T0455|Tiles wide|Felter bred
+T0456|Tiles deep|Felter dyb
+T0457|Flat on the floor|Fladt på gulvet (kan gås på)
+T0458|Players can place it|Spillere kan placere den
+T0459|Nudge x / y|Ryk x / y
+T0460|Replace the art|Erstat grafikken:
+T0461|Save|Gem
+T0462|Delete "{name}"|Slet "{name}"? Det forsvinder fra alle værelser.
+T0463|This takes EVERYTHING off sale|Det her tager ALT ud af salg (alt tøj, emotes, ting, jukebox-adgang og dine egne designs). Priser bliver gemt, så du kan slå ting til igen ét ad gangen.
+
+Skriv  clear  for at bekræfte:
+T0464|Nothing changed|Intet ændret. Du skal skrive "clear".
+T0465|cleared the shop|ryddede shoppen (alt er ude af salg)
+T0466|The shop is empty|Shoppen er tom.
+T0467|Clear the shop|Ryd shoppen
+T0468|Forget every shop change|Glem alle shop-ændringer du har lavet (priser, hvad der er til salg) og gå tilbage til standard?
+T0469|Shop reset to defaults|Shop nulstillet til standard.
+T0470|Reset to defaults|Nulstil til standard
+T0471|Clear the shop takes|Ryd shoppen tager alt ud af salg på én gang.
+T0472|Couldn't save (are you still|Kunne ikke gemme (er du stadig logget ind som admin?)
+T0473|All items|Alle ting
+T0474|In the shop|I shoppen
+T0475|Not in the shop|Ikke i shoppen
+T0476|Free (everyone owns)|Gratis (alle ejer den)
+T0477|Club only|Kun klub
+T0478|None of the ticked items|Ingen af de valgte ting kan ændres (klub, indbyggede gratis og Studio ting kan ikke).
+T0479|{…}: {length} clothing items|{…}: {length} tøjting
+T0480|made starter|gjort til starter (gratis for alle)
+T0481|Starter: free for everyone|Starter: gratis for alle, aldrig til salg
+T0482|{…} {type}-{id} a starter|{…} {type}-{id} en starter ting
+T0483|{…} {type}-{id} {…} the shop|{…} {type}-{id} {…} shoppen
+T0484|set {type}-{id} to {n}|satte {type}-{id} til {n} dråber
+T0485|drops|dråber
+T0486|club item|klub ting: kan ikke sælges
+T0487|{length} items · {size}|{length} ting · {size} valgt
+T0488|Ticked items|Valgte ting:
+T0489|Select this page|Vælg denne side
+T0490|Put in shop at|Sæt i shoppen til
+T0491|Remove from shop|Fjern fra shoppen
+T0492|Free for everyone, never sold|Gratis for alle, aldrig til salg
+T0493|Make starter|Gør til starter
+T0494|Reset to default|Nulstil til standard
+T0495|{label} ({priceOf})|{label} ({priceOf})
+T0496|{priceOf} drops|{priceOf} dråber
+T0497|Shop room: today's four|Shop-rummet: dagens fire møbler
+T0498|You changed today's pick|Du ændrede dagens valg: det bliver til midnat.
+T0499|Today's pick is random|Dagens valg er tilfældigt (det samme for alle).
+T0500|rerolled the shop's furniture|rerollede shoppens møbler
+T0501|Reroll|Reroll
+T0502|Back to the random pick|Tilbage til det tilfældige valg
+T0503|Prices (10-25 drops|Priser (10-25 dråber som standard)
+T0504|Piece|Møbel
+T0505|set {label} to {n}|satte {label} til {n} dråber
+T0506|Default|Standard
+T0507|{…} the {name} {…} 6ixty's shelf|{…} {name} {…} 6ixtys hylde
+T0508|6ixty sells it|6ixty sælger den
+T0509|set the {name} to {n}|satte {name} til {n} dråber
+T0510|New players start with one|Nye spillere starter med en i deres inventar
+T0511|{…} the {name} a starter|{…} {name} en starter ting
+T0512|6ixty sells what is ticked|6ixty sælger det der er sat flueben ved her (shop-vinduet åbner når en spiller taler med ham). Sæt flueben ved "starter" og hver NY spiller starter med en i deres inventar (spillere der allerede har en konto får ikke en). Kniven kommer fra 6ixty selv, første gang du møder ham.
+T0513|Item|Ting
+T0514|What it does|Hvad den gør
+T0515|On the shelf|På hylden
+T0516|Starter|Starter
+T0517|Download item icons|Download ting-ikoner (.zip)
+T0518|Choose Option|Vælg
+T0519|Cancel|Annuller
+T0520|Door|Dør
+T0521|🚪 Where to|Hvorhen?
+T0522|Click. The lock gives way|Klik. Låsen giver efter.
+T0523|{ownerName}'s room (picked|{ownerName}s værelse (dirket op)
+T0524|The lock won't give|Låsen giver ikke efter.
+T0525|Closed|Lukket
+T0526|Use a lockpick (once)|Brug en dirk (én gang)
+T0527|🔓 Pick|Dirk op
+T0528|{ownerName}'s room|{ownerName}s værelse
+T0529|Visit|Besøg
+T0530|Knock|Bank på
+T0531|· idle|· inaktiv
+T0532|· {count} inside|· {count} inde
+T0533|🕳 Basement|Kælderen
+T0534|🏠 My room|Mit værelse
+T0535|Visit a player's room|Besøg en spillers værelse
+T0536|Find|Find
+T0537|Nobody is called|Ingen hedder "{search}".
+T0538|{name} hasn't set up a room|{name} har ikke lavet et værelse endnu.
+T0539|No rooms to visit|Ingen værelser at besøge lige nu. Søg efter en ven på brugernavn ovenfor.
+T0540|Username…|Brugernavn…
+T0541|Knocking on {ownerName}|Banker på {ownerName}s dør…
+T0542|They'll see your request|De ser din anmodning i deres venner-menu. Vent lidt.
+T0543|{ownerName} didn't let you in|{ownerName} lukkede dig ikke ind.
+T0544|No answer from|Intet svar fra {ownerName}.
+T0545|{ownerName} let you in|{ownerName} lukkede dig ind.
+T0546|{ownerName}'s room (let in)|{ownerName}s værelse (lukket ind)
+T0547|Couldn't knock|Kunne ikke banke på. De har måske lige lukket deres dør.
+T0548|How many|Hvor mange
+T0549|Yes|Ja
+T0550|Drop item|Drop ting
+T0551|You have {qty}|Du har {qty}.
+T0552|It lands on the floor|Den lander på gulvet.
+T0553|How many?|Hvor mange?
+T0554|Type a number|Skriv et tal fra 1 til {qty}.
+T0555|None|Ingen
+T0556|You own everything|Du ejer alt i denne kategori
+T0557|Nothing here yet|Intet her endnu: besøg shoppen!
+T0558|6ixty's look saved|6ixtys look gemt!
+T0559|Look saved|Look gemt!
+T0560|Save 6ixty's look|Gem 6ixtys look
+T0561|Save look|Gem look
+T0562|You haven't saved the new look|Du har ikke gemt det nye look. Gå tilbage uden at gemme?
+T0563|Go back|Gå tilbage
+T0564|Try items on|Prøv ting på, køb så dem du kan lide.
+T0565|Bought {length} item|Købte {length} ting og tog dem på!
+T0566|Buy & wear|Køb & tag på
+T0567|Need 🩸|Mangler {…}
+T0568|· you can sit on it|· du kan sidde på den
+T0569|You need {short} more drop|Du mangler {short} dråber.
+T0570|It goes into your inventory|Den går i dit inventar.
+T0571|{label} is in your inventory|{label} er i dit inventar.
+T0572|The hotel refused that|Hotellet afviste det.
+T0573|Furnishing|Indretning
+T0574|{placedCount}/{MAX|{placedCount}/{MAX_FURNI} sat
+T0575|Tap a spot in the room|Tryk et sted i værelset for at stille den ned.
+T0576|⟳ Turn|Drej
+T0577|Drag it to move it|Træk den for at flytte den.
+T0578|📦 Store|Gem
+T0579|Tap a piece to select it|Tryk på et møbel for at vælge det, og træk det så. Tryk på et møbel nedenfor for at stille det ned.
+T0580|(ass)|(ass)
+T0581|Take|Tag
+T0582|All|Alle
+T0583|Store|Gem
+T0584|Storage ({…})|Kasse ({…})
+T0585|Carrying ({length})|Bærer ({length})
+T0586|Store pieces and things|Gem møbler og ting (cigaretter, weed...) så dine lommer er frie.
+T0587|Nothing in storage|Intet i kassen. Tag et møbel op med Gem, eller læg det du bærer i kassen fra Bærer-fanen.
+T0588|You aren't carrying anything|Du bærer ikke på noget du kan gemme. Møbler kommer fra shoppen (den gule dør i kælderen).
+T0589|<svg width="13"|<svg width="13" height="10" viewBox="0 0 13 10"><path d="M6.5 2.2c1.9 0 3.6.7 4.9 1.9l1-1C10.8 1.6 8.8.8 6.5.8S2.2 1.6.6 3.1l1 1C2.9 2.9 4.6 2.2 6.5 2.2zm0 2.6c1.2 0 2.2.4 3 1.2l1-1C9.4 4 8 3.4 6.5 3.4S3.6 4 2.5 5l1 1c.8-.8 1.8-1.2 3-1.2zm0 2.6c-.5 0-.9.2-1.2.5L6.5 9.2l1.2-1.3c-.3-.3-.7-.5-1.2-.5z" fill="#fff"/></svg>
+T0590|<svg width="23"|<svg width="23" height="11" viewBox="0 0 23 11"><rect x=".6" y=".6" width="19" height="9.8" rx="1.6" fill="none" stroke="#fff" stroke-width="1.2"/><rect x="2" y="2" width="16.2" height="7" rx=".6" fill="#fff"/><rect x="20.4" y="3.4" width="1.8" height="4.2" rx=".6" fill="#fff"/></svg>
+T0591|(pointer: coarse)|(pointer: coarse)
+T0592|Landlord|Udlejer
+T0593|Any colour|Enhver farve
+T0594|Bed & wardrobe · you pay|Seng & garderobe · du betaler kun én gang for et look
+T0595|Bed|Seng
+T0596|Plain bed|Almindelig seng
+T0597|Bag of clothes|Tøjpose
+T0598|Done. That was|Færdig. Det var {paid} dråber.
+T0599|Couldn't do that|Kunne ikke gøre det.
+T0600|Pick a look to preview|Vælg et look for at se det
+T0601|Apply ({price} drops)|Brug ({price} dråber)
+T0602|Apply (free)|Brug (gratis)
+T0603|You don't have enough drops|Du har ikke nok dråber til det.
+T0604|A bigger piece moves over|Et større møbel flytter sig hvis det ikke kan være hvor det gamle stod.
+T0605|Your room is {size}|Dit værelse er {size} × {size}.
+T0606|Room upgrades|Værelse opgraderinger
+T0607|{size} × {size} room|{size} × {size} værelse
+T0608|✓ bought|købt
+T0609|Buy the smaller one first|Køb den mindre først
+T0610|Your room is now|Dit værelse er nu {s} × {s}.
+T0611|Colours · {RECOLOR|Farver · {RECOLOR_PRICE} dråber for hver del du ændrer
+T0612|Floor|Gulv
+T0613|Walls|Vægge
+T0614|Carpet|Tæppe
+T0615|Your room has its new colours|Dit værelse har fået nye farver. Det var {paid} dråber.
+T0616|Pick a colour to preview|Vælg en farve for at se den
+T0617|Tap colours to see them|Tryk på farver for at se dem i billedet. Intet betales før du trykker Brug.
+T0618|Bed & wardrobe|Seng & garderobe
+T0619|👥 Friends|Venner
+T0620|Add friend by username|Tilføj ven med brugernavn
+T0621|Couldn't send that request|Kunne ikke sende den anmodning.
+T0622|👥 Friends ({onlineCount}|Venner ({onlineCount}/{length})
+T0623|{name} is at your door|{name} er ved din dør
+T0624|Let them in|Luk dem ind
+T0625|{name} can come in until|{name} kan komme ind indtil du logger af.
+T0626|Couldn't let them in|Kunne ikke lukke dem ind.
+T0627|Let in|Luk ind
+T0628|Send them away|Send dem væk
+T0629|Accept|Acceptér
+T0630|You and {name} are friends now|Du og {name} er venner nu.
+T0631|Couldn't accept that|Kunne ikke acceptere det.
+T0632|Decline|Afvis
+T0633|{fromName} invited you|{fromName} inviterede dig til "{roomName}"
+T0634|Join|Kom med
+T0635|Friends|Venner
+T0636|Close|Luk
+T0637|Add|Tilføj
+T0638|Room requests|Værelse anmodninger ({length})
+T0639|Room invites|Værelse invitationer
+T0640|Friend requests|Venneanmodninger ({length})
+T0641|No friends yet|Ingen venner endnu. Tilføj nogen med brugernavn, eller tryk på en spiller i et værelse.
+T0642|Idle|Inaktiv
+T0643|In the basement|I kælderen
+T0644|In a room|I et værelse
+T0645|Online|Online
+T0646|Offline|Offline
+T0647|Message|Besked
+T0648|Go to the basement|Gå til kælderen
+T0649|Follow into their room|Følg ind i deres værelse
+T0650|Remove friend|Fjern ven
+T0651|Remove {name} from your friends|Fjern {name} fra dine venner?
+T0652|Message {name}|Skriv til {name}…
+T0653|That message didn't go through|Den besked gik ikke igennem.
+T0654|Say hi!|Sig hej!
+T0655|invited you to|inviterede dig til
+T0656|Later|Senere
+T0657|is knocking on your door|banker på din dør.
+T0658|Send away|Send væk
+T0659|Mixer|Mixer
+T0660|Your batch is ready|Din batch er klar!
+T0661|The mixer is working|Mixeren arbejder…
+T0662|Tap Collect|Tryk Hent.
+T0663|{clock} left|{clock} tilbage. Du kan gå: den kører videre.
+T0664|You collect {…}|Du henter {…} {…}.
+T0665|It isn't done yet|Den er ikke færdig endnu.
+T0666|Collect|Hent
+T0667|Tap two things to mix|Tryk på to ting for at mixe. Hver batch tager 10 minutter.
+T0668|You have nothing that mixes|Du har intet der kan mixes (weed, ass weed, cigaretter, piller).
+T0669|Those don't mix|De kan ikke mixes.
+T0670|The mixer starts up|Mixeren starter.
+T0671|Start mixing (10 min)|Start mixing (10 min)
+T0672|Step {n} of 2|Trin {n} af 2
+T0673|Next: pick your room|Næste: vælg dit værelse
+T0674|Couldn't save your avatar|Kunne ikke gemme din avatar.
+T0675|Done|Færdig
+T0676|Next|Næste
+T0677|Choose your avatar|Vælg din avatar
+T0678|Hi {name}! Shuffle|Hej {name}! Shuffle til du kan lide det du ser. Du kan ændre alt senere fra tøjposen i dit værelse.
+T0679|Turn left|Drej til venstre
+T0680|🎲 Randomize|Tilfældig
+T0681|Turn right|Drej til højre
+T0682|Wake up|Vågn op
+T0683|Couldn't wake up|Kunne ikke vågne op.
+T0684|Body|Krop
+T0685|Left sleeve|Venstre ærme
+T0686|Right sleeve|Højre ærme
+T0687|Legs|Ben
+T0688|Shoes|Sko
+T0689|Hair|Hår
+T0690|Hair (back)|Hår (bagved)
+T0691|Hat|Hat
+T0692|Head item|Hovedting
+T0693|Glasses|Briller
+T0694|Face item|Ansigtsting
+T0695|Jacket|Jakke
+T0696|Jacket, left sleeve|Jakke, venstre ærme
+T0697|Jacket, right sleeve|Jakke, højre ærme
+T0698|Print|Print
+T0699|Chest item|Brystting
+T0700|Belt|Bælte
+T0701|Head|Hoved
+T0702|Body skin|Kropshud
+T0703|Face|Ansigt
+T0704|Down-right (default)|Ned til højre (standard)
+T0705|Front|Front
+T0706|Right|Højre
+T0707|Up-right|Op til højre
+T0708|Back|Bagfra
+T0709|Colour|Farve
+T0710|Pencil|Blyant
+T0711|Eraser|Viskelæder
+T0712|Fill|Fyld
+T0713|Pick a colour|Vælg en farve
+T0714|Lighten|Lysere
+T0715|Darken|Mørkere
+T0716|Undo|Fortryd
+T0717|Redo|Gentag
+T0718|Pixel grid|Pixelgitter
+T0719|Show the original art faintly|Vis den originale grafik svagt nedenunder
+T0720|Zoom out|Zoom ud
+T0721|Zoom in|Zoom ind
+T0722|Empty this frame|Tøm denne frame
+T0723|Clear|Ryd
+T0724|Back to the original art for this frame|Tilbage til den originale grafik for denne frame
+T0725|Reset|Nulstil
+T0726|Nothing to paint here|Intet at male her.
+T0727|· tinted by the player's colour|· farves af spillerens farve: mal i hvid/grå
+T0728|· real colours|· rigtige farver
+T0729|· edited|· redigeret

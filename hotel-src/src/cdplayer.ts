@@ -1,4 +1,4 @@
-import { onValue, ref, remove, Unsubscribe } from "firebase/database";
+import { get, onValue, ref, remove, Unsubscribe } from "firebase/database";
 import { db } from "./firebase";
 import { call, serverNow } from "./db";
 import type { Profile } from "./db";
@@ -14,29 +14,39 @@ export interface CdTrack {
 }
 
 export const CD_TRACKS: Record<string, CdTrack> = {
+  freakme: { id: "freakme", title: "Freakme", artist: "Freakme", url: assetUrl("music/cd-freakme.mp3") },
+  moyo: { id: "moyo", title: "Freakme", artist: "Freakme", url: assetUrl("music/cd-freakme.mp3") }, // (the old name: a CD that is still playing from before)
   standin: { id: "standin", title: "Stand-in track", artist: "swap me in src/cdplayer.ts", url: assetUrl("music/cd-standin.mp3") },
 };
-export const DEFAULT_CD_TRACK = "standin";
+export const DEFAULT_CD_TRACK = "freakme";
 
-/** What's in the player right now. Lives at rooms/lobby/cdplayer so everyone in the lobby hears the same thing. */
+/** What's in the player right now. Lives at rooms/<room>/cdplayer so everyone in the room hears the same thing. */
 export interface CdState {
   by: string;
   byName: string;
   track: string;
   title: string;
-  /** server time the CD started, ms */
+  /** server time the CD started (moved forward when it is played on after a pause), ms */
   startedAt: number;
   /** server time it finishes, ms */
   endsAt: number;
+  /** the whole song, ms */
+  durationMs?: number;
+  /** set while it is paused: when (server time) */
+  pausedAt?: number;
 }
 
-const cdRef = ref(db, "rooms/lobby/cdplayer");
+const cdRef = (roomId: string) => ref(db, `rooms/${roomId}/cdplayer`);
 
-export function watchCdPlayer(cb: (state: CdState | null) => void, onError?: () => void): Unsubscribe {
-  return onValue(cdRef, (snap) => cb(snap.exists() ? (snap.val() as CdState) : null), onError);
+export function watchCdPlayer(roomId: string, cb: (state: CdState | null) => void, onError?: () => void): Unsubscribe {
+  return onValue(cdRef(roomId), (snap) => cb(snap.exists() ? (snap.val() as CdState) : null), onError);
 }
 
-export const cdEnded = (s: CdState): boolean => serverNow() >= s.endsAt;
+/** a paused CD that nobody plays on is given up after this long */
+export const PAUSE_MAX_MS = 10 * 60_000;
+export const cdEnded = (s: CdState): boolean => (s.pausedAt ? serverNow() - s.pausedAt > PAUSE_MAX_MS : serverNow() >= s.endsAt);
+/** how far into the song it is right now, ms (it stands still while paused) */
+export const cdPositionMs = (s: CdState): number => Math.max(0, (s.pausedAt ?? serverNow()) - s.startedAt);
 
 /** Loads just enough of the file to learn how long it is (falls back to a minute if it can't). */
 export function trackDurationMs(track: CdTrack): Promise<number> {
@@ -51,16 +61,19 @@ export function trackDurationMs(track: CdTrack): Promise<number> {
   });
 }
 
-/** Puts the CD in `slot` into the player (the server checks it is a CD and the player is free). */
-export async function insertCd(me: Profile, slot: number, trackId = DEFAULT_CD_TRACK): Promise<CdState> {
+/** Puts the CD in `slot` into the player of this room (the server checks it is a CD, you are in the room and the player is free). */
+export async function insertCd(me: Profile, slot: number, roomId: string, trackId = DEFAULT_CD_TRACK): Promise<CdState> {
   const track = CD_TRACKS[trackId];
   const duration = await trackDurationMs(track);
-  const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, durationMs: Math.round(duration) });
-  return { by: me.uid, byName: me.name, track: track.id, title: track.title, startedAt: Number(r.startedAt) || serverNow(), endsAt: Number(r.endsAt) || Math.round(serverNow() + duration) };
+  const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, room: roomId, durationMs: Math.round(duration) });
+  return { by: me.uid, byName: me.name, track: track.id, title: track.title, startedAt: Number(r.startedAt) || serverNow(), endsAt: Number(r.endsAt) || Math.round(serverNow() + duration), durationMs: Math.round(duration) };
 }
 
-/** Stops the CD early (only the person who inserted it may), or clears it once it has finished (anyone). */
-export const clearCdPlayer = (): Promise<void> => remove(cdRef);
+/** Pause / play on / play from the start / eject (the one who put the CD in, and the owner of the room). */
+export const controlCd = (me: Profile, roomId: string, op: "pause" | "play" | "restart" | "eject"): Promise<unknown> => call(me, "cdControl", { room: roomId, op });
+
+/** Clears a CD that has finished (the server and the database rules only allow it once it is over). */
+export const clearCdPlayer = (roomId: string): Promise<void> => remove(cdRef(roomId));
 
 /** Hands a loaned-out CD back to its owner's inventory (the server does it). */
 export async function returnCd(me: Profile): Promise<boolean> {
@@ -69,11 +82,17 @@ export async function returnCd(me: Profile): Promise<boolean> {
   return true;
 }
 
-/** If my CD isn't actually in the player any more (finished, stopped, or I was offline), it goes back in my inventory. */
-export async function reconcileCd(me: Profile, state: CdState | null): Promise<boolean> {
-  const loaned = me.inventory.some((s) => s?.item === "cd" && s.inPlayer);
+/**
+ * If my CD isn't actually playing any more (finished, ejected, or I was away), it goes back in my inventory.
+ * It remembers which room it is in: here the state is at hand, for another room it is looked up.
+ */
+export async function reconcileCd(me: Profile, roomId: string, state: CdState | null): Promise<boolean> {
+  const loaned = me.inventory.find((s) => s?.item === "cd" && s.inPlayer);
   if (!loaned) return false;
-  if (state && state.by === me.uid && !cdEnded(state)) return false;
+  const where = typeof loaned.inPlayer === "string" ? loaned.inPlayer : "lobby";
+  let st = state;
+  if (where !== roomId) st = await get(cdRef(where)).then((snap) => (snap.exists() ? (snap.val() as CdState) : null), () => null);
+  if (st && st.by === me.uid && !cdEnded(st)) return false;
   return returnCd(me).catch(() => false);
 }
 
@@ -93,6 +112,9 @@ function loadVolume(): number {
  * Plays the CD for this listener, lined up with everyone else (it seeks to wherever the track should be by now).
  * Volume is the listener's own: turning it down never affects anyone else.
  */
+/** the boombox is loud: its slider goes to 100% but that is only half of the real volume */
+const CD_VOLUME_SCALE = 0.5;
+
 export class CdAudio {
   readonly audio = new Audio();
   volume = loadVolume();
@@ -108,7 +130,7 @@ export class CdAudio {
   }
 
   private apply(): void {
-    this.audio.volume = this.muted ? 0 : this.volume;
+    this.audio.volume = this.muted ? 0 : this.volume * CD_VOLUME_SCALE; // the slider's 100% is half of the real loudness
   }
 
   setVolume(v: number): void {
@@ -129,9 +151,9 @@ export class CdAudio {
     return !!this.state && !this.audio.paused && !this.audio.ended;
   }
 
-  /** seconds into the CD according to the shared clock */
+  /** seconds into the CD according to the shared clock (it stands still while the CD is paused) */
   get position(): number {
-    return this.state ? Math.max(0, (serverNow() - this.state.startedAt) / 1000) : 0;
+    return this.state ? cdPositionMs(this.state) / 1000 : 0;
   }
 
   /** Call whenever the shared state changes. */
@@ -143,12 +165,15 @@ export class CdAudio {
     }
     const track = CD_TRACKS[this.state.track];
     if (!track) return this.stop();
+    if (this.state.pausedAt) { this.audio.pause(); this.onChange(); return; } // paused: quiet until it is played on
     const key = `${this.state.by}:${this.state.startedAt}`;
     if (key !== this.key) {
       this.key = key;
       this.audio.src = track.url;
       this.audio.addEventListener("loadedmetadata", () => this.seekAndPlay(), { once: true });
       this.audio.load();
+    } else if (this.audio.paused) {
+      this.tryPlay(); // played on after a pause (the song is already loaded)
     }
     this.onChange();
   }

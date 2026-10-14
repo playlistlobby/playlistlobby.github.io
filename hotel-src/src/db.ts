@@ -52,7 +52,14 @@ export interface Profile {
   speedUntil: number;
   /** flashing and smoking until this time (research chemical) */
   chemUntil: number;
+  /** how many times faster you walk while speedUntil lasts (2, or 4 with the super pill) */
+  speedMult: number;
+  /** the lean (codeine) works until this time; you hold the cup until cupUntil (server time, ms) */
+  leanUntil: number;
+  cupUntil: number;
   catsCarved: number;
+  /** how many of the landlord's room upgrades are bought (0..3) */
+  roomLevel: number;
   /** furniture and things kept in the toolbox's storage: kind (or "ass_<item>") -> how many */
   storage: Record<string, number>;
   /** the introduction and 6ixty's jobs: 0 = just woke up, 1 = has the knife, 2 = stabbed the guy (first 5 drops), 3 = has the pill, 4 = introduction done (the door leads to the real basement),
@@ -91,7 +98,7 @@ export const syringeWaitMs = (p: Profile, who: "self" | "bag"): number => Math.m
 /** 6ixty has the lighter job ready: the introduction is over and a couple of hours have passed since the first blood */
 export const jobReady = (p: Profile): boolean => p.tutorial === 4 && serverNow() - (p.questAt || p.sixty.knifeAt) >= JOB_DELAY_MS;
 export const jobWaitMs = (p: Profile): number => Math.max(0, (p.questAt || p.sixty.knifeAt) + JOB_DELAY_MS - serverNow());
-export const dumpsterWaitMs = (p: Profile, canId: string): number => Math.max(0, (p.dumpsters[canId] ?? 0) + 600_000 - serverNow());
+export const dumpsterWaitMs = (p: Profile, canId: string): number => Math.max(0, (p.dumpsters[canId] ?? 0) + (p.leanUntil > serverNow() ? 300_000 : 600_000) - serverNow());
 /** What a stab is worth right now: 1 drop, or more for a while after you finished a cigarette (x2), joint (x3) or blunt (x4). */
 export const stabGain = (p: Profile): number => stabGainAt(p, serverNow());
 export const plantProgress = (pl: Plant): number => plantProgressAt(pl, serverNow());
@@ -111,7 +118,11 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.boostMult = s.boostMult;
   p.speedUntil = s.speedUntil;
   p.chemUntil = s.chemUntil;
+  p.speedMult = s.speedMult;
+  p.leanUntil = s.leanUntil;
+  p.cupUntil = s.cupUntil;
   p.catsCarved = s.catsCarved;
+  p.roomLevel = s.roomLevel;
   p.syringeSelfAt = s.syringeSelfAt;
   p.syringeBagAt = s.syringeBagAt;
   p.flappyAt = s.flappyAt;
@@ -174,7 +185,11 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     boostMult: 2,
     speedUntil: 0,
     chemUntil: 0,
+    speedMult: 2,
+    leanUntil: 0,
+    cupUntil: 0,
     catsCarved: 0,
+    roomLevel: 0,
     storage: {},
     tutorial: 0,
     questAt: 0,
@@ -207,6 +222,21 @@ export async function buyStock(p: Profile, id: string): Promise<void> {
   await call(p, "buyVending", { id });
 }
 
+/** Buys the next room upgrade from the landlord (the server checks the price and makes the room bigger). Resolves with the new size. */
+export async function buyRoomUpgrade(p: Profile): Promise<number> {
+  return Number((await call<{ size?: number }>(p, "buyRoomUpgrade", {})).size) || 0;
+}
+
+/** New colours for your floor / walls / carpet (hex, or "none" for no carpet), 2 drops for each part that changes. Resolves with what it cost. */
+export async function buyRoomColors(p: Profile, parts: { floor?: string; wall?: string; rug?: string }): Promise<number> {
+  return Number((await call<{ price?: number }>(p, "roomColors", parts)).price) || 0;
+}
+
+/** A new look for the bed and/or the bag of clothes (ids from shared/skins.ts, or "default"). Each look is paid once. Resolves with what it cost. */
+export async function buyRoomSkins(p: Profile, parts: { bed?: string; bag?: string }): Promise<number> {
+  return Number((await call<{ price?: number }>(p, "roomSkins", parts)).price) || 0;
+}
+
 /** Buys one of today's pieces in the shop room. */
 export async function buyFurni(p: Profile, kind: string, _price?: number): Promise<void> {
   await call(p, "buyFurni", { kind });
@@ -230,9 +260,12 @@ export const sixtyJobReward = (p: Profile): Promise<unknown> => call(p, "sixty",
 export const swallowPill = (p: Profile, slot: number): Promise<unknown> => call(p, "usePill", { slot });
 export const eatItem = (p: Profile, slot: number): Promise<unknown> => call(p, "eat", { slot });
 /** Rummages through a garbage can. Resolves with the item that came out. */
-export async function searchDumpster(p: Profile, canId: string, roomId: string): Promise<string> {
-  return String((await call<{ item?: string }>(p, "dumpster", { can: canId, room: roomId })).item);
+export async function searchDumpster(p: Profile, canId: string, roomId: string): Promise<string[]> {
+  const r = await call<{ item?: string; items?: string[] }>(p, "dumpster", { can: canId, room: roomId });
+  return r.items && r.items.length ? r.items.map(String) : [String(r.item)];
 }
+/** Swallows the super pill or drinks the lean (codeine) in a slot. */
+export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number }> => call(p, "consume", { slot });
 /** Uses two pocket items on each other (weed + paper, ...). Resolves with the message. */
 export async function combineSlots(p: Profile, a: number, b: number): Promise<string> {
   return String((await call<{ note?: string }>(p, "combine", { a, b })).note ?? "");
@@ -266,6 +299,10 @@ export const rewardSyringe = (p: Profile, who: "self" | "bag", roomId: string): 
 /** The test commands (/giveblud, /weed). The server only listens to the admin. Resolves with the message. */
 export async function debugCommand(p: Profile, cmd: "blood" | "weed", n?: number): Promise<string> {
   return String((await call<{ note?: string }>(p, "debug", { cmd, n })).note ?? "");
+}
+/** /give <item> [amount] [ass]: any item (admin only). Resolves with the message. */
+export async function giveCommand(p: Profile, item: string, qty: number, ass: boolean): Promise<string> {
+  return String((await call<{ note?: string }>(p, "debug", { cmd: "give", item, qty, ass })).note ?? "");
 }
 
 // ---- wardrobe (just saved looks: nothing worth cheating) -------------------------------------------------------------

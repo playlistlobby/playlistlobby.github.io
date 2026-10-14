@@ -12,6 +12,18 @@ export const SIXTY = {
   dir: 4,
 };
 
+/** The landlord: stands behind the counter in the right corner of the shop room. Not a player either, only drawn there. */
+export const LANDLORD = {
+  id: "landlord",
+  name: "Landlord",
+  x: 13,
+  y: 0,
+  dir: 4,
+  figure: "hd-180-10.hr-98113-9001.fa-98057.ch-98046-9004.lg-285-9004.sh-98143", // what the player PenerGuy wears
+  /** what he says when you walk up */
+  line: "looking for more space? or a fresh coat of paint?",
+};
+
 export interface NpcLook {
   figure: string;
   gender: Gender;
@@ -50,20 +62,21 @@ export const LEGEND = {
   dir: 4,
 };
 
+/** what he says the next time you walk into the public room after the introduction (not during it) */
+export const sixtyCheckIn = (when: string): string => `you earned your first blood. come back in about ${when}, I will have another job.`;
+
 export const SIXTY_LINES = {
   legend: "now go over and use the knife on that guy.",
   legendAgain: "the knife. that guy. go.",
   goodjob: "good job.",
-  pill: "here. swallow this, it takes you home.",
-  pillAgain: "take the pill. it takes you home.",
+  pill: "eat this pill.",
+  pillAgain: "eat the pill.",
   psst: "psst",
   knife: "take this",
-  firstBlood: "you earned your first blood. come check in with me in a couple hours, I will have another job.",
   lighterJob: "that is what a lighter costs. go buy one in the shop, the yellow door.",
   lighterJob2: "bring it back to me when you have it.",
   lighterAgain: "no lighter yet. the shop, the yellow door.",
   lighterDone: "good. that is your pay.",
-  syringe: "take this too. use it on yourself and on a body bag, once every 20 minutes.",
   shop: "what do you need?",
   full: "your pockets are full. clear some space.",
 };

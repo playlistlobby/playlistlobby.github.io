@@ -1,6 +1,7 @@
 import { h } from "./dom";
 import { sfxMuted, setSfxMuted } from "../sfx";
 import { BLOOD_ICON } from "../items";
+import { FLAG_SVG, Lang, LANG, setLang } from "../lang";
 import type { View } from "../main";
 
 export interface TopBarOpts {
@@ -22,6 +23,14 @@ export interface TopBarApi {
  * the drops-of-blood counter in the middle and a menu (Admin, sounds, log out) on the right. (Character is the bag of clothes in your room; the shop is the yellow door in the basement, and the wardrobe in it opens the clothing shop.)
  * On phones it wraps into two rows so everything stays tappable.
  */
+/** a small flag (drawn as a picture: flag emoji do not show on Windows) */
+function flag(lang: Lang): HTMLElement {
+  const s = document.createElement("span");
+  s.className = "flag-ico";
+  s.innerHTML = FLAG_SVG[lang];
+  return s;
+}
+
 export function topBar(o: TopBarOpts): TopBarApi {
   // every page (Character, Shop, Admin) has its own Go back button, so there is no Room tab, and no Shop button any more
   const badge = h("span", { class: "badge hidden", "data-friends-badge": "1" });
@@ -40,6 +49,8 @@ export function topBar(o: TopBarOpts): TopBarApi {
         setSfxMuted(!sfxMuted());
         (ev.currentTarget as HTMLElement).textContent = sfxMuted() ? "🔇 Sounds: off" : "🔊 Sounds: on";
       } }, sfxMuted() ? "🔇 Sounds: off" : "🔊 Sounds: on"),
+      // the language: the flag of the one you are in; tap it to switch to the other
+      h("button", { class: "nav-pop-item lang-item", title: LANG === "da" ? "Switch to English" : "Skift til dansk", onclick: () => setLang(LANG === "da" ? "en" : "da") }, flag(LANG), LANG === "da" ? "Dansk" : "English"),
       h("button", { class: "nav-pop-item danger", onclick: () => { closeMenu(); o.onLogout(); } }, "Log out"));
     right.append(menu);
     const away = (ev: Event) => {

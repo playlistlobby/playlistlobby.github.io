@@ -73,3 +73,7 @@ The rules (not just the UI) enforce: only you can touch your data; blood can onl
 - The floor/wall textures, UI sounds and any assets taken from the Habbo asset dump belong to their original owner.
 - The "surprised" face sprite is missing from the hosted atlas, so that emote jumps instead of pulling a face.
 - Assets are hotlinked from third-party hosts.
+
+## Credits
+
+The tab pictures under the room (backpack, emotes, house) and the emote buttons are from [OSRS Icons by Dava96](https://github.com/Dava96/osrs-icons) (sprites from the Old School RuneScape Wiki), licence CC BY-NC-SA 3.0, non-commercial. Old School RuneScape belongs to Jagex Ltd. See `public/osrs/README.txt`.

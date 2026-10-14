@@ -231,7 +231,7 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
   }
 
   // ---- 6ixty's stock -----------------------------------------------------------------------------------------
-  /** What 6ixty can sell, and what new players start with: lockpick and cigarette are on his shelf by default. */
+  /** What 6ixty can sell, and what new players start with: the cigarette is on his shelf by default. */
   function sixtyTab(el: HTMLElement): () => void {
     const ids = Object.keys(ITEMS).filter((id) => !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "deadcat");
     const rowFor = (id: string): HTMLElement => {

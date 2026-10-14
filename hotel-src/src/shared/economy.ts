@@ -11,10 +11,23 @@ export const STARTER_ITEMS: string[] = [];
 /** each garbage can can be searched once every 10 minutes; one weighted pick per search */
 export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
-  { item: "weedseed", chance: 0.5, label: "weed seed" },
-  { item: "deadcat", chance: 0.3, label: "dead cat" },
-  { item: "lighter", chance: 0.05, label: "lighter" },
+  // percentages (they add up to 100): kodimagnyl is 10%, the rest keep the same proportions as before
+  { item: "weedseed", chance: 52.9, label: "weed seed" },
+  { item: "deadcat", chance: 31.8, label: "dead cat" },
+  { item: "lighter", chance: 5.3, label: "lighter" },
+  { item: "kodimagnyl", chance: 10, label: "kodimagnyl" },
 ];
+/** the super pill: 4x walking speed for a minute */
+export const SUPERPILL_MS = 60_000;
+export const SUPERPILL_MULT = 4;
+/** the lean (codeine): for an hour, garbage cans give twice as much and can be searched twice as often. You hold the cup for the first 2 minutes. */
+export const LEAN_MS = 3_600_000;
+export const LEAN_CUP_MS = 2 * 60_000;
+/** Now and then something turns up on the floor of the public room (the basement): every 10 minutes, a 25% chance, never more than 2 lying there at once. */
+export const FLOOR_SPAWN_MS = 10 * 60_000;
+export const FLOOR_SPAWN_CHANCE = 0.25;
+export const FLOOR_SPAWN_MAX = 2;
+export const FLOOR_SPAWN_ITEMS = ["weedseed", "cigarette"];
 export const CAT_BLOOD = 3;
 export const SYRINGE_BLOOD = 1;
 /** the syringe draws 1 drop from yourself and 1 from a body bag, each once every 20 minutes */
@@ -23,7 +36,7 @@ export const SYRINGE_CD_MS = 20 * 60_000;
 export const FIRST_BLOOD = 5;
 export const JOB_REWARD = 5;
 /** 6ixty's second job comes this long after the first stab */
-export const JOB_DELAY_MS = 2 * 3_600_000;
+export const JOB_DELAY_MS = 10 * 60_000;
 /** Flappy Bird: at least this long between two drops of blood */
 export const FLAPPY_GAP_MS = 12_000;
 /** things on the floor of a public room vanish after 5 minutes, or 1 minute once the same player has 5+ of theirs there */
@@ -31,6 +44,14 @@ export const DROP_LIFE_MS = 5 * 60_000;
 export const DROP_LIFE_BULK_MS = 60_000;
 export const BULK_AT = 5;
 export const MAX_FURNI = 40;
+/** The landlord's three room upgrades, in the order they must be bought: the room becomes size x size for this many drops. Every player room starts at 8 x 8. */
+export const ROOM_UPGRADES: Array<{ size: number; price: number }> = [{ size: 10, price: 25 }, { size: 12, price: 50 }, { size: 14, price: 80 }];
+export const BASE_ROOM_SIZE = 8;
+/** Changing the colour of your floor, your walls or your carpet at the landlord costs this many drops each. */
+export const RECOLOR_PRICE = 2;
+/** a little lighter: the second colour of the chequered floor */
+export const lighterHex = (hex: string, by = 9): string => "#" + [1, 3, 5].map((i) => Math.min(255, parseInt(hex.slice(i, i + 2), 16) + by).toString(16).padStart(2, "0")).join("");
+export const roomSizeAt = (level: number): number => (level > 0 ? ROOM_UPGRADES[Math.min(level, ROOM_UPGRADES.length) - 1].size : BASE_ROOM_SIZE);
 /** the mixer works for this long on every batch */
 export const MIX_MS = 10 * 60_000;
 export const STORAGE_MAX_PIECES = 99;
@@ -51,9 +72,16 @@ export interface Snapshot {
   boostMult: number;
   /** walking twice as fast until this time (thc-a, research chemical) */
   speedUntil: number;
+  /** how many times faster (2 thc-a / research chemical, 4 super pill) */
+  speedMult: number;
+  /** the lean (codeine) is in you until this time; you hold the cup until cupUntil */
+  leanUntil: number;
+  cupUntil: number;
   /** flashing and smoking until this time (research chemical) */
   chemUntil: number;
   catsCarved: number;
+  /** how many room upgrades are bought (0..3) */
+  roomLevel: number;
   syringeSelfAt: number;
   syringeBagAt: number;
   flappyAt: number;
@@ -88,8 +116,12 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     boostUntil: Number(v.boostUntil) || 0,
     boostMult: Math.min(4, Math.max(2, Number(v.boostMult) || 2)),
     speedUntil: Number(v.speedUntil) || 0,
+    speedMult: Math.min(4, Math.max(2, Number(v.speedMult) || 2)),
+    leanUntil: Number(v.leanUntil) || 0,
+    cupUntil: Number(v.cupUntil) || 0,
     chemUntil: Number(v.chemUntil) || 0,
     catsCarved: Number(v.catsCarved) || 0,
+    roomLevel: Math.min(ROOM_UPGRADES.length, Math.max(0, Math.floor(Number(v.roomLevel) || 0))),
     syringeSelfAt: Number(v.syringeSelfAt) || 0,
     syringeBagAt: Number(v.syringeBagAt) || 0,
     flappyAt: Number(v.flappyAt) || 0,
@@ -106,7 +138,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
   const patch: Record<string, unknown> = {};
   const base = `users/${uid}/`;
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "chemUntil", "catsCarved", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
+  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "speedMult", "leanUntil", "cupUntil", "chemUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
     if (before[k] !== after[k]) patch[base + k] = after[k];
   }
   if (before.sixty.knifeAt !== after.sixty.knifeAt) patch[`${base}sixty/knifeAt`] = after.sixty.knifeAt;

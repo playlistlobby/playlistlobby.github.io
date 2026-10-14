@@ -78,39 +78,21 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     const all = Object.entries(rooms)
       .filter(([id, m]) => id.startsWith("u_") && m.owner !== me.uid && id !== currentRoom)
       .map(([id, m]) => rowFor(id, m));
-    // with a lockpick in your pocket every room is a candidate, closed ones too
-    const visible = all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online) || hasPick());
+    const visible = all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online));
     return visible.sort((a, b) =>
       Number(b.friend) - Number(a.friend) || Number(b.online) - Number(a.online) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, 40);
   }
 
-  const hasPick = () => findSlot(me.inventory, "lockpick") >= 0;
-
-  /** Uses a lockpick: you're in without knocking, even in a closed room. The pick is used up. */
-  async function pickLock(r: Row): Promise<void> {
-    if (findSlot(me.inventory, "lockpick") < 0) return;
-    try {
-      await call(me, "lockpick", { owner: r.owner }); // the server uses up the pick and opens the lock in one write
-      social.armLockpickCleanup(r.owner);
-      playSfx("pickLock", 0.55);
-      toast("Click. The lock gives way.");
-      enter(r.roomId, `${r.ownerName}'s room (picked the lock)`);
-    } catch {
-      toast("The lock won't give.", "err");
-    }
-  }
-
   function actionFor(r: Row): HTMLElement {
-    if (r.access === "none") return h("span", { class: "door-actions" }, h("button", { class: "btn small", disabled: true }, "Closed"), hasPick() ? h("button", { class: "btn small", title: "Use a lockpick (once)", onclick: (e: Event) => { if (chosen(e)) void pickLock(r); } }, "🔓 Pick") : null);
+    if (r.access === "none") return h("span", { class: "door-actions" }, h("button", { class: "btn small", disabled: true }, "Closed"));
     if (r.friend || r.access === "open") return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Visit");
-    const pick = hasPick() ? h("button", { class: "btn small", title: "Use a lockpick (once)", onclick: (e: Event) => { if (chosen(e)) void pickLock(r); } }, "🔓 Pick") : null;
     let main: HTMLElement;
     if (r.access === "knock") {
       main = r.online
         ? h("button", { class: "btn small", onclick: (e: Event) => { if (chosen(e)) startKnock(r); } }, "Knock")
         : h("button", { class: "btn small", disabled: true }, "Offline");
     } else main = h("button", { class: "btn small", disabled: true }, "Closed");
-    return h("span", { class: "door-actions" }, main, pick);
+    return h("span", { class: "door-actions" }, main);
   }
 
   function rowEl(r: Row): HTMLElement {
