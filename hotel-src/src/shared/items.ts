@@ -142,3 +142,15 @@ const matches = (it: InvItem, m: { item: string; ass?: boolean }): boolean => it
 export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
   return MIX_RECIPES.find((r) => (matches(x, r.a) && matches(y, r.b)) || (matches(y, r.a) && matches(x, r.b))) ?? null;
 }
+/** What 6ixty pays for one piece, or null if he doesn't buy it. */
+export function sellPrice(item: string, ass?: boolean): number | null {
+  switch (item) {
+    case "weed": return ass ? 4 : 6;
+    case "weedseed": return 2;
+    case "midweed": return 4;
+    case "mix": return 7;
+    case "thca": return 8;
+    case "researchchem": return 5;
+    default: return null;
+  }
+}

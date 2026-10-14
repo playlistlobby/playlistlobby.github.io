@@ -2,7 +2,7 @@
 import { Action, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
-import { DISABLED_ITEMS, ITEM_IDS, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
+import { DISABLED_ITEMS, ITEM_IDS, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPicksToday, furniPrice, SHIPPED_DIMS, SHOP_KIND_PREFIX } from "../../../src/shared/furniture";
 import { todayStartAt } from "../../../src/shared/economy";
 
@@ -60,21 +60,18 @@ export const buyFurni: Action = {
   },
 };
 
-/** What 6ixty pays for weed, per piece. */
-export const WEED_PRICE = 6;
-export const ASS_WEED_PRICE = 3;
-export const SEED_PRICE = 2;
 
-/** Selling to 6ixty: 6 drops for good weed, 3 for ass weed, 2 for a weed seed. */
+/** Selling to 6ixty: weed, ass weed, seeds and what the mixer makes (prices in shared/items.ts sellPrice). */
 export const sellWeed: Action = {
   async run(c, a) {
     const w = await c.user();
     const slot = Number(a.slot);
     if (!Number.isInteger(slot) || slot < 0 || slot > 27) return fail("Bad slot.");
     const it = w.s.inventory[slot];
-    if (!it || (it.item !== "weed" && it.item !== "weedseed") || it.lit || it.inPlayer) return fail("He only buys weed and seeds.");
+    const each = it ? sellPrice(it.item, it.ass) : null;
+    if (!it || each === null || it.lit || it.inPlayer) return fail("He doesn't buy that.");
     const qty = Math.max(1, Math.min(Math.floor(Number(a.qty) || 1), it.qty));
-    const gain = qty * (it.item === "weedseed" ? SEED_PRICE : it.ass ? ASS_WEED_PRICE : WEED_PRICE);
+    const gain = qty * each;
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, qty);
     w.s.blood += gain;
     return { gain, qty };

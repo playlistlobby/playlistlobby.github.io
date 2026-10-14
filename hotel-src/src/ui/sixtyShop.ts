@@ -1,6 +1,7 @@
 import { h, toast } from "./dom";
 import { buyInventoryItem, sellWeed } from "../db";
 import { BLOOD_ICON, DISABLED_ITEMS, itemDef, ITEMS, SIXTY_STOCK } from "../items";
+import { sellPrice } from "../shared/items";
 import { itemEntry, onShopConfig } from "../shopConfig";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
@@ -24,16 +25,16 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
     if (closed) return;
     // his shelf: whatever the admin has switched on (Admin > Shop > 6ixty stock); lockpick and cigarette are on by default
     const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => itemDef(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "deadcat" && itemEntry(id).on);
-    // selling: he buys weed (6 drops each, 3 for ass weed) and weed seeds (2 each)
-    const sells = me.inventory.map((s, slot) => ({ s, slot })).filter((e) => e.s && (e.s.item === "weed" || e.s.item === "weedseed") && !e.s.lit);
+    // selling: he buys weed, seeds and what the mixer makes (prices: sellPrice)
+    const sells = me.inventory.map((s, slot) => ({ s, slot })).filter((e) => e.s && sellPrice(e.s.item, e.s.ass) !== null && !e.s.lit);
     const sellRows = sells.map(({ s, slot }) => {
-      const seed = s!.item === "weedseed";
-      const each = seed ? 2 : s!.ass ? 3 : 6;
+      const each = sellPrice(s!.item, s!.ass)!;
+      const nm = `${itemDef(s!.item)?.name ?? s!.item}${s!.ass ? " (ass)" : ""}`;
       const sell = async (qty: number) => {
         try {
           const gain = await sellWeed(me, slot, qty);
           ctx.refreshHeader();
-          logAction(me, "buy", `sold ${qty} ${seed ? "weed seed" : s!.ass ? "ass weed" : "weed"} to 6ixty for ${gain}`);
+          logAction(me, "buy", `sold ${qty} ${nm} to 6ixty for ${gain}`);
           playSfx("coins", 0.5);
           toast(`6ixty pays you ${gain} drops.`);
           onChange();
@@ -42,7 +43,7 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
       };
       return h("div", { class: "sixty-row" },
         h("img", { src: itemDef(s!.item)!.icon, alt: "", class: "sixty-ico" }),
-        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, `${seed ? "Weed seed" : s!.ass ? "Ass weed" : "Weed"} x${s!.qty}`), h("div", { class: "hint" }, `He pays ${each} drops each.`)),
+        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, `${nm} x${s!.qty}`), h("div", { class: "hint" }, `He pays ${each} drops each.`)),
         h("button", { class: "btn small", onclick: () => void sell(1) }, `Sell 1 (${each})`),
         ...(s!.qty > 1 ? [h("button", { class: "btn small primary", onclick: () => void sell(s!.qty) }, `All (${each * s!.qty})`)] : []));
     });

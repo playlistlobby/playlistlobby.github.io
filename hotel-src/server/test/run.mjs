@@ -179,10 +179,15 @@ console.log("--- selling weed");
   check("paid 12", r1.state.blood === 12);
   const r2 = await act(a, "sellWeed", { slot: 1, qty: 99 });
   ok("sell all the ass weed", r2);
-  check("paid 6 more (3 each, capped at what you have)", r2.state.blood === 18);
+  check("paid 8 more (4 each, capped at what you have)", r2.state.blood === 20);
   const r3 = await act(a, "sellWeed", { slot: 2, qty: 5 });
   ok("sell the 5 weed seeds", r3);
-  check("2 each: 10 more", r3.state.blood === 28);
+  check("2 each: 10 more", r3.state.blood === 30);
+  const b2 = await fresh("t_sell2", { inventory: { 0: { item: "midweed", qty: 1 }, 1: { item: "mix", qty: 1 }, 2: { item: "thca", qty: 1 }, 3: { item: "researchchem", qty: 1 } } });
+  await act(b2, "sync");
+  let tot = 0;
+  for (let i = 0; i < 4; i++) { const r = await act(b2, "sellWeed", { slot: 0, qty: 1 }); ok(`sell mixer item #${i + 1}`, r); tot = r.state.blood; }
+  check("mid weed 4 + weed mix 7 + thc-a 8 + research chemical 5 = 24", tot === 24, String(tot));
 }
 
 console.log("--- the floor: drop and pick up");
