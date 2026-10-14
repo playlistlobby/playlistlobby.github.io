@@ -611,6 +611,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     const obj = pick(objBoxes, m.x, m.y);
 
+    // nothing selected: a tap does what the menu would offer (one option -> it happens, several -> you choose)
+    if (!selectedDef()) {
+      const options = contextOptions(m.x, m.y, true);
+      if (options.length === 1) options[0].action();
+      else if (options.length > 1) showMenu(e.clientX, e.clientY, options);
+      return;
+    }
+
     // one of today's pieces in the shop room: a window asks Buy or Cancel
     if (!target && obj && isDisplayPiece(obj.id)) { clearSelection(); openBuy(obj.kind!); return; }
 
@@ -672,8 +680,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (t && walkable(t.x, t.y)) { pending = null; walkTo(t); }
   });
 
-  /** The right-click menu for whatever is at canvas position (mx, my); (cx, cy) is where on the page to show it. */
-  function openContextAt(mx: number, my: number, cx: number, cy: number): void {
+  /** What you can do with whatever is at canvas position (mx, my). `forTap` leaves out the owner's "Pick up" (that belongs to the furnishing menu). */
+  function contextOptions(mx: number, my: number, forTap = false): Array<{ label: string; target?: string; danger?: boolean; action: () => void }> {
     const target = playerAt(mx, my);
     const tile = tileAt(mx, my);
     const item = selectedDef();
@@ -681,11 +689,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const opts: Array<{ label: string; target?: string; danger?: boolean; action: () => void }> = [];
     if (target?.npc && target.uid !== me.uid) {
       opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
-      opts.push({ label: "Examine", target: SIXTY.name, action: () => say("6ixty. He sells things, and he knows how this place works.") });
     } else if (target && target.uid !== me.uid) {
       if (item?.useOnPlayer === "stab" && !(target.uid === LEGEND.id && me.tutorial >= 2)) opts.push({ label: `Use ${item.name} →`, target: target.name, action: () => startStab(target.uid) });
       if (hasKnife && item?.useOnPlayer !== "stab" && !(target.uid === LEGEND.id && me.tutorial >= 2)) opts.push({ label: "Stab", target: target.name, danger: true, action: () => startStab(target.uid) });
-      opts.push({ label: "Examine", target: target.name, action: () => say(target.uid === LEGEND.id ? (target.faint ? `${target.name}. He isn't getting up.` : `${target.name}. He doesn't look like he'll be missed.`) : `${target.name}: a fellow hotel guest.`) });
       if (target.uid !== LEGEND.id && social.isOnline(target.uid) && !target.sleeper) opts.push({ label: "Invite to trade", target: target.name, action: () => void social.inviteToTrade(target.uid).then(() => say(`You ask ${target.name} to trade. They have to accept.`), () => say("Couldn't send that trade invite.", "warn")) });
       if (target.uid === LEGEND.id) { /* a stand-in: no friending him */ } else if (social.friends.has(target.uid)) opts.push({ label: "Message", target: target.name, action: () => window.dispatchEvent(new CustomEvent("open-chat", { detail: target.uid })) });
       else opts.push({ label: "Add friend", target: target.name, action: () => social.sendRequest(target.name).then((s) => say(s), (err) => say((err as Error).message, "warn")) });
@@ -695,13 +701,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "flappy") opts.push({ label: "Play", target: "Flappy Bird", action: () => startArcade(obj.id) });
     if (obj?.kind === "npc") {
       opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
-      opts.push({ label: "Examine", target: SIXTY.name, action: () => say("6ixty. He sells things, and he knows how this place works.") });
       if (me.isAdmin) opts.push({ label: "Change look", target: SIXTY.name, action: () => ctx.navigate("npc") });
     }
-    if (obj?.kind === "dumpster") {
-      opts.push({ label: "Search", target: "Dumpster", action: () => startDumpster(obj.id) });
-      opts.push({ label: "Examine", target: "Dumpster", action: () => say("An alley dumpster. It stinks. Somebody has to look inside, and it can be you every ten minutes.") });
-    }
+    if (obj?.kind === "dumpster") opts.push({ label: "Search", target: "Dumpster", action: () => startDumpster(obj.id) });
     if (obj?.kind === "drop") { const dd = drops.get(obj.id.slice(5)); opts.push({ label: "Pick up", target: dd ? (itemDef(dd.item)?.name ?? dd.item) : "item", action: () => startPickup(obj.id.slice(5)) }); }
     if (obj && isDisplayPiece(obj.id)) opts.push({ label: "Buy", target: FURNI_KINDS[obj.kind!].label, action: () => openBuy(obj.kind!) });
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
@@ -714,15 +716,24 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "cdplayer") {
       if (item?.useOnObject === "cdplayer") opts.push({ label: `Use ${item.name} →`, target: "CD player", action: () => startCd(obj.id) });
       opts.push({ label: "Volume", target: "CD player", action: () => openCdPopup() });
-      opts.push({ label: "Examine", target: "CD player", action: () => say(cdState && !cdEnded(cdState) ? `The CD player is playing "${cdState.title}", put in by ${cdState.byName}.` : "A chunky CD player. It's empty. Use a CD on it.") });
     }
-    if (!target && !obj && inBox({ x: mx, y: my }, doorBox)) opts.push({ label: "Open", target: "Door", action: () => startDoor() });
+    const onDoor = !target && !obj && inBox({ x: mx, y: my }, doorBox);
+    if (onDoor) opts.push({ label: "Open", target: "Door", action: () => { clearSelection(); startDoor(); } });
+    const ed = !target && !obj && !onDoor ? extraDoorBoxes.find((e) => inBox({ x: mx, y: my }, e.box)) : undefined;
+    if (ed) opts.push({ label: "Open", target: `${ed.door.label} door`, action: () => { clearSelection(); pending = { type: "door", since: performance.now(), lastTry: 0, to: ed.door }; } });
     const furni = tile ? furniAtTile(tile) : undefined;
-    if (furni && isOwner() && furni.kind !== "arcade" && !isFixedLobbyPiece(furni.id)) {
+    if (!forTap && furni && isOwner() && furni.kind !== "arcade" && !isFixedLobbyPiece(furni.id)) {
       opts.push({ label: "Pick up", target: FURNI_KINDS[furni.kind].label, action: () => void removeFurni(def.id, furni.id).catch(() => undefined) });
     }
-    if (tile && walkable(tile.x, tile.y)) opts.push({ label: "Walk here", action: () => { pending = null; walkTo(tile); } });
-    showMenu(cx, cy, opts);
+    // walking is the default for an empty floor tile; on a door or a piece of furniture the tap means that thing, not "walk"
+    if (tile && walkable(tile.x, tile.y) && !obj && !onDoor && !ed) opts.push({ label: "Walk here", action: () => { pending = null; walkTo(tile); } });
+    return opts;
+  }
+
+  /** The menu you get from a right-click or a long press. */
+  function openContextAt(mx: number, my: number, cx: number, cy: number): void {
+    const options = contextOptions(mx, my);
+    if (options.length) showMenu(cx, cy, options);
   }
 
   canvas.addEventListener("contextmenu", (e) => {

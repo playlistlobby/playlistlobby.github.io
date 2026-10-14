@@ -74,7 +74,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
       ...(reqRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, `Friend requests (${reqRows.length})`), ...reqRows)] : []),
       h("div", { class: "fp-list" },
         ...(friends.length === 0
-          ? [h("div", { class: "hint pad" }, "No friends yet. Add someone by username, or right-click (long-press) a player in a room.")]
+          ? [h("div", { class: "hint pad" }, "No friends yet. Add someone by username, or tap a player in a room.")]
           : friends.map((f) => friendRow(f)))));
   }
   const dyn = h("div", { class: "fp-dyn" });

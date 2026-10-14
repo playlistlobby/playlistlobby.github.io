@@ -1,5 +1,5 @@
 import { h } from "./dom";
-import { showMenu } from "./contextMenu";
+import { showMenu, MenuOption } from "./contextMenu";
 import { BLOOD_ICON, combine, findSlot, INV_SIZE, itemDef, ITEMS, MUSIC_ACCESS_KEY, onFurniIcon } from "../items";
 import { consumeSlot } from "../db";
 import { playSfx } from "../sfx";
@@ -99,6 +99,23 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     return d?.furniture ? "Now click a free spot in your room to put it down (R turns it)." : d?.useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
   }
 
+  /** What you can do with the item in slot `i` (no right-click needed: a tap runs the only option, or lists them). */
+  function optionsFor(i: number): MenuOption[] {
+    const slot = profile.inventory[i];
+    const def = slot ? itemDef(slot.item) : undefined;
+    if (!slot || !def || slot.inPlayer) return [];
+    const out: MenuOption[] = [];
+    if (def.useSelf && !slot.lit) {
+      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!, i) });
+    }
+    const combinable = profile.inventory.some((o, j) => j !== i && !!o && (combine(slot, o) || combine(o, slot)));
+    if (def.furniture || def.useOnObject || def.useOnPlayer || combinable) {
+      out.push({ label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) });
+    }
+    if (def.carvable && findSlot(profile.inventory, "knife") >= 0) out.push({ label: "Use knife", target: def.name, action: () => opts.onCarve(i) });
+    return out;
+  }
+
   function renderInventory(): void {
     unsubMusic?.();
     unsubMusic = null;
@@ -110,7 +127,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
       const el = h("div", {
         class: "inv-slot" + (selected === i ? " selected" : "") + (guided === i && def ? " guide" : "") + (dropMode && def && !loaned && !slot?.lit ? " drop-glow" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
         title: def ? (loaned ? `${def.name} (in the player)` : def.name) : "",
-        onclick: () => {
+        onclick: (e: MouseEvent) => {
           if (!def) return;
           playSfx("select", 0.35);
           if (dropMode) {
@@ -121,31 +138,23 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
             return opts.onDropPick(i);
           }
           if (loaned) return opts.say(`Your ${def.name} is in the player. It'll be back when it's done.`, "warn");
-          if (def.carvable) {
-            const k = selected !== null ? profile.inventory[selected] : null;
-            if (k?.item === "knife") return opts.onCarve(i);
-            return opts.say(findSlot(profile.inventory, "knife") >= 0 ? "Select your knife first, then click the cat." : "You've got nothing to cut it with.", "warn");
-          }
+          // something is selected and you tap another item: use the one on the other (cut the cat, roll the weed...)
           if (selected !== null && selected !== i) {
             const sel = profile.inventory[selected];
+            if (def.carvable && sel?.item === "knife") return opts.onCarve(i);
             if (sel && slot && combine(sel, slot)) { const first = selected; setSelected(null); return opts.onCombine(first, i); }
           }
-          if (def.useSelf) return opts.onUseSelf(def.useSelf, i);
-          setSelected(selected === i ? null : i);
+          // a tap does what the menu would offer: one option -> it happens, several -> you choose
+          const options = optionsFor(i);
+          if (options.length === 1) options[0].action();
+          else if (options.length > 1) showMenu(e.clientX, e.clientY, options);
+          else if (def.carvable) opts.say("You've got nothing to cut it with.", "warn");
         },
         oncontextmenu: (e: MouseEvent) => {
           e.preventDefault();
           if (!def) return;
-          showMenu(e.clientX, e.clientY, [
-            ...(loaned ? [] : def.useSelf
-              ? [{ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!, i) }]
-              : def.droppable ? [] : def.useOnObject || def.useOnPlayer || def.furniture
-              ? [{ label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) }]
-              : []),
-            ...(def.carvable && findSlot(profile.inventory, "knife") >= 0 ? [{ label: "Use knife", target: def.name, action: () => opts.onCarve(i) }] : []),
-            ...(def.droppable ? [{ label: "Drop", target: def.name, action: () => opts.onDropPick(i) }] : []),
-            { label: "Examine", target: def.name, action: () => opts.say(loaned ? `${def.examine} (It's in the player right now.)` : def.examine) },
-          ]);
+          const options = optionsFor(i);
+          if (options.length) showMenu(e.clientX, e.clientY, options);
         },
       }, def ? h("img", { src: def.litIcon && slot?.lit ? def.litIcon : def.icon, alt: def.name, draggable: false }) : null,
         slot && slot.qty > 1 ? h("span", { class: "qty" }, String(slot.qty)) : null);
