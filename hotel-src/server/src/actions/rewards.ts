@@ -198,7 +198,7 @@ export const plant: Action = {
     if (w.s.inventory[slot]?.item !== "weedseed") fail("That isn't a seed.");
     w.s.inventory = takeOneFrom(w.s.inventory, slot);
     c.extra[`${path}/plantedAt`] = c.now;
-    c.extra[`${path}/wateredAt`] = c.now;
+    c.extra[`${path}/wateredAt`] = null; // it hasn't been watered yet
     c.extra[`${path}/neglect`] = null;
     return {};
   },
@@ -211,10 +211,11 @@ export const water: Action = {
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "wateringcan_full") fail("That can is empty.");
+    // one watering, once it is thirsty (5 minutes in), keeps the weed good: before that it isn't thirsty, after that it's done
+    if ((row.wateredAt ?? 0) >= row.plantedAt! + WATER_MS) fail("It's already been watered. It'll grow fine now.");
+    if (c.now < row.plantedAt! + WATER_MS) fail("It isn't thirsty yet. Wait until its water bar is empty.");
     w.s.inventory = w.s.inventory.map((x, i) => (i === slot ? { item: "wateringcan", qty: 1 } : x));
-    const dry = c.now - (row.wateredAt ?? row.plantedAt!) > WATER_MS;
     c.extra[`${path}/wateredAt`] = c.now;
-    if (dry && !row.neglect) c.extra[`${path}/neglect`] = true;
     return {};
   },
 };
@@ -224,7 +225,7 @@ export const harvest: Action = {
     const { path, row } = await planter(c, a.fid);
     if (typeof row.plantedAt !== "number") fail("There's nothing planted there.");
     if (c.now - row.plantedAt! < GROW_MS) fail("It isn't ready yet.");
-    const ass = !!row.neglect || c.now - (row.wateredAt ?? row.plantedAt!) > WATER_MS;
+    const ass = !((row.wateredAt ?? 0) >= row.plantedAt! + WATER_MS); // never got its one watering
     const w = await c.user();
     const next = addToInv(w.s.inventory, { item: "weed", qty: 3, ...(ass ? { ass: true } : {}) });
     if (!next) fail("Your inventory is full");

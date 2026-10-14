@@ -19,9 +19,12 @@ const owner = async (method, path, body) => {
   return r.json();
 };
 const act = async (who, a, args = {}) => {
-  const r = await fetch(`${API}/act`, { method: "POST", headers: { authorization: `Bearer ${who.token}`, "content-type": "application/json" }, body: JSON.stringify({ a, args }) });
-  const j = await r.json();
-  return { status: r.status, ...j };
+  for (let tries = 0; ; tries++) {
+    const r = await fetch(`${API}/act`, { method: "POST", headers: { authorization: `Bearer ${who.token}`, "content-type": "application/json" }, body: JSON.stringify({ a, args }) });
+    const j = await r.json();
+    if (r.status === 429 && tries < 12 && !process.env.NO_RETRY) { await new Promise((x) => setTimeout(x, 800)); continue; } // the anti-spam limit: wait and go on
+    return { status: r.status, ...j };
+  }
 };
 let fails = 0, passes = 0;
 const check = (label, cond, extra = "") => { if (cond) passes++; else fails++; console.log(`${cond ? "PASS" : "FAIL"}  ${label} ${cond ? "" : extra}`); };
@@ -122,7 +125,19 @@ console.log("--- the mixer");
   const place = await act(a, "furniPlace", { source: "inv", slot: slotOf(st, "f_mixer"), x: 5, y: 5, dir: 0 });
   ok("place the mixer in the room", place);
   const fid = Object.keys((await owner("GET", `roomsMeta/${room}/furni`)) ?? {})[0];
-  const mixIt = async (x, y) => { st = await state(a); return act(a, "mix", { fid, a: slotOf(st, x[0], x[1]), b: slotOf(st, y[0], y[1]) }); };
+  const mixIt = async (x, y) => {
+    st = await state(a);
+    const started = await act(a, "mix", { fid, a: slotOf(st, x[0], x[1]), b: slotOf(st, y[0], y[1]) });
+    if (!started.ok) return started;
+    const job = await owner("GET", `roomsMeta/${room}/furni/${fid}/mixJob`);
+    if (!job || job.doneAt - Date.now() < 590_000 || job.doneAt - Date.now() > 601_000) return { ok: false, status: 0, error: "no 10 minute job: " + JSON.stringify(job) };
+    const early = await act(a, "mixCollect", { fid });
+    if (early.ok) return { ok: false, status: 0, error: "collected early" };
+    const busy = await act(a, "mix", { fid, a: 0, b: 1 });
+    if (busy.ok) return { ok: false, status: 0, error: "started a second batch while busy" };
+    await owner("PATCH", `roomsMeta/${room}/furni/${fid}/mixJob`, { doneAt: Date.now() - 1000 });
+    return act(a, "mixCollect", { fid });
+  };
   bad("rolling weed with a cigarette in the pocket no longer works", await (async () => { st = await state(a); return act(a, "combine", { a: slotOf(st, "weed"), b: slotOf(st, "cigarette") }); })());
   const r1 = await mixIt(["weed"], ["cigarette"]); ok("weed + cigarette", r1);
   check("2 weed mix", total(r1.state.inventory, "mix") === 2 && total(r1.state.inventory, "cigarette") === 2);
@@ -133,6 +148,13 @@ console.log("--- the mixer");
   const r4 = await mixIt(["pill"], ["cigarette"]); ok("pill + cigarette", r4);
   check("1 research chemical", total(r4.state.inventory, "researchchem") === 1);
   bad("pill + pill doesn't mix", await mixIt(["pill"], ["pill"]));
+  {
+    st = await state(a);
+    ok("start a batch to test storing", await act(a, "mix", { fid, a: slotOf(st, "weed"), b: slotOf(st, "cigarette") }));
+    bad("a mixer with a batch inside can't be stored", await act(a, "furniStore", { id: fid }));
+    await owner("PATCH", `roomsMeta/${room}/furni/${fid}/mixJob`, { doneAt: Date.now() - 1000 });
+    ok("collect it", await act(a, "mixCollect", { fid }));
+  }
   bad("ass weed + pill doesn't mix", await mixIt(["weed", true], ["pill"]));
   bad("ass weed + cigarette doesn't mix", await mixIt(["weed", true], ["cigarette"]));
   bad("the same slot twice", await act(a, "mix", { fid, a: 0, b: 0 }));
@@ -183,11 +205,12 @@ console.log("--- selling weed");
   const r3 = await act(a, "sellWeed", { slot: 2, qty: 5 });
   ok("sell the 5 weed seeds", r3);
   check("2 each: 10 more", r3.state.blood === 30);
-  const b2 = await fresh("t_sell2", { inventory: { 0: { item: "midweed", qty: 1 }, 1: { item: "mix", qty: 1 }, 2: { item: "thca", qty: 1 }, 3: { item: "researchchem", qty: 1 } } });
+  const b2 = await fresh("t_sell2", { inventory: { 0: { item: "mix", qty: 1 }, 1: { item: "midweed", qty: 1 }, 2: { item: "thca", qty: 1 }, 3: { item: "researchchem", qty: 1 } } });
   await act(b2, "sync");
+  bad("weed mix can't be sold", await act(b2, "sellWeed", { slot: 0, qty: 1 }));
   let tot = 0;
-  for (let i = 0; i < 4; i++) { const r = await act(b2, "sellWeed", { slot: 0, qty: 1 }); ok(`sell mixer item #${i + 1}`, r); tot = r.state.blood; }
-  check("mid weed 4 + weed mix 7 + thc-a 8 + research chemical 5 = 24", tot === 24, String(tot));
+  for (let i = 0; i < 3; i++) { const r = await act(b2, "sellWeed", { slot: 1, qty: 1 }); ok(`sell mixer item #${i + 1}`, r); tot = r.state.blood; }
+  check("mid weed 4 + thc-a 8 + research chemical 10 = 22", tot === 22, String(tot));
 }
 
 console.log("--- the floor: drop and pick up");
@@ -345,7 +368,7 @@ console.log("--- smoking, bins, syringe, cats, flappy");
 
 console.log("--- combining, growing");
 {
-  const a = await fresh("t_grow", { inventory: { 0: { item: "weed", qty: 1 }, 1: { item: "jointpaper", qty: 1 }, 2: { item: "weedseed", qty: 1 }, 3: { item: "wateringcan", qty: 1 } } });
+  const a = await fresh("t_grow", { inventory: { 0: { item: "weed", qty: 1 }, 1: { item: "jointpaper", qty: 1 }, 2: { item: "weedseed", qty: 2 }, 3: { item: "wateringcan", qty: 1 } } });
   await act(a, "sync");
   const room = `u_${a.uid}`;
   await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_grow", name: "t_grow's room", access: "knock", w: 8, h: 8, furni: { kit1: { kind: "f_planter", x: 2, y: 2 } } });
@@ -360,12 +383,23 @@ console.log("--- combining, growing");
   bad("harvest too early", await act(a, "harvest", { fid: "kit1" }));
   const canSlot = (await state(a)).inventory.findIndex((x) => x && x.item === "wateringcan");
   ok("fill the can", await act(a, "fillCan", { slot: canSlot }));
-  ok("water the plant", await act(a, "water", { fid: "kit1", slot: canSlot }));
-  await owner("PATCH", `roomsMeta/${room}/furni/kit1`, { plantedAt: Date.now() - 3 * 3600_000, wateredAt: Date.now() });
+  bad("it isn't thirsty in the first 5 minutes", await act(a, "water", { fid: "kit1", slot: canSlot }));
+  await owner("PATCH", `roomsMeta/${room}/furni/kit1`, { plantedAt: Date.now() - 6 * 60_000 });
+  ok("water it once it is thirsty", await act(a, "water", { fid: "kit1", slot: canSlot }));
+  bad("harvest before 20 minutes", await act(a, "harvest", { fid: "kit1" }));
+  const empty = (await state(a)).inventory.findIndex((x) => x && x.item === "wateringcan");
+  ok("fill the can again", await act(a, "fillCan", { slot: empty }));
+  bad("one watering is enough", await act(a, "water", { fid: "kit1", slot: empty }));
+  await owner("PATCH", `roomsMeta/${room}/furni/kit1`, { plantedAt: Date.now() - 21 * 60_000, wateredAt: Date.now() - 12 * 60_000 });
   const h = await act(a, "harvest", { fid: "kit1" });
-  ok("harvest once it has grown", h);
+  ok("harvest after 20 minutes", h);
   check("3 good weed", h.state.inventory.some((x) => x && x.item === "weed" && x.qty === 3 && !x.ass));
-  bad("a kit that isn't yours", await act(await fresh("t_grow2"), "harvest", { fid: "kit1" }));
+  // a second plant that never gets its water
+  const seed2 = (await state(a)); const sl = seed2.inventory.findIndex((x) => x && x.item === "weedseed");
+  if (sl >= 0) { ok("plant another seed", await act(a, "plant", { fid: "kit1", slot: sl })); }
+  await owner("PATCH", `roomsMeta/${room}/furni/kit1`, { plantedAt: Date.now() - 21 * 60_000 });
+  const h2 = await act(a, "harvest", { fid: "kit1" });
+  if (sl >= 0) { ok("harvest without ever watering", h2); check("it is ass weed", h2.state.inventory.some((x) => x && x.item === "weed" && x.ass === true && x.qty === 3)); }  bad("a kit that isn't yours", await act(await fresh("t_grow2"), "harvest", { fid: "kit1" }));
 }
 
 console.log("--- trading");

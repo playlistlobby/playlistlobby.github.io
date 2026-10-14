@@ -36,7 +36,7 @@ export const ITEMS: Record<string, ItemDef> = {
   weedseed: {
     id: "weedseed",
     name: "Weed seed",
-    examine: "A little seed from the bin. Select it, then click your growing kit to plant it.",
+    examine: "A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 20 minutes and needs one watering once it gets thirsty.",
     icon: assetUrl("items/weedseed.svg"),
     useOnObject: "f_planter",
   },

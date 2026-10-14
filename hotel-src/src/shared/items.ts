@@ -102,9 +102,9 @@ export const SMOKABLE: Record<string, SmokeDef> = {
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
 export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem"]);
-/** A plant grows for 2 hours and is thirsty after 1 hour without water. */
-export const GROW_MS = 2 * 3_600_000;
-export const WATER_MS = 3_600_000;
+/** A plant grows for 20 minutes. It gets thirsty after 5: water it once after that (and only then) or the weed turns out ass. */
+export const GROW_MS = 20 * 60_000;
+export const WATER_MS = 5 * 60_000;
 export const SMOKE_MS = 60_000;
 
 /** A drop of blood is the hotel's currency. */
@@ -148,9 +148,8 @@ export function sellPrice(item: string, ass?: boolean): number | null {
     case "weed": return ass ? 4 : 6;
     case "weedseed": return 2;
     case "midweed": return 4;
-    case "mix": return 7;
     case "thca": return 8;
-    case "researchchem": return 5;
+    case "researchchem": return 10;
     default: return null;
   }
 }

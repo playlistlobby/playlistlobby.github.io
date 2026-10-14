@@ -16,6 +16,7 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
+import { plantThirsty, plantWatered } from "../db";
 import { canStab, carveCat, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
@@ -1167,10 +1168,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   const planterStatus = (pl: { at: number; water: number; neglect: boolean }): string => {
-    const prog = plantProgress(pl), water = plantWater(pl);
+    const prog = plantProgress(pl);
     const left = Math.max(0, GROW_MS * (1 - prog));
-    const mins = Math.ceil(left / 60000);
-    return prog >= 1 ? `It's ready to pick!${pl.neglect || water <= 0 ? " It looks a bit sad." : ""}` : `Growing: ${Math.round(prog * 100)}% (about ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`} to go). Water: ${Math.round(water * 100)}%.`;
+    const mins = Math.max(1, Math.ceil(left / 60000));
+    const water = plantWatered(pl) ? "watered" : plantThirsty(pl) ? "THIRSTY: water it now!" : `water bar ${Math.round(plantWater(pl) * 100)}%`;
+    return prog >= 1 ? `It's ready to pick!${plantWatered(pl) ? "" : " It looks a bit sad."}` : `Growing: ${Math.round(prog * 100)}% (about ${mins}m to go). ${water[0].toUpperCase()}${water.slice(1)}.`;
   };
 
   /** Next to the sink or a growing kit: the sink fills a can; a kit gets a seed, water, or gets picked. */
@@ -1194,12 +1196,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (ss < 0 || ss === null) return say("An empty growing kit. Select a weed seed, then click the kit to plant it.", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
-        return say("You push a seed into the soil. It needs water: 2 hours to grow, thirsty after 1.");
+        return say("You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering once it gets thirsty (after 5 minutes).");
       }
       const prog = plantProgress(f.plant);
       const canSlot = held?.item === "wateringcan_full" ? slot! : findSlot(me.inventory, "wateringcan_full");
-      if (held?.item === "wateringcan_full" || (prog < 1 && canSlot >= 0)) {
+      if (held?.item === "wateringcan_full" || (prog < 1 && canSlot >= 0 && !plantWatered(f.plant))) {
         if (canSlot < 0 || canSlot === null) return say("You need a full watering can.", "warn");
+        if (plantWatered(f.plant)) return say("It's already been watered. It'll grow fine now.");
+        if (!plantThirsty(f.plant)) return say("It isn't thirsty yet. Wait until its water bar is empty.", "warn");
         await waterPlant(me, def.id, f.id, f.plant, canSlot);
         panel.refresh();
         playSfx("select", 0.4);
@@ -1211,7 +1215,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         playSfx("give", 0.6);
         giftPop(r.ass ? "+3 Ass weed" : "+3 Weed", itemImg("weed"));
         logAction(me, "room", `harvested ${r.ass ? "ass weed" : "weed"}`);
-        return say(r.ass ? "You pick it. It's ass weed: it ran dry on you." : "You pick the buds. Nice.");
+        return say(r.ass ? "You pick it. It's ass weed: it never got its water." : "You pick the buds. Nice.");
       }
       say(planterStatus(f.plant));
     } catch (err) {
@@ -1457,7 +1461,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const opens = FURNI_KINDS[f.kind].opens;
         if (opens === "furnish") enterFurnish();
         else if (opens === "vending") openVendingShop();
-        else if (opens === "mixer") { if (!mixerApi) mixerApi = openMixer(stage, ctx, f.id, () => panel.refresh(), () => { mixerApi = null; }); }
+        else if (opens === "mixer") { if (!mixerApi) mixerApi = openMixer(stage, ctx, f.id, def.id, () => panel.refresh(), () => { mixerApi = null; }); }
         else if (opens === "intercom") { if (!intercomApi) intercomApi = openIntercom(stage, def.id, () => def.access, () => { intercomApi = null; }); }
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
       }

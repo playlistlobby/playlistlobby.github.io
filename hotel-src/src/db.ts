@@ -4,7 +4,7 @@ import { act } from "./api";
 import { DEFAULT_FIGURE, Gender } from "./catalog";
 import { DISABLED_ITEMS, Inventory, INV_SIZE, itemDef } from "./items";
 import {
-  DAY_MS, parseEconomy, plantProgressAt, plantWaterAt, Snapshot, stabGainAt, SYRINGE_CD_MS, JOB_DELAY_MS,
+  DAY_MS, parseEconomy, plantProgressAt, plantThirsty as plantThirstyAt, plantWatered as plantWateredAt, plantWaterAt, Snapshot, stabGainAt, SYRINGE_CD_MS, JOB_DELAY_MS,
 } from "./shared/economy";
 
 // The numbers of the economy live in shared/economy.ts (the server uses the very same ones).
@@ -96,6 +96,8 @@ export const dumpsterWaitMs = (p: Profile, canId: string): number => Math.max(0,
 export const stabGain = (p: Profile): number => stabGainAt(p, serverNow());
 export const plantProgress = (pl: Plant): number => plantProgressAt(pl, serverNow());
 export const plantWater = (pl: Plant): number => plantWaterAt(pl, serverNow());
+export const plantThirsty = (pl: Plant): boolean => plantThirstyAt(pl, serverNow());
+export const plantWatered = (pl: Plant): boolean => plantWateredAt(pl);
 
 // ---- keeping the profile in step with the server ---------------------------------------------------------------------
 /** Replaces the economy part of the profile with what the server says (the pocket array stays the same array). */

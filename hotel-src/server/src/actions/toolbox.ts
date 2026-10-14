@@ -121,9 +121,10 @@ export const furniStore: Action = {
   async run(c, a) {
     const room = await requireOwnRoom(c);
     const id = text(a.id, ID_RE, "piece");
-    const row = await c.db.get<{ kind?: string; plantedAt?: number }>(`roomsMeta/${room}/furni/${id}`);
+    const row = await c.db.get<{ kind?: string; plantedAt?: number; mixJob?: unknown }>(`roomsMeta/${room}/furni/${id}`);
     if (!row?.kind) return fail("That piece isn't in your room.");
     if (typeof row.plantedAt === "number") fail("Harvest the plant first.");
+    if (row.mixJob) fail("Collect what's in the mixer first.");
     const w = await c.user();
     const have = w.s.storage[row.kind] ?? 0;
     if (have >= STORAGE_MAX_PIECES) fail("Storage is full of those.");

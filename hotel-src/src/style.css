@@ -222,6 +222,8 @@ button, input, select { font-family: var(--font); }
 .mixer-body { display: grid; gap: 8px; }
 .mixer-grid { display: grid; grid-template-columns: repeat(5, 48px); gap: 5px; justify-content: center; }
 .mixer-grid .inv-slot { width: 48px; height: 48px; padding: 0; cursor: pointer; }
+.mixer-bar { height: 10px; border-radius: 6px; background: rgba(255, 255, 255, .15); overflow: hidden; }
+.mixer-bar-fill { height: 100%; background: linear-gradient(#7fe08a, #2ea84a); transition: width .9s linear; }
 .mixer-line { text-align: center; font-weight: 700; }
 .mixer-result { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 28px; font-weight: 700; }
 .mixer-result img { width: 26px; height: 26px; image-rendering: pixelated; }

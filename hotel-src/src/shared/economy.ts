@@ -31,6 +31,8 @@ export const DROP_LIFE_MS = 5 * 60_000;
 export const DROP_LIFE_BULK_MS = 60_000;
 export const BULK_AT = 5;
 export const MAX_FURNI = 40;
+/** the mixer works for this long on every batch */
+export const MIX_MS = 10 * 60_000;
 export const STORAGE_MAX_PIECES = 99;
 export const STORAGE_MAX_ITEMS = 9999;
 
@@ -158,6 +160,11 @@ export const stabGainAt = (s: Pick<Snapshot, "boostUntil" | "boostMult">, now: n
 
 export interface Plant { at: number; water: number; neglect: boolean }
 export const plantProgressAt = (pl: Plant, now: number): number => Math.min(1, (now - pl.at) / GROW_MS);
-export const plantWaterAt = (pl: Plant, now: number): number => Math.max(0, 1 - (now - pl.water) / WATER_MS);
+/** It has had its water: watered at some point after getting thirsty (5 minutes in). One watering is enough. */
+export const plantWatered = (pl: Plant): boolean => pl.water >= pl.at + WATER_MS;
+/** Thirsty and not yet watered. */
+export const plantThirsty = (pl: Plant, now: number): boolean => now >= pl.at + WATER_MS && !plantWatered(pl);
+/** The water bar: it drains over the first 5 minutes; once it's empty the plant needs its one watering, which fills it for good. */
+export const plantWaterAt = (pl: Plant, now: number): number => (plantWatered(pl) ? 1 : Math.max(0, 1 - (now - pl.at) / WATER_MS));
 
 export { emptyInventory, SMOKABLE, SMOKE_MS, START_BLOOD };
