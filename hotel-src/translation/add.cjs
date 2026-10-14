@@ -74,7 +74,7 @@ set("Only the one who put the CD in (or the room's owner) can do that.", "Kun de
 set("There's no music player there.", "Der er ingen musikafspiller der.", "server/src/actions/cd.ts");
 set("You already bought your CD.", "Du har allerede købt din CD.", "server/src/actions/shop.ts");
 set("Owned", "Købt", "src/ui/sixtyShop.ts");
-set("A CD with a song on it. Use it on the boombox in your room (or the CD player in the basement) and the song plays for everyone there. It comes back when it's done.", "En CD med en sang på. Brug den på boomboxen i dit værelse (eller CD afspilleren i kælderen), så spiller sangen for alle derinde. Den kommer tilbage når den er færdig.", "src/items.ts");
+set("freakme", "freakme", "src/items.ts");
 set("🎲 Randomize", "Randomize");
 set("Door: locked", "Dør: låst", "src/ui/room.ts");
 set("The door is locked. Finish what Sixty wants first.", "Døren er låst. Gør færdig hvad Sixty vil have først.", "src/ui/room.ts");

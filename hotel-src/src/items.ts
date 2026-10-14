@@ -196,7 +196,7 @@ export const ITEMS: Record<string, ItemDef> = {
   cd: {
     id: "cd",
     name: "CD",
-    examine: "A CD with a song on it. Use it on the boombox in your room (or the CD player in the basement) and the song plays for everyone there. It comes back when it's done.",
+    examine: "freakme",
     icon: assetUrl("items/cd.png"),
     useOnObject: "cdplayer",
   },

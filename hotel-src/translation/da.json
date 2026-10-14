@@ -5850,8 +5850,8 @@
   "where": "src/ui/sixtyShop.ts"
  },
  "N059": {
-  "en": "A CD with a song on it. Use it on the boombox in your room (or the CD player in the basement) and the song plays for everyone there. It comes back when it's done.",
-  "da": "En CD med en sang på. Brug den på boomboxen i dit værelse (eller CD afspilleren i kælderen), så spiller sangen for alle derinde. Den kommer tilbage når den er færdig.",
+  "en": "freakme",
+  "da": "freakme",
   "where": "src/items.ts"
  },
  "N060": {
