@@ -48,6 +48,10 @@ export interface Profile {
   boostUntil: number;
   /** how many times a stab is worth while the bonus lasts (2 cigarette, 3 joint, 4 blunt) */
   boostMult: number;
+  /** walking twice as fast until this time (thc-a, research chemical) */
+  speedUntil: number;
+  /** flashing and smoking until this time (research chemical) */
+  chemUntil: number;
   catsCarved: number;
   /** furniture and things kept in the toolbox's storage: kind (or "ass_<item>") -> how many */
   storage: Record<string, number>;
@@ -103,6 +107,8 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.dumpsters = s.dumpsters;
   p.boostUntil = s.boostUntil;
   p.boostMult = s.boostMult;
+  p.speedUntil = s.speedUntil;
+  p.chemUntil = s.chemUntil;
   p.catsCarved = s.catsCarved;
   p.syringeSelfAt = s.syringeSelfAt;
   p.syringeBagAt = s.syringeBagAt;
@@ -164,6 +170,8 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     dumpsters: {},
     boostUntil: 0,
     boostMult: 2,
+    speedUntil: 0,
+    chemUntil: 0,
     catsCarved: 0,
     storage: {},
     tutorial: 0,
@@ -233,7 +241,7 @@ export async function lightItem(p: Profile, slot: number): Promise<number> {
   return Number((await call<{ litAt?: number }>(p, "light", { slot })).litAt) || serverNow();
 }
 /** A smoke that has burned for a minute: it becomes a butt and gives its bonus (or knocks you out, for ass weed). */
-export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; mult?: number; boostMs?: number }> => call(p, "finishSmoke", { slot });
+export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; mult?: number; boostMs?: number; speedMs?: number; chemMs?: number }> => call(p, "finishSmoke", { slot });
 
 // ---- growing weed in a growing kit ---------------------------------------------------------------------------
 export const plantSeed = (p: Profile, _roomId: string, fid: string, seedSlot: number): Promise<unknown> => call(p, "plant", { fid, slot: seedSlot });

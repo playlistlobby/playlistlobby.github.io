@@ -627,6 +627,12 @@
               "$other": {
                 ".validate": false
               }
+            },
+            "fast": {
+              ".validate": "newData.isNumber()"
+            },
+            "chem": {
+              ".validate": "newData.isNumber()"
             }
           }
         },

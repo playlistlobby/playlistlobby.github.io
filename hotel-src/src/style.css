@@ -219,6 +219,12 @@ button, input, select { font-family: var(--font); }
 .drop-buttons { display: flex; gap: 10px; justify-content: flex-end; }
 .btn.drop-yes { background: linear-gradient(#58d68d, #1e9e55); border-color: #14753f; color: #fff; font-weight: 700; min-width: 90px; }
 .btn.drop-no { background: linear-gradient(#ff6b6b, #c62828); border-color: #8e1b1b; color: #fff; font-weight: 700; min-width: 90px; }
+.mixer-body { display: grid; gap: 8px; }
+.mixer-grid { display: grid; grid-template-columns: repeat(5, 48px); gap: 5px; justify-content: center; }
+.mixer-grid .inv-slot { width: 48px; height: 48px; padding: 0; cursor: pointer; }
+.mixer-line { text-align: center; font-weight: 700; }
+.mixer-result { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 28px; font-weight: 700; }
+.mixer-result img { width: 26px; height: 26px; image-rendering: pixelated; }
 .inv-slot.loaned { opacity: .4; filter: grayscale(.6); cursor: not-allowed; }
 .inv-slot img { width: 80%; height: 80%; image-rendering: pixelated; user-select: none; }
 .inv-slot .qty { position: absolute; top: 1px; left: 3px; color: #a67800; font-size: 11px; font-weight: 700; }

@@ -107,6 +107,68 @@ console.log("--- shops can't be fooled");
   bad("furniture that isn't in the shop today", await act(u, "buyFurni", { kind: "f_sofa" }) );
 }
 
+console.log("--- the mixer");
+{
+  const a = await fresh("t_mix", { blood: 10, inventory: { 0: { item: "weed", qty: 4 }, 1: { item: "weed", qty: 2, ass: true }, 2: { item: "cigarette", qty: 3 }, 3: { item: "pill", qty: 3 }, 4: { item: "jointpaper", qty: 4 }, 5: { item: "lighter", qty: 1 }, 6: { item: "bluntwrap", qty: 2 } } });
+  await act(a, "sync");
+  const room = `u_${a.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_mix", name: "t_mix's room", access: "knock", w: 8, h: 8 });
+  await stand(a, room, 3, 3);
+  const buy = await act(a, "buyVending", { id: "mixer" });
+  ok("buy the mixer from the vending machine", buy);
+  check("it costs 10", buy.state.blood === 0);
+  const slotOf = (st, item, ass) => st.inventory.findIndex((x) => x && x.item === item && !!x.ass === !!ass);
+  let st = await state(a);
+  const place = await act(a, "furniPlace", { source: "inv", slot: slotOf(st, "f_mixer"), x: 5, y: 5, dir: 0 });
+  ok("place the mixer in the room", place);
+  const fid = Object.keys((await owner("GET", `roomsMeta/${room}/furni`)) ?? {})[0];
+  const mixIt = async (x, y) => { st = await state(a); return act(a, "mix", { fid, a: slotOf(st, x[0], x[1]), b: slotOf(st, y[0], y[1]) }); };
+  bad("rolling weed with a cigarette in the pocket no longer works", await (async () => { st = await state(a); return act(a, "combine", { a: slotOf(st, "weed"), b: slotOf(st, "cigarette") }); })());
+  const r1 = await mixIt(["weed"], ["cigarette"]); ok("weed + cigarette", r1);
+  check("2 weed mix", total(r1.state.inventory, "mix") === 2 && total(r1.state.inventory, "cigarette") === 2);
+  const r2 = await mixIt(["weed"], ["weed", true]); ok("weed + ass weed", r2);
+  check("2 mid weed", total(r2.state.inventory, "midweed") === 2);
+  const r3 = await mixIt(["pill"], ["weed"]); ok("pill + weed", r3);
+  check("1 thc-a", total(r3.state.inventory, "thca") === 1 && total(r3.state.inventory, "pill") === 2);
+  const r4 = await mixIt(["pill"], ["cigarette"]); ok("pill + cigarette", r4);
+  check("1 research chemical", total(r4.state.inventory, "researchchem") === 1);
+  bad("pill + pill doesn't mix", await mixIt(["pill"], ["pill"]));
+  bad("ass weed + pill doesn't mix", await mixIt(["weed", true], ["pill"]));
+  bad("ass weed + cigarette doesn't mix", await mixIt(["weed", true], ["cigarette"]));
+  bad("the same slot twice", await act(a, "mix", { fid, a: 0, b: 0 }));
+  bad("a mixer that isn't there", await act(a, "mix", { fid: "nope", a: 0, b: 1 }));
+  const far = await fresh("t_mix2", { inventory: { 0: { item: "weed", qty: 1 }, 1: { item: "cigarette", qty: 1 } } });
+  await act(far, "sync"); await stand(far, `u_${far.uid}`, 2, 2);
+  await owner("PUT", `roomsMeta/u_${far.uid}`, { owner: far.uid, ownerName: "t_mix2", name: "t_mix2 room", access: "knock", w: 8, h: 8 });
+  bad("mixing needs a mixer in your own room", await act(far, "mix", { fid, a: 0, b: 1 }));
+  // rolling and smoking the new things (a short rest so the server's anti-spam limit doesn't trip on this test's burst)
+  await new Promise((r) => setTimeout(r, 3500));
+  st = await state(a);
+  const tj = await act(a, "combine", { a: slotOf(st, "thca"), b: slotOf(st, "jointpaper") });
+  ok("roll thc-a into a joint", tj);
+  check("it is a thc-a joint", total(tj.state.inventory, "joint_thca") === 1);
+  const cb = await act(a, "combine", { a: slotOf(tj.state, "researchchem"), b: slotOf(tj.state, "bluntwrap") });
+  ok("roll research chemical into a blunt", cb);
+  check("it is a research blunt", total(cb.state.inventory, "blunt_chem") === 1);
+  const mj = await act(a, "combine", { a: slotOf(cb.state, "midweed"), b: slotOf(cb.state, "jointpaper") });
+  ok("roll mid weed into a joint", mj);
+  const lit = await act(a, "light", { slot: slotOf(mj.state, "joint_thca") });
+  ok("light the thc-a joint", lit);
+  const litSlot = lit.state.inventory.findIndex((x) => x && x.lit);
+  await owner("PATCH", `users/${a.uid}/inventory/${litSlot}`, { lit: Date.now() - 70_000 });
+  const fin = await act(a, "finishSmoke", { slot: litSlot });
+  ok("finish it", fin);
+  check("double blood and double speed for 2 minutes, no flashing", fin.state.boostMult === 2 && fin.state.speedUntil - Date.now() > 100_000 && fin.state.speedUntil - Date.now() <= 121_000 && fin.state.chemUntil === 0, JSON.stringify([fin.state.boostMult, fin.state.speedUntil - Date.now(), fin.state.chemUntil]));
+  await new Promise((r) => setTimeout(r, 2500));
+  const lit2 = await act(a, "light", { slot: slotOf(fin.state, "blunt_chem") });
+  ok("light the research blunt", lit2);
+  const litSlot2 = lit2.state.inventory.findIndex((x) => x && x.lit);
+  await owner("PATCH", `users/${a.uid}/inventory/${litSlot2}`, { lit: Date.now() - 70_000 });
+  const fin2 = await act(a, "finishSmoke", { slot: litSlot2 });
+  ok("finish the research blunt", fin2);
+  check("the same, and 30 seconds of flashing and smoke", fin2.state.speedUntil - Date.now() > 100_000 && fin2.state.chemUntil - Date.now() > 20_000 && fin2.state.chemUntil - Date.now() <= 31_000, JSON.stringify([fin2.state.speedUntil - Date.now(), fin2.state.chemUntil - Date.now()]));
+}
+
 console.log("--- selling weed");
 {
   const a = await fresh("t_sell", { inventory: { 0: { item: "weed", qty: 3 }, 1: { item: "weed", qty: 2, ass: true }, 2: { item: "knife", qty: 1 } } });

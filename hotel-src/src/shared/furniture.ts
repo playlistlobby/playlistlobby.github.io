@@ -40,6 +40,7 @@ export const SHOP_KIND_PREFIX = "f_";
 export const SHIPPED_DIMS: Record<string, { w: number; h: number }> = {
   ...Object.fromEntries(SHOP_PIECES.map((p) => [SHOP_KIND_PREFIX + p.id, { w: p.w, h: p.h }])),
   f_planter: { w: 1, h: 1 },
+  f_mixer: { w: 1, h: 1 },
 };
 
 export const PICKS_PER_DAY = 4;

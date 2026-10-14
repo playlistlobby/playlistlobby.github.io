@@ -5,6 +5,9 @@
 export const ITEM_ID_LIST = [
   "weedseed", "weed", "mix", "jointpaper", "bluntwrap", "joint", "blunt", "wateringcan", "wateringcan_full",
   "burger", "pill", "syringe", "cd", "lockpick", "cigarette", "cigbutt", "lighter", "deadcat", "knife",
+  // the mixer's results, and the joints and blunts rolled from them
+  "midweed", "thca", "researchchem",
+  "joint_mid", "joint_thca", "joint_chem", "blunt_mid", "blunt_thca", "blunt_chem",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -75,15 +78,30 @@ export const VENDING_STOCK: Array<{ id: string; item: string; qty: number; label
   { id: "bluntwrap", item: "bluntwrap", qty: 1, label: "Blunt wrap" },
   { id: "cigpack", item: "cigarette", qty: 15, label: "Cigarettes (15)", fixedPrice: 10 },
   { id: "wateringcan", item: "wateringcan", qty: 1, label: "Watering can" },
+  { id: "mixer", item: "f_mixer", qty: 1, label: "Mixer", fixedPrice: 10 },
 ];
-/** Things you can light, and what finishing one does: for a while, a stab is worth more blood. */
-export const SMOKABLE: Record<string, { mult: number; boostMs: number }> = {
-  cigarette: { mult: 2, boostMs: 120_000 },
-  joint: { mult: 3, boostMs: 120_000 },
-  blunt: { mult: 4, boostMs: 180_000 },
+/**
+ * Things you can light, and what finishing one does: for a while, a stab is worth more blood.
+ * `kind` is how it looks in the mouth (cigarette / joint / blunt); `speedMs` = you walk twice as fast for that long; `chemMs` = you flash and smoke
+ * pours off you for that long.
+ */
+export interface SmokeDef { mult: number; boostMs: number; kind: "cigarette" | "joint" | "blunt"; speedMs?: number; chemMs?: number }
+export const SMOKABLE: Record<string, SmokeDef> = {
+  cigarette: { mult: 2, boostMs: 120_000, kind: "cigarette" },
+  joint: { mult: 3, boostMs: 120_000, kind: "joint" },
+  blunt: { mult: 4, boostMs: 180_000, kind: "blunt" },
+  // mid weed: a milder smoke than the real thing
+  joint_mid: { mult: 2, boostMs: 120_000, kind: "joint" },
+  blunt_mid: { mult: 2, boostMs: 120_000, kind: "blunt" },
+  // thc-a: walk twice as fast and stab for double blood, both for 2 minutes
+  joint_thca: { mult: 2, boostMs: 120_000, kind: "joint", speedMs: 120_000 },
+  blunt_thca: { mult: 2, boostMs: 120_000, kind: "blunt", speedMs: 120_000 },
+  // research chemical: the same, and for 30 seconds you flash and smoke pours off you
+  joint_chem: { mult: 2, boostMs: 120_000, kind: "joint", speedMs: 120_000, chemMs: 30_000 },
+  blunt_chem: { mult: 2, boostMs: 120_000, kind: "blunt", speedMs: 120_000, chemMs: 30_000 },
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem"]);
 /** A plant grows for 2 hours and is thirsty after 1 hour without water. */
 export const GROW_MS = 2 * 3_600_000;
 export const WATER_MS = 3_600_000;
@@ -94,14 +112,33 @@ export const START_BLOOD = 0; // you start with nothing: the first stab (in the 
 export const MUSIC_ACCESS_KEY = "access_music";
 export const MUSIC_ACCESS_PRICE = 4;
 
-/** Two items used on each other (weed + paper = a joint, ...): what you get, or null if they don't go together. The order you clicked them in doesn't matter. */
+/** Everything you can roll: good weed, and what the mixer makes from it. */
+export const ROLLABLE: ReadonlySet<string> = new Set(["weed", "mix", "midweed", "thca", "researchchem"]);
+
+/** What a rolled joint / blunt is called, by what went into it. (Good weed and weed mix both make the plain one.) */
+const ROLL_SUFFIX: Record<string, string> = { weed: "", mix: "", midweed: "_mid", thca: "_thca", researchchem: "_chem" };
+
+/** Rolling, in the pocket: weed (or mix, mid weed, thc-a, research chemical) + joint paper or a blunt wrap. The order you clicked them in doesn't matter. Null if they don't go together. */
 export function combine(a: InvItem, b: InvItem): { give: InvItem; note: string } | null {
-  const w = [a, b].find((x) => x.item === "weed" || x.item === "mix");
+  const w = [a, b].find((x) => ROLLABLE.has(x.item));
   const o = w === a ? b : w === b ? a : undefined;
   if (!w || !o || w === o) return null;
-  const ass = w.ass ? { ass: true as const } : {};
-  if (o.item === "jointpaper") return { give: { item: "joint", qty: 1, ...ass }, note: "You roll a joint." };
-  if (o.item === "bluntwrap") return { give: { item: "blunt", qty: 1, ...ass }, note: "You roll a blunt." };
-  if (o.item === "cigarette" && !o.lit && w.item === "weed") return { give: { item: "mix", qty: 2, ...ass }, note: "You crumble the weed into the cigarette: 2 mix." };
+  const ass = w.ass && w.item === "weed" ? { ass: true as const } : {};
+  const suffix = ROLL_SUFFIX[w.item] ?? "";
+  if (o.item === "jointpaper") return { give: { item: `joint${suffix}`, qty: 1, ...ass }, note: "You roll a joint." };
+  if (o.item === "bluntwrap") return { give: { item: `blunt${suffix}`, qty: 1, ...ass }, note: "You roll a blunt." };
   return null;
+}
+
+/** The mixer: two things in, something new out. One of each goes in; the result is how many come out. The order doesn't matter. */
+export interface MixRecipe { a: { item: string; ass?: boolean }; b: { item: string; ass?: boolean }; give: InvItem; note: string }
+export const MIX_RECIPES: MixRecipe[] = [
+  { a: { item: "weed" }, b: { item: "cigarette" }, give: { item: "mix", qty: 2 }, note: "You crumble the weed into the tobacco: 2 weed mix." },
+  { a: { item: "weed" }, b: { item: "weed", ass: true }, give: { item: "midweed", qty: 2 }, note: "Good weed and bad weed, mixed up: 2 mid weed." },
+  { a: { item: "pill" }, b: { item: "weed" }, give: { item: "thca", qty: 1 }, note: "The pill dissolves into the weed: 1 thc-a." },
+  { a: { item: "pill" }, b: { item: "cigarette" }, give: { item: "researchchem", qty: 1 }, note: "You grind the pill into the tobacco: 1 research chemical." },
+];
+const matches = (it: InvItem, m: { item: string; ass?: boolean }): boolean => it.item === m.item && !it.lit && !it.inPlayer && !!it.ass === !!m.ass;
+export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
+  return MIX_RECIPES.find((r) => (matches(x, r.a) && matches(y, r.b)) || (matches(y, r.a) && matches(x, r.b))) ?? null;
 }

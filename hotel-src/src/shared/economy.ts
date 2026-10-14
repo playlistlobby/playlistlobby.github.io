@@ -47,6 +47,10 @@ export interface Snapshot {
   dumpsters: Record<string, number>;
   boostUntil: number;
   boostMult: number;
+  /** walking twice as fast until this time (thc-a, research chemical) */
+  speedUntil: number;
+  /** flashing and smoking until this time (research chemical) */
+  chemUntil: number;
   catsCarved: number;
   syringeSelfAt: number;
   syringeBagAt: number;
@@ -81,6 +85,8 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     dumpsters: nums(v.dumpsters),
     boostUntil: Number(v.boostUntil) || 0,
     boostMult: Math.min(4, Math.max(2, Number(v.boostMult) || 2)),
+    speedUntil: Number(v.speedUntil) || 0,
+    chemUntil: Number(v.chemUntil) || 0,
     catsCarved: Number(v.catsCarved) || 0,
     syringeSelfAt: Number(v.syringeSelfAt) || 0,
     syringeBagAt: Number(v.syringeBagAt) || 0,
@@ -98,7 +104,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
   const patch: Record<string, unknown> = {};
   const base = `users/${uid}/`;
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-  for (const k of ["blood", "boostUntil", "boostMult", "catsCarved", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
+  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "chemUntil", "catsCarved", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
     if (before[k] !== after[k]) patch[base + k] = after[k];
   }
   if (before.sixty.knifeAt !== after.sixty.knifeAt) patch[`${base}sixty/knifeAt`] = after.sixty.knifeAt;

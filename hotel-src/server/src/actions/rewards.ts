@@ -144,11 +144,13 @@ export const finishSmoke: Action = {
     if (ass) return { passOut: true };
     s.boostUntil = c.now + sm!.boostMs;
     s.boostMult = sm!.mult;
-    return { mult: sm!.mult, boostMs: sm!.boostMs };
+    if (sm!.speedMs) s.speedUntil = c.now + sm!.speedMs;
+    if (sm!.chemMs) s.chemUntil = c.now + sm!.chemMs;
+    return { mult: sm!.mult, boostMs: sm!.boostMs, speedMs: sm!.speedMs ?? 0, chemMs: sm!.chemMs ?? 0 };
   },
 };
 
-/** Two pocket items used on each other (weed + paper, ...). */
+/** Two pocket items used on each other: rolling (weed + paper, ...). Mixing is the mixer's job. */
 export const combineItems: Action = {
   async run(c, a) {
     const w = await c.user();

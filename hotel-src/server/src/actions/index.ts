@@ -8,6 +8,7 @@ import { furniMove, furniPlace, furniStore, storeItem, takeItem } from "./toolbo
 import { tradeFinish } from "./trade";
 import { debug } from "./debug";
 import { cdInsert, cdReturn } from "./cd";
+import { mix } from "./mixer";
 
 /** Every thing the browser may ask for. Anything not listed here cannot be done: the browser can't write economy data itself. */
 export const ACTIONS: Record<string, Action> = {
@@ -18,6 +19,6 @@ export const ACTIONS: Record<string, Action> = {
   drop, pickup,
   store: storeItem, take: takeItem, furniPlace, furniMove, furniStore,
   tradeFinish,
-  cdInsert, cdReturn,
+  cdInsert, cdReturn, mix,
   debug,
 };

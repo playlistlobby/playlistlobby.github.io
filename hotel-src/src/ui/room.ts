@@ -64,6 +64,7 @@ import { onFurniShopChanged, picksToday, priceOf } from "../furniShop";
 import { FurniBuyApi, openFurniBuy } from "./furniBuy";
 import { openVending, VendingApi } from "./vendingShop";
 import { IntercomApi, openIntercom } from "./intercom";
+import { MixerApi, openMixer } from "./mixer";
 import { FurnishApi, mountFurnishUi } from "./furnish";
 import { canTurn, defaultDir, isFixedPiece, nextDir, movePiece, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
 import { Box, drawNitroSprites, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
@@ -184,6 +185,10 @@ interface Player {
   smoke?: number;
   /** what they are smoking: "cigarette" (or nothing), "joint" or "blunt" */
   smokeKind?: string;
+  /** walking twice as fast until this time (server time, ms) */
+  fast?: number;
+  /** flashing with smoke pouring off them until this time */
+  chem?: number;
   /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
   npc?: boolean;
   /** sitting on a chair or couch (shown to everyone through players/<uid>/sit) */
@@ -302,6 +307,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let furniBuyApi: FurniBuyApi | null = null;
   let vendingApi: VendingApi | null = null;
   let intercomApi: IntercomApi | null = null;
+  let mixerApi: MixerApi | null = null;
   // the furnishing menu (toolbox): your room without you in it, pieces to drag around, storage
   let furnishOn = false;
   let furnishUi: FurnishApi | null = null;
@@ -426,6 +432,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "intercom") text = "Door intercom: who may come in";
+    else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && isBodyBag(hoverObj.kind)) text = "Body bag: use a syringe on it";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind ?? ""]?.plant) { const pf = def.furni.find((x) => x.id === hoverObj!.id); text = pf?.plant ? `Growing kit · ${Math.round(plantProgress(pf.plant) * 100)}% · water ${Math.round(plantWater(pf.plant) * 100)}%` : "Growing kit (empty): plant a seed"; }
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
@@ -672,7 +679,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (obj.kind === "cdplayer") openCdPopup();
-      else if (obj.kind === "bag" || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "intercom") startBag(obj.id);
+      else if (obj.kind === "bag" || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "intercom" || obj.kind === "f_mixer") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
@@ -714,6 +721,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "vending") opts.push({ label: "Shop", target: "Vending machine", action: () => startBag(obj.id) });
     if (obj && isBodyBag(obj.kind) && !isDisplayPiece(obj.id)) opts.push({ label: "Draw blood", target: "Body bag", action: () => startUse(obj.id, null) });
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
+    if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
     if (obj?.kind === "intercom") opts.push({ label: "Use", target: "Door intercom", action: () => startBag(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (obj?.kind === "bag") opts.push({ label: "Change clothes", target: "Bag of clothes", action: () => startBag(obj.id) });
@@ -807,7 +815,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   };
   window.addEventListener("keydown", onKey);
   window.addEventListener("keydown", onRotateKey);
-  const onPocket = () => { panel.refresh(); ctx.refreshHeader(); };
+  const onPocket = () => { panel.refresh(); ctx.refreshHeader(); mixerApi?.refresh(); };
   window.addEventListener("pocket-changed", onPocket);
 
   function rotateTool(): void {
@@ -1025,16 +1033,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       from: p, to: p, stepStart: 0, path: [], dest: p, lastEmoteTs: v.emote?.ts ?? 0,
       smoke: typeof v.smoke === "number" ? v.smoke : undefined,
       smokeKind: typeof v.smokeKind === "string" ? v.smokeKind : undefined,
+      fast: typeof v.fast === "number" ? v.fast : undefined,
+      chem: typeof v.chem === "number" ? v.chem : undefined,
       npc: v.sixty === true,
       sit: v.sit === true,
       faint: v.lay === true,
     };
   }
 
-  const isMoving = (p: Player, now: number) => now - p.stepStart < STEP_MS && (p.from.x !== p.to.x || p.from.y !== p.to.y);
+  /** how long one step takes: half as long while thc-a / research chemical is in you */
+  const stepOf = (p: Player): number => (p.fast && serverNow() < p.fast ? STEP_MS / 2 : STEP_MS);
+  const isMoving = (p: Player, now: number) => now - p.stepStart < stepOf(p) && (p.from.x !== p.to.x || p.from.y !== p.to.y);
 
   function currentTile(p: Player): Pt {
-    return p.path.length || performance.now() - p.stepStart < STEP_MS ? p.to : p.from;
+    return p.path.length || performance.now() - p.stepStart < stepOf(p) ? p.to : p.from;
   }
 
   function setDestination(p: Player, dest: Pt): void {
@@ -1057,7 +1069,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function advance(p: Player, now: number): void {
-    if (now - p.stepStart < STEP_MS) return;
+    if (now - p.stepStart < stepOf(p)) return;
     p.from = p.to;
     if (p.path.length) {
       const next = p.path.shift()!;
@@ -1068,7 +1080,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function posOf(p: Player, now: number): Pt {
-    const t = isMoving(p, now) ? (now - p.stepStart) / STEP_MS : 1;
+    const t = isMoving(p, now) ? (now - p.stepStart) / stepOf(p) : 1;
     return { x: p.from.x + (p.to.x - p.from.x) * t, y: p.from.y + (p.to.y - p.from.y) * t };
   }
 
@@ -1445,6 +1457,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const opens = FURNI_KINDS[f.kind].opens;
         if (opens === "furnish") enterFurnish();
         else if (opens === "vending") openVendingShop();
+        else if (opens === "mixer") { if (!mixerApi) mixerApi = openMixer(stage, ctx, f.id, () => panel.refresh(), () => { mixerApi = null; }); }
         else if (opens === "intercom") { if (!intercomApi) intercomApi = openIntercom(stage, def.id, () => def.access, () => { intercomApi = null; }); }
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
       }
@@ -1884,8 +1897,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     try {
       const t = await lightItem(me, slot);
       p.smoke = t;
-      p.smokeKind = it.item;
-      void update(myRef, { smoke: serverTimestamp(), smokeKind: it.item }).catch(() => undefined);
+      p.smokeKind = SMOKABLE[it.item].kind;
+      void update(myRef, { smoke: serverTimestamp(), smokeKind: SMOKABLE[it.item].kind }).catch(() => undefined);
       playSfx("light", 0.45);
       logAction(me, "room", `lit a ${it.item}`);
       panel.refresh();
@@ -2006,7 +2019,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           say("That was ass weed… it hits you hard. Give it a moment…");
           startWoozy();
         } else {
-          say(`You finish the ${name}. You feel sharp: stabs give x${r.mult ?? sm.mult} blood for ${Math.round((r.boostMs ?? sm.boostMs) / 60000)} minutes.`);
+          const extra: string[] = [];
+          if (r.speedMs) extra.push("you're walking twice as fast");
+          if (r.chemMs) extra.push("you're flashing and smoke pours off you");
+          if (p && (r.speedMs || r.chemMs)) {
+            p.fast = me.speedUntil || undefined;
+            p.chem = me.chemUntil || undefined;
+            void update(myRef, { fast: p.fast ?? null, chem: p.chem ?? null }).catch(() => undefined);
+          }
+          say(`You finish the ${name}. You feel sharp: stabs give x${r.mult ?? sm.mult} blood for ${Math.round((r.boostMs ?? sm.boostMs) / 60000)} minutes${extra.length ? ` and ${extra.join(", ")}` : ""}.`);
         }
       }).catch(() => undefined).finally(() => window.setTimeout(() => finishing.delete(i), 4000));
     });
@@ -2099,13 +2120,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // a cigarette still burning from before (you changed rooms) keeps smoking
     const burningItem = me.inventory.find((s) => s && SMOKABLE[s.item] && s.lit && serverNow() - s.lit < SMOKE_MS);
     const burning = burningItem?.lit;
-    if (burning) { mineP.smoke = burning; mineP.smokeKind = burningItem!.item; }
+    if (me.speedUntil > serverNow()) mineP.fast = me.speedUntil;
+    if (me.chemUntil > serverNow()) mineP.chem = me.chemUntil;
+    if (burning) { mineP.smoke = burning; mineP.smokeKind = SMOKABLE[burningItem!.item].kind; }
     void onDisconnect(myRef).remove();
-    set(myRef, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, ts: serverTimestamp(), ...(burning ? { smoke: burning, smokeKind: burningItem!.item } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
+    set(myRef, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, ts: serverTimestamp(), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
     unsubs.push(watchDrops(roomId, (m) => { drops = m; sweepExpired(roomId, m.values()); }));
+    const stopPocketWatch = (): void => undefined; void stopPocketWatch;
     const dropSweep = window.setInterval(() => sweepExpired(roomId, drops.values()), 5000);
     unsubs.push(() => window.clearInterval(dropSweep));
     if (isBasement) setAmbience(true); if (roomId === SHOP_ID) setShopMusic(true); // the basement hums: the sound fades in as you arrive
@@ -2175,6 +2199,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.figure = v.figure;
         p.smoke = typeof v.smoke === "number" ? v.smoke : undefined;
         p.smokeKind = typeof v.smokeKind === "string" ? v.smokeKind : undefined;
+        p.fast = typeof v.fast === "number" ? v.fast : undefined;
+        p.chem = typeof v.chem === "number" ? v.chem : undefined;
         p.npc = v.sixty === true;
         p.sit = v.sit === true;
         p.faint = v.lay === true;
@@ -2294,7 +2320,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const actions = moving ? ["wlk"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && holdsKnife(p, now) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
-      ? Math.floor((now - p.stepStart) / (STEP_MS / 4)) % 4
+      ? Math.floor((now - p.stepStart) / (stepOf(p) / 4)) % 4
       : talking ? Math.floor(now / 140) % 2
       : em?.def.actions?.includes("wav") ? Math.floor(now / 250) % 2
       : 0;
@@ -2428,7 +2454,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (k.plant) return drawPlanter(f, now);
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
-      if (b && k.opens && k.opens !== "sink" && k.opens !== "intercom" && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
+      if (b && k.opens && k.opens !== "sink" && k.opens !== "intercom" && k.opens !== "mixer" && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -3092,12 +3118,23 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             g.fillStyle = grad;
             g.beginPath(); g.arc(gx, gy, gr, 0, Math.PI * 2); g.fill();
           }
+          const chemOn = !!p.chem && serverNow() < p.chem;
           if (img) {
             const ax = feet.x + lunge.x - 32 * scale;
             const ay = feet.y + lunge.y + lift - FEET_Y * scale;
             if (glowing) { g.save(); g.shadowColor = `rgba(255,214,90,${(0.75 + 0.25 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 18 * pulse) * scale; }
+            else if (chemOn) { g.save(); g.shadowColor = `hsla(${Math.floor(now / 2.5) % 360},100%,60%,0.95)`; g.shadowBlur = (14 + 14 * Math.abs(Math.sin(now / 90))) * scale; }
             g.drawImage(img, ax, ay, img.width * scale, img.height * scale);
-            if (glowing) g.restore();
+            if (glowing || chemOn) g.restore();
+            if (chemOn) { // smoke pours off you
+              for (let i = 0; i < 10; i++) {
+                const t = (now / 1400 + i / 10) % 1;
+                const px = feet.x + lunge.x + Math.sin(t * 9 + i * 2.1) * (10 + t * 14) * scale;
+                const py = feet.y + lunge.y + lift - (14 + t * 70) * scale;
+                g.fillStyle = `rgba(244,244,248,${(0.85 * (1 - t)).toFixed(3)})`; g.strokeStyle = `rgba(80,84,96,${(0.55 * (1 - t)).toFixed(3)})`; g.lineWidth = 1.2;
+                g.beginPath(); g.arc(px, py, (4 + t * 10) * scale, 0, Math.PI * 2); g.fill(); g.stroke();
+              }
+            }
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
           }
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
@@ -3189,6 +3226,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     furniBuyApi?.close();
     vendingApi?.close();
     intercomApi?.close();
+    mixerApi?.close();
     dropConfirmApi?.close();
     pillCleanup?.();
     furnishUi?.dispose();
