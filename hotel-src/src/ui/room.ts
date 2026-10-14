@@ -672,8 +672,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
       opts.push({ label: "Examine", target: SIXTY.name, action: () => say("6ixty. He sells things, and he knows how this place works.") });
     } else if (target && target.uid !== me.uid) {
-      if (item?.useOnPlayer === "stab") opts.push({ label: `Use ${item.name} →`, target: target.name, action: () => startStab(target.uid) });
-      if (hasKnife && item?.useOnPlayer !== "stab") opts.push({ label: "Stab", target: target.name, danger: true, action: () => startStab(target.uid) });
+      if (item?.useOnPlayer === "stab" && !(target.uid === LEGEND.id && me.tutorial >= 2)) opts.push({ label: `Use ${item.name} →`, target: target.name, action: () => startStab(target.uid) });
+      if (hasKnife && item?.useOnPlayer !== "stab" && !(target.uid === LEGEND.id && me.tutorial >= 2)) opts.push({ label: "Stab", target: target.name, danger: true, action: () => startStab(target.uid) });
       opts.push({ label: "Examine", target: target.name, action: () => say(target.uid === LEGEND.id ? (target.faint ? `${target.name}. He isn't getting up.` : `${target.name}. He doesn't look like he'll be missed.`) : `${target.name}: a fellow hotel guest.`) });
       if (target.uid !== LEGEND.id && social.isOnline(target.uid) && !target.sleeper) opts.push({ label: "Invite to trade", target: target.name, action: () => void social.inviteToTrade(target.uid).then(() => say(`You ask ${target.name} to trade. They have to accept.`), () => say("Couldn't send that trade invite.", "warn")) });
       if (target.uid === LEGEND.id) { /* a stand-in: no friending him */ } else if (social.friends.has(target.uid)) opts.push({ label: "Message", target: target.name, action: () => window.dispatchEvent(new CustomEvent("open-chat", { detail: target.uid })) });
@@ -1701,22 +1701,26 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       playSfx("give", 0.6);
       giftPop("+1 Knife", knifeImg);
       logAction(me, "room", "got the knife from 6ixty");
-      sixtySay(SIXTY_LINES.knife, 2600);
-      sixtyAfter(2900, () => { sixtySay(SIXTY_LINES.legend, 6500); say("Tap the glowing knife in your pocket, then tap LegendGamer2015."); tutorialGuide(); });
+      sixtySay(SIXTY_LINES.knife, 4200);
+      sixtyAfter(4800, () => { sixtySay(SIXTY_LINES.legend, 8500); say("Tap the glowing knife in your pocket, then tap LegendGamer2015."); tutorialGuide(); });
     } else if (st === 1) {
-      sixtySay(SIXTY_LINES.legendAgain, 4000);
+      sixtySay(SIXTY_LINES.legendAgain, 5000);
       tutorialGuide();
     } else if (st === 2) {
+      // let him finish what he is saying (good job / your first blood) before he hands anything over
+      const left = sixtyBubble ? sixtyBubble.until - performance.now() : 0;
+      if (left > 0) await new Promise<void>((r) => window.setTimeout(r, left + 600));
+      if (disposed) return;
       try { await sixtyGivePill(me); } catch { return sixtySay(SIXTY_LINES.full); }
       panel.refresh();
       playSfx("give", 0.6);
       giftPop("+1 Pill", itemImg("pill"));
       logAction(me, "room", "got the pill from 6ixty");
-      sixtySay(SIXTY_LINES.pill, 4200);
-      sixtyAfter(4500, () => { say("Tap the glowing pill in your pocket to swallow it."); tutorialGuide(); });
+      sixtySay(SIXTY_LINES.pill, 6000);
+      sixtyAfter(6200, () => { say("Tap the glowing pill in your pocket to swallow it."); tutorialGuide(); });
       tutorialGuide();
     } else {
-      sixtySay(SIXTY_LINES.pillAgain, 4000);
+      sixtySay(SIXTY_LINES.pillAgain, 5000);
       tutorialGuide();
     }
   }
@@ -1741,9 +1745,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       say("You did what you had to do");
       tutorialGuide();
       sixtyAfter(450, () => { legend.path = []; legend.emote = undefined; legend.faint = true; }); // he goes down
-      sixtyAfter(1700, () => sixtySay(SIXTY_LINES.goodjob, 2600));
-      sixtyAfter(4500, () => sixtySay(SIXTY_LINES.firstBlood, 9000));
-      sixtyAfter(5200, () => { if (!pending && !mine()?.lying) startSixty(true); }); // you walk over to him
+      sixtyAfter(1800, () => sixtySay(SIXTY_LINES.goodjob, 3600));
+      sixtyAfter(5800, () => sixtySay(SIXTY_LINES.firstBlood, 10000));
+      sixtyAfter(7000, () => { if (!pending && !mine()?.lying) startSixty(true); }); // you walk over to him (he finishes his sentence first)
     } finally {
       stabbing = false;
     }
@@ -2008,11 +2012,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (isBasement) {
       // he whispers to anyone he has something for, now and every little while until they come over
-      sixtyAfter(1500, () => { if (sixtyWants() && !sixtyBusy) sixtySay(SIXTY_LINES.psst, 3200); });
+      const sixtyCalls = (): boolean => (isTut ? me.tutorial === 0 : sixtyWants()); // (in the introduction he only whispers before you have the knife)
+      sixtyAfter(2200, () => { if (sixtyCalls() && !sixtyBusy) sixtySay(SIXTY_LINES.psst, 4500); });
       // you walk over to him by yourself when you come down (the admin plays him and stays put)
       if (!asSixty) sixtyAfter(900, () => { if (!pending && !mine()?.lying) startSixty(true); });
       const psst = window.setInterval(() => {
-        if (sixtyWants() && !sixtyBusy && !sixtyShop && !(sixtyBubble && sixtyBubble.until > performance.now())) sixtySay(SIXTY_LINES.psst, 3200);
+        if (sixtyCalls() && !sixtyBusy && !sixtyShop && !(sixtyBubble && sixtyBubble.until > performance.now())) sixtySay(SIXTY_LINES.psst, 4500);
       }, 14_000);
       unsubs.push(() => window.clearInterval(psst));
     }
@@ -2869,7 +2874,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const lw = (limg?.width ?? 110) * scale;
         const lh = (limg?.height ?? 64) * scale;
         // clickable area = just the sleeping body (the picture itself has a lot of empty padding around it)
-        boxes.push({ id: p.uid, x0: ax + 78 * scale, x1: ax + 154 * scale, y0: ay + 48 * scale, y1: ay + 90 * scale, depth: dh.x + dh.y + 3 });
+        boxes.push({ id: p.uid, x0: ax + 66 * scale, x1: ax + 166 * scale, y0: ay + 38 * scale, y1: ay + 98 * scale, depth: dh.x + dh.y + 3 });
         list.push({
           depth: p.lying ? headTile().x + 3 - 1 + headTile().y + 0.6 : dh.x + dh.y + 0.6, // just after the bed itself
           draw: () => {
