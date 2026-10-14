@@ -39,6 +39,14 @@ export interface Profile {
   catsCarved: number;
   /** furniture kept in the toolbox's storage: kind -> how many */
   storage: Record<string, number>;
+  /** the introduction and 6ixty's jobs: 0 = just woke up, 1 = has the knife, 2 = stabbed the guy (first 5 drops), 3 = has the pill, 4 = introduction done (the door leads to the real basement),
+   *  5 = got the money for a lighter (go buy one), 6 = brought it back: got 5 drops and the syringe */
+  tutorial: number;
+  /** when the first stab happened (server time, ms; 0 = never): 6ixty's next job comes a couple of hours later */
+  questAt: number;
+  /** when the syringe last drew blood from yourself / from a body bag (server time, ms); each works once every 20 minutes */
+  syringeSelfAt: number;
+  syringeBagAt: number;
 }
 
 /** Furniture everybody starts with, waiting in their toolbox's storage (given once, to new players and to everybody who played before). */
@@ -58,7 +66,14 @@ export const CAT_BLOOD = 2;
 export const BOOST_MS = 120_000;
 
 export const WARDROBE_SLOTS = 8;
-export const SYRINGE_BLOOD = 2;
+export const SYRINGE_BLOOD = 1;
+/** the syringe draws 1 drop from yourself and 1 from a body bag, each once every 20 minutes */
+export const SYRINGE_CD_MS = 20 * 60_000;
+/** the first stab pays 5 drops; the lighter job pays the price of a lighter, then 5 more with the syringe */
+export const FIRST_BLOOD = 5;
+export const JOB_REWARD = 5;
+/** 6ixty's second job comes this long after the first stab */
+export const JOB_DELAY_MS = 2 * 3_600_000;
 const DAY_MS = 86_400_000;
 /** Nobody starts with anything any more: 6ixty gives the knife (right away) and the syringe (12 hours later). */
 export const STARTER_ITEMS: string[] = []; // (the lighter used to start in everybody's pocket; now it's bought in the shop room or found in the bin)
@@ -82,7 +97,10 @@ export const msUntilTomorrow = (): number => todayStart() + DAY_MS - serverNow()
 /** You can stab each person once a day. */
 export const canStab = (p: Profile, targetUid: string): boolean => (p.stabs[targetUid] ?? 0) < todayStart();
 export const stabsToday = (p: Profile): number => Object.values(p.stabs).filter((d) => d >= todayStart()).length;
-export const canUseSyringe = (p: Profile): boolean => p.syringeDay < todayStart();
+export const syringeWaitMs = (p: Profile, who: "self" | "bag"): number => Math.max(0, (who === "self" ? p.syringeSelfAt : p.syringeBagAt) + SYRINGE_CD_MS - serverNow());
+/** 6ixty has the lighter job ready: the introduction is over and a couple of hours have passed since the first blood */
+export const jobReady = (p: Profile): boolean => p.tutorial === 4 && serverNow() - (p.questAt || p.sixty.knifeAt) >= JOB_DELAY_MS;
+export const jobWaitMs = (p: Profile): number => Math.max(0, (p.questAt || p.sixty.knifeAt) + JOB_DELAY_MS - serverNow());
 
 // ---- profile ----------------------------------------------------------------------
 export async function createProfile(uid: string, name: string): Promise<Profile> {
@@ -99,7 +117,7 @@ export async function createProfile(uid: string, name: string): Promise<Profile>
     inventory[i] = { item, qty: 1 };
     first[i] = { item, qty: 1 };
   });
-  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsters: {}, boostUntil: 0, boostMult: 2, catsCarved: 0, storage: Object.fromEntries(STARTER_FURNITURE.map((k) => [k, 1])) };
+  const profile: Profile = { uid, name, gender: "M", figure: "", blood: START_BLOOD, owned: {}, wardrobe: {}, inventory, stabs: {}, syringeDay: 0, isAdmin: false, seenDoor: false, sixty: { knifeAt: 0, syringeGiven: false }, dumpsters: {}, boostUntil: 0, boostMult: 2, catsCarved: 0, storage: Object.fromEntries(STARTER_FURNITURE.map((k) => [k, 1])), tutorial: 0, questAt: 0, syringeSelfAt: 0, syringeBagAt: 0 };
   // figure "" marks a player who hasn't been through the customizer yet.
   await set(ref(db, `users/${uid}`), {
     name,
@@ -136,6 +154,10 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     boostMult: Math.min(4, Math.max(2, Number(v.boostMult) || 2)),
     catsCarved: Number(v.catsCarved) || 0,
     storage: Object.fromEntries(Object.entries((v.storage ?? {}) as Record<string, number>).filter(([, n]) => Number(n) > 0).map(([k, n]) => [k, Number(n)])),
+    tutorial: 4, // (worked out below)
+    questAt: Number(v.questAt) || 0,
+    syringeSelfAt: Number(v.syringeSelfAt) || 0,
+    syringeBagAt: Number(v.syringeBagAt) || 0,
     // accounts from before 6ixty already have their knife and syringe: they skip his introduction
     sixty: v.sixty
       ? { knifeAt: Number(v.sixty.knifeAt) || 0, syringeGiven: !!v.sixty.syringeGiven }
@@ -143,6 +165,9 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
         ? { knifeAt: 1, syringeGiven: true }
         : { knifeAt: 0, syringeGiven: false },
   };
+
+  // The introduction is for players who never got 6ixty's knife. Players from before it have it: with a syringe they are done with every job (6), without one the lighter job is next (4).
+  profile.tutorial = typeof v.tutorial === "number" ? Math.min(6, Math.max(0, v.tutorial)) : isAdmin || profile.sixty.syringeGiven ? 6 : profile.sixty.knifeAt > 0 ? 4 : 0;
 
   // Accounts made before something existed get it now.
   const patch: Record<string, unknown> = {};
@@ -252,28 +277,55 @@ export async function compactInventory(p: Profile): Promise<void> {
 }
 
 /** 6ixty's first gift: the knife. Starts the 12-hour wait for the second gift. */
-export async function sixtyGiveKnife(p: Profile): Promise<void> {
+export async function sixtyGiveKnife(p: Profile, tutorialStep = 0): Promise<void> {
   // (a knife that is already in the inventory, e.g. a starter item, isn't given twice)
   const has = findSlotAny(p.inventory, "knife") >= 0;
   const free = p.inventory.findIndex((s) => s === null);
   if (!has && free < 0) throw new Error("Your inventory is full");
-  await update(ref(db, `users/${p.uid}`), { ...(has ? {} : { [`inventory/${free}`]: { item: "knife", qty: 1 } }), "sixty/knifeAt": serverTimestamp() });
+  await update(ref(db, `users/${p.uid}`), { ...(has ? {} : { [`inventory/${free}`]: { item: "knife", qty: 1 } }), "sixty/knifeAt": serverTimestamp(), ...(tutorialStep > p.tutorial ? { tutorial: tutorialStep } : {}) });
   if (!has) p.inventory[free] = { item: "knife", qty: 1 };
   p.sixty.knifeAt = serverNow();
+  if (tutorialStep > p.tutorial) p.tutorial = tutorialStep;
 }
 
-/** His second gift, once the 12 hours are up: the syringe. */
-export async function sixtyGiveSyringe(p: Profile): Promise<void> {
-  const has = findSlotAny(p.inventory, "syringe") >= 0;
-  const free = p.inventory.findIndex((s) => s === null);
-  if (!has && free < 0) throw new Error("Your inventory is full");
-  await update(ref(db, `users/${p.uid}`), { ...(has ? {} : { [`inventory/${free}`]: { item: "syringe", qty: 1 } }), "sixty/syringeGiven": true });
-  if (!has) p.inventory[free] = { item: "syringe", qty: 1 };
-  p.sixty.syringeGiven = true;
+/** Moves the introduction on (never back). */
+export async function setTutorial(p: Profile, step: number): Promise<void> {
+  if (step <= p.tutorial) return;
+  p.tutorial = step;
+  await update(ref(db, `users/${p.uid}`), { tutorial: step });
 }
 
-export const sixtySyringeReady = (p: Profile): boolean => p.sixty.knifeAt > 0 && !p.sixty.syringeGiven && serverNow() - p.sixty.knifeAt >= SIXTY_GIFT_DELAY_MS;
+/** 6ixty's pill, at the end of the introduction (it also moves the introduction on to step 3). */
+export async function sixtyGivePill(p: Profile): Promise<void> {
+  const next = addToInv(p.inventory, { item: "pill", qty: 1 });
+  if (!next) throw new Error("Your inventory is full");
+  await commitInv(p, next, { [`users/${p.uid}/tutorial`]: 3 });
+  p.tutorial = 3;
+}
 
+/** The first stab (the introduction's guy): the first 5 drops, and the clock starts for 6ixty's next job. */
+export async function rewardFirstStab(p: Profile): Promise<void> {
+  await update(ref(db, `users/${p.uid}`), { blood: p.blood + FIRST_BLOOD, tutorial: 2, questAt: serverTimestamp() });
+  p.blood += FIRST_BLOOD;
+  p.tutorial = 2;
+  p.questAt = serverNow();
+}
+
+/** The lighter job, part 1: 6ixty hands over what a lighter costs (go and buy one in the shop room). */
+export async function sixtyJobMoney(p: Profile, amount: number): Promise<void> {
+  await update(ref(db, `users/${p.uid}`), { blood: p.blood + amount, tutorial: 5 });
+  p.blood += amount;
+  p.tutorial = 5;
+}
+
+/** The lighter job, part 2: the lighter is brought back: 5 drops and the syringe. */
+export async function sixtyJobReward(p: Profile): Promise<void> {
+  const next = addToInv(p.inventory, { item: "syringe", qty: 1 });
+  if (!next) throw new Error("Your inventory is full");
+  await commitInv(p, next, { [`users/${p.uid}/blood`]: p.blood + JOB_REWARD, [`users/${p.uid}/tutorial`]: 6 });
+  p.blood += JOB_REWARD;
+  p.tutorial = 6;
+}
 export const dumpsterWaitMs = (p: Profile, canId: string): number => Math.max(0, (p.dumpsters[canId] ?? 0) + DUMPSTER_MS - serverNow());
 
 // ---- the pocket: adding, stacking, trading items in one write --------------------------------------------------
@@ -462,12 +514,12 @@ export async function rewardFlappyDrop(p: Profile): Promise<void> {
   p.blood += 1;
 }
 
-/** Banks the syringe's 2 drops. The rules only accept +2, once per UTC day. */
-export async function rewardSyringe(p: Profile): Promise<void> {
-  const day = todayStart();
-  await update(ref(db, `users/${p.uid}`), { blood: p.blood + SYRINGE_BLOOD, syringeDay: day });
+/** Banks the syringe's drop: 1 from yourself or 1 from a body bag, each once every 20 minutes (the rules check the 20 minutes). */
+export async function rewardSyringe(p: Profile, who: "self" | "bag"): Promise<void> {
+  const field = who === "self" ? "syringeSelfAt" : "syringeBagAt";
+  await update(ref(db, `users/${p.uid}`), { blood: p.blood + SYRINGE_BLOOD, [field]: serverTimestamp() });
   p.blood += SYRINGE_BLOOD;
-  p.syringeDay = day;
+  if (who === "self") p.syringeSelfAt = serverNow(); else p.syringeBagAt = serverNow();
 }
 
 export async function saveOutfit(p: Profile, slot: number, outfit: Outfit): Promise<void> {

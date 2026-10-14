@@ -105,6 +105,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 
 /** Furniture you can click on and do something with (not just walk around). */
 export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "flappy", "dumpster"]);
+/** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
+export const isBodyBag = (kind: string | undefined): boolean => !!kind && /bodybag/.test(kind);
 
 interface Pt2 { x: number; y: number }
 export interface PlacedFurni {
@@ -189,7 +191,10 @@ export const MAX_FURNI = 40;
 export const LOBBY_ID = "lobby";
 export const SHOP_ID = "shop";
 /** rooms with no owner that everyone shares (the basement and the shop) */
-export const isPublicRoom = (id: string) => id === LOBBY_ID || id === SHOP_ID;
+export const isPublicRoom = (id: string) => id === LOBBY_ID || id === SHOP_ID || isTutRoom(id);
+/** The private copy of the basement a brand-new player walks through the introduction in (nobody else can come in, the body bag is not there). */
+export const tutRoomId = (uid: string) => `tut_${uid}`;
+export const isTutRoom = (id: string) => id.startsWith("tut_");
 export const ownRoomId = (uid: string) => `u_${uid}`;
 export const ownerOfRoom = (id: string) => (id.startsWith("u_") ? id.slice(2) : null);
 export const isLobby = (id: string) => id === LOBBY_ID;
@@ -215,6 +220,11 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     // the yellow door on the other side of 6ixty leads to the shop
     extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }],
   };
+}
+
+/** The private copy of the basement: the same room without the pieces the admin put in it, and its door leads back to your own room. */
+export function tutDef(uid: string): RoomDef {
+  return { ...lobbyDef([]), id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [] };
 }
 
 /** Where the four daily pieces stand in the shop room (every piece is placed facing the same way, each in its own 3x3 corner). */

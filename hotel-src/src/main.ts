@@ -20,7 +20,7 @@ import { trackKeyboard } from "./ui/keyboard";
 import { ensureBasementArt, ensureDoorArt } from "./roomRender";
 import { watchIdle } from "./idle";
 import { player } from "./music";
-import { fetchMeta, LOBBY_ID, ownRoomId } from "./rooms";
+import { fetchMeta, LOBBY_ID, ownRoomId, tutRoomId } from "./rooms";
 import { logAction } from "./logger";
 import { watchShopConfig } from "./shopConfig";
 import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns, watchDesigns } from "./designs";
@@ -249,7 +249,7 @@ async function showHotel(user: User): Promise<void> {
   social.armInviteCleanup();
   startPresence(p);
   // a crashed or reloaded earlier visit can leave a ghost of you standing in a room; clear those before walking in
-  for (const room of [LOBBY_ID, ownRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
+  for (const room of [LOBBY_ID, ownRoomId(p.uid), tutRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
   logAction(p, "login", "opened 6ixPlanet");
   const stopMessenger = mountMessenger(shell, ctx);
   const stopTrades = mountTrades(ctx);
@@ -287,7 +287,9 @@ async function showHotel(user: User): Promise<void> {
   function go(view: View, opts: NavOpts = {}): void {
     if ((view === "admin" || view === "npc") && !p.isAdmin) view = "room";
     if (view === "room") {
-      const target = opts.roomId ?? lastRoomId;
+      let target = opts.roomId ?? lastRoomId;
+      // until the introduction is over, the basement is the private copy (nobody else is in it)
+      if (target === LOBBY_ID && p.tutorial < 4 && !p.isAdmin) target = tutRoomId(p.uid);
       pageCleanup?.();
       pageCleanup = null;
       pageHost.replaceChildren();

@@ -137,7 +137,7 @@ export const ITEMS: Record<string, ItemDef> = {
   syringe: {
     id: "syringe",
     name: "Syringe",
-    examine: "A clean syringe. Click it to draw blood from yourself: 2 drops of blood, once a day.",
+    examine: "A clean syringe. Click it to draw blood from yourself, or click a body bag with it: 1 drop from each, once every 20 minutes.",
     icon: assetUrl("items/syringe.svg"),
     useSelf: "syringe",
   },
@@ -266,7 +266,7 @@ export const findSlotAny = (inv: Inventory, item: string): number => inv.findInd
 
 /** A drop of blood is the hotel's currency. */
 export const BLOOD_ICON = assetUrl("items/blood.svg");
-export const START_BLOOD = 5; // welcome gift so the shop is usable before your first stab
+export const START_BLOOD = 0; // you start with nothing: the first stab (in the introduction) pays your first 5 drops
 export const MUSIC_ACCESS_KEY = "access_music";
 export const MUSIC_ACCESS_PRICE = 4;
 

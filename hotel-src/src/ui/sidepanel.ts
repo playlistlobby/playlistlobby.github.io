@@ -11,6 +11,8 @@ type Tab = "inventory" | "emotes" | "music" | "room";
 
 export interface PanelApi {
   setSelected(slot: number | null): void;
+  /** the introduction points at one pocket item: opens the inventory and makes that slot glow (null = stop) */
+  guide(slot: number | null): void;
   /** call after the profile changed (inventory, blood, stab status) */
   refresh(): void;
   dispose(): void;
@@ -43,6 +45,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   /** on phones the panel starts as a bare tab strip; tapping the open tab again folds it away */
   let collapsed = isMobile();
   let selected: number | null = null;
+  let guided: number | null = null;
   let unsubMusic: (() => void) | null = null;
   let roomCleanup: (() => void) | null = null;
 
@@ -100,7 +103,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
       const def = slot ? itemDef(slot.item) ?? null : null;
       const loaned = !!slot?.inPlayer; // e.g. the CD is sitting in the CD player right now
       const el = h("div", {
-        class: "inv-slot" + (selected === i ? " selected" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
+        class: "inv-slot" + (selected === i ? " selected" : "") + (guided === i && def ? " guide" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),
         title: def ? (loaned ? `${def.name} (in the player)` : def.name) : "",
         onclick: () => {
           if (!def) return;
@@ -211,6 +214,10 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
 
   return {
     setSelected(slot) { selected = slot; if (tab === "inventory") renderInventory(); },
+    guide(slot) {
+      guided = slot;
+      if (slot !== null && (tab !== "inventory" || collapsed)) { tab = "inventory"; collapsed = false; render(); } else if (tab === "inventory") renderInventory();
+    },
     refresh: render,
     dispose() {
       window.clearInterval(timer);

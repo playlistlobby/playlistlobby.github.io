@@ -40,11 +40,30 @@ export function saveSixtyLook(figure: string, gender: Gender): Promise<void> {
   return set(ref(db, "config/npc/sixty"), { figure, gender });
 }
 
+/** The guy 6ixty sends you to stab in the private copy of the basement (a stand-in: he is never stored anywhere). He wears what the account asdasdasd wore. */
+export const LEGEND = {
+  id: "legend",
+  name: "LegendGamer2015",
+  figure: "hd-190-10.hr-891-42.he-98089-9004.fa-98057.ch-98046-9002.cc-98025-80.ca-98005-1408.lg-98120-64.sh-98143.wa-98147-9003",
+  x: 7,
+  y: 5,
+  dir: 4,
+};
+
 export const SIXTY_LINES = {
+  legend: "now go over and use the knife on that guy.",
+  legendAgain: "the knife. that guy. go.",
+  goodjob: "good job.",
+  pill: "here. swallow this, it takes you home.",
+  pillAgain: "take the pill. it takes you home.",
   psst: "psst",
   knife: "take this",
-  tomorrow: "I have another gift for you tomorrow, now go collect blood.",
-  syringe: "here, as promised.",
+  firstBlood: "you earned your first blood. come check in with me in a couple hours, I will have another job.",
+  lighterJob: "that is what a lighter costs. go buy one in the shop, the yellow door.",
+  lighterJob2: "bring it back to me when you have it.",
+  lighterAgain: "no lighter yet. the shop, the yellow door.",
+  lighterDone: "good. that is your pay.",
+  syringe: "take this too. use it on yourself and on a body bag, once every 20 minutes.",
   shop: "what do you need?",
   full: "your pockets are full. clear some space.",
 };
