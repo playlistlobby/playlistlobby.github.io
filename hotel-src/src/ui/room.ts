@@ -292,6 +292,9 @@ export interface RoomOpts {
 }
 
 const WAKE_MS = 2300;
+/** who has already been put to bed since this page loaded: every login starts asleep in your own bed (until you tap the floor or go somewhere) */
+let sleptUid = "";
+export const forgetSleep = (): void => { sleptUid = ""; };
 
 export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: RoomOpts = {}): RoomApi {
   const me = ctx.profile;
@@ -2422,6 +2425,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       stage.append(fade);
       window.setTimeout(() => fade.remove(), WAKE_MS + 800);
     }
+    // logging in again: you start asleep in your own bed, and stay there until you tap the floor or head somewhere else
+    let sleepingIn = false;
+    if (!opts.intro && isOwnRoom && !frozen && !asSixty && sleptUid !== me.uid) {
+      sleptUid = me.uid;
+      sleepingIn = true;
+      mineP.lying = true;
+      mineP.from = mineP.to = mineP.dest = { ...headTile() };
+      mineP.dir = 2;
+    }
     // the introduction's guy: only drawn here (never stored), standing about until you stab him
     if (isTut) {
       const lg = makePlayer(LEGEND.id, { name: LEGEND.name, figure: LEGEND.figure, x: LEGEND.x, y: LEGEND.y, dir: LEGEND.dir });
@@ -2438,7 +2450,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (me.chemUntil > serverNow()) mineP.chem = me.chemUntil;
     if (burning) { mineP.smoke = burning; mineP.smokeKind = SMOKABLE[burningItem!.item].kind; }
     void onDisconnect(myRef).remove();
-    set(myRef, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, ts: serverTimestamp(), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
+    set(myRef, { name: shownName, figure: shownFigure(), x: sleepingIn ? headTile().x : spawn.x, y: sleepingIn ? headTile().y : spawn.y, dir: startDir, ts: serverTimestamp(), ...(sleepingIn ? { bed: true } : {}), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
@@ -3025,6 +3037,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox"; // the boombox glows red and floats a CD when you point at it or tap it
+      const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
       if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id);
@@ -3036,10 +3049,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.save();
         const halo = g.createRadialGradient(cx, cy, 2 * scale, cx, cy, r);
         const a = 0.11 + 0.05 * pulse + (hot ? 0.14 : 0);
-        const glowRgb = isBoom ? "255,60,50" : "255,214,70";
+        const glowRgb = redGlow ? "255,60,50" : "255,214,70";
         halo.addColorStop(0, `rgba(${glowRgb},${a.toFixed(2)})`);
-        halo.addColorStop(0.55, `rgba(${isBoom ? "255,50,40" : "255,200,40"},${(a * 0.6).toFixed(2)})`);
-        halo.addColorStop(1, `rgba(${isBoom ? "255,50,40" : "255,200,40"},0)`);
+        halo.addColorStop(0.55, `rgba(${redGlow ? "255,50,40" : "255,200,40"},${(a * 0.6).toFixed(2)})`);
+        halo.addColorStop(1, `rgba(${redGlow ? "255,50,40" : "255,200,40"},0)`);
         g.fillStyle = halo;
         g.beginPath();
         g.arc(cx, cy, r, 0, Math.PI * 2);
@@ -3063,7 +3076,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           const bob = Math.sin(now / 380) * 3 * scale;
           g.save();
           g.imageSmoothingEnabled = false;
-          g.shadowColor = isBoom ? "rgba(255,90,80,0.7)" : "rgba(255,226,140,0.7)";
+          g.shadowColor = redGlow ? "rgba(255,90,80,0.7)" : "rgba(255,226,140,0.7)";
           g.shadowBlur = (hot ? 6 : 3) * scale;
           if (k.opens === "sink") g.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(now / 320)); // the watering can flashes
           g.drawImage(hint, cx - hw / 2, b.y0 - hh - 2 * scale + bob, hw, hh);

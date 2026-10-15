@@ -13,7 +13,7 @@ import { h, toast } from "./ui/dom";
 import { lockTime, statusBar } from "./ui/ios";
 import { topBar, TopBarApi } from "./ui/topbar";
 import { mountEditor } from "./ui/editor";
-import { mountRoom, RoomApi } from "./ui/room";
+import { forgetSleep, mountRoom, RoomApi } from "./ui/room";
 import { mountShop } from "./ui/shop";
 import { mountMessenger } from "./ui/messenger";
 import { mountTrades } from "./ui/trade";
@@ -263,6 +263,7 @@ async function showHotel(user: User): Promise<void> {
     logAction(p, "logout", "logged out");
     roomApi?.dispose();
     roomApi = null;
+    forgetSleep(); // the next login starts asleep in bed again
     await new Promise((r) => setTimeout(r, 300));
     stopPresence(p);
     await social.clearRoomInvites();
