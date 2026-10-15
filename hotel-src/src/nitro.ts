@@ -171,6 +171,30 @@ function firstState(json: NitroJson): Record<string, number | null> | null {
   return out;
 }
 
+/**
+ * Every sprite is cut out of its sheet into a canvas of its own, once. Drawing straight from a sheet can pick up a sliver of the neighbouring picture when the
+ * game is scaled or moved by a fraction of a pixel, and the neighbour next to a sprite is often the solid black shadow: that was the thin black line along
+ * the edge of the mixer and the sink. A separate canvas has nothing next to it, so no line can ever show.
+ */
+const cutOuts = new WeakMap<object, Map<string, HTMLCanvasElement>>();
+function cutOut(image: SheetImage, x: number, y: number, w: number, h: number): HTMLCanvasElement | SheetImage {
+  if (typeof document === "undefined") return image;
+  let perImage = cutOuts.get(image as object);
+  if (!perImage) { perImage = new Map(); cutOuts.set(image as object, perImage); }
+  const key = `${x},${y},${w},${h}`;
+  let c = perImage.get(key);
+  if (!c) {
+    c = document.createElement("canvas");
+    c.width = Math.max(1, w); c.height = Math.max(1, h);
+    const cx = c.getContext("2d");
+    if (!cx) return image;
+    cx.imageSmoothingEnabled = false;
+    cx.drawImage(image as CanvasImageSource, x, y, w, h, 0, 0, w, h);
+    perImage.set(key, c);
+  }
+  return c;
+}
+
 /** Everything to draw for one facing direction (falls back to the nearest direction that has art). */
 export function spritesFor(n: NitroFurni, dir: number, frame = 0): SpriteDraw[] {
   const have = directionsOf(n);
@@ -186,7 +210,7 @@ export function spritesFor(n: NitroFurni, dir: number, frame = 0): SpriteDraw[] 
     const f = n.json.spritesheet.frames[`${n.name}_${a.source ?? key}`];
     if (!f) continue;
     out.push({
-      layer, image: n.image, sx: f.frame.x, sy: f.frame.y, sw: f.frame.w, sh: f.frame.h,
+      layer, image: cutOut(n.image, f.frame.x, f.frame.y, f.frame.w, f.frame.h), sx: 0, sy: 0, sw: f.frame.w, sh: f.frame.h,
       dx: a.flipH ? a.x - f.frame.w : -a.x, dy: -a.y, flipH: !!a.flipH, isShadow: layer === "sd", // a mirrored copy is mirrored about the anchor: the registration x is the original one
     });
   }
