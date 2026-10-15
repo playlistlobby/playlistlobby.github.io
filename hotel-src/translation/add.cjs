@@ -179,5 +179,7 @@ set("The mixer starts up. It needs 30 minutes.", "Mixeren starter. Den skal brug
 set("Tap two things to mix. A batch takes 10 minutes (the lean takes 30).", "Tryk på to ting for at mixe. Et parti tager 10 minutter (leanen tager 30).", "src/ui/mixer.ts");
 set("Start mixing (30 min)", "Start mixing (30 min)", "src/ui/mixer.ts");
 set("Tap two things to mix. The dearer the result, the longer it takes (10 to 30 minutes).","Tryk på to ting for at mixe. Jo dyrere resultat, jo længere tid tager det (10 til 30 minutter).","src/ui/mixer.ts");
+set("Mix some shit", "Mix noget shi", "src/items.ts");
+set("Water the shit you grow", "Vand det shi du gror", "src/items.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

@@ -6343,5 +6343,15 @@
   "en": "Tap two things to mix. The dearer the result, the longer it takes (10 to 30 minutes).",
   "da": "Tryk på to ting for at mixe. Jo dyrere resultat, jo længere tid tager det (10 til 30 minutter).",
   "where": "src/ui/mixer.ts"
+ },
+ "N158": {
+  "en": "Mix some shit",
+  "da": "Mix noget shi",
+  "where": "src/items.ts"
+ },
+ "N159": {
+  "en": "Water the shit you grow",
+  "da": "Vand det shi du gror",
+  "where": "src/items.ts"
  }
 }

@@ -214,7 +214,7 @@ export const ITEMS: Record<string, ItemDef> = {
   wateringcan: {
     id: "wateringcan",
     name: "Watering can",
-    examine: "An empty watering can. Select it, then click the sink in your room to fill it.",
+    examine: "Water the shit you grow",
     icon: assetUrl("items/wateringcan.svg"),
     useOnObject: "sink",
   },
@@ -344,7 +344,7 @@ export function itemDef(id: string): ItemDef | undefined {
   const k = FURNI_KINDS[id];
   if (!k || !isFurniItem(id)) return undefined;
   if (id === "f_poster") return { id, name: k.label, examine: "A poster for your wall. When you hang it you choose the picture, and the picture stays on it. Only on a wall.", icon: assetUrl("items/poster.svg"), furniture: true };
-  return { id, name: k.label, examine: id === "f_planter" ? "Grow some shit" : `${k.label}: furniture. Click it, then a free spot in your own room to put it down. Your toolbox can also store it.`, icon: furniIcon(id), furniture: true };
+  return { id, name: k.label, examine: id === "f_planter" ? "Grow some shit" : id === "f_mixer" ? "Mix some shit" : `${k.label}: furniture. Click it, then a free spot in your own room to put it down. Your toolbox can also store it.`, icon: furniIcon(id), furniture: true };
 }
 
 /** The inventory from what the database holds: only items that exist (and aren't switched off) are kept. */
