@@ -2970,7 +2970,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
         const cx = (b.x0 + b.x1) / 2;
         const cy = (b.y0 + b.y1) / 2;
-        const r = 42 * scale * (hot ? 1.2 : 1);
+        const r = 42 * scale * (hot ? 1.2 : 1) * (k.opens === "records" ? 1.5 : 1);
         // a warm gold halo (plain alpha, so it shows on the pale room background too), then the bag lit up on top when pointed at
         g.save();
         const halo = g.createRadialGradient(cx, cy, 2 * scale, cx, cy, r);
@@ -2991,11 +2991,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const noHint = k.opens === "mixer" || k.opens === "records"; // the mixer and the record table glow like the rest, but have no little icon floating over them
-        const showHanger = k.opens === "sink" ? glowSink : !noHint && (!me.seenDoor || hot); // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "sink" ? itemImg("wateringcan") : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
+        const noHint = k.opens === "mixer"; // the mixer glows like the rest, but has no little icon floating over it
+        const showHanger = k.opens === "sink" ? glowSink : k.opens === "records" ? true : !noHint && (!me.seenDoor || hot); // the record player always floats a little CD // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "records" ? itemImg("cd") : k.opens === "sink" ? itemImg("wateringcan") : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" ? (scale * 30) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -3008,7 +3008,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // while the hanger always shows, the click box covers it too
-        return { id: "", ...b, y0: me.seenDoor || noHint || k.opens === "sink" ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
+        return { id: "", ...b, y0: me.seenDoor || noHint || k.opens === "sink" || k.opens === "records" ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
       }
       return b ? { id: "", ...b, depth: f.x + f.y } : null;
     }
