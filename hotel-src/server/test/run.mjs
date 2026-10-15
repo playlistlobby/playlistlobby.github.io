@@ -101,7 +101,8 @@ console.log("--- shops can't be fooled");
 {
   const u = await fresh("t_shop", { blood: 3 });
   await act(u, "sync");
-  bad("can't buy the planter without enough blood", await act(u, "buySixty", { item: "f_planter" }));
+  bad("6ixty doesn't sell the growing kit any more", await act(u, "buySixty", { item: "f_planter" }));
+  bad("can't buy the planter without enough blood", await act(u, "buyVending", { id: "planter" }));
   bad("can't buy something 6ixty doesn't sell", await act(u, "buySixty", { item: "knife" }));
   bad("can't buy a dead cat", await act(u, "buySixty", { item: "deadcat" }));
   bad("not enough for the pack", await act(u, "buyVending", { id: "cigpack" }));
@@ -229,8 +230,8 @@ console.log("--- selling weed");
   await sold("2 kodimagnyl: 2 each", "kodimagnyl", 2, 4);
   await sold("hash: 12", "hash", 1, 12);
   await sold("a hash joint: 13", "joint_hash", 1, 13);
-  await sold("DMT: 14", "dmt", 1, 14);
-  await sold("3 shrooms: 6 each", "shroom", 3, 18);
+  await sold("DMT: 24", "dmt", 1, 24);
+  await sold("3 shrooms: 14 each", "shroom", 3, 42);
   const never = await fresh("t_sell4", { inventory: { 0: { item: "f_mixer", qty: 1 }, 1: { item: "f_planter", qty: 1 }, 2: { item: "jointpaper", qty: 1 }, 3: { item: "bluntwrap", qty: 1 }, 4: { item: "wateringcan", qty: 1 }, 5: { item: "wateringcan_full", qty: 1 }, 6: { item: "knife", qty: 1 }, 7: { item: "cd_yellow", qty: 1 } } });
   await act(never, "sync");
   for (const [i, nm] of ["the mixer", "the growing kit", "joint paper", "blunt paper", "a watering can", "a full watering can", "the knife", "a CD bought with real money"].entries()) bad(`he won't buy ${nm}`, await act(never, "sellWeed", { slot: i, qty: 1 }));
@@ -577,11 +578,12 @@ console.log("--- kodimagnyl, the lean and the super pill");
   const a = await fresh("t_kodi", { blood: 30, inventory: { 0: { item: "pill", qty: 1 }, 1: { item: "wateringcan_full", qty: 1 } } });
   await act(a, "sync");
   await stand(a, "shop", 5, 5);
-  const v = await act(a, "buyVending", { id: "kodimagnyl" });
-  ok("buy kodimagnyl from the vending machine", v);
+  bad("the vending machine doesn't sell kodimagnyl any more", await act(a, "buyVending", { id: "kodimagnyl" }));
+  const v = await act(a, "buySixty", { item: "kodimagnyl" });
+  ok("buy kodimagnyl from 6ixty", v);
   check("4 drops", v.state.blood === 26, String(v.state.blood));
   check("it stacks", total(v.state.inventory, "kodimagnyl") === 1);
-  const v2 = await act(a, "buyVending", { id: "kodimagnyl" });
+  const v2 = await act(a, "buySixty", { item: "kodimagnyl" });
   check("two now, in one slot", total(v2.state.inventory, "kodimagnyl") === 2 && v2.state.inventory.filter((x) => x && x.item === "kodimagnyl").length === 1);
   // kodimagnyl + water: codeine, and the can comes back empty
   const cd = await act(a, "combine", { a: slotOf(v2.state, "kodimagnyl"), b: slotOf(v2.state, "wateringcan_full") });
@@ -904,6 +906,30 @@ console.log("--- cigarette butts to 6ixty");
   await act(odd, "sync");
   const so = await act(odd, "sellWeed", { slot: 0, qty: 3 });
   check("an odd one stays: 3 butts sell as 2", so.ok === true && so.state.blood === 1 && total(so.state.inventory, "cigbutt") === 1, JSON.stringify(so.state));
+}
+
+console.log("--- harvesting: a 25% chance of a seed (or spores) back");
+{
+  const g = await fresh("t_seedback");
+  await act(g, "sync");
+  const room = `u_${g.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: g.uid, ownerName: "t_seedback", name: "t_seedback's room", access: "knock", w: 8, h: 8, furni: { kw: { kind: "f_planter", x: 2, y: 2 }, ks: { kind: "f_planter", x: 4, y: 2 } } });
+  await stand(g, room, 4, 4);
+  const total2 = async (item) => total((await state(g)).inventory, item);
+  const grown = { plantedAt: Date.now() - 25 * 60_000, wateredAt: Date.now() - 10 * 60_000 };
+  let weedBack = 0, sporeBack = 0;
+  const N = 40;
+  for (let i = 0; i < N; i++) {
+    await owner("PATCH", `roomsMeta/${room}/furni/kw`, grown);
+    const r = await act(g, "harvest", { fid: "kw" });
+    if (r.data.seed === "weedseed") weedBack++;
+    await owner("PATCH", `roomsMeta/${room}/furni/ks`, { ...grown, crop: "shroom" });
+    const r2 = await act(g, "harvest", { fid: "ks" });
+    if (r2.data.seed === "shroomspore") sporeBack++;
+  }
+  check(`weed: about a quarter gave a seed back (${weedBack} of ${N})`, weedBack >= 2 && weedBack <= 22, String(weedBack));
+  check(`shrooms: about a quarter gave spores back (${sporeBack} of ${N})`, sporeBack >= 2 && sporeBack <= 22, String(sporeBack));
+  check("the seeds and spores really are in the pocket", (await total2("weedseed")) === weedBack && (await total2("shroomspore")) === sporeBack);
 }
 
 console.log("--- /give");

@@ -38,13 +38,25 @@ if (-not $hook.secret) { throw "Stripe didn't hand out a webhook secret." }
 
 Write-Host "Saving the secrets on the Cloudflare Worker..."
 $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+$wrangler = "node_modules/wrangler/bin/wrangler.js"
 Push-Location $server
+$file = Join-Path $env:TEMP ("stripe-secrets-" + [guid]::NewGuid().ToString("N") + ".json")
 try {
-  $key | node node_modules\wrangler\bin\wrangler.js secret put STRIPE_SECRET_KEY
-  if ($LASTEXITCODE -ne 0) { throw "Couldn't save STRIPE_SECRET_KEY (are you logged in to Cloudflare? run: node node_modules\wrangler\bin\wrangler.js login)" }
-  $hook.secret | node node_modules\wrangler\bin\wrangler.js secret put STRIPE_WEBHOOK_SECRET
-  if ($LASTEXITCODE -ne 0) { throw "Couldn't save STRIPE_WEBHOOK_SECRET" }
-} finally { Pop-Location }
+  # logged in to Cloudflare? (if not, a browser window opens: click Allow, then come back here)
+  $who = (node $wrangler whoami 2>&1 | Out-String)
+  if ($who -notmatch "You are logged in") {
+    Write-Host "You need to log in to Cloudflare first: a browser window opens, click Allow."
+    node $wrangler login
+    if ($LASTEXITCODE -ne 0) { throw "Cloudflare login didn't finish. Run the script again." }
+  }
+  # both secrets in one go, from a temporary file (deleted right after); nothing is typed into wrangler's stdin, so it can ask or choose normally
+  @{ STRIPE_SECRET_KEY = $key; STRIPE_WEBHOOK_SECRET = $hook.secret } | ConvertTo-Json | Set-Content -Path $file -Encoding UTF8
+  node $wrangler secret bulk $file
+  if ($LASTEXITCODE -ne 0) { throw "Couldn't save the secrets on Cloudflare. Run:  cd $server ; node $wrangler login   and then run this script again." }
+} finally {
+  Remove-Item -Path $file -Force -ErrorAction SilentlyContinue
+  Pop-Location
+}
 
 Write-Host ""
 Write-Host "Done. The record player in the shop now sends people to Stripe ($mode)." -ForegroundColor Green

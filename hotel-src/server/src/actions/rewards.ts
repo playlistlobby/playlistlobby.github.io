@@ -2,7 +2,7 @@
 import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from "./util";
 import { fail } from "../ctx";
 import {
-  addToInv, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { combine, findSlot, GROW_MS, SMOKABLE, smokeMsOf, WATER_MS } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
@@ -269,11 +269,18 @@ export const harvest: Action = {
     const next = addToInv(w.s.inventory, give);
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;
+    // a 25% chance of a seed (or spores) falling out of the plant: only if there is room for it
+    let seed: string | undefined;
+    if (Math.random() < SEED_BACK_CHANCE) {
+      const item = shrooms ? "shroomspore" : "weedseed";
+      const withSeed = addToInv(w.s.inventory, { item, qty: 1 });
+      if (withSeed) { w.s.inventory = withSeed; seed = item; }
+    }
     c.extra[`${path}/crop`] = null;
     c.extra[`${path}/plantedAt`] = null;
     c.extra[`${path}/wateredAt`] = null;
     c.extra[`${path}/neglect`] = null;
-    return { ass, crop: shrooms ? "shroom" : undefined, qty: give.qty };
+    return { ass, crop: shrooms ? "shroom" : undefined, qty: give.qty, seed };
   },
 };
 

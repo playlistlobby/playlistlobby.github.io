@@ -296,9 +296,9 @@ export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boole
 // ---- growing weed in a growing kit ---------------------------------------------------------------------------
 export const plantSeed = (p: Profile, _roomId: string, fid: string, seedSlot: number): Promise<unknown> => call(p, "plant", { fid, slot: seedSlot });
 export const waterPlant = (p: Profile, _roomId: string, fid: string, _pl: Plant, canSlot: number): Promise<unknown> => call(p, "water", { fid, slot: canSlot });
-export async function harvestPlant(p: Profile, _roomId: string, fid: string, _pl: Plant): Promise<{ ass: boolean; crop?: string; qty?: number }> {
-  const r = await call<{ ass?: boolean; crop?: string; qty?: number }>(p, "harvest", { fid });
-  return { ass: !!r.ass, crop: r.crop, qty: r.qty };
+export async function harvestPlant(p: Profile, _roomId: string, fid: string, _pl: Plant): Promise<{ ass: boolean; crop?: string; qty?: number; seed?: string }> {
+  const r = await call<{ ass?: boolean; crop?: string; qty?: number; seed?: string }>(p, "harvest", { fid });
+  return { ass: !!r.ass, crop: r.crop, qty: r.qty, seed: r.seed };
 }
 
 // ---- blood ---------------------------------------------------------------------------------------------------------------

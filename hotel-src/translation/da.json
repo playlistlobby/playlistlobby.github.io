@@ -6183,5 +6183,15 @@
   "en": "He pays 3 drops for 2.",
   "da": "Han giver 3 dråber for 2.",
   "where": "src/ui/sixtyShop.ts"
+ },
+ "N126": {
+  "en": "Some spores fell out of the shrooms. You keep them.",
+  "da": "Der faldt nogle sporer ud af shroomene. Dem beholder du.",
+  "where": "src/ui/room.ts"
+ },
+ "N127": {
+  "en": "A seed fell out of the plant. You keep it.",
+  "da": "Et frø faldt ud af planten. Det beholder du.",
+  "where": "src/ui/room.ts"
  }
 }

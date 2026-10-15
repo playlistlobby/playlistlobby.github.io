@@ -11,11 +11,10 @@ export const STARTER_ITEMS: string[] = [];
 /** each garbage can can be searched once every 10 minutes; one weighted pick per search */
 export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
-  // percentages (they add up to 100): kodimagnyl is 10%, the rest keep the same proportions as before
-  { item: "weedseed", chance: 72.7, label: "weed seed" },
-  { item: "lighter", chance: 7.3, label: "lighter" },
-  { item: "kodimagnyl", chance: 9, label: "kodimagnyl" },
-  { item: "shroomspore", chance: 10, label: "shroom spores" },
+  // percentages (they add up to 100): a third spores, two thirds weed seeds, and now and then a lighter (kodimagnyl is sold by 6ixty now)
+  { item: "weedseed", chance: 66, label: "weed seed" },
+  { item: "shroomspore", chance: 33, label: "shroom spores" },
+  { item: "lighter", chance: 1, label: "lighter" },
 ];
 /** the super pill: 4x walking speed for a minute */
 export const SUPERPILL_MS = 60_000;
@@ -23,6 +22,8 @@ export const SUPERPILL_MS = 60_000;
 export const DMT_MS = 10_000;
 /** after the colours: a shroom lets you into any room for 3 minutes; DMT does it for 4 and doubles your walking speed */
 export const SHROOM_MS = 3 * 60_000;
+/** harvesting: a 25% chance of getting one seed (or spores, from shrooms) back */
+export const SEED_BACK_CHANCE = 0.25;
 export const DMT_TRIP_MS = 4 * 60_000;
 export const SUPERPILL_MULT = 4;
 /** the lean (codeine): for an hour, garbage cans give twice as much and can be searched twice as often. You hold the cup for the first 2 minutes. */

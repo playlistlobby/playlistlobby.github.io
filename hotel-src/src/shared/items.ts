@@ -66,14 +66,14 @@ export const findSlot = (inv: Inventory, item: string): number => inv.findIndex(
 export const findSlotAny = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item);
 
 /** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
-export const SIXTY_STOCK = ["cigarette", "pill", "f_planter"];
+export const SIXTY_STOCK = ["cigarette", "pill", "kodimagnyl"];
 export const DEFAULT_ITEM_PRICE = 5;
 /** Default shop entry for items that start on sale (everything else starts off). */
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cigarette: { on: true, price: 1 },
   pill: { on: true, price: 3 },
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
-  f_planter: { on: true, price: 6 }, // the growing kit
+  kodimagnyl: { on: true, price: 4 }, // sold by 6ixty (the growing kit moved to the vending machine)
   // sold in the shop room's vending machine (not by 6ixty): the admin can still change these prices
   lighter: { on: false, price: 2 },
   jointpaper: { on: false, price: 1 },
@@ -88,7 +88,7 @@ export const VENDING_STOCK: Array<{ id: string; item: string; qty: number; label
   { id: "cigpack", item: "cigarette", qty: 15, label: "Cigarettes (15)", fixedPrice: 10 },
   { id: "wateringcan", item: "wateringcan", qty: 1, label: "Watering can" },
   { id: "mixer", item: "f_mixer", qty: 1, label: "Mixer", fixedPrice: 10 },
-  { id: "kodimagnyl", item: "kodimagnyl", qty: 1, label: "Kodimagnyl", fixedPrice: 4 },
+  { id: "planter", item: "f_planter", qty: 1, label: "Growing kit", fixedPrice: 6 },
 ];
 /**
  * Things you can light, and what finishing one does: for a while, a stab is worth more blood.
@@ -193,8 +193,8 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     // grown from seeds and spores (3 from each, so a seed is worth much less than what it grows into)
     case "weedseed": return 2;
     case "weed": return ass ? 4 : 6;
-    case "shroomspore": return 2;
-    case "shroom": return 6;
+    case "shroomspore": return 3;
+    case "shroom": return 14; // worth more than weed: 3 per kit and they open every door
     // mixed
     case "mix": return 5; // weed 6 + a cigarette -> 2
     case "midweed": return 7; // a good weed 6 + an ass weed 4 -> 2
@@ -204,7 +204,7 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "hashmix": return 8; // hash 12 + a cigarette -> 2
     case "codeine": return 8; // kodimagnyl 4 and water
     case "superpill": return 14; // pill 3 + kodimagnyl 4
-    case "dmt": return 14; // shroom 6 + pill 3
+    case "dmt": return 24; // shroom 14 + pill 3
     // rolled (paper 1, blunt wrap 2)
     case "joint": return 9;
     case "blunt": return 11;
