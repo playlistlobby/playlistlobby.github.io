@@ -89,7 +89,7 @@ export function runOnboarding(region: HTMLElement, ctx: Ctx, needAvatar: boolean
     // ---- step 2: wake up -----------------------------------------------------------------------------
     function showWake(): void {
       const profile = ctx.profile;
-      const wake = h("button", { class: "btn primary onb-next onb-wake" }, "Wake up");
+      const wake = h("button", { class: "btn danger onb-next onb-wake" }, "Wake up");
       wake.addEventListener("click", async () => {
         wake.setAttribute("disabled", "");
         try {

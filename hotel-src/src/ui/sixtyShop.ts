@@ -48,8 +48,8 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
         h("img", { src: itemDef(s!.item)!.icon, alt: "", class: "sixty-ico" }),
         h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, `${nm} x${s!.qty}`), h("div", { class: "hint" }, bundle > 1 ? (each === 1 ? "He pays 1 drop for 2." : "He pays 3 drops for 2.") : `He pays ${each} drops each.`)),
         ...(bundle > 1
-          ? (s!.qty >= bundle ? [h("button", { class: "btn small", onclick: () => void sell(bundle) }, `Sell ${bundle} (${each})`), ...(s!.qty >= bundle * 2 ? [h("button", { class: "btn small primary", onclick: () => void sell(s!.qty) }, `All (${Math.floor(s!.qty / bundle) * each})`)] : [])] : [h("button", { class: "btn small", disabled: true }, "Needs 2")])
-          : [h("button", { class: "btn small", onclick: () => void sell(1) }, `Sell 1 (${each})`), ...(s!.qty > 1 ? [h("button", { class: "btn small primary", onclick: () => void sell(s!.qty) }, `All (${each * s!.qty})`)] : [])]));
+          ? (s!.qty >= bundle ? [h("button", { class: "btn small danger", onclick: () => void sell(bundle) }, `Sell ${bundle} (${each})`), ...(s!.qty >= bundle * 2 ? [h("button", { class: "btn small danger", onclick: () => void sell(s!.qty) }, `All (${Math.floor(s!.qty / bundle) * each})`)] : [])] : [h("button", { class: "btn small", disabled: true }, "Needs 2")])
+          : [h("button", { class: "btn small danger", onclick: () => void sell(1) }, `Sell 1 (${each})`), ...(s!.qty > 1 ? [h("button", { class: "btn small danger", onclick: () => void sell(s!.qty) }, `All (${each * s!.qty})`)] : [])]));
     });
     body.replaceChildren(
       ...(stock.length === 0 ? [h("div", { class: "hint" }, "Nothing on the shelf right now.")] : stock.map((id) => {
