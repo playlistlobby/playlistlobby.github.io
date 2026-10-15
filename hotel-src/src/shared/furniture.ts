@@ -49,8 +49,8 @@ export const POSTER_KIND = "f_poster";
 /** the shop sells a poster for blood; a poster's picture is chosen when it is hung and then stays on it */
 export const POSTER_PRICE = 25;
 /** the picture inside the frame is this many pixels (drawn twice as big in the game, so it comes out pixelated) */
-export const POSTER_W = 37;
-export const POSTER_H = 48;
+export const POSTER_W = 25;
+export const POSTER_H = 38;
 /** A poster only hangs on a wall: the back wall facing 4 (y = 0) or the left wall facing 2 (x = 0). */
 export const wallPlaceOk = (x: number, y: number, dir: number): boolean => (dir === 4 && y === 0) || (dir === 2 && x === 0);
 /**

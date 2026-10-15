@@ -71,7 +71,7 @@ import { openVending, VendingApi } from "./vendingShop";
 import { openRecordShop, RecordShopApi } from "./recordShop";
 import { openPosterShop, PosterShopApi } from "./posterShop";
 import { pickPosterPicture } from "./posterEditor";
-import { POSTER_H, POSTER_KIND, POSTER_W } from "../shared/furniture";
+import { POSTER_KIND, POSTER_PRICE, POSTER_W, POSTER_H } from "../shared/furniture";
 import { MixerApi, openMixer } from "./mixer";
 import { LandlordApi, openLandlord } from "./landlord";
 import { consumeItem } from "../db";
@@ -140,30 +140,16 @@ void loadNitro("furni/mafia_c26_planter_white.nitro").then((n) => {
 /** what grows in the kit when the seed was shroom spores */
 let shroomArt: NitroFurni | null = null;
 void loadNitro("furni/shrooms.nitro").then((n) => { shroomArt = n; }).catch(() => undefined);
-/** the poster's frame: the Habbo poster with the picture inside wiped out (the pictures are drawn into the hole, skewed to the wall) */
-let posterFrame: NitroFurni | null = null;
-void loadNitro("furni/poster.nitro").then((n) => {
-  if (!n) return;
-  posterFrame = derive(n, (g) => {
-    const key = Object.keys(n.json.spritesheet.frames).find((k) => /_64_a_4_0$/.test(k));
-    const f = key ? n.json.spritesheet.frames[key].frame : null;
-    if (!f) return;
-    const img = g.getImageData(f.x, f.y, f.w, f.h);
-    for (let y = 0; y < f.h; y++) for (let x = 8; x <= 80; x++) {
-      // the inside of the frame: left edge x 8, right edge x 80, top edge 5 + x/2, bottom edge 100 + x/2 (the art slopes half a pixel per pixel)
-      if (y >= Math.ceil(5 + 0.5 * x) && y <= Math.floor(100 + 0.5 * x)) img.data[(y * f.w + x) * 4 + 3] = 0;
-    }
-    g.putImageData(img, f.x, f.y);
-  });
-}).catch(() => undefined);
-/** the "?" every new poster shows until a picture is hung on it */
+/** the poster art (a black poster with a thin outline; one picture for each wall). The picture is drawn over its face, inside the outline. */
+let posterArt: NitroFurni | null = null;
+void loadNitro("furni/poster.nitro").then((n) => { posterArt = n; }).catch(() => undefined);
+/** the "?" every new poster shows until a picture is hung on it: black, with a "?" */
 const posterBlank: HTMLCanvasElement = (() => {
   const c = document.createElement("canvas");
   c.width = POSTER_W; c.height = POSTER_H;
   const g = c.getContext("2d")!;
-  g.fillStyle = "#e7d9a6"; g.fillRect(0, 0, POSTER_W, POSTER_H);
-  g.fillStyle = "#d6c791"; g.fillRect(0, 0, POSTER_W, 4);
-  g.fillStyle = "#3a3a42"; g.font = "bold 40px Verdana, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillStyle = "#000"; g.fillRect(0, 0, POSTER_W, POSTER_H);
+  g.fillStyle = "#e6e6e6"; g.font = "bold 30px Verdana, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
   g.fillText("?", POSTER_W / 2, POSTER_H / 2 + 2);
   return c;
 })();
@@ -318,6 +304,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let drops = new Map<string, Drop>();
   let dropConfirmApi: DropConfirmApi | null = null;
   const isOwnRoom = roomId === ownRoomId(me.uid);
+  /** your own room, or (an account with the decorator power) any player's room: furniture and posters can be put down here */
+  const mayFurnish = isOwnRoom || (me.decorator && roomId.startsWith("u_"));
   /** the private copy of the basement a new player does the introduction in; it looks and works like the basement, but nobody else comes in */
   const isTut = roomId === tutRoomId(me.uid);
   const isBasement = roomId === LOBBY_ID || isTut;
@@ -462,7 +450,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   const selectedDef = () => (selectedSlot !== null && me.inventory[selectedSlot] ? itemDef(me.inventory[selectedSlot]!.item) ?? null : null);
 
+  /** The Turn button on the screen while you hold a piece of furniture from your pocket (outside the furnishing menu): the same as the R key. */
+  const carryTurnBtn = h("button", { class: "btn small carry-turn hidden", title: "Turn", onclick: () => { const it = selectedDef(); if (it?.furniture) toolDir = nextDir(it.id, toolDir || defaultDir(it.id)); } }, "⟳ Turn");
+  stage.append(carryTurnBtn);
+  /** Only for accounts with the decorator power, in somebody else's room: opens the furnishing menu there. */
+  const decorateBtn = h("button", { class: "btn small decorate-btn hidden", onclick: () => enterFurnish() }, "🛠 Decorate");
+  stage.append(decorateBtn);
+  function syncCarryTurn(): void {
+    const it = selectedDef();
+    carryTurnBtn.classList.toggle("hidden", !(it?.furniture && !furnishOn && mayFurnish && FURNI_KINDS[it.id]?.rotatable));
+    decorateBtn.classList.toggle("hidden", !(me.decorator && !isOwnRoom && roomId.startsWith("u_") && !furnishOn));
+  }
   function updateHint(): void {
+    syncCarryTurn();
     const item = selectedDef();
     let text = "";
     if (tool && isOwner()) text = tool === "pickup" ? "Pick up furniture: click it" : `Place ${FURNI_KINDS[tool]?.label ?? tool}: click a tile${FURNI_KINDS[tool]?.rotatable ? " (R turns it)" : ""}`;
@@ -705,7 +705,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // tapping another player (with nothing selected) opens their menu: add friend, invite to trade, walk here...
     if (target && target.uid !== me.uid && !target.sleeper && !item) { openContextAt(m.x, m.y, e.clientX, e.clientY); return; }
     if (item?.furniture) {
-      if (!isOwnRoom) { clearSelection(); say("You can only put furniture down in your own room.", "warn"); return; }
+      if (!mayFurnish) { clearSelection(); say("You can only put furniture down in your own room.", "warn"); return; }
       if (t && selectedSlot !== null) void putDown(t, { kind: item.id, source: "inv", slot: selectedSlot }, toolDir || defaultDir(item.id));
       return;
     }
@@ -916,7 +916,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const refreshFz = () => { furnishUi?.refresh(); panel.refresh(); };
 
   function enterFurnish(): void {
-    if (!isOwnRoom || furnishOn) return;
+    if (!mayFurnish || furnishOn) return;
     clearSelection();
     pending = null;
     furnishOn = true;
@@ -963,7 +963,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage"; slot?: number }, dir: number): Promise<void> {
     const o = originFor(what.kind, dir, t);
     // a wall piece (a poster) snaps to the nearest wall instead of standing where you tapped
-    const spot: Spot = FURNI_KINDS[what.kind].wall ? wallSpot(def, what.kind, t) : { x: o.x, y: o.y, dir: FURNI_KINDS[what.kind].rotatable ? dir : 0 };
+    const spot: Spot = FURNI_KINDS[what.kind].wall ? wallSpot(def, what.kind, t, dir) : { x: o.x, y: o.y, dir: FURNI_KINDS[what.kind].rotatable ? dir : 0 };
     if (placedCount(def) >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
     const why = whyNot(def, what.kind, spot, null, othersOccupy());
     if (why) return say(why, "warn");
@@ -1064,24 +1064,22 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const ok = !whyNot(def, kind, spot, ignore, othersOccupy());
       const fp = footprint(kind, spot.dir);
       for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) diamond(spot.x + i, spot.y + j, ok ? "rgba(80,220,120,0.45)" : "rgba(230,70,70,0.45)", null);
-      if (FURNI_KINDS[kind].poster && posterFrame) { // a poster: the empty frame, on the wall
-        const kk = FURNI_KINDS[kind];
-        drawNitroSprites(g, posterFrame, 2, 1, spot.dir === 2 ? spot.x - 0.5 : spot.x, spot.dir === 4 ? spot.y - 0.5 : spot.y, spot.dir, kk.nudge, toScreen, scale, 0.6);
-      } else if (FURNI_KINDS[kind].nitro) drawNitroFurni(g, kind, spot.x, spot.y, spot.dir, toScreen, scale, 0.6);
+      if (FURNI_KINDS[kind].poster) drawPosterAt(kind, spot.x, spot.y, spot.dir, undefined, 0.6); // a poster: the "?" one, on the wall
+      else if (FURNI_KINDS[kind].nitro) drawNitroFurni(g, kind, spot.x, spot.y, spot.dir, toScreen, scale, 0.6);
     };
     if (fzDrag?.moved) ghost(fzDrag.kind, fzDrag.spot, fzDrag.id);
     else if (fzPlacing && hover) {
       const o = originFor(fzPlacing.kind, fzDir, hover);
-      ghost(fzPlacing.kind, FURNI_KINDS[fzPlacing.kind].wall ? wallSpot(def, fzPlacing.kind, hover) : { x: o.x, y: o.y, dir: fzDir }, null);
+      ghost(fzPlacing.kind, FURNI_KINDS[fzPlacing.kind].wall ? wallSpot(def, fzPlacing.kind, hover, fzDir) : { x: o.x, y: o.y, dir: fzDir }, null);
     }
   }
 
   /** The ghost for a furniture item you've selected in your pocket (outside the furnishing menu). */
   function drawCarryGhost(): void {
     const item = selectedDef();
-    if (furnishOn || !item?.furniture || !isOwnRoom || !hover) return;
+    if (furnishOn || !item?.furniture || !mayFurnish || !hover) return;
     const o = originFor(item.id, toolDir || defaultDir(item.id), hover);
-    const spot: Spot = { x: o.x, y: o.y, dir: toolDir || defaultDir(item.id) };
+    const spot: Spot = FURNI_KINDS[item.id].wall ? wallSpot(def, item.id, hover, toolDir || defaultDir(item.id)) : { x: o.x, y: o.y, dir: toolDir || defaultDir(item.id) };
     const ok = !whyNot(def, item.id, spot, null, othersOccupy());
     const fp = footprint(item.id, spot.dir);
     for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) {
@@ -1095,7 +1093,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       g.fillStyle = ok ? "rgba(80,220,120,0.45)" : "rgba(230,70,70,0.45)";
       g.fill();
     }
-    if (FURNI_KINDS[item.id].nitro) drawNitroFurni(g, item.id, spot.x, spot.y, spot.dir, toScreen, scale, 0.6);
+    if (FURNI_KINDS[item.id].poster) drawPosterAt(item.id, spot.x, spot.y, spot.dir, undefined, 0.6);
+    else if (FURNI_KINDS[item.id].nitro) drawNitroFurni(g, item.id, spot.x, spot.y, spot.dir, toScreen, scale, 0.6);
   }
 
   // ---- players -------------------------------------------------------------------
@@ -2876,52 +2875,66 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /**
-   * A poster: the picture first (cut to the frame opening, tilted to lie on the wall, drawn in big pixels), then the frame over it.
-   * The back wall tilts the picture one way, the left wall the other; the frame art slopes half a pixel per pixel.
+   * A poster: the art, then its picture over the face of it (cut to the face, tilted to lie on the wall, drawn in big pixels).
+   * The back wall tilts the picture one way and the left wall the other (the art slopes half a pixel per pixel); the face is 50 x 76 sprite pixels.
    */
-  function drawPoster(f: { id?: string; kind: string; x: number; y: number; dir?: number; img?: string }, now: number): Hitbox | null {
-    const k = FURNI_KINDS[f.kind];
-    const frame = posterFrame;
-    if (!frame) return null;
-    const dir = f.dir === 2 ? 2 : 4;
-    const tx = dir === 2 ? f.x - 0.5 : f.x;
-    const ty = dir === 4 ? f.y - 0.5 : f.y;
-    const box = drawNitroSpritesBox(frame, { x: tx, y: ty }, dir, k.nudge ?? { x: 0, y: 0 });
+  /** where the poster art is anchored: on the wall plane, half a tile along the wall (the poster covers two tiles, the art is anchored to the first) */
+  const posterOrigin = (x: number, y: number, dir: number): { tx: number; ty: number } => (dir === 2 ? { tx: x - 0.5, ty: y + 0.5 } : { tx: x + 0.5, ty: y - 0.5 });
+  function drawPosterAt(kind: string, x: number, y: number, dirIn: number, img: string | undefined, alpha: number, glowHot = false): Box | null {
+    const k = FURNI_KINDS[kind];
+    const art = posterArt;
+    if (!art) return null;
+    const dir = dirIn === 2 ? 2 : 4;
+    const { tx, ty } = posterOrigin(x, y, dir);
+    const box = drawNitroSpritesBox(art, { x: tx, y: ty }, dir, k.nudge ?? { x: 0, y: 0 });
     if (!box) return null;
-    const hot = !!f.id && hoverObj?.id === f.id;
-    if (k.opens) { // the poster in the shop glows like the other things you can use
-      const pulse = 0.5 + 0.5 * Math.sin(now / 450);
-      const cx = (box.x0 + box.x1) / 2, cy = (box.y0 + box.y1) / 2, r = 70 * scale * (hot ? 1.15 : 1);
-      g.save();
-      const halo = g.createRadialGradient(cx, cy, 4 * scale, cx, cy, r);
-      const a = 0.12 + 0.05 * pulse + (hot ? 0.14 : 0);
-      halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
-      halo.addColorStop(0.6, `rgba(255,200,40,${(a * 0.6).toFixed(2)})`);
-      halo.addColorStop(1, "rgba(255,200,40,0)");
-      g.fillStyle = halo;
-      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
-      g.restore();
-    }
-    // the picture: its small PNG laid onto the opening (73 x 96 sprite pixels), sheared along the wall
+    const b = drawNitroSprites(g, art, 2, 1, tx, ty, dir, k.nudge, toScreen, scale, alpha) ?? box;
     g.save();
-    g.translate(box.x0, box.y0);
+    g.globalAlpha = alpha;
+    g.translate(b.x0, b.y0);
     g.scale(scale, scale);
     g.imageSmoothingEnabled = false;
-    const W = 73, H = 96;
-    if (dir === 4) g.transform(1, 0.5, 0, 1, 8, 9); // back wall: sloping down to the right
-    else g.transform(1, -0.5, 0, 1, 10, 45); // left wall: the art is mirrored, so it slopes the other way
-    g.beginPath(); g.rect(-1, -1, W + 2, H + 2); g.clip(); // (the dark outline of the frame covers the edge)
-    g.drawImage(posterPicture(f.img), 0, 0, W, H);
-    g.fillStyle = "rgba(10,12,30,0.07)"; // the wall is in the shade of the room: a little darker, like everything else
+    const W = 50, H = 76;
+    if (dir === 4) g.transform(1, 0.5, 0, 1, 1, 2.25); // back wall: the face slopes down to the right
+    else g.transform(1, -0.5, 0, 1, 1, 27.25); // left wall: the other way
+    g.beginPath(); g.rect(0, 0, W, H); g.clip();
+    g.drawImage(posterPicture(img), 0, 0, W, H);
+    g.fillStyle = "rgba(10,12,30,0.06)"; // the wall is in the shade of the room: a little darker, like everything else
     g.fillRect(0, 0, W, H);
     g.restore();
-    const b = drawNitroSprites(g, frame, 2, 1, tx, ty, dir, k.nudge, toScreen, scale) ?? box;
-    if (hot && k.opens) {
+    if (glowHot) {
       g.save();
       g.globalCompositeOperation = "lighter";
-      drawNitroSprites(g, frame, 2, 1, tx, ty, dir, k.nudge, toScreen, scale, 0.14);
+      drawNitroSprites(g, art, 2, 1, tx, ty, dir, k.nudge, toScreen, scale, 0.14);
       g.restore();
     }
+    return b;
+  }
+
+  function drawPoster(f: { id?: string; kind: string; x: number; y: number; dir?: number; img?: string }, now: number): Hitbox | null {
+    const k = FURNI_KINDS[f.kind];
+    const hot = !!f.id && hoverObj?.id === f.id;
+    if (k.opens && posterArt) { // the poster in the shop glows like the other things you can use
+      const dir0 = f.dir === 2 ? 2 : 4;
+      const po = posterOrigin(f.x, f.y, dir0);
+      const bx = drawNitroSpritesBox(posterArt, { x: po.tx, y: po.ty }, dir0, k.nudge ?? { x: 0, y: 0 });
+      if (bx) {
+        const pulse = 0.5 + 0.5 * Math.sin(now / 450);
+        const cx = (bx.x0 + bx.x1) / 2, cy = (bx.y0 + bx.y1) / 2, r = 62 * scale * (hot ? 1.15 : 1);
+        g.save();
+        const halo = g.createRadialGradient(cx, cy, 4 * scale, cx, cy, r);
+        const a = 0.12 + 0.05 * pulse + (hot ? 0.14 : 0);
+        halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
+        halo.addColorStop(0.6, `rgba(255,200,40,${(a * 0.6).toFixed(2)})`);
+        halo.addColorStop(1, "rgba(255,200,40,0)");
+        g.fillStyle = halo;
+        g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+    }
+    const b = drawPosterAt(f.kind, f.x, f.y, f.dir ?? 4, f.img, 1, hot && !!k.opens);
+    if (!b) return null;
+    if (k.opens && !furnishOn) drawPriceTag(POSTER_PRICE, b.x1, b.y1); // the shop poster shows its price in blood, like the other things for sale
     return { id: "", ...b, depth: f.x + f.y };
   }
 

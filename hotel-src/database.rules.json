@@ -597,6 +597,9 @@
             "crop": {
               ".validate": "newData.isString() && newData.val() === 'shroom'"
             },
+            "by": {
+              ".validate": "newData.isString() && newData.val().length < 60"
+            },
             "img": {
               ".validate": "newData.isString() && newData.val().length < 12000 && newData.val().beginsWith('data:image/png;base64,')"
             },

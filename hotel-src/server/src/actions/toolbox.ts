@@ -1,6 +1,6 @@
 // The toolbox in your own room: storing things, and putting furniture down / moving it / taking it back. A piece exists in exactly one place
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
-import { Action, ID_RE, int, requireOwnRoom, roomSize, text } from "./util";
+import { Action, ID_RE, int, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, MAX_FURNI, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
@@ -8,6 +8,21 @@ import { POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../
 
 const isPiece = async (c: Ctx, key: string): Promise<boolean> => !!SHIPPED_DIMS[key] || !!(await c.furniMeta())[key];
 const KEY_RE = /^[a-z0-9_]{1,30}$/;
+
+/**
+ * Which room a furnishing action is for: your own, or (for an account with the decorator power, see users/<uid>/decorator) another player's room that you
+ * are standing in. In someone else's room you only place new pieces, and only move or take back the ones you put there yourself (they carry `by`).
+ */
+async function roomFor(c: Ctx, a: Record<string, unknown>): Promise<{ room: string; foreign: boolean }> {
+  const own = `u_${c.uid}`;
+  const want = a.room === undefined ? own : text(a.room, /^u_[A-Za-z0-9]{1,40}$/, "room");
+  if (want === own) return { room: await requireOwnRoom(c), foreign: false }; // your own room: you have to be standing in it
+  const w = await c.user();
+  if (!(c.isAdmin || w.raw.decorator === true)) fail("That isn't your room.");
+  if (!(await c.db.get(`roomsMeta/${want}/owner`))) fail("That room doesn't exist.");
+  await requireInRoom(c, want);
+  return { room: want, foreign: true };
+}
 
 /** What you carry goes into the toolbox: a piece of furniture, or `qty` of an item. Ass weed is kept apart as "ass_<item>". */
 export const storeItem: Action = {
@@ -67,7 +82,7 @@ const newRowId = (now: number): string => `f${now.toString(36)}${Math.random().t
 /** Puts a piece down in your room, from your pocket or from storage. */
 export const furniPlace: Action = {
   async run(c, a) {
-    const room = await requireOwnRoom(c);
+    const { room, foreign } = await roomFor(c, a);
     const w = await c.user();
     const dir = int(a.dir ?? 0, 0, 6, "facing");
     if (!DIRS.includes(dir)) fail("Bad facing.");
@@ -98,7 +113,7 @@ export const furniPlace: Action = {
       if (!wallPlaceOk(Number(a.x), Number(a.y), dir)) fail("A poster hangs on a wall: the back wall or the left wall.");
       if (a.img !== undefined) { if (!posterImageOk(a.img)) fail("That picture can't be used."); img = a.img as string; }
     } else if (a.img !== undefined) fail("Only a poster carries a picture.");
-    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}) };
+    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : {}) };
     return {};
   },
 };
@@ -106,10 +121,11 @@ export const furniPlace: Action = {
 /** Moves or turns a piece that is already in your room. (The bed, bag, toolbox and sink have their own positions the browser sets.) */
 export const furniMove: Action = {
   async run(c, a) {
-    const room = await requireOwnRoom(c);
+    const { room, foreign } = await roomFor(c, a);
     const id = text(a.id, ID_RE, "piece");
-    const row = await c.db.get<{ kind?: string }>(`roomsMeta/${room}/furni/${id}`);
+    const row = await c.db.get<{ kind?: string; by?: string }>(`roomsMeta/${room}/furni/${id}`);
     if (!row?.kind) return fail("That piece isn't in your room.");
+    if (foreign && row.by !== c.uid && !c.isAdmin) fail("That isn't yours to move.");
     const dims = SHIPPED_DIMS[row.kind] ?? (await c.furniMeta())[row.kind];
     if (!dims) fail("That piece doesn't exist any more.");
     const dir = int(a.dir ?? 0, 0, 6, "facing");
@@ -127,10 +143,11 @@ export const furniMove: Action = {
 /** Takes a piece out of your room into storage. */
 export const furniStore: Action = {
   async run(c, a) {
-    const room = await requireOwnRoom(c);
+    const { room, foreign } = await roomFor(c, a);
     const id = text(a.id, ID_RE, "piece");
-    const row = await c.db.get<{ kind?: string; plantedAt?: number; mixJob?: unknown }>(`roomsMeta/${room}/furni/${id}`);
+    const row = await c.db.get<{ kind?: string; plantedAt?: number; mixJob?: unknown; by?: string }>(`roomsMeta/${room}/furni/${id}`);
     if (!row?.kind) return fail("That piece isn't in your room.");
+    if (foreign && row.by !== c.uid && !c.isAdmin) fail("That isn't yours to take.");
     if (typeof row.plantedAt === "number") fail("Harvest the plant first.");
     if (row.mixJob) fail("Collect what's in the mixer first.");
     const w = await c.user();

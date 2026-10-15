@@ -98,8 +98,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
   // posters: a frame on the wall; the picture inside is the player's own (chosen when it is hung). The one in the shop room is for sale.
-  f_poster: { id: "f_poster", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: true, nitro: "furni/poster.nitro", rotatable: true, flat: true, wall: true, poster: true },
-  shopposter: { id: "shopposter", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: false, nitro: "furni/poster.nitro", rotatable: true, fixed: true, flat: true, wall: true, poster: true, opens: "poster" },
+  f_poster: { id: "f_poster", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: true, nitro: "furni/poster.nitro", rotatable: true, flat: true, wall: true, poster: true, nudge: { x: 0, y: -36 } },
+  shopposter: { id: "shopposter", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: false, nitro: "furni/poster.nitro", rotatable: true, fixed: true, flat: true, wall: true, poster: true, opens: "poster", nudge: { x: 0, y: -36 } },
   // the record player on the counter at the left of the shop room: the CDs are sold here
   recordplayer: { id: "recordplayer", label: "Record player", icon: "💿", w: 1, h: 1, height: 30, color: "#3a3a44", placeable: false, nitro: "furni/recordplayer.nitro", rotatable: true, fixed: true, opens: "records", nudge: { x: 0, y: -26 } },
   // the landlord's counter in the corner of the shop room

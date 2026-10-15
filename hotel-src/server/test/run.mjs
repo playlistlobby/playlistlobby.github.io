@@ -952,12 +952,12 @@ console.log("--- posters");
   await owner("PUT", `roomsMeta/${room}`, { owner: p.uid, ownerName: "t_poster", name: "t_poster's room", access: "knock", w: 8, h: 8 });
   await stand(p, room, 4, 4);
   const slot = buy.state.inventory.findIndex((x) => x && x.item === "f_poster");
-  bad("not in the middle of the room", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 4, dir: 0, img: png(37, 48) }));
-  bad("not on the floor of the back wall facing the wrong way", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 2, img: png(37, 48) }));
+  bad("not in the middle of the room", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 4, dir: 0, img: png(25, 38) }));
+  bad("not on the floor of the back wall facing the wrong way", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 2, img: png(25, 38) }));
   bad("a picture that isn't a PNG", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 4, img: "data:image/png;base64,AAAA" }));
   bad("a picture of the wrong size", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 4, img: png(500, 500) }));
   bad("a picture on something that isn't a poster", await act(p, "furniPlace", { source: "inv", slot: buy.state.inventory.findIndex((x) => x && x.item === "f_poster") + 0, x: 4, y: 0, dir: 4, img: "http://example.com/x.png" }));
-  const hang = await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 4, img: png(37, 48) });
+  const hang = await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 4, img: png(25, 38) });
   ok("hang the poster on the back wall", hang);
   const rows = await owner("GET", `roomsMeta/${room}/furni`);
   const [fid, row] = Object.entries(rows ?? {}).find(([, r]) => r.kind === "f_poster") ?? [];
@@ -975,6 +975,40 @@ console.log("--- posters");
   await act(sell, "sync");
   const so = await act(sell, "sellWeed", { slot: 0, qty: 1 });
   check("6ixty pays 75% of 25 for a poster: 18", so.ok === true && so.state.blood === 18, JSON.stringify(so.state && so.state.blood));
+}
+
+console.log("--- the decorator power: furniture in other people's rooms");
+{
+  const owner1 = await fresh("t_dec_owner");
+  await act(owner1, "sync");
+  const room = `u_${owner1.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: owner1.uid, ownerName: "t_dec_owner", name: "t_dec_owner's room", access: "open", w: 8, h: 8, furni: { theirs: { kind: "f_sofa", x: 5, y: 5 } } });
+  await owner("PUT", `rooms/${room}/players/${owner1.uid}`, { name: "t_dec_owner", figure: "x", x: 1, y: 6, dir: 2 });
+  const png = () => { const b = Buffer.alloc(33); Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(b, 0); b.writeUInt32BE(13, 8); b.write("IHDR", 12); b.writeUInt32BE(25, 16); b.writeUInt32BE(38, 20); b[24] = 8; b[25] = 6; return "data:image/png;base64," + b.toString("base64"); };
+  const inv = { 0: { item: "f_poster", qty: 1 }, 1: { item: "f_sofa", qty: 1 }, 2: { item: "f_poster", qty: 1 } };
+  const plain = await fresh("t_dec_plain", { inventory: inv });
+  await act(plain, "sync");
+  await owner("PUT", `roomsMeta/u_${plain.uid}`, { owner: plain.uid, ownerName: "t_dec_plain", name: "x", access: "open", w: 8, h: 8 });
+  await stand(plain, room, 3, 3);
+  bad("a normal player can't put furniture in someone else's room", await act(plain, "furniPlace", { room, source: "inv", slot: 1, x: 2, y: 2, dir: 0 }));
+  const deco = await fresh("t_dec_deco", { inventory: inv });
+  await owner("PATCH", `users/${deco.uid}`, { decorator: true });
+  await act(deco, "sync");
+  await owner("PUT", `roomsMeta/u_${deco.uid}`, { owner: deco.uid, ownerName: "t_dec_deco", name: "x", access: "open", w: 8, h: 8 });
+  bad("not from outside the room", await act(deco, "furniPlace", { room, source: "inv", slot: 1, x: 2, y: 2, dir: 0 }));
+  await stand(deco, room, 3, 3);
+  const sofa = await act(deco, "furniPlace", { room, source: "inv", slot: 1, x: 2, y: 2, dir: 0 });
+  ok("the decorator puts a sofa in their room", sofa);
+  const rows = await owner("GET", `roomsMeta/${room}/furni`);
+  const mine = Object.entries(rows).find(([, r]) => r.by === deco.uid && r.kind === "f_sofa");
+  check("it carries who put it there", !!mine, JSON.stringify(rows));
+  ok("and a poster on the wall", await act(deco, "furniPlace", { room, source: "inv", slot: 0, x: 4, y: 0, dir: 4, img: png() }));
+  bad("a poster still only goes on a wall", await act(deco, "furniPlace", { room, source: "inv", slot: 2, x: 4, y: 4, dir: 0, img: png() }));
+  ok("move the sofa they put there", await act(deco, "furniMove", { room, id: mine[0], x: 1, y: 3, dir: 0 }));
+  bad("not the owner's own sofa", await act(deco, "furniMove", { room, id: "theirs", x: 1, y: 1, dir: 0 }));
+  bad("and not take it away", await act(deco, "furniStore", { room, id: "theirs" }));
+  ok("they can take back what they put there", await act(deco, "furniStore", { room, id: mine[0] }));
+  check("the owner's sofa is still there", (await owner("GET", `roomsMeta/${room}/furni/theirs/kind`)) === "f_sofa");
 }
 
 console.log("--- /give");

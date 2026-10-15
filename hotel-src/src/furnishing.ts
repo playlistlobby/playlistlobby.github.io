@@ -72,8 +72,8 @@ export function whyNot(def: RoomDef, kind: string, spot: Spot, ignoreId: string 
 }
 
 /** Where a wall item goes when the pointer is on tile t: it snaps to the nearest wall (the back wall facing 4, the left wall facing 2) and slides along it. */
-export function wallSpot(def: RoomDef, kind: string, t: { x: number; y: number }): Spot {
-  const onBack = t.y <= t.x;
+export function wallSpot(def: RoomDef, kind: string, t: { x: number; y: number }, prefer?: number): Spot {
+  const onBack = prefer === 4 ? true : prefer === 2 ? false : t.y <= t.x; // (Turn picks the wall: 4 = the back wall, 2 = the left wall)
   const dir = onBack ? 4 : 2;
   const fp = footprint(kind, dir);
   return onBack ? { x: Math.max(0, Math.min(t.x, def.w - fp.w)), y: 0, dir } : { x: 0, y: Math.max(0, Math.min(t.y, def.h - fp.h)), dir };
@@ -105,15 +105,15 @@ export const placedCount = (def: RoomDef): number => def.furni.filter((f) => !is
 const roomRef = (roomId: string) => `roomsMeta/${roomId}`;
 
 /** Puts a piece you carry down in your room. */
-export async function placeFromInventory(p: Profile, _roomId: string, slot: number, spot: Spot, img?: string): Promise<void> {
+export async function placeFromInventory(p: Profile, roomId: string, slot: number, spot: Spot, img?: string): Promise<void> {
   if (!p.inventory[slot]) throw new Error("You aren't carrying that.");
-  await call(p, "furniPlace", { source: "inv", slot, x: spot.x, y: spot.y, dir: spot.dir, ...(img ? { img } : {}) });
+  await call(p, "furniPlace", { room: roomId, source: "inv", slot, x: spot.x, y: spot.y, dir: spot.dir, ...(img ? { img } : {}) });
 }
 
 /** Puts a piece from storage down in your room. */
-export async function placeFromStorage(p: Profile, _roomId: string, kind: string, spot: Spot, img?: string): Promise<void> {
+export async function placeFromStorage(p: Profile, roomId: string, kind: string, spot: Spot, img?: string): Promise<void> {
   if (storedCount(p, kind) < 1) throw new Error("There's none of that in storage.");
-  await call(p, "furniPlace", { source: "storage", kind, x: spot.x, y: spot.y, dir: spot.dir, ...(img ? { img } : {}) });
+  await call(p, "furniPlace", { room: roomId, source: "storage", kind, x: spot.x, y: spot.y, dir: spot.dir, ...(img ? { img } : {}) });
 }
 
 /** Moves or turns a piece that is already in the room. The bed, bag, toolbox and sink live under their own names (looks only); every other piece goes through the server. */
@@ -124,14 +124,14 @@ export async function movePiece(roomId: string, f: PlacedFurni, spot: Spot, p?: 
     return;
   }
   if (!p) throw new Error("Not signed in.");
-  await call(p, "furniMove", { id: f.id, x: spot.x, y: spot.y, dir: spot.dir });
+  await call(p, "furniMove", { room: roomId, id: f.id, x: spot.x, y: spot.y, dir: spot.dir });
 }
 
 /** Takes a piece out of the room into storage. */
-export async function storeFromRoom(p: Profile, _roomId: string, f: PlacedFurni): Promise<void> {
+export async function storeFromRoom(p: Profile, roomId: string, f: PlacedFurni): Promise<void> {
   if (isFixedPiece(f.id)) throw new Error("That one stays in your room.");
   if (f.plant) throw new Error("Harvest the plant first.");
-  await call(p, "furniStore", { id: f.id });
+  await call(p, "furniStore", { room: roomId, id: f.id });
 }
 
 /** Puts what you carry into the toolbox: a piece of furniture, or `qty` of an item (a whole stack of cigarettes, say). */
