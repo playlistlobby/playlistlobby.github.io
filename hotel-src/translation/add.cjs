@@ -220,5 +220,6 @@ set("Sold out for today. New stock tomorrow.", "Udsolgt for i dag. Nye varer i m
 set("Weak shroom", "Svag shroom", "src/items.ts");
 set("A shroom that never got its water. It works the same when you eat it, but it can't be mixed with anything.", "En shroom der aldrig fik sit vand. Den virker på samme måde, når du spiser den, men den kan ikke mixes med noget.", "src/items.ts");
 set("You pick one weak shroom. It never got its water.", "Du plukker én svag shroom. Den fik aldrig sit vand.", "src/ui/room.ts");
+set("Tap two things to mix. The dearer the result, the longer it takes (10 minutes to an hour).","Tryk på to ting for at mixe. Jo dyrere resultat, jo længere tid tager det (10 minutter til en time).","src/ui/mixer.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

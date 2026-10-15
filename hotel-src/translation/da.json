@@ -6538,5 +6538,10 @@
   "en": "You pick one weak shroom. It never got its water.",
   "da": "Du plukker én svag shroom. Den fik aldrig sit vand.",
   "where": "src/ui/room.ts"
+ },
+ "N197": {
+  "en": "Tap two things to mix. The dearer the result, the longer it takes (10 minutes to an hour).",
+  "da": "Tryk på to ting for at mixe. Jo dyrere resultat, jo længere tid tager det (10 minutter til en time).",
+  "where": "src/ui/mixer.ts"
  }
 }
