@@ -41,7 +41,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
     const done = left <= 0;
     body.replaceChildren(
       h("div", { class: "mixer-line" }, done ? "Your batch is ready!" : "The mixer is working…"),
-      h("div", { class: "mixer-result" }, ...(d && me.mixed[j.item] ? [h("img", { src: d.icon, alt: "" }), `${j.qty} × ${d.name}`] : [h("span", { class: "mixer-q" }, "?")])),
+      h("div", { class: "mixer-result" }, ...(d && (done || me.mixed[j.item]) ? [h("img", { src: d.icon, alt: "" }), `${j.qty} × ${d.name}`] : [h("span", { class: "mixer-q" }, "?")])),
       h("div", { class: "mixer-bar" }, h("div", { class: "mixer-bar-fill", style: { width: `${Math.round(Math.min(1, 1 - left / j.ms) * 100)}%` } })),
       h("div", { class: "hint", style: { textAlign: "center" } }, done ? "Tap Collect." : `${clock(left)} left. You can leave: it keeps going.`),
       h("div", { class: "row center" },

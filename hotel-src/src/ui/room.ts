@@ -2876,9 +2876,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const mix = f.mix!;
     const left = mix.doneAt - serverNow();
     const done = left <= 0;
-    const shake = done ? 0 : Math.sin(now / 40) * 1.4 * scale;
+    const shake = done ? 0 : Math.sin(now / 40) * 0.7 * scale;
     g.save();
-    g.translate(shake, done ? 0 : Math.sin(now / 53) * 0.6 * scale);
+    g.translate(shake, done ? 0 : Math.sin(now / 53) * 0.3 * scale);
     const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
     g.restore();
     if (!b) return null;
