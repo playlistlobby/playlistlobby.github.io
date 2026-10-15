@@ -18,7 +18,7 @@ import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
 import { plantThirsty, plantWatered } from "../db";
 import { giveCommand } from "../db";
-import { canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
+import { call, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
@@ -1608,7 +1608,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "vending") openVendingShop();
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "records") { if (!recordApi) recordApi = openRecordShop(stage, ctx, () => panel.refresh(), () => { recordApi = null; }); }
-        else if (opens === "mixer") { if (!mixerApi) mixerApi = openMixer(stage, ctx, f.id, def.id, () => panel.refresh(), () => { mixerApi = null; }); }
+        else if (opens === "mixer") {
+          if (mixerApi) { /* already open */ }
+          else if (f.mix && f.mix.doneAt <= serverNow()) { // a finished batch: one tap and it's in your pocket (no window)
+            const item = f.mix.item ? itemDef(f.mix.item)?.name : undefined;
+            void call<{ item?: string; qty?: number }>(me, "mixCollect", { fid: f.id }).then((r) => {
+              playSfx("give", 0.5);
+              panel.refresh();
+              say(`You collect ${r.qty ?? 1} ${itemDef(r.item ?? "")?.name ?? item ?? "of it"} from the mixer.`);
+            }, (err) => say((err as Error).message || "It isn't done yet.", "warn"));
+          } else mixerApi = openMixer(stage, ctx, f.id, def.id, () => panel.refresh(), () => { mixerApi = null; });
+        }
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
       }
       else if (job.type === "dumpster") void searchTheDumpster(job.fid);
