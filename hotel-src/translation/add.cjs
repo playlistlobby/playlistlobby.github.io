@@ -14,7 +14,7 @@ const set = (en, da, where = "") => {
 // edits asked for
 set("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.", "En cigaret. Klik for at tænde den med en lighter.");
 // texts the first pass missed
-set("A red and white pill from 6ixty. Swallow it and you pass out; you wake up in your own room. He doesn't say what's in it.", "En rød og hvid pille fra 6ixty. Sluk den og du besvimer; du vågner i dit eget værelse. Han siger ikke hvad der er i den.", "src/items.ts:185");
+set("A red and white pill", "en rød og hvid pille", "src/items.ts:185");
 set("Clothes you make yourself live in the Studio tab; set their price there.", "Tøj du laver selv ligger i Studio-fanen; sæt prisen der.", "src/ui/adminShop.ts:184");
 set("Two parts use the same layer; only the first of each layer is imported. Give one a different garment number.", "To dele bruger det samme lag; kun den første af hvert lag bliver importeret. Giv en et andet tøjnummer.", "src/ui/studioNitro.ts:123");
 set("They go live straight away. Free ones are available to everyone; priced ones go on sale in the shop.", "De går live med det samme. Gratis ting er til rådighed for alle; ting med pris kommer til salg i shoppen.", "src/ui/studioNitro.ts:135");
@@ -100,5 +100,6 @@ set("You get up. Everything is fast, and every room is open to you. For 4 minute
 set("The shroom wears off and the door closes behind you.", "Shroomen aftager og døren lukker bag dig.", "src/ui/room.ts");
 set("Walk in", "Gå ind", "src/ui/door.ts");
 set("Opened by a shroom", "Åbnet af en shroom", "src/ui/door.ts");
+set("Grow some shit", "Gro noget shi", "src/items.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

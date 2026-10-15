@@ -5560,8 +5560,8 @@
   "where": "src/ui/trade.ts:142"
  },
  "N001": {
-  "en": "A red and white pill from 6ixty. Swallow it and you pass out; you wake up in your own room. He doesn't say what's in it.",
-  "da": "En rød og hvid pille fra 6ixty. Sluk den og du besvimer; du vågner i dit eget værelse. Han siger ikke hvad der er i den.",
+  "en": "A red and white pill",
+  "da": "en rød og hvid pille",
   "where": "src/items.ts:185"
  },
  "N002": {
@@ -5973,5 +5973,10 @@
   "en": "Opened by a shroom",
   "da": "Åbnet af en shroom",
   "where": "src/ui/door.ts"
+ },
+ "N084": {
+  "en": "Grow some shit",
+  "da": "Gro noget shi",
+  "where": "src/items.ts"
  }
 }

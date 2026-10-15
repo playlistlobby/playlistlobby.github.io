@@ -203,7 +203,7 @@ export const ITEMS: Record<string, ItemDef> = {
   pill: {
     id: "pill",
     name: "Pill",
-    examine: "A red and white pill from 6ixty. Swallow it and you pass out; you wake up in your own room. He doesn't say what's in it.",
+    examine: "A red and white pill",
     icon: assetUrl("items/pill.svg"),
     useSelf: "pill",
   },
@@ -290,7 +290,7 @@ export function itemDef(id: string): ItemDef | undefined {
   if (ITEMS[id]) return ITEMS[id];
   const k = FURNI_KINDS[id];
   if (!k || !isFurniItem(id)) return undefined;
-  return { id, name: k.label, examine: `${k.label}: furniture. Click it, then a free spot in your own room to put it down. Your toolbox can also store it.`, icon: furniIcon(id), furniture: true };
+  return { id, name: k.label, examine: id === "f_planter" ? "Grow some shit" : `${k.label}: furniture. Click it, then a free spot in your own room to put it down. Your toolbox can also store it.`, icon: furniIcon(id), furniture: true };
 }
 
 /** The inventory from what the database holds: only items that exist (and aren't switched off) are kept. */
