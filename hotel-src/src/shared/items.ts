@@ -188,8 +188,8 @@ for (const r of [...MIX_RECIPES]) if (r.b.item === "cigarette") for (const smoke
 MIX_RECIPES.push({ a: { item: "cigbutt" }, b: { item: "cigbutt" }, give: { item: "tobacco", qty: 1 }, note: "Two cigarette butts, picked apart: 1 tobacco." });
 /** Minutes in the mixer, by what comes out: the dearer the result (and the more mixed things went into it), the longer it takes. 10 to 30. */
 export const MIX_MINUTES: Record<string, number> = { tobacco: 10, mix: 10, midweed: 12, researchchem: 12, thca: 14, hash: 16, superpill: 18, hashmix: 22, chudmix: 20, trollmix: 24, lsd: 24, joint_chudname: 12, dmt: 26, codeine: 30 };
-/** what you can grow: a mix with none of these in it (pills, kodimagnyl, water, cigarettes, hash, butts) takes twice as long */
-const GROWN = new Set(["weed", "shroom"]);
+/** what you can grow: a mix with none of these in it (pills, kodimagnyl, water, cigarettes, butts) takes twice as long */
+const GROWN = new Set(["weed", "shroom", "hash"]); // (hash is made from ass weed, so it counts)
 for (const r of MIX_RECIPES) r.ms = (MIX_MINUTES[r.give.item] ?? 10) * 60_000 * (GROWN.has(r.a.item) || GROWN.has(r.b.item) ? 1 : 2);
 const matches = (it: InvItem, m: { item: string; ass?: boolean }): boolean => it.item === m.item && !it.lit && !it.inPlayer && !!it.ass === !!m.ass;
 export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
