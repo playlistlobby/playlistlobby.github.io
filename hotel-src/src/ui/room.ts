@@ -1201,7 +1201,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const cs = held?.item === "wateringcan" ? slot! : findSlot(me.inventory, "wateringcan");
         if (cs < 0 || cs === null) return say(findSlot(me.inventory, "wateringcan_full") >= 0 ? "Your watering can is already full." : "You have nowhere to put the water.", "warn");
         await fillCan(me, cs);
+        try { localStorage.setItem(`6ixplanet.sinkHint.${me.uid}`, String(sinkFills() + 1)); } catch { /* private mode */ }
         panel.refresh();
+        tutorialGuide();
         playSfx("select", 0.4);
         return say("You fill the watering can.");
       }
@@ -1899,6 +1901,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   // ---- the introduction (in the private copy of the basement) ---------------------------------------------
+  /** The first three times you fill the watering can, the empty can and the sink in your room glow (counted on this device). */
+  function sinkFills(): number { try { return Number(localStorage.getItem(`6ixplanet.sinkHint.${me.uid}`)) || 0; } catch { return 0; } }
+  function sinkHintOn(): boolean { return isOwnRoom && sinkFills() < 3 && findSlot(me.inventory, "wateringcan") >= 0; }
   /** points the player at the next thing: the knife (and the guy) in the pocket, then the pill */
   function tutorialGuide(): void {
     if (disposed) return;
@@ -1907,7 +1912,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!isTut) {
       // the first two dead cats you carry: the cat and the knife glow (tap the knife, then the cat)
       const cat = findSlot(me.inventory, "deadcat");
+      const can = sinkHintOn() ? findSlot(me.inventory, "wateringcan") : -1;
       if (me.catsCarved < 2 && cat >= 0 && knife >= 0) panel.guide(selectedSlot === knife ? [cat] : [cat, knife]);
+      else if (can >= 0 && selectedSlot !== can) panel.guide(can); // the empty watering can glows (and so does the sink) for your first three fills
       else panel.guide(null);
       return;
     }
@@ -2695,7 +2702,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (k.plant) return drawPlanter(f, now);
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
-      if (b && k.opens && k.opens !== "sink" && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
+      const glowSink = k.opens === "sink" && sinkHintOn();
+      if (b && k.opens && (k.opens !== "sink" || glowSink) && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -2722,7 +2730,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const noHint = k.opens === "mixer"; // the mixer glows like the rest, but has no little icon floating over it
+        const noHint = k.opens === "mixer" || k.opens === "sink"; // the mixer and the sink glow like the rest, but have no little icon floating over them
         const showHanger = !noHint && (!me.seenDoor || hot);
         const hint = k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
