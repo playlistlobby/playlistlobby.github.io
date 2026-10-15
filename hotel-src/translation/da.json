@@ -6323,5 +6323,25 @@
   "en": "A pinch of spores. Select them, then click a growing kit to plant them. Shrooms are ready after 25 minutes (water them once, any time).",
   "da": "En knivspids sporer. Vælg dem, klik så på et growth kit for at plante dem. Shrooms er klar efter 25 minutter (vand dem én gang, når som helst).",
   "where": "src/items.ts"
+ },
+ "N154": {
+  "en": "The mixer starts up. It needs 30 minutes.",
+  "da": "Mixeren starter. Den skal bruge 30 minutter.",
+  "where": "server/src/actions/mixer.ts"
+ },
+ "N155": {
+  "en": "Tap two things to mix. A batch takes 10 minutes (the lean takes 30).",
+  "da": "Tryk på to ting for at mixe. Et parti tager 10 minutter (leanen tager 30).",
+  "where": "src/ui/mixer.ts"
+ },
+ "N156": {
+  "en": "Start mixing (30 min)",
+  "da": "Start mixing (30 min)",
+  "where": "src/ui/mixer.ts"
+ },
+ "N157": {
+  "en": "Tap two things to mix. The dearer the result, the longer it takes (10 to 30 minutes).",
+  "da": "Tryk på to ting for at mixe. Jo dyrere resultat, jo længere tid tager det (10 til 30 minutter).",
+  "where": "src/ui/mixer.ts"
  }
 }

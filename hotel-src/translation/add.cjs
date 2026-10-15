@@ -175,5 +175,9 @@ set("You press the spores into the soil. Shrooms take 25 minutes, and they need 
 set("You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering: water it any time.", "Du skubber et frø ned i jorden. Det tager 20 minutter at gro, og det skal vandes én gang: vand det når som helst.", "src/ui/room.ts");
 set("A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 20 minutes and needs one watering (any time).", "Et lille frø fra skraldespanden. Vælg det, klik så på dit growth kit for at plante det. Det gror på 20 minutter og skal vandes én gang (når som helst).", "src/items.ts");
 set("A pinch of spores. Select them, then click a growing kit to plant them. Shrooms are ready after 25 minutes (water them once, any time).", "En knivspids sporer. Vælg dem, klik så på et growth kit for at plante dem. Shrooms er klar efter 25 minutter (vand dem én gang, når som helst).", "src/items.ts");
+set("The mixer starts up. It needs 30 minutes.", "Mixeren starter. Den skal bruge 30 minutter.", "server/src/actions/mixer.ts");
+set("Tap two things to mix. A batch takes 10 minutes (the lean takes 30).", "Tryk på to ting for at mixe. Et parti tager 10 minutter (leanen tager 30).", "src/ui/mixer.ts");
+set("Start mixing (30 min)", "Start mixing (30 min)", "src/ui/mixer.ts");
+set("Tap two things to mix. The dearer the result, the longer it takes (10 to 30 minutes).","Tryk på to ting for at mixe. Jo dyrere resultat, jo længere tid tager det (10 til 30 minutter).","src/ui/mixer.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

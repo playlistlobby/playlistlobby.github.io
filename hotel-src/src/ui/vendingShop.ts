@@ -10,7 +10,7 @@ export interface VendingApi {
   close(): void;
 }
 
-/** The shop room's vending machine: lighters, rolling paper, cigarette packs, watering cans. */
+/** The shop room's vending machine: lighters, rolling paper, watering cans, the mixer and the growing kit. */
 export function openVending(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): VendingApi {
   const me = ctx.profile;
   const body = h("div", { class: "sixty-body" });

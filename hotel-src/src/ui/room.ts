@@ -2595,11 +2595,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** TEMP test commands (/giveblud 25, /weed): only the admin account gets anything from the server. */
-  async function testCommand(cmd: "blood" | "weed", n?: number): Promise<void> {
+  async function testCommand(cmd: "blood" | "weed" | "skip", n?: number): Promise<void> {
     try {
       const note = await debugCommand(me, cmd, n);
       ctx.refreshHeader();
       panel.refresh();
+      if (cmd === "skip") mixerApi?.refresh();
       say(note || "(test) Done.");
     } catch (err) {
       say((err as Error).message || "Unknown command.", "warn");
@@ -2669,6 +2670,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (text.startsWith("/")) {
       // TEMP-GIVEBLUD: testing command, remove together with the 'testBlood' rule in database.rules.template.json
+      const skipM = /^\/skip\s+(\d{1,4})$/i.exec(text);
+      if (skipM) { void testCommand("skip", Number(skipM[1])); return; } // TEMP: /skip <minutes> moves your plants, mixers and bins on in time
       if (/^\/weed$/i.test(text)) { void testCommand("weed"); return; } // TEMP: testing command (admin only), remove when asked
       // TEMP: /give <item> [amount] [ass]: any item by its id or its name (admin only)
       const giveM = /^\/give(?:\s+(.+))?$/i.exec(text);
@@ -2822,6 +2825,22 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const pot = drawNitroSprites(g, potN, 1, 1, f.x, f.y, dir, k.nudge, toScreen, scale);
     const pl = f.plant;
     let box = pot;
+    if (pl && pot && isOwnRoom) {
+      // a planted pot glows green like the mixers glow gold, and brighter when you point at it
+      const hot = !!f.id && hoverObj?.id === f.id;
+      const pulse = 0.5 + 0.5 * Math.sin(now / 450);
+      const cx = (pot.x0 + pot.x1) / 2, cy = pot.y0 - 10 * scale;
+      const r = 46 * scale * (hot ? 1.2 : 1);
+      const al = 0.12 + 0.05 * pulse + (hot ? 0.14 : 0);
+      g.save();
+      const halo = g.createRadialGradient(cx, cy, 2 * scale, cx, cy, r);
+      halo.addColorStop(0, `rgba(80,230,90,${al.toFixed(2)})`);
+      halo.addColorStop(0.55, `rgba(60,210,70,${(al * 0.6).toFixed(2)})`);
+      halo.addColorStop(1, "rgba(60,210,70,0)");
+      g.fillStyle = halo;
+      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+      g.restore();
+    }
     const art = pl?.crop === "shroom" ? shroomArt : foliageArt;
     if (pl && art) {
       const full = art;

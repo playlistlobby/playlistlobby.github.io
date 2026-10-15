@@ -320,7 +320,7 @@ export const rewardFlappyDrop = (p: Profile, roomId: string): Promise<unknown> =
 export const rewardSyringe = (p: Profile, who: "self" | "bag", roomId: string): Promise<unknown> => call(p, "syringe", { who, room: roomId });
 
 /** The test commands (/giveblud, /weed). The server only listens to the admin. Resolves with the message. */
-export async function debugCommand(p: Profile, cmd: "blood" | "weed", n?: number): Promise<string> {
+export async function debugCommand(p: Profile, cmd: "blood" | "weed" | "skip", n?: number): Promise<string> {
   return String((await call<{ note?: string }>(p, "debug", { cmd, n })).note ?? "");
 }
 /** /give <item> [amount] [ass]: any item (admin only). Resolves with the message. */

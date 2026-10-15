@@ -1,6 +1,7 @@
 // Things that pay blood or change what you carry: stabbing, the syringe, Flappy Bird, cats, bins, smoking, rolling, watering, growing.
 import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from "./util";
 import { fail } from "../ctx";
+import { skipTime } from "../skipTime";
 import {
   addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
@@ -176,6 +177,7 @@ export const finishSmoke: Action = {
     const ass = !!it!.ass && it!.item !== "cigarette";
     s.inventory = s.inventory.map((x, i) => (i === slot ? { item: "cigbutt", qty: 1 } : x));
     if (ass) return { passOut: true };
+    if (it!.item === "cigarette") await skipTime(c, s.dumpsters, 30_000); // a cigarette is half a minute gone: your plants, mixers and bins move on 30 seconds
     s.boostUntil = c.now + sm!.boostMs;
     s.boostMult = sm!.mult;
     if (sm!.speedMs) { s.speedUntil = c.now + sm!.speedMs; s.speedMult = 2; }

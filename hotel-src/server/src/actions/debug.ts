@@ -1,6 +1,7 @@
-// Test commands (/giveblud, /weed, /give). /giveblud and /give are open to everyone for now (TEMP); /weed is for the admin account only (and anyone in the local emulator).
+// Test commands (/giveblud, /weed, /give, /skip). /giveblud and /give are open to everyone for now (TEMP); /weed is for the admin account only (and anyone in the local emulator).
 import { Action, int, text } from "./util";
 import { fail } from "../ctx";
+import { skipTime } from "../skipTime";
 import { isEmulator } from "../env";
 import { addToInv } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
@@ -15,6 +16,12 @@ export const debug: Action = {
       const n = int(a.n, 1, 1000, "amount");
       w.s.blood += n;
       return { note: `(test) You got ${n} drops of blood.` };
+    }
+    if (a.cmd === "skip") {
+      // /skip <minutes>: your own timers run that much further: the plants and mixers in your room, and the bins you have searched (7 minutes to go, /skip 5: 2 to go)
+      const n = int(a.n, 1, 1440, "minutes");
+      await skipTime(c, w.s.dumpsters, n * 60_000);
+      return { note: `(test) ${n} minutes went by. The plants, mixers and bins moved on.` };
     }
     if (a.cmd === "weed") {
       let inv = w.s.inventory;

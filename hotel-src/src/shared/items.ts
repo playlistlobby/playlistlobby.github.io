@@ -82,12 +82,11 @@ export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   bluntwrap: { on: false, price: 2 },
   wateringcan: { on: false, price: 2 },
 };
-/** What the vending machine in the shop room sells. "cigpack" is 15 cigarettes in one go. */
+/** What the vending machine in the shop room sells. */
 export const VENDING_STOCK: Array<{ id: string; item: string; qty: number; label: string; fixedPrice?: number }> = [
   { id: "lighter", item: "lighter", qty: 1, label: "Lighter" },
   { id: "jointpaper", item: "jointpaper", qty: 1, label: "Joint paper" },
   { id: "bluntwrap", item: "bluntwrap", qty: 1, label: "Blunt wrap" },
-  { id: "cigpack", item: "cigarette", qty: 15, label: "Cigarettes (15)", fixedPrice: 10 },
   { id: "wateringcan", item: "wateringcan", qty: 1, label: "Watering can" },
   { id: "mixer", item: "f_mixer", qty: 1, label: "Mixer", fixedPrice: 10 },
   { id: "planter", item: "f_planter", qty: 1, label: "Growing kit", fixedPrice: 6 },
@@ -140,9 +139,6 @@ const ROLL_SUFFIX: Record<string, string> = { weed: "", mix: "", midweed: "_mid"
 
 /** Rolling, in the pocket: weed (or mix, mid weed, thc-a, research chemical) + joint paper or a blunt wrap. The order you clicked them in doesn't matter. Null if they don't go together. */
 export function combine(a: InvItem, b: InvItem): { give: InvItem; note: string; back?: InvItem } | null {
-  // kodimagnyl + a can of water: codeine (the lean); the can is empty afterwards and comes back to you
-  const water = [a, b].find((x) => x.item === "wateringcan_full"), kodi = [a, b].find((x) => x.item === "kodimagnyl");
-  if (water && kodi && water !== kodi) return { give: { item: "codeine", qty: 1 }, back: { item: "wateringcan", qty: 1 }, note: "You crush the kodimagnyl into the water. It turns purple: codeine. The can is empty again." };
   // tobacco rolls in joint paper to a cigarette, and in blunt paper to a cigar
   const tob = [a, b].find((x) => x.item === "tobacco"), paper = [a, b].find((x) => x.item === "jointpaper" || x.item === "bluntwrap");
   if (tob && paper && tob !== paper) return paper.item === "jointpaper" ? { give: { item: "cigarette", qty: 1 }, note: "You roll a cigarette." } : { give: { item: "cigar", qty: 1 }, note: "You roll a cigar." };
@@ -157,7 +153,7 @@ export function combine(a: InvItem, b: InvItem): { give: InvItem; note: string; 
 }
 
 /** The mixer: two things in, something new out. One of each goes in; the result is how many come out. The order doesn't matter. */
-export interface MixRecipe { a: { item: string; ass?: boolean }; b: { item: string; ass?: boolean }; give: InvItem; note: string; /** something that comes straight back to you (the emptied watering can) */ back?: InvItem }
+export interface MixRecipe { a: { item: string; ass?: boolean }; b: { item: string; ass?: boolean }; give: InvItem; note: string; /** something that comes straight back to you (the emptied watering can) */ back?: InvItem; /** how long it takes in the mixer (default MIX_MS, 10 minutes) */ ms?: number }
 export const MIX_RECIPES: MixRecipe[] = [
   { a: { item: "weed" }, b: { item: "cigarette" }, give: { item: "mix", qty: 2 }, note: "You crumble the weed into the tobacco: 2 weed mix." },
   { a: { item: "weed" }, b: { item: "weed", ass: true }, give: { item: "midweed", qty: 2 }, note: "Good weed and bad weed, mixed up: 2 mid weed." },
@@ -174,6 +170,9 @@ export const MIX_RECIPES: MixRecipe[] = [
 for (const r of [...MIX_RECIPES]) if (r.b.item === "cigarette") for (const smoke of ["tobacco", "cigar"]) MIX_RECIPES.push({ ...r, b: { item: smoke } });
 // two cigarette butts, picked apart, make tobacco (both from the same stack is fine)
 MIX_RECIPES.push({ a: { item: "cigbutt" }, b: { item: "cigbutt" }, give: { item: "tobacco", qty: 1 }, note: "Two cigarette butts, picked apart: 1 tobacco." });
+/** Minutes in the mixer, by what comes out: the dearer the result (and the more mixed things went into it), the longer it takes. 10 to 30. */
+export const MIX_MINUTES: Record<string, number> = { tobacco: 10, mix: 10, midweed: 12, researchchem: 12, thca: 14, hash: 16, superpill: 18, hashmix: 22, dmt: 26, codeine: 30 };
+for (const r of MIX_RECIPES) r.ms = (MIX_MINUTES[r.give.item] ?? 10) * 60_000;
 const matches = (it: InvItem, m: { item: string; ass?: boolean }): boolean => it.item === m.item && !it.lit && !it.inPlayer && !!it.ass === !!m.ass;
 export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
   return MIX_RECIPES.find((r) => (matches(x, r.a) && matches(y, r.b)) || (matches(y, r.a) && matches(x, r.b))) ?? null;

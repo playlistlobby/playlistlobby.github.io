@@ -5,7 +5,7 @@ import { Ctx, fail } from "../ctx";
 import { addToInv, MIX_MS, takeOneFrom } from "../../../src/shared/economy";
 import { mixRecipe } from "../../../src/shared/items";
 
-interface MixerRow { kind?: string; mixJob?: { item: string; qty: number; doneAt: number } }
+interface MixerRow { kind?: string; mixJob?: { item: string; qty: number; doneAt: number; ms?: number } }
 async function mixer(c: Ctx, fid: unknown): Promise<{ path: string; row: MixerRow }> {
   const room = await requireOwnRoom(c);
   const id = text(fid, ID_RE, "mixer");
@@ -30,8 +30,9 @@ export const mix: Action = {
     next = takeOneFrom(next, ib);
     if (r!.back) { const withBack = addToInv(next, r!.back); if (!withBack) fail("Your inventory is full."); next = withBack!; } // (the emptied can: its old slot is free)
     w.s.inventory = next;
-    c.extra[`${path}/mixJob`] = { item: r!.give.item, qty: r!.give.qty, doneAt: c.now + MIX_MS };
-    return { note: "The mixer starts up. It needs 10 minutes.", doneAt: c.now + MIX_MS };
+    const ms = r!.ms ?? MIX_MS; // 10 to 30 minutes: the dearer the result, the longer
+    c.extra[`${path}/mixJob`] = { item: r!.give.item, qty: r!.give.qty, doneAt: c.now + ms, ms };
+    return { note: `The mixer starts up. It needs ${Math.round(ms / 60_000)} minutes.`, doneAt: c.now + ms };
   },
 };
 

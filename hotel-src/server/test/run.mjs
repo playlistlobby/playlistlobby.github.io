@@ -105,7 +105,7 @@ console.log("--- shops can't be fooled");
   bad("can't buy the planter without enough blood", await act(u, "buyVending", { id: "planter" }));
   bad("can't buy something 6ixty doesn't sell", await act(u, "buySixty", { item: "knife" }));
   bad("can't buy a dead cat", await act(u, "buySixty", { item: "deadcat" }));
-  bad("not enough for the pack", await act(u, "buyVending", { id: "cigpack" }));
+  bad("the cigarette pack is gone from the machine", await act(u, "buyVending", { id: "cigpack" }));
   const r = await act(u, "buySixty", { item: "pill" });
   ok("buy a pill for 3", r);
   check("blood went to 0", r.state.blood === 0);
@@ -132,7 +132,7 @@ console.log("--- the mixer");
     const started = await act(a, "mix", { fid, a: slotOf(st, x[0], x[1]), b: slotOf(st, y[0], y[1]) });
     if (!started.ok) return started;
     const job = await owner("GET", `roomsMeta/${room}/furni/${fid}/mixJob`);
-    if (!job || job.doneAt - Date.now() < 590_000 || job.doneAt - Date.now() > 601_000) return { ok: false, status: 0, error: "no 10 minute job: " + JSON.stringify(job) };
+    if (!job || job.doneAt - Date.now() < 590_000 || job.doneAt - Date.now() > 30 * 60_000 + 1000) return { ok: false, status: 0, error: "no 10 minute job: " + JSON.stringify(job) };
     const early = await act(a, "mixCollect", { fid });
     if (early.ok) return { ok: false, status: 0, error: "collected early" };
     const busy = await act(a, "mix", { fid, a: 0, b: 1 });
@@ -583,11 +583,8 @@ console.log("--- kodimagnyl, the lean and the super pill");
   check("it stacks", total(v.state.inventory, "kodimagnyl") === 1);
   const v2 = await act(a, "buySixty", { item: "kodimagnyl" });
   check("two now, in one slot", total(v2.state.inventory, "kodimagnyl") === 2 && v2.state.inventory.filter((x) => x && x.item === "kodimagnyl").length === 1);
-  // kodimagnyl + water: codeine, and the can comes back empty
-  const cd = await act(a, "combine", { a: slotOf(v2.state, "kodimagnyl"), b: slotOf(v2.state, "wateringcan_full") });
-  ok("kodimagnyl and the full can make codeine", cd);
-  check("one codeine, an empty can, one kodimagnyl left", total(cd.state.inventory, "codeine") === 1 && total(cd.state.inventory, "wateringcan") === 1 && total(cd.state.inventory, "wateringcan_full") === 0 && total(cd.state.inventory, "kodimagnyl") === 1);
-  bad("an empty can doesn't work", await act(a, "combine", { a: slotOf(cd.state, "kodimagnyl"), b: slotOf(cd.state, "wateringcan") }));
+  const cd = v2;
+  bad("kodimagnyl and water no longer combine in the pocket (the lean is a mixer job)", await act(a, "combine", { a: slotOf(v2.state, "kodimagnyl"), b: slotOf(v2.state, "wateringcan_full") }));
   // the super pill is made in the mixer: pill + kodimagnyl
   const room = `u_${a.uid}`;
   await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_kodi", name: "t_kodi's room", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 2, y: 2 } } });
@@ -607,6 +604,8 @@ console.log("--- kodimagnyl, the lean and the super pill");
     const lm = await act(l, "mix", { fid: "mx", a: 0, b: 1 });
     ok("kodimagnyl + full can in the mixer", lm);
     check("the can came back empty, the kodimagnyl is gone", total(lm.state.inventory, "wateringcan") === 1 && total(lm.state.inventory, "wateringcan_full") === 0 && total(lm.state.inventory, "kodimagnyl") === 0);
+    const lj = await owner("GET", `roomsMeta/u_${l.uid}/furni/mx/mixJob`);
+    check("the lean takes 30 minutes", lj && lj.doneAt - Date.now() > 29 * 60_000 && lj.doneAt - Date.now() <= 30 * 60_000 + 2000, JSON.stringify(lj));
     await owner("PATCH", `roomsMeta/u_${l.uid}/furni/mx/mixJob`, { doneAt: Date.now() - 1000 });
     const lc = await act(l, "mixCollect", { fid: "mx" });
     check("and the lean comes out", total(lc.state.inventory, "codeine") === 1);
@@ -616,7 +615,8 @@ console.log("--- kodimagnyl, the lean and the super pill");
   ok("swallow the super pill", sp);
   check("4x speed for about a minute", sp.state.speedMult === 4 && sp.state.speedUntil - Date.now() > 50_000 && sp.state.speedUntil - Date.now() <= 61_000, JSON.stringify([sp.state.speedMult, sp.state.speedUntil - Date.now()]));
   // drinking the lean: an hour, the cup for 2 minutes, bins give two things and reload in 5 minutes
-  const dr = await act(a, "consume", { slot: slotOf(sp.state, "codeine") });
+  const gc = await act(a, "debug", { cmd: "give", item: "codeine", qty: 1 });
+  const dr = await act(a, "consume", { slot: slotOf(gc.state, "codeine") });
   ok("drink the codeine", dr);
   check("an hour of lean and 2 minutes of cup", dr.state.leanUntil - Date.now() > 3_500_000 && dr.state.cupUntil - Date.now() > 100_000 && dr.state.cupUntil - Date.now() <= 121_000, JSON.stringify([dr.state.leanUntil - Date.now(), dr.state.cupUntil - Date.now()]));
   bad("you can't drink a lighter", await act(a, "consume", { slot: 0 }));
@@ -1084,5 +1084,33 @@ console.log("--- /give");
   bad("an item that does not exist", await act(g, "debug", { cmd: "give", item: "unicorn", qty: 1 }));
 }
 
+console.log("--- a cigarette skips 30 seconds");
+{
+  const k = await fresh("t_cigskip", { inventory: { 0: { item: "cigarette", qty: 1 }, 1: { item: "lighter", qty: 1 }, 2: { item: "kodimagnyl", qty: 1 }, 3: { item: "wateringcan_full", qty: 1 } } });
+  await act(k, "sync");
+  await owner("PUT", `roomsMeta/u_${k.uid}`, { owner: k.uid, ownerName: "t_cigskip", name: "t_cigskip's room", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 2, y: 2 } } });
+  await stand(k, `u_${k.uid}`, 4, 4);
+  ok("start a lean", await act(k, "mix", { fid: "mx", a: 2, b: 3 }));
+  const before = (await owner("GET", `roomsMeta/u_${k.uid}/furni/mx/mixJob`)).doneAt;
+  const lit = await act(k, "light", { slot: 0 });
+  ok("light the cigarette", lit);
+  const ls = lit.state.inventory.findIndex((x) => x && x.lit);
+  await owner("PATCH", `users/${k.uid}/inventory/${ls}`, { lit: Date.now() - 70_000 });
+  ok("smoke it", await act(k, "finishSmoke", { slot: ls }));
+  const after = (await owner("GET", `roomsMeta/u_${k.uid}/furni/mx/mixJob`)).doneAt;
+  check("the mixer is 30 seconds closer", before - after === 30_000, String(before - after));
+}
+console.log("--- /skip");
+{
+  const k = await fresh("t_skip", { inventory: { 0: { item: "kodimagnyl", qty: 1 }, 1: { item: "wateringcan_full", qty: 1 } } });
+  await act(k, "sync");
+  await owner("PUT", `roomsMeta/u_${k.uid}`, { owner: k.uid, ownerName: "t_skip", name: "t_skip's room", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 2, y: 2 } } });
+  await stand(k, `u_${k.uid}`, 4, 4);
+  ok("start a lean", await act(k, "mix", { fid: "mx", a: 0, b: 1 }));
+  const before = (await owner("GET", `roomsMeta/u_${k.uid}/furni/mx/mixJob`)).doneAt;
+  ok("/skip 5", await act(k, "debug", { cmd: "skip", n: 5 }));
+  const after = (await owner("GET", `roomsMeta/u_${k.uid}/furni/mx/mixJob`)).doneAt;
+  check("the mixer is 5 minutes closer", before - after === 300_000, String(before - after));
+}
 console.log(`\n${fails ? `${fails} FAILED, ${passes} passed` : `all ${passes} passed`}`);
 process.exit(fails ? 1 : 0);

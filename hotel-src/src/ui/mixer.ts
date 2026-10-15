@@ -10,7 +10,7 @@ import type { Ctx } from "../main";
 
 export interface MixerApi { close(): void; refresh(): void }
 
-interface Job { item: string; qty: number; doneAt: number }
+interface Job { item: string; qty: number; doneAt: number; ms: number }
 
 /** The mixer window: tap two things, see what they make, press Mix. It works for 10 minutes; come back and Collect. */
 export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: string, onChange: () => void, onClose: () => void): MixerApi {
@@ -26,7 +26,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
   host.append(el);
   const off: Unsubscribe = onValue(ref(db, `roomsMeta/${roomId}/furni/${fid}/mixJob`), (snap) => {
     const v = snap.val() as Partial<Job> | null;
-    job = v && typeof v.item === "string" && typeof v.doneAt === "number" ? { item: v.item, qty: Number(v.qty) || 1, doneAt: v.doneAt } : null;
+    job = v && typeof v.item === "string" && typeof v.doneAt === "number" ? { item: v.item, qty: Number(v.qty) || 1, doneAt: v.doneAt, ms: Number(v.ms) || MIX_MS } : null;
     render();
   }, () => undefined);
   // the countdown ticks on its own
@@ -42,7 +42,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
     body.replaceChildren(
       h("div", { class: "mixer-line" }, done ? "Your batch is ready!" : "The mixer is working…"),
       h("div", { class: "mixer-result" }, ...(d ? [h("img", { src: d.icon, alt: "" }), `${j.qty} × ${d.name}`] : [])),
-      h("div", { class: "mixer-bar" }, h("div", { class: "mixer-bar-fill", style: { width: `${Math.round(Math.min(1, 1 - left / MIX_MS) * 100)}%` } })),
+      h("div", { class: "mixer-bar" }, h("div", { class: "mixer-bar-fill", style: { width: `${Math.round(Math.min(1, 1 - left / j.ms) * 100)}%` } })),
       h("div", { class: "hint", style: { textAlign: "center" } }, done ? "Tap Collect." : `${clock(left)} left. You can leave: it keeps going.`),
       h("div", { class: "row center" },
         h("button", {
@@ -71,7 +71,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
     const recipe = a && b ? mixRecipe(a, b) : null;
     const result = recipe ? itemDef(recipe.give.item) : null;
     body.replaceChildren(
-      h("div", { class: "hint" }, cells.length ? "Tap two things to mix. Every batch takes 10 minutes." : "You have nothing that mixes (weed, ass weed, cigarettes, pills, kodimagnyl, a full watering can)."),
+      h("div", { class: "hint" }, cells.length ? "Tap two things to mix. The dearer the result, the longer it takes (10 to 30 minutes)." : "You have nothing that mixes (weed, ass weed, cigarettes, pills, kodimagnyl, a full watering can)."),
       h("div", { class: "mixer-grid" }, ...cells.map(({ s, slot }) => {
         const d = itemDef(s!.item)!;
         const on = slot === first || slot === second;
@@ -104,7 +104,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
               onChange();
             } catch (err) { toast((err as Error).message || "Those don't mix.", "err"); }
           },
-        }, "Start mixing (10 min)")));
+        }, `Start mixing (${Math.round((recipe?.ms ?? MIX_MS) / 60_000)} min)`)));
   }
   render();
   function close(): void {
