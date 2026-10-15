@@ -1007,6 +1007,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
   }
 
+  let fzHinted = false;
   function fzTurn(): void {
     if (fzPlacing) { fzDir = nextDir(fzPlacing.kind, fzDir); return; }
     const f = fzPiece();
@@ -1033,7 +1034,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     hover = t;
     if (fzPlacing) { if (t) void putDown(t, fzPlacing, fzDir); return; }
     const f = pieceAtPointer(m, t);
+    if (!f && fzSel && t && e.pointerType !== "mouse") { // on a phone: a piece is selected and you tap an empty spot, it goes there (no dragging needed)
+      const sel = fzPiece();
+      if (sel) {
+        const spot: Spot = FURNI_KINDS[sel.kind].wall ? wallSpot(def, sel.kind, t) : { x: t.x, y: t.y, dir: sel.dir ?? 0 };
+        const why = whyNot(def, sel.kind, spot, sel.id, othersOccupy());
+        if (why) say(why, "warn");
+        else void movePiece(def.id, sel, spot, me).catch((err) => say((err as Error).message || "Couldn't move that.", "warn"));
+        return;
+      }
+    }
     if (!f) { fzSel = null; furnishUi?.refresh(); return; }
+    if (f.id !== fzSel && e.pointerType !== "mouse" && !fzHinted) { fzHinted = true; say("Tap a free spot to move it there."); }
     fzSel = f.id;
     fzDrag = { id: f.id, kind: f.kind, grab: t ? { x: t.x - f.x, y: t.y - f.y } : { x: 0, y: 0 }, moved: false, spot: { x: f.x, y: f.y, dir: f.dir ?? 0 } };
     canvas.setPointerCapture?.(e.pointerId);
@@ -2817,6 +2829,32 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** A growing kit: an empty pot; once planted the plant is revealed from the bottom up as it grows, with a growth bar and a water bar over it. */
+  /** A mixer with a batch in it: it shakes a little while it works and shows a progress bar like the growing kit, then "ready!" until you collect. */
+  function drawMixing(f: { id?: string; kind: string; x: number; y: number; dir?: number; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
+    const mix = f.mix!;
+    const left = mix.doneAt - serverNow();
+    const done = left <= 0;
+    const shake = done ? 0 : Math.sin(now / 40) * 1.4 * scale;
+    g.save();
+    g.translate(shake, done ? 0 : Math.sin(now / 53) * 0.6 * scale);
+    const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
+    g.restore();
+    if (!b) return null;
+    const prog = done ? 1 : Math.max(0, Math.min(1, 1 - left / mix.ms));
+    const bw = 30 * scale, bh = 4 * scale, cx = (b.x0 + b.x1) / 2, y = b.y0 - 7 * scale;
+    g.fillStyle = "rgba(0,0,0,0.6)"; g.fillRect(cx - bw / 2 - scale, y - scale, bw + 2 * scale, bh + 2 * scale);
+    g.fillStyle = "#222"; g.fillRect(cx - bw / 2, y, bw, bh);
+    g.fillStyle = done ? "#ffd75a" : "#e0a030"; g.fillRect(cx - bw / 2, y, bw * prog, bh);
+    if (done) {
+      const bounce = Math.sin(now / 260) * 2 * scale;
+      g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`; g.textAlign = "center"; g.textBaseline = "bottom";
+      g.lineWidth = 3; g.strokeStyle = "#000"; g.strokeText("ready!", cx, y - 3 * scale + bounce);
+      g.fillStyle = "#ffe9a0"; g.fillText("ready!", cx, y - 3 * scale + bounce);
+      g.textAlign = "start";
+    }
+    return { id: "", ...b, depth: f.x + f.y };
+  }
+
   function drawPlanter(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     const potN = k.nitro ? nitroIfReady(k.nitro) : undefined;
@@ -2977,8 +3015,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { id: "", ...b, depth: f.x + f.y };
   }
 
-  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string } }, now: number): Hitbox | null {
+  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
+    if (k.opens === "mixer" && f.mix) return drawMixing(f, now);
     if (k.plant) return drawPlanter(f, now);
     if (k.poster) return drawPoster(f, now);
     if (k.nitro) {
