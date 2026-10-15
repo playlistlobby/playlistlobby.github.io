@@ -405,13 +405,13 @@ console.log("--- combining, growing");
   const canSlot = (await state(a)).inventory.findIndex((x) => x && x.item === "wateringcan");
   ok("fill the can", await act(a, "fillCan", { slot: canSlot }));
   ok("it can be watered at once, before the bar is empty", await act(a, "water", { fid: "kit1", slot: canSlot }));
-  bad("harvest before 20 minutes", await act(a, "harvest", { fid: "kit1" }));
+  bad("harvest before 10 minutes", await act(a, "harvest", { fid: "kit1" }));
   const empty = (await state(a)).inventory.findIndex((x) => x && x.item === "wateringcan");
   ok("fill the can again", await act(a, "fillCan", { slot: empty }));
   bad("one watering is enough", await act(a, "water", { fid: "kit1", slot: empty }));
   await owner("PATCH", `roomsMeta/${room}/furni/kit1`, { plantedAt: Date.now() - 21 * 60_000, wateredAt: Date.now() - 12 * 60_000 });
   const h = await act(a, "harvest", { fid: "kit1" });
-  ok("harvest after 20 minutes", h);
+  ok("harvest after 10 minutes", h);
   check("1 or 2 good weed (2 only 15% of the time)", h.state.inventory.some((x) => x && x.item === "weed" && (x.qty === 1 || x.qty === 2) && !x.ass));
   // a second plant that never gets its water
   const seed2 = (await state(a)); const sl = seed2.inventory.findIndex((x) => x && x.item === "weedseed");

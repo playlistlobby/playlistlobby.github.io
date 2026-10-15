@@ -1321,7 +1321,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (ss < 0 || ss === null) return say("An empty growing kit. Select a weed seed or shroom spores, then click the kit to plant it.", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
-        return say(me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering: water it any time.");
+        return say(me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");
       }
       const prog = plantProgress(f.plant);
       const canSlot = held?.item === "wateringcan_full" ? slot! : findSlot(me.inventory, "wateringcan_full");
@@ -2789,18 +2789,40 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     (p.uid === me.uid && selectedDef()?.useOnPlayer === "stab") || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
 
   /** Little hearts that drift up over a player's head (a hash joint). (fx, fy) = the player's feet. */
+  /** Particles are drawn as chunky pixels on the same grid as the game's art: a round blob made of square cells, snapped to the grid. */
+  function pxCell(): number { return Math.max(1.5, scale); }
+  function pxBlob(cx: number, cy: number, r: number, color: string): void {
+    const P = pxCell();
+    const n = Math.max(0, Math.round(r / P));
+    const gx = Math.round(cx / P), gy = Math.round(cy / P);
+    g.fillStyle = color;
+    for (let dy = -n; dy <= n; dy++) {
+      let w = 0;
+      while ((w + 1) * (w + 1) + dy * dy <= n * n + n) w++;
+      if (n === 0) w = 0;
+      g.fillRect((gx - w) * P, (gy + dy) * P, (2 * w + 1) * P, P);
+    }
+  }
+  /** A pixel-art heart (7 wide) at (cx, cy), pixel size from pxCell. */
+  const HEART_PIX = ["0110110", "1111111", "1111111", "0111110", "0011100", "0001000"];
+  function pxHeart(cx: number, cy: number, size: number, color: string, shine: string): void {
+    const P = pxCell() * size;
+    const ox = Math.round((cx - 3.5 * P) / P) * P, oy = Math.round((cy - 3 * P) / P) * P;
+    HEART_PIX.forEach((row, j) => [...row].forEach((c, i) => {
+      if (c === "0") return;
+      g.fillStyle = j === 1 && i === 1 ? shine : color;
+      g.fillRect(ox + i * P, oy + j * P, P, P);
+    }));
+  }
   function drawHearts(fx: number, fy: number, now: number): void {
-    const HEARTS = ["❤️", "💕", "💗", "💖"];
+    const COLORS = ["#ff4d6d", "#ff7aa8", "#ff3b5c", "#ff9ec4"];
     g.save();
-    g.textAlign = "center";
-    g.textBaseline = "middle";
     for (let i = 0; i < 5; i++) {
       const t = (now / 2600 + i / 5) % 1;
       const x = fx + Math.sin(t * 7 + i * 2.3) * 11 * scale;
       const y = fy - (FEET_Y + 4) * scale - t * 34 * scale;
       g.globalAlpha = Math.min(1, t * 6) * (1 - t * t);
-      g.font = `${Math.round((11 + (i % 3) * 3) * Math.max(1, scale))}px sans-serif`;
-      g.fillText(HEARTS[(i + Math.floor(now / 2600)) % HEARTS.length], x, y);
+      pxHeart(x, y, i % 3 === 0 ? 1.4 : 1, COLORS[(i + Math.floor(now / 2600)) % COLORS.length], "#fff");
     }
     g.restore();
   }
@@ -2832,7 +2854,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (chud) { // the spots
       g.fillStyle = "#d83a4a";
-      for (const u of [0.25, 0.5, 0.75]) { g.beginPath(); g.arc(mx + (tipx - mx) * u, my + (tipy - my) * u, 1.1 * s, 0, Math.PI * 2); g.fill(); }
+      for (const u of [0.25, 0.5, 0.75]) pxBlob(mx + (tipx - mx) * u, my + (tipy - my) * u, 0, "#d83a4a");
     }
     g.strokeStyle = "#ff6a1a"; g.lineWidth = 3 * s;
     g.beginPath(); g.moveTo(tipx - (side || 1) * 1.6 * s, tipy - 0.3 * s); g.lineTo(tipx, tipy); g.stroke();
@@ -2843,8 +2865,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const px = tipx + Math.sin(t * 7 + i * 1.7) * 3.5 * s + t * 3 * s * (side || 1);
       const py = tipy - t * 36 * s;
       const r = (1.6 + t * 4.2) * s;
-      g.fillStyle = chud ? `rgba(90,230,110,${(0.5 * (1 - t)).toFixed(3)})` : `rgba(222,224,230,${(0.42 * (1 - t)).toFixed(3)})`;
-      g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill();
+      pxBlob(px, py, r, chud ? `rgba(90,230,110,${(0.5 * (1 - t)).toFixed(3)})` : `rgba(222,224,230,${(0.42 * (1 - t)).toFixed(3)})`);
     }
     g.restore();
   }
@@ -3795,8 +3816,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
                 const t = (now / 1400 + i / 10) % 1;
                 const px = feet.x + lunge.x + Math.sin(t * 9 + i * 2.1) * (10 + t * 14) * scale;
                 const py = feet.y + lunge.y + lift - (14 + t * 70) * scale;
-                g.fillStyle = `rgba(244,244,248,${(0.85 * (1 - t)).toFixed(3)})`; g.strokeStyle = `rgba(80,84,96,${(0.55 * (1 - t)).toFixed(3)})`; g.lineWidth = 1.2;
-                g.beginPath(); g.arc(px, py, (4 + t * 10) * scale, 0, Math.PI * 2); g.fill(); g.stroke();
+                const pr = (4 + t * 10) * scale;
+                pxBlob(px, py, pr + pxCell(), `rgba(80,84,96,${(0.55 * (1 - t)).toFixed(3)})`); // the dark edge, then the light puff on top
+                pxBlob(px, py, pr, `rgba(244,244,248,${(0.85 * (1 - t)).toFixed(3)})`);
               }
             }
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);

@@ -6408,5 +6408,15 @@
   "en": "Mix with water",
   "da": "Mix med vand",
   "where": "src/items.ts"
+ },
+ "N171": {
+  "en": "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.",
+  "da": "Du skubber et frø ned i jorden. Det tager 10 minutter at gro, og det skal vandes én gang: vand det når som helst.",
+  "where": "src/ui/room.ts"
+ },
+ "N172": {
+  "en": "A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 10 minutes and needs one watering (any time).",
+  "da": "Et lille frø fra skraldespanden. Vælg det, klik så på dit growth kit for at plante det. Det gror på 10 minutter og skal vandes én gang (når som helst).",
+  "where": "src/items.ts"
  }
 }

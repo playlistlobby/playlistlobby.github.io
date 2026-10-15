@@ -192,5 +192,7 @@ set("A spotted joint rolled from chud mix. Click it to light up (you need a ligh
 set("A spotted blunt rolled from chud mix. Click it to light up (you need a lighter). Green smoke: the weed high and the shroom high together (stabs give 4x blood for 3 minutes, and every door opens for 3).", "En plettet blunt rullet af chud mix. Klik på den for at tænde den (du skal bruge en lighter). Grøn røg: weed-rusen og shroom-rusen på én gang (stik giver 4x blod i 3 minutter, og alle døre åbner sig i 3).", "src/items.ts");
 set("The shroom is chopped into the weed: 2 chud mix.", "Shroomen hakkes ud i weeden: 2 chud mix.", "src/shared/items.ts");
 set("Mix with water", "Mix med vand", "src/items.ts");
+set("You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.", "Du skubber et frø ned i jorden. Det tager 10 minutter at gro, og det skal vandes én gang: vand det når som helst.", "src/ui/room.ts");
+set("A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 10 minutes and needs one watering (any time).", "Et lille frø fra skraldespanden. Vælg det, klik så på dit growth kit for at plante det. Det gror på 10 minutter og skal vandes én gang (når som helst).", "src/items.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);
