@@ -303,7 +303,7 @@ export async function lightItem(p: Profile, slot: number): Promise<number> {
   return Number((await call<{ litAt?: number }>(p, "light", { slot })).litAt) || serverNow();
 }
 /** A smoke that has burned for a minute: it becomes a butt and gives its bonus (or knocks you out, for ass weed). */
-export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; mult?: number; boostMs?: number; speedMs?: number; chemMs?: number; shroomMs?: number }> => call(p, "finishSmoke", { slot });
+export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; mult?: number; boostMs?: number; speedMs?: number; chemMs?: number; shroomMs?: number; chudMs?: number }> => call(p, "finishSmoke", { slot });
 
 // ---- growing weed in a growing kit ---------------------------------------------------------------------------
 export const plantSeed = (p: Profile, _roomId: string, fid: string, seedSlot: number): Promise<unknown> => call(p, "plant", { fid, slot: seedSlot });

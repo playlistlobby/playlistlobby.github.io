@@ -213,6 +213,10 @@ interface Player {
   cup?: number;
   /** flashing with smoke pouring off them until this time */
   chem?: number;
+  /** until when the name plate reads "chud" (server time, ms) */
+  chud?: number;
+  /** spinning round and round until then (LSD; server time, ms) */
+  spin?: number;
   /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
   npc?: boolean;
   /** sitting on a chair or couch (shown to everyone through players/<uid>/sit) */
@@ -1151,6 +1155,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       fastMult: typeof v.fastMult === "number" ? v.fastMult : undefined,
       cup: typeof v.cup === "number" ? v.cup : undefined,
       chem: typeof v.chem === "number" ? v.chem : undefined,
+      chud: typeof v.chud === "number" ? v.chud : undefined,
+      spin: typeof v.spin === "number" ? v.spin : undefined,
       npc: v.sixty === true,
       sit: v.sit === true,
       faint: v.lay === true,
@@ -2164,6 +2170,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             say("You get up. Everything is fast, and every room is open to you. For 4 minutes.");
           },
         });
+      } else if (r.kind === "lsd") {
+        logAction(me, "room", "took LSD");
+        say("You put the little pattern on your tongue. Everything starts to breathe, and your legs won't stop.");
+        const until = serverNow() + (r.tripMs ?? 90_000);
+        p.fast = me.speedUntil; p.fastMult = me.speedMult; p.spin = until; // 3x speed and spinning for a minute and a half, while the patterns only last 10 seconds
+        void update(myRef, { fast: p.fast, fastMult: p.fastMult, spin: until }).catch(() => undefined);
+        window.setTimeout(() => { if (!disposed) void update(myRef, { spin: null }).catch(() => undefined); }, (r.tripMs ?? 90_000) + 500);
+        startDmt(r.ms ?? 10_000, { lie: false });
       } else if (r.kind === "shroom") {
         logAction(me, "room", "ate a shroom");
         say("You chew the shroom. It tastes like soil. The edges of the world start to move.");
@@ -2348,6 +2362,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             p.fastMult = me.speedMult;
             p.chem = me.chemUntil || undefined;
             void update(myRef, { fast: p.fast ?? null, fastMult: p.fast ? me.speedMult : null, chem: p.chem ?? null }).catch(() => undefined);
+          }
+          if (r.chudMs) {
+            const until = serverNow() + r.chudMs;
+            if (p) p.chud = until;
+            void update(myRef, { chud: until }).catch(() => undefined);
+            window.setTimeout(() => { if (!disposed) void update(myRef, { chud: null }).catch(() => undefined); }, r.chudMs + 500);
+            say("You finish the chud joint. Nothing happens. Except your name is now chud.");
+            return;
           }
           if (r.shroomMs) {
             logAction(me, "room", `smoked a ${s.item}`);
@@ -2563,6 +2585,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.fastMult = typeof v.fastMult === "number" ? v.fastMult : undefined;
         p.cup = typeof v.cup === "number" ? v.cup : undefined;
         p.chem = typeof v.chem === "number" ? v.chem : undefined;
+        p.chud = typeof v.chud === "number" ? v.chud : undefined;
+        p.spin = typeof v.spin === "number" ? v.spin : undefined;
         p.npc = v.sixty === true;
         p.sit = v.sit === true;
         p.faint = v.lay === true;
@@ -2738,6 +2762,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     let dir = p.dir;
     let yOff = 0;
     if (em?.def.motion === "spin") dir = SPIN_DIRS[Math.floor(t / 140) % 8];
+    if (p.spin && serverNow() < p.spin && !p.lying && !p.faint) dir = SPIN_DIRS[Math.floor(now / 140) % 8]; // LSD: round and round, walking or not
     if (em?.def.motion === "dance") { dir = SPIN_DIRS[Math.floor(t / 420) % 8]; yOff = -Math.abs(Math.sin(t / 120)) * 6; }
     if (em?.def.motion === "bounce") yOff = -Math.abs(Math.sin(t / 110)) * 7;
     if (em?.def.motion === "hop") yOff = -Math.abs(Math.sin((t / em.def.ms) * Math.PI * 2)) * 16;
@@ -3836,7 +3861,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
-          const tw = g.measureText(p.name).width + 10;
+          const shownLabel = p.chud && serverNow() < p.chud ? "chud" : p.name; // the plain chud joint: your name reads "chud" for a while
+          const tw = g.measureText(shownLabel).width + 10;
           g.fillStyle = targeted ? "rgba(150,20,20,0.85)" : "rgba(0,0,0,0.55)";
           g.beginPath();
           g.roundRect(feet.x - tw / 2, feet.y + 7 * scale, tw, 14 * Math.max(1, scale), 5);
@@ -3844,7 +3870,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.fillStyle = p.npc ? "#ff3b3b" : p.uid === me.uid ? "#ffe27a" : "#fff";
           g.textBaseline = "top";
           g.textAlign = "center";
-          g.fillText(p.name, feet.x, feet.y + 9 * scale);
+          g.fillText(shownLabel, feet.x, feet.y + 9 * scale);
           if (glowing) { // a little arrow bobbing over his head
             g.fillStyle = "#ffd54a";
             g.font = `${Math.round(16 * Math.max(1, scale))}px Verdana, sans-serif`;

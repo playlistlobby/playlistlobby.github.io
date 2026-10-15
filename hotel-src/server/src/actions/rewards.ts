@@ -3,7 +3,7 @@ import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from ".
 import { fail } from "../ctx";
 import { skipTime } from "../skipTime";
 import {
-  addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { combine, findSlot, growMsOf, SMOKABLE, smokeMsOf } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
@@ -121,6 +121,12 @@ export const consume: Action = {
       s.shroomUntil = c.now + SHROOM_MS; // any room is open to you (the database rules look at this too)
       return { kind: "shroom", ms: DMT_MS, tripMs: SHROOM_MS }; // (the subtle patterns are drawn by the browser)
     }
+    if (it!.item === "lsd") {
+      s.inventory = takeOneFrom(s.inventory, slot);
+      s.speedUntil = c.now + LSD_MS; // 3x speed (the browser makes the character spin for as long); no open doors
+      s.speedMult = LSD_SPEED;
+      return { kind: "lsd", ms: DMT_MS, tripMs: LSD_MS };
+    }
     if (it!.item === "dmt") {
       s.inventory = takeOneFrom(s.inventory, slot);
       const until = c.now + DMT_MS + DMT_TRIP_MS; // the 4 minutes start after the colours and the lying down
@@ -178,6 +184,7 @@ export const finishSmoke: Action = {
     s.inventory = s.inventory.map((x, i) => (i === slot ? { item: "cigbutt", qty: 1 } : x));
     if (ass) return { passOut: true };
     if (it!.item === "cigarette") await skipTime(c, s.dumpsters, 30_000); // a cigarette is half a minute gone: your plants, mixers and bins move on 30 seconds
+    if (sm!.chudNameMs) return { mult: 0, boostMs: 0, speedMs: 0, chemMs: 0, shroomMs: 0, chudMs: sm!.chudNameMs }; // only the name changes (the browser shows it)
     s.boostUntil = c.now + sm!.boostMs;
     s.boostMult = sm!.mult;
     if (sm!.speedMs) { s.speedUntil = c.now + sm!.speedMs; s.speedMult = 2; }

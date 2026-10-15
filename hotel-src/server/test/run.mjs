@@ -707,7 +707,7 @@ console.log("--- shrooms and DMT");
   // spores grow into shrooms in a growing kit
   const room = `u_${d.uid}`;
   await owner("PUT", `roomsMeta/${room}`, { owner: d.uid, ownerName: "t_dmt", name: "t_dmt's room", access: "closed", w: 8, h: 8, furni: { kit: { kind: "f_planter", x: 2, y: 2 }, mx: { kind: "f_mixer", x: 4, y: 2 } } });
-  await owner("PUT", `users/${d.uid}/inventory`, { 0: { item: "shroomspore", qty: 2 }, 1: { item: "pill", qty: 2 } });
+  await owner("PUT", `users/${d.uid}/inventory`, { 0: { item: "shroomspore", qty: 2 }, 1: { item: "kodimagnyl", qty: 2 } });
   await stand(d, room, 4, 4);
   const pl = await act(d, "plant", { fid: "kit", slot: 0 });
   ok("plant shroom spores", pl);
@@ -719,8 +719,8 @@ console.log("--- shrooms and DMT");
   check("three shrooms, and the kit is empty again", [1, 2].includes(total(hv.state.inventory, "shroom")) && (await owner("GET", `roomsMeta/${room}/furni/kit/crop`)) === null, JSON.stringify(hv.data));
   // shroom + pill in the mixer = DMT
   const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
-  const mx = await act(d, "mix", { fid: "mx", a: slotOf(hv.state, "shroom"), b: slotOf(hv.state, "pill") });
-  ok("shroom + pill in the mixer", mx);
+  const mx = await act(d, "mix", { fid: "mx", a: slotOf(hv.state, "shroom"), b: slotOf(hv.state, "kodimagnyl") });
+  ok("shroom + kodimagnyl in the mixer", mx);
   await owner("PATCH", `roomsMeta/${room}/furni/mx/mixJob`, { doneAt: Date.now() - 1000 });
   const col = await act(d, "mixCollect", { fid: "mx" });
   check("a DMT comes out", total(col.state.inventory, "dmt") === 1);
@@ -1143,6 +1143,39 @@ console.log("--- chud mix");
   ok("smoke it", fin);
   check("the weed high: triple blood", fin.state.boostMult === 3, JSON.stringify(fin.state.boostMult));
   check("and the shroom high: doors open for 3 minutes", fin.state.shroomUntil - Date.now() > 170_000 && fin.state.shroomUntil - Date.now() <= 181_000, String(fin.state.shroomUntil - Date.now()));
+}
+console.log("--- troldmand mix, LSD, the plain chud joint");
+{
+  const slotOf = (st, item, ass) => st.inventory.findIndex((x) => x && x.item === item && !!x.ass === !!ass);
+  const k = await fresh("t_troll", { inventory: { 0: { item: "hash", qty: 1 }, 1: { item: "weed", qty: 1 }, 2: { item: "shroom", qty: 1 }, 3: { item: "pill", qty: 1 }, 4: { item: "weed", qty: 1, ass: true }, 5: { item: "cigarette", qty: 1 }, 6: { item: "lighter", qty: 1 }, 7: { item: "jointpaper", qty: 1 } } });
+  await act(k, "sync");
+  await owner("PUT", `roomsMeta/u_${k.uid}`, { owner: k.uid, ownerName: "t_troll", name: "t_troll's room", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 2, y: 2 } } });
+  await stand(k, `u_${k.uid}`, 4, 4);
+  const mixCollect = async (a, b, item, qty) => {
+    const st = await act(k, "sync");
+    const m = await act(k, "mix", { fid: "mx", a: slotOf(st.state, a[0], a[1]), b: slotOf(st.state, b[0], b[1]) });
+    ok(`${a[0]} + ${b[0]} in the mixer`, m);
+    await owner("PATCH", `roomsMeta/u_${k.uid}/furni/mx/mixJob`, { doneAt: Date.now() - 1000 });
+    const col = await act(k, "mixCollect", { fid: "mx" });
+    check(`${qty} ${item} come out`, total(col.state.inventory, item) === qty, JSON.stringify(col.state.inventory.filter(Boolean)));
+    return col;
+  };
+  await mixCollect(["hash"], ["weed"], "trollmix", 2);
+  await mixCollect(["shroom"], ["pill"], "lsd", 1);
+  const cj = await mixCollect(["weed", true], ["cigarette"], "joint_chudname", 1);
+  const lsd = await act(k, "debug", { cmd: "give", item: "lsd", qty: 1 });
+  const dr = await act(k, "consume", { slot: slotOf(lsd.state, "lsd") });
+  ok("take LSD", dr);
+  check("3x speed for a minute and a half", dr.state.speedMult === 3 && dr.state.speedUntil - Date.now() > 85_000 && dr.state.speedUntil - Date.now() <= 91_000, JSON.stringify([dr.state.speedMult, dr.state.speedUntil - Date.now()]));
+  check("and no open doors", !(dr.state.shroomUntil > Date.now()), String(dr.state.shroomUntil));
+  const lit = await act(k, "light", { slot: slotOf(dr.state, "joint_chudname") });
+  ok("light the chud joint", lit);
+  const ls = lit.state.inventory.findIndex((x) => x && x.lit);
+  await owner("PATCH", `users/${k.uid}/inventory/${ls}`, { lit: Date.now() - 70_000 });
+  const fin = await act(k, "finishSmoke", { slot: ls });
+  ok("smoke it", fin);
+  check("it only changes the name for 30 seconds", fin.data.chudMs === 30_000 && fin.data.mult === 0, JSON.stringify(fin.data));
+  check("no blood bonus", !(fin.state.boostUntil > Date.now()), String(fin.state.boostUntil));
 }
 console.log("--- /skip");
 {

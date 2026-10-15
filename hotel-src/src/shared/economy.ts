@@ -23,12 +23,15 @@ export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string
 export const SUPERPILL_MS = 60_000;
 /** DMT: patterns on the screen and your character lying down for this long */
 export const DMT_MS = 10_000;
+/** LSD: after the colours you run 3x as fast and spin, for a minute and a half (it opens no doors) */
+export const LSD_MS = 90_000;
+export const LSD_SPEED = 3;
 /** after the colours: a shroom lets you into any room for 3 minutes; DMT does it for 4 and doubles your walking speed */
 export const SHROOM_MS = 3 * 60_000;
-/** harvesting: a 25% chance of getting one seed (or spores, from shrooms) back */
-export const SEED_BACK_CHANCE = 0.25;
-/** a harvest gives 1 weed (or 1 shroom), and now and then (15%) 2 */
-export const DOUBLE_HARVEST_CHANCE = 0.15;
+/** harvesting: a 12.5% chance of getting one seed (or spores, from shrooms) back */
+export const SEED_BACK_CHANCE = 0.125;
+/** a harvest gives 1 weed (or 1 shroom), and now and then (7.5%) 2 */
+export const DOUBLE_HARVEST_CHANCE = 0.075;
 export const DMT_TRIP_MS = 4 * 60_000;
 export const SUPERPILL_MULT = 4;
 /** the lean (codeine): for an hour, garbage cans give twice as much and can be searched twice as often. You hold the cup for the first 2 minutes. */

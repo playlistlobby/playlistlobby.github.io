@@ -676,6 +676,12 @@
             },
             "chem": {
               ".validate": "newData.isNumber()"
+            },
+            "chud": {
+              ".validate": "newData.isNumber()"
+            },
+            "spin": {
+              ".validate": "newData.isNumber()"
             }
           }
         },
