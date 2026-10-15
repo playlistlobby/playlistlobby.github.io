@@ -3,6 +3,7 @@ import { db } from "./firebase";
 import { call, serverNow } from "./db";
 import type { Profile } from "./db";
 import { assetUrl } from "./assetUrl";
+import { onSfxMuteChange, sfxMuted } from "./sfx";
 import { ALBUM_TRACKS, CD_ITEMS, isCdItem } from "./shared/cds";
 
 // The CD player in the lobby plays whatever is on the CD you put in. For now every CD holds the same stand-in track.
@@ -161,10 +162,12 @@ export class CdAudio {
       if (this.state && !this.state.pausedAt && !cdEnded(this.state)) this.seekAndPlay();
     });
     window.addEventListener("pagehide", () => this.audio.pause());
+    onSfxMuteChange(() => this.apply());
   }
 
   private apply(): void {
     this.audio.volume = this.muted ? 0 : this.volume * CD_VOLUME_SCALE; // the slider's 100% is half of the real loudness
+    this.audio.muted = this.muted || sfxMuted(); // (`muted` works on iPhones, where the volume can't be set; the Sounds switch silences the CD too)
   }
 
   setVolume(v: number): void {

@@ -28,8 +28,13 @@ const cache = new Map<Sfx, HTMLAudioElement>();
 
 export const sfxMuted = (): boolean => muted;
 
+const muteListeners = new Set<() => void>();
+/** Called when the Sounds switch is flipped (the background music and the CD player follow it at once). */
+export const onSfxMuteChange = (fn: () => void): void => { muteListeners.add(fn); };
+
 export function setSfxMuted(m: boolean): void {
   muted = m;
+  muteListeners.forEach((l) => l());
   try { localStorage.setItem(KEY, m ? "1" : "0"); } catch { /* ignore */ }
 }
 

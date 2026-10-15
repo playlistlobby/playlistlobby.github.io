@@ -1,5 +1,5 @@
 import { assetUrl } from "./assetUrl";
-import { sfxMuted } from "./sfx";
+import { onSfxMuteChange, sfxMuted } from "./sfx";
 
 /**
  * The basement's background sound: Half-Life 2 "Citadel" ambience, looping at a low volume.
@@ -42,6 +42,7 @@ function makeLoop(file: string, target: number, fadeInMs: number, fadeOutMs: num
   const tryStart = (): void => {
     if (document.hidden) return;
     const a = ensure();
+    a.muted = sfxMuted(); // (`muted` works on iPhones where the volume can't be set)
     if (!canFade) level = target; // no fades on this device: it is simply on
     void a.play().then(() => { blocked = false; }, () => { blocked = true; });
   };
@@ -57,11 +58,17 @@ function makeLoop(file: string, target: number, fadeInMs: number, fadeOutMs: num
     if (wanted && !sfxMuted()) { tryStart(); if (!timer && canFade) timer = window.setInterval(tick, 100); }
   };
   document.addEventListener("visibilitychange", onVisibility);
+  // the Sounds switch in the menu: silent at once (phones included), and back when it is switched on again
+  onSfxMuteChange(() => {
+    if (audio) audio.muted = sfxMuted();
+    if (!sfxMuted() && wanted) { if (audio && audio.paused) tryStart(); if (canFade && !timer) timer = window.setInterval(tick, 100); }
+  });
   window.addEventListener("pagehide", stopNow);
 
   const tick = (): void => {
     const a = audio;
     if (!a) return;
+    a.muted = sfxMuted();
     const goal = wanted && !sfxMuted() ? target : 0;
     const step = target / ((wanted ? fadeInMs : fadeOutMs) / 100);
     level = level < goal ? Math.min(goal, level + step) : Math.max(goal, level - step);
