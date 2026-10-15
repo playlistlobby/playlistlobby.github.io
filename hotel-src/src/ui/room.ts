@@ -3101,7 +3101,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
       if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
-        const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id);
+        const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
+        const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
         const cx = (b.x0 + b.x1) / 2;
         const cy = (b.y0 + b.y1) / 2;
