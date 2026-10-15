@@ -101,7 +101,9 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   f_poster: { id: "f_poster", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: true, nitro: "furni/poster.nitro", rotatable: true, flat: true, wall: true, poster: true, nudge: { x: 0, y: -52 } },
   shopposter: { id: "shopposter", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: false, nitro: "furni/poster.nitro", rotatable: true, fixed: true, flat: true, wall: true, poster: true, opens: "poster", nudge: { x: 0, y: -52 } },
   // the record player on the counter at the left of the shop room: the CDs are sold here
-  recordplayer: { id: "recordplayer", label: "Record player", icon: "💿", w: 1, h: 1, height: 30, color: "#3a3a44", placeable: false, nitro: "furni/vinyltable.nitro", rotatable: true, fixed: true, opens: "records" },
+  recordplayer: { id: "recordplayer", label: "Record player", icon: "💿", w: 1, h: 1, height: 30, color: "#3a3a44", placeable: false, nitro: "furni/recordplayer.nitro", rotatable: true, fixed: true, opens: "records", nudge: { x: 0, y: -34 } },
+  // the grey vinyl table the record player stands on (it opens the record shop too, but only the player glows)
+  vinyltable: { id: "vinyltable", label: "Record table", icon: "💿", w: 1, h: 1, height: 36, color: "#555", placeable: false, nitro: "furni/vinyltable.nitro", rotatable: true, fixed: true, opens: "records" },
   // the landlord's counter in the corner of the shop room
   counter: { id: "counter", label: "Counter", icon: "🧾", w: 1, h: 2, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/f_counter.nitro", rotatable: true, fixed: true },
   // the wardrobe in the shop room: click it and the clothing shop opens
@@ -261,7 +263,7 @@ export function shopDef(picks: string[]): RoomDef {
     // a poster on the back wall between the vending machine and the landlord: tap it to buy one
     { id: "shop_poster", kind: "shopposter", x: 10, y: 0, dir: 4 },
     // the record table on the left (a grey turntable table): mystery CDs, the album and the Freakme CD
-    { id: "shop_records", kind: "recordplayer", x: 0, y: 6, dir: 4 },
+    { id: "shop_table", kind: "vinyltable", x: 0, y: 6, dir: 4 }, { id: "shop_records", kind: "recordplayer", x: 0, y: 6, dir: 4 },
   ];
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;

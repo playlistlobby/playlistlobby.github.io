@@ -477,7 +477,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && isDisplayPiece(hoverObj.id)) text = `${FURNI_KINDS[hoverObj.kind!].label} · ${priceOf(hoverObj.kind!)} drops (click to buy)`;
     else if (hoverObj && hoverObj.kind === "wardrobe") text = "Wardrobe: the clothing shop";
     else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
-    else if (hoverObj && hoverObj.kind === "recordplayer") text = "Record player: CDs";
+    else if (hoverObj && (hoverObj.kind === "recordplayer" || hoverObj.kind === "vinyltable")) text = "Record player: CDs";
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
@@ -620,6 +620,25 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     return best;
   }
+  /**
+   * The thing you meant when you point at (or tap) something: the piece that stands on the tile under the pointer, first of all (two pots or mixers
+   * side by side have sprites that overlap, but the tile you click is the one you get). Only if no piece stands on that tile, whatever picture is under the pointer.
+   */
+  function pickObj(mx: number, my: number): Hitbox | null {
+    const t = tileAt(mx, my);
+    if (t) {
+      let best: Hitbox | null = null;
+      for (const b of objBoxes) {
+        const f = def.furni.find((q) => q.id === b.id);
+        const k = f ? FURNI_KINDS[f.kind] : undefined;
+        if (!f || !k || k.wall || k.flat) continue; // (wall pieces hang above their tile; flat things are walked over)
+        const fp = footprint(f.kind, f.dir);
+        if (t.x >= f.x && t.x < f.x + fp.w && t.y >= f.y && t.y < f.y + fp.h && (!best || b.depth > best.depth)) best = b;
+      }
+      if (best) return best;
+    }
+    return pick(objBoxes, mx, my);
+  }
   const playerAt = (mx: number, my: number): Player | null => {
     const b = pick(hitboxes, mx, my);
     return b ? players.get(b.id) ?? null : null;
@@ -640,7 +659,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const m = mousePos(e);
     hover = tileAt(m.x, m.y);
     const hp = playerAt(m.x, m.y);
-    const ho = hp ? null : pick(objBoxes, m.x, m.y);
+    const ho = hp ? null : pickObj(m.x, m.y);
     const hd = !hp && !ho && inBox(m, doorBox);
     const he = !hp && !ho && !hd ? extraDoorBoxes.findIndex((e) => inBox(m, e.box)) : -1;
     if (hp !== hoverPlayer || ho?.id !== hoverObj?.id || hd !== hoverDoor || he !== hoverExtra) {
@@ -673,7 +692,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return;
     }
 
-    const obj = pick(objBoxes, m.x, m.y);
+    const obj = pickObj(m.x, m.y);
 
     // nothing selected: a tap does what the menu would offer (one option -> it happens, several -> you choose)
     if (!selectedDef()) {
@@ -733,7 +752,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "shopposter" || obj.kind === "f_mixer") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "landlord") startLandlord();
@@ -762,7 +781,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (target.uid === LEGEND.id) { /* a stand-in: no friending him */ } else if (social.friends.has(target.uid)) opts.push({ label: "Message", target: target.name, action: () => window.dispatchEvent(new CustomEvent("open-chat", { detail: target.uid })) });
       else opts.push({ label: "Add friend", target: target.name, action: () => social.sendRequest(target.name).then((s) => say(s), (err) => say((err as Error).message, "warn")) });
     }
-    const obj = pick(objBoxes, mx, my);
+    const obj = pickObj(mx, my);
     if (obj?.kind === "arcade") opts.push({ label: "Play", target: "Arcade machine", action: () => startArcade(obj.id) });
     if (obj?.kind === "flappy") opts.push({ label: "Play", target: "Flappy Bird", action: () => startArcade(obj.id) });
     if (obj?.kind === "npc") {
@@ -777,7 +796,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
     if (obj && FURNI_KINDS[obj.kind!]?.seat && !isDisplayPiece(obj.id)) opts.push({ label: "Sit", target: FURNI_KINDS[obj.kind!].label, action: () => sitAt(obj.id, tile) });
     if (obj?.kind === "vending") opts.push({ label: "Shop", target: "Vending machine", action: () => startBag(obj.id) });
-    if (obj?.kind === "recordplayer") opts.push({ label: "CDs", target: "Record player", action: () => startBag(obj.id) });
+    if (obj?.kind === "recordplayer" || obj?.kind === "vinyltable") opts.push({ label: "CDs", target: "Record player", action: () => startBag(obj.id) });
     if (obj?.kind === "shopposter") opts.push({ label: "Buy", target: "Poster", action: () => startBag(obj.id) });
     if (obj && isBodyBag(obj.kind) && !isDisplayPiece(obj.id)) opts.push({ label: "Draw blood", target: "Body bag", action: () => startUse(obj.id, null) });
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
@@ -2945,7 +2964,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
       const glowSink = k.opens === "sink" && sinkHintOn();
-      if (b && k.opens && (k.opens !== "sink" || glowSink) && (isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
+      if (b && k.opens && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
