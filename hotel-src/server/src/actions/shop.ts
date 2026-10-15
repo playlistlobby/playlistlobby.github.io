@@ -3,7 +3,7 @@ import { Action, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, takeQtyFrom } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, ITEM_IDS, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
-import { furniPicksToday, furniPrice, SHIPPED_DIMS, SHOP_KIND_PREFIX } from "../../../src/shared/furniture";
+import { furniPicksToday, furniPrice, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
 import { todayStartAt } from "../../../src/shared/economy";
 import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, skinOf, skinOwnedKey, SkinPart } from "../../../src/shared/skins";
 
@@ -49,7 +49,8 @@ export const buyFurni: Action = {
     const kind = text(a.kind, /^[fx]_[a-z0-9_]{1,30}$/, "piece");
     const meta = await c.furniMeta();
     const cfg = await c.furniCfg();
-    const pool = [...Object.keys(SHIPPED_DIMS).filter((k) => k.startsWith(SHOP_KIND_PREFIX) && k !== "f_planter"), ...Object.entries(meta).filter(([, m]) => m.players).map(([id]) => id)];
+    // the same pool as the shop window (shopPool in src/furniShop.ts): the shop's own pieces plus Studio pieces. (It used to be every shipped f_ piece, so the mixer was in the server's pool only and the two picked different four.)
+    const pool = [...SHOP_PIECES.map((p) => SHOP_KIND_PREFIX + p.id), ...Object.entries(meta).filter(([, m]) => m.players).map(([id]) => id)];
     const picks = furniPicksToday(todayStartAt(c.now), cfg, pool, (id) => !!SHIPPED_DIMS[id] || !!meta[id]);
     if (!picks.includes(kind)) fail("That isn't in the shop today.");
     const price = furniPrice(kind, cfg.prices);

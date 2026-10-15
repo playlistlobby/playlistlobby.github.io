@@ -154,13 +154,33 @@ export interface SpriteDraw {
   isShadow: boolean;
 }
 
+/**
+ * What the piece looks like in its first state (animation 0 of the 64px visualization): which picture each layer shows, and which layers are left out.
+ * Pieces with doors (a wardrobe) carry the open and the closed doors as separate layers; showing every layer at once drew both.
+ * Returns null when the file says nothing about it (then every layer is drawn as before).
+ */
+function firstState(json: NitroJson): Record<string, number | null> | null {
+  const vis = (json.visualizations as Array<{ size?: number; animations?: Record<string, { layers?: Record<string, { frameSequences?: Record<string, { frames?: Record<string, { id?: number }> }> }> }> }> | undefined)?.find((v) => v.size === 64);
+  const layers = vis?.animations?.["0"]?.layers;
+  if (!layers) return null;
+  const out: Record<string, number | null> = {};
+  for (const [idx, l] of Object.entries(layers)) {
+    const id = l?.frameSequences?.["0"]?.frames?.["0"]?.id;
+    out[String.fromCharCode(97 + Number(idx))] = typeof id === "number" ? id : null;
+  }
+  return out;
+}
+
 /** Everything to draw for one facing direction (falls back to the nearest direction that has art). */
 export function spritesFor(n: NitroFurni, dir: number, frame = 0): SpriteDraw[] {
   const have = directionsOf(n);
   const d = have.includes(dir) ? dir : have.includes(dir % 4) ? dir % 4 : have[0] ?? 0;
   const out: SpriteDraw[] = [];
+  const state = frame === 0 ? firstState(n.json) : null;
   for (const layer of n.layers) {
-    const key = `${n.name}_64_${layer}_${d}_${frame}`;
+    const want = state && layer in state ? state[layer] : null;
+    if (want !== null && !n.json.assets[`${n.name}_64_${layer}_${d}_${want}`]) continue; // this layer has nothing to show in that state (the open doors)
+    const key = `${n.name}_64_${layer}_${d}_${want ?? frame}`;
     const a = n.json.assets[key] ?? n.json.assets[`${n.name}_64_${layer}_${d}_0`];
     if (!a) continue;
     const f = n.json.spritesheet.frames[`${n.name}_${a.source ?? key}`];

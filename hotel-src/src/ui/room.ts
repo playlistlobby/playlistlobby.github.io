@@ -2695,7 +2695,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (k.plant) return drawPlanter(f, now);
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
-      if (b && k.opens && k.opens !== "sink" && k.opens !== "mixer" && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
+      if (b && k.opens && k.opens !== "sink" && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -2722,7 +2722,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const showHanger = !me.seenDoor || hot;
+        const noHint = k.opens === "mixer"; // the mixer glows like the rest, but has no little icon floating over it
+        const showHanger = !noHint && (!me.seenDoor || hot);
         const hint = k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
           const hs = scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
@@ -2737,7 +2738,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // while the hanger always shows, the click box covers it too
-        return { id: "", ...b, y0: me.seenDoor ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
+        return { id: "", ...b, y0: me.seenDoor || noHint ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
       }
       return b ? { id: "", ...b, depth: f.x + f.y } : null;
     }
@@ -2758,7 +2759,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       g.fillStyle = "#3b7de2";
       const b2 = P(0.64, 0.6);
       g.beginPath(); g.arc(b2.x, b2.y, 3 * scale, 0, Math.PI * 2); g.fill();
-    } else if (f.kind === "lamp") {    } else if (f.kind === "lamp") {
+    } else if (f.kind === "lamp") {
       const c = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };
       const grad = g.createRadialGradient(c.x, c.y, 2, c.x, c.y, 34 * scale);
       grad.addColorStop(0, "rgba(255,240,170,0.55)");
