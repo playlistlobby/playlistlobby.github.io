@@ -158,10 +158,24 @@ export const ITEMS: Record<string, ItemDef> = {
     icon: assetUrl("items/superpill.svg"),
     useSelf: "consume",
   },
+  shroomspore: {
+    id: "shroomspore",
+    name: "Shroom spores",
+    examine: "A pinch of spores. Select them, then click a growing kit to plant them. Shrooms are ready after 20 minutes (water them once).",
+    icon: assetUrl("items/shroomspore.svg"),
+    useOnObject: "f_planter",
+  },
+  shroom: {
+    id: "shroom",
+    name: "Shroom",
+    examine: "A shroom. Eat it: the world gets a little strange, and for 3 minutes you can walk into anyone's room, online or offline.",
+    icon: assetUrl("items/shroom.png"),
+    useSelf: "consume",
+  },
   dmt: {
     id: "dmt",
     name: "DMT",
-    examine: "A yellow pill from 6ixty. Swallow it and the world fills with patterns. You lie down for 10 seconds.",
+    examine: "A shroom pressed into a pill: yellow. Swallow it: the world fills with patterns and you lie down for 10 seconds. Then, for 4 minutes, you run twice as fast and can walk into anyone's room.",
     icon: assetUrl("items/dmt.svg"),
     useSelf: "consume",
   },
@@ -206,12 +220,6 @@ export const ITEMS: Record<string, ItemDef> = {
     examine: "freakme",
     icon: assetUrl("items/cd.png"),
     useOnObject: "cdplayer",
-  },
-  lockpick: {
-    id: "lockpick",
-    name: "Lockpick",
-    examine: "A bent piece of wire. It works once: it lets you into the room of someone who isn't your friend. Use it from the door menu.",
-    icon: assetUrl("items/lockpick.svg"),
   },
   cigarette: {
     id: "cigarette",

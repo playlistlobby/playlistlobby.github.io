@@ -4,14 +4,14 @@
 /** every ordinary item (furniture pieces are items too, with ids "f_..." / "x_...") */
 export const ITEM_ID_LIST = [
   "weedseed", "weed", "mix", "jointpaper", "bluntwrap", "joint", "blunt", "wateringcan", "wateringcan_full",
-  "burger", "pill", "syringe", "cd", "lockpick", "cigarette", "cigbutt", "lighter", "deadcat", "knife",
+  "burger", "pill", "syringe", "cd", "cigarette", "cigbutt", "lighter", "deadcat", "knife",
   // the mixer's results, and the joints and blunts rolled from them
   "midweed", "thca", "researchchem",
   "joint_mid", "joint_thca", "joint_chem", "blunt_mid", "blunt_thca", "blunt_chem",
   // kodimagnyl (vending machine, the bins), and what is made from it: the lean ("codeine") and the super pill
   "kodimagnyl", "codeine", "superpill",
-  // 6ixty's yellow pill: patterns and lying down for 10 seconds
-  "dmt",
+  // shrooms (grown from spores found in the bins) let you into any room; a shroom pressed into a pill is DMT
+  "shroomspore", "shroom", "dmt",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -34,7 +34,7 @@ export type Inventory = Array<InvItem | null>;
 export const emptyInventory = (): Inventory => Array.from({ length: INV_SIZE }, () => null);
 
 /** Items that exist in the code but are switched off for now: nobody gets one and any already held are hidden (the data stays, so turning one back on restores it). */
-export const DISABLED_ITEMS: ReadonlySet<string> = new Set(["burger", "lockpick"]);
+export const DISABLED_ITEMS: ReadonlySet<string> = new Set(["burger"]);
 
 /** Furniture is an inventory item too: its id is the furniture kind's id ("f_sofa" for pieces that ship with the game, "x_..." for Studio pieces). */
 export const isFurniItem = (id: string): boolean => /^[fx]_[a-z0-9_]{1,30}$/.test(id);
@@ -61,7 +61,7 @@ export const findSlot = (inv: Inventory, item: string): number => inv.findIndex(
 export const findSlotAny = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item);
 
 /** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
-export const SIXTY_STOCK = ["cigarette", "cd", "pill", "f_planter", "dmt"];
+export const SIXTY_STOCK = ["cigarette", "cd", "pill", "f_planter"];
 export const DEFAULT_ITEM_PRICE = 5;
 /** Default shop entry for items that start on sale (everything else starts off). */
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
@@ -69,7 +69,6 @@ export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   pill: { on: true, price: 3 },
   cd: { on: true, price: 1 }, // one per player, once (see buySixty)
   f_planter: { on: true, price: 6 }, // the growing kit
-  dmt: { on: true, price: 15 },
   // sold in the shop room's vending machine (not by 6ixty): the admin can still change these prices
   lighter: { on: false, price: 2 },
   jointpaper: { on: false, price: 1 },
@@ -107,7 +106,7 @@ export const SMOKABLE: Record<string, SmokeDef> = {
   blunt_chem: { mult: 2, boostMs: 90_000, kind: "blunt", speedMs: 90_000, chemMs: 90_000, smokeMs: 5_000 },
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "kodimagnyl"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "kodimagnyl", "shroomspore", "shroom"]);
 /** A plant grows for 20 minutes. It gets thirsty after 5: water it once after that (and only then) or the weed turns out ass. */
 export const GROW_MS = 20 * 60_000;
 export const WATER_MS = 5 * 60_000;
@@ -149,6 +148,7 @@ export const MIX_RECIPES: MixRecipe[] = [
   { a: { item: "pill" }, b: { item: "weed" }, give: { item: "thca", qty: 1 }, note: "The pill dissolves into the weed: 1 thc-a." },
   { a: { item: "pill" }, b: { item: "cigarette" }, give: { item: "researchchem", qty: 1 }, note: "You grind the pill into the tobacco: 1 research chemical." },
   { a: { item: "pill" }, b: { item: "kodimagnyl" }, give: { item: "superpill", qty: 1 }, note: "Two pills, pressed into one: 1 super pill." },
+  { a: { item: "shroom" }, b: { item: "pill" }, give: { item: "dmt", qty: 1 }, note: "The shroom dissolves into the pill, which turns yellow: 1 DMT." },
   // the lean also works in the mixer: kodimagnyl + a full watering can (the can comes straight back, empty)
   { a: { item: "kodimagnyl" }, b: { item: "wateringcan_full" }, give: { item: "codeine", qty: 1 }, back: { item: "wateringcan", qty: 1 }, note: "You crush the kodimagnyl into the water. It turns purple: codeine. The can is empty again." },
 ];

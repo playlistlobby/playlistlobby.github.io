@@ -594,6 +594,9 @@
             "neglect": {
               ".validate": "newData.isBoolean()"
             },
+            "crop": {
+              ".validate": "newData.isString() && newData.val() === 'shroom'"
+            },
             "$other": {
               ".validate": false
             }

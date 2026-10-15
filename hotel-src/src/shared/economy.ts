@@ -12,15 +12,19 @@ export const STARTER_ITEMS: string[] = [];
 export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
   // percentages (they add up to 100): kodimagnyl is 10%, the rest keep the same proportions as before
-  { item: "weedseed", chance: 52.9, label: "weed seed" },
-  { item: "deadcat", chance: 31.8, label: "dead cat" },
-  { item: "lighter", chance: 5.3, label: "lighter" },
-  { item: "kodimagnyl", chance: 10, label: "kodimagnyl" },
+  { item: "weedseed", chance: 47.6, label: "weed seed" },
+  { item: "deadcat", chance: 28.6, label: "dead cat" },
+  { item: "lighter", chance: 4.8, label: "lighter" },
+  { item: "kodimagnyl", chance: 9, label: "kodimagnyl" },
+  { item: "shroomspore", chance: 10, label: "shroom spores" },
 ];
 /** the super pill: 4x walking speed for a minute */
 export const SUPERPILL_MS = 60_000;
 /** DMT: patterns on the screen and your character lying down for this long */
 export const DMT_MS = 10_000;
+/** after the colours: a shroom lets you into any room for 3 minutes; DMT does it for 4 and doubles your walking speed */
+export const SHROOM_MS = 3 * 60_000;
+export const DMT_TRIP_MS = 4 * 60_000;
 export const SUPERPILL_MULT = 4;
 /** the lean (codeine): for an hour, garbage cans give twice as much and can be searched twice as often. You hold the cup for the first 2 minutes. */
 export const LEAN_MS = 3_600_000;
@@ -29,7 +33,7 @@ export const LEAN_CUP_MS = 2 * 60_000;
 export const FLOOR_SPAWN_MS = 10 * 60_000;
 export const FLOOR_SPAWN_CHANCE = 0.25;
 export const FLOOR_SPAWN_MAX = 2;
-export const FLOOR_SPAWN_ITEMS = ["weedseed", "cigarette"];
+export const FLOOR_SPAWN_ITEMS = ["weedseed", "cigarette", "shroomspore"];
 export const CAT_BLOOD = 3;
 export const SYRINGE_BLOOD = 1;
 /** the syringe draws 1 drop from yourself and 1 from a body bag, each once every 20 minutes */
@@ -79,6 +83,8 @@ export interface Snapshot {
   /** the lean (codeine) is in you until this time; you hold the cup until cupUntil */
   leanUntil: number;
   cupUntil: number;
+  /** a shroom or DMT lets you walk into any room until this time */
+  shroomUntil: number;
   /** flashing and smoking until this time (research chemical) */
   chemUntil: number;
   catsCarved: number;
@@ -121,6 +127,7 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     speedMult: Math.min(4, Math.max(2, Number(v.speedMult) || 2)),
     leanUntil: Number(v.leanUntil) || 0,
     cupUntil: Number(v.cupUntil) || 0,
+    shroomUntil: Number(v.shroomUntil) || 0,
     chemUntil: Number(v.chemUntil) || 0,
     catsCarved: Number(v.catsCarved) || 0,
     roomLevel: Math.min(ROOM_UPGRADES.length, Math.max(0, Math.floor(Number(v.roomLevel) || 0))),
@@ -140,7 +147,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
   const patch: Record<string, unknown> = {};
   const base = `users/${uid}/`;
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "speedMult", "leanUntil", "cupUntil", "chemUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
+  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "speedMult", "leanUntil", "cupUntil", "shroomUntil", "chemUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
     if (before[k] !== after[k]) patch[base + k] = after[k];
   }
   if (before.sixty.knifeAt !== after.sixty.knifeAt) patch[`${base}sixty/knifeAt`] = after.sixty.knifeAt;

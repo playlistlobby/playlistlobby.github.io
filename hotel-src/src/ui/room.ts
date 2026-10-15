@@ -132,6 +132,9 @@ void loadNitro("furni/mafia_c26_planter_white.nitro").then((n) => {
     }
   });
 }).catch(() => undefined);
+/** what grows in the kit when the seed was shroom spores */
+let shroomArt: NitroFurni | null = null;
+void loadNitro("furni/shrooms.nitro").then((n) => { shroomArt = n; }).catch(() => undefined);
 const itemImgs = new Map<string, HTMLImageElement>();
 const itemImg = (id: string): HTMLImageElement => {
   let im = itemImgs.get(id);
@@ -1210,11 +1213,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (!k?.plant) return;
       if (!isOwnRoom) return say("That's not your plant.", "warn");
       if (!f.plant) {
-        const ss = held?.item === "weedseed" ? slot! : findSlot(me.inventory, "weedseed");
-        if (ss < 0 || ss === null) return say("An empty growing kit. Select a weed seed, then click the kit to plant it.", "warn");
+        const isSeed = (n: string | undefined): boolean => n === "weedseed" || n === "shroomspore";
+        const ss = isSeed(held?.item) ? slot! : findSlot(me.inventory, "weedseed") >= 0 ? findSlot(me.inventory, "weedseed") : findSlot(me.inventory, "shroomspore");
+        if (ss < 0 || ss === null) return say("An empty growing kit. Select a weed seed or shroom spores, then click the kit to plant it.", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
-        return say("You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering once it gets thirsty (after 5 minutes).");
+        return say(me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 20 minutes, and they need one watering once they get thirsty (after 5 minutes)." : "You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering once it gets thirsty (after 5 minutes).");
       }
       const prog = plantProgress(f.plant);
       const canSlot = held?.item === "wateringcan_full" ? slot! : findSlot(me.inventory, "wateringcan_full");
@@ -1231,6 +1235,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const r = await harvestPlant(me, def.id, f.id, f.plant);
         panel.refresh();
         playSfx("give", 0.6);
+        if (r.crop === "shroom") {
+          giftPop(`+${r.qty ?? 3} Shroom`, itemImg("shroom"));
+          logAction(me, "room", "picked shrooms");
+          return say(r.ass ? "You pick one shroom. They never got their water." : "You pick the shrooms. Fresh.");
+        }
         giftPop(r.ass ? "+3 Ass weed" : "+3 Weed", itemImg("weed"));
         logAction(me, "room", `harvested ${r.ass ? "ass weed" : "weed"}`);
         return say(r.ass ? "You pick it. It's ass weed: it never got its water." : "You pick the buds. Nice.");
@@ -1266,7 +1275,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const found = foundAll[0];
       panel.refresh();
       playSfx("give", 0.6);
-      const FOUND: Record<string, string> = { deadcat: "Under the bin bags: a dead cat. Poor thing.", burger: "A burger, hardly bitten. Lucky you.", weedseed: "A few little seeds in the muck. They might grow.", lighter: "A lighter, and it still works!", kodimagnyl: "A blister of blue pills: kodimagnyl." };
+      const FOUND: Record<string, string> = { deadcat: "Under the bin bags: a dead cat. Poor thing.", burger: "A burger, hardly bitten. Lucky you.", weedseed: "A few little seeds in the muck. They might grow.", lighter: "A lighter, and it still works!", kodimagnyl: "A blister of blue pills: kodimagnyl.", shroomspore: "A pinch of spores in the muck. They might grow." };
       giftPop(`+1 ${itemDef(found)?.name ?? found}`, itemImg(found));
       say(FOUND[found] ?? `You find a ${itemDef(found)?.name ?? found}.`);
       foundAll.slice(1).forEach((extra, i) => {
@@ -2018,7 +2027,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** The super pill (4x walking speed for a minute) and the lean (the cup in your hand, an hour of better bins). */
   async function consumeSlot(slot: number): Promise<void> {
     const p = mine();
-    if (!p || p.lying || faintUntil || woozy) return;
+    if (!p || p.lying || faintUntil || woozy || trippingOn) return;
     const it = me.inventory[slot];
     if (!it) return;
     try {
@@ -2034,7 +2043,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       } else if (r.kind === "dmt") {
         logAction(me, "room", "swallowed DMT");
         say("You swallow the yellow pill. The floor tilts and the colours start to move.");
-        startDmt(r.ms ?? 10_000);
+        startDmt(r.ms ?? 10_000, {
+          lie: true,
+          then: () => { // the colours are over: now the 4 minutes of double speed (and open doors) begin
+            p.fast = me.speedUntil; p.fastMult = me.speedMult;
+            void update(myRef, { fast: p.fast, fastMult: p.fastMult }).catch(() => undefined);
+            say("You get up. Everything is fast, and every room is open to you. For 4 minutes.");
+          },
+        });
+      } else if (r.kind === "shroom") {
+        logAction(me, "room", "ate a shroom");
+        say("You chew the shroom. It tastes like soil. The edges of the world start to move.");
+        startDmt(r.ms ?? 10_000, { lie: false, then: () => say("Every door is open to you for 3 minutes. Take the basement door and walk into anyone's room.") });
       } else if (r.kind === "codeine") {
         p.cup = me.cupUntil;
         void update(myRef, { cup: p.cup }).catch(() => undefined);
@@ -2044,14 +2064,22 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     } catch (err) { say((err as Error).message || "Couldn't do that.", "warn"); }
   }
 
-  /** DMT: for ten seconds you lie on the floor where you stood and the screen fills with moving patterns. */
-  function startDmt(ms: number): void {
+  /**
+   * DMT and shrooms: for ten seconds the screen fills with moving patterns. With DMT you also lie on the floor where you stood (and everyone sees it);
+   * a shroom's patterns are only a faint wash and you stay on your feet. `then` runs when it is over (the speed and room access come after the colours).
+   */
+  let trippingOn = false;
+  function startDmt(ms: number, opts: { lie: boolean; then?: () => void }): void {
     const p = mine();
-    if (!p || disposed || faintUntil) return;
-    faintUntil = performance.now() + ms;
-    p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
-    p.faint = true; // they go down (shown to everyone, like after the other pill)
-    update(myRef, { lay: true, sit: null }).catch(() => undefined);
+    if (!p || disposed || faintUntil || trippingOn) return;
+    trippingOn = true;
+    const lie = opts.lie;
+    if (lie) {
+      faintUntil = performance.now() + ms;
+      p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
+      p.faint = true; // they go down (shown to everyone, like after the other pill)
+      update(myRef, { lay: true, sit: null }).catch(() => undefined);
+    }
     const cv = h("canvas", { class: "dmt-overlay" }) as HTMLCanvasElement;
     document.body.append(cv);
     // a small canvas, stretched over the screen: a pattern worked out per pixel from the distance and angle to the middle, with colours that keep rolling
@@ -2070,7 +2098,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     let raf = 0;
     const draw = (): void => {
       const t = performance.now() - t0, ts = t / 1000;
-      cv.style.opacity = String(Math.max(0, Math.min(1, t / 700, (ms - t) / 1200)) * 0.72);
+      cv.style.opacity = String(Math.max(0, Math.min(1, t / 700, (ms - t) / 1200)) * (lie ? 0.72 : 0.24));
       const px = img.data;
       for (let i = 0; i < W * H; i++) {
         const d = dist[i], a = ang[i];
@@ -2088,7 +2116,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       cancelAnimationFrame(raf);
       cv.remove();
       pillCleanup = null;
-      if (faintUntil) { faintUntil = 0; p.faint = false; if (!disposed) update(myRef, { lay: null }).catch(() => undefined); } // they get up
+      trippingOn = false;
+      if (lie && faintUntil) { faintUntil = 0; p.faint = false; if (!disposed) update(myRef, { lay: null }).catch(() => undefined); } // they get up
+      if (!disposed) opts.then?.();
     };
     pillCleanup = end; // leaving the room ends it
   }
@@ -2671,7 +2701,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** A growing kit: an empty pot; once planted the plant is revealed from the bottom up as it grows, with a growth bar and a water bar over it. */
-  function drawPlanter(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean } }, now: number): Hitbox | null {
+  function drawPlanter(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     const potN = k.nitro ? nitroIfReady(k.nitro) : undefined;
     if (!potN) return null;
@@ -2679,11 +2709,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const pot = drawNitroSprites(g, potN, 1, 1, f.x, f.y, dir, k.nudge, toScreen, scale);
     const pl = f.plant;
     let box = pot;
-    if (pl && foliageArt) {
-      const full = foliageArt;
+    const art = pl?.crop === "shroom" ? shroomArt : foliageArt;
+    if (pl && art) {
+      const full = art;
       // the leaves are drawn so that their base sits on the new pot's rim (about 22px above the anchor, in the middle)
       const s0 = spritesFor(full, dir).find((q) => !q.isShadow && q.sw > 2);
-      const leaf = s0 ? { x: -(s0.dx + s0.sw / 2), y: -22 - (s0.dy + Math.round(s0.sh * 0.64) - 1) } : { x: 0, y: 0 };
+      const leaf = s0 ? { x: -(s0.dx + s0.sw / 2), y: -22 - (s0.dy + Math.round(s0.sh * (pl.crop === "shroom" ? 0.95 : 0.64)) - 1) } : { x: 0, y: 0 };
       const leafNudge = { x: (k.nudge?.x ?? 0) + leaf.x, y: (k.nudge?.y ?? 0) + leaf.y };
       const prog = plantProgress(pl);
       const water = plantWater(pl);
@@ -2750,7 +2781,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.restore();
   }
 
-  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean } }, now: number): Hitbox | null {
+  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     if (k.plant) return drawPlanter(f, now);
     if (k.nitro) {
@@ -3558,8 +3589,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const meta = await fetchMeta(roomId);
       if (disposed) return;
       if (!meta) return kicked("That room doesn't exist.");
-      if (!(await canEnter(meta, me.uid, social.friendUids()))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
+      const trespassNow = me.shroomUntil > serverNow();
+      if (!(await canEnter(meta, me.uid, social.friendUids(), trespassNow))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
       if (disposed) return;
+      // in on a shroom or DMT rather than by the door rules: when it wears off the door closes behind you (the database stops letting you in at that moment too)
+      if (trespassNow && !(await canEnter(meta, me.uid, social.friendUids(), false))) {
+        const watch = window.setInterval(() => {
+          if (disposed || me.shroomUntil > serverNow()) return;
+          window.clearInterval(watch);
+          toast("The shroom wears off and the door closes behind you.", "err");
+          ctx.navigate("room", { roomId: ownRoomId(me.uid) });
+        }, 1000);
+        unsubs.push(() => window.clearInterval(watch));
+      }
       applyDef(defFromMeta(roomId, meta));
       start();
       unsubs.push(watchMeta(roomId, (m) => {

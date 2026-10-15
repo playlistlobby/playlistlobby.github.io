@@ -57,6 +57,8 @@ export interface Profile {
   /** the lean (codeine) works until this time; you hold the cup until cupUntil (server time, ms) */
   leanUntil: number;
   cupUntil: number;
+  /** a shroom or DMT lets you walk into any room until this time (server time, ms) */
+  shroomUntil: number;
   catsCarved: number;
   /** how many of the landlord's room upgrades are bought (0..3) */
   roomLevel: number;
@@ -121,6 +123,7 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.speedMult = s.speedMult;
   p.leanUntil = s.leanUntil;
   p.cupUntil = s.cupUntil;
+  p.shroomUntil = s.shroomUntil;
   p.catsCarved = s.catsCarved;
   p.roomLevel = s.roomLevel;
   p.syringeSelfAt = s.syringeSelfAt;
@@ -188,6 +191,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     speedMult: 2,
     leanUntil: 0,
     cupUntil: 0,
+    shroomUntil: 0,
     catsCarved: 0,
     roomLevel: 0,
     storage: {},
@@ -265,7 +269,7 @@ export async function searchDumpster(p: Profile, canId: string, roomId: string):
   return r.items && r.items.length ? r.items.map(String) : [String(r.item)];
 }
 /** Swallows the super pill or drinks the lean (codeine) in a slot. */
-export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number; ms?: number }> => call(p, "consume", { slot });
+export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number; ms?: number; tripMs?: number }> => call(p, "consume", { slot });
 /** Uses two pocket items on each other (weed + paper, ...). Resolves with the message. */
 export async function combineSlots(p: Profile, a: number, b: number): Promise<string> {
   return String((await call<{ note?: string }>(p, "combine", { a, b })).note ?? "");
@@ -281,8 +285,9 @@ export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boole
 // ---- growing weed in a growing kit ---------------------------------------------------------------------------
 export const plantSeed = (p: Profile, _roomId: string, fid: string, seedSlot: number): Promise<unknown> => call(p, "plant", { fid, slot: seedSlot });
 export const waterPlant = (p: Profile, _roomId: string, fid: string, _pl: Plant, canSlot: number): Promise<unknown> => call(p, "water", { fid, slot: canSlot });
-export async function harvestPlant(p: Profile, _roomId: string, fid: string, _pl: Plant): Promise<{ ass: boolean }> {
-  return { ass: !!(await call<{ ass?: boolean }>(p, "harvest", { fid })).ass };
+export async function harvestPlant(p: Profile, _roomId: string, fid: string, _pl: Plant): Promise<{ ass: boolean; crop?: string; qty?: number }> {
+  const r = await call<{ ass?: boolean; crop?: string; qty?: number }>(p, "harvest", { fid });
+  return { ass: !!r.ass, crop: r.crop, qty: r.qty };
 }
 export const carveCat = (p: Profile, slot: number): Promise<unknown> => call(p, "carve", { slot });
 

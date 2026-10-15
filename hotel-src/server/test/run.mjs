@@ -678,17 +678,53 @@ console.log("--- the CD and the boombox");
   ok("nothing playing: nothing to control", { ok: (await act(a, "cdControl", { room, op: "pause" })).ok === false });
 }
 
-console.log("--- DMT");
+console.log("--- shrooms and DMT");
 {
-  const d = await fresh("t_dmt", { blood: 20 });
+  // 6ixty no longer sells DMT
+  const d = await fresh("t_dmt", { blood: 40 });
   await act(d, "sync");
-  const b = await act(d, "buySixty", { item: "dmt" });
-  ok("buy DMT from 6ixty", b);
-  check("15 drops", b.state.blood === 5, String(b.state.blood));
-  bad("not enough left for a second one", await act(d, "buySixty", { item: "dmt" }));
-  const c = await act(d, "consume", { slot: b.state.inventory.findIndex((x) => x && x.item === "dmt") });
-  ok("swallow it", c);
-  check("it says 10 seconds, and the pill is gone", c.data.kind === "dmt" && c.data.ms === 10000 && total(c.state.inventory, "dmt") === 0, JSON.stringify(c.data));
+  bad("6ixty doesn't sell DMT", await act(d, "buySixty", { item: "dmt" }));
+  // spores grow into shrooms in a growing kit
+  const room = `u_${d.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: d.uid, ownerName: "t_dmt", name: "t_dmt's room", access: "closed", w: 8, h: 8, furni: { kit: { kind: "f_planter", x: 2, y: 2 }, mx: { kind: "f_mixer", x: 4, y: 2 } } });
+  await owner("PUT", `users/${d.uid}/inventory`, { 0: { item: "shroomspore", qty: 2 }, 1: { item: "pill", qty: 2 } });
+  await stand(d, room, 4, 4);
+  const pl = await act(d, "plant", { fid: "kit", slot: 0 });
+  ok("plant shroom spores", pl);
+  check("the kit remembers it is shrooms", (await owner("GET", `roomsMeta/${room}/furni/kit/crop`)) === "shroom");
+  bad("not ready yet", await act(d, "harvest", { fid: "kit" }));
+  await owner("PATCH", `roomsMeta/${room}/furni/kit`, { plantedAt: Date.now() - 25 * 60_000, wateredAt: Date.now() - 10 * 60_000 });
+  const hv = await act(d, "harvest", { fid: "kit" });
+  ok("pick the shrooms", hv);
+  check("three shrooms, and the kit is empty again", total(hv.state.inventory, "shroom") === 3 && (await owner("GET", `roomsMeta/${room}/furni/kit/crop`)) === null, JSON.stringify(hv.data));
+  // shroom + pill in the mixer = DMT
+  const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
+  const mx = await act(d, "mix", { fid: "mx", a: slotOf(hv.state, "shroom"), b: slotOf(hv.state, "pill") });
+  ok("shroom + pill in the mixer", mx);
+  await owner("PATCH", `roomsMeta/${room}/furni/mx/mixJob`, { doneAt: Date.now() - 1000 });
+  const col = await act(d, "mixCollect", { fid: "mx" });
+  check("a DMT comes out", total(col.state.inventory, "dmt") === 1);
+  // eating a shroom: every room is open for 3 minutes
+  const eat = await act(d, "consume", { slot: slotOf(col.state, "shroom") });
+  ok("eat a shroom", eat);
+  check("3 minutes of open doors", eat.data.kind === "shroom" && eat.state.shroomUntil - Date.now() > 170_000 && eat.state.shroomUntil - Date.now() <= 181_000, JSON.stringify([eat.data, eat.state.shroomUntil - Date.now()]));
+  // DMT: the colours, then 4 minutes of open doors and double speed
+  const dm = await act(d, "consume", { slot: slotOf(eat.state, "dmt") });
+  ok("swallow DMT", dm);
+  check("DMT: 10 seconds of colours, then 4 minutes", dm.data.kind === "dmt" && dm.data.ms === 10000 && dm.data.tripMs === 240000, JSON.stringify(dm.data));
+  check("2x speed and open doors until the 4 minutes are over", dm.state.speedMult === 2 && dm.state.speedUntil - Date.now() > 245_000 && dm.state.shroomUntil === dm.state.speedUntil && total(dm.state.inventory, "dmt") === 0, JSON.stringify([dm.state.speedMult, dm.state.speedUntil - Date.now()]));
+  // the database rules let you into someone's closed room while it lasts, and not afterwards
+  const owner2 = await fresh("t_dmt_owner");
+  await act(owner2, "sync");
+  await owner("PUT", `roomsMeta/u_${owner2.uid}`, { owner: owner2.uid, ownerName: "t_dmt_owner", name: "closed room", access: "none", w: 8, h: 8 });
+  await owner("PUT", `rooms/u_${owner2.uid}/players/${owner2.uid}`, { name: "t_dmt_owner", figure: "x", x: 3, y: 3, dir: 2 });
+  const peek = async (who) => (await fetch(`${DB}/rooms/u_${owner2.uid}/players.json?ns=${NS}&auth=${who.token}`)).status;
+  const trip = await fresh("t_dmt_trip");
+  check("no shroom: a closed room stays closed", (await peek(trip)) === 401);
+  await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() + 60_000);
+  check("on a shroom: the room can be read", (await peek(trip)) === 200);
+  await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() - 1000);
+  check("when it wears off: closed again", (await peek(trip)) === 401);
 }
 
 console.log("--- /give");

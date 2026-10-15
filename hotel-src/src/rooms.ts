@@ -127,7 +127,7 @@ export interface PlacedFurni {
   /** facing 0/2/4/6 (only matters for rotatable pieces) */
   dir?: number;
   /** a growing kit with a seed in it (server times, ms): planted, last watered, and whether it ever ran dry */
-  plant?: { at: number; water: number; neglect: boolean };
+  plant?: { at: number; water: number; neglect: boolean; /** what grows in it: weed (nothing) or shrooms */ crop?: string };
 }
 
 export interface RugRect {
@@ -303,7 +303,7 @@ export interface RoomMeta {
   w: number;
   h: number;
   theme?: Partial<RoomTheme>;
-  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean }>;
+  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string }>;
   /** where the owner moved the fixed pieces to (the bed can't be turned, so only its x/y count) */
   bed?: { x: number; y: number; dir?: number };
   bag?: { x: number; y: number; dir?: number };
@@ -326,7 +326,7 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   // furniture of kinds that no longer exist (the old test cubes) is ignored; the bed is always there
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
-    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect } } : {}) }));
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}) } } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
   const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), boombox = at(meta.boombox, BOOMBOX);
   furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, { id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir });
@@ -387,8 +387,8 @@ export const removeFurni = (id: string, fid: string) => remove(ref(db, `${furniP
 
 /** Can this player walk straight in? Mirrors the database rules so we can say no politely instead of failing.
  *  Open rooms and friends' rooms: yes. Anyone else needs to be let in (a roomInvites entry), which a knock asks for. */
-export async function canEnter(meta: RoomMeta, uid: string, friendUids: Set<string>): Promise<boolean> {
-  if (meta.owner === uid || meta.access === "open") return true;
+export async function canEnter(meta: RoomMeta, uid: string, friendUids: Set<string>, trespass = false): Promise<boolean> {
+  if (meta.owner === uid || meta.access === "open" || trespass) return true; // (trespass: a shroom or DMT is working)
   if (meta.access !== "none" && friendUids.has(meta.owner)) return true;
   const inv = await get(ref(db, `roomInvites/u_${meta.owner}/${uid}`));
   return inv.exists();

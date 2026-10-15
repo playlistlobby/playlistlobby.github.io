@@ -2,7 +2,7 @@
 import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from "./util";
 import { fail } from "../ctx";
 import {
-  addToInv, CAT_BLOOD, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, CAT_BLOOD, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { combine, findSlot, GROW_MS, SMOKABLE, smokeMsOf, WATER_MS } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
@@ -129,9 +129,18 @@ export const consume: Action = {
       s.speedMult = SUPERPILL_MULT;
       return { kind: "superpill", speedMs: SUPERPILL_MS, speedMult: SUPERPILL_MULT };
     }
+    if (it!.item === "shroom") {
+      s.inventory = takeOneFrom(s.inventory, slot);
+      s.shroomUntil = c.now + SHROOM_MS; // any room is open to you (the database rules look at this too)
+      return { kind: "shroom", ms: DMT_MS, tripMs: SHROOM_MS }; // (the subtle patterns are drawn by the browser)
+    }
     if (it!.item === "dmt") {
       s.inventory = takeOneFrom(s.inventory, slot);
-      return { kind: "dmt", ms: DMT_MS }; // (the patterns and the lying down are drawn by the browser; nothing else changes)
+      const until = c.now + DMT_MS + DMT_TRIP_MS; // the 4 minutes start after the colours and the lying down
+      s.shroomUntil = until;
+      s.speedUntil = until;
+      s.speedMult = 2;
+      return { kind: "dmt", ms: DMT_MS, tripMs: DMT_TRIP_MS };
     }
     if (it!.item === "codeine") {
       s.inventory = takeOneFrom(s.inventory, slot);
@@ -224,7 +233,7 @@ async function planter(c: import("../ctx").Ctx, fid: unknown) {
   const room = await requireOwnRoom(c);
   const id = text(fid, ID_RE, "kit");
   const path = `roomsMeta/${room}/furni/${id}`;
-  const row = await c.db.get<{ kind?: string; plantedAt?: number; wateredAt?: number; neglect?: boolean }>(path);
+  const row = await c.db.get<{ kind?: string; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string }>(path);
   if (!row || row.kind !== "f_planter") return fail("That isn't a growing kit.");
   return { path, row };
 }
@@ -235,8 +244,10 @@ export const plant: Action = {
     if (typeof row.plantedAt === "number") fail("Something is already growing there.");
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
-    if (w.s.inventory[slot]?.item !== "weedseed") fail("That isn't a seed.");
+    const seed = w.s.inventory[slot]?.item;
+    if (seed !== "weedseed" && seed !== "shroomspore") fail("That isn't a seed.");
     w.s.inventory = takeOneFrom(w.s.inventory, slot);
+    c.extra[`${path}/crop`] = seed === "shroomspore" ? "shroom" : null; // what grows: weed (nothing stored) or shrooms
     c.extra[`${path}/plantedAt`] = c.now;
     c.extra[`${path}/wateredAt`] = null; // it hasn't been watered yet
     c.extra[`${path}/neglect`] = null;
@@ -267,13 +278,16 @@ export const harvest: Action = {
     if (c.now - row.plantedAt! < GROW_MS) fail("It isn't ready yet.");
     const ass = !((row.wateredAt ?? 0) >= row.plantedAt! + WATER_MS); // never got its one watering
     const w = await c.user();
-    const next = addToInv(w.s.inventory, { item: "weed", qty: 3, ...(ass ? { ass: true } : {}) });
+    const shrooms = row.crop === "shroom";
+    const give = shrooms ? { item: "shroom", qty: ass ? 1 : 3 } : { item: "weed", qty: 3, ...(ass ? { ass: true } : {}) }; // thirsty shrooms give only one
+    const next = addToInv(w.s.inventory, give);
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;
+    c.extra[`${path}/crop`] = null;
     c.extra[`${path}/plantedAt`] = null;
     c.extra[`${path}/wateredAt`] = null;
     c.extra[`${path}/neglect`] = null;
-    return { ass };
+    return { ass, crop: shrooms ? "shroom" : undefined, qty: give.qty };
   },
 };
 

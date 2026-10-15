@@ -5,7 +5,7 @@ import { Access, LOBBY_ID, normAccess, ownRoomId, RoomMeta, watchAllRooms } from
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import { findSlot } from "../items";
-import { call } from "../db";
+import { call, serverNow } from "../db";
 import type { Ctx } from "../main";
 
 export interface DoorApi {
@@ -78,12 +78,16 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     const all = Object.entries(rooms)
       .filter(([id, m]) => id.startsWith("u_") && m.owner !== me.uid && id !== currentRoom)
       .map(([id, m]) => rowFor(id, m));
-    const visible = all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online));
+    const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
     return visible.sort((a, b) =>
       Number(b.friend) - Number(a.friend) || Number(b.online) - Number(a.online) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, 40);
   }
 
+  /** a shroom or DMT is working: every door is open */
+  const tripping = (): boolean => me.shroomUntil > serverNow();
+
   function actionFor(r: Row): HTMLElement {
+    if (tripping() && !(r.friend || r.access === "open")) return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Walk in");
     if (r.access === "none") return h("span", { class: "door-actions" }, h("button", { class: "btn small", disabled: true }, "Closed"));
     if (r.friend || r.access === "open") return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Visit");
     let main: HTMLElement;
@@ -96,7 +100,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   }
 
   function rowEl(r: Row): HTMLElement {
-    const sub = r.friend ? "friend" : r.access === "open" ? "open to everyone" : r.access === "knock" ? "knock to enter" : "closed";
+    const sub = r.friend ? "friend" : r.access === "open" ? "open to everyone" : tripping() ? "Opened by a shroom" : r.access === "knock" ? "knock to enter" : "closed";
     return h("div", { class: "door-row" },
       headBoxFor(r.owner),
       h("span", { class: "dot " + (r.online ? (r.idle ? "idle" : "on") : "") }),

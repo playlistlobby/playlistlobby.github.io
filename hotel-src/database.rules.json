@@ -594,6 +594,9 @@
             "neglect": {
               ".validate": "newData.isBoolean()"
             },
+            "crop": {
+              ".validate": "newData.isString() && newData.val() === 'shroom'"
+            },
             "$other": {
               ".validate": false
             }
@@ -622,10 +625,10 @@
     "rooms": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'admin@users.bobba.invalid'",
       "$room": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none'))",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('users').child(auth.uid).child('shroomUntil').val() > now || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none'))",
         "players": {
           "$uid": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none'))",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('users').child(auth.uid).child('shroomUntil').val() > now || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none'))",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
             "smoke": {
               ".validate": "newData.isNumber()"
@@ -675,13 +678,13 @@
             "ts"
           ],
           "$msg": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none')) && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('users').child(auth.uid).child('shroomUntil').val() > now || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none')) && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
             ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0"
           }
         },
         "drops": {
           "$tile": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none')) && data.exists() && !newData.exists() && data.child('exp').exists() && data.child('exp').val() <= now",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('users').child(auth.uid).child('shroomUntil').val() > now || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none')) && data.exists() && !newData.exists() && data.child('exp').exists() && data.child('exp').val() <= now",
             ".validate": "false"
           }
         },
@@ -693,7 +696,7 @@
             "ts"
           ],
           "$event": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && newData.child('from').val() === auth.uid && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none'))",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && newData.child('from').val() === auth.uid && ($room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || root.child('users').child(auth.uid).child('shroomUntil').val() > now || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none'))",
             ".validate": "newData.hasChildren(['type', 'from', 'to', 'ts']) && ((newData.child('type').val() === 'stab' && newData.child('to').val() !== auth.uid && (root.child('rooms').child($room).child('players').child(newData.child('to').val()).exists() || root.child('roomsMeta').child($room).child('owner').val() === newData.child('to').val())) || (newData.child('type').val() === 'syringe' && newData.child('to').val() === auth.uid))"
           }
         }

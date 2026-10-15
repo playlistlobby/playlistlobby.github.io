@@ -5888,5 +5888,90 @@
   "en": "You swallow the yellow pill. The floor tilts and the colours start to move.",
   "da": "Du sluger den gule pille. Gulvet vipper og farverne begynder at bevæge sig.",
   "where": "src/ui/room.ts"
+ },
+ "N067": {
+  "en": "Shroom spores",
+  "da": "Shroom-sporer",
+  "where": "src/items.ts"
+ },
+ "N068": {
+  "en": "A pinch of spores. Select them, then click a growing kit to plant them. Shrooms are ready after 20 minutes (water them once).",
+  "da": "En knivspids sporer. Vælg dem, klik så på et growth kit for at plante dem. Shrooms er klar efter 20 minutter (vand dem én gang).",
+  "where": "src/items.ts"
+ },
+ "N069": {
+  "en": "Shroom",
+  "da": "Shroom",
+  "where": "src/items.ts"
+ },
+ "N070": {
+  "en": "A shroom. Eat it: the world gets a little strange, and for 3 minutes you can walk into anyone's room, online or offline.",
+  "da": "En shroom. Spis den: verden bliver lidt mærkelig, og i 3 minutter kan du gå ind i hvem som helst sit værelse, online eller offline.",
+  "where": "src/items.ts"
+ },
+ "N071": {
+  "en": "A shroom pressed into a pill: yellow. Swallow it: the world fills with patterns and you lie down for 10 seconds. Then, for 4 minutes, you run twice as fast and can walk into anyone's room.",
+  "da": "En shroom presset ind i en pille: gul. Sluk den: verden fyldes med mønstre og du ligger ned i 10 sekunder. Bagefter løber du dobbelt så hurtigt i 4 minutter og kan gå ind i hvem som helst sit værelse.",
+  "where": "src/items.ts"
+ },
+ "N072": {
+  "en": "The shroom dissolves into the pill, which turns yellow: 1 DMT.",
+  "da": "Shroomen opløses i pillen, som bliver gul: 1 DMT.",
+  "where": "src/shared/items.ts"
+ },
+ "N073": {
+  "en": "An empty growing kit. Select a weed seed or shroom spores, then click the kit to plant it.",
+  "da": "Et tomt growth kit. Vælg et weed frø eller shroom-sporer, klik så på kittet for at plante det.",
+  "where": "src/ui/room.ts"
+ },
+ "N074": {
+  "en": "You press the spores into the soil. Shrooms take 20 minutes, and they need one watering once they get thirsty (after 5 minutes).",
+  "da": "Du trykker sporerne ned i jorden. Shrooms tager 20 minutter, og de skal vandes én gang når de bliver tørstige (efter 5 minutter).",
+  "where": "src/ui/room.ts"
+ },
+ "N075": {
+  "en": "You pick one shroom. They never got their water.",
+  "da": "Du plukker én shroom. De fik aldrig deres vand.",
+  "where": "src/ui/room.ts"
+ },
+ "N076": {
+  "en": "You pick the shrooms. Fresh.",
+  "da": "Du plukker shroomene. Friske.",
+  "where": "src/ui/room.ts"
+ },
+ "N077": {
+  "en": "A pinch of spores in the muck. They might grow.",
+  "da": "En knivspids sporer i skidtet. De kan måske gro.",
+  "where": "src/ui/room.ts"
+ },
+ "N078": {
+  "en": "You chew the shroom. It tastes like soil. The edges of the world start to move.",
+  "da": "Du tygger shroomen. Den smager af jord. Verdens kanter begynder at bevæge sig.",
+  "where": "src/ui/room.ts"
+ },
+ "N079": {
+  "en": "Every door is open to you for 3 minutes. Take the basement door and walk into anyone's room.",
+  "da": "Alle døre er åbne for dig i 3 minutter. Tag kælderdøren og gå ind i hvem som helst sit værelse.",
+  "where": "src/ui/room.ts"
+ },
+ "N080": {
+  "en": "You get up. Everything is fast, and every room is open to you. For 4 minutes.",
+  "da": "Du rejser dig. Alt går hurtigt, og alle værelser er åbne for dig. I 4 minutter.",
+  "where": "src/ui/room.ts"
+ },
+ "N081": {
+  "en": "The shroom wears off and the door closes behind you.",
+  "da": "Shroomen aftager og døren lukker bag dig.",
+  "where": "src/ui/room.ts"
+ },
+ "N082": {
+  "en": "Walk in",
+  "da": "Gå ind",
+  "where": "src/ui/door.ts"
+ },
+ "N083": {
+  "en": "Opened by a shroom",
+  "da": "Åbnet af en shroom",
+  "where": "src/ui/door.ts"
  }
 }
