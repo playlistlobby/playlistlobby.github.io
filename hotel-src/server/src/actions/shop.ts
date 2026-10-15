@@ -2,7 +2,7 @@
 import { Action, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, takeQtyFrom } from "../../../src/shared/economy";
-import { DISABLED_ITEMS, ITEM_IDS, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
+import { DISABLED_ITEMS, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPicksToday, furniPrice, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
 import { todayStartAt } from "../../../src/shared/economy";
 import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, skinOf, skinOwnedKey, SkinPart } from "../../../src/shared/skins";
@@ -11,19 +11,35 @@ import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, s
 export const buySixty: Action = {
   async run(c, a) {
     const id = text(a.item, /^[a-z0-9_]{1,30}$/, "item");
-    const known = SIXTY_STOCK.includes(id) || (ITEM_IDS.has(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "deadcat");
+    if (id === "cd") fail("He doesn't sell that."); // the Freakme CD is sold at the record player in the shop now
+    const known = SIXTY_STOCK.includes(id) || (ITEM_IDS.has(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt");
     if (!known) fail("He doesn't sell that.");
     const entry = await c.itemEntry(id);
     if (!entry.on) fail("He doesn't sell that.");
     const w = await c.user();
-    if (id === "cd" && w.s.owned.item_cd) fail("You already bought your CD."); // one CD per player, ever (it comes back after it has played)
     if (w.s.blood < entry.price) fail(`You need ${entry.price - w.s.blood} more drops`);
     const next = addToInv(w.s.inventory, { item: id, qty: 1 });
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;
     w.s.blood -= entry.price;
-    if (id === "cd") w.s.owned.item_cd = true;
     return { price: entry.price };
+  },
+};
+
+/** The record player in the shop room: the Freakme CD for blood (one per player, ever: it comes back after it has played). The CDs for real money are bought through /pay/checkout. */
+export const buyRecord: Action = {
+  async run(c) {
+    await requireInRoom(c, "shop");
+    const w = await c.user();
+    if (w.s.owned.item_cd) fail("You already bought your CD.");
+    const price = (await c.itemEntry("cd")).price;
+    if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
+    const next = addToInv(w.s.inventory, { item: "cd", qty: 1 });
+    if (!next) fail("Your inventory is full");
+    w.s.inventory = next!;
+    w.s.blood -= price;
+    w.s.owned.item_cd = true;
+    return { price };
   },
 };
 
@@ -183,8 +199,11 @@ export const sellWeed: Action = {
     const it = w.s.inventory[slot];
     const each = it ? sellPrice(it.item, it.ass) : null;
     if (!it || each === null || it.lit || it.inPlayer) return fail("He doesn't buy that.");
-    const qty = Math.max(1, Math.min(Math.floor(Number(a.qty) || 1), it.qty));
-    const gain = qty * each;
+    const bundle = SELL_BUNDLE[it.item] ?? 1; // some things only go in bundles (2 cigarette butts for a drop)
+    let qty = Math.max(1, Math.min(Math.floor(Number(a.qty) || 1), it.qty));
+    qty -= qty % bundle;
+    if (qty < bundle) return fail("He wants them in twos.");
+    const gain = (qty / bundle) * each;
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, qty);
     w.s.blood += gain;
     return { gain, qty };

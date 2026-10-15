@@ -1,5 +1,6 @@
 // Integration tests: the Worker (wrangler dev, port 8787) against the Firebase emulators (auth 9099, database 9000).
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: npm test (server/)
+import { createHmac } from "node:crypto";
 const DB = "http://127.0.0.1:9000";
 const NS = "demo-hotel-default-rtdb";
 const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts";
@@ -336,9 +337,9 @@ console.log("--- stabbing");
   bad("a stab needs a knife", await act(noKnife, "stab", { target: b.uid, room: "lobby" }));
 }
 
-console.log("--- smoking, bins, syringe, cats, flappy");
+console.log("--- smoking, bins, syringe, flappy");
 {
-  const a = await fresh("t_misc", { inventory: { 0: { item: "cigarette", qty: 2 }, 1: { item: "lighter", qty: 1 }, 2: { item: "syringe", qty: 1 }, 3: { item: "deadcat", qty: 1 }, 4: { item: "knife", qty: 1 } } });
+  const a = await fresh("t_misc", { inventory: { 0: { item: "cigarette", qty: 2 }, 1: { item: "lighter", qty: 1 }, 2: { item: "syringe", qty: 1 }, 4: { item: "knife", qty: 1 } } });
   await act(a, "sync"); await stand(a, "lobby", 4, 4);
   const l = await act(a, "light", { slot: 0 });
   ok("light a cigarette", l);
@@ -349,9 +350,6 @@ console.log("--- smoking, bins, syringe, cats, flappy");
   const f = await act(a, "finishSmoke", { slot: litSlot });
   ok("finish once it has burned", f);
   check("stab bonus x2", f.state.boostMult === 2 && f.state.boostUntil > Date.now());
-  const cat = await act(a, "carve", { slot: (await state(a)).inventory.findIndex((x) => x && x.item === "deadcat") });
-  ok("carve a cat", cat);
-  check("+3 blood", cat.state.blood === 3);
   const sy = await act(a, "syringe", { who: "self" });
   ok("syringe on yourself", sy);
   bad("syringe again right away", await act(a, "syringe", { who: "self" }));
@@ -638,10 +636,11 @@ console.log("--- the CD and the boombox");
   await act(a, "sync");
   const room = `u_${a.uid}`;
   await owner("PUT", `roomsMeta/${room}`, { owner: a.uid, ownerName: "t_cd", name: "t_cd room", access: "open", w: 8, h: 8 });
-  const b1 = await act(a, "buySixty", { item: "cd" });
-  ok("buy the CD from 6ixty", b1);
-  check("1 drop", b1.state.blood === 4 && total(b1.state.inventory, "cd") === 1, String(b1.state.blood));
-  bad("it can't be bought twice", await act(a, "buySixty", { item: "cd" }));
+  await stand(a, "shop", 2, 6);
+  const b1 = await act(a, "buyRecord");
+  ok("buy the CD at the record player", b1);
+  check("2 drops", b1.state.blood === 3 && total(b1.state.inventory, "cd") === 1, String(b1.state.blood));
+  bad("it can't be bought twice", await act(a, "buyRecord"));
   bad("the player needs you in the room", await act(a, "cdInsert", { slot: slotOf(b1.state, "cd"), room, durationMs: 180000 }));
   await stand(a, room, 4, 4);
   const ins = await act(a, "cdInsert", { slot: slotOf(b1.state, "cd"), room, durationMs: 180000 });
@@ -734,6 +733,156 @@ console.log("--- shrooms and DMT");
   check("on a shroom: the room can be read", (await peek(trip)) === 200);
   await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() - 1000);
   check("when it wears off: closed again", (await peek(trip)) === 401);
+}
+
+console.log("--- CDs: the record player in the shop, paying, the album");
+{
+  const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
+  const checkout = async (who, product) => { const r = await fetch(`${API}/pay/checkout`, { method: "POST", headers: { authorization: `Bearer ${who.token}`, "content-type": "application/json" }, body: JSON.stringify({ product }) }); return { status: r.status, ...(await r.json()) }; };
+  // the Freakme CD: 2 blood at the record player, once, no longer from 6ixty
+  const f1 = await fresh("t_cd1", { blood: 9 });
+  await act(f1, "sync");
+  bad("not in the shop room", await act(f1, "buyRecord"));
+  await stand(f1, "shop", 2, 6);
+  const fr = await act(f1, "buyRecord");
+  ok("buy the Freakme CD", fr);
+  check("it costs 2 blood and is a CD", fr.state.blood === 7 && total(fr.state.inventory, "cd") === 1, String(fr.state.blood));
+  bad("only one per player", await act(f1, "buyRecord"));
+  bad("6ixty doesn't sell it any more", await act(f1, "buySixty", { item: "cd" }));
+  // real money: three mystery CDs, never the same colour twice
+  const m = await fresh("t_cd2");
+  await act(m, "sync");
+  check("no login: no checkout", (await fetch(`${API}/pay/checkout`, { method: "POST", body: "{}" })).status === 401);
+  const colours = new Set();
+  for (let i = 0; i < 3; i++) {
+    const co = await checkout(m, "mystery");
+    check(`mystery checkout ${i + 1} works`, co.ok === true && typeof co.url === "string", JSON.stringify(co));
+    const cl = await act(m, "claimPurchases");
+    ok(`claim ${i + 1}`, cl);
+    check(`one new mystery CD (${i + 1})`, cl.data.items.length === 1 && /^cd_(yellow|green|blue)$/.test(cl.data.items[0]) && !colours.has(cl.data.items[0]), JSON.stringify(cl.data));
+    colours.add(cl.data.items[0]);
+    if (i === 2) check("all three colours", colours.size === 3 && cl.state.owned.item_cd_yellow && cl.state.owned.item_cd_green && cl.state.owned.item_cd_blue, JSON.stringify(cl.state.owned));
+  }
+  const fourth = await checkout(m, "mystery");
+  check("a fourth mystery CD can't be bought", fourth.ok === false && fourth.status === 400, JSON.stringify(fourth));
+  // the album: one, red
+  const al = await checkout(m, "album");
+  check("album checkout works", al.ok === true, JSON.stringify(al));
+  const alc = await act(m, "claimPurchases");
+  check("the album arrives", alc.data.items[0] === "cd_album" && total(alc.state.inventory, "cd_album") === 1, JSON.stringify(alc.data));
+  const al2 = await checkout(m, "album");
+  check("a second album can't be bought", al2.ok === false, JSON.stringify(al2));
+  bad("the paid CDs can't be dropped", await act(m, "drop", { slot: slotOf(alc.state, "cd_album"), qty: 1 }));
+  // the webhook: only a signed message from Stripe marks a payment as paid
+  const w = await fresh("t_cd3");
+  await act(w, "sync");
+  const sid = `cs_test_${Date.now()}`;
+  await owner("PUT", `purchases/${sid}`, { uid: w.uid, product: "album", amount: 200, status: "open", at: Date.now(), session: sid });
+  await owner("PUT", `userPurchases/${w.uid}/${sid}`, { product: "album", status: "open", at: Date.now() });
+  const event = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: sid, payment_status: "paid", amount_total: 200, currency: "dkk" } } });
+  const sign = (body, secret, t = Math.floor(Date.now() / 1000)) => `t=${t},v1=${createHmac("sha256", secret).update(`${t}.${body}`).digest("hex")}`;
+  const hook = (body, sig) => fetch(`${API}/pay/webhook`, { method: "POST", headers: sig ? { "stripe-signature": sig } : {}, body });
+  check("no signature: refused", (await hook(event, null)).status === 400);
+  check("a wrong secret: refused", (await hook(event, sign(event, "whsec_not_ours"))).status === 400);
+  check("an old signature: refused", (await hook(event, sign(event, "whsec_local_test_secret", Math.floor(Date.now() / 1000) - 3600))).status === 400);
+  check("still unpaid after all that", (await owner("GET", `purchases/${sid}/status`)) === "open" && (await act(w, "claimPurchases")).data.items.length === 0);
+  check("a signed message: accepted", (await hook(event, sign(event, "whsec_local_test_secret"))).status === 200);
+  check("the payment is marked paid", (await owner("GET", `purchases/${sid}/status`)) === "paid");
+  const wc = await act(w, "claimPurchases");
+  check("and now the album arrives", wc.data.items[0] === "cd_album", JSON.stringify(wc.data));
+  check("the purchase is closed", (await owner("GET", `purchases/${sid}/status`)) === "claimed" && (await act(w, "claimPurchases")).data.items.length === 0);
+  // a payment of the wrong amount is not believed
+  const sid2 = `cs_test_wrong_${Date.now()}`;
+  const w2 = await fresh("t_cd4");
+  await act(w2, "sync");
+  await owner("PUT", `purchases/${sid2}`, { uid: w2.uid, product: "album", amount: 200, status: "open", at: Date.now(), session: sid2 });
+  await owner("PUT", `userPurchases/${w2.uid}/${sid2}`, { product: "album", status: "open", at: Date.now() });
+  const bent = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: sid2, payment_status: "paid", amount_total: 1, currency: "dkk" } } });
+  await hook(bent, sign(bent, "whsec_local_test_secret"));
+  check("a payment of the wrong amount is held back", (await owner("GET", `purchases/${sid2}/status`)) === "stuck" && (await act(w2, "claimPurchases")).data.items.length === 0);
+  // using the CDs: a mystery CD plays one song, the album plays on and can skip
+  const room = `u_${m.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: m.uid, ownerName: "t_cd2", name: "t_cd2's room", access: "knock", w: 8, h: 8 });
+  await stand(m, room, 4, 4);
+  const ys = (await state(m)).inventory.findIndex((x) => x && /^cd_(yellow|green|blue)$/.test(x.item));
+  ok("a mystery CD in the boombox", await act(m, "cdInsert", { slot: ys, room, durationMs: 100_000 }));
+  const st1 = await owner("GET", `rooms/${room}/cdplayer`);
+  check("it plays its own song", ["ahmingud", "blodig-oktober", "blod-ud-af-naesen"].includes(st1.track) && st1.index === undefined, JSON.stringify(st1));
+  bad("it has no songs to skip", await act(m, "cdControl", { room, op: "next", from: 0, durationMs: 90_000 }));
+  ok("eject", await act(m, "cdControl", { room, op: "eject" }));
+  const albumSlot = (await state(m)).inventory.findIndex((x) => x && x.item === "cd_album");
+  ok("the album in the boombox", await act(m, "cdInsert", { slot: albumSlot, room, durationMs: 120_000 }));
+  const a0 = await owner("GET", `rooms/${room}/cdplayer`);
+  check("it starts with the first song", a0.track === "album" && a0.index === 0 && a0.title === "02!11 på en blodig søndag", JSON.stringify(a0));
+  ok("skip to the next song", await act(m, "cdControl", { room, op: "next", from: 0, durationMs: 137_000 }));
+  const a1 = await owner("GET", `rooms/${room}/cdplayer`);
+  check("the second song, with its own length", a1.index === 1 && a1.title === "200mg" && a1.durationMs === 137_000, JSON.stringify(a1));
+  ok("pressing it twice in a row does nothing the second time", await act(m, "cdControl", { room, op: "next", from: 0, durationMs: 100_000 }));
+  check("still the second song", (await owner("GET", `rooms/${room}/cdplayer/index`)) === 1);
+  ok("back to the first song", await act(m, "cdControl", { room, op: "prev", from: 1, durationMs: 120_000 }));
+  check("the first song again", (await owner("GET", `rooms/${room}/cdplayer/index`)) === 0);
+  bad("advance only when the song is over", await act(m, "cdControl", { room, op: "advance", from: 0, durationMs: 100_000 }));
+  await owner("PATCH", `rooms/${room}/cdplayer`, { startedAt: Date.now() - 119_000, endsAt: Date.now() + 500 });
+  ok("the song is nearly over: the album moves on by itself", await act(m, "cdControl", { room, op: "advance", from: 0, durationMs: 137_000 }));
+  check("the second song is on", (await owner("GET", `rooms/${room}/cdplayer/index`)) === 1);
+  ok("eject the album", await act(m, "cdControl", { room, op: "eject" }));
+  const back = await state(m);
+  check("the CD is back in the pocket", total(back.inventory, "cd_album") === 1 && !back.inventory.some((x) => x && x.inPlayer));
+}
+
+console.log("--- hash, hash mix and the hash joint");
+{
+  const slotOf = (st, item, ass) => st.inventory.findIndex((x) => x && x.item === item && !!x.ass === !!ass);
+  const h = await fresh("t_hash", { inventory: { 0: { item: "weed", qty: 2, ass: true }, 1: { item: "kodimagnyl", qty: 1 }, 2: { item: "cigarette", qty: 2 }, 3: { item: "jointpaper", qty: 2 }, 4: { item: "bluntwrap", qty: 1 }, 5: { item: "lighter", qty: 1 }, 6: { item: "weed", qty: 1 } } });
+  await act(h, "sync");
+  const room = `u_${h.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: h.uid, ownerName: "t_hash", name: "t_hash's room", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 4, y: 2 } } });
+  await stand(h, room, 4, 4);
+  const mixOnce = async (fid, aItem, aAss, bItem) => {
+    const st = await state(h);
+    const r = await act(h, "mix", { fid, a: slotOf(st, aItem, aAss), b: slotOf(st, bItem, false) });
+    await owner("PATCH", `roomsMeta/${room}/furni/${fid}/mixJob`, { doneAt: Date.now() - 1000 });
+    return r.ok ? await act(h, "mixCollect", { fid }) : r;
+  };
+  bad("good weed and kodimagnyl is not hash", await (async () => { const st = await state(h); return act(h, "mix", { fid: "mx", a: slotOf(st, "weed", false), b: slotOf(st, "kodimagnyl", false) }); })());
+  const hs = await mixOnce("mx", "weed", true, "kodimagnyl");
+  ok("ass weed + kodimagnyl in the mixer", hs);
+  check("1 hash", total(hs.state.inventory, "hash") === 1 && total(hs.state.inventory, "kodimagnyl") === 0, JSON.stringify(hs.data));
+  const hm = await mixOnce("mx", "hash", false, "cigarette");
+  ok("hash + cigarette in the mixer", hm);
+  check("2 hash mix", total(hm.state.inventory, "hashmix") === 2 && total(hm.state.inventory, "hash") === 0, JSON.stringify(hm.data));
+  const st = await state(h);
+  bad("hash mix can't go in a blunt", await act(h, "combine", { a: slotOf(st, "hashmix", false), b: slotOf(st, "bluntwrap", false) }));
+  const hj = await act(h, "combine", { a: slotOf(st, "hashmix", false), b: slotOf(st, "jointpaper", false) });
+  ok("hash mix + joint paper", hj);
+  check("a hash joint", total(hj.state.inventory, "joint_hash") === 1 && total(hj.state.inventory, "hashmix") === 1, JSON.stringify(hj.data));
+  const lit = await act(h, "light", { slot: slotOf(hj.state, "joint_hash", false) });
+  ok("light the hash joint", lit);
+  const litSlot = lit.state.inventory.findIndex((x) => x && x.lit);
+  await owner("PATCH", `users/${h.uid}/inventory/${litSlot}`, { lit: Date.now() - 70_000 });
+  const fin = await act(h, "finishSmoke", { slot: litSlot });
+  ok("smoke it to the end", fin);
+  check("stabs give 3x for 2 minutes", fin.state.boostMult === 3 && fin.state.boostUntil - Date.now() > 110_000 && fin.state.boostUntil - Date.now() <= 121_000, JSON.stringify([fin.state.boostMult, fin.state.boostUntil - Date.now()]));
+}
+
+console.log("--- cigarette butts to 6ixty");
+{
+  const b = await fresh("t_butts", { inventory: { 0: { item: "cigbutt", qty: 5 }, 1: { item: "cigbutt", qty: 1 } } });
+  await act(b, "sync");
+  const st = await state(b);
+  check("the butts share a slot", total(st.inventory, "cigbutt") === 6 && st.inventory.filter((x) => x && x.item === "cigbutt").length === 1, JSON.stringify(st.inventory.filter(Boolean)));
+  const slot = st.inventory.findIndex((x) => x && x.item === "cigbutt");
+  bad("one butt on its own isn't enough", await act(b, "sellWeed", { slot, qty: 1 }));
+  const s1 = await act(b, "sellWeed", { slot, qty: 2 });
+  ok("sell two butts", s1);
+  check("1 drop for 2 butts", s1.state.blood === 1 && total(s1.state.inventory, "cigbutt") === 4, String(s1.state.blood));
+  const s2 = await act(b, "sellWeed", { slot, qty: 99 });
+  ok("sell all the rest", s2);
+  check("4 butts: 2 more drops", s2.state.blood === 3 && total(s2.state.inventory, "cigbutt") === 0, String(s2.state.blood));
+  const odd = await fresh("t_butts2", { inventory: { 0: { item: "cigbutt", qty: 3 } } });
+  await act(odd, "sync");
+  const so = await act(odd, "sellWeed", { slot: 0, qty: 3 });
+  check("an odd one stays: 3 butts sell as 2", so.ok === true && so.state.blood === 1 && total(so.state.inventory, "cigbutt") === 1, JSON.stringify(so.state));
 }
 
 console.log("--- /give");

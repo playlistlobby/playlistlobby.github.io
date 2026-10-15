@@ -12,9 +12,8 @@ export const STARTER_ITEMS: string[] = [];
 export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
   // percentages (they add up to 100): kodimagnyl is 10%, the rest keep the same proportions as before
-  { item: "weedseed", chance: 47.6, label: "weed seed" },
-  { item: "deadcat", chance: 28.6, label: "dead cat" },
-  { item: "lighter", chance: 4.8, label: "lighter" },
+  { item: "weedseed", chance: 72.7, label: "weed seed" },
+  { item: "lighter", chance: 7.3, label: "lighter" },
   { item: "kodimagnyl", chance: 9, label: "kodimagnyl" },
   { item: "shroomspore", chance: 10, label: "shroom spores" },
 ];
@@ -34,7 +33,6 @@ export const FLOOR_SPAWN_MS = 10 * 60_000;
 export const FLOOR_SPAWN_CHANCE = 0.25;
 export const FLOOR_SPAWN_MAX = 2;
 export const FLOOR_SPAWN_ITEMS = ["weedseed", "cigarette", "shroomspore"];
-export const CAT_BLOOD = 3;
 export const SYRINGE_BLOOD = 1;
 /** the syringe draws 1 drop from yourself and 1 from a body bag, each once every 20 minutes */
 export const SYRINGE_CD_MS = 20 * 60_000;
@@ -190,6 +188,20 @@ export function takeQtyFrom(inv: Inventory, slot: number, qty: number): Inventor
 }
 
 /** The inventory never has gaps: every item moves up to fill an empty slot before it. */
+/** Puts stackable things of the same kind into one slot (items that only stack now, like cigarette butts, may have been lying about one to a slot). */
+export function mergeStacks(inv: Inventory): Inventory {
+  const out: Inventory = inv.map((s) => (s ? { ...s } : null));
+  for (let i = 0; i < out.length; i++) {
+    const a = out[i];
+    if (!a || !STACKABLE.has(a.item) || a.lit || a.inPlayer) continue;
+    for (let j = i + 1; j < out.length; j++) {
+      const b = out[j];
+      if (b && b.item === a.item && !!b.ass === !!a.ass && !b.lit && !b.inPlayer) { a.qty += b.qty; out[j] = null; }
+    }
+  }
+  return compactInv(out);
+}
+
 export function compactInv(inv: Inventory): Inventory {
   const kept = inv.filter((s): s is InvItem => !!s);
   return inv.map((_, i) => kept[i] ?? null);

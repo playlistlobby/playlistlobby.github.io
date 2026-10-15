@@ -291,7 +291,7 @@
  },
  "T0059": {
   "en": "He doesn't sell that.",
-  "da": "Han sælger ikke det der.",
+  "da": "Det sælger han ikke.",
   "where": "server/src/actions/shop.ts:15  |  server/src/actions/shop.ts:17"
  },
  "T0060": {
@@ -5978,5 +5978,205 @@
   "en": "Grow some shit",
   "da": "Gro noget shi",
   "where": "src/items.ts"
+ },
+ "N085": {
+  "en": "Knife: click it, then a player. CD: click it, then the CD player. Syringe: just click it.",
+  "da": "Kniv: klik på den, så en spiller. CD: klik på den, så CD afspilleren. Sprøjte: bare klik på den.",
+  "where": "src/ui/sidepanel.ts:46"
+ },
+ "N086": {
+  "en": "A yellow CD. Use it on a boombox: Åhmingud plays. It comes back when it's done.",
+  "da": "En gul CD. Brug den på en boombox: Åhmingud spiller. Den kommer tilbage når den er færdig.",
+  "where": "src/items.ts"
+ },
+ "N087": {
+  "en": "A green CD. Use it on a boombox: Blodig oktober plays. It comes back when it's done.",
+  "da": "En grøn CD. Brug den på en boombox: Blodig oktober spiller. Den kommer tilbage når den er færdig.",
+  "where": "src/items.ts"
+ },
+ "N088": {
+  "en": "A blue CD. Use it on a boombox: Blod ud af næsen plays. It comes back when it's done.",
+  "da": "En blå CD. Brug den på en boombox: Blod ud af næsen spiller. Den kommer tilbage når den er færdig.",
+  "where": "src/items.ts"
+ },
+ "N089": {
+  "en": "A red CD with the whole album on it. Put it in a boombox and skip from song to song. It comes back when the last song is done.",
+  "da": "En rød CD med hele albummet på. Sæt den i en boombox og skip fra sang til sang. Den kommer tilbage når den sidste sang er færdig.",
+  "where": "src/items.ts"
+ },
+ "N090": {
+  "en": "Full album",
+  "da": "Hele albummet",
+  "where": "src/items.ts"
+ },
+ "N091": {
+  "en": "Record player",
+  "da": "Pladespiller",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N092": {
+  "en": "Record player: CDs",
+  "da": "Pladespiller: CD'er",
+  "where": "src/ui/room.ts"
+ },
+ "N093": {
+  "en": "CDs",
+  "da": "CD'er",
+  "where": "src/ui/room.ts"
+ },
+ "N094": {
+  "en": "Sold out",
+  "da": "Udsolgt",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N095": {
+  "en": "One song, for blood. One per player.",
+  "da": "Én sang, for blod. Én pr. spiller.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N096": {
+  "en": "Mystery CD",
+  "da": "Mystery CD",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N097": {
+  "en": "You have all three. There are none left.",
+  "da": "Du har alle tre. Der er ikke flere tilbage.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N098": {
+  "en": "A CD with one of three songs. You never get the same one twice. Real money.",
+  "da": "En CD med en af tre sange. Du får aldrig den samme to gange. Rigtige penge.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N099": {
+  "en": "It's in your pocket (or in a player).",
+  "da": "Den er i din lomme (eller i en afspiller).",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N100": {
+  "en": "A red CD with the whole album. Skip and go back from song to song. Real money.",
+  "da": "En rød CD med hele albummet. Skip og gå tilbage fra sang til sang. Rigtige penge.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N101": {
+  "en": "Real money is paid on a payment page, and you come back to the game afterwards.",
+  "da": "Rigtige penge betales på en betalingsside, og bagefter kommer du tilbage til spillet.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N102": {
+  "en": "The CD was added to your inventory.",
+  "da": "CD'en blev lagt i din inventory.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N103": {
+  "en": "The payment was cancelled. Nothing was charged.",
+  "da": "Betalingen blev annulleret. Der blev ikke trukket noget.",
+  "where": "src/payReturn.ts"
+ },
+ "N104": {
+  "en": "Your pockets are full. Make room, and your CD arrives next time you log in.",
+  "da": "Dine lommer er fulde. Gør plads, så kommer din CD næste gang du logger ind.",
+  "where": "src/payReturn.ts"
+ },
+ "N105": {
+  "en": "Your payment is on its way. The CD arrives as soon as it has been received (log in again if it takes long).",
+  "da": "Din betaling er på vej. CD'en kommer så snart den er modtaget (log ind igen hvis det tager lang tid).",
+  "where": "src/payReturn.ts"
+ },
+ "N106": {
+  "en": "Payments aren't set up yet.",
+  "da": "Betaling er ikke sat op endnu.",
+  "where": "server/src/pay.ts"
+ },
+ "N107": {
+  "en": "You already have the full album.",
+  "da": "Du har allerede hele albummet.",
+  "where": "server/src/pay.ts"
+ },
+ "N108": {
+  "en": "You're already buying the album. Finish that first.",
+  "da": "Du er allerede ved at købe albummet. Gør det færdigt først.",
+  "where": "server/src/pay.ts"
+ },
+ "N109": {
+  "en": "You have all three mystery CDs. There are none left.",
+  "da": "Du har alle tre mystery CD'er. Der er ikke flere tilbage.",
+  "where": "server/src/pay.ts"
+ },
+ "N110": {
+  "en": "You're already buying the last mystery CD. Finish that first.",
+  "da": "Du er allerede ved at købe den sidste mystery CD. Gør det færdigt først.",
+  "where": "server/src/pay.ts"
+ },
+ "N111": {
+  "en": "That CD only has one song.",
+  "da": "Den CD har kun én sang.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N112": {
+  "en": "That's the last song.",
+  "da": "Det er den sidste sang.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N113": {
+  "en": "The song isn't over yet.",
+  "da": "Sangen er ikke slut endnu.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N114": {
+  "en": "Hash",
+  "da": "Hash",
+  "where": "src/items.ts"
+ },
+ "N115": {
+  "en": "Ass weed pressed together with kodimagnyl. Mix it with a cigarette in the mixer to get hash mix.",
+  "da": "Ass weed presset sammen med kodimagnyl. Mix den med en cigaret i mixeren for at få hash mix.",
+  "where": "src/items.ts"
+ },
+ "N116": {
+  "en": "Hash mix",
+  "da": "Hash mix",
+  "where": "src/items.ts"
+ },
+ "N117": {
+  "en": "Hash crumbled into tobacco. Select it, then click joint paper to roll a hash joint.",
+  "da": "Hash krummet ud i tobak. Vælg den, klik så på joint papir for at rulle en hash joint.",
+  "where": "src/items.ts"
+ },
+ "N118": {
+  "en": "Hash joint",
+  "da": "Hash joint",
+  "where": "src/items.ts"
+ },
+ "N119": {
+  "en": "A joint rolled from hash mix. Click it to light up (you need a lighter). Hearts float over your head while you smoke, and stabs give triple blood for 2 minutes.",
+  "da": "En joint rullet af hash mix. Klik på den for at tænde (du skal bruge en lighter). Hjerter svæver over dit hoved mens du ryger, og stik giver tredobbelt blod i 2 minutter.",
+  "where": "src/items.ts"
+ },
+ "N120": {
+  "en": "Ass weed and kodimagnyl, pressed together: 1 hash.",
+  "da": "Ass weed og kodimagnyl, presset sammen: 1 hash.",
+  "where": "src/shared/items.ts"
+ },
+ "N121": {
+  "en": "You crumble the hash into the tobacco: 2 hash mix.",
+  "da": "Du krummer hashen ud i tobakken: 2 hash mix.",
+  "where": "src/shared/items.ts"
+ },
+ "N122": {
+  "en": "He pays 1 drop for 2.",
+  "da": "Han giver 1 dråbe for 2.",
+  "where": "src/ui/sixtyShop.ts"
+ },
+ "N123": {
+  "en": "Needs 2",
+  "da": "Skal bruge 2",
+  "where": "src/ui/sixtyShop.ts"
+ },
+ "N124": {
+  "en": "He wants them in twos.",
+  "da": "Han vil have dem to ad gangen.",
+  "where": "server/src/actions/shop.ts"
  }
 }

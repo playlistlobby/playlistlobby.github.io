@@ -12,6 +12,12 @@ export interface Env {
   ADMIN_EMAIL: string;
   /** secret: the Firebase service-account key (JSON) the server uses to write to the database */
   FIREBASE_SA_JSON?: string;
+  /** secret: Stripe's secret key (sk_test_... while testing, sk_live_... later). Without it the pay button says payments aren't set up. */
+  STRIPE_SECRET_KEY?: string;
+  /** secret: the signing secret (whsec_...) of the Stripe webhook that points at /pay/webhook */
+  STRIPE_WEBHOOK_SECRET?: string;
+  /** where Stripe sends people back to: the game's address with a trailing slash */
+  PUBLIC_URL?: string;
 }
 
 export const isEmulator = (env: Env): boolean => env.ENV === "emulator";

@@ -3,3 +3,5 @@ ENV=emulator
 FIREBASE_PROJECT_ID=demo-hotel
 DB_URL=http://127.0.0.1:9000
 DB_NS=demo-hotel-default-rtdb
+# a made-up signing secret so the tests can sign fake Stripe webhooks (the real one comes from the Stripe dashboard, as a Worker secret)
+STRIPE_WEBHOOK_SECRET=whsec_local_test_secret

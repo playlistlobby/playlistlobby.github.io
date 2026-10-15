@@ -18,7 +18,7 @@ import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
 import { plantThirsty, plantWatered } from "../db";
 import { giveCommand } from "../db";
-import { canStab, carveCat, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, CAT_BLOOD, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
+import { canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
@@ -26,7 +26,8 @@ import { LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSix
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
 import { BLOOD_ICON, findSlot, GROW_MS, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
-import { CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
+import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
+import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
 import {
@@ -67,6 +68,7 @@ import { derive, loadNitro, NitroFurni, nitroIfReady, spritesFor } from "../nitr
 import { onFurniShopChanged, picksToday, priceOf } from "../furniShop";
 import { FurniBuyApi, openFurniBuy } from "./furniBuy";
 import { openVending, VendingApi } from "./vendingShop";
+import { openRecordShop, RecordShopApi } from "./recordShop";
 import { MixerApi, openMixer } from "./mixer";
 import { LandlordApi, openLandlord } from "./landlord";
 import { consumeItem } from "../db";
@@ -237,7 +239,6 @@ void loadNitro(KNIFE_NITRO);
 const bloodImg = loadImg(BLOOD_ICON);
 const syringeImg = loadImg(ITEMS.syringe.icon);
 const cigaretteImg = loadImg(ITEMS.cigarette.icon);
-const deadcatImg = loadImg(ITEMS.deadcat.icon);
 const burgerImg = loadImg(ITEMS.burger.icon);
 
 /** Where the lying avatar's 110x64 picture sits relative to the bed-head tile's floor point (tuned by eye against the bed art). */
@@ -304,6 +305,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let hoverExtra = -1;
   let furniBuyApi: FurniBuyApi | null = null;
   let vendingApi: VendingApi | null = null;
+  let recordApi: RecordShopApi | null = null;
   let landlordApi: LandlordApi | null = null;
   let landlordBubble: Bubble | null = null;
   let landlordLast: HTMLCanvasElement | undefined;
@@ -401,7 +403,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       } else if (furnishOn && slot === null && fzPlacing?.source === "inv") { fzPlacing = null; furnishUi?.refresh(); }
     },
     onEmote: (id) => performEmote(id),
-    onCarve: (slot) => { void carveDeadCat(slot); },
     onUseSelf: (what, slot) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
     onCombine: (a, b) => { void combineSlots(me, a, b).then((note) => { panel.refresh(); say(note); }, (err) => say((err as Error).message, "warn")); },
@@ -438,6 +439,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && isDisplayPiece(hoverObj.id)) text = `${FURNI_KINDS[hoverObj.kind!].label} · ${priceOf(hoverObj.kind!)} drops (click to buy)`;
     else if (hoverObj && hoverObj.kind === "wardrobe") text = "Wardrobe: the clothing shop";
     else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
+    else if (hoverObj && hoverObj.kind === "recordplayer") text = "Record player: CDs";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && isBodyBag(hoverObj.kind)) text = "Body bag: use a syringe on it";
@@ -692,7 +694,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "f_mixer") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "f_mixer") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "landlord") startLandlord();
@@ -736,6 +738,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
     if (obj && FURNI_KINDS[obj.kind!]?.seat && !isDisplayPiece(obj.id)) opts.push({ label: "Sit", target: FURNI_KINDS[obj.kind!].label, action: () => sitAt(obj.id, tile) });
     if (obj?.kind === "vending") opts.push({ label: "Shop", target: "Vending machine", action: () => startBag(obj.id) });
+    if (obj?.kind === "recordplayer") opts.push({ label: "CDs", target: "Record player", action: () => startBag(obj.id) });
     if (obj && isBodyBag(obj.kind) && !isDisplayPiece(obj.id)) opts.push({ label: "Draw blood", target: "Body bag", action: () => startUse(obj.id, null) });
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
@@ -1181,7 +1184,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** Walk over to a piece you're using something on (or just tending); `slot` is the pocket item you had selected. */
+  /** Tapping the next thing you want to use closes the window of the last one (the mixer, the shops...), so you never have to close it by hand first. */
+  function closeToolWindows(): void {
+    mixerApi?.close();
+    vendingApi?.close();
+    recordApi?.close();
+    landlordApi?.close();
+    sixtyShop?.close();
+  }
+
   function startUse(fid: string, slot: number | null): void {
+    closeToolWindows();
     pending = { type: "use", fid, since: performance.now(), lastTry: 0, slot };
     clearSelection();
   }
@@ -1275,42 +1288,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const found = foundAll[0];
       panel.refresh();
       playSfx("give", 0.6);
-      const FOUND: Record<string, string> = { deadcat: "Under the bin bags: a dead cat. Poor thing.", burger: "A burger, hardly bitten. Lucky you.", weedseed: "A few little seeds in the muck. They might grow.", lighter: "A lighter, and it still works!", kodimagnyl: "A blister of blue pills: kodimagnyl.", shroomspore: "A pinch of spores in the muck. They might grow." };
+      const FOUND: Record<string, string> = { burger: "A burger, hardly bitten. Lucky you.", weedseed: "A few little seeds in the muck. They might grow.", lighter: "A lighter, and it still works!", kodimagnyl: "A blister of blue pills: kodimagnyl.", shroomspore: "A pinch of spores in the muck. They might grow." };
       giftPop(`+1 ${itemDef(found)?.name ?? found}`, itemImg(found));
       say(FOUND[found] ?? `You find a ${itemDef(found)?.name ?? found}.`);
       foundAll.slice(1).forEach((extra, i) => {
         window.setTimeout(() => { if (!disposed) giftPop(`+1 ${itemDef(extra)?.name ?? extra}`, itemImg(extra)); }, 600 * (i + 1));
         say(`The lean pays off: you find a ${itemDef(extra)?.name ?? extra} as well.`);
       });
-      if (found === "deadcat" && me.catsCarved < 2) say("Tap the glowing knife, then the glowing cat.");
       logAction(me, "room", `searched a garbage can and found a ${found}`);
     } catch (err) {
       say((err as Error).message || "You find nothing but rot.", "warn");
     } finally {
       searching = false;
-    }
-  }
-
-  /** the knife on a dead cat from your inventory: +5 drops of blood, the cat is used up */
-  async function carveDeadCat(slot: number): Promise<void> {
-    if (me.inventory[slot]?.item !== "deadcat") return;
-    if (findSlot(me.inventory, "knife") < 0) return say("You've got nothing to cut it with.", "warn");
-    try {
-      await carveCat(me, slot);
-      clearSelection();
-      ctx.refreshHeader();
-      panel.refresh();
-      playSfx("stab", 0.5);
-      const p = mine();
-      if (p) {
-        const t = performance.now();
-        const fp = feetOf(p, t);
-        floaters.push({ text: `+${CAT_BLOOD}`, x: fp.x, y: fp.y - 70 * scale, born: t, color: "#ff5252", icon: bloodImg, life: 1700 });
-      }
-      logAction(me, "stab", `cut open a dead cat (+${CAT_BLOOD})`);
-      say(`You open the cat up with your knife. It's still a little warm. (+${CAT_BLOOD})`);
-    } catch {
-      say("The cat slips away… (the hotel refused it)", "warn");
     }
   }
 
@@ -1320,6 +1309,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** Walk over to the bag of clothes; processPending opens the Character page once you're next to it. */
   function startBag(fid: string): void {
+    closeToolWindows();
     clearSelection();
     pending = { type: "bag", fid, since: performance.now(), lastTry: 0 };
   }
@@ -1512,6 +1502,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const opens = FURNI_KINDS[f.kind].opens;
         if (opens === "furnish") enterFurnish();
         else if (opens === "vending") openVendingShop();
+        else if (opens === "records") { if (!recordApi) recordApi = openRecordShop(stage, ctx, () => panel.refresh(), () => { recordApi = null; }); }
         else if (opens === "mixer") { if (!mixerApi) mixerApi = openMixer(stage, ctx, f.id, def.id, () => panel.refresh(), () => { mixerApi = null; }); }
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
       }
@@ -1552,7 +1543,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     pause: h("button", { class: "btn small", onclick: () => void cdControlOp(cdState?.pausedAt ? "play" : "pause") }, "Pause"),
     restart: h("button", { class: "btn small", onclick: () => void cdControlOp("restart") }, "Play from start"),
     eject: h("button", { class: "btn small danger", onclick: () => void ejectCd() }, "Eject"),
+    prev: h("button", { class: "btn small", title: "Back", onclick: () => void albumOp("prev") }, "⏮"),
+    next: h("button", { class: "btn small", title: "Skip", onclick: () => void albumOp("next") }, "⏭"),
   };
+  /** the full album: the song before, or the next one */
+  async function albumOp(op: "prev" | "next"): Promise<void> {
+    const s = cdState;
+    if (!s || s.track !== "album") return;
+    try { await albumStep(me, roomId, op, s.index ?? 0); } catch (err) { say((err as Error).message || "That didn't work.", "warn"); }
+  }
   /** the buttons in the player's window (for whoever put the CD in, and the owner of the room) */
   async function cdControlOp(op: "pause" | "play" | "restart"): Promise<void> {
     try { await controlCd(me, roomId, op); } catch (err) { say((err as Error).message || "That didn't work.", "warn"); }
@@ -1561,7 +1560,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function refreshCdPopup(): void {
     if (!cdPopup) return;
     const s = cdState && !cdEnded(cdState) ? cdState : null;
-    cdUi.title.textContent = s ? `♪ ${s.title}` : "Nothing playing";
+    cdUi.title.textContent = s ? `♪ ${s.title}${s.track === "album" ? ` (${(s.index ?? 0) + 1}/${ALBUM_TRACKS.length})` : ""}` : "Nothing playing";
     cdUi.status.textContent = s ? `Put in by ${s.byName}` : "Use a CD from your inventory on the player.";
     const total = s ? (s.durationMs ?? s.endsAt - s.startedAt) : 0;
     const pos = s ? Math.min(total, cdPositionMs(s)) : 0;
@@ -1572,6 +1571,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const mayControl = !!s && (s.by === me.uid || isOwner());
     cdUi.eject.classList.toggle("hidden", !mayControl);
     cdUi.pause.classList.toggle("hidden", !mayControl);
+    const isAlbum = !!s && s.track === "album";
+    cdUi.prev.classList.toggle("hidden", !(mayControl && isAlbum));
+    cdUi.next.classList.toggle("hidden", !(mayControl && isAlbum && (s!.index ?? 0) < ALBUM_TRACKS.length - 1));
     cdUi.restart.classList.toggle("hidden", !mayControl);
     cdUi.pause.textContent = s?.pausedAt ? "Resume" : "Pause";
   }
@@ -1609,14 +1611,21 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         h("button", { class: "btn small", title: "Louder", onclick: () => step(0.1) }, "+"),
         cdUi.mute),
       h("div", { class: "hint" }, "Volume is just for you. Other players keep their own."),
-      h("div", { class: "cd-row" }, cdUi.pause, cdUi.restart, cdUi.eject));
+      h("div", { class: "cd-row" }, cdUi.prev, cdUi.pause, cdUi.next, cdUi.restart, cdUi.eject));
     stage.append(el);
     cdPopup = { el, timer: window.setInterval(refreshCdPopup, 500) };
     refreshCdPopup();
   }
 
+  /** the CD to put in the player: the selected one, else the first one that isn't in a player already */
+  function findCdSlot(): number {
+    const ok = (i: number | null): i is number => i !== null && !!me.inventory[i] && isCdItem(me.inventory[i]!.item) && !me.inventory[i]!.inPlayer;
+    if (ok(selectedSlot)) return selectedSlot;
+    return me.inventory.findIndex((s) => !!s && isCdItem(s.item) && !s.inPlayer);
+  }
+
   function startCd(fid: string): void {
-    if (findSlot(me.inventory, "cd") < 0) { clearSelection(); return say("Your CD is already in the player.", "warn"); }
+    if (findCdSlot() < 0) { clearSelection(); return say("Your CD is already in the player.", "warn"); }
     if (cdPlaying()) { clearSelection(); return say(`The CD player is busy playing ${cdState!.byName}'s CD.`, "warn"); }
     pending = { type: "cd", fid, since: performance.now(), lastTry: 0 };
     clearSelection();
@@ -1627,7 +1636,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (cdInserting) return;
     cdInserting = true;
     try {
-      const slot = findSlot(me.inventory, "cd");
+      const slot = findCdSlot();
       if (slot < 0) return;
       if (cdPlaying()) return say(`The CD player is busy playing ${cdState!.byName}'s CD.`, "warn");
       await insertCd(me, slot, roomId);
@@ -1665,7 +1674,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** Anyone may clear a CD that has finished; this also keeps a stuck CD from blocking the player. */
+  let albumAdvancing = false;
   function tickCd(): void {
+    // the full album: when a song has finished somebody's browser moves it on (the first one wins, the others see the new song and do nothing)
+    const cs = cdState;
+    if (cs && cs.track === "album" && !cs.pausedAt && (cs.index ?? 0) < ALBUM_TRACKS.length - 1 && serverNow() >= cs.endsAt - 400 && !cdEnded(cs) && !albumAdvancing) {
+      albumAdvancing = true;
+      void albumStep(me, roomId, "advance", cs.index ?? 0).catch(() => undefined).finally(() => setTimeout(() => { albumAdvancing = false; }, 2500));
+    }
     if (cdState && cdEnded(cdState) && !cdClearing) {
       cdClearing = true;
       clearCdPlayer(roomId).catch(() => undefined).finally(() => setTimeout(() => { cdClearing = false; }, 3000));
@@ -1842,6 +1858,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function startLandlord(): void {
+    closeToolWindows();
     clearSelection();
     pending = { type: "landlord", since: performance.now(), lastTry: 0 };
   }
@@ -1919,11 +1936,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const knife = findSlot(me.inventory, "knife");
     const pill = findSlot(me.inventory, "pill");
     if (!isTut) {
-      // the first two dead cats you carry: the cat and the knife glow (tap the knife, then the cat)
-      const cat = findSlot(me.inventory, "deadcat");
       const can = sinkHintOn() ? findSlot(me.inventory, "wateringcan") : -1;
-      if (me.catsCarved < 2 && cat >= 0 && knife >= 0) panel.guide(selectedSlot === knife ? [cat] : [cat, knife]);
-      else if (can >= 0 && selectedSlot !== can) panel.guide(can); // the empty watering can glows (and so does the sink) for your first three fills
+      if (can >= 0 && selectedSlot !== can) panel.guide(can); // the empty watering can glows (and so does the sink) for your first three fills
       else panel.guide(null);
       return;
     }
@@ -2340,11 +2354,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     unsubs.push(() => window.clearInterval(burnTimer));
     const awayTimer = window.setInterval(() => {
       const p = mine();
-      if (!p || (!landlordApi && !vendingApi)) return;
+      if (!p || (!landlordApi && !vendingApi && !recordApi)) return;
       const t = currentTile(p);
       if (landlordApi && cheb(t, { x: LANDLORD.x, y: LANDLORD.y }) > 3) landlordApi.close();
       const vm = def.furni.find((f) => f.kind === "vending");
       if (vendingApi && vm && cheb(t, vm) > 3) vendingApi.close();
+      const rp = def.furni.find((f) => f.kind === "recordplayer");
+      if (recordApi && rp && cheb(t, rp) > 3) recordApi.close();
     }, 300);
     unsubs.push(() => window.clearInterval(awayTimer));
     unsubs.push(watchDrops(roomId, (m) => { drops = m; sweepExpired(roomId, m.values()); }));
@@ -2661,9 +2677,26 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const holdsKnife = (p: Player, now: number): boolean =>
     (p.uid === me.uid && selectedDef()?.useOnPlayer === "stab") || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
 
+  /** Little hearts that drift up over a player's head (a hash joint). (fx, fy) = the player's feet. */
+  function drawHearts(fx: number, fy: number, now: number): void {
+    const HEARTS = ["❤️", "💕", "💗", "💖"];
+    g.save();
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    for (let i = 0; i < 5; i++) {
+      const t = (now / 2600 + i / 5) % 1;
+      const x = fx + Math.sin(t * 7 + i * 2.3) * 11 * scale;
+      const y = fy - (FEET_Y + 4) * scale - t * 34 * scale;
+      g.globalAlpha = Math.min(1, t * 6) * (1 - t * t);
+      g.font = `${Math.round((11 + (i % 3) * 3) * Math.max(1, scale))}px sans-serif`;
+      g.fillText(HEARTS[(i + Math.floor(now / 2600)) % HEARTS.length], x, y);
+    }
+    g.restore();
+  }
+
   /** A cigarette at the mouth and a thin stream of smoke rising from the tip. (fx, fy) = the player's feet, `dir` the way they face. */
   function drawCigarette(fx: number, fy: number, dir: number, now: number, kind?: string): void {
-    const blunt = kind === "blunt", joint = kind === "joint";
+    const blunt = kind === "blunt", joint = kind === "joint" || kind === "hashjoint";
     const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0; // which side of the face the cigarette sticks out on
     const s = scale;
     const mx = fx + side * 5 * s;                 // the mouth
@@ -2787,7 +2820,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
       const glowSink = k.opens === "sink" && sinkHintOn();
-      if (b && k.opens && (k.opens !== "sink" || glowSink) && (isOwnRoom || k.opens === "shop" || k.opens === "vending")) {
+      if (b && k.opens && (k.opens !== "sink" || glowSink) && (isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || (pending?.type === "bag" && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -2814,7 +2847,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const noHint = k.opens === "mixer" || k.opens === "sink"; // the mixer and the sink glow like the rest, but have no little icon floating over them
+        const noHint = k.opens === "mixer" || k.opens === "sink" || k.opens === "records"; // the mixer and the sink glow like the rest, but have no little icon floating over them
         const showHanger = !noHint && (!me.seenDoor || hot);
         const hint = k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
@@ -3301,7 +3334,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -3531,6 +3564,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
           }
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
+          if (smoking && p.smokeKind === "hashjoint") drawHearts(feet.x + lunge.x, feet.y + lunge.y + lift, now); // the hash joint: hearts float up over the head
           if (knifeOut && !knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           if (cupOut && !cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           // name plate (highlighted while it's a valid stab target)
@@ -3630,6 +3664,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     doorApi?.close();
     furniBuyApi?.close();
     vendingApi?.close();
+    recordApi?.close();
     landlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();
@@ -3661,6 +3696,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       sixtyShop?.close();
       furniBuyApi?.close();
       vendingApi?.close();
+      recordApi?.close();
       exitFurnish();
       closeCdPopup();
       closeMenu();

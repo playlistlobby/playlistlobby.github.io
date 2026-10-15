@@ -2,7 +2,7 @@
 import { Action, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { STARTER_FURNITURE, STARTER_ITEMS, START_BLOOD } from "../../../src/shared/economy";
-import { addToInv } from "../../../src/shared/economy";
+import { addToInv, mergeStacks } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, ITEM_IDS, SMOKABLE, smokeMsOf } from "../../../src/shared/items";
 
 const CLOTHING_SLOTS = new Set(["hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", "cp", "ca", "lg", "sh", "wa"]);
@@ -24,6 +24,7 @@ export const sync: Action = {
     }
     // a cigarette lit long ago (the page was closed meanwhile) is a butt by now
     s.inventory = s.inventory.map((it) => (it && SMOKABLE[it.item] && it.lit && c.now - it.lit > smokeMsOf(it.item) + 5000 ? { item: "cigbutt", qty: 1 } : it));
+    s.inventory = mergeStacks(s.inventory); // things that stack now (butts) but were lying about one to a slot
     if (raw.blood === undefined) s.blood = START_BLOOD;
     if (raw.createdAt === undefined) c.extra[`users/${c.uid}/createdAt`] = c.now;
     return {};

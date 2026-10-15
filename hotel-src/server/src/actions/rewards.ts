@@ -2,7 +2,7 @@
 import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from "./util";
 import { fail } from "../ctx";
 import {
-  addToInv, CAT_BLOOD, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { combine, findSlot, GROW_MS, SMOKABLE, smokeMsOf, WATER_MS } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
@@ -63,20 +63,6 @@ export const flappy: Action = {
     if (c.now - w.s.flappyAt < FLAPPY_GAP_MS) fail("Too soon.");
     w.s.blood += 1;
     w.s.flappyAt = c.now;
-    return {};
-  },
-};
-
-/** Cuts a dead cat open with the knife. */
-export const carve: Action = {
-  async run(c, a) {
-    const w = await c.user();
-    const slot = int(a.slot, 0, 27, "slot");
-    if (w.s.inventory[slot]?.item !== "deadcat") fail("That isn't a dead cat");
-    if (findSlot(w.s.inventory, "knife") < 0) fail("You've got nothing to cut it with.");
-    w.s.inventory = takeOneFrom(w.s.inventory, slot);
-    w.s.blood += CAT_BLOOD;
-    w.s.catsCarved += 1;
     return {};
   },
 };

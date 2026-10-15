@@ -9,7 +9,7 @@ import {
 
 // The numbers of the economy live in shared/economy.ts (the server uses the very same ones).
 export {
-  BULK_AT, CAT_BLOOD, DAY_MS, DROP_LIFE_BULK_MS, DROP_LIFE_MS, DUMPSTER_DROPS, DUMPSTER_MS, FIRST_BLOOD, FLAPPY_GAP_MS, JOB_DELAY_MS, JOB_REWARD, MAX_FURNI,
+  BULK_AT, DAY_MS, DROP_LIFE_BULK_MS, DROP_LIFE_MS, DUMPSTER_DROPS, DUMPSTER_MS, FIRST_BLOOD, FLAPPY_GAP_MS, JOB_DELAY_MS, JOB_REWARD, MAX_FURNI,
   STARTER_FURNITURE, STARTER_ITEMS, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, SYRINGE_BLOOD, SYRINGE_CD_MS, addToInv, takeOneFrom, takeQtyFrom,
 } from "./shared/economy";
 export type { Plant } from "./shared/economy";
@@ -226,6 +226,17 @@ export async function buyStock(p: Profile, id: string): Promise<void> {
   await call(p, "buyVending", { id });
 }
 
+/** The Freakme CD from the record player in the shop, for blood (once per player). */
+export async function buyRecordCd(p: Profile): Promise<void> {
+  await call(p, "buyRecord", {});
+}
+
+/** Hands over the CDs that have been paid for (the payment may take a few seconds to arrive). Resolves with the item ids that landed in the pocket. */
+export async function claimPurchases(p: Profile): Promise<{ items: string[]; full: boolean }> {
+  const r = await call<{ items?: string[]; full?: boolean }>(p, "claimPurchases", {});
+  return { items: r.items ?? [], full: !!r.full };
+}
+
 /** Buys the next room upgrade from the landlord (the server checks the price and makes the room bigger). Resolves with the new size. */
 export async function buyRoomUpgrade(p: Profile): Promise<number> {
   return Number((await call<{ size?: number }>(p, "buyRoomUpgrade", {})).size) || 0;
@@ -289,7 +300,6 @@ export async function harvestPlant(p: Profile, _roomId: string, fid: string, _pl
   const r = await call<{ ass?: boolean; crop?: string; qty?: number }>(p, "harvest", { fid });
   return { ass: !!r.ass, crop: r.crop, qty: r.qty };
 }
-export const carveCat = (p: Profile, slot: number): Promise<unknown> => call(p, "carve", { slot });
 
 // ---- blood ---------------------------------------------------------------------------------------------------------------
 /** Banks the blood for stabbing `targetUid` in `roomId` (the server checks the room, the distance and the once-a-day rule). Returns what it was worth. */

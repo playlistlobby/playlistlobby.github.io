@@ -38,7 +38,7 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
@@ -95,6 +95,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   boombox: { id: "boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true, fixed: true },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
+  // the record player on the counter at the left of the shop room: the CDs are sold here
+  recordplayer: { id: "recordplayer", label: "Record player", icon: "💿", w: 1, h: 1, height: 30, color: "#3a3a44", placeable: false, nitro: "furni/recordplayer.nitro", rotatable: true, fixed: true, opens: "records", nudge: { x: 0, y: -26 } },
   // the landlord's counter in the corner of the shop room
   counter: { id: "counter", label: "Counter", icon: "🧾", w: 1, h: 2, height: 30, color: "#6b5a48", placeable: false, nitro: "furni/f_counter.nitro", rotatable: true, fixed: true },
   // the wardrobe in the shop room: click it and the clothing shop opens
@@ -249,6 +251,8 @@ export function shopDef(picks: string[]): RoomDef {
     { id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 4 }, { id: "shop_vending", kind: "vending", x: 8, y: 0, dir: 4 },
     // the landlord's counter in the right corner: he stands behind it (see LANDLORD in npc.ts)
     { id: "shop_counter", kind: "counter", x: 13, y: 1, dir: 2 },
+    // the counter on the left with the record player on it: mystery CDs, the album and the Freakme CD
+    { id: "shop_counter2", kind: "counter", x: 0, y: 5, dir: 4 }, { id: "shop_records", kind: "recordplayer", x: 0, y: 6, dir: 4 },
   ];
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;

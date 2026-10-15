@@ -4,6 +4,7 @@ import { SIXTY, watchSixtyLook } from "./npc";
 import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
 import { createProfile, loadProfile, Profile, watchEconomy } from "./db";
+import { collectPaidCds } from "./payReturn";
 import { publishPriceBook } from "./priceBook";
 import { avatarsReady } from "./avatarService";
 import { loadCatalog } from "./catalog";
@@ -283,6 +284,7 @@ async function showHotel(user: User): Promise<void> {
   for (const room of [LOBBY_ID, ownRoomId(p.uid), tutRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
   logAction(p, "login", "opened 6ixPlanet");
   const stopMessenger = mountMessenger(shell, ctx);
+  void collectPaidCds(p); // back from the payment page, or an earlier payment still waiting: the CD is handed over
   const stopTrades = mountTrades(ctx);
   // 10 minutes without touching anything: marked idle (the door's room list says so) and sent home to your own room
   const stopIdle = watchIdle(p, () => {

@@ -26,6 +26,22 @@ async function call(action: string, args: object, forceToken: boolean): Promise<
   }
 }
 
+/** Starts paying real money for a CD: resolves with the address of the payment page (Stripe), where the player is sent. */
+export async function startPayment(product: "mystery" | "album"): Promise<string> {
+  const user = auth.currentUser;
+  if (!user) throw new ApiError("Please log in again.", 401);
+  let r: Response;
+  try {
+    r = await fetch(`${base()}/pay/checkout`, { method: "POST", headers: { authorization: `Bearer ${await user.getIdToken()}`, "content-type": "application/json" }, body: JSON.stringify({ product }) });
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError("Can't reach the game server. Check your connection.", 0);
+  }
+  const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; url?: string } | null;
+  if (!j || !j.ok || !j.url) throw new ApiError(trServer(j?.error ?? "The server had a problem. Try again."), r.status);
+  return j.url;
+}
+
 /** Asks the server to do something. Resolves with the player's new state; rejects with a message that can be shown to the player. */
 export async function act<T = Record<string, any>>(action: string, args: object = {}): Promise<{ state: Snapshot; data: T }> {
   let r = await call(action, args, false);

@@ -1,5 +1,6 @@
 // The public face of the server: CORS, who is asking, then hand the request to the economy.
 import { verifyToken } from "./auth";
+import { handleWebhook, PayError, startCheckout } from "./pay";
 import type { Env } from "./env";
 export { Economy } from "./economy";
 
@@ -25,6 +26,24 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     const url = new URL(request.url);
     if (url.pathname === "/" || url.pathname === "/health") return reply({ ok: true });
+    // Stripe tells us a payment went through (no browser, no login: the signature is the proof)
+    if (url.pathname === "/pay/webhook" && request.method === "POST") {
+      const r = await handleWebhook(env, await request.text(), request.headers.get("stripe-signature"));
+      return new Response(r.body, { status: r.status });
+    }
+    // a player wants to pay real money: make the payment page
+    if (url.pathname === "/pay/checkout" && request.method === "POST") {
+      if (origin && !env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).includes(origin)) return reply({ ok: false, error: "Not allowed." }, 403);
+      try {
+        const who = await verifyToken((request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, ""), env);
+        const body = (await request.json().catch(() => ({}))) as { product?: unknown };
+        return reply({ ok: true, ...(await startCheckout(env, who.uid, body.product)) });
+      } catch (e) {
+        if (e instanceof PayError) return reply({ ok: false, error: e.message }, e.status);
+        console.error("checkout failed", e);
+        return reply({ ok: false, error: "Please log in again." }, 401);
+      }
+    }
     if (url.pathname !== "/act" || request.method !== "POST") return reply({ ok: false, error: "Not found." }, 404);
     // browsers from other sites can't read the answer (CORS), and the token is required anyway; still refuse unknown origins outright
     if (origin && !env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).includes(origin)) return reply({ ok: false, error: "Not allowed." }, 403);

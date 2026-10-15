@@ -29,8 +29,6 @@ export interface PanelOpts {
   onCombine(a: number, b: number): void;
   /** Drop mode: an item was picked to be put on the floor */
   onDropPick(slot: number): void;
-  /** the knife was used on a dead cat in this slot */
-  onCarve(slot: number): void;
   /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
   roomTab?: { icon: string; title: string; mount(container: HTMLElement): () => void };
 }
@@ -95,7 +93,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
   // ---- inventory -----------------------------------------------------------------------
   function selectedHint(): string {
     const it = selected !== null ? profile.inventory[selected] : null;
-    if (!it) return "Knife: click it, then a player (or a dead cat). CD: click it, then the CD player. Syringe: just click it.";
+    if (!it) return "Knife: click it, then a player. CD: click it, then the CD player. Syringe: just click it.";
     const d = itemDef(it.item);
     return d?.furniture ? "Now click a free spot in your room to put it down (R turns it)." : d?.useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
   }
@@ -113,7 +111,6 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     if (def.furniture || def.useOnObject || def.useOnPlayer || combinable) {
       out.push({ label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) });
     }
-    if (def.carvable && findSlot(profile.inventory, "knife") >= 0) out.push({ label: "Use knife", target: def.name, action: () => opts.onCarve(i) });
     return out;
   }
 
@@ -143,7 +140,6 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           // something is selected and you tap another item: use the one on the other (cut the cat, roll the weed...)
           if (selected !== null && selected !== i) {
             const sel = profile.inventory[selected];
-            if (def.carvable && sel?.item === "knife") return opts.onCarve(i);
             if (sel && slot && combine(sel, slot)) { const first = selected; setSelected(null); return opts.onCombine(first, i); }
           }
           // a tap does what the menu would offer: one option -> it happens, several -> you choose
