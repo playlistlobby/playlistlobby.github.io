@@ -725,7 +725,9 @@ console.log("--- shrooms and DMT");
   const col = await act(d, "mixCollect", { fid: "mx" });
   check("a DMT comes out", total(col.state.inventory, "dmt") === 1);
   // eating a shroom: every room is open for 3 minutes
-  const eat = await act(d, "consume", { slot: slotOf(col.state, "shroom") });
+  await owner("PUT", `users/${d.uid}/inventory/25`, { item: "shroom", qty: 1 }); // (a harvest gives only 1 now, and it went into the DMT)
+  const eatState = await state(d);
+  const eat = await act(d, "consume", { slot: slotOf(eatState, "shroom") });
   ok("eat a shroom", eat);
   check("3 minutes of open doors", eat.data.kind === "shroom" && eat.state.shroomUntil - Date.now() > 170_000 && eat.state.shroomUntil - Date.now() <= 181_000, JSON.stringify([eat.data, eat.state.shroomUntil - Date.now()]));
   // DMT: the colours, then 4 minutes of open doors and double speed
