@@ -106,7 +106,7 @@
  },
  "T0022": {
   "en": "The mixer is busy.",
-  "da": "Mixeren gør allerede sin ting",
+  "da": "Mixeren er optaget.",
   "where": "server/src/actions/mixer.ts:21"
  },
  "T0023": {
@@ -6418,5 +6418,15 @@
   "en": "A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 10 minutes and needs one watering (any time).",
   "da": "Et lille frø fra skraldespanden. Vælg det, klik så på dit growth kit for at plante det. Det gror på 10 minutter og skal vandes én gang (når som helst).",
   "where": "src/items.ts"
+ },
+ "N173": {
+  "en": "That doesn't go in the mixer.",
+  "da": "Det kan ikke komme i mixeren.",
+  "where": "src/ui/mixer.ts"
+ },
+ "N174": {
+  "en": "You're talking to 6ixty: use his window.",
+  "da": "Du taler med 6ixty: brug hans vindue.",
+  "where": "src/ui/room.ts"
  }
 }

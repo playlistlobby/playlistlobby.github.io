@@ -27,6 +27,8 @@ export interface PanelOpts {
   onUseSelf(what: "syringe" | "smoke" | "pill" | "eat" | "consume", slot: number): void;
   /** one pocket item used on another (weed + paper, ...) */
   onCombine(a: number, b: number): void;
+  /** a pocket item was tapped: return true if something else (the mixer, 6ixty's window) took the tap */
+  slotTap?(slot: number): boolean;
   /** Drop mode: an item was picked to be put on the floor */
   onDropPick(slot: number): void;
   /** an extra tab (player rooms get a "Room" tab); `mount` fills the body and returns a cleanup */
@@ -127,6 +129,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
         title: def ? (loaned ? `${def.name} (in the player)` : def.name) : "",
         onclick: (e: MouseEvent) => {
           if (!def) return;
+          if (opts.slotTap?.(i)) { playSfx("select", 0.35); return; }
           playSfx("select", 0.35);
           if (dropMode) {
             if (loaned) return opts.say(`Your ${def.name} is in the player right now.`, "warn");
@@ -150,7 +153,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
         },
         oncontextmenu: (e: MouseEvent) => {
           e.preventDefault();
-          if (!def) return;
+          if (!def || opts.slotTap?.(i)) return;
           const options = optionsFor(i);
           if (options.length) showMenu(e.clientX, e.clientY, options);
         },

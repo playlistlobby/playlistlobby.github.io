@@ -433,6 +433,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         furnishUi?.refresh();
       } else if (furnishOn && slot === null && fzPlacing?.source === "inv") { fzPlacing = null; furnishUi?.refresh(); }
     },
+    // with the mixer open a tap on a pocket item puts it in the mixer; while you trade with 6ixty the pocket does nothing (use his window)
+    slotTap: (slot) => {
+      if (mixerApi) return mixerApi.pick(slot);
+      if (sixtyShop) { say("You're talking to 6ixty: use his window.", "warn"); return true; }
+      return false;
+    },
     onEmote: (id) => performEmote(id),
     onUseSelf: (what, slot) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),

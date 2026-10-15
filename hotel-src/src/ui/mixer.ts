@@ -8,7 +8,7 @@ import { MIX_MS } from "../shared/economy";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 
-export interface MixerApi { close(): void; refresh(): void }
+export interface MixerApi { close(): void; refresh(): void; /** a pocket item was tapped while the mixer is open: it goes into the mixer (true if the mixer took it) */ pick(slot: number): boolean }
 
 interface Job { item: string; qty: number; doneAt: number; ms: number }
 
@@ -58,6 +58,21 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
         }, "Collect")));
   }
 
+  /** Puts a pocket item into the mixer (or takes it back out): the same as tapping it in the mixer's own list. */
+  function pick(slot: number): boolean {
+    if (closed) return false;
+    if (job) { toast("The mixer is busy.", "err"); return true; }
+    const s = me.inventory[slot];
+    if (!s || s.lit || s.inPlayer || !MIX_RECIPES.some((r) => r.a.item === s.item || r.b.item === s.item)) { toast("That doesn't go in the mixer.", "err"); return true; }
+    if (slot === first && second === null && s.item === "cigbutt" && s.qty >= 2) second = slot; // two butts out of the same stack
+    else if (slot === first) { first = second === slot ? null : first === slot && second !== null ? second : null; second = null; }
+    else if (slot === second) second = null;
+    else if (first === null) first = slot;
+    else if (second === null) second = slot;
+    else { first = second; second = slot; }
+    render();
+    return true;
+  }
   function render(): void {
     if (closed) return;
     if (job) return renderJob(job);
@@ -78,15 +93,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
         return h("button", {
           class: "inv-slot filled" + (on ? " selected" : ""),
           title: d.name + (s!.ass ? " (ass)" : ""),
-          onclick: () => {
-            if (slot === first && second === null && s!.item === "cigbutt" && s!.qty >= 2) second = slot; // two butts out of the same stack
-            else if (slot === first) { first = second === slot ? null : first === slot && second !== null ? second : null; second = null; }
-            else if (slot === second) second = null;
-            else if (first === null) first = slot;
-            else if (second === null) second = slot;
-            else { first = second; second = slot; }
-            render();
-          },
+          onclick: () => pick(slot),
         }, h("img", { src: d.icon, alt: d.name, draggable: false }), ...(s!.qty > 1 ? [h("span", { class: "qty" }, String(s!.qty))] : []), ...(s!.ass ? [h("span", { class: "ass-tag" }, "ass")] : []));
       })),
       h("div", { class: "mixer-line" }, `${label(first)}  +  ${label(second)}`),
@@ -115,5 +122,5 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
     el.remove();
     onClose();
   }
-  return { close, refresh: render };
+  return { close, refresh: render, pick };
 }

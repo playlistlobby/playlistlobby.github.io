@@ -194,5 +194,8 @@ set("The shroom is chopped into the weed: 2 chud mix.", "Shroomen hakkes ud i we
 set("Mix with water", "Mix med vand", "src/items.ts");
 set("You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.", "Du skubber et frø ned i jorden. Det tager 10 minutter at gro, og det skal vandes én gang: vand det når som helst.", "src/ui/room.ts");
 set("A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 10 minutes and needs one watering (any time).", "Et lille frø fra skraldespanden. Vælg det, klik så på dit growth kit for at plante det. Det gror på 10 minutter og skal vandes én gang (når som helst).", "src/items.ts");
+set("That doesn't go in the mixer.", "Det kan ikke komme i mixeren.", "src/ui/mixer.ts");
+set("The mixer is busy.", "Mixeren er optaget.", "src/ui/mixer.ts");
+set("You're talking to 6ixty: use his window.", "Du taler med 6ixty: brug hans vindue.", "src/ui/room.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);
