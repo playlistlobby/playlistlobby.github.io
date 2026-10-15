@@ -4,7 +4,7 @@ import { Action, ID_RE, int, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, MAX_FURNI, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
-import { SHIPPED_DIMS } from "../../../src/shared/furniture";
+import { POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
 
 const isPiece = async (c: Ctx, key: string): Promise<boolean> => !!SHIPPED_DIMS[key] || !!(await c.furniMeta())[key];
 const KEY_RE = /^[a-z0-9_]{1,30}$/;
@@ -92,7 +92,13 @@ export const furniPlace: Action = {
       if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir, size)) fail("That doesn't fit in the room.");
       if (w.s.storage[kind] > 1) w.s.storage[kind] -= 1; else delete w.s.storage[kind];
     }
-    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}) };
+    // a poster only hangs on a wall, and carries the picture chosen when it is hung (it stays on it; a poster taken down goes back blank)
+    let img: string | undefined;
+    if (kind === POSTER_KIND) {
+      if (!wallPlaceOk(Number(a.x), Number(a.y), dir)) fail("A poster hangs on a wall: the back wall or the left wall.");
+      if (a.img !== undefined) { if (!posterImageOk(a.img)) fail("That picture can't be used."); img = a.img as string; }
+    } else if (a.img !== undefined) fail("Only a poster carries a picture.");
+    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}) };
     return {};
   },
 };
@@ -110,6 +116,7 @@ export const furniMove: Action = {
     if (!DIRS.includes(dir)) fail("Bad facing.");
     const x = int(a.x, 0, 15, "spot"), y = int(a.y, 0, 15, "spot");
     if (!fits(dims!, x, y, dir, await roomSize(c, room))) fail("That doesn't fit in the room.");
+    if (row.kind === POSTER_KIND && !wallPlaceOk(x, y, dir)) fail("A poster hangs on a wall: the back wall or the left wall.");
     c.extra[`roomsMeta/${room}/furni/${id}/x`] = x;
     c.extra[`roomsMeta/${room}/furni/${id}/y`] = y;
     c.extra[`roomsMeta/${room}/furni/${id}/dir`] = dir || null;

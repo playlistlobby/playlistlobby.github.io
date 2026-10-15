@@ -38,9 +38,11 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
+  /** a poster: a frame on the wall with a picture inside (the picture is stored on the placed piece as `img`) */
+  poster?: boolean;
   /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
   seat?: boolean;
   /** how far up (in 64px pixels) a sitting person is lifted onto the seat */
@@ -95,6 +97,9 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   boombox: { id: "boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true, fixed: true },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
+  // posters: a frame on the wall; the picture inside is the player's own (chosen when it is hung). The one in the shop room is for sale.
+  f_poster: { id: "f_poster", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: true, nitro: "furni/poster.nitro", rotatable: true, flat: true, wall: true, poster: true },
+  shopposter: { id: "shopposter", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: false, nitro: "furni/poster.nitro", rotatable: true, fixed: true, flat: true, wall: true, poster: true, opens: "poster" },
   // the record player on the counter at the left of the shop room: the CDs are sold here
   recordplayer: { id: "recordplayer", label: "Record player", icon: "💿", w: 1, h: 1, height: 30, color: "#3a3a44", placeable: false, nitro: "furni/recordplayer.nitro", rotatable: true, fixed: true, opens: "records", nudge: { x: 0, y: -26 } },
   // the landlord's counter in the corner of the shop room
@@ -128,6 +133,8 @@ export interface PlacedFurni {
   y: number;
   /** facing 0/2/4/6 (only matters for rotatable pieces) */
   dir?: number;
+  /** a poster's picture: a small PNG as a data address (empty = the "?" poster) */
+  img?: string;
   /** a growing kit with a seed in it (server times, ms): planted, last watered, and whether it ever ran dry */
   plant?: { at: number; water: number; neglect: boolean; /** what grows in it: weed (nothing) or shrooms */ crop?: string };
 }
@@ -251,6 +258,8 @@ export function shopDef(picks: string[]): RoomDef {
     { id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 4 }, { id: "shop_vending", kind: "vending", x: 8, y: 0, dir: 4 },
     // the landlord's counter in the right corner: he stands behind it (see LANDLORD in npc.ts)
     { id: "shop_counter", kind: "counter", x: 13, y: 1, dir: 2 },
+    // a poster on the back wall between the vending machine and the landlord: tap it to buy one
+    { id: "shop_poster", kind: "shopposter", x: 10, y: 0, dir: 4 },
     // the counter on the left with the record player on it: mystery CDs, the album and the Freakme CD
     { id: "shop_counter2", kind: "counter", x: 0, y: 5, dir: 4 }, { id: "shop_records", kind: "recordplayer", x: 0, y: 6, dir: 4 },
   ];
@@ -307,7 +316,7 @@ export interface RoomMeta {
   w: number;
   h: number;
   theme?: Partial<RoomTheme>;
-  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string }>;
+  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string; img?: string }>;
   /** where the owner moved the fixed pieces to (the bed can't be turned, so only its x/y count) */
   bed?: { x: number; y: number; dir?: number };
   bag?: { x: number; y: number; dir?: number };
@@ -330,7 +339,7 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   // furniture of kinds that no longer exist (the old test cubes) is ignored; the bed is always there
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
-    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}) } } : {}) }));
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}) } } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
   const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), boombox = at(meta.boombox, BOOMBOX);
   furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, { id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir });

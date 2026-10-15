@@ -3,7 +3,7 @@ import { Action, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, takeQtyFrom } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
-import { furniPicksToday, furniPrice, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
+import { furniPicksToday, furniPrice, POSTER_KIND, POSTER_PRICE, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
 import { todayStartAt } from "../../../src/shared/economy";
 import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, skinOf, skinOwnedKey, SkinPart } from "../../../src/shared/skins";
 
@@ -40,6 +40,20 @@ export const buyRecord: Action = {
     w.s.blood -= price;
     w.s.owned.item_cd = true;
     return { price };
+  },
+};
+
+/** The poster on the shop room's wall: a poster for blood. Its picture is chosen when you hang it in your room. */
+export const buyPoster: Action = {
+  async run(c) {
+    await requireInRoom(c, "shop");
+    const w = await c.user();
+    if (w.s.blood < POSTER_PRICE) fail(`You need ${POSTER_PRICE - w.s.blood} more drops`);
+    const next = addToInv(w.s.inventory, { item: POSTER_KIND, qty: 1 });
+    if (!next) fail("Your inventory is full");
+    w.s.inventory = next!;
+    w.s.blood -= POSTER_PRICE;
+    return { price: POSTER_PRICE };
   },
 };
 

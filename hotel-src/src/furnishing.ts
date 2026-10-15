@@ -46,6 +46,14 @@ export function whyNot(def: RoomDef, kind: string, spot: Spot, ignoreId: string 
   const fp = footprint(kind, spot.dir);
   if (spot.x < 0 || spot.y < 0 || spot.x + fp.w > def.w || spot.y + fp.h > def.h) return "That doesn't fit in the room.";
   if (k.wall && !((spot.dir === 4 && spot.y === 0) || (spot.dir === 2 && spot.x === 0))) return "That one hangs on a wall: put it against the back wall or the left wall.";
+  if (k.wall) {
+    // two things can't hang in the same place on a wall
+    for (const f of def.furni) {
+      if (f.id === ignoreId || !FURNI_KINDS[f.kind]?.wall) continue;
+      const q = footprint(f.kind, f.dir);
+      if ((f.dir ?? 4) === spot.dir && spot.x < f.x + q.w && f.x < spot.x + fp.w && spot.y < f.y + q.h && f.y < spot.y + fp.h) return "Something already hangs there.";
+    }
+  }
   const taken = new Set<string>();
   for (const f of def.furni) {
     if (f.id === ignoreId || FURNI_KINDS[f.kind]?.flat) continue;
@@ -97,15 +105,15 @@ export const placedCount = (def: RoomDef): number => def.furni.filter((f) => !is
 const roomRef = (roomId: string) => `roomsMeta/${roomId}`;
 
 /** Puts a piece you carry down in your room. */
-export async function placeFromInventory(p: Profile, _roomId: string, slot: number, spot: Spot): Promise<void> {
+export async function placeFromInventory(p: Profile, _roomId: string, slot: number, spot: Spot, img?: string): Promise<void> {
   if (!p.inventory[slot]) throw new Error("You aren't carrying that.");
-  await call(p, "furniPlace", { source: "inv", slot, x: spot.x, y: spot.y, dir: spot.dir });
+  await call(p, "furniPlace", { source: "inv", slot, x: spot.x, y: spot.y, dir: spot.dir, ...(img ? { img } : {}) });
 }
 
 /** Puts a piece from storage down in your room. */
-export async function placeFromStorage(p: Profile, _roomId: string, kind: string, spot: Spot): Promise<void> {
+export async function placeFromStorage(p: Profile, _roomId: string, kind: string, spot: Spot, img?: string): Promise<void> {
   if (storedCount(p, kind) < 1) throw new Error("There's none of that in storage.");
-  await call(p, "furniPlace", { source: "storage", kind, x: spot.x, y: spot.y, dir: spot.dir });
+  await call(p, "furniPlace", { source: "storage", kind, x: spot.x, y: spot.y, dir: spot.dir, ...(img ? { img } : {}) });
 }
 
 /** Moves or turns a piece that is already in the room. The bed, bag, toolbox and sink live under their own names (looks only); every other piece goes through the server. */

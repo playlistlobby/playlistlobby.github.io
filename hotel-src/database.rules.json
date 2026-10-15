@@ -597,6 +597,9 @@
             "crop": {
               ".validate": "newData.isString() && newData.val() === 'shroom'"
             },
+            "img": {
+              ".validate": "newData.isString() && newData.val().length < 12000 && newData.val().beginsWith('data:image/png;base64,')"
+            },
             "$other": {
               ".validate": false
             }

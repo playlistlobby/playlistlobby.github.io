@@ -226,6 +226,11 @@ export async function buyStock(p: Profile, id: string): Promise<void> {
   await call(p, "buyVending", { id });
 }
 
+/** A poster from the wall of the shop room (the picture is chosen when it is hung in your room). */
+export async function buyPosterItem(p: Profile): Promise<void> {
+  await call(p, "buyPoster", {});
+}
+
 /** The Freakme CD from the record player in the shop, for blood (once per player). */
 export async function buyRecordCd(p: Profile): Promise<void> {
   await call(p, "buyRecord", {});

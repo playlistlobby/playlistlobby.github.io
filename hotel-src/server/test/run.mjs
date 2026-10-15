@@ -932,6 +932,51 @@ console.log("--- harvesting: a 25% chance of a seed (or spores) back");
   check("the seeds and spores really are in the pocket", (await total2("weedseed")) === weedBack && (await total2("shroomspore")) === sporeBack);
 }
 
+console.log("--- posters");
+{
+  // a PNG header is all the server looks at: the signature and a 37 x 48 size
+  const png = (w, h) => {
+    const b = Buffer.alloc(8 + 4 + 4 + 13 + 4);
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(b, 0);
+    b.writeUInt32BE(13, 8); b.write("IHDR", 12); b.writeUInt32BE(w, 16); b.writeUInt32BE(h, 20); b[24] = 8; b[25] = 6;
+    return "data:image/png;base64," + b.toString("base64");
+  };
+  const p = await fresh("t_poster", { blood: 60 });
+  await act(p, "sync");
+  bad("a poster is bought in the shop room", await act(p, "buyPoster"));
+  await stand(p, "shop", 9, 4);
+  const buy = await act(p, "buyPoster");
+  ok("buy a poster", buy);
+  check("25 blood, one poster", buy.state.blood === 35 && total(buy.state.inventory, "f_poster") === 1, String(buy.state.blood));
+  const room = `u_${p.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: p.uid, ownerName: "t_poster", name: "t_poster's room", access: "knock", w: 8, h: 8 });
+  await stand(p, room, 4, 4);
+  const slot = buy.state.inventory.findIndex((x) => x && x.item === "f_poster");
+  bad("not in the middle of the room", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 4, dir: 0, img: png(37, 48) }));
+  bad("not on the floor of the back wall facing the wrong way", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 2, img: png(37, 48) }));
+  bad("a picture that isn't a PNG", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 4, img: "data:image/png;base64,AAAA" }));
+  bad("a picture of the wrong size", await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 4, img: png(500, 500) }));
+  bad("a picture on something that isn't a poster", await act(p, "furniPlace", { source: "inv", slot: buy.state.inventory.findIndex((x) => x && x.item === "f_poster") + 0, x: 4, y: 0, dir: 4, img: "http://example.com/x.png" }));
+  const hang = await act(p, "furniPlace", { source: "inv", slot, x: 4, y: 0, dir: 4, img: png(37, 48) });
+  ok("hang the poster on the back wall", hang);
+  const rows = await owner("GET", `roomsMeta/${room}/furni`);
+  const [fid, row] = Object.entries(rows ?? {}).find(([, r]) => r.kind === "f_poster") ?? [];
+  check("it hangs there with its picture", !!row && row.x === 4 && row.y === 0 && row.dir === 4 && typeof row.img === "string" && row.img.length > 40, JSON.stringify(row).slice(0, 120));
+  ok("move it along the wall", await act(p, "furniMove", { id: fid, x: 2, y: 0, dir: 4 }));
+  ok("round the corner to the left wall", await act(p, "furniMove", { id: fid, x: 0, y: 3, dir: 2 }));
+  bad("not into the room", await act(p, "furniMove", { id: fid, x: 3, y: 3, dir: 0 }));
+  check("the picture stayed on it", typeof (await owner("GET", `roomsMeta/${room}/furni/${fid}/img`)) === "string");
+  const st = await act(p, "furniStore", { id: fid });
+  ok("take it down (into the toolbox)", st);
+  check("it is back as a plain poster", st.state.storage.f_poster === 1 && (await owner("GET", `roomsMeta/${room}/furni/${fid}`)) === null);
+  const again = await act(p, "furniPlace", { source: "storage", kind: "f_poster", x: 6, y: 0, dir: 4 });
+  ok("hang it again with no picture: it shows the ?", again);
+  const sell = await fresh("t_poster2", { inventory: { 0: { item: "f_poster", qty: 1 } } });
+  await act(sell, "sync");
+  const so = await act(sell, "sellWeed", { slot: 0, qty: 1 });
+  check("6ixty pays 75% of 25 for a poster: 18", so.ok === true && so.state.blood === 18, JSON.stringify(so.state && so.state.blood));
+}
+
 console.log("--- /give");
 {
   const g = await fresh("t_give");

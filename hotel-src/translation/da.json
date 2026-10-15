@@ -6193,5 +6193,80 @@
   "en": "A seed fell out of the plant. You keep it.",
   "da": "Et frø faldt ud af planten. Det beholder du.",
   "where": "src/ui/room.ts"
+ },
+ "N128": {
+  "en": "Poster",
+  "da": "Plakat",
+  "where": "src/ui/posterShop.ts"
+ },
+ "N129": {
+  "en": "A frame for your wall. You choose the picture when you hang it: your own photo. It stays on the poster.",
+  "da": "En ramme til din væg. Du vælger billedet når du hænger den op: dit eget foto. Det bliver på plakaten.",
+  "where": "src/ui/posterShop.ts"
+ },
+ "N130": {
+  "en": "The poster was added to your inventory.",
+  "da": "Plakaten blev lagt i din inventory.",
+  "where": "src/ui/posterShop.ts"
+ },
+ "N131": {
+  "en": "A poster for your wall. When you hang it you choose the picture, and the picture stays on it. Only on a wall.",
+  "da": "En plakat til din væg. Når du hænger den op vælger du billedet, og billedet bliver på den. Kun på en væg.",
+  "where": "src/items.ts"
+ },
+ "N132": {
+  "en": "Poster: buy one for your wall",
+  "da": "Plakat: køb en til din væg",
+  "where": "src/ui/room.ts"
+ },
+ "N133": {
+  "en": "Something already hangs there.",
+  "da": "Der hænger allerede noget der.",
+  "where": "src/furnishing.ts"
+ },
+ "N134": {
+  "en": "Choose a photo from your device. It is made smaller and a little pixelated so it fits the game.",
+  "da": "Vælg et foto fra din enhed. Det bliver gjort mindre og lidt pixeleret, så det passer til spillet.",
+  "where": "src/ui/posterEditor.ts"
+ },
+ "N135": {
+  "en": "That isn't a picture.",
+  "da": "Det er ikke et billede.",
+  "where": "src/ui/posterEditor.ts"
+ },
+ "N136": {
+  "en": "Make it bigger or smaller and move it until it looks right.",
+  "da": "Gør det større eller mindre og flyt det til det ser rigtigt ud.",
+  "where": "src/ui/posterEditor.ts"
+ },
+ "N137": {
+  "en": "That picture couldn't be opened. Try another one.",
+  "da": "Det billede kunne ikke åbnes. Prøv et andet.",
+  "where": "src/ui/posterEditor.ts"
+ },
+ "N138": {
+  "en": "Hang it up",
+  "da": "Hæng den op",
+  "where": "src/ui/posterEditor.ts"
+ },
+ "N139": {
+  "en": "Drag the picture to move it. When you hang the poster the picture is locked to it.",
+  "da": "Træk i billedet for at flytte det. Når du hænger plakaten op er billedet låst til den.",
+  "where": "src/ui/posterEditor.ts"
+ },
+ "N140": {
+  "en": "A poster hangs on a wall: the back wall or the left wall.",
+  "da": "En plakat hænger på en væg: bagvæggen eller venstre væg.",
+  "where": "server/src/actions/toolbox.ts"
+ },
+ "N141": {
+  "en": "That picture can't be used.",
+  "da": "Det billede kan ikke bruges.",
+  "where": "server/src/actions/toolbox.ts"
+ },
+ "N142": {
+  "en": "Only a poster carries a picture.",
+  "da": "Kun en plakat kan have et billede.",
+  "where": "server/src/actions/toolbox.ts"
  }
 }

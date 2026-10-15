@@ -41,7 +41,32 @@ export const SHIPPED_DIMS: Record<string, { w: number; h: number }> = {
   ...Object.fromEntries(SHOP_PIECES.map((p) => [SHOP_KIND_PREFIX + p.id, { w: p.w, h: p.h }])),
   f_planter: { w: 1, h: 1 },
   f_mixer: { w: 1, h: 1 },
+  f_poster: { w: 2, h: 1 },
 };
+
+// ---- the poster: a frame on the wall with a picture of the player's own in it ----------------------------------------
+export const POSTER_KIND = "f_poster";
+/** the shop sells a poster for blood; a poster's picture is chosen when it is hung and then stays on it */
+export const POSTER_PRICE = 25;
+/** the picture inside the frame is this many pixels (drawn twice as big in the game, so it comes out pixelated) */
+export const POSTER_W = 37;
+export const POSTER_H = 48;
+/** A poster only hangs on a wall: the back wall facing 4 (y = 0) or the left wall facing 2 (x = 0). */
+export const wallPlaceOk = (x: number, y: number, dir: number): boolean => (dir === 4 && y === 0) || (dir === 2 && x === 0);
+/**
+ * The picture a poster carries: a small PNG as a data address. Only a real PNG of exactly the right size, no bigger than ~9 KB, is accepted
+ * (the server checks this before it is stored on the poster).
+ */
+export function posterImageOk(img: unknown): img is string {
+  if (typeof img !== "string" || img.length > 12_000 || !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(img)) return false;
+  try {
+    const bytes = atob(img.slice("data:image/png;base64,".length).slice(0, 48));
+    const sig = [137, 80, 78, 71, 13, 10, 26, 10];
+    for (let i = 0; i < 8; i++) if (bytes.charCodeAt(i) !== sig[i]) return false;
+    const u32 = (o: number): number => ((bytes.charCodeAt(o) << 24) | (bytes.charCodeAt(o + 1) << 16) | (bytes.charCodeAt(o + 2) << 8) | bytes.charCodeAt(o + 3)) >>> 0;
+    return bytes.slice(12, 16) === "IHDR" && u32(16) === POSTER_W && u32(20) === POSTER_H;
+  } catch { return false; }
+}
 
 export const PICKS_PER_DAY = 4;
 export const MIN_PRICE = 10;
@@ -55,6 +80,7 @@ const hash = (s: string): number => { let h = 0; for (let i = 0; i < s.length; i
 export function furniPrice(kind: string, prices: Record<string, number>): number {
   const set = prices[kind];
   if (typeof set === "number" && set > 0) return Math.round(set);
+  if (kind === "f_poster") return 25; // the poster has its own price (POSTER_PRICE): 6ixty pays 75% of that
   const shipped = SHOP_PIECES.find((p) => SHOP_KIND_PREFIX + p.id === kind);
   return shipped ? shipped.price : MIN_PRICE + (hash(kind) % (MAX_PRICE - MIN_PRICE + 1));
 }

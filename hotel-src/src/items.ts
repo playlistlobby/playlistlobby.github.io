@@ -330,6 +330,7 @@ export function itemDef(id: string): ItemDef | undefined {
   if (ITEMS[id]) return ITEMS[id];
   const k = FURNI_KINDS[id];
   if (!k || !isFurniItem(id)) return undefined;
+  if (id === "f_poster") return { id, name: k.label, examine: "A poster for your wall. When you hang it you choose the picture, and the picture stays on it. Only on a wall.", icon: assetUrl("items/poster.svg"), furniture: true };
   return { id, name: k.label, examine: id === "f_planter" ? "Grow some shit" : `${k.label}: furniture. Click it, then a free spot in your own room to put it down. Your toolbox can also store it.`, icon: furniIcon(id), furniture: true };
 }
 

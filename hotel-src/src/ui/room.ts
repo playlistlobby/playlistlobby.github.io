@@ -69,6 +69,9 @@ import { onFurniShopChanged, picksToday, priceOf } from "../furniShop";
 import { FurniBuyApi, openFurniBuy } from "./furniBuy";
 import { openVending, VendingApi } from "./vendingShop";
 import { openRecordShop, RecordShopApi } from "./recordShop";
+import { openPosterShop, PosterShopApi } from "./posterShop";
+import { pickPosterPicture } from "./posterEditor";
+import { POSTER_H, POSTER_KIND, POSTER_W } from "../shared/furniture";
 import { MixerApi, openMixer } from "./mixer";
 import { LandlordApi, openLandlord } from "./landlord";
 import { consumeItem } from "../db";
@@ -137,6 +140,40 @@ void loadNitro("furni/mafia_c26_planter_white.nitro").then((n) => {
 /** what grows in the kit when the seed was shroom spores */
 let shroomArt: NitroFurni | null = null;
 void loadNitro("furni/shrooms.nitro").then((n) => { shroomArt = n; }).catch(() => undefined);
+/** the poster's frame: the Habbo poster with the picture inside wiped out (the pictures are drawn into the hole, skewed to the wall) */
+let posterFrame: NitroFurni | null = null;
+void loadNitro("furni/poster.nitro").then((n) => {
+  if (!n) return;
+  posterFrame = derive(n, (g) => {
+    const key = Object.keys(n.json.spritesheet.frames).find((k) => /_64_a_4_0$/.test(k));
+    const f = key ? n.json.spritesheet.frames[key].frame : null;
+    if (!f) return;
+    const img = g.getImageData(f.x, f.y, f.w, f.h);
+    for (let y = 0; y < f.h; y++) for (let x = 8; x <= 80; x++) {
+      // the inside of the frame: left edge x 8, right edge x 80, top edge 5 + x/2, bottom edge 100 + x/2 (the art slopes half a pixel per pixel)
+      if (y >= Math.ceil(5 + 0.5 * x) && y <= Math.floor(100 + 0.5 * x)) img.data[(y * f.w + x) * 4 + 3] = 0;
+    }
+    g.putImageData(img, f.x, f.y);
+  });
+}).catch(() => undefined);
+/** the "?" every new poster shows until a picture is hung on it */
+const posterBlank: HTMLCanvasElement = (() => {
+  const c = document.createElement("canvas");
+  c.width = POSTER_W; c.height = POSTER_H;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#e7d9a6"; g.fillRect(0, 0, POSTER_W, POSTER_H);
+  g.fillStyle = "#d6c791"; g.fillRect(0, 0, POSTER_W, 4);
+  g.fillStyle = "#3a3a42"; g.font = "bold 40px Verdana, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText("?", POSTER_W / 2, POSTER_H / 2 + 2);
+  return c;
+})();
+const posterPics = new Map<string, HTMLImageElement>();
+const posterPicture = (img?: string): CanvasImageSource => {
+  if (!img) return posterBlank;
+  let im = posterPics.get(img);
+  if (!im) { im = new Image(); im.src = img; posterPics.set(img, im); }
+  return im.complete && im.naturalWidth ? im : posterBlank;
+};
 const itemImgs = new Map<string, HTMLImageElement>();
 const itemImg = (id: string): HTMLImageElement => {
   let im = itemImgs.get(id);
@@ -306,6 +343,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let furniBuyApi: FurniBuyApi | null = null;
   let vendingApi: VendingApi | null = null;
   let recordApi: RecordShopApi | null = null;
+  let posterApi: PosterShopApi | null = null;
   let landlordApi: LandlordApi | null = null;
   let landlordBubble: Bubble | null = null;
   let landlordLast: HTMLCanvasElement | undefined;
@@ -440,6 +478,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "wardrobe") text = "Wardrobe: the clothing shop";
     else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
     else if (hoverObj && hoverObj.kind === "recordplayer") text = "Record player: CDs";
+    else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && isBodyBag(hoverObj.kind)) text = "Body bag: use a syringe on it";
@@ -694,7 +733,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "f_mixer") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "shopposter" || obj.kind === "f_mixer") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "landlord") startLandlord();
@@ -739,6 +778,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj && FURNI_KINDS[obj.kind!]?.seat && !isDisplayPiece(obj.id)) opts.push({ label: "Sit", target: FURNI_KINDS[obj.kind!].label, action: () => sitAt(obj.id, tile) });
     if (obj?.kind === "vending") opts.push({ label: "Shop", target: "Vending machine", action: () => startBag(obj.id) });
     if (obj?.kind === "recordplayer") opts.push({ label: "CDs", target: "Record player", action: () => startBag(obj.id) });
+    if (obj?.kind === "shopposter") opts.push({ label: "Buy", target: "Poster", action: () => startBag(obj.id) });
     if (obj && isBodyBag(obj.kind) && !isDisplayPiece(obj.id)) opts.push({ label: "Draw blood", target: "Body bag", action: () => startUse(obj.id, null) });
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
@@ -922,13 +962,21 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage"; slot?: number }, dir: number): Promise<void> {
     const o = originFor(what.kind, dir, t);
-    const spot: Spot = { x: o.x, y: o.y, dir: FURNI_KINDS[what.kind].rotatable ? dir : 0 };
+    // a wall piece (a poster) snaps to the nearest wall instead of standing where you tapped
+    const spot: Spot = FURNI_KINDS[what.kind].wall ? wallSpot(def, what.kind, t) : { x: o.x, y: o.y, dir: FURNI_KINDS[what.kind].rotatable ? dir : 0 };
     if (placedCount(def) >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
     const why = whyNot(def, what.kind, spot, null, othersOccupy());
     if (why) return say(why, "warn");
+    // a poster: first the menu where the picture is chosen and sized (cancelling leaves the poster in your hand)
+    let img: string | undefined;
+    if (what.kind === POSTER_KIND) {
+      const pic = await pickPosterPicture(stage);
+      if (!pic) return;
+      img = pic;
+    }
     try {
-      if (what.source === "inv") await placeFromInventory(me, def.id, what.slot!, spot);
-      else await placeFromStorage(me, def.id, what.kind, spot);
+      if (what.source === "inv") await placeFromInventory(me, def.id, what.slot!, spot, img);
+      else await placeFromStorage(me, def.id, what.kind, spot, img);
       playSfx("select", 0.4);
       clearSelection();
       fzPlacing = null;
@@ -1016,10 +1064,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const ok = !whyNot(def, kind, spot, ignore, othersOccupy());
       const fp = footprint(kind, spot.dir);
       for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) diamond(spot.x + i, spot.y + j, ok ? "rgba(80,220,120,0.45)" : "rgba(230,70,70,0.45)", null);
-      if (FURNI_KINDS[kind].nitro) drawNitroFurni(g, kind, spot.x, spot.y, spot.dir, toScreen, scale, 0.6);
+      if (FURNI_KINDS[kind].poster && posterFrame) { // a poster: the empty frame, on the wall
+        const kk = FURNI_KINDS[kind];
+        drawNitroSprites(g, posterFrame, 2, 1, spot.dir === 2 ? spot.x - 0.5 : spot.x, spot.dir === 4 ? spot.y - 0.5 : spot.y, spot.dir, kk.nudge, toScreen, scale, 0.6);
+      } else if (FURNI_KINDS[kind].nitro) drawNitroFurni(g, kind, spot.x, spot.y, spot.dir, toScreen, scale, 0.6);
     };
     if (fzDrag?.moved) ghost(fzDrag.kind, fzDrag.spot, fzDrag.id);
-    else if (fzPlacing && hover) { const o = originFor(fzPlacing.kind, fzDir, hover); ghost(fzPlacing.kind, { x: o.x, y: o.y, dir: fzDir }, null); }
+    else if (fzPlacing && hover) {
+      const o = originFor(fzPlacing.kind, fzDir, hover);
+      ghost(fzPlacing.kind, FURNI_KINDS[fzPlacing.kind].wall ? wallSpot(def, fzPlacing.kind, hover) : { x: o.x, y: o.y, dir: fzDir }, null);
+    }
   }
 
   /** The ghost for a furniture item you've selected in your pocket (outside the furnishing menu). */
@@ -1189,6 +1243,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     mixerApi?.close();
     vendingApi?.close();
     recordApi?.close();
+    posterApi?.close();
     landlordApi?.close();
     sixtyShop?.close();
   }
@@ -1505,6 +1560,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const opens = FURNI_KINDS[f.kind].opens;
         if (opens === "furnish") enterFurnish();
         else if (opens === "vending") openVendingShop();
+        else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "records") { if (!recordApi) recordApi = openRecordShop(stage, ctx, () => panel.refresh(), () => { recordApi = null; }); }
         else if (opens === "mixer") { if (!mixerApi) mixerApi = openMixer(stage, ctx, f.id, def.id, () => panel.refresh(), () => { mixerApi = null; }); }
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
@@ -2357,13 +2413,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     unsubs.push(() => window.clearInterval(burnTimer));
     const awayTimer = window.setInterval(() => {
       const p = mine();
-      if (!p || (!landlordApi && !vendingApi && !recordApi)) return;
+      if (!p || (!landlordApi && !vendingApi && !recordApi && !posterApi)) return;
       const t = currentTile(p);
       if (landlordApi && cheb(t, { x: LANDLORD.x, y: LANDLORD.y }) > 3) landlordApi.close();
       const vm = def.furni.find((f) => f.kind === "vending");
       if (vendingApi && vm && cheb(t, vm) > 3) vendingApi.close();
       const rp = def.furni.find((f) => f.kind === "recordplayer");
       if (recordApi && rp && cheb(t, rp) > 3) recordApi.close();
+      const sp = def.furni.find((f) => f.kind === "shopposter");
+      if (posterApi && sp && cheb(t, sp) > 4) posterApi.close();
     }, 300);
     unsubs.push(() => window.clearInterval(awayTimer));
     unsubs.push(watchDrops(roomId, (m) => { drops = m; sweepExpired(roomId, m.values()); }));
@@ -2817,9 +2875,60 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.restore();
   }
 
+  /**
+   * A poster: the picture first (cut to the frame opening, tilted to lie on the wall, drawn in big pixels), then the frame over it.
+   * The back wall tilts the picture one way, the left wall the other; the frame art slopes half a pixel per pixel.
+   */
+  function drawPoster(f: { id?: string; kind: string; x: number; y: number; dir?: number; img?: string }, now: number): Hitbox | null {
+    const k = FURNI_KINDS[f.kind];
+    const frame = posterFrame;
+    if (!frame) return null;
+    const dir = f.dir === 2 ? 2 : 4;
+    const tx = dir === 2 ? f.x - 0.5 : f.x;
+    const ty = dir === 4 ? f.y - 0.5 : f.y;
+    const box = drawNitroSpritesBox(frame, { x: tx, y: ty }, dir, k.nudge ?? { x: 0, y: 0 });
+    if (!box) return null;
+    const hot = !!f.id && hoverObj?.id === f.id;
+    if (k.opens) { // the poster in the shop glows like the other things you can use
+      const pulse = 0.5 + 0.5 * Math.sin(now / 450);
+      const cx = (box.x0 + box.x1) / 2, cy = (box.y0 + box.y1) / 2, r = 70 * scale * (hot ? 1.15 : 1);
+      g.save();
+      const halo = g.createRadialGradient(cx, cy, 4 * scale, cx, cy, r);
+      const a = 0.12 + 0.05 * pulse + (hot ? 0.14 : 0);
+      halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
+      halo.addColorStop(0.6, `rgba(255,200,40,${(a * 0.6).toFixed(2)})`);
+      halo.addColorStop(1, "rgba(255,200,40,0)");
+      g.fillStyle = halo;
+      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+      g.restore();
+    }
+    // the picture: its small PNG laid onto the opening (73 x 96 sprite pixels), sheared along the wall
+    g.save();
+    g.translate(box.x0, box.y0);
+    g.scale(scale, scale);
+    g.imageSmoothingEnabled = false;
+    const W = 73, H = 96;
+    if (dir === 4) g.transform(1, 0.5, 0, 1, 8, 9); // back wall: sloping down to the right
+    else g.transform(1, -0.5, 0, 1, 10, 45); // left wall: the art is mirrored, so it slopes the other way
+    g.beginPath(); g.rect(-1, -1, W + 2, H + 2); g.clip(); // (the dark outline of the frame covers the edge)
+    g.drawImage(posterPicture(f.img), 0, 0, W, H);
+    g.fillStyle = "rgba(10,12,30,0.07)"; // the wall is in the shade of the room: a little darker, like everything else
+    g.fillRect(0, 0, W, H);
+    g.restore();
+    const b = drawNitroSprites(g, frame, 2, 1, tx, ty, dir, k.nudge, toScreen, scale) ?? box;
+    if (hot && k.opens) {
+      g.save();
+      g.globalCompositeOperation = "lighter";
+      drawNitroSprites(g, frame, 2, 1, tx, ty, dir, k.nudge, toScreen, scale, 0.14);
+      g.restore();
+    }
+    return { id: "", ...b, depth: f.x + f.y };
+  }
+
   function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     if (k.plant) return drawPlanter(f, now);
+    if (k.poster) return drawPoster(f, now);
     if (k.nitro) {
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
       const glowSink = k.opens === "sink" && sinkHintOn();
@@ -3337,7 +3446,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -3668,6 +3777,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     furniBuyApi?.close();
     vendingApi?.close();
     recordApi?.close();
+    posterApi?.close();
     landlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();

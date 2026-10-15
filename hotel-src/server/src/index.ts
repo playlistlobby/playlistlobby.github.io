@@ -4,7 +4,7 @@ import { handleWebhook, PayError, startCheckout } from "./pay";
 import type { Env } from "./env";
 export { Economy } from "./economy";
 
-const MAX_BODY = 4_000;
+const MAX_BODY = 16_000; // (a poster's picture travels with the request that hangs it)
 
 function cors(env: Env, origin: string | null): Record<string, string> {
   const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
