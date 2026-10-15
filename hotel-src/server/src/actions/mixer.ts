@@ -21,9 +21,9 @@ export const mix: Action = {
     if (row.mixJob) fail("The mixer is busy.");
     const w = await c.user();
     const ia = int(a.a, 0, 27, "slot"), ib = int(a.b, 0, 27, "slot");
-    if (ia === ib) fail("Pick two different things.");
     const x = w.s.inventory[ia], y = w.s.inventory[ib];
     if (!x || !y) fail("Those don't go together.");
+    if (ia === ib && (x!.qty < 2 || x!.item !== "cigbutt")) fail("Pick two different things."); // (only 2 butts out of one stack can go in together)
     const r = mixRecipe(x!, y!);
     if (!r) fail("Those don't mix.");
     let next = takeOneFrom(w.s.inventory, ia);

@@ -17,6 +17,8 @@ export const ITEM_ID_LIST = [
   "cd_yellow", "cd_green", "cd_blue", "cd_album",
   // hash (ass weed + kodimagnyl), hash mix (hash + cigarette) and the hash joint (hash mix + joint paper)
   "hash", "hashmix", "joint_hash",
+  // tobacco (2 cigarette butts) and the cigar (tobacco rolled in blunt paper)
+  "tobacco", "cigar",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -98,6 +100,7 @@ export const VENDING_STOCK: Array<{ id: string; item: string; qty: number; label
 export interface SmokeDef { mult: number; boostMs: number; kind: "cigarette" | "joint" | "blunt" | "hashjoint"; speedMs?: number; chemMs?: number; /** how long it burns before the effect starts (default SMOKE_MS) */ smokeMs?: number }
 export const SMOKABLE: Record<string, SmokeDef> = {
   cigarette: { mult: 2, boostMs: 120_000, kind: "cigarette" },
+  cigar: { mult: 2, boostMs: 120_000, kind: "blunt" }, // a cigar smokes like a cigarette (and looks like a little blunt)
   joint: { mult: 3, boostMs: 120_000, kind: "joint" },
   blunt: { mult: 4, boostMs: 180_000, kind: "blunt" },
   // mid weed: a milder smoke than the real thing
@@ -113,7 +116,7 @@ export const SMOKABLE: Record<string, SmokeDef> = {
   blunt_chem: { mult: 2, boostMs: 90_000, kind: "blunt", speedMs: 90_000, chemMs: 90_000, smokeMs: 5_000 },
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "kodimagnyl", "shroomspore", "shroom", "hash", "hashmix", "cigbutt"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "kodimagnyl", "shroomspore", "shroom", "hash", "hashmix", "cigbutt", "tobacco"]);
 /** A plant grows for 20 minutes. It gets thirsty after 5: water it once after that (and only then) or the weed turns out ass. */
 export const GROW_MS = 20 * 60_000;
 export const WATER_MS = 5 * 60_000;
@@ -137,6 +140,9 @@ export function combine(a: InvItem, b: InvItem): { give: InvItem; note: string; 
   // kodimagnyl + a can of water: codeine (the lean); the can is empty afterwards and comes back to you
   const water = [a, b].find((x) => x.item === "wateringcan_full"), kodi = [a, b].find((x) => x.item === "kodimagnyl");
   if (water && kodi && water !== kodi) return { give: { item: "codeine", qty: 1 }, back: { item: "wateringcan", qty: 1 }, note: "You crush the kodimagnyl into the water. It turns purple: codeine. The can is empty again." };
+  // tobacco rolls in joint paper to a cigarette, and in blunt paper to a cigar
+  const tob = [a, b].find((x) => x.item === "tobacco"), paper = [a, b].find((x) => x.item === "jointpaper" || x.item === "bluntwrap");
+  if (tob && paper && tob !== paper) return paper.item === "jointpaper" ? { give: { item: "cigarette", qty: 1 }, note: "You roll a cigarette." } : { give: { item: "cigar", qty: 1 }, note: "You roll a cigar." };
   const w = [a, b].find((x) => ROLLABLE.has(x.item));
   const o = w === a ? b : w === b ? a : undefined;
   if (!w || !o || w === o) return null;
@@ -161,6 +167,10 @@ export const MIX_RECIPES: MixRecipe[] = [
   // the lean also works in the mixer: kodimagnyl + a full watering can (the can comes straight back, empty)
   { a: { item: "kodimagnyl" }, b: { item: "wateringcan_full" }, give: { item: "codeine", qty: 1 }, back: { item: "wateringcan", qty: 1 }, note: "You crush the kodimagnyl into the water. It turns purple: codeine. The can is empty again." },
 ];
+// tobacco and the cigar mix exactly like a cigarette
+for (const r of [...MIX_RECIPES]) if (r.b.item === "cigarette") for (const smoke of ["tobacco", "cigar"]) MIX_RECIPES.push({ ...r, b: { item: smoke } });
+// two cigarette butts, picked apart, make tobacco (both from the same stack is fine)
+MIX_RECIPES.push({ a: { item: "cigbutt" }, b: { item: "cigbutt" }, give: { item: "tobacco", qty: 1 }, note: "Two cigarette butts, picked apart: 1 tobacco." });
 const matches = (it: InvItem, m: { item: string; ass?: boolean }): boolean => it.item === m.item && !it.lit && !it.inPlayer && !!it.ass === !!m.ass;
 export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
   return MIX_RECIPES.find((r) => (matches(x, r.a) && matches(y, r.b)) || (matches(y, r.a) && matches(x, r.b))) ?? null;
@@ -190,6 +200,8 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "kodimagnyl": return 2; // cost 4 in the vending machine
     case "lighter": return 1; // cost 2 in the vending machine
     case "cigbutt": return 1; // per 2 butts
+    case "tobacco": return 2; // from 2 butts (worth 1)
+    case "cigar": return 2;
     // grown from seeds and spores (3 from each, so a seed is worth much less than what it grows into)
     case "weedseed": return 2;
     case "weed": return ass ? 4 : 6;

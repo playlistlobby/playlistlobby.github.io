@@ -164,5 +164,12 @@ set("Drag the picture to move it. When you hang the poster the picture is locked
 set("A poster hangs on a wall: the back wall or the left wall.", "En plakat hænger på en væg: bagvæggen eller venstre væg.", "server/src/actions/toolbox.ts");
 set("That picture can't be used.", "Det billede kan ikke bruges.", "server/src/actions/toolbox.ts");
 set("Only a poster carries a picture.", "Kun en plakat kan have et billede.", "server/src/actions/toolbox.ts");
+set("Tobacco", "Tobak", "src/items.ts");
+set("Two cigarette butts, picked apart. Mix it like a cigarette, or select it and click joint paper to roll a cigarette, or blunt paper to roll a cigar.", "To cigaret skodder, pillet fra hinanden. Mix den som en cigaret, eller vælg den og klik på joint papir for at rulle en cigaret, eller blunt papir for at rulle en cigar.", "src/items.ts");
+set("Cigar", "Cigar", "src/items.ts");
+set("Tobacco rolled in blunt paper. Click it to light up (you need a lighter): it smokes like a cigarette, and it mixes like one too.", "Tobak rullet i blunt papir. Klik på den for at tænde (du skal bruge en lighter): den ryger som en cigaret, og den mixer også som en.", "src/items.ts");
+set("Two cigarette butts, picked apart: 1 tobacco.", "To cigaret skodder, pillet fra hinanden: 1 tobak.", "src/shared/items.ts");
+set("You roll a cigarette.", "Du ruller en cigaret.", "src/shared/items.ts");
+set("You roll a cigar.", "Du ruller en cigar.", "src/shared/items.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

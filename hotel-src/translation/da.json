@@ -6268,5 +6268,40 @@
   "en": "Only a poster carries a picture.",
   "da": "Kun en plakat kan have et billede.",
   "where": "server/src/actions/toolbox.ts"
+ },
+ "N143": {
+  "en": "Tobacco",
+  "da": "Tobak",
+  "where": "src/items.ts"
+ },
+ "N144": {
+  "en": "Two cigarette butts, picked apart. Mix it like a cigarette, or select it and click joint paper to roll a cigarette, or blunt paper to roll a cigar.",
+  "da": "To cigaret skodder, pillet fra hinanden. Mix den som en cigaret, eller vælg den og klik på joint papir for at rulle en cigaret, eller blunt papir for at rulle en cigar.",
+  "where": "src/items.ts"
+ },
+ "N145": {
+  "en": "Cigar",
+  "da": "Cigar",
+  "where": "src/items.ts"
+ },
+ "N146": {
+  "en": "Tobacco rolled in blunt paper. Click it to light up (you need a lighter): it smokes like a cigarette, and it mixes like one too.",
+  "da": "Tobak rullet i blunt papir. Klik på den for at tænde (du skal bruge en lighter): den ryger som en cigaret, og den mixer også som en.",
+  "where": "src/items.ts"
+ },
+ "N147": {
+  "en": "Two cigarette butts, picked apart: 1 tobacco.",
+  "da": "To cigaret skodder, pillet fra hinanden: 1 tobak.",
+  "where": "src/shared/items.ts"
+ },
+ "N148": {
+  "en": "You roll a cigarette.",
+  "da": "Du ruller en cigaret.",
+  "where": "src/shared/items.ts"
+ },
+ "N149": {
+  "en": "You roll a cigar.",
+  "da": "Du ruller en cigar.",
+  "where": "src/shared/items.ts"
  }
 }

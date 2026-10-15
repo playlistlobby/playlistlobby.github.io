@@ -79,7 +79,9 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
           class: "inv-slot filled" + (on ? " selected" : ""),
           title: d.name + (s!.ass ? " (ass)" : ""),
           onclick: () => {
-            if (slot === first) first = null; else if (slot === second) second = null;
+            if (slot === first && second === null && s!.item === "cigbutt" && s!.qty >= 2) second = slot; // two butts out of the same stack
+            else if (slot === first) { first = second === slot ? null : first === slot && second !== null ? second : null; second = null; }
+            else if (slot === second) second = null;
             else if (first === null) first = slot;
             else if (second === null) second = slot;
             else { first = second; second = slot; }

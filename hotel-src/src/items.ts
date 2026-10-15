@@ -158,6 +158,19 @@ export const ITEMS: Record<string, ItemDef> = {
     icon: assetUrl("items/superpill.svg"),
     useSelf: "consume",
   },
+  tobacco: {
+    id: "tobacco",
+    name: "Tobacco",
+    examine: "Two cigarette butts, picked apart. Mix it like a cigarette, or select it and click joint paper to roll a cigarette, or blunt paper to roll a cigar.",
+    icon: assetUrl("items/tobacco.svg"),
+  },
+  cigar: {
+    id: "cigar",
+    name: "Cigar",
+    examine: "Tobacco rolled in blunt paper. Click it to light up (you need a lighter): it smokes like a cigarette, and it mixes like one too.",
+    icon: assetUrl("items/cigar.svg"),
+    useSelf: "smoke",
+  },
   hash: {
     id: "hash",
     name: "Hash",

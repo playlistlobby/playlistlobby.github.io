@@ -1011,6 +1011,50 @@ console.log("--- the decorator power: furniture in other people's rooms");
   check("the owner's sofa is still there", (await owner("GET", `roomsMeta/${room}/furni/theirs/kind`)) === "f_sofa");
 }
 
+console.log("--- tobacco and the cigar");
+{
+  const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
+  const t = await fresh("t_tobacco", { inventory: { 0: { item: "cigbutt", qty: 5 }, 1: { item: "jointpaper", qty: 1 }, 2: { item: "bluntwrap", qty: 1 }, 3: { item: "weed", qty: 2 }, 4: { item: "pill", qty: 1 }, 5: { item: "lighter", qty: 1 } } });
+  await act(t, "sync");
+  const room = `u_${t.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: t.uid, ownerName: "t_tobacco", name: "x", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 4, y: 2 } } });
+  await stand(t, room, 4, 4);
+  const done = async () => { await owner("PATCH", `roomsMeta/${room}/furni/mx/mixJob`, { doneAt: Date.now() - 1000 }); return act(t, "mixCollect", { fid: "mx" }); };
+  bad("one butt on its own can't be mixed with itself", await act(t, "mix", { fid: "mx", a: 1, b: 1 }));
+  const m1 = await act(t, "mix", { fid: "mx", a: 0, b: 0 }); // two butts out of the same stack
+  ok("two cigarette butts in the mixer", m1);
+  check("three butts left", total(m1.state.inventory, "cigbutt") === 3);
+  const c1 = await done();
+  check("1 tobacco", total(c1.state.inventory, "tobacco") === 1, JSON.stringify(c1.data));
+  // tobacco mixes like a cigarette
+  const m2 = await act(t, "mix", { fid: "mx", a: slotOf(c1.state, "weed"), b: slotOf(c1.state, "tobacco") });
+  ok("weed + tobacco in the mixer", m2);
+  const c2 = await done();
+  check("2 weed mix, like with a cigarette", total(c2.state.inventory, "mix") === 2 && total(c2.state.inventory, "tobacco") === 0, JSON.stringify(c2.data));
+  // butts again -> tobacco -> rolled in paper
+  await owner("PUT", `users/${t.uid}/inventory/20`, { item: "tobacco", qty: 2 });
+  const st = await state(t);
+  const cig = await act(t, "combine", { a: slotOf(st, "tobacco"), b: slotOf(st, "jointpaper") });
+  ok("tobacco + joint paper", cig);
+  check("a cigarette", total(cig.state.inventory, "cigarette") === 1 && total(cig.state.inventory, "tobacco") === 1, JSON.stringify(cig.data));
+  const cgr = await act(t, "combine", { a: slotOf(cig.state, "tobacco"), b: slotOf(cig.state, "bluntwrap") });
+  ok("tobacco + blunt paper", cgr);
+  check("a cigar", total(cgr.state.inventory, "cigar") === 1, JSON.stringify(cgr.data));
+  // the cigar mixes like a cigarette and smokes like one
+  const mc = await act(t, "mix", { fid: "mx", a: slotOf(cgr.state, "pill"), b: slotOf(cgr.state, "cigar") });
+  ok("pill + cigar in the mixer", mc);
+  const cc = await done();
+  check("a research chemical, like with a cigarette", total(cc.state.inventory, "researchchem") === 1, JSON.stringify(cc.data));
+  await owner("PUT", `users/${t.uid}/inventory/21`, { item: "cigar", qty: 1 });
+  const smoke = await act(t, "light", { slot: 21 });
+  ok("light a cigar", smoke);
+  const litSlot = smoke.state.inventory.findIndex((x) => x && x.lit);
+  await owner("PATCH", `users/${t.uid}/inventory/${litSlot}`, { lit: Date.now() - 70_000 });
+  const fin = await act(t, "finishSmoke", { slot: litSlot });
+  ok("smoke it", fin);
+  check("stabs give 2x, like a cigarette", fin.state.boostMult === 2 && fin.state.boostUntil - Date.now() > 110_000, JSON.stringify([fin.state.boostMult]));
+}
+
 console.log("--- /give");
 {
   const g = await fresh("t_give");

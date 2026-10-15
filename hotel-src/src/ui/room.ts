@@ -1987,7 +1987,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- the introduction (in the private copy of the basement) ---------------------------------------------
   /** The first three times you fill the watering can, the empty can and the sink in your room glow (counted on this device). */
   function sinkFills(): number { try { return Number(localStorage.getItem(`6ixplanet.sinkHint.${me.uid}`)) || 0; } catch { return 0; } }
-  function sinkHintOn(): boolean { return isOwnRoom && sinkFills() < 3 && findSlot(me.inventory, "wateringcan") >= 0; }
+  function sinkHintOn(): boolean { return isOwnRoom && sinkFills() < 3 && findSlot(me.inventory, "wateringcan") >= 0 && findSlot(me.inventory, "wateringcan_full") < 0; } // (nothing flashes while you already carry a full can)
   /** points the player at the next thing: the knife (and the guy) in the pocket, then the pill */
   function tutorialGuide(): void {
     if (disposed) return;
@@ -2972,11 +2972,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const noHint = k.opens === "mixer" || k.opens === "sink" || k.opens === "records"; // the mixer and the sink glow like the rest, but have no little icon floating over them
-        const showHanger = !noHint && (!me.seenDoor || hot);
-        const hint = k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
+        const noHint = k.opens === "mixer" || k.opens === "records"; // the mixer and the record table glow like the rest, but have no little icon floating over them
+        const showHanger = k.opens === "sink" ? glowSink : !noHint && (!me.seenDoor || hot); // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "sink" ? itemImg("wateringcan") : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" ? (scale * 30) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -2984,11 +2984,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.imageSmoothingEnabled = false;
           g.shadowColor = "rgba(255,226,140,0.7)";
           g.shadowBlur = (hot ? 6 : 3) * scale;
+          if (k.opens === "sink") g.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(now / 320)); // the watering can flashes
           g.drawImage(hint, cx - hw / 2, b.y0 - hh - 2 * scale + bob, hw, hh);
           g.restore();
         }
         // while the hanger always shows, the click box covers it too
-        return { id: "", ...b, y0: me.seenDoor || noHint ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
+        return { id: "", ...b, y0: me.seenDoor || noHint || k.opens === "sink" ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
       }
       return b ? { id: "", ...b, depth: f.x + f.y } : null;
     }
