@@ -155,6 +155,12 @@ export class CdAudio {
   constructor(private onChange: () => void) {
     this.audio.preload = "auto";
     this.apply();
+    // the app is hidden or closed: the music stops; when it is back the song carries on at the right place
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) { this.audio.pause(); return; }
+      if (this.state && !this.state.pausedAt && !cdEnded(this.state)) this.seekAndPlay();
+    });
+    window.addEventListener("pagehide", () => this.audio.pause());
   }
 
   private apply(): void {

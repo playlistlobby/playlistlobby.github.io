@@ -379,7 +379,7 @@ button, input, select { font-family: var(--font); }
 .furni-buy { width: 250px; }
 .furni-buy-body { display: flex; gap: 10px; align-items: center; }
 .furni-buy-img { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; background: rgba(255, 255, 255, .08); border-radius: 8px; padding: 4px; }
-.fb-stage { position: relative; height: min(70vh, 540px); aspect-ratio: 9 / 16; max-width: 100%; margin: 0 auto 6px; border-radius: 8px; overflow: hidden; background: #4ec0ca; touch-action: none; user-select: none; -webkit-user-select: none; }
+.fb-stage { position: relative; height: min(70vh, 540px); width: calc(min(70vh, 540px) * 9 / 16); aspect-ratio: 9 / 16; max-width: 100%; margin: 0 auto 6px; border-radius: 8px; overflow: hidden; background: #4ec0ca; touch-action: none; user-select: none; -webkit-user-select: none; }
 .fb-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .door-actions { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .sixty-shop { width: 280px; max-width: calc(100% - 20px); left: 10px; right: auto; top: 44px; }
@@ -407,7 +407,7 @@ button, input, select { font-family: var(--font); }
 .arcade-screen.solo { position: relative; display: block; width: auto; padding: 5px; border-radius: 10px; }
 .arcade-screen.solo .arcade-body { display: block; }
 .arcade-screen.solo .arcade-head { display: none; }
-.arcade-screen.solo .fb-stage { margin: 0; height: min(70vh, 540px); border-radius: 6px; }
+.arcade-screen.solo .fb-stage { margin: 0; height: min(70vh, 540px); width: calc(min(70vh, 540px) * 9 / 16); border-radius: 6px; }
 .arcade-x { display: none; }
 .arcade-screen.solo .arcade-x { display: block; position: absolute; top: 8px; right: 8px; z-index: 5; }
 .arcade-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
