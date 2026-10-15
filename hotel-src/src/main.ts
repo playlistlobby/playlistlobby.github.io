@@ -5,6 +5,7 @@ import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
 import { createProfile, loadProfile, Profile, watchEconomy } from "./db";
 import { collectPaidCds } from "./payReturn";
+import { startUpdateCheck } from "./updateCheck";
 import { publishPriceBook } from "./priceBook";
 import { avatarsReady } from "./avatarService";
 import { loadCatalog } from "./catalog";
@@ -29,6 +30,8 @@ import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns, watchDesigns }
 import { watchFurni } from "./furniDefs";
 import { watchFurniShop } from "./furniShop";
 import { otherWindowOpen, publishProfile, releasePresence, social, startPresence, stopPresence, watchSession } from "./social";
+
+startUpdateCheck(); // a phone that still runs an old copy reloads to the new one
 
 export const APP_NAME = "6ixPlanet";
 export const STAFF_NOTICE = "Staff can see chat, private messages and activity on 6ixPlanet.";
