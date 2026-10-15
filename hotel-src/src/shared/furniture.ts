@@ -19,7 +19,7 @@ export const SHOP_PIECES: ShopPiece[] = [
   { id: "shark", label: "Shark", icon: "🦈", price: 14, w: 1, h: 1, height: 30, showDir: 2 },
   { id: "horse", label: "Horse", icon: "🐴", price: 16, w: 1, h: 1, height: 70, showDir: 4 },
   { id: "prizemoney", label: "Prize money", icon: "💰", price: 15, w: 1, h: 1, height: 3, flat: true, showDir: 2 },
-  { id: "label", label: "Label", icon: "🏷️", price: 10, w: 1, h: 1, height: 3, flat: true, showDir: 2 },
+  { id: "label", label: "Shuffi", icon: "🏷️", price: 10, w: 1, h: 1, height: 3, flat: true, showDir: 2 },
   { id: "ritualcircle", label: "Ritual circle", icon: "⭕", price: 17, w: 2, h: 2, height: 3, flat: true, showDir: 2 },
   { id: "bloodbath", label: "Blood bath", icon: "🛁", price: 19, w: 1, h: 1, height: 86, showDir: 2 },
   { id: "norjasofa", label: "Norja couch", icon: "🛋️", price: 18, w: 2, h: 1, height: 32, seat: true, seatHeight: 14, showDir: 4 },

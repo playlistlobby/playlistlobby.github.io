@@ -79,5 +79,6 @@ set("🎲 Randomize", "Randomize");
 set("Door: locked", "Dør: låst", "src/ui/room.ts");
 set("The door is locked. Finish what Sixty wants first.", "Døren er låst. Gør færdig hvad Sixty vil have først.", "src/ui/room.ts");
 set("You have nothing that mixes (weed, ass weed, cigarettes, pills, kodimagnyl, a full watering can).", "Du har intet der kan mixes (weed, ass weed, cigaretter, piller, kodimagnyl, en fyldt vandkande).", "src/ui/mixer.ts");
+set("Shuffi", "Shuffi", "src/shared/furniture.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

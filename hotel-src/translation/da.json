@@ -5868,5 +5868,10 @@
   "en": "You have nothing that mixes (weed, ass weed, cigarettes, pills, kodimagnyl, a full watering can).",
   "da": "Du har intet der kan mixes (weed, ass weed, cigaretter, piller, kodimagnyl, en fyldt vandkande).",
   "where": "src/ui/mixer.ts"
+ },
+ "N063": {
+  "en": "Shuffi",
+  "da": "Shuffi",
+  "where": "src/shared/furniture.ts"
  }
 }
