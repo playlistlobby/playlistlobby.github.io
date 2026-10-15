@@ -72,7 +72,7 @@ export const SIXTY_STOCK = ["cigarette", "pill", "kodimagnyl"];
 export const DEFAULT_ITEM_PRICE = 5;
 /** Default shop entry for items that start on sale (everything else starts off). */
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
-  cigarette: { on: true, price: 1 },
+  cigarette: { on: true, price: 2 },
   pill: { on: true, price: 3 },
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
   kodimagnyl: { on: true, price: 4 }, // sold by 6ixty (the growing kit moved to the vending machine)
