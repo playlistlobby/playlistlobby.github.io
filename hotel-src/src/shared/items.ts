@@ -159,7 +159,7 @@ export const MIX_RECIPES: MixRecipe[] = [
   { a: { item: "weed" }, b: { item: "weed", ass: true }, give: { item: "midweed", qty: 2 }, note: "Good weed and bad weed, mixed up: 2 mid weed." },
   { a: { item: "pill" }, b: { item: "weed" }, give: { item: "thca", qty: 1 }, note: "The pill dissolves into the weed: 1 thc-a." },
   { a: { item: "pill" }, b: { item: "cigarette" }, give: { item: "researchchem", qty: 1 }, note: "You grind the pill into the tobacco: 1 research chemical." },
-  { a: { item: "pill" }, b: { item: "kodimagnyl" }, give: { item: "superpill", qty: 1 }, note: "Two pills, pressed into one: 1 super pill." },
+  { a: { item: "pill" }, b: { item: "kodimagnyl" }, give: { item: "superpill", qty: 1 }, note: "Two pills, pressed into one: 1 fentanyl." },
   { a: { item: "weed", ass: true }, b: { item: "kodimagnyl" }, give: { item: "hash", qty: 1 }, note: "Ass weed and kodimagnyl, pressed together: 1 hash." },
   { a: { item: "hash" }, b: { item: "cigarette" }, give: { item: "hashmix", qty: 2 }, note: "You crumble the hash into the tobacco: 2 hash mix." },
   { a: { item: "shroom" }, b: { item: "pill" }, give: { item: "dmt", qty: 1 }, note: "The shroom dissolves into the pill, which turns yellow: 1 DMT." },

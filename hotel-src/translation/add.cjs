@@ -181,5 +181,8 @@ set("Start mixing (30 min)", "Start mixing (30 min)", "src/ui/mixer.ts");
 set("Tap two things to mix. The dearer the result, the longer it takes (10 to 30 minutes).","Tryk på to ting for at mixe. Jo dyrere resultat, jo længere tid tager det (10 til 30 minutter).","src/ui/mixer.ts");
 set("Mix some shit", "Mix noget shi", "src/items.ts");
 set("Water the shit you grow", "Vand det shi du gror", "src/items.ts");
+set("Fentanyl", "Fentanyl", "src/items.ts");
+set("Two pills, pressed into one: 1 fentanyl.", "To piller, presset til én: 1 fentanyl.", "src/shared/items.ts");
+set("You swallow the fentanyl. The world slows down. You're running 4 times faster for a minute.", "Du sluger fentanylen. Verden går langsomt. Du løber 4 gange så hurtigt i et minut.", "src/ui/room.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

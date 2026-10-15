@@ -6353,5 +6353,20 @@
   "en": "Water the shit you grow",
   "da": "Vand det shi du gror",
   "where": "src/items.ts"
+ },
+ "N160": {
+  "en": "Fentanyl",
+  "da": "Fentanyl",
+  "where": "src/items.ts"
+ },
+ "N161": {
+  "en": "Two pills, pressed into one: 1 fentanyl.",
+  "da": "To piller, presset til én: 1 fentanyl.",
+  "where": "src/shared/items.ts"
+ },
+ "N162": {
+  "en": "You swallow the fentanyl. The world slows down. You're running 4 times faster for a minute.",
+  "da": "Du sluger fentanylen. Verden går langsomt. Du løber 4 gange så hurtigt i et minut.",
+  "where": "src/ui/room.ts"
  }
 }

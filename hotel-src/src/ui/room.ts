@@ -2130,8 +2130,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (r.kind === "superpill") {
         p.fast = me.speedUntil; p.fastMult = me.speedMult;
         void update(myRef, { fast: p.fast, fastMult: p.fastMult }).catch(() => undefined);
-        logAction(me, "room", "swallowed a super pill");
-        say("You swallow the super pill. The world slows down. You're running 4 times faster for a minute.");
+        logAction(me, "room", "swallowed fentanyl");
+        say("You swallow the fentanyl. The world slows down. You're running 4 times faster for a minute.");
       } else if (r.kind === "dmt") {
         logAction(me, "room", "swallowed DMT");
         say("You swallow the yellow pill. The floor tilts and the colours start to move.");
