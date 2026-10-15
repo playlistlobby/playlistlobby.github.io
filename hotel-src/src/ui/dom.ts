@@ -46,6 +46,19 @@ export function trimCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
   return out;
 }
 
+/** Puts text on the clipboard (with a fallback for browsers that refuse). */
+export async function copyText(text: string): Promise<boolean> {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* fall through */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.cssText = "position:fixed;left:-999px;top:0";
+    document.body.append(ta); ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch { return false; }
+}
+
 export function toast(msg: string, kind: "ok" | "err" = "ok"): void {
   const t = h("div", { class: `toast ${kind}` }, msg);
   document.body.append(t);

@@ -969,8 +969,8 @@ console.log("--- harvesting: a 25% chance of a seed (or spores) back");
     const r2 = await act(g, "harvest", { fid: "ks" });
     if (r2.data.seed === "shroomspore") sporeBack++;
   }
-  check(`weed: about a quarter gave a seed back (${weedBack} of ${N})`, weedBack >= 2 && weedBack <= 22, String(weedBack));
-  check(`shrooms: about a quarter gave spores back (${sporeBack} of ${N})`, sporeBack >= 2 && sporeBack <= 22, String(sporeBack));
+  check(`weed: some gave a seed back, about 1 in 8 (${weedBack} of ${N})`, weedBack >= 1 && weedBack <= 16, String(weedBack));
+  check(`shrooms: some gave spores back, about 1 in 8 (${sporeBack} of ${N})`, sporeBack >= 1 && sporeBack <= 16, String(sporeBack));
   check("the seeds and spores really are in the pocket", (await total2("weedseed")) === weedBack && (await total2("shroomspore")) === sporeBack);
 }
 

@@ -6543,5 +6543,10 @@
   "en": "Tap two things to mix. The dearer the result, the longer it takes (10 minutes to an hour).",
   "da": "Tryk på to ting for at mixe. Jo dyrere resultat, jo længere tid tager det (10 minutter til en time).",
   "where": "src/ui/mixer.ts"
+ },
+ "N198": {
+  "en": "Admin. Treat what you see here as private.",
+  "da": "Admin. Behandl det, du ser her, som privat.",
+  "where": "src/ui/admin.ts"
  }
 }

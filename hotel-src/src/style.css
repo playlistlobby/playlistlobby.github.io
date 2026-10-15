@@ -701,3 +701,6 @@ html.kb .side-host { display: none; }
 .ll-preview canvas { max-width: 100%; height: auto; }
 
 .mixer-q { font: bold 22px Verdana, sans-serif; color: #b0842a; text-shadow: 0 1px 0 rgba(255,255,255,.6); margin-right: 4px; }
+
+.admin-name { position: absolute; left: 3px; bottom: 2px; font: 10px/1 Verdana, sans-serif; background: rgba(0,0,0,.65); color: #ffe27a; padding: 2px 4px; border-radius: 4px; cursor: copy; user-select: text; }
+.admin-name:hover { background: #2a64d6; color: #fff; }

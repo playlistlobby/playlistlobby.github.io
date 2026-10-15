@@ -321,9 +321,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // The admin account IS 6ixty: in every room they show up as him (his name and look), and in the basement they stand
   // at his spot, can't move, and talk as him.
   const asSixty = me.isAdmin;
-  const frozen = asSixty && roomId === LOBBY_ID;
-  const shownName = asSixty ? SIXTY.name : me.name;
-  const shownFigure = (): string => (asSixty ? sixtyLook().figure : me.figure);
+  const asLandlord = me.isAdmin && roomId === SHOP_ID; // in the shop room the admin is the landlord: he stands behind the counter, can't move, and talks as him
+  const frozen = (asSixty && roomId === LOBBY_ID) || asLandlord;
+  const shownName = asLandlord ? LANDLORD.name : asSixty ? SIXTY.name : me.name;
+  const shownFigure = (): string => (asLandlord ? LANDLORD.figure : asSixty ? sixtyLook().figure : me.figure);
 
   let def: RoomDef = lobbyDef();
   const blocked = new Set<string>();
@@ -734,7 +735,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (ed) { clearSelection(); if (isTut) { say("The door is locked. Finish what Sixty wants first.", "warn"); return; } pending = { type: "door", since: performance.now(), lastTry: 0, to: ed.door }; return; }
     }
 
-    if (target?.npc && target.uid !== me.uid) { clearSelection(); startSixty(); return; }
+    if (target?.npc && target.uid !== me.uid) { clearSelection(); if (isShop) startLandlord(); else startSixty(); return; }
     const item = selectedDef();
     // tapping another player (with nothing selected) opens their menu: add friend, invite to trade, walk here...
     if (target && target.uid !== me.uid && !target.sleeper && !item) { openContextAt(m.x, m.y, e.clientX, e.clientY); return; }
@@ -788,7 +789,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const hasKnife = findSlot(me.inventory, "knife") >= 0;
     const opts: Array<{ label: string; target?: string; danger?: boolean; action: () => void }> = [];
     if (target?.npc && target.uid !== me.uid) {
-      opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
+      opts.push({ label: "Talk", target: isShop ? LANDLORD.name : SIXTY.name, action: () => (isShop ? startLandlord() : startSixty()) });
     } else if (target && target.uid !== me.uid) {
       if (item?.useOnPlayer === "stab" && !(target.uid === LEGEND.id && me.tutorial >= 2)) opts.push({ label: `Use ${item.name} →`, target: target.name, action: () => startStab(target.uid) });
       if (hasKnife && item?.useOnPlayer !== "stab" && !(target.uid === LEGEND.id && me.tutorial >= 2)) opts.push({ label: "Stab", target: target.name, danger: true, action: () => startStab(target.uid) });
@@ -1234,7 +1235,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function startStab(uid: string): void {
     const target = players.get(uid);
     if (!target || uid === me.uid) return;
-    if (target.npc) return startSixty(); // you don't stab 6ixty, you talk to him
+    if (target.npc) return isShop ? startLandlord() : startSixty(); // you don't stab 6ixty, you talk to him
     if (findSlot(me.inventory, "knife") < 0) return say("You need a knife for that.", "warn");
     if (uid === LEGEND.id && me.tutorial >= 2) return say("He isn't getting up.", "warn");
     if (!canStab(me, uid)) {
@@ -1449,6 +1450,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** Walks next to a tile (or a player's tile), returns true once adjacent. */
   function approach(p: Player, goal: Pt | Pt[], now: number, tries: { lastTry: number }): "arrived" | "walking" | "unreachable" {
+    if (me.isAdmin) return "arrived"; // the admin never walks: whatever he clicks opens right away
     const goals = Array.isArray(goal) ? goal : [goal]; // every tile the target covers (a big machine covers two)
     const mt = currentTile(p);
     const key = (t: Pt) => `${t.x},${t.y}`;
@@ -2455,8 +2457,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function start(): void {
     if (started || disposed) return;
     started = true;
-    const spawn = frozen ? { x: SIXTY.x, y: SIXTY.y } : spawnTile(); // as 6ixty you stand exactly where he stands
-    const startDir = frozen ? SIXTY.dir : 2;
+    const spawn = frozen ? (asLandlord ? { x: LANDLORD.x, y: LANDLORD.y } : { x: SIXTY.x, y: SIXTY.y }) : spawnTile(); // as 6ixty (or the landlord) you stand exactly where he stands
+    const startDir = frozen ? (asLandlord ? LANDLORD.dir : SIXTY.dir) : 2;
     const mineP = makePlayer(me.uid, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, sixty: asSixty });
     players.set(me.uid, mineP);
     if (opts.intro && isOwnRoom) {
@@ -3699,7 +3701,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
     }
 
-    if (isShop) {
+    const landlordHere = isShop && [...players.values()].some((q) => q.npc); // the admin is standing there as the landlord: no second one
+    if (isShop && !landlordHere) {
       // the landlord: not a player, only drawn here, behind his counter. He glows like the other things you can use, and brighter when you point at him
       const talking = !!landlordBubble && landlordBubble.until > now;
       const lopts = { figure: LANDLORD.figure, dir: LANDLORD.dir, headDir: LANDLORD.dir, actions: ["std"], gesture: talking ? "spk" : "std", frame: talking ? Math.floor(now / 140) % 2 : 0 };

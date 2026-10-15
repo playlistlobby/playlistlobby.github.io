@@ -34,7 +34,6 @@ import { otherWindowOpen, publishProfile, releasePresence, social, startPresence
 startUpdateCheck(); // a phone that still runs an old copy reloads to the new one
 
 export const APP_NAME = "6ixPlanet";
-export const STAFF_NOTICE = "Staff can see chat, private messages and activity on 6ixPlanet.";
 
 export type View = "room" | "customize" | "shop" | "admin" | "npc";
 
@@ -145,7 +144,6 @@ function showAuth(): void {
           h("div", { class: "logo" }, APP_NAME),
           h("p", { class: "tagline" }, "Sign in to hang out."),
           form,
-          h("p", { class: "notice" }, STAFF_NOTICE),
           useEmulator ? h("p", { class: "notice" }, "(running against local Firebase emulators)") : null))));
 }
 

@@ -80,11 +80,11 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
       .map(([id, m]) => rowFor(id, m));
     const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
     return visible.sort((a, b) =>
-      Number(b.friend) - Number(a.friend) || Number(b.online) - Number(a.online) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, 40);
+      Number(b.friend) - Number(a.friend) || Number(b.online) - Number(a.online) || Number(a.idle) - Number(b.idle) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, me.isAdmin ? 300 : 40); // (online first, active before idle)
   }
 
   /** a shroom or DMT is working: every door is open */
-  const tripping = (): boolean => me.shroomUntil > serverNow();
+  const tripping = (): boolean => me.isAdmin || me.shroomUntil > serverNow(); // (the admin can walk into anybody's room, always)
 
   function actionFor(r: Row): HTMLElement {
     if (tripping() && !(r.friend || r.access === "open")) return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Walk in");
@@ -100,7 +100,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   }
 
   function rowEl(r: Row): HTMLElement {
-    const sub = r.friend ? "friend" : r.access === "open" ? "open to everyone" : tripping() ? "Opened by a shroom" : r.access === "knock" ? "knock to enter" : "closed";
+    const sub = r.friend ? "friend" : r.access === "open" ? "open to everyone" : me.isAdmin ? "admin: always open" : tripping() ? "Opened by a shroom" : r.access === "knock" ? "knock to enter" : "closed";
     return h("div", { class: "door-row" },
       headBoxFor(r.owner),
       h("span", { class: "dot " + (r.online ? (r.idle ? "idle" : "on") : "") }),

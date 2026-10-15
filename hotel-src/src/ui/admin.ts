@@ -55,7 +55,7 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
   const tabsEl = h("div", { class: "admin-tabs tabs" });
   const body = h("div", { class: "admin-body" });
   root.append(h("div", { class: "admin" },
-    h("div", { class: "privnote" }, "Admin. Players are told on the sign-in screen that staff can see chat, private messages and activity. Treat what you see here as private."),
+    h("div", { class: "privnote" }, "Admin. Treat what you see here as private."),
     tabsEl, body));
 
   function show(next: Tab): void {

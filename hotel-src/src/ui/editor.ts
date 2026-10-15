@@ -1,4 +1,4 @@
-import { h, toast, trimCanvas } from "./dom";
+import { copyText, h, toast, trimCanvas } from "./dom";
 import {
   DEFAULT_FIGURE,
   defaultColors,
@@ -138,6 +138,14 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
     const shown = all.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
     const current = parts[slotId];
     gridEl.replaceChildren();
+    // the admin sees every item's name (slot-id, e.g. ch-3030) and can copy it, or the whole list, to paste anywhere
+    if (profile.isAdmin && mode !== "npc") {
+      const names = (list: Item[], slotKey: string) => list.map((i) => `${slotKey}-${i.id}`);
+      const copy = async (list: string[], what: string) => toast((await copyText(list.join(String.fromCharCode(10)))) ? `Copied ${list.length} names (${what}).` : "Couldn't copy.", list.length ? "ok" : "err");
+      gridEl.append(h("div", { class: "admin-names", style: { gridColumn: "1 / -1", display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" } },
+        h("button", { class: "btn small", onclick: () => void copy(names(all, slotId), slot.label) }, `Copy names: ${slot.label} (${all.length})`),
+        h("button", { class: "btn small", onclick: () => void copy(SLOTS.flatMap((s) => names(itemsFor(s.id, gender).filter((i) => (mode === "shop" ? !isOwned(i, profile.owned) && i.shopOn : isOwned(i, profile.owned))), s.id)), "everything") }, "Copy all names")));
+    }
 
     if (mode !== "shop" && !slot.required) {
       gridEl.append(
@@ -153,7 +161,8 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
           drawPreview();
           redraw();
         },
-      }, thumb, mode === "shop" ? h("span", { class: "price" }, `🩸 ${item.price}`) : null);
+      }, thumb, mode === "shop" ? h("span", { class: "price" }, `🩸 ${item.price}`) : null,
+      profile.isAdmin && mode !== "npc" ? h("span", { class: "admin-name", title: "Click to copy", onclick: (e: Event) => { e.stopPropagation(); void copyText(`${slotId}-${item.id}`).then((ok) => toast(ok ? `Copied ${slotId}-${item.id}` : "Couldn't copy.", ok ? "ok" : "err")); } }, `${slotId}-${item.id}`) : null);
       gridEl.append(cell);
 
       const thumbParts: Parts = { ...parts, [slotId]: { id: item.id, colors: defaultColors(item, current) } };
