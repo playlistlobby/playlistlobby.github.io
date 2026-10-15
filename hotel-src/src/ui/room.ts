@@ -1324,13 +1324,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         playSfx("give", 0.6);
         if (r.seed) window.setTimeout(() => { if (!disposed && r.seed) giftPop(`+1 ${itemDef(r.seed)?.name ?? r.seed}`, itemImg(r.seed)); }, 700);
         if (r.crop === "shroom") {
-          giftPop(`+${r.qty ?? 3} Shroom`, itemImg("shroom"));
+          giftPop(`+${r.qty ?? 1} Shroom`, itemImg("shroom"));
           logAction(me, "room", "picked shrooms");
           if (r.seed) say("Some spores fell out of the shrooms. You keep them.");
           return say(r.ass ? "You pick one shroom. They never got their water." : "You pick the shrooms. Fresh.");
         }
         if (r.seed) say("A seed fell out of the plant. You keep it.");
-        giftPop(r.ass ? "+3 Ass weed" : "+3 Weed", itemImg("weed"));
+        giftPop(`+${r.qty ?? 1} ${r.ass ? "Ass weed" : "Weed"}`, itemImg("weed"));
         logAction(me, "room", `harvested ${r.ass ? "ass weed" : "weed"}`);
         return say(r.ass ? "You pick it. It's ass weed: it never got its water." : "You pick the buds. Nice.");
       }

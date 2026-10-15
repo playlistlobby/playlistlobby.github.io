@@ -2,7 +2,7 @@
 import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from "./util";
 import { fail } from "../ctx";
 import {
-  addToInv, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { combine, findSlot, growMsOf, SMOKABLE, smokeMsOf } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
@@ -264,7 +264,8 @@ export const harvest: Action = {
     const ass = !(typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!); // never got its one watering
     const w = await c.user();
     const shrooms = row.crop === "shroom";
-    const give = shrooms ? { item: "shroom", qty: ass ? 1 : 3 } : { item: "weed", qty: 3, ...(ass ? { ass: true } : {}) }; // thirsty shrooms give only one
+    const qty = Math.random() < DOUBLE_HARVEST_CHANCE ? 2 : 1; // one per harvest, and now and then two
+    const give = shrooms ? { item: "shroom", qty: ass ? 1 : qty } : { item: "weed", qty, ...(ass ? { ass: true } : {}) }; // (shrooms that never got their water give only one)
     const next = addToInv(w.s.inventory, give);
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;

@@ -412,13 +412,13 @@ console.log("--- combining, growing");
   await owner("PATCH", `roomsMeta/${room}/furni/kit1`, { plantedAt: Date.now() - 21 * 60_000, wateredAt: Date.now() - 12 * 60_000 });
   const h = await act(a, "harvest", { fid: "kit1" });
   ok("harvest after 20 minutes", h);
-  check("3 good weed", h.state.inventory.some((x) => x && x.item === "weed" && x.qty === 3 && !x.ass));
+  check("1 or 2 good weed (2 only 15% of the time)", h.state.inventory.some((x) => x && x.item === "weed" && (x.qty === 1 || x.qty === 2) && !x.ass));
   // a second plant that never gets its water
   const seed2 = (await state(a)); const sl = seed2.inventory.findIndex((x) => x && x.item === "weedseed");
   if (sl >= 0) { ok("plant another seed", await act(a, "plant", { fid: "kit1", slot: sl })); }
   await owner("PATCH", `roomsMeta/${room}/furni/kit1`, { plantedAt: Date.now() - 21 * 60_000 });
   const h2 = await act(a, "harvest", { fid: "kit1" });
-  if (sl >= 0) { ok("harvest without ever watering", h2); check("it is ass weed", h2.state.inventory.some((x) => x && x.item === "weed" && x.ass === true && x.qty === 3)); }  bad("a kit that isn't yours", await act(await fresh("t_grow2"), "harvest", { fid: "kit1" }));
+  if (sl >= 0) { ok("harvest without ever watering", h2); check("it is ass weed", h2.state.inventory.some((x) => x && x.item === "weed" && x.ass === true && (x.qty === 1 || x.qty === 2))); }  bad("a kit that isn't yours", await act(await fresh("t_grow2"), "harvest", { fid: "kit1" }));
 }
 
 console.log("--- trading");
@@ -716,7 +716,7 @@ console.log("--- shrooms and DMT");
   await owner("PATCH", `roomsMeta/${room}/furni/kit`, { plantedAt: Date.now() - 25 * 60_000, wateredAt: Date.now() - 10 * 60_000 });
   const hv = await act(d, "harvest", { fid: "kit" });
   ok("pick the shrooms", hv);
-  check("three shrooms, and the kit is empty again", total(hv.state.inventory, "shroom") === 3 && (await owner("GET", `roomsMeta/${room}/furni/kit/crop`)) === null, JSON.stringify(hv.data));
+  check("three shrooms, and the kit is empty again", [1, 2].includes(total(hv.state.inventory, "shroom")) && (await owner("GET", `roomsMeta/${room}/furni/kit/crop`)) === null, JSON.stringify(hv.data));
   // shroom + pill in the mixer = DMT
   const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
   const mx = await act(d, "mix", { fid: "mx", a: slotOf(hv.state, "shroom"), b: slotOf(hv.state, "pill") });

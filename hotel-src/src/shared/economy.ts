@@ -24,6 +24,8 @@ export const DMT_MS = 10_000;
 export const SHROOM_MS = 3 * 60_000;
 /** harvesting: a 25% chance of getting one seed (or spores, from shrooms) back */
 export const SEED_BACK_CHANCE = 0.25;
+/** a harvest gives 1 weed (or 1 shroom), and now and then (15%) 2 */
+export const DOUBLE_HARVEST_CHANCE = 0.15;
 export const DMT_TRIP_MS = 4 * 60_000;
 export const SUPERPILL_MULT = 4;
 /** the lean (codeine): for an hour, garbage cans give twice as much and can be searched twice as often. You hold the cup for the first 2 minutes. */
