@@ -12,7 +12,7 @@ export const ITEM_ID_LIST = [
   // kodimagnyl (vending machine, the bins), and what is made from it: the lean ("codeine") and the super pill
   "kodimagnyl", "codeine", "superpill",
   // shrooms (grown from spores found in the bins) let you into any room; a shroom pressed into a pill is DMT
-  "shroomspore", "shroom", "dmt",
+  "shroomspore", "shroom", "weakshroom", "dmt",
   // the mystery CDs (yellow, green, blue) and the full album (red), bought with real money from the record player in the shop
   "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album",
   // hash (ass weed + kodimagnyl), hash mix (hash + cigarette) and the hash joint (hash mix + joint paper)
@@ -127,7 +127,7 @@ export const SMOKABLE: Record<string, SmokeDef> = {
   blunt_chem: { mult: 2, boostMs: 90_000, kind: "blunt", speedMs: 90_000, chemMs: 90_000, smokeMs: 5_000 },
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "hash", "hashmix", "chudmix", "trollmix", "cigbutt", "tobacco"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco"]);
 /** Weed grows for 10 minutes, shrooms for 25. The water bar runs dry after 5: water it once, any time while it grows (even before the bar is empty), or the harvest turns out poor. */
 export const GROW_MS = 10 * 60_000;
 export const GROW_MS_SHROOM = 25 * 60_000;
@@ -223,6 +223,7 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "weedseed": return 2;
     case "weed": return ass ? 4 : 6;
     case "shroomspore": return 3;
+    case "weakshroom": return 14; // a badly watered shroom: the same price as a good one
     case "shroom": return 14; // worth more than weed: 3 per kit and they open every door
     // mixed
     case "mix": return 5; // weed 6 + a cigarette -> 2

@@ -1234,6 +1234,22 @@ console.log("--- the vending machine's daily stock of mixers and growing kits");
   for (let i = 0; i < 4; i++) if ((await act(older, "buyVending", { id: "mixer" })).ok) n3++;
   check("day 5 and later: one a day", n3 === 1, String(n3));
 }
+console.log("--- weak shrooms");
+{
+  const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
+  const w = await fresh("t_weak", { inventory: { 0: { item: "weed", qty: 1 } } });
+  await act(w, "sync");
+  const room = `u_${w.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: w.uid, ownerName: "t_weak", name: "t_weak's room", access: "knock", w: 8, h: 8, furni: { ks: { kind: "f_planter", x: 2, y: 2, crop: "shroom", plantedAt: Date.now() - 26 * 60_000 }, mx: { kind: "f_mixer", x: 4, y: 2 } } });
+  await stand(w, room, 4, 4);
+  const hv = await act(w, "harvest", { fid: "ks" });
+  ok("harvest an unwatered shroom", hv);
+  check("a weak shroom, not a shroom", total(hv.state.inventory, "weakshroom") === 1 && total(hv.state.inventory, "shroom") === 0, JSON.stringify(hv.state.inventory.filter(Boolean)));
+  bad("it can't be mixed with weed", await act(w, "mix", { fid: "mx", a: slotOf(hv.state, "weakshroom"), b: slotOf(hv.state, "weed") }));
+  const eat = await act(w, "consume", { slot: slotOf(hv.state, "weakshroom") });
+  ok("but it can be eaten", eat);
+  check("same effect: 3 minutes of open doors", eat.state.shroomUntil - Date.now() > 170_000, String(eat.state.shroomUntil - Date.now()));
+}
 console.log("--- /skip");
 {
   const k = await fresh("t_skip", { inventory: { 0: { item: "kodimagnyl", qty: 1 }, 1: { item: "wateringcan_full", qty: 1 } } });

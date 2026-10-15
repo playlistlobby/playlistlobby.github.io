@@ -258,6 +258,13 @@ export const ITEMS: Record<string, ItemDef> = {
     icon: assetUrl("items/shroom.png"),
     useSelf: "consume",
   },
+  weakshroom: {
+    id: "weakshroom",
+    name: "Weak shroom",
+    examine: "A shroom that never got its water. It works the same when you eat it, but it can't be mixed with anything.",
+    icon: assetUrl("items/weakshroom.png"),
+    useSelf: "consume",
+  },
   dmt: {
     id: "dmt",
     name: "DMT",

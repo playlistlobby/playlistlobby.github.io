@@ -217,5 +217,8 @@ set("You put the little pattern on your tongue. Everything starts to breathe, an
 set("Sold out today. New stock tomorrow.", "Udsolgt i dag. Nye varer i morgen.", "src/ui/vendingShop.ts");
 set("Sold out today", "Udsolgt i dag", "src/ui/vendingShop.ts");
 set("Sold out for today. New stock tomorrow.", "Udsolgt for i dag. Nye varer i morgen.", "server/src/actions/shop.ts");
+set("Weak shroom", "Svag shroom", "src/items.ts");
+set("A shroom that never got its water. It works the same when you eat it, but it can't be mixed with anything.", "En shroom der aldrig fik sit vand. Den virker på samme måde, når du spiser den, men den kan ikke mixes med noget.", "src/items.ts");
+set("You pick one weak shroom. It never got its water.", "Du plukker én svag shroom. Den fik aldrig sit vand.", "src/ui/room.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

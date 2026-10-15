@@ -118,7 +118,7 @@ export const consume: Action = {
       s.speedMult = SUPERPILL_MULT;
       return { kind: "superpill", speedMs: SUPERPILL_MS, speedMult: SUPERPILL_MULT };
     }
-    if (it!.item === "shroom") {
+    if (it!.item === "shroom" || it!.item === "weakshroom") { // a weak shroom works the same, it just can't be mixed
       s.inventory = takeOneFrom(s.inventory, slot);
       s.shroomUntil = c.now + SHROOM_MS; // any room is open to you (the database rules look at this too)
       return { kind: "shroom", ms: DMT_MS, tripMs: SHROOM_MS }; // (the subtle patterns are drawn by the browser)
@@ -277,7 +277,7 @@ export const harvest: Action = {
     const w = await c.user();
     const shrooms = row.crop === "shroom";
     const qty = Math.random() < DOUBLE_HARVEST_CHANCE ? 2 : 1; // one per harvest, and now and then two
-    const give = shrooms ? { item: "shroom", qty: ass ? 1 : qty } : { item: "weed", qty, ...(ass ? { ass: true } : {}) }; // (shrooms that never got their water give only one)
+    const give = shrooms ? { item: ass ? "weakshroom" : "shroom", qty: ass ? 1 : qty } : { item: "weed", qty, ...(ass ? { ass: true } : {}) }; // (shrooms that never got their water give only one)
     const next = addToInv(w.s.inventory, give);
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;

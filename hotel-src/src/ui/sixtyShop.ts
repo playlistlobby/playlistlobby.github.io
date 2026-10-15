@@ -48,11 +48,13 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
       const sell = async (qty: number) => {
         try {
           let left = qty, gain = 0;
-          for (const sl of grp.slots) { // (it may lie in several slots: take from one after the other)
-            if (left <= 0) break;
-            const take = Math.min(left, bundle > 1 ? Math.floor(sl.qty / bundle) * bundle : sl.qty);
-            if (take <= 0) continue;
-            gain += await sellWeed(me, sl.slot, take);
+          // (the pocket can shift after every sale, so each time the slot is looked up again from what is in the pocket now)
+          while (left > 0) {
+            const at = me.inventory.findIndex((x) => x && x.item === grp.item && !!x.ass === !!grp.ass && !x.lit && !x.inPlayer && x.qty >= bundle);
+            if (at < 0) break;
+            const have = me.inventory[at]!.qty;
+            const take = Math.min(left, bundle > 1 ? Math.floor(have / bundle) * bundle : have);
+            gain += await sellWeed(me, at, take);
             left -= take;
           }
           picking = null;

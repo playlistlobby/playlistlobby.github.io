@@ -6523,5 +6523,20 @@
   "en": "Sold out for today. New stock tomorrow.",
   "da": "Udsolgt for i dag. Nye varer i morgen.",
   "where": "server/src/actions/shop.ts"
+ },
+ "N194": {
+  "en": "Weak shroom",
+  "da": "Svag shroom",
+  "where": "src/items.ts"
+ },
+ "N195": {
+  "en": "A shroom that never got its water. It works the same when you eat it, but it can't be mixed with anything.",
+  "da": "En shroom der aldrig fik sit vand. Den virker på samme måde, når du spiser den, men den kan ikke mixes med noget.",
+  "where": "src/items.ts"
+ },
+ "N196": {
+  "en": "You pick one weak shroom. It never got its water.",
+  "da": "Du plukker én svag shroom. Den fik aldrig sit vand.",
+  "where": "src/ui/room.ts"
  }
 }
