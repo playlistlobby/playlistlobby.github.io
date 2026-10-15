@@ -17,7 +17,7 @@ export const stab: Action = {
     if (target === c.uid) fail("You can't stab yourself.");
     const room = text(a.room, /^[A-Za-z0-9_-]{1,60}$/, "room");
     const me = await requireInRoom(c, room);
-    const theirs = await c.db.get<{ x?: number; y?: number }>(`rooms/${room}/players/${target}`);
+    const theirs = await c.db.get<{ x?: number; y?: number; bed?: boolean }>(`rooms/${room}/players/${target}`);
     // a sleeping owner (offline) isn't in the room's player list: you can still stab them in their own room
     if (!theirs && room !== `u_${target}`) fail("They've left the room.");
     if (me && theirs && typeof theirs.x === "number" && typeof theirs.y === "number" && cheb(me, { x: theirs.x, y: theirs.y }) > 3) fail("They're too far away.");
@@ -27,7 +27,9 @@ export const stab: Action = {
     if (findSlot(s.inventory, "knife") < 0) fail("You need a knife for that.");
     const today = todayStartAt(c.now);
     if ((s.stabs[target] ?? 0) >= today) fail("You've already stabbed them today.");
-    const gain = stabGainAt(s, c.now);
+    // somebody asleep (an offline owner in their bed, or lying in bed) is always worth exactly 1 drop: no boost counts, so sleepers can't be farmed
+    const sleeping = !theirs || theirs.bed === true;
+    const gain = sleeping ? 1 : stabGainAt(s, c.now);
     s.blood += gain;
     s.stabs[target] = today;
     return { gain };

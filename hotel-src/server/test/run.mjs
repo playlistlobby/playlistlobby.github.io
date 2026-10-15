@@ -21,7 +21,7 @@ const owner = async (method, path, body) => {
 };
 const act = async (who, a, args = {}) => {
   for (let tries = 0; ; tries++) {
-    const r = await fetch(`${API}/act`, { method: "POST", headers: { authorization: `Bearer ${who.token}`, "content-type": "application/json" }, body: JSON.stringify({ a, args }) });
+    const r = await fetch(`${API}/act`, { method: "POST", headers: { authorization: `Bearer ${who.token}`, "content-type": "application/json", ...(who.device ? { "x-device": who.device } : {}) }, body: JSON.stringify({ a, args }) });
     const j = await r.json();
     if (r.status === 429 && tries < 12 && !process.env.NO_RETRY) { await new Promise((x) => setTimeout(x, 800)); continue; } // the anti-spam limit: wait and go on
     return { status: r.status, ...j };
@@ -757,6 +757,33 @@ console.log("--- shrooms and DMT");
   check("on a shroom: the room can be read", (await peek(trip)) === 200);
   await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() - 1000);
   check("when it wears off: closed again", (await peek(trip)) === 401);
+  // accounts on the same device are peers: a shroom doesn't open each other's rooms
+  await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() + 60_000);
+  await owner("PUT", `peers/${trip.uid}/${owner2.uid}`, true);
+  check("on a shroom, but the owner is a peer (same device): still closed", (await peek(trip)) === 401);
+  await owner("DELETE", `peers/${trip.uid}/${owner2.uid}`);
+  check("not peers: the shroom works again", (await peek(trip)) === 200);
+  await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() - 1000);
+}
+console.log("--- peers: same device, same connection; sleepers give 1");
+{
+  const a = await fresh("t_peer_a"), b = await fresh("t_peer_b"), c3 = await fresh("t_peer_c");
+  a.device = b.device = "device-aaaa-1111"; c3.device = "device-cccc-3333";
+  await act(a, "sync"); await act(b, "sync"); await act(c3, "sync");
+  const pa = (await owner("GET", `peers/${a.uid}`)) ?? {};
+  check("a and b share a device: peers both ways", pa[b.uid] === true && (await owner("GET", `peers/${b.uid}/${a.uid}`)) === true, JSON.stringify(pa));
+  check("c is on another device: nobody's peer", !(pa[c3.uid]) && !((await owner("GET", `peers/${c3.uid}`)) ?? {})[a.uid]);
+  // a sleeping owner (offline, in their own room) gives exactly 1, whatever the boost
+  const knife = { 0: { item: "knife", qty: 1 } };
+  await owner("PUT", `users/${c3.uid}/inventory`, knife);
+  await owner("PUT", `users/${c3.uid}/boostUntil`, Date.now() + 120_000);
+  await owner("PUT", `users/${c3.uid}/boostMult`, 4);
+  const room = `u_${b.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: b.uid, ownerName: "t_peer_b", name: "b's room", access: "open", w: 8, h: 8 });
+  await stand(c3, room, 3, 3);
+  const st = await act(c3, "stab", { target: b.uid, room });
+  ok("stab the sleeping owner", st);
+  check("a sleeper is worth exactly 1, boost or not", st.data.gain === 1, JSON.stringify(st.data));
 }
 
 console.log("--- CDs: the record player in the shop, paying, the album");
@@ -1177,6 +1204,35 @@ console.log("--- troldmand mix, LSD, the plain chud joint");
   ok("smoke it", fin);
   check("it only changes the name for 30 seconds", fin.data.chudMs === 30_000 && fin.data.mult === 0, JSON.stringify(fin.data));
   check("no blood bonus", !(fin.state.boostUntil > Date.now()), String(fin.state.boostUntil));
+}
+console.log("--- the vending machine's daily stock of mixers and growing kits");
+{
+  const room = "shop";
+  const v = await fresh("t_vend", { blood: 500 });
+  await act(v, "sync");
+  await stand(v, room, 3, 3);
+  let got = 0;
+  for (let i = 0; i < 5; i++) if ((await act(v, "buyVending", { id: "mixer" })).ok) got++;
+  check("day 1: five mixers", got === 5, String(got));
+  bad("the sixth is sold out", await act(v, "buyVending", { id: "mixer" }));
+  ok("kits have their own stock", await act(v, "buyVending", { id: "planter" }));
+  ok("lighters have no limit", await act(v, "buyVending", { id: "lighter" }));
+  // an account made 2 days ago: 3 a day
+  const old = await fresh("t_vend_old", { blood: 500 });
+  await owner("PUT", `users/${old.uid}/createdAt`, Date.now() - 2 * 86_400_000);
+  await act(old, "sync");
+  await stand(old, room, 3, 3);
+  let n2 = 0;
+  for (let i = 0; i < 6; i++) if ((await act(old, "buyVending", { id: "planter" })).ok) n2++;
+  check("day 3: three kits", n2 === 3, String(n2));
+  // an account made long ago: one a day
+  const older = await fresh("t_vend_older", { blood: 500 });
+  await owner("PUT", `users/${older.uid}/createdAt`, Date.now() - 20 * 86_400_000);
+  await act(older, "sync");
+  await stand(older, room, 3, 3);
+  let n3 = 0;
+  for (let i = 0; i < 4; i++) if ((await act(older, "buyVending", { id: "mixer" })).ok) n3++;
+  check("day 5 and later: one a day", n3 === 1, String(n3));
 }
 console.log("--- /skip");
 {

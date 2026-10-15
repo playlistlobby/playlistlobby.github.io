@@ -6508,5 +6508,20 @@
   "en": "You put the little pattern on your tongue. Everything starts to breathe, and your legs won't stop.",
   "da": "Du lægger det lille mønster på tungen. Alting begynder at ånde, og dine ben vil ikke stoppe.",
   "where": "src/items.ts"
+ },
+ "N191": {
+  "en": "Sold out today. New stock tomorrow.",
+  "da": "Udsolgt i dag. Nye varer i morgen.",
+  "where": "src/ui/vendingShop.ts"
+ },
+ "N192": {
+  "en": "Sold out today",
+  "da": "Udsolgt i dag",
+  "where": "src/ui/vendingShop.ts"
+ },
+ "N193": {
+  "en": "Sold out for today. New stock tomorrow.",
+  "da": "Udsolgt for i dag. Nye varer i morgen.",
+  "where": "server/src/actions/shop.ts"
  }
 }

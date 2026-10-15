@@ -13,7 +13,7 @@ export interface MixerApi { close(): void; refresh(): void; /** a pocket item wa
 interface Job { item: string; qty: number; doneAt: number; ms: number }
 
 /** The mixer window: tap two things, see what they make, press Mix. It works for 10 minutes; come back and Collect. */
-export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: string, onChange: () => void, onClose: () => void): MixerApi {
+export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: string, onChange: () => void, onClose: () => void, onCollect?: (item: string, qty: number) => void): MixerApi {
   const me = ctx.profile;
   let closed = false;
   let first: number | null = null;
@@ -52,6 +52,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
               const r = await call<{ item?: string; qty?: number }>(me, "mixCollect", { fid });
               playSfx("give", 0.5);
               toast(`You collect ${r.qty ?? j.qty} ${d?.name ?? "of it"}.`);
+              onCollect?.(r.item ?? j.item, r.qty ?? j.qty); // the "+2 Thing" pop-up over your head, like a harvest
               onChange();
             } catch (err) { toast((err as Error).message || "It isn't done yet.", "err"); }
           },

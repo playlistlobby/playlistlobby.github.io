@@ -74,6 +74,10 @@ export const STORAGE_MAX_ITEMS = 9999;
 export interface Snapshot {
   blood: number;
   owned: Record<string, true>;
+  /** the day the account was made (ms; from the database, read only): the vending machine's daily stock shrinks with every day since */
+  joinAt: number;
+  /** what this player bought from the vending machine's limited stock today: item id -> { day (UTC midnight, ms), how many } */
+  vend: Record<string, { day: number; n: number }>;
   /** what this player has mixed and collected at least once (the item it makes): until then the mixer only shows a "?" for the result */
   mixed: Record<string, true>;
   inventory: Inventory;
@@ -111,6 +115,25 @@ export interface Snapshot {
 
 export const todayStartAt = (now: number): number => now - (now % DAY_MS);
 
+/**
+ * The vending machine's daily stock of the mixer and the growing kit: 5 a day on your first day, one fewer every day, never fewer than 1.
+ * (keys are the vending machine's ids)
+ */
+export const VENDING_DAILY: Record<string, number> = { mixer: 5, planter: 5 };
+export function vendLimit(id: string, joinAt: number, now: number): number | null {
+  const first = VENDING_DAILY[id];
+  if (first === undefined) return null;
+  const days = Math.max(0, Math.floor((todayStartAt(now) - todayStartAt(joinAt || now)) / DAY_MS));
+  return Math.max(1, first - days);
+}
+/** how many more you can buy today (null = no limit on this one) */
+export function vendLeft(s: { joinAt: number; vend: Record<string, { day: number; n: number }> }, id: string, now: number): number | null {
+  const limit = vendLimit(id, s.joinAt, now);
+  if (limit === null) return null;
+  const got = s.vend[id];
+  return Math.max(0, limit - (got && got.day === todayStartAt(now) ? got.n : 0));
+}
+
 /** The economy part of a player's database node as a Snapshot, with the defaults for older accounts. `valid` says which item ids exist. */
 export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: boolean): Snapshot {
   v = v ?? {};
@@ -126,6 +149,8 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
   return {
     blood: Number(v.blood) || 0,
     owned: Object.fromEntries(Object.entries((v.owned ?? {}) as Record<string, unknown>).filter(([, x]) => x === true).map(([k]) => [k, true as const])),
+    joinAt: Number(v.createdAt) || 0,
+    vend: Object.fromEntries(Object.entries((v.vend ?? {}) as Record<string, any>).filter(([, x]) => x && typeof x.day === "number" && typeof x.n === "number").map(([k, x]) => [k, { day: x.day, n: x.n }])),
     mixed: Object.fromEntries(Object.entries((v.mixed ?? {}) as Record<string, unknown>).filter(([, x]) => x === true).map(([k]) => [k, true as const])),
     inventory,
     storage: Object.fromEntries(Object.entries(nums(v.storage)).filter(([, n]) => n > 0)),
@@ -163,7 +188,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
   if (before.sixty.knifeAt !== after.sixty.knifeAt) patch[`${base}sixty/knifeAt`] = after.sixty.knifeAt;
   if (before.sixty.syringeGiven !== after.sixty.syringeGiven) patch[`${base}sixty/syringeGiven`] = after.sixty.syringeGiven;
   for (let i = 0; i < INV_SIZE; i++) if (!same(before.inventory[i] ?? null, after.inventory[i] ?? null)) patch[`${base}inventory/${i}`] = after.inventory[i] ?? null;
-  for (const m of ["storage", "stabs", "dumpsters", "owned", "mixed"] as const) {
+  for (const m of ["storage", "stabs", "dumpsters", "owned", "mixed", "vend"] as const) {
     const b = before[m] as Record<string, unknown>, a = after[m] as Record<string, unknown>;
     for (const k of new Set([...Object.keys(b), ...Object.keys(a)])) if (!same(b[k], a[k])) patch[`${base}${m}/${k}`] = k in a ? a[k] : null;
   }

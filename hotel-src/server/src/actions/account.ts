@@ -7,6 +7,23 @@ import { DISABLED_ITEMS, ITEM_IDS, SMOKABLE, smokeMsOf } from "../../../src/shar
 
 const CLOTHING_SLOTS = new Set(["hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", "cp", "ca", "lg", "sh", "wa"]);
 
+/**
+ * Accounts that log in from the same device or the same connection are peers: peers/<a>/<b> and peers/<b>/<a> are set (only the server writes them).
+ * A peer's room does not open for a shroom / DMT / chud (the database rules check it), and a peer isn't offered on the visit list while you trip,
+ * so nobody can run a pile of accounts to walk from one of their own rooms to the next.
+ */
+async function notePeers(c: Ctx): Promise<void> {
+  for (const key of c.net) {
+    const known = (await c.db.get<Record<string, true>>(`netUsers/${key}`)) ?? {};
+    for (const other of Object.keys(known)) {
+      if (other === c.uid) continue;
+      c.extra[`peers/${c.uid}/${other}`] = true;
+      c.extra[`peers/${other}/${c.uid}`] = true;
+    }
+    if (!known[c.uid]) c.extra[`netUsers/${key}/${c.uid}`] = true;
+  }
+}
+
 /** Login: everything an account made before something existed gets now. Safe to call as often as you like. */
 export const sync: Action = {
   async run(c) {
@@ -27,6 +44,7 @@ export const sync: Action = {
     s.inventory = mergeStacks(s.inventory); // things that stack now (butts) but were lying about one to a slot
     if (raw.blood === undefined) s.blood = START_BLOOD;
     if (raw.createdAt === undefined) c.extra[`users/${c.uid}/createdAt`] = c.now;
+    await notePeers(c);
     return {};
   },
 };

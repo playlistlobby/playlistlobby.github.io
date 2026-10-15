@@ -76,7 +76,7 @@ export class Economy {
   }
 
   async fetch(request: Request): Promise<Response> {
-    let body: { caller: Caller; action: string; args: unknown };
+    let body: { caller: Caller; action: string; args: unknown; net?: unknown };
     try { body = (await request.json()) as typeof body; } catch { return json({ ok: false, error: "Bad request." }, 400); }
     void this.ensureAlarm();
     const { caller, action } = body;
@@ -87,6 +87,7 @@ export class Economy {
 
     const db = new Rtdb(this.env);
     const c = new Ctx(this.env, db, caller);
+    if (Array.isArray(body.net)) c.net = body.net.filter((k): k is string => typeof k === "string" && /^(ip|dv)[0-9a-f]{18}$/.test(k)).slice(0, 4);
     const releases: Array<() => void> = [];
     try {
       const keys = new Set<string>([`user:${caller.uid}`]);

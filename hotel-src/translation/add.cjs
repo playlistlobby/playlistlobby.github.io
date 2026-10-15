@@ -214,5 +214,8 @@ set("Hash crumbled into good weed: 2 troldmand mix.", "Hash smuldret ud i god we
 set("Ass weed and a cigarette, rolled together: 1 chud joint.", "Ass weed og en cigaret, rullet sammen: 1 chud joint.", "src/items.ts");
 set("You finish the chud joint. Nothing happens. Except your name is now chud.", "Du ryger chud jointen færdig. Der sker ingenting. Bortset fra at dit navn nu er chud.", "src/items.ts");
 set("You put the little pattern on your tongue. Everything starts to breathe, and your legs won't stop.", "Du lægger det lille mønster på tungen. Alting begynder at ånde, og dine ben vil ikke stoppe.", "src/items.ts");
+set("Sold out today. New stock tomorrow.", "Udsolgt i dag. Nye varer i morgen.", "src/ui/vendingShop.ts");
+set("Sold out today", "Udsolgt i dag", "src/ui/vendingShop.ts");
+set("Sold out for today. New stock tomorrow.", "Udsolgt for i dag. Nye varer i morgen.", "server/src/actions/shop.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

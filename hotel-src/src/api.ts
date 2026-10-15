@@ -4,6 +4,15 @@ import { API_URL } from "./apiConfig";
 import type { Snapshot } from "./shared/economy";
 import { trServer } from "./daRuntime";
 
+/** A random id for this browser (kept in its storage): the server uses it, with the network address, to tell which accounts share a device or a connection. */
+function deviceId(): string {
+  try {
+    let id = localStorage.getItem("sixplanet.device");
+    if (!id) { id = (crypto.randomUUID?.() ?? String(Math.random()).slice(2) + Date.now().toString(36)).replace(/[^A-Za-z0-9-]/g, ""); localStorage.setItem("sixplanet.device", id); }
+    return id;
+  } catch { return ""; }
+}
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
 }
@@ -19,7 +28,7 @@ async function call(action: string, args: object, forceToken: boolean): Promise<
   if (!user) throw new ApiError("Please log in again.", 401);
   const token = await user.getIdToken(forceToken);
   try {
-    return await fetch(`${base()}/act`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ a: action, args }) });
+    return await fetch(`${base()}/act`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "x-device": deviceId() }, body: JSON.stringify({ a: action, args }) });
   } catch (err) {
     if (err instanceof ApiError) throw err;
     throw new ApiError("Can't reach the game server. Check your connection.", 0);

@@ -38,6 +38,8 @@ export class Ctx {
   now = Date.now();
   readonly works = new Map<string, Work>();
   readonly extra: Record<string, unknown> = {};
+  /** hashes of this request's connection and device (ip..., dv...): accounts that share one are peers (see peers/<uid>) */
+  net: string[] = [];
 
   constructor(readonly env: Env, readonly db: Rtdb, readonly caller: Caller) {}
 

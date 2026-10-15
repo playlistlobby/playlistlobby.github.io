@@ -30,6 +30,9 @@ export interface Profile {
   /** drops of blood: the hotel's currency */
   blood: number;
   owned: Record<string, true>;
+  /** the account's start (ms) and what was bought today from the vending machine's limited stock */
+  joinAt: number;
+  vend: Record<string, { day: number; n: number }>;
   /** the things this player has mixed and collected before (the mixer shows "?" for anything else) */
   mixed: Record<string, true>;
   wardrobe: Record<string, Outfit>;
@@ -118,6 +121,8 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.blood = s.blood;
   p.owned = s.owned;
   p.mixed = s.mixed;
+  p.joinAt = s.joinAt;
+  p.vend = s.vend;
   p.storage = s.storage;
   p.stabs = s.stabs;
   p.dumpsters = s.dumpsters;
@@ -182,6 +187,8 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     blood: 0,
     owned: {},
     mixed: {},
+    joinAt: 0,
+    vend: {},
     wardrobe: v.wardrobe ?? {},
     inventory: Array.from({ length: INV_SIZE }, () => null),
     stabs: {},

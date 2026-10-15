@@ -11,7 +11,7 @@ function cors(env: Env, origin: string | null): Record<string, string> {
   const ok = origin && allowed.includes(origin);
   return {
     "access-control-allow-origin": ok ? origin! : allowed[0],
-    "access-control-allow-headers": "authorization, content-type",
+    "access-control-allow-headers": "authorization, content-type, x-device",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "origin",
@@ -58,8 +58,15 @@ export default {
     try { parsed = JSON.parse(raw); } catch { return reply({ ok: false, error: "Bad request." }, 400); }
     if (typeof parsed.a !== "string") return reply({ ok: false, error: "Bad request." }, 400);
 
+    // which connection and which browser this is, as short hashes (never the address itself): accounts that share one are "peers"
+    const net: string[] = [];
+    const hash = async (s: string): Promise<string> => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("sixplanet|" + s)))].slice(0, 9).map((b) => b.toString(16).padStart(2, "0")).join("");
+    const ip = request.headers.get("cf-connecting-ip");
+    if (ip) net.push("ip" + (await hash(ip)));
+    const dev = request.headers.get("x-device") ?? "";
+    if (/^[A-Za-z0-9-]{8,64}$/.test(dev)) net.push("dv" + (await hash(dev)));
     const stub = env.ECONOMY.get(env.ECONOMY.idFromName("main"));
-    const r = await stub.fetch("https://economy/act", { method: "POST", body: JSON.stringify({ caller, action: parsed.a, args: parsed.args ?? {} }) });
+    const r = await stub.fetch("https://economy/act", { method: "POST", body: JSON.stringify({ caller, action: parsed.a, args: parsed.args ?? {}, net }) });
     return new Response(r.body, { status: r.status, headers: { ...headers, "content-type": "application/json" } });
   },
 } satisfies ExportedHandler<Env>;

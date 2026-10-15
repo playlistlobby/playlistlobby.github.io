@@ -1616,8 +1616,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
               playSfx("give", 0.5);
               panel.refresh();
               say(`You collect ${r.qty ?? 1} ${itemDef(r.item ?? "")?.name ?? item ?? "of it"} from the mixer.`);
+              if (r.item) giftPop(`+${r.qty ?? 1} ${itemDef(r.item)?.name ?? r.item}`, itemImg(r.item));
             }, (err) => say((err as Error).message || "It isn't done yet.", "warn"));
-          } else mixerApi = openMixer(stage, ctx, f.id, def.id, () => panel.refresh(), () => { mixerApi = null; });
+          } else mixerApi = openMixer(stage, ctx, f.id, def.id, () => panel.refresh(), () => { mixerApi = null; }, (item, qty) => giftPop(`+${qty} ${itemDef(item)?.name ?? item}`, itemImg(item)));
         }
         else ctx.navigate(opens === "shop" ? "shop" : "customize");
       }
