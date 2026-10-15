@@ -214,7 +214,7 @@ export const ITEMS: Record<string, ItemDef> = {
     id: "lsd",
     name: "LSD",
     examine: "A shroom ground into a pill. Swallow it: the world fills with patterns for 10 seconds. For a minute and a half you run 3 times as fast and spin round and round. It doesn't open any doors.",
-    icon: assetUrl("items/lsd.svg"),
+    icon: assetUrl("items/lsd.png"),
     useSelf: "consume",
   },
   joint_chudname: {
