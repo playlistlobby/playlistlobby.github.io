@@ -645,9 +645,9 @@ console.log("--- kodimagnyl, the lean and the super pill");
   check("8 drops", s8.state.blood === 8, String(s8.state.blood));
   const s12 = await act(sell, "sellWeed", { slot: slotOf(s8.state, "superpill"), qty: 1 });
   ok("sell the super pill", s12);
-  check("14 more", s12.state.blood === 22, String(s12.state.blood));
+  check("11 more", s12.state.blood === 19, String(s12.state.blood));
   const sk = await act(sell, "sellWeed", { slot: slotOf(s12.state, "kodimagnyl"), qty: 1 });
-  check("kodimagnyl: half of the 4 it costs", sk.ok === true && sk.state.blood === 24, String(sk.state && sk.state.blood));
+  check("kodimagnyl: half of the 4 it costs", sk.ok === true && sk.state.blood === 21, String(sk.state && sk.state.blood));
 }
 
 console.log("--- the CD and the boombox");

@@ -236,7 +236,7 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "hashmix": return 8; // hash 12 + a cigarette -> 2
     case "chudmix": return 12; // shroom 14 + weed 6 -> 2
     case "codeine": return 8; // kodimagnyl 4 and water
-    case "superpill": return 14; // pill 3 + kodimagnyl 4
+    case "superpill": return 11; // fentanyl: pill 3 + kodimagnyl 4
     case "dmt": return 24; // shroom 14 + kodimagnyl 4
     case "lsd": return 22; // shroom 14 + pill 3
     case "trollmix": return 11; // hash 12 + weed 6 -> 2
