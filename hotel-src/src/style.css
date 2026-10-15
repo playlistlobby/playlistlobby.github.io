@@ -374,6 +374,7 @@ button, input, select { font-family: var(--font); }
 .fz-btns { display: flex; gap: 3px; }
 .fz-pick.thing { cursor: default; }
 .fz-pick .ass-tag { position: absolute; left: 1px; top: 0; font-size: 8px; font-weight: 700; color: #ffb4a0; }
+.dmt-overlay { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 9000; pointer-events: none; image-rendering: pixelated; opacity: 0; }
 .blackout { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity .3s ease; z-index: 9999; pointer-events: all; }
 .furni-buy { width: 250px; }
 .furni-buy-body { display: flex; gap: 10px; align-items: center; }

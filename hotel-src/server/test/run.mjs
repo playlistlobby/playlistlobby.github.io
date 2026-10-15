@@ -678,6 +678,19 @@ console.log("--- the CD and the boombox");
   ok("nothing playing: nothing to control", { ok: (await act(a, "cdControl", { room, op: "pause" })).ok === false });
 }
 
+console.log("--- DMT");
+{
+  const d = await fresh("t_dmt", { blood: 20 });
+  await act(d, "sync");
+  const b = await act(d, "buySixty", { item: "dmt" });
+  ok("buy DMT from 6ixty", b);
+  check("15 drops", b.state.blood === 5, String(b.state.blood));
+  bad("not enough left for a second one", await act(d, "buySixty", { item: "dmt" }));
+  const c = await act(d, "consume", { slot: b.state.inventory.findIndex((x) => x && x.item === "dmt") });
+  ok("swallow it", c);
+  check("it says 10 seconds, and the pill is gone", c.data.kind === "dmt" && c.data.ms === 10000 && total(c.state.inventory, "dmt") === 0, JSON.stringify(c.data));
+}
+
 console.log("--- /give");
 {
   const g = await fresh("t_give");

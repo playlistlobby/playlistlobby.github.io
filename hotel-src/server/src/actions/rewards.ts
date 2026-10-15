@@ -2,7 +2,7 @@
 import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from "./util";
 import { fail } from "../ctx";
 import {
-  addToInv, CAT_BLOOD, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, CAT_BLOOD, DUMPSTER_DROPS, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { combine, findSlot, GROW_MS, SMOKABLE, smokeMsOf, WATER_MS } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
@@ -128,6 +128,10 @@ export const consume: Action = {
       s.speedUntil = c.now + SUPERPILL_MS;
       s.speedMult = SUPERPILL_MULT;
       return { kind: "superpill", speedMs: SUPERPILL_MS, speedMult: SUPERPILL_MULT };
+    }
+    if (it!.item === "dmt") {
+      s.inventory = takeOneFrom(s.inventory, slot);
+      return { kind: "dmt", ms: DMT_MS }; // (the patterns and the lying down are drawn by the browser; nothing else changes)
     }
     if (it!.item === "codeine") {
       s.inventory = takeOneFrom(s.inventory, slot);

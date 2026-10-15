@@ -2031,6 +2031,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         void update(myRef, { fast: p.fast, fastMult: p.fastMult }).catch(() => undefined);
         logAction(me, "room", "swallowed a super pill");
         say("You swallow the super pill. The world slows down. You're running 4 times faster for a minute.");
+      } else if (r.kind === "dmt") {
+        logAction(me, "room", "swallowed DMT");
+        say("You swallow the yellow pill. The floor tilts and the colours start to move.");
+        startDmt(r.ms ?? 10_000);
       } else if (r.kind === "codeine") {
         p.cup = me.cupUntil;
         void update(myRef, { cup: p.cup }).catch(() => undefined);
@@ -2038,6 +2042,55 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         say("You drink the lean. Slow and heavy. For an hour the bins give twice as much, twice as often.");
       }
     } catch (err) { say((err as Error).message || "Couldn't do that.", "warn"); }
+  }
+
+  /** DMT: for ten seconds you lie on the floor where you stood and the screen fills with moving patterns. */
+  function startDmt(ms: number): void {
+    const p = mine();
+    if (!p || disposed || faintUntil) return;
+    faintUntil = performance.now() + ms;
+    p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
+    p.faint = true; // they go down (shown to everyone, like after the other pill)
+    update(myRef, { lay: true, sit: null }).catch(() => undefined);
+    const cv = h("canvas", { class: "dmt-overlay" }) as HTMLCanvasElement;
+    document.body.append(cv);
+    // a small canvas, stretched over the screen: a pattern worked out per pixel from the distance and angle to the middle, with colours that keep rolling
+    const W = (cv.width = Math.max(120, Math.ceil(innerWidth / 3))), H = (cv.height = Math.max(120, Math.ceil(innerHeight / 3)));
+    const g2 = cv.getContext("2d")!;
+    const img = g2.createImageData(W, H);
+    const dist = new Float32Array(W * H), ang = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = x - W / 2, dy = y - H / 2, i = y * W + x; dist[i] = Math.hypot(dx, dy); ang[i] = Math.atan2(dy, dx); }
+    const pal = new Uint8Array(256 * 3);
+    for (let i = 0; i < 256; i++) { // a rainbow, hsl(i/256) at full colour
+      const hh = (i / 256) * 6, c = Math.floor(hh), f = hh - c, q = Math.round(255 * (1 - f)), t = Math.round(255 * f);
+      const rgb = [[255, t, 0], [q, 255, 0], [0, 255, t], [0, q, 255], [t, 0, 255], [255, 0, q]][c % 6];
+      pal.set(rgb, i * 3);
+    }
+    const t0 = performance.now();
+    let raf = 0;
+    const draw = (): void => {
+      const t = performance.now() - t0, ts = t / 1000;
+      cv.style.opacity = String(Math.max(0, Math.min(1, t / 700, (ms - t) / 1200)) * 0.72);
+      const px = img.data;
+      for (let i = 0; i < W * H; i++) {
+        const d = dist[i], a = ang[i];
+        const v = Math.sin(d * 0.2 - ts * 2.4) + Math.sin(a * 6 + ts * 1.4 + d * 0.05) + Math.sin(d * 0.07 + a * 3 - ts * 0.9) * 1.3;
+        const k = (((v + 3.3) / 6.6) * 255 + ts * 60) & 255;
+        px[i * 4] = pal[k * 3]; px[i * 4 + 1] = pal[k * 3 + 1]; px[i * 4 + 2] = pal[k * 3 + 2]; px[i * 4 + 3] = 255;
+      }
+      g2.putImageData(img, 0, 0);
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    const done = window.setTimeout(() => end(), ms);
+    const end = (): void => {
+      window.clearTimeout(done);
+      cancelAnimationFrame(raf);
+      cv.remove();
+      pillCleanup = null;
+      if (faintUntil) { faintUntil = 0; p.faint = false; if (!disposed) update(myRef, { lay: null }).catch(() => undefined); } // they get up
+    };
+    pillCleanup = end; // leaving the room ends it
   }
 
   async function usePill(): Promise<void> {

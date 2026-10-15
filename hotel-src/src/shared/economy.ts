@@ -19,6 +19,8 @@ export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string
 ];
 /** the super pill: 4x walking speed for a minute */
 export const SUPERPILL_MS = 60_000;
+/** DMT: patterns on the screen and your character lying down for this long */
+export const DMT_MS = 10_000;
 export const SUPERPILL_MULT = 4;
 /** the lean (codeine): for an hour, garbage cans give twice as much and can be searched twice as often. You hold the cup for the first 2 minutes. */
 export const LEAN_MS = 3_600_000;

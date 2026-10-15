@@ -10,6 +10,8 @@ export const ITEM_ID_LIST = [
   "joint_mid", "joint_thca", "joint_chem", "blunt_mid", "blunt_thca", "blunt_chem",
   // kodimagnyl (vending machine, the bins), and what is made from it: the lean ("codeine") and the super pill
   "kodimagnyl", "codeine", "superpill",
+  // 6ixty's yellow pill: patterns and lying down for 10 seconds
+  "dmt",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -59,7 +61,7 @@ export const findSlot = (inv: Inventory, item: string): number => inv.findIndex(
 export const findSlotAny = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item);
 
 /** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
-export const SIXTY_STOCK = ["cigarette", "cd", "pill", "f_planter"];
+export const SIXTY_STOCK = ["cigarette", "cd", "pill", "f_planter", "dmt"];
 export const DEFAULT_ITEM_PRICE = 5;
 /** Default shop entry for items that start on sale (everything else starts off). */
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
@@ -67,6 +69,7 @@ export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   pill: { on: true, price: 3 },
   cd: { on: true, price: 1 }, // one per player, once (see buySixty)
   f_planter: { on: true, price: 6 }, // the growing kit
+  dmt: { on: true, price: 15 },
   // sold in the shop room's vending machine (not by 6ixty): the admin can still change these prices
   lighter: { on: false, price: 2 },
   jointpaper: { on: false, price: 1 },

@@ -5873,5 +5873,20 @@
   "en": "Shuffi",
   "da": "Shuffi",
   "where": "src/shared/furniture.ts"
+ },
+ "N064": {
+  "en": "DMT",
+  "da": "DMT",
+  "where": "src/items.ts"
+ },
+ "N065": {
+  "en": "A yellow pill from 6ixty. Swallow it and the world fills with patterns. You lie down for 10 seconds.",
+  "da": "En gul pille fra 6ixty. Sluk den og verden fyldes med mønstre. Du ligger ned i 10 sekunder.",
+  "where": "src/items.ts"
+ },
+ "N066": {
+  "en": "You swallow the yellow pill. The floor tilts and the colours start to move.",
+  "da": "Du sluger den gule pille. Gulvet vipper og farverne begynder at bevæge sig.",
+  "where": "src/ui/room.ts"
  }
 }

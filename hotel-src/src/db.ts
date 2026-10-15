@@ -265,7 +265,7 @@ export async function searchDumpster(p: Profile, canId: string, roomId: string):
   return r.items && r.items.length ? r.items.map(String) : [String(r.item)];
 }
 /** Swallows the super pill or drinks the lean (codeine) in a slot. */
-export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number }> => call(p, "consume", { slot });
+export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number; ms?: number }> => call(p, "consume", { slot });
 /** Uses two pocket items on each other (weed + paper, ...). Resolves with the message. */
 export async function combineSlots(p: Profile, a: number, b: number): Promise<string> {
   return String((await call<{ note?: string }>(p, "combine", { a, b })).note ?? "");

@@ -158,6 +158,13 @@ export const ITEMS: Record<string, ItemDef> = {
     icon: assetUrl("items/superpill.svg"),
     useSelf: "consume",
   },
+  dmt: {
+    id: "dmt",
+    name: "DMT",
+    examine: "A yellow pill from 6ixty. Swallow it and the world fills with patterns. You lie down for 10 seconds.",
+    icon: assetUrl("items/dmt.svg"),
+    useSelf: "consume",
+  },
   wateringcan: {
     id: "wateringcan",
     name: "Watering can",
