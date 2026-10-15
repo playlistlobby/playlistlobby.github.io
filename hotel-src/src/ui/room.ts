@@ -2489,11 +2489,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const burningItem = me.inventory.find((s) => s && SMOKABLE[s.item] && s.lit && serverNow() - s.lit < smokeMsOf(s.item));
     const burning = burningItem?.lit;
     if (me.speedUntil > serverNow()) { mineP.fast = me.speedUntil; mineP.fastMult = me.speedMult; }
+    if (me.speedUntil > serverNow() && me.speedMult === 3) mineP.spin = me.speedUntil; // LSD is the only 3x: the spinning goes with you into the next room (and across a reload)
     if (me.cupUntil > serverNow()) mineP.cup = me.cupUntil;
     if (me.chemUntil > serverNow()) mineP.chem = me.chemUntil;
     if (burning) { mineP.smoke = burning; mineP.smokeKind = SMOKABLE[burningItem!.item].kind; }
     void onDisconnect(myRef).remove();
-    set(myRef, { name: shownName, figure: shownFigure(), x: sleepingIn ? headTile().x : spawn.x, y: sleepingIn ? headTile().y : spawn.y, dir: startDir, ts: serverTimestamp(), ...(sleepingIn ? { bed: true } : {}), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
+    set(myRef, { name: shownName, figure: shownFigure(), x: sleepingIn ? headTile().x : spawn.x, y: sleepingIn ? headTile().y : spawn.y, dir: startDir, ts: serverTimestamp(), ...(sleepingIn ? { bed: true } : {}), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.spin ? { spin: mineP.spin } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
