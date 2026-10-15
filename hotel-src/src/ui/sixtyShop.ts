@@ -21,6 +21,8 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
     body);
   host.append(el);
   let closed = false;
+  let picking: string | null = null; // the row whose "how many?" bar is open
+  let pickQty = 1;
 
   function render(): void {
     if (closed) return;
@@ -28,28 +30,59 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
     const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => itemDef(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "cd" && itemEntry(id).on);
     // selling: he buys weed, seeds and what the mixer makes (prices: sellPrice)
     const sellPrice = (item: string, ass?: boolean): number | null => sellPriceOf(item, ass, furniPricesNow());
-    const sells = me.inventory.map((s, slot) => ({ s, slot })).filter((e) => e.s && sellPrice(e.s.item, e.s.ass) !== null && !e.s.lit && !e.s.inPlayer);
-    const sellRows = sells.map(({ s, slot }) => {
-      const each = sellPrice(s!.item, s!.ass)!;
-      const bundle = SELL_BUNDLE[s!.item] ?? 1; // cigarette butts: he buys them 2 at a time
-      const nm = `${itemDef(s!.item)?.name ?? s!.item}${s!.ass ? " (ass)" : ""}`;
+    // the same thing lying in several slots is one row ("Fentanyl x3"); Sell asks how many
+    const groups = new Map<string, { item: string; ass?: boolean; slots: Array<{ slot: number; qty: number }>; qty: number }>();
+    me.inventory.forEach((s, slot) => {
+      if (!s || sellPrice(s.item, s.ass) === null || s.lit || s.inPlayer) return;
+      const key = `${s.item}|${s.ass ? "ass" : ""}`;
+      const g = groups.get(key) ?? { item: s.item, ass: s.ass, slots: [], qty: 0 };
+      g.slots.push({ slot, qty: s.qty });
+      g.qty += s.qty;
+      groups.set(key, g);
+    });
+    const sellRows = [...groups.entries()].map(([key, grp]) => {
+      const each = sellPrice(grp.item, grp.ass)!;
+      const bundle = SELL_BUNDLE[grp.item] ?? 1; // cigarette butts, cigarettes and pills: he buys them 2 at a time
+      const nm = `${itemDef(grp.item)?.name ?? grp.item}${grp.ass ? " (ass)" : ""}`;
+      const max = Math.floor(grp.qty / bundle) * bundle;
       const sell = async (qty: number) => {
         try {
-          const gain = await sellWeed(me, slot, qty);
+          let left = qty, gain = 0;
+          for (const sl of grp.slots) { // (it may lie in several slots: take from one after the other)
+            if (left <= 0) break;
+            const take = Math.min(left, bundle > 1 ? Math.floor(sl.qty / bundle) * bundle : sl.qty);
+            if (take <= 0) continue;
+            gain += await sellWeed(me, sl.slot, take);
+            left -= take;
+          }
+          picking = null;
           ctx.refreshHeader();
-          logAction(me, "buy", `sold ${qty} ${nm} to 6ixty for ${gain}`);
+          logAction(me, "buy", `sold ${qty - left} ${nm} to 6ixty for ${gain}`);
           playSfx("coins", 0.5);
           toast(`6ixty pays you ${gain} drops.`);
           onChange();
           render();
-        } catch (err) { toast((err as Error).message, "err"); }
+        } catch (err) { toast((err as Error).message, "err"); render(); }
       };
-      return h("div", { class: "sixty-row" },
-        h("img", { src: itemDef(s!.item)!.icon, alt: "", class: "sixty-ico" }),
-        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, `${nm} x${s!.qty}`), h("div", { class: "hint" }, bundle > 1 ? (each === 1 ? "He pays 1 drop for 2." : "He pays 3 drops for 2.") : `He pays ${each} drops each.`)),
-        ...(bundle > 1
-          ? (s!.qty >= bundle ? [h("button", { class: "btn small danger", onclick: () => void sell(bundle) }, `Sell ${bundle} (${each})`), ...(s!.qty >= bundle * 2 ? [h("button", { class: "btn small danger", onclick: () => void sell(s!.qty) }, `All (${Math.floor(s!.qty / bundle) * each})`)] : [])] : [h("button", { class: "btn small", disabled: true }, "Needs 2")])
-          : [h("button", { class: "btn small danger", onclick: () => void sell(1) }, `Sell 1 (${each})`), ...(s!.qty > 1 ? [h("button", { class: "btn small danger", onclick: () => void sell(s!.qty) }, `All (${each * s!.qty})`)] : [])]));
+      const head = h("div", { class: "sixty-row" },
+        h("img", { src: itemDef(grp.item)!.icon, alt: "", class: "sixty-ico" }),
+        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, `${nm}${grp.qty > 1 ? ` x${grp.qty}` : ""}`), h("div", { class: "hint" }, bundle > 1 ? (each === 1 ? "He pays 1 drop for 2." : "He pays 3 drops for 2.") : `He pays ${each} drops each.`)),
+        max < 1 ? h("button", { class: "btn small", disabled: true }, "Needs 2")
+          : h("button", { class: "btn small danger", onclick: () => { picking = picking === key ? null : key; pickQty = Math.min(max, Math.max(bundle, pickQty)); render(); } }, "Sell"));
+      if (picking !== key || max < 1) return head;
+      pickQty = Math.min(max, Math.max(bundle, pickQty - (pickQty % bundle)));
+      const total = (): number => (pickQty / bundle) * each;
+      const label = h("span", { class: "sixty-qty-label" }, `${pickQty} for ${total()}`);
+      const range = h("input", { type: "range", class: "sixty-qty", min: String(bundle), max: String(max), step: String(bundle), value: String(pickQty) }) as HTMLInputElement;
+      range.oninput = () => { pickQty = Number(range.value); label.textContent = `${pickQty} for ${total()}`; };
+      const step = (d: number) => { pickQty = Math.min(max, Math.max(bundle, pickQty + d * bundle)); range.value = String(pickQty); label.textContent = `${pickQty} for ${total()}`; };
+      return h("div", { class: "sixty-pick" }, head,
+        h("div", { class: "row center sixty-pick-row" },
+          h("button", { class: "btn small", onclick: () => step(-1) }, "−"), range, h("button", { class: "btn small", onclick: () => step(1) }, "+"), label),
+        h("div", { class: "row center" },
+          h("button", { class: "btn small danger", onclick: () => void sell(pickQty) }, "Sell"),
+          h("button", { class: "btn small", onclick: () => { pickQty = max; range.value = String(max); label.textContent = `${max} for ${(max / bundle) * each}`; } }, "All"),
+          h("button", { class: "btn small", onclick: () => { picking = null; render(); } }, "Cancel")));
     });
     body.replaceChildren(
       ...(stock.length === 0 ? [h("div", { class: "hint" }, "Nothing on the shelf right now.")] : stock.map((id) => {
