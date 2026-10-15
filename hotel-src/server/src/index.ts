@@ -58,11 +58,9 @@ export default {
     try { parsed = JSON.parse(raw); } catch { return reply({ ok: false, error: "Bad request." }, 400); }
     if (typeof parsed.a !== "string") return reply({ ok: false, error: "Bad request." }, 400);
 
-    // which connection and which browser this is, as short hashes (never the address itself): accounts that share one are "peers"
+    // which browser this is, as a short hash: accounts that log in from the same one are "peers" (they can't stab each other)
     const net: string[] = [];
     const hash = async (s: string): Promise<string> => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("sixplanet|" + s)))].slice(0, 9).map((b) => b.toString(16).padStart(2, "0")).join("");
-    const ip = request.headers.get("cf-connecting-ip");
-    if (ip) net.push("ip" + (await hash(ip)));
     const dev = request.headers.get("x-device") ?? "";
     if (/^[A-Za-z0-9-]{8,64}$/.test(dev)) net.push("dv" + (await hash(dev)));
     const stub = env.ECONOMY.get(env.ECONOMY.idFromName("main"));

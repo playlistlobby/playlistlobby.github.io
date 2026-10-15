@@ -757,15 +757,8 @@ console.log("--- shrooms and DMT");
   check("on a shroom: the room can be read", (await peek(trip)) === 200);
   await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() - 1000);
   check("when it wears off: closed again", (await peek(trip)) === 401);
-  // accounts on the same device are peers: a shroom doesn't open each other's rooms
-  await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() + 60_000);
-  await owner("PUT", `peers/${trip.uid}/${owner2.uid}`, true);
-  check("on a shroom, but the owner is a peer (same device): still closed", (await peek(trip)) === 401);
-  await owner("DELETE", `peers/${trip.uid}/${owner2.uid}`);
-  check("not peers: the shroom works again", (await peek(trip)) === 200);
-  await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() - 1000);
 }
-console.log("--- peers: same device, same connection; sleepers give 1");
+console.log("--- peers: same device; sleepers give 1");
 {
   const a = await fresh("t_peer_a"), b = await fresh("t_peer_b"), c3 = await fresh("t_peer_c");
   a.device = b.device = "device-aaaa-1111"; c3.device = "device-cccc-3333";
@@ -773,6 +766,12 @@ console.log("--- peers: same device, same connection; sleepers give 1");
   const pa = (await owner("GET", `peers/${a.uid}`)) ?? {};
   check("a and b share a device: peers both ways", pa[b.uid] === true && (await owner("GET", `peers/${b.uid}/${a.uid}`)) === true, JSON.stringify(pa));
   check("c is on another device: nobody's peer", !(pa[c3.uid]) && !((await owner("GET", `peers/${c3.uid}`)) ?? {})[a.uid]);
+  // accounts from one device can't stab each other, but anybody else can
+  const roomB = `u_${b.uid}`;
+  await owner("PUT", `roomsMeta/${roomB}`, { owner: b.uid, ownerName: "t_peer_b", name: "b's room", access: "open", w: 8, h: 8 });
+  await owner("PUT", `users/${a.uid}/inventory`, { 0: { item: "knife", qty: 1 } });
+  await stand(a, roomB, 3, 3);
+  bad("a can't stab b (same device)", await act(a, "stab", { target: b.uid, room: roomB }));
   // a sleeping owner (offline, in their own room) gives exactly 1, whatever the boost
   const knife = { 0: { item: "knife", qty: 1 } };
   await owner("PUT", `users/${c3.uid}/inventory`, knife);

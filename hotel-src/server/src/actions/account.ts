@@ -8,9 +8,8 @@ import { DISABLED_ITEMS, ITEM_IDS, SMOKABLE, smokeMsOf } from "../../../src/shar
 const CLOTHING_SLOTS = new Set(["hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", "cp", "ca", "lg", "sh", "wa"]);
 
 /**
- * Accounts that log in from the same device or the same connection are peers: peers/<a>/<b> and peers/<b>/<a> are set (only the server writes them).
- * A peer's room does not open for a shroom / DMT / chud (the database rules check it), and a peer isn't offered on the visit list while you trip,
- * so nobody can run a pile of accounts to walk from one of their own rooms to the next.
+ * Accounts that log in from the same device are peers: peers/<a>/<b> and peers/<b>/<a> are set (only the server writes them).
+ * Peers can't stab each other (so nobody can run a pile of accounts and stab them one after another for blood); they can still visit each other like anybody else.
  */
 async function notePeers(c: Ctx): Promise<void> {
   for (const key of c.net) {

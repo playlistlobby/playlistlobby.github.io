@@ -87,7 +87,7 @@ export class Economy {
 
     const db = new Rtdb(this.env);
     const c = new Ctx(this.env, db, caller);
-    if (Array.isArray(body.net)) c.net = body.net.filter((k): k is string => typeof k === "string" && /^(ip|dv)[0-9a-f]{18}$/.test(k)).slice(0, 4);
+    if (Array.isArray(body.net)) c.net = body.net.filter((k): k is string => typeof k === "string" && /^dv[0-9a-f]{18}$/.test(k)).slice(0, 4);
     const releases: Array<() => void> = [];
     try {
       const keys = new Set<string>([`user:${caller.uid}`]);

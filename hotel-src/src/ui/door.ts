@@ -1,5 +1,3 @@
-import { get, ref } from "firebase/database";
-import { db } from "../firebase";
 import { h, toast } from "./dom";
 import { headBoxFor } from "./head";
 import { social } from "../social";
@@ -80,14 +78,10 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     const all = Object.entries(rooms)
       .filter(([id, m]) => id.startsWith("u_") && m.owner !== me.uid && id !== currentRoom)
       .map(([id, m]) => rowFor(id, m));
-    const visible = tripping() ? all.filter((r) => !peers.has(r.owner)) : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
+    const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
     return visible.sort((a, b) =>
       Number(b.friend) - Number(a.friend) || Number(b.online) - Number(a.online) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, 40);
   }
-
-  /** accounts that use the same device or connection as you: a shroom doesn't open their rooms (the server and the database rules agree) */
-  const peers = new Set<string>();
-  void get(ref(db, `peers/${me.uid}`)).then((snap) => { if (snap.exists()) { for (const k of Object.keys(snap.val())) peers.add(k); render(); } }, () => undefined);
 
   /** a shroom or DMT is working: every door is open */
   const tripping = (): boolean => me.shroomUntil > serverNow();

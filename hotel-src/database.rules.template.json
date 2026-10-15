@@ -1,10 +1,5 @@
 {
   "rules": {
-    "peers": {
-      "$uid": {
-        ".read": "@PW@ && auth.uid === $uid"
-      }
-    },
     "users": {
       ".read": "@ADMIN@",
       "$uid": {
