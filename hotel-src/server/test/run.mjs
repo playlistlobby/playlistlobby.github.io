@@ -720,6 +720,15 @@ console.log("--- shrooms and DMT");
   await owner("PUT", `rooms/u_${owner2.uid}/players/${owner2.uid}`, { name: "t_dmt_owner", figure: "x", x: 3, y: 3, dir: 2 });
   const peek = async (who) => (await fetch(`${DB}/rooms/u_${owner2.uid}/players.json?ns=${NS}&auth=${who.token}`)).status;
   const trip = await fresh("t_dmt_trip");
+  // a friend gets in without any shroom (this broke once: the shroom check came before the friend check and failed on "no value")
+  const friendRoom = await fresh("t_dmt_friend");
+  await owner("PUT", `friends/${owner2.uid}/${friendRoom.uid}`, true);
+  await owner("PUT", `roomsMeta/u_${owner2.uid}/access`, "knock");
+  check("a friend can read a friend's room (no shroom at all)", (await peek(friendRoom)) === 200);
+  await owner("PUT", `roomInvites/u_${owner2.uid}/${trip.uid}`, true);
+  check("someone let in by the owner can read it", (await peek(trip)) === 200);
+  await owner("DELETE", `roomInvites/u_${owner2.uid}/${trip.uid}`);
+  await owner("PUT", `roomsMeta/u_${owner2.uid}/access`, "none");
   check("no shroom: a closed room stays closed", (await peek(trip)) === 401);
   await owner("PUT", `users/${trip.uid}/shroomUntil`, Date.now() + 60_000);
   check("on a shroom: the room can be read", (await peek(trip)) === 200);
