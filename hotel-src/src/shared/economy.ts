@@ -11,9 +11,12 @@ export const STARTER_ITEMS: string[] = [];
 /** each garbage can can be searched once every 10 minutes; one weighted pick per search */
 export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
-  // percentages (they add up to 100): a third spores, two thirds weed seeds, and now and then a lighter (kodimagnyl is sold by 6ixty now)
-  { item: "weedseed", chance: 66, label: "weed seed" },
-  { item: "shroomspore", chance: 33, label: "shroom spores" },
+  // percentages (they add up to 100): a quarter cigarette butts, then seeds and spores (2 seeds to 1 spore) in what is left, a little weed and lean, and now and then a lighter
+  { item: "cigbutt", chance: 25, label: "cigarette butt" },
+  { item: "weedseed", chance: 43, label: "weed seed" },
+  { item: "shroomspore", chance: 22, label: "shroom spores" },
+  { item: "weed", chance: 7, label: "weed" },
+  { item: "codeine", chance: 2, label: "lean" },
   { item: "lighter", chance: 1, label: "lighter" },
 ];
 /** the super pill: 4x walking speed for a minute */

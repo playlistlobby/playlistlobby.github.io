@@ -3024,7 +3024,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
-      if (b && k.opens && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
+      const isBoom = f.kind === "boombox"; // the boombox glows red and floats a CD when you point at it or tap it
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id);
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -3035,40 +3036,41 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.save();
         const halo = g.createRadialGradient(cx, cy, 2 * scale, cx, cy, r);
         const a = 0.11 + 0.05 * pulse + (hot ? 0.14 : 0);
-        halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
-        halo.addColorStop(0.55, `rgba(255,200,40,${(a * 0.6).toFixed(2)})`);
-        halo.addColorStop(1, "rgba(255,200,40,0)");
+        const glowRgb = isBoom ? "255,60,50" : "255,214,70";
+        halo.addColorStop(0, `rgba(${glowRgb},${a.toFixed(2)})`);
+        halo.addColorStop(0.55, `rgba(${isBoom ? "255,50,40" : "255,200,40"},${(a * 0.6).toFixed(2)})`);
+        halo.addColorStop(1, `rgba(${isBoom ? "255,50,40" : "255,200,40"},0)`);
         g.fillStyle = halo;
         g.beginPath();
         g.arc(cx, cy, r, 0, Math.PI * 2);
         g.fill();
         g.restore();
-        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale); // the bag again, on top of the halo
+        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, true); // the bag again, on top of the halo (its shadow is already down)
         if (hot) {
           g.save();
           g.globalCompositeOperation = "lighter";
-          drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.12 + 0.05 * pulse);
+          drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.12 + 0.05 * pulse, true);
           g.restore();
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const noHint = k.opens === "mixer"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "records" ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "records" ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
           g.save();
           g.imageSmoothingEnabled = false;
-          g.shadowColor = "rgba(255,226,140,0.7)";
+          g.shadowColor = isBoom ? "rgba(255,90,80,0.7)" : "rgba(255,226,140,0.7)";
           g.shadowBlur = (hot ? 6 : 3) * scale;
           if (k.opens === "sink") g.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(now / 320)); // the watering can flashes
           g.drawImage(hint, cx - hw / 2, b.y0 - hh - 2 * scale + bob, hw, hh);
           g.restore();
         }
         // while the hanger always shows, the click box covers it too
-        return { id: "", ...b, y0: me.seenDoor || noHint || k.opens === "sink" || k.opens === "records" ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
+        return { id: "", ...b, y0: me.seenDoor || noHint || k.opens === "sink" || k.opens === "records" || isBoom ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
       }
       return b ? { id: "", ...b, depth: f.x + f.y } : null;
     }
