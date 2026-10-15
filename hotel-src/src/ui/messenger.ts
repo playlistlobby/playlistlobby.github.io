@@ -8,6 +8,22 @@ import type { Ctx } from "../main";
 
 const fmtClock = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+// ---- notifications outside the page: a system notification while the game is in the background, and "(2)" in the tab title ----
+/** asks the browser once (it has to come from a tap); nothing happens if it was already answered or isn't supported */
+function askNotifyPermission(): void {
+  try { if (typeof Notification !== "undefined" && Notification.permission === "default") void Notification.requestPermission(); } catch { /* old browsers */ }
+}
+function systemNotify(name: string, text: string, onClick: () => void): void {
+  try {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    const opts: NotificationOptions = { body: text.slice(0, 120), tag: `dm-${name}` };
+    const direct = (): void => { const n = new Notification(name, opts); n.onclick = () => { window.focus(); onClick(); n.close(); }; };
+    // phones only allow notifications through a service worker; desktops can use the plain kind
+    if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then((reg) => (reg ? reg.showNotification(name, opts) : direct()), direct).catch(() => undefined);
+    else direct();
+  } catch { /* a notification is a bonus, never an error */ }
+}
+
 /** Docked friends list + private chat windows + room requests and invites. Lives for as long as you're signed in. */
 export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
   const me = ctx.profile;
@@ -15,7 +31,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
   const windows = new Map<string, { el: HTMLElement; log: HTMLElement; render(): void }>();
 
   const badge = h("span", { class: "badge hidden" });
-  const toggle = h("button", { class: "btn friends-toggle", onclick: () => { open = !open; renderPanel(); } }, "👥 Friends ", badge);
+  const toggle = h("button", { class: "btn friends-toggle", onclick: () => { askNotifyPermission(); open = !open; renderPanel(); } }, "👥 Friends ", badge);
   const panel = h("div", { class: "friends-panel hidden" });
   const winRow = h("div", { class: "chat-windows" });
   const popups = h("div", { class: "invite-popups" });
@@ -122,6 +138,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
         const text = field.value.trim();
         if (!text) return;
         field.value = "";
+        askNotifyPermission(); // you have started talking: now is a fair time to ask if they may tell you about the answer
         social.sendDm(uid, text).then(() => playSfx("sent", 0.3), () => toast("That message didn't go through.", "err"));
       } }, field));
     const render = () => {
@@ -148,11 +165,14 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
   const onOpenChat = (e: Event) => openChat((e as CustomEvent<string>).detail);
   window.addEventListener("open-chat", onOpenChat);
   // the Friends button in the top bar (phones) opens/closes the list the same way the corner button does
-  const onToggleFriends = () => { open = !open; renderPanel(); };
+  const onToggleFriends = () => { askNotifyPermission(); open = !open; renderPanel(); };
   window.addEventListener("toggle-friends", onToggleFriends);
 
   // ---- live updates ---------------------------------------------------------------------
+  const baseTitle = document.title.replace(/^(d+) /, "");
   const offStore = social.subscribe(() => {
+    const unread = social.totalUnread;
+    document.title = unread ? `(${unread}) ${baseTitle}` : baseTitle;
     renderPanel();
     for (const [uid, w] of windows) {
       if (!social.friends.has(uid)) closeChat(uid);
@@ -161,9 +181,13 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
   });
 
   const offDm = social.onDm((friend, m) => {
-    if (m.from === me.uid || windows.has(friend)) return;
+    if (m.from === me.uid) return;
     const f = social.friends.get(friend);
     if (!f) return;
+    const away = document.hidden || !document.hasFocus();
+    if (away) systemNotify(f.name, m.text, () => openChat(friend)); // the game is in the background: tell the system
+    const w = windows.get(friend);
+    if (w && !w.el.classList.contains("min") && !away) return; // you are looking at that chat right now
     playSfx("message", 0.4);
     const pop = h("div", { class: "toast ok show msg-toast", onclick: () => { openChat(friend); pop.remove(); } }, `💬 ${f.name}: ${m.text.slice(0, 60)}`);
     document.body.append(pop);
@@ -200,6 +224,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     offDm();
     offInvite();
     offKnock();
+    document.title = baseTitle;
     document.body.classList.remove("friends-open");
     window.removeEventListener("open-chat", onOpenChat);
     window.removeEventListener("toggle-friends", onToggleFriends);
