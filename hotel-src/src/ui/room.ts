@@ -476,7 +476,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
     else if (hoverObj && hoverObj.kind === "bed") text = mine()?.lying ? "Your bed: get up" : "Your bed: lie down";
-    else if (hoverObj && hoverObj.kind === "boombox") text = "Boombox: use a CD on it";
+    else if (hoverObj && (hoverObj.kind === "boombox" || hoverObj.kind === "f_boombox")) text = "Boombox: use a CD on it";
     else if (hoverObj && hoverObj.kind === "landlord") text = "Landlord: bigger rooms, room colours";
     else if (hoverObj && hoverObj.kind === "drop") { const dd = drops.get(hoverObj.id.slice(5)); text = dd ? `${itemDef(dd.item)?.name ?? dd.item}${dd.qty > 1 ? ` x${dd.qty}` : ""}${dd.ass ? " (ass)" : ""} · ${dd.by === "world" ? "lying on the floor" : `dropped by ${dd.byName}`} (click to pick up)` : "On the floor"; }
     else if (hoverObj && isDisplayPiece(hoverObj.id)) text = `${FURNI_KINDS[hoverObj.kind!].label} · ${priceOf(hoverObj.kind!)} drops (click to buy)`;
@@ -2343,6 +2343,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             p.chem = me.chemUntil || undefined;
             void update(myRef, { fast: p.fast ?? null, fastMult: p.fast ? me.speedMult : null, chem: p.chem ?? null }).catch(() => undefined);
           }
+          if (r.shroomMs) {
+            logAction(me, "room", `smoked a ${s.item}`);
+            startDmt(10_000, { lie: false, then: () => say("Every door is open to you for 3 minutes. Take the basement door and walk into anyone's room.") });
+          }
           say(`You finish the ${name}. You feel sharp: stabs give x${r.mult ?? sm.mult} blood for ${fmtDuration(r.boostMs ?? sm.boostMs)}${extra.length ? ` and ${extra.join(", ")}` : ""}.`);
         }
       }).catch(() => undefined).finally(() => window.setTimeout(() => finishing.delete(i), 4000));
@@ -2803,7 +2807,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** A cigarette at the mouth and a thin stream of smoke rising from the tip. (fx, fy) = the player's feet, `dir` the way they face. */
   function drawCigarette(fx: number, fy: number, dir: number, now: number, kind?: string): void {
-    const blunt = kind === "blunt", joint = kind === "joint" || kind === "hashjoint";
+    const blunt = kind === "blunt" || kind === "chudblunt", joint = kind === "joint" || kind === "hashjoint" || kind === "chudjoint";
+    const chud = kind === "chudjoint" || kind === "chudblunt"; // spots on the paper, and green smoke
     const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0; // which side of the face the cigarette sticks out on
     const s = scale;
     const mx = fx + side * 5 * s;                 // the mouth
@@ -2825,6 +2830,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       g.strokeStyle = "#d98a2b"; g.lineWidth = 2.6 * s; // the filter
       g.beginPath(); g.moveTo(mx, my); g.lineTo(mx + (side || 1) * 3 * s, my + 0.7 * s); g.stroke();
     }
+    if (chud) { // the spots
+      g.fillStyle = "#d83a4a";
+      for (const u of [0.25, 0.5, 0.75]) { g.beginPath(); g.arc(mx + (tipx - mx) * u, my + (tipy - my) * u, 1.1 * s, 0, Math.PI * 2); g.fill(); }
+    }
     g.strokeStyle = "#ff6a1a"; g.lineWidth = 3 * s;
     g.beginPath(); g.moveTo(tipx - (side || 1) * 1.6 * s, tipy - 0.3 * s); g.lineTo(tipx, tipy); g.stroke();
     }
@@ -2834,7 +2843,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const px = tipx + Math.sin(t * 7 + i * 1.7) * 3.5 * s + t * 3 * s * (side || 1);
       const py = tipy - t * 36 * s;
       const r = (1.6 + t * 4.2) * s;
-      g.fillStyle = `rgba(222,224,230,${(0.42 * (1 - t)).toFixed(3)})`;
+      g.fillStyle = chud ? `rgba(90,230,110,${(0.5 * (1 - t)).toFixed(3)})` : `rgba(222,224,230,${(0.42 * (1 - t)).toFixed(3)})`;
       g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill();
     }
     g.restore();
@@ -3036,7 +3045,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
-      const isBoom = f.kind === "boombox"; // the boombox glows red and floats a CD when you point at it or tap it
+      const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
       const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
       if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it

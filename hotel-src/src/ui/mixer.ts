@@ -41,7 +41,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
     const done = left <= 0;
     body.replaceChildren(
       h("div", { class: "mixer-line" }, done ? "Your batch is ready!" : "The mixer is working…"),
-      h("div", { class: "mixer-result" }, ...(d ? [h("img", { src: d.icon, alt: "" }), `${j.qty} × ${d.name}`] : [])),
+      h("div", { class: "mixer-result" }, ...(d && me.mixed[j.item] ? [h("img", { src: d.icon, alt: "" }), `${j.qty} × ${d.name}`] : [h("span", { class: "mixer-q" }, "?")])),
       h("div", { class: "mixer-bar" }, h("div", { class: "mixer-bar-fill", style: { width: `${Math.round(Math.min(1, 1 - left / j.ms) * 100)}%` } })),
       h("div", { class: "hint", style: { textAlign: "center" } }, done ? "Tap Collect." : `${clock(left)} left. You can leave: it keeps going.`),
       h("div", { class: "row center" },
@@ -90,7 +90,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
         }, h("img", { src: d.icon, alt: d.name, draggable: false }), ...(s!.qty > 1 ? [h("span", { class: "qty" }, String(s!.qty))] : []), ...(s!.ass ? [h("span", { class: "ass-tag" }, "ass")] : []));
       })),
       h("div", { class: "mixer-line" }, `${label(first)}  +  ${label(second)}`),
-      h("div", { class: "mixer-result" }, ...(recipe && result ? [h("img", { src: result.icon, alt: "" }), ` → ${recipe.give.qty} × ${result.name}`] : [a && b ? "Those don't mix." : ""])),
+      h("div", { class: "mixer-result" }, ...(recipe && result ? (me.mixed[recipe.give.item] ? [h("img", { src: result.icon, alt: "" }), ` → ${recipe.give.qty} × ${result.name}`] : [h("span", { class: "mixer-q" }, "?"), " → ?"]) : [a && b ? "Those don't mix." : ""])),
       h("div", { class: "row center" },
         h("button", {
           class: "btn primary", disabled: !recipe,

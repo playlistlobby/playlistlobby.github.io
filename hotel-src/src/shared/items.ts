@@ -17,6 +17,8 @@ export const ITEM_ID_LIST = [
   "cd_yellow", "cd_green", "cd_blue", "cd_album",
   // hash (ass weed + kodimagnyl), hash mix (hash + cigarette) and the hash joint (hash mix + joint paper)
   "hash", "hashmix", "joint_hash",
+  // chud mix (shroom + weed, rolled like weed): the chud joint and chud blunt
+  "chudmix", "joint_chud", "blunt_chud",
   // tobacco (2 cigarette butts) and the cigar (tobacco rolled in blunt paper)
   "tobacco", "cigar",
 ] as const;
@@ -96,7 +98,7 @@ export const VENDING_STOCK: Array<{ id: string; item: string; qty: number; label
  * `kind` is how it looks in the mouth (cigarette / joint / blunt); `speedMs` = you walk twice as fast for that long; `chemMs` = you flash and smoke
  * pours off you for that long.
  */
-export interface SmokeDef { mult: number; boostMs: number; kind: "cigarette" | "joint" | "blunt" | "hashjoint"; speedMs?: number; chemMs?: number; /** how long it burns before the effect starts (default SMOKE_MS) */ smokeMs?: number }
+export interface SmokeDef { mult: number; boostMs: number; kind: "cigarette" | "joint" | "blunt" | "hashjoint" | "chudjoint" | "chudblunt"; /** a shroom's trip too: every door open for this long (chud) */ shroomMs?: number; speedMs?: number; chemMs?: number; /** how long it burns before the effect starts (default SMOKE_MS) */ smokeMs?: number }
 export const SMOKABLE: Record<string, SmokeDef> = {
   cigarette: { mult: 2, boostMs: 120_000, kind: "cigarette" },
   cigar: { mult: 2, boostMs: 120_000, kind: "blunt" }, // a cigar smokes like a cigarette (and looks like a little blunt)
@@ -112,10 +114,13 @@ export const SMOKABLE: Record<string, SmokeDef> = {
   joint_chem: { mult: 2, boostMs: 90_000, kind: "joint", speedMs: 90_000, chemMs: 90_000, smokeMs: 5_000 },
   // hash: the same stab bonus as a joint, and hearts float over your head while you smoke it
   joint_hash: { mult: 3, boostMs: 120_000, kind: "hashjoint" },
+  // chud: the weed effect and the shroom effect together, from a joint or a blunt with spots on it and green smoke
+  joint_chud: { mult: 3, boostMs: 120_000, kind: "chudjoint", shroomMs: 3 * 60_000 },
+  blunt_chud: { mult: 4, boostMs: 180_000, kind: "chudblunt", shroomMs: 3 * 60_000 },
   blunt_chem: { mult: 2, boostMs: 90_000, kind: "blunt", speedMs: 90_000, chemMs: 90_000, smokeMs: 5_000 },
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "kodimagnyl", "shroomspore", "shroom", "hash", "hashmix", "cigbutt", "tobacco"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "kodimagnyl", "shroomspore", "shroom", "hash", "hashmix", "chudmix", "cigbutt", "tobacco"]);
 /** Weed grows for 20 minutes, shrooms for 25. The water bar runs dry after 5: water it once, any time while it grows (even before the bar is empty), or the harvest turns out poor. */
 export const GROW_MS = 20 * 60_000;
 export const GROW_MS_SHROOM = 25 * 60_000;
@@ -132,10 +137,10 @@ export const MUSIC_ACCESS_KEY = "access_music";
 export const MUSIC_ACCESS_PRICE = 4;
 
 /** Everything you can roll: good weed, and what the mixer makes from it. */
-export const ROLLABLE: ReadonlySet<string> = new Set(["weed", "mix", "midweed", "thca", "researchchem", "hashmix"]);
+export const ROLLABLE: ReadonlySet<string> = new Set(["weed", "mix", "midweed", "thca", "researchchem", "hashmix", "chudmix"]);
 
 /** What a rolled joint / blunt is called, by what went into it. (Good weed and weed mix both make the plain one.) */
-const ROLL_SUFFIX: Record<string, string> = { weed: "", mix: "", midweed: "_mid", thca: "_thca", researchchem: "_chem", hashmix: "_hash" };
+const ROLL_SUFFIX: Record<string, string> = { weed: "", mix: "", midweed: "_mid", thca: "_thca", researchchem: "_chem", hashmix: "_hash", chudmix: "_chud" };
 
 /** Rolling, in the pocket: weed (or mix, mid weed, thc-a, research chemical) + joint paper or a blunt wrap. The order you clicked them in doesn't matter. Null if they don't go together. */
 export function combine(a: InvItem, b: InvItem): { give: InvItem; note: string; back?: InvItem } | null {
@@ -162,6 +167,7 @@ export const MIX_RECIPES: MixRecipe[] = [
   { a: { item: "pill" }, b: { item: "kodimagnyl" }, give: { item: "superpill", qty: 1 }, note: "Two pills, pressed into one: 1 fentanyl." },
   { a: { item: "weed", ass: true }, b: { item: "kodimagnyl" }, give: { item: "hash", qty: 1 }, note: "Ass weed and kodimagnyl, pressed together: 1 hash." },
   { a: { item: "hash" }, b: { item: "cigarette" }, give: { item: "hashmix", qty: 2 }, note: "You crumble the hash into the tobacco: 2 hash mix." },
+  { a: { item: "shroom" }, b: { item: "weed" }, give: { item: "chudmix", qty: 2 }, note: "The shroom is chopped into the weed: 2 chud mix." },
   { a: { item: "shroom" }, b: { item: "pill" }, give: { item: "dmt", qty: 1 }, note: "The shroom dissolves into the pill, which turns yellow: 1 DMT." },
   // the lean also works in the mixer: kodimagnyl + a full watering can (the can comes straight back, empty)
   { a: { item: "kodimagnyl" }, b: { item: "wateringcan_full" }, give: { item: "codeine", qty: 1 }, back: { item: "wateringcan", qty: 1 }, note: "You crush the kodimagnyl into the water. It turns purple: codeine. The can is empty again." },
@@ -171,7 +177,7 @@ for (const r of [...MIX_RECIPES]) if (r.b.item === "cigarette") for (const smoke
 // two cigarette butts, picked apart, make tobacco (both from the same stack is fine)
 MIX_RECIPES.push({ a: { item: "cigbutt" }, b: { item: "cigbutt" }, give: { item: "tobacco", qty: 1 }, note: "Two cigarette butts, picked apart: 1 tobacco." });
 /** Minutes in the mixer, by what comes out: the dearer the result (and the more mixed things went into it), the longer it takes. 10 to 30. */
-export const MIX_MINUTES: Record<string, number> = { tobacco: 10, mix: 10, midweed: 12, researchchem: 12, thca: 14, hash: 16, superpill: 18, hashmix: 22, dmt: 26, codeine: 30 };
+export const MIX_MINUTES: Record<string, number> = { tobacco: 10, mix: 10, midweed: 12, researchchem: 12, thca: 14, hash: 16, superpill: 18, hashmix: 22, chudmix: 20, dmt: 26, codeine: 30 };
 for (const r of MIX_RECIPES) r.ms = (MIX_MINUTES[r.give.item] ?? 10) * 60_000;
 const matches = (it: InvItem, m: { item: string; ass?: boolean }): boolean => it.item === m.item && !it.lit && !it.inPlayer && !!it.ass === !!m.ass;
 export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
@@ -182,7 +188,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife) and the CDs bought with real money. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
-  "f_mixer", "f_planter", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
+  "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
   "cd_yellow", "cd_green", "cd_blue", "cd_album",
 ]);
 
@@ -216,6 +222,7 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "researchchem": return 9; // pill 3 + a cigarette
     case "hash": return 12; // ass weed 4 + kodimagnyl 4
     case "hashmix": return 8; // hash 12 + a cigarette -> 2
+    case "chudmix": return 12; // shroom 14 + weed 6 -> 2
     case "codeine": return 8; // kodimagnyl 4 and water
     case "superpill": return 14; // pill 3 + kodimagnyl 4
     case "dmt": return 24; // shroom 14 + pill 3
@@ -229,6 +236,8 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "joint_chem": return 13;
     case "blunt_chem": return 15;
     case "joint_hash": return 13;
+    case "joint_chud": return 18;
+    case "blunt_chud": return 20;
     case "syringe": return 1;
     default: return null;
   }

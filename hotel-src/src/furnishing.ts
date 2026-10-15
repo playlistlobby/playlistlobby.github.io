@@ -129,7 +129,7 @@ export async function movePiece(roomId: string, f: PlacedFurni, spot: Spot, p?: 
 
 /** Takes a piece out of the room into storage. */
 export async function storeFromRoom(p: Profile, roomId: string, f: PlacedFurni): Promise<void> {
-  if (isFixedPiece(f.id)) throw new Error("That one stays in your room.");
+  if (isFixedPiece(f.id) && f.id !== BOOMBOX_ID) throw new Error("That one stays in your room."); // (the boombox goes into storage, never into your pocket)
   if (f.plant) throw new Error("Harvest the plant first.");
   await call(p, "furniStore", { room: roomId, id: f.id });
 }

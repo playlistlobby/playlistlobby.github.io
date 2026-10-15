@@ -182,7 +182,8 @@ export const finishSmoke: Action = {
     s.boostMult = sm!.mult;
     if (sm!.speedMs) { s.speedUntil = c.now + sm!.speedMs; s.speedMult = 2; }
     if (sm!.chemMs) s.chemUntil = c.now + sm!.chemMs;
-    return { mult: sm!.mult, boostMs: sm!.boostMs, speedMs: sm!.speedMs ?? 0, chemMs: sm!.chemMs ?? 0 };
+    if (sm!.shroomMs) s.shroomUntil = Math.max(s.shroomUntil, c.now + sm!.shroomMs); // chud: the shroom's open doors too
+    return { mult: sm!.mult, boostMs: sm!.boostMs, speedMs: sm!.speedMs ?? 0, chemMs: sm!.chemMs ?? 0, shroomMs: sm!.shroomMs ?? 0 };
   },
 };
 

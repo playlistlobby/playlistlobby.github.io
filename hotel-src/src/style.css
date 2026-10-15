@@ -695,3 +695,5 @@ html.kb .side-host { display: none; }
 .ll-part { font-size: 11px; font-weight: 700; color: #b6c2e0; margin-top: 2px; }
 .ll-preview { display: flex; justify-content: center; background: radial-gradient(#e9eef6, #c9d3e3); border-radius: 8px; padding: 4px 0; min-height: 60px; }
 .ll-preview canvas { max-width: 100%; height: auto; }
+
+.mixer-q { font: bold 22px Verdana, sans-serif; color: #b0842a; text-shadow: 0 1px 0 rgba(255,255,255,.6); margin-right: 4px; }

@@ -640,7 +640,7 @@
               ".validate": "newData.isNumber()"
             },
             "smokeKind": {
-              ".validate": "newData.isString() && (newData.val() === 'cigarette' || newData.val() === 'joint' || newData.val() === 'blunt' || newData.val() === 'hashjoint')"
+              ".validate": "newData.isString() && (newData.val() === 'cigarette' || newData.val() === 'joint' || newData.val() === 'blunt' || newData.val() === 'hashjoint' || newData.val() === 'chudjoint' || newData.val() === 'chudblunt')"
             },
             "sit": {
               ".validate": "newData.isBoolean()"

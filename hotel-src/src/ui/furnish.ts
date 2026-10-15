@@ -59,7 +59,7 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
       bar.replaceChildren(
         h("div", { class: "fz-sel" }, h("b", {}, k?.label ?? sel.kind), h("span", { class: "hint" }, "Drag it to move it.")),
         ...(canTurn(sel) ? [h("button", { class: "btn small", onclick: () => fh.turn() }, "⟳ Turn")] : []),
-        ...(isFixedPiece(sel.id) ? [] : [h("button", { class: "btn small", onclick: () => fh.store() }, "📦 Store")]));
+        ...(isFixedPiece(sel.id) && sel.id !== "boombox" ? [] : [h("button", { class: "btn small", onclick: () => fh.store() }, "📦 Store")]));
     } else {
       bar.replaceChildren(h("div", { class: "fz-sel hint" }, "Tap a piece to select it, then drag it. Tap a piece below to put it down."));
     }

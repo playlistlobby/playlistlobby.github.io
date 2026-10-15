@@ -178,7 +178,7 @@ export const roomSkins: Action = {
         const bedPos = { ...DEFAULT_PIECE_POS.bed, ...(meta.bed ?? {}) };
         const bedFp = skinFootprint("bed", meta.skins?.bed, 2);
         cover(bedPos.x, bedPos.y, bedFp.w, bedFp.h);
-        for (const k of ["toolbox", "sink", "boombox"] as const) { const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
+        for (const k of ["toolbox", "sink", "boombox"] as const) { if (k === "boombox" && meta.boombox?.gone) continue; const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
         const dimsOf = await c.furniMeta();
         for (const f of Object.values<any>(meta.furni ?? {})) {
           const d = SHIPPED_DIMS[f?.kind] ?? dimsOf[f?.kind] ?? { w: 1, h: 1 };

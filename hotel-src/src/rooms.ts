@@ -94,6 +94,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the sink in every player room (like the bed: always there, movable, never removable): fills the watering can
   sink: { id: "sink", label: "Sink", icon: "🚰", w: 1, h: 1, height: 36, color: "#555b66", placeable: false, nitro: "furni/hygge_c25_toiletsink.nitro", rotatable: true, fixed: true, opens: "sink" },
   // the silver boombox every player room starts with: use a CD on it (6ixty sells one) and the song plays in the room
+  // the same boombox as a piece you carry: take it out of the room into your pocket, put it down anywhere, trade it or sell it
+  f_boombox: { id: "f_boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true },
   boombox: { id: "boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true, fixed: true },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
@@ -121,9 +123,9 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "flappy", "dumpster"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster"]);
 /** the CD player in the basement or a boombox: both play the CD you use on them */
-export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox";
+export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox";
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
 export const isBodyBag = (kind: string | undefined): boolean => !!kind && /bodybag/.test(kind);
 
@@ -326,7 +328,7 @@ export interface RoomMeta {
   bag?: { x: number; y: number; dir?: number };
   toolbox?: { x: number; y: number; dir?: number };
   sink?: { x: number; y: number; dir?: number };
-  boombox?: { x: number; y: number; dir?: number };
+  boombox?: { x: number; y: number; dir?: number; /** taken out of the room (it is in somebody's pocket as f_boombox) */ gone?: boolean };
   /** the looks bought from the landlord (the server writes these): ids from shared/skins.ts */
   skins?: { bed?: string; bag?: string };
 }
@@ -346,7 +348,7 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
     .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000 } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}) } } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
   const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), boombox = at(meta.boombox, BOOMBOX);
-  furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, { id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir });
+  furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]));
   // the landlord makes rooms bigger (the server writes w and h)
   const side = (n: unknown) => (typeof n === "number" && n >= ROOM_W && n <= 14 ? Math.floor(n) : ROOM_W);
   const w = side(meta.w), h = side(meta.h);

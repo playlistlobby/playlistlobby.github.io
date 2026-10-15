@@ -4,10 +4,17 @@ import { Action, ID_RE, int, requireInRoom, requireOwnRoom, roomSize, text } fro
 import { Ctx, fail } from "../ctx";
 import { addToInv, MAX_FURNI, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
+const BOOMBOX_ID = "boombox";
 import { POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
 
 const isPiece = async (c: Ctx, key: string): Promise<boolean> => !!SHIPPED_DIMS[key] || !!(await c.furniMeta())[key];
 const KEY_RE = /^[a-z0-9_]{1,30}$/;
+
+/** A boombox can't be taken while a CD is still playing in the room: take the CD out first. */
+async function boomboxFree(c: Ctx, room: string): Promise<void> {
+  const cd = await c.db.get<{ endsAt?: number }>(`rooms/${room}/cdplayer`);
+  if (cd && typeof cd.endsAt === "number" && cd.endsAt > c.now) fail("A CD is playing. Stop it first.");
+}
 
 /**
  * Which room a furnishing action is for: your own, or (for an account with the decorator power, see users/<uid>/decorator) another player's room that you
@@ -52,6 +59,7 @@ export const takeItem: Action = {
     await requireOwnRoom(c);
     const w = await c.user();
     const key = text(a.key, KEY_RE, "item");
+    if (key === "f_boombox") fail("The boombox can't be carried around: put it down in your room."); // it stays in the toolbox or in a room, never in a pocket (so it can't be traded or sold)
     const have = w.s.storage[key] ?? 0;
     if (have < 1) fail("There's none of that in storage.");
     const take = Math.min(int(a.qty ?? 1, 1, 9999, "amount"), have);
@@ -145,11 +153,23 @@ export const furniStore: Action = {
   async run(c, a) {
     const { room, foreign } = await roomFor(c, a);
     const id = text(a.id, ID_RE, "piece");
+    if (id === BOOMBOX_ID) { // the room's own boombox goes into storage too (and can only come back out as a piece in the room, never into your pocket)
+      if (foreign) fail("That isn't yours to take.");
+      const gone = await c.db.get<boolean>(`roomsMeta/${room}/boombox/gone`);
+      if (gone) fail("That piece isn't in your room.");
+      await boomboxFree(c, room);
+      const w = await c.user();
+      if ((w.s.storage.f_boombox ?? 0) >= STORAGE_MAX_PIECES) fail("Storage is full of those.");
+      w.s.storage.f_boombox = (w.s.storage.f_boombox ?? 0) + 1;
+      c.extra[`roomsMeta/${room}/boombox`] = { gone: true };
+      return {};
+    }
     const row = await c.db.get<{ kind?: string; plantedAt?: number; mixJob?: unknown; by?: string }>(`roomsMeta/${room}/furni/${id}`);
     if (!row?.kind) return fail("That piece isn't in your room.");
     if (foreign && row.by !== c.uid && !c.isAdmin) fail("That isn't yours to take.");
     if (typeof row.plantedAt === "number") fail("Harvest the plant first.");
     if (row.mixJob) fail("Collect what's in the mixer first.");
+    if (row.kind === "f_boombox") await boomboxFree(c, room);
     const w = await c.user();
     const have = w.s.storage[row.kind] ?? 0;
     if (have >= STORAGE_MAX_PIECES) fail("Storage is full of those.");

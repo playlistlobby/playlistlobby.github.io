@@ -6368,5 +6368,45 @@
   "en": "You swallow the fentanyl. The world slows down. You're running 4 times faster for a minute.",
   "da": "Du sluger fentanylen. Verden går langsomt. Du løber 4 gange så hurtigt i et minut.",
   "where": "src/ui/room.ts"
+ },
+ "N163": {
+  "en": "Chud mix",
+  "da": "Chud mix",
+  "where": "src/items.ts"
+ },
+ "N164": {
+  "en": "Chud joint",
+  "da": "Chud joint",
+  "where": "src/items.ts"
+ },
+ "N165": {
+  "en": "Chud blunt",
+  "da": "Chud blunt",
+  "where": "src/items.ts"
+ },
+ "N166": {
+  "en": "A shroom chopped into weed (made in the mixer). Roll it in joint paper or a blunt wrap like weed.",
+  "da": "En shroom hakket ud i weed (lavet i mixeren). Rul den i joint paper eller blunt paper ligesom weed.",
+  "where": "src/items.ts"
+ },
+ "N167": {
+  "en": "A spotted joint rolled from chud mix. Click it to light up (you need a lighter). Green smoke: the weed high and the shroom high together (stabs give triple blood for 2 minutes, and every door opens for 3).",
+  "da": "En plettet joint rullet af chud mix. Klik på den for at tænde den (du skal bruge en lighter). Grøn røg: weed-rusen og shroom-rusen på én gang (stik giver tredobbelt blod i 2 minutter, og alle døre åbner sig i 3).",
+  "where": "src/items.ts"
+ },
+ "N168": {
+  "en": "A spotted blunt rolled from chud mix. Click it to light up (you need a lighter). Green smoke: the weed high and the shroom high together (stabs give 4x blood for 3 minutes, and every door opens for 3).",
+  "da": "En plettet blunt rullet af chud mix. Klik på den for at tænde den (du skal bruge en lighter). Grøn røg: weed-rusen og shroom-rusen på én gang (stik giver 4x blod i 3 minutter, og alle døre åbner sig i 3).",
+  "where": "src/items.ts"
+ },
+ "N169": {
+  "en": "The shroom is chopped into the weed: 2 chud mix.",
+  "da": "Shroomen hakkes ud i weeden: 2 chud mix.",
+  "where": "src/shared/items.ts"
+ },
+ "N170": {
+  "en": "Mix with water",
+  "da": "Mix med vand",
+  "where": "src/items.ts"
  }
 }

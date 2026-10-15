@@ -1100,6 +1100,50 @@ console.log("--- a cigarette skips 30 seconds");
   const after = (await owner("GET", `roomsMeta/u_${k.uid}/furni/mx/mixJob`)).doneAt;
   check("the mixer is 30 seconds closer", before - after === 30_000, String(before - after));
 }
+console.log("--- the boombox goes into storage, never into a pocket");
+{
+  const k = await fresh("t_boombox");
+  await act(k, "sync");
+  await owner("PUT", `roomsMeta/u_${k.uid}`, { owner: k.uid, ownerName: "t_boombox", name: "t_boombox's room", access: "knock", w: 8, h: 8 });
+  await stand(k, `u_${k.uid}`, 4, 4);
+  const st = await act(k, "furniStore", { id: "boombox" });
+  ok("store the room's boombox", st);
+  check("it is in storage", (st.state.storage ?? {}).f_boombox === 1, JSON.stringify(st.state.storage));
+  check("and gone from the room", (await owner("GET", `roomsMeta/u_${k.uid}/boombox/gone`)) === true);
+  bad("it can't be taken into the pocket", await act(k, "take", { key: "f_boombox" }));
+  bad("it can't be stored twice", await act(k, "furniStore", { id: "boombox" }));
+  ok("put it down again", await act(k, "furniPlace", { source: "storage", kind: "f_boombox", x: 3, y: 3, dir: 2 }));
+  const rows = (await owner("GET", `roomsMeta/u_${k.uid}/furni`)) ?? {};
+  const fid = Object.keys(rows).find((id) => rows[id].kind === "f_boombox");
+  check("it stands in the room", !!fid);
+  ok("and back into storage", await act(k, "furniStore", { id: fid }));
+}
+console.log("--- chud mix");
+{
+  const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
+  const k = await fresh("t_chud", { inventory: { 0: { item: "shroom", qty: 1 }, 1: { item: "weed", qty: 1 }, 2: { item: "jointpaper", qty: 1 }, 3: { item: "lighter", qty: 1 } } });
+  await act(k, "sync");
+  await owner("PUT", `roomsMeta/u_${k.uid}`, { owner: k.uid, ownerName: "t_chud", name: "t_chud's room", access: "knock", w: 8, h: 8, furni: { mx: { kind: "f_mixer", x: 2, y: 2 } } });
+  await stand(k, `u_${k.uid}`, 4, 4);
+  ok("shroom + weed in the mixer", await act(k, "mix", { fid: "mx", a: 0, b: 1 }));
+  const job = await owner("GET", `roomsMeta/u_${k.uid}/furni/mx/mixJob`);
+  check("2 chud mix, 20 minutes", job.item === "chudmix" && job.qty === 2 && job.doneAt - Date.now() > 19 * 60_000 && job.doneAt - Date.now() <= 20 * 60_000 + 2000, JSON.stringify(job));
+  await owner("PATCH", `roomsMeta/u_${k.uid}/furni/mx/mixJob`, { doneAt: Date.now() - 1000 });
+  const col = await act(k, "mixCollect", { fid: "mx" });
+  check("collected", total(col.state.inventory, "chudmix") === 2);
+  check("and the mixer remembers it: you know the result now", (await owner("GET", `users/${k.uid}/mixed/chudmix`)) === true);
+  const roll = await act(k, "combine", { a: slotOf(col.state, "chudmix"), b: slotOf(col.state, "jointpaper") });
+  ok("roll a chud joint", roll);
+  check("a chud joint", total(roll.state.inventory, "joint_chud") === 1);
+  const lit = await act(k, "light", { slot: slotOf(roll.state, "joint_chud") });
+  ok("light it", lit);
+  const ls = lit.state.inventory.findIndex((x) => x && x.lit);
+  await owner("PATCH", `users/${k.uid}/inventory/${ls}`, { lit: Date.now() - 70_000 });
+  const fin = await act(k, "finishSmoke", { slot: ls });
+  ok("smoke it", fin);
+  check("the weed high: triple blood", fin.state.boostMult === 3, JSON.stringify(fin.state.boostMult));
+  check("and the shroom high: doors open for 3 minutes", fin.state.shroomUntil - Date.now() > 170_000 && fin.state.shroomUntil - Date.now() <= 181_000, String(fin.state.shroomUntil - Date.now()));
+}
 console.log("--- /skip");
 {
   const k = await fresh("t_skip", { inventory: { 0: { item: "kodimagnyl", qty: 1 }, 1: { item: "wateringcan_full", qty: 1 } } });

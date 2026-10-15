@@ -41,6 +41,7 @@ export const SHIPPED_DIMS: Record<string, { w: number; h: number }> = {
   ...Object.fromEntries(SHOP_PIECES.map((p) => [SHOP_KIND_PREFIX + p.id, { w: p.w, h: p.h }])),
   f_planter: { w: 1, h: 1 },
   f_mixer: { w: 1, h: 1 },
+  f_boombox: { w: 1, h: 1 }, // the room's boombox once it has been taken out and carried around
   f_poster: { w: 2, h: 1 },
 };
 

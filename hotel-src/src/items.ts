@@ -141,7 +141,7 @@ export const ITEMS: Record<string, ItemDef> = {
   kodimagnyl: {
     id: "kodimagnyl",
     name: "Kodimagnyl",
-    examine: "People mix this with water for some reason.",
+    examine: "Mix with water",
     icon: assetUrl("items/kodimagnyl.svg"),
   },
   codeine: {
@@ -188,6 +188,26 @@ export const ITEMS: Record<string, ItemDef> = {
     name: "Hash joint",
     examine: "A joint rolled from hash mix. Click it to light up (you need a lighter). Hearts float over your head while you smoke, and stabs give triple blood for 2 minutes.",
     icon: assetUrl("items/joint_hash.svg"),
+    useSelf: "smoke",
+  },
+  chudmix: {
+    id: "chudmix",
+    name: "Chud mix",
+    examine: "A shroom chopped into weed (made in the mixer). Roll it in joint paper or a blunt wrap like weed.",
+    icon: assetUrl("items/chudmix.svg"),
+  },
+  joint_chud: {
+    id: "joint_chud",
+    name: "Chud joint",
+    examine: "A spotted joint rolled from chud mix. Click it to light up (you need a lighter). Green smoke: the weed high and the shroom high together (stabs give triple blood for 2 minutes, and every door opens for 3).",
+    icon: assetUrl("items/joint_chud.svg"),
+    useSelf: "smoke",
+  },
+  blunt_chud: {
+    id: "blunt_chud",
+    name: "Chud blunt",
+    examine: "A spotted blunt rolled from chud mix. Click it to light up (you need a lighter). Green smoke: the weed high and the shroom high together (stabs give 4x blood for 3 minutes, and every door opens for 3).",
+    icon: assetUrl("items/blunt_chud.svg"),
     useSelf: "smoke",
   },
   shroomspore: {

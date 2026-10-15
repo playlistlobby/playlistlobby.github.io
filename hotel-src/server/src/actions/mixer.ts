@@ -46,6 +46,7 @@ export const mixCollect: Action = {
     const added = addToInv(w.s.inventory, { item: job!.item, qty: job!.qty });
     if (!added) fail("Your inventory is full");
     w.s.inventory = added!;
+    w.s.mixed[job!.item] = true; // now you know what that mix makes
     c.extra[`${path}/mixJob`] = null;
     return { item: job!.item, qty: job!.qty };
   },

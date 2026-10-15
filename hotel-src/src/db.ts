@@ -30,6 +30,8 @@ export interface Profile {
   /** drops of blood: the hotel's currency */
   blood: number;
   owned: Record<string, true>;
+  /** the things this player has mixed and collected before (the mixer shows "?" for anything else) */
+  mixed: Record<string, true>;
   wardrobe: Record<string, Outfit>;
   inventory: Inventory;
   /** who this player has stabbed, and when: target uid -> start (ms, UTC midnight) of that day. One stab per person per day. */
@@ -115,6 +117,7 @@ export const plantWatered = (pl: Plant): boolean => plantWateredAt(pl);
 export function applyState(p: Profile, s: Snapshot): void {
   p.blood = s.blood;
   p.owned = s.owned;
+  p.mixed = s.mixed;
   p.storage = s.storage;
   p.stabs = s.stabs;
   p.dumpsters = s.dumpsters;
@@ -178,6 +181,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     figure: v.figure ?? "",
     blood: 0,
     owned: {},
+    mixed: {},
     wardrobe: v.wardrobe ?? {},
     inventory: Array.from({ length: INV_SIZE }, () => null),
     stabs: {},
@@ -299,7 +303,7 @@ export async function lightItem(p: Profile, slot: number): Promise<number> {
   return Number((await call<{ litAt?: number }>(p, "light", { slot })).litAt) || serverNow();
 }
 /** A smoke that has burned for a minute: it becomes a butt and gives its bonus (or knocks you out, for ass weed). */
-export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; mult?: number; boostMs?: number; speedMs?: number; chemMs?: number }> => call(p, "finishSmoke", { slot });
+export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; mult?: number; boostMs?: number; speedMs?: number; chemMs?: number; shroomMs?: number }> => call(p, "finishSmoke", { slot });
 
 // ---- growing weed in a growing kit ---------------------------------------------------------------------------
 export const plantSeed = (p: Profile, _roomId: string, fid: string, seedSlot: number): Promise<unknown> => call(p, "plant", { fid, slot: seedSlot });
