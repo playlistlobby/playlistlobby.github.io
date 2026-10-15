@@ -25,7 +25,7 @@ import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
 import { LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
-import { BLOOD_ICON, findSlot, GROW_MS, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
+import { BLOOD_ICON, findSlot, growMsOf, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
 import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
@@ -1274,9 +1274,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     clearSelection();
   }
 
-  const planterStatus = (pl: { at: number; water: number; neglect: boolean }): string => {
+  const planterStatus = (pl: { at: number; water: number; neglect: boolean; crop?: string }): string => {
     const prog = plantProgress(pl);
-    const left = Math.max(0, GROW_MS * (1 - prog));
+    const left = Math.max(0, growMsOf(pl.crop) * (1 - prog));
     const mins = Math.max(1, Math.ceil(left / 60000));
     const water = plantWatered(pl) ? "watered" : plantThirsty(pl) ? "THIRSTY: water it now!" : `water bar ${Math.round(plantWater(pl) * 100)}%`;
     return prog >= 1 ? `It's ready to pick!${plantWatered(pl) ? "" : " It looks a bit sad."}` : `Growing: ${Math.round(prog * 100)}% (about ${mins}m to go). ${water[0].toUpperCase()}${water.slice(1)}.`;
@@ -1306,14 +1306,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (ss < 0 || ss === null) return say("An empty growing kit. Select a weed seed or shroom spores, then click the kit to plant it.", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
-        return say(me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 20 minutes, and they need one watering once they get thirsty (after 5 minutes)." : "You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering once it gets thirsty (after 5 minutes).");
+        return say(me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering: water it any time.");
       }
       const prog = plantProgress(f.plant);
       const canSlot = held?.item === "wateringcan_full" ? slot! : findSlot(me.inventory, "wateringcan_full");
       if (held?.item === "wateringcan_full" || (prog < 1 && canSlot >= 0 && !plantWatered(f.plant))) {
         if (canSlot < 0 || canSlot === null) return say("You need a full watering can.", "warn");
         if (plantWatered(f.plant)) return say("It's already been watered. It'll grow fine now.");
-        if (!plantThirsty(f.plant)) return say("It isn't thirsty yet. Wait until its water bar is empty.", "warn");
         await waterPlant(me, def.id, f.id, f.plant, canSlot);
         panel.refresh();
         playSfx("select", 0.4);

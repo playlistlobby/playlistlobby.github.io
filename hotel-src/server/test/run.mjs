@@ -404,9 +404,7 @@ console.log("--- combining, growing");
   bad("harvest too early", await act(a, "harvest", { fid: "kit1" }));
   const canSlot = (await state(a)).inventory.findIndex((x) => x && x.item === "wateringcan");
   ok("fill the can", await act(a, "fillCan", { slot: canSlot }));
-  bad("it isn't thirsty in the first 5 minutes", await act(a, "water", { fid: "kit1", slot: canSlot }));
-  await owner("PATCH", `roomsMeta/${room}/furni/kit1`, { plantedAt: Date.now() - 6 * 60_000 });
-  ok("water it once it is thirsty", await act(a, "water", { fid: "kit1", slot: canSlot }));
+  ok("it can be watered at once, before the bar is empty", await act(a, "water", { fid: "kit1", slot: canSlot }));
   bad("harvest before 20 minutes", await act(a, "harvest", { fid: "kit1" }));
   const empty = (await state(a)).inventory.findIndex((x) => x && x.item === "wateringcan");
   ok("fill the can again", await act(a, "fillCan", { slot: empty }));
@@ -906,6 +904,21 @@ console.log("--- cigarette butts to 6ixty");
   await act(odd, "sync");
   const so = await act(odd, "sellWeed", { slot: 0, qty: 3 });
   check("an odd one stays: 3 butts sell as 2", so.ok === true && so.state.blood === 1 && total(so.state.inventory, "cigbutt") === 1, JSON.stringify(so.state));
+}
+
+console.log("--- shrooms take 25 minutes");
+{
+  const g = await fresh("t_grow25");
+  await act(g, "sync");
+  const room = `u_${g.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: g.uid, ownerName: "t_grow25", name: "x", access: "knock", w: 8, h: 8, furni: { ks: { kind: "f_planter", x: 2, y: 2, crop: "shroom" }, kw: { kind: "f_planter", x: 4, y: 2 } } });
+  await stand(g, room, 4, 4);
+  await owner("PATCH", `roomsMeta/${room}/furni/ks`, { plantedAt: Date.now() - 22 * 60_000, wateredAt: Date.now() - 20 * 60_000 });
+  await owner("PATCH", `roomsMeta/${room}/furni/kw`, { plantedAt: Date.now() - 22 * 60_000, wateredAt: Date.now() - 20 * 60_000 });
+  bad("shrooms aren't ready after 22 minutes", await act(g, "harvest", { fid: "ks" }));
+  ok("but weed is", await act(g, "harvest", { fid: "kw" }));
+  await owner("PATCH", `roomsMeta/${room}/furni/ks`, { plantedAt: Date.now() - 26 * 60_000 });
+  ok("shrooms are ready after 25", await act(g, "harvest", { fid: "ks" }));
 }
 
 console.log("--- harvesting: a 25% chance of a seed (or spores) back");

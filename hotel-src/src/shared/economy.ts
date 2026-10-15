@@ -1,6 +1,6 @@
 // The economy's numbers and pure helpers, shared by the browser (to show things) and the server (to decide them).
 // Nothing here may import the browser or Firebase.
-import { emptyInventory, findSlotAny, GROW_MS, InvItem, Inventory, INV_SIZE, parseInventoryWith, SMOKABLE, SMOKE_MS, STACKABLE, START_BLOOD, WATER_MS } from "./items";
+import { emptyInventory, findSlotAny, growMsOf, InvItem, Inventory, INV_SIZE, parseInventoryWith, SMOKABLE, SMOKE_MS, STACKABLE, START_BLOOD, WATER_MS } from "./items";
 
 export const DAY_MS = 86_400_000;
 /** Furniture everybody starts with, waiting in their toolbox's storage (given once, to new players and to everybody who played before). */
@@ -212,10 +212,10 @@ export function compactInv(inv: Inventory): Inventory {
 /** What a stab is worth right now: 1 drop, or more for a while after you finished a cigarette (x2), joint (x3) or blunt (x4). */
 export const stabGainAt = (s: Pick<Snapshot, "boostUntil" | "boostMult">, now: number): number => (s.boostUntil > now ? s.boostMult : 1);
 
-export interface Plant { at: number; water: number; neglect: boolean }
-export const plantProgressAt = (pl: Plant, now: number): number => Math.min(1, (now - pl.at) / GROW_MS);
-/** It has had its water: watered at some point after getting thirsty (5 minutes in). One watering is enough. */
-export const plantWatered = (pl: Plant): boolean => pl.water >= pl.at + WATER_MS;
+export interface Plant { at: number; water: number; neglect: boolean; /** "shroom" when spores were planted (grows for 25 minutes), else weed */ crop?: string }
+export const plantProgressAt = (pl: Plant, now: number): number => Math.min(1, (now - pl.at) / growMsOf(pl.crop));
+/** It has had its water: watered at any time since it was planted (before the bar is empty or after). One watering is enough. */
+export const plantWatered = (pl: Plant): boolean => pl.water > pl.at;
 /** Thirsty and not yet watered. */
 export const plantThirsty = (pl: Plant, now: number): boolean => now >= pl.at + WATER_MS && !plantWatered(pl);
 /** The water bar: it drains over the first 5 minutes; once it's empty the plant needs its one watering, which fills it for good. */

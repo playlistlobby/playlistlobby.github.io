@@ -117,8 +117,11 @@ export const SMOKABLE: Record<string, SmokeDef> = {
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
 export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "kodimagnyl", "shroomspore", "shroom", "hash", "hashmix", "cigbutt", "tobacco"]);
-/** A plant grows for 20 minutes. It gets thirsty after 5: water it once after that (and only then) or the weed turns out ass. */
+/** Weed grows for 20 minutes, shrooms for 25. The water bar runs dry after 5: water it once, any time while it grows (even before the bar is empty), or the harvest turns out poor. */
 export const GROW_MS = 20 * 60_000;
+export const GROW_MS_SHROOM = 25 * 60_000;
+/** how long what is planted takes to grow */
+export const growMsOf = (crop?: string): number => (crop === "shroom" ? GROW_MS_SHROOM : GROW_MS);
 export const WATER_MS = 5 * 60_000;
 export const SMOKE_MS = 60_000;
 /** How long this smokable burns before it's finished. */

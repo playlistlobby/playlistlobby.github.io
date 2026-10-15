@@ -171,5 +171,9 @@ set("Tobacco rolled in blunt paper. Click it to light up (you need a lighter): i
 set("Two cigarette butts, picked apart: 1 tobacco.", "To cigaret skodder, pillet fra hinanden: 1 tobak.", "src/shared/items.ts");
 set("You roll a cigarette.", "Du ruller en cigaret.", "src/shared/items.ts");
 set("You roll a cigar.", "Du ruller en cigar.", "src/shared/items.ts");
+set("You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time.", "Du trykker sporerne ned i jorden. Shrooms tager 25 minutter, og de skal vandes én gang: vand dem når som helst.", "src/ui/room.ts");
+set("You push a seed into the soil. It takes 20 minutes to grow, and it needs one watering: water it any time.", "Du skubber et frø ned i jorden. Det tager 20 minutter at gro, og det skal vandes én gang: vand det når som helst.", "src/ui/room.ts");
+set("A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 20 minutes and needs one watering (any time).", "Et lille frø fra skraldespanden. Vælg det, klik så på dit growth kit for at plante det. Det gror på 20 minutter og skal vandes én gang (når som helst).", "src/items.ts");
+set("A pinch of spores. Select them, then click a growing kit to plant them. Shrooms are ready after 25 minutes (water them once, any time).", "En knivspids sporer. Vælg dem, klik så på et growth kit for at plante dem. Shrooms er klar efter 25 minutter (vand dem én gang, når som helst).", "src/items.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

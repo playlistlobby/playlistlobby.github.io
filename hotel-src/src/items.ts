@@ -3,7 +3,7 @@ import { FURNI_KINDS } from "./rooms";
 import { loadNitro } from "./nitro";
 import { DISABLED_ITEMS, ITEM_ID_LIST, parseInventoryWith } from "./shared/items";
 export {
-  combine, DEFAULT_ITEM_PRICE, DISABLED_ITEMS, emptyInventory, findSlot, findSlotAny, GROW_MS, INV_COLS, INV_SIZE, isFurniItem, ITEM_DEFAULTS,
+  combine, DEFAULT_ITEM_PRICE, DISABLED_ITEMS, emptyInventory, findSlot, findSlotAny, GROW_MS, growMsOf, INV_COLS, INV_SIZE, isFurniItem, ITEM_DEFAULTS,
   MUSIC_ACCESS_KEY, MUSIC_ACCESS_PRICE, SIXTY_STOCK, SMOKABLE, SMOKE_MS, smokeMsOf, STACKABLE, START_BLOOD, VENDING_STOCK, WATER_MS,
 } from "./shared/items";
 export type { InvItem, Inventory } from "./shared/items";
@@ -36,7 +36,7 @@ export const ITEMS: Record<string, ItemDef> = {
   weedseed: {
     id: "weedseed",
     name: "Weed seed",
-    examine: "A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 20 minutes and needs one watering once it gets thirsty.",
+    examine: "A little seed from the bin. Select it, then click your growing kit to plant it. It grows in 20 minutes and needs one watering (any time).",
     icon: assetUrl("items/weedseed.svg"),
     useOnObject: "f_planter",
   },
@@ -193,7 +193,7 @@ export const ITEMS: Record<string, ItemDef> = {
   shroomspore: {
     id: "shroomspore",
     name: "Shroom spores",
-    examine: "A pinch of spores. Select them, then click a growing kit to plant them. Shrooms are ready after 20 minutes (water them once).",
+    examine: "A pinch of spores. Select them, then click a growing kit to plant them. Shrooms are ready after 25 minutes (water them once, any time).",
     icon: assetUrl("items/shroomspore.svg"),
     useOnObject: "f_planter",
   },

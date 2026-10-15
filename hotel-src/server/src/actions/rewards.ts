@@ -4,7 +4,7 @@ import { fail } from "../ctx";
 import {
   addToInv, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
-import { combine, findSlot, GROW_MS, SMOKABLE, smokeMsOf, WATER_MS } from "../../../src/shared/items";
+import { combine, findSlot, growMsOf, SMOKABLE, smokeMsOf } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
 const mins = (ms: number): string => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
@@ -248,9 +248,8 @@ export const water: Action = {
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "wateringcan_full") fail("That can is empty.");
-    // one watering, once it is thirsty (5 minutes in), keeps the weed good: before that it isn't thirsty, after that it's done
-    if ((row.wateredAt ?? 0) >= row.plantedAt! + WATER_MS) fail("It's already been watered. It'll grow fine now.");
-    if (c.now < row.plantedAt! + WATER_MS) fail("It isn't thirsty yet. Wait until its water bar is empty.");
+    // one watering, at any time while it grows (the bar need not be empty), keeps the harvest good
+    if (typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!) fail("It's already been watered. It'll grow fine now.");
     w.s.inventory = w.s.inventory.map((x, i) => (i === slot ? { item: "wateringcan", qty: 1 } : x));
     c.extra[`${path}/wateredAt`] = c.now;
     return {};
@@ -261,8 +260,8 @@ export const harvest: Action = {
   async run(c, a) {
     const { path, row } = await planter(c, a.fid);
     if (typeof row.plantedAt !== "number") fail("There's nothing planted there.");
-    if (c.now - row.plantedAt! < GROW_MS) fail("It isn't ready yet.");
-    const ass = !((row.wateredAt ?? 0) >= row.plantedAt! + WATER_MS); // never got its one watering
+    if (c.now - row.plantedAt! < growMsOf(row.crop)) fail("It isn't ready yet.");
+    const ass = !(typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!); // never got its one watering
     const w = await c.user();
     const shrooms = row.crop === "shroom";
     const give = shrooms ? { item: "shroom", qty: ass ? 1 : 3 } : { item: "weed", qty: 3, ...(ass ? { ass: true } : {}) }; // thirsty shrooms give only one
