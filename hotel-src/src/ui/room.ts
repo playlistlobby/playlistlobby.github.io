@@ -160,6 +160,8 @@ const posterPicture = (img?: string): CanvasImageSource => {
   if (!im) { im = new Image(); im.src = img; posterPics.set(img, im); }
   return im.complete && im.naturalWidth ? im : posterBlank;
 };
+/** the blue water drop that flashes over the sink (the blood drop, but blue) */
+const waterDropImg = loadImg(assetUrl("items/waterdrop.svg"));
 const itemImgs = new Map<string, HTMLImageElement>();
 const itemImg = (id: string): HTMLImageElement => {
   let im = itemImgs.get(id);
@@ -2993,7 +2995,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const noHint = k.opens === "mixer"; // the mixer glows like the rest, but has no little icon floating over it
         const showHanger = k.opens === "sink" ? glowSink : k.opens === "records" ? true : !noHint && (!me.seenDoor || hot); // the record player always floats a little CD // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "records" ? itemImg("cd") : k.opens === "sink" ? itemImg("wateringcan") : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
+        const hint = k.opens === "records" ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
           const hs = k.opens === "sink" || k.opens === "records" ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
@@ -3581,6 +3583,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
               g.drawImage(limg, lf.x - 32 * scale, lf.y - FEET_Y * scale, limg.width * scale, limg.height * scale);
               g.restore();
             }
+          }
+          if (toolIconImg.complete && toolIconImg.naturalWidth) { // the little house over his head: he is the one for rooms
+            const hs = scale * (lHot ? 0.95 : 0.8), hw = toolIconImg.naturalWidth * hs, hh = toolIconImg.naturalHeight * hs;
+            g.save();
+            g.imageSmoothingEnabled = false;
+            g.shadowColor = "rgba(255,226,140,0.7)";
+            g.shadowBlur = (lHot ? 6 : 3) * scale;
+            g.drawImage(toolIconImg, lf.x - hw / 2, lf.y - (FEET_Y + 6) * scale - hh + Math.sin(now / 380) * 3 * scale, hw, hh);
+            g.restore();
           }
         },
       });
