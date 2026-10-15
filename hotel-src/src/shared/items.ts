@@ -14,7 +14,7 @@ export const ITEM_ID_LIST = [
   // shrooms (grown from spores found in the bins) let you into any room; a shroom pressed into a pill is DMT
   "shroomspore", "shroom", "dmt",
   // the mystery CDs (yellow, green, blue) and the full album (red), bought with real money from the record player in the shop
-  "cd_yellow", "cd_green", "cd_blue", "cd_album",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album",
   // hash (ass weed + kodimagnyl), hash mix (hash + cigarette) and the hash joint (hash mix + joint paper)
   "hash", "hashmix", "joint_hash",
   // chud mix (shroom + weed, rolled like weed): the chud joint and chud blunt
@@ -196,10 +196,10 @@ export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
 /** Things 6ixty only buys in bundles: the price of one of these is for the whole bundle (2 cigarette butts = 1 drop, 2 pills = 3 drops). */
 export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, pill: 2 };
 
-/** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife) and the CDs bought with real money. */
+/** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife) and every CD. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
-  "cd_yellow", "cd_green", "cd_blue", "cd_album",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album",
 ]);
 
 /**
@@ -214,7 +214,6 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     // bought for blood: half of it (the cigarette 1 and the pill 3 only come out whole in twos)
     case "cigarette": return 1; // per 2
     case "pill": return 3; // per 2
-    case "cd": return 1; // the Freakme CD cost 2
     case "kodimagnyl": return 2; // cost 4 in the vending machine
     case "lighter": return 1; // cost 2 in the vending machine
     case "cigbutt": return 1; // per 2 butts

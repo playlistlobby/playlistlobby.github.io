@@ -672,6 +672,7 @@ console.log("--- the CD and the boombox");
   // a visitor can't use the boombox while it plays, and can't control it
   const v = await fresh("t_cd2", { inventory: { 0: { item: "cd", qty: 1 } } });
   await act(v, "sync");
+  bad("6ixty does not buy a CD", await act(v, "sellWeed", { slot: 0, qty: 1 }));
   await stand(v, room, 2, 2);
   bad("busy", await act(v, "cdInsert", { slot: 0, room, durationMs: 100000 }));
   bad("a visitor can't pause it", await act(v, "cdControl", { room, op: "pause" }));
