@@ -197,7 +197,7 @@ export const sellWeed: Action = {
     const slot = Number(a.slot);
     if (!Number.isInteger(slot) || slot < 0 || slot > 27) return fail("Bad slot.");
     const it = w.s.inventory[slot];
-    const each = it ? sellPrice(it.item, it.ass) : null;
+    const each = it ? sellPrice(it.item, it.ass, (await c.furniCfg()).prices) : null;
     if (!it || each === null || it.lit || it.inPlayer) return fail("He doesn't buy that.");
     const bundle = SELL_BUNDLE[it.item] ?? 1; // some things only go in bundles (2 cigarette butts for a drop)
     let qty = Math.max(1, Math.min(Math.floor(Number(a.qty) || 1), it.qty));

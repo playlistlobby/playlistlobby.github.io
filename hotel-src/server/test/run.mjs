@@ -210,10 +210,30 @@ console.log("--- selling weed");
   check("2 each: 10 more", r3.state.blood === 30);
   const b2 = await fresh("t_sell2", { inventory: { 0: { item: "mix", qty: 1 }, 1: { item: "midweed", qty: 1 }, 2: { item: "thca", qty: 1 }, 3: { item: "researchchem", qty: 1 } } });
   await act(b2, "sync");
-  bad("weed mix can't be sold", await act(b2, "sellWeed", { slot: 0, qty: 1 }));
   let tot = 0;
-  for (let i = 0; i < 3; i++) { const r = await act(b2, "sellWeed", { slot: 1, qty: 1 }); ok(`sell mixer item #${i + 1}`, r); tot = r.state.blood; }
-  check("mid weed 4 + thc-a 8 + research chemical 10 = 22", tot === 22, String(tot));
+  for (let i = 0; i < 4; i++) { const r = await act(b2, "sellWeed", { slot: 0, qty: 1 }); ok(`sell mixer item #${i + 1}`, r); tot = r.state.blood; }
+  check("mix 5 + mid weed 7 + thc-a 12 + research chemical 9 = 33", tot === 33, String(tot));
+  // 6ixty buys nearly anything: furniture at 75%, what cost blood at half, what you grow / mix / find at its own price
+  const b3 = await fresh("t_sell3", { inventory: { 0: { item: "f_sofa", qty: 1 }, 1: { item: "cigarette", qty: 4 }, 2: { item: "pill", qty: 3 }, 3: { item: "lighter", qty: 1 }, 4: { item: "kodimagnyl", qty: 2 }, 5: { item: "hash", qty: 1 }, 6: { item: "joint_hash", qty: 1 }, 7: { item: "dmt", qty: 1 }, 8: { item: "shroom", qty: 3 } } });
+  await act(b3, "sync");
+  const sold = async (label, slotItem, qty, expect) => {
+    const st = await state(b3);
+    const slot = st.inventory.findIndex((x) => x && x.item === slotItem);
+    const r = await act(b3, "sellWeed", { slot, qty });
+    check(label, r.ok === true && r.state.blood - st.blood === expect, JSON.stringify([r.ok, r.error, r.state && r.state.blood - st.blood]));
+  };
+  await sold("an old sofa (16) sells for 75%: 12", "f_sofa", 1, 12);
+  await sold("4 cigarettes: 1 drop for 2, so 2", "cigarette", 4, 2);
+  await sold("3 pills: 2 sell for 3, the third stays", "pill", 3, 3);
+  await sold("a lighter: 1", "lighter", 1, 1);
+  await sold("2 kodimagnyl: 2 each", "kodimagnyl", 2, 4);
+  await sold("hash: 12", "hash", 1, 12);
+  await sold("a hash joint: 13", "joint_hash", 1, 13);
+  await sold("DMT: 14", "dmt", 1, 14);
+  await sold("3 shrooms: 6 each", "shroom", 3, 18);
+  const never = await fresh("t_sell4", { inventory: { 0: { item: "f_mixer", qty: 1 }, 1: { item: "f_planter", qty: 1 }, 2: { item: "jointpaper", qty: 1 }, 3: { item: "bluntwrap", qty: 1 }, 4: { item: "wateringcan", qty: 1 }, 5: { item: "wateringcan_full", qty: 1 }, 6: { item: "knife", qty: 1 }, 7: { item: "cd_yellow", qty: 1 } } });
+  await act(never, "sync");
+  for (const [i, nm] of ["the mixer", "the growing kit", "joint paper", "blunt paper", "a watering can", "a full watering can", "the knife", "a CD bought with real money"].entries()) bad(`he won't buy ${nm}`, await act(never, "sellWeed", { slot: i, qty: 1 }));
 }
 
 console.log("--- the floor: drop and pick up");
@@ -625,8 +645,9 @@ console.log("--- kodimagnyl, the lean and the super pill");
   check("8 drops", s8.state.blood === 8, String(s8.state.blood));
   const s12 = await act(sell, "sellWeed", { slot: slotOf(s8.state, "superpill"), qty: 1 });
   ok("sell the super pill", s12);
-  check("12 more", s12.state.blood === 20, String(s12.state.blood));
-  bad("he doesn't buy the plain kodimagnyl", await act(sell, "sellWeed", { slot: slotOf(s12.state, "kodimagnyl"), qty: 1 }));
+  check("14 more", s12.state.blood === 22, String(s12.state.blood));
+  const sk = await act(sell, "sellWeed", { slot: slotOf(s12.state, "kodimagnyl"), qty: 1 });
+  check("kodimagnyl: half of the 4 it costs", sk.ok === true && sk.state.blood === 24, String(sk.state && sk.state.blood));
 }
 
 console.log("--- the CD and the boombox");

@@ -22,6 +22,8 @@ export function shopPool(): string[] {
 
 /** What a piece costs today: the admin's price if set, else the shipped price, else 10-25 by name for Studio pieces. */
 export const priceOf = (kind: string): number => furniPrice(kind, cfg.prices);
+/** the admin's furniture prices right now (6ixty pays 75% of them for furniture) */
+export const furniPricesNow = (): Record<string, number> => cfg.prices;
 
 /** The random pick for a day (before any admin change). */
 export const randomPicks = (day: number, count = PICKS_PER_DAY): string[] => randomFurniPicks(day, shopPool(), count);

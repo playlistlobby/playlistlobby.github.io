@@ -144,5 +144,6 @@ set("You crumble the hash into the tobacco: 2 hash mix.", "Du krummer hashen ud 
 set("He pays 1 drop for 2.", "Han giver 1 dråbe for 2.", "src/ui/sixtyShop.ts");
 set("Needs 2", "Skal bruge 2", "src/ui/sixtyShop.ts");
 set("He wants them in twos.", "Han vil have dem to ad gangen.", "server/src/actions/shop.ts");
+set("He pays 3 drops for 2.", "Han giver 3 dråber for 2.", "src/ui/sixtyShop.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

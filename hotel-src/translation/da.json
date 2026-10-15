@@ -6178,5 +6178,10 @@
   "en": "He wants them in twos.",
   "da": "Han vil have dem to ad gangen.",
   "where": "server/src/actions/shop.ts"
+ },
+ "N125": {
+  "en": "He pays 3 drops for 2.",
+  "da": "Han giver 3 dråber for 2.",
+  "where": "src/ui/sixtyShop.ts"
  }
 }

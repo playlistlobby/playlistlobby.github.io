@@ -1,7 +1,8 @@
 import { h, toast } from "./dom";
 import { buyInventoryItem, sellWeed } from "../db";
 import { BLOOD_ICON, DISABLED_ITEMS, itemDef, ITEMS, SIXTY_STOCK } from "../items";
-import { SELL_BUNDLE, sellPrice } from "../shared/items";
+import { SELL_BUNDLE, sellPrice as sellPriceOf } from "../shared/items";
+import { furniPricesNow } from "../furniShop";
 import { itemEntry, onShopConfig } from "../shopConfig";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
@@ -26,7 +27,8 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
     // his shelf: whatever the admin has switched on (Admin > Shop > 6ixty stock); the cigarette is on by default
     const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => itemDef(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "cd" && itemEntry(id).on);
     // selling: he buys weed, seeds and what the mixer makes (prices: sellPrice)
-    const sells = me.inventory.map((s, slot) => ({ s, slot })).filter((e) => e.s && sellPrice(e.s.item, e.s.ass) !== null && !e.s.lit);
+    const sellPrice = (item: string, ass?: boolean): number | null => sellPriceOf(item, ass, furniPricesNow());
+    const sells = me.inventory.map((s, slot) => ({ s, slot })).filter((e) => e.s && sellPrice(e.s.item, e.s.ass) !== null && !e.s.lit && !e.s.inPlayer);
     const sellRows = sells.map(({ s, slot }) => {
       const each = sellPrice(s!.item, s!.ass)!;
       const bundle = SELL_BUNDLE[s!.item] ?? 1; // cigarette butts: he buys them 2 at a time
@@ -44,7 +46,7 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
       };
       return h("div", { class: "sixty-row" },
         h("img", { src: itemDef(s!.item)!.icon, alt: "", class: "sixty-ico" }),
-        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, `${nm} x${s!.qty}`), h("div", { class: "hint" }, bundle > 1 ? "He pays 1 drop for 2." : `He pays ${each} drops each.`)),
+        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, `${nm} x${s!.qty}`), h("div", { class: "hint" }, bundle > 1 ? (each === 1 ? "He pays 1 drop for 2." : "He pays 3 drops for 2.") : `He pays ${each} drops each.`)),
         ...(bundle > 1
           ? (s!.qty >= bundle ? [h("button", { class: "btn small", onclick: () => void sell(bundle) }, `Sell ${bundle} (${each})`), ...(s!.qty >= bundle * 2 ? [h("button", { class: "btn small primary", onclick: () => void sell(s!.qty) }, `All (${Math.floor(s!.qty / bundle) * each})`)] : [])] : [h("button", { class: "btn small", disabled: true }, "Needs 2")])
           : [h("button", { class: "btn small", onclick: () => void sell(1) }, `Sell 1 (${each})`), ...(s!.qty > 1 ? [h("button", { class: "btn small primary", onclick: () => void sell(s!.qty) }, `All (${each * s!.qty})`)] : [])]));

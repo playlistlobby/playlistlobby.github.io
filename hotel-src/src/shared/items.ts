@@ -1,5 +1,6 @@
 // Pure item data and rules shared by the browser and the server (src/items.ts adds the pictures and texts on top).
 // Nothing here may import the browser, Firebase or anything with a picture in it.
+import { furniPrice } from "./furniture";
 
 /** every ordinary item (furniture pieces are items too, with ids "f_..." / "x_...") */
 export const ITEM_ID_LIST = [
@@ -164,19 +165,57 @@ const matches = (it: InvItem, m: { item: string; ass?: boolean }): boolean => it
 export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
   return MIX_RECIPES.find((r) => (matches(x, r.a) && matches(y, r.b)) || (matches(y, r.a) && matches(x, r.b))) ?? null;
 }
-/** Things 6ixty only buys in bundles: the price below is for the whole bundle (2 cigarette butts = 1 drop). */
-export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2 };
-/** What 6ixty pays for one piece (for a whole bundle, see SELL_BUNDLE), or null if he doesn't buy it. */
-export function sellPrice(item: string, ass?: boolean): number | null {
+/** Things 6ixty only buys in bundles: the price of one of these is for the whole bundle (2 cigarette butts = 1 drop, 2 pills = 3 drops). */
+export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, pill: 2 };
+
+/** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife) and the CDs bought with real money. */
+export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
+  "f_mixer", "f_planter", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
+  "cd_yellow", "cd_green", "cd_blue", "cd_album",
+]);
+
+/**
+ * What 6ixty pays: furniture 75% of what it cost in the shop; the things that were bought for blood 50% of that; and everything you grow, mix or
+ * find in the bins at a price made so that growing and mixing pay off (each step is worth more than what went into it). Null = he doesn't buy it.
+ * Things in SELL_BUNDLE are paid per bundle. `furniPrices` = the admin's furniture prices (shared/furniture.ts furniPrice).
+ */
+export function sellPrice(item: string, ass?: boolean, furniPrices: Record<string, number> = {}): number | null {
+  if (NEVER_BOUGHT.has(item)) return null;
+  if (/^[fx]_/.test(item)) return Math.max(1, Math.floor(furniPrice(item, furniPrices) * 0.75)); // furniture: 75% of the shop price
   switch (item) {
-    case "weed": return ass ? 4 : 6;
-    case "weedseed": return 2;
+    // bought for blood: half of it (the cigarette 1 and the pill 3 only come out whole in twos)
+    case "cigarette": return 1; // per 2
+    case "pill": return 3; // per 2
+    case "cd": return 1; // the Freakme CD cost 2
+    case "kodimagnyl": return 2; // cost 4 in the vending machine
+    case "lighter": return 1; // cost 2 in the vending machine
     case "cigbutt": return 1; // per 2 butts
-    case "midweed": return 4;
-    case "thca": return 8;
-    case "researchchem": return 10;
-    case "codeine": return 8;
-    case "superpill": return 12;
+    // grown from seeds and spores (3 from each, so a seed is worth much less than what it grows into)
+    case "weedseed": return 2;
+    case "weed": return ass ? 4 : 6;
+    case "shroomspore": return 2;
+    case "shroom": return 6;
+    // mixed
+    case "mix": return 5; // weed 6 + a cigarette -> 2
+    case "midweed": return 7; // a good weed 6 + an ass weed 4 -> 2
+    case "thca": return 12; // pill 3 + weed 6
+    case "researchchem": return 9; // pill 3 + a cigarette
+    case "hash": return 12; // ass weed 4 + kodimagnyl 4
+    case "hashmix": return 8; // hash 12 + a cigarette -> 2
+    case "codeine": return 8; // kodimagnyl 4 and water
+    case "superpill": return 14; // pill 3 + kodimagnyl 4
+    case "dmt": return 14; // shroom 6 + pill 3
+    // rolled (paper 1, blunt wrap 2)
+    case "joint": return 9;
+    case "blunt": return 11;
+    case "joint_mid": return 10;
+    case "blunt_mid": return 12;
+    case "joint_thca": return 15;
+    case "blunt_thca": return 17;
+    case "joint_chem": return 13;
+    case "blunt_chem": return 15;
+    case "joint_hash": return 13;
+    case "syringe": return 1;
     default: return null;
   }
 }
