@@ -704,3 +704,10 @@ html.kb .side-host { display: none; }
 
 .admin-name { position: absolute; left: 3px; bottom: 2px; font: 10px/1 Verdana, sans-serif; background: rgba(0,0,0,.65); color: #ffe27a; padding: 2px 4px; border-radius: 4px; cursor: copy; user-select: text; }
 .admin-name:hover { background: #2a64d6; color: #fff; }
+
+/* the CD player's window with the album's extra buttons (back, next, play from start, eject): the rows wrap instead of pushing the window wider than its box */
+.cd-popup { box-sizing: border-box; max-width: calc(100% - 12px); }
+.cd-popup > * { min-width: 0; }
+.cd-popup .cd-row { flex-wrap: wrap; }
+.cd-popup .btn { white-space: nowrap; }
+.cd-popup .cd-bar { width: 100%; box-sizing: border-box; }
