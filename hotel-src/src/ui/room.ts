@@ -3617,12 +3617,27 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const bubbles: Array<() => void> = [];
     const pieceBoxes: Array<{ id: string; box: Box; depth: number }> = [];
 
+    const pieceDepth = (f: PlacedFurni): number =>
+      // flat pieces lie on the floor, so they're drawn before (underneath) everyone else
+      FURNI_KINDS[f.kind].flat ? -1
+        : FURNI_KINDS[f.kind].nitro ? f.x + footprint(f.kind, f.dir).w - 1 + f.y + footprint(f.kind, f.dir).h - 1 + 0.25 // sprite pieces: their far tile, so people beside them stand in front
+        : f.x + footprint(f.kind, f.dir).w + f.y + footprint(f.kind, f.dir).h - 1;
+    /** A big sprite piece (a long or wide bed) is sorted by its far tile, so someone standing right in front of it would be drawn behind it: lift them above any piece they stand in front of. */
+    const aboveFrontPieces = (depth: number, pos: Pt): number => {
+      const tx = Math.floor(pos.x + 0.5), ty = Math.floor(pos.y + 0.5);
+      for (const f of def.furni) {
+        const k = FURNI_KINDS[f.kind];
+        if (!k.nitro || k.flat) continue;
+        const fp = footprint(f.kind, f.dir);
+        const inX = tx >= f.x && tx < f.x + fp.w, inY = ty >= f.y && ty < f.y + fp.h;
+        if ((inX && ty >= f.y + fp.h) || (inY && tx >= f.x + fp.w)) depth = Math.max(depth, pieceDepth(f) + 0.1);
+      }
+      return depth;
+    };
+
     for (const f of def.furni) {
       list.push({
-        // flat pieces lie on the floor, so they're drawn before (underneath) everyone else
-        depth: FURNI_KINDS[f.kind].flat ? -1
-          : FURNI_KINDS[f.kind].nitro ? f.x + footprint(f.kind, f.dir).w - 1 + f.y + footprint(f.kind, f.dir).h - 1 + 0.25 // sprite pieces: their far tile, so people beside them stand in front
-          : f.x + footprint(f.kind, f.dir).w + f.y + footprint(f.kind, f.dir).h - 1,
+        depth: pieceDepth(f),
         draw: () => {
           const box = drawFurni(f, now);
           if (box && isDisplayPiece(f.id) && !furnishOn) drawPriceTag(priceOf(f.kind), box.x1, box.y1);
@@ -3771,7 +3786,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         // clickable area = just the sleeping body (the picture itself has a lot of empty padding around it)
         boxes.push({ id: p.uid, x0: ax + 66 * scale, x1: ax + 166 * scale, y0: ay + 38 * scale, y1: ay + 98 * scale, depth: dh.x + dh.y + 3 });
         list.push({
-          depth: p.lying ? headTile().x + 3 - 1 + headTile().y + 0.6 : dh.x + dh.y + 0.6, // just after the bed itself
+          depth: p.lying ? pieceDepth(bedPiece()) + 0.35 : dh.x + dh.y + 0.6, // just after the bed itself, whatever its size
           draw: () => {
             if (limg) {
               g.drawImage(limg, ax, ay, lw, lh);
@@ -3826,7 +3841,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
       boxes.push({ id: p.uid, x0: feet.x - 22 * scale, x1: feet.x + 22 * scale, y0: feet.y - FEET_Y * scale, y1: feet.y + 8 * scale, depth: pos.x + pos.y });
       list.push({
-        depth: pos.x + pos.y + 0.5 + (p.sit && !isMoving(p, now) ? 1.2 : 0),
+        depth: aboveFrontPieces(pos.x + pos.y + 0.5 + (p.sit && !isMoving(p, now) ? 1.2 : 0), pos),
         draw: () => {
           g.fillStyle = "rgba(0,0,0,0.18)";
           g.beginPath();
