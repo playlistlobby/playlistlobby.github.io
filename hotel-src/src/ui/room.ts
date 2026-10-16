@@ -3638,14 +3638,38 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (!k.nitro || k.flat) continue;
         const fp = footprint(f.kind, f.dir);
         const inX = tx >= f.x && tx < f.x + fp.w, inY = ty >= f.y && ty < f.y + fp.h;
-        if ((inX && ty >= f.y + fp.h) || (inY && tx >= f.x + fp.w)) depth = Math.max(depth, pieceDepth(f) + 0.1);
+        if ((inX && ty >= f.y + fp.h) || (inY && tx >= f.x + fp.w)) depth = Math.max(depth, (furniDepth.get(f.id) ?? pieceDepth(f)) + 0.1);
       }
       return depth;
     };
 
+    // Pieces that stand on the floor are drawn far to near. Sorting by one number (the far tile's x+y) leaves ties and mistakes for big pieces, e.g. three long beds
+    // set out diagonally: so every pair of footprints is compared properly (one that lies entirely behind the other on either axis is drawn first), and the depths are
+    // nudged until the order agrees with that. People and small things keep sorting by their own numbers around them.
+    const furniDepth = new Map<string, number>();
+    {
+      const solid = def.furni.filter((f) => { const k = FURNI_KINDS[f.kind]; return k.nitro && !k.flat && !k.wall; });
+      const rect = (f: PlacedFurni) => { const fp = footprint(f.kind, f.dir); return { x0: f.x, x1: f.x + fp.w - 1, y0: f.y, y1: f.y + fp.h - 1 }; };
+      const behind = (a: PlacedFurni, b: PlacedFurni): boolean => { // a must be drawn before b
+        const A = rect(a), B = rect(b);
+        const aBack = A.x1 < B.x0 || A.y1 < B.y0, bBack = B.x1 < A.x0 || B.y1 < A.y0;
+        return aBack && !bBack;
+      };
+      for (const f of solid) furniDepth.set(f.id, pieceDepth(f));
+      for (let pass = 0; pass < solid.length; pass++) {
+        let changed = false;
+        for (const a of solid) for (const b of solid) {
+          if (a === b || !behind(a, b)) continue;
+          const da = furniDepth.get(a.id)!, db = furniDepth.get(b.id)!;
+          if (db <= da) { furniDepth.set(b.id, da + 0.001); changed = true; }
+        }
+        if (!changed) break;
+      }
+    }
+
     for (const f of def.furni) {
       list.push({
-        depth: pieceDepth(f),
+        depth: furniDepth.get(f.id) ?? pieceDepth(f),
         draw: () => {
           const box = drawFurni(f, now);
           if (box && isDisplayPiece(f.id) && !furnishOn) drawPriceTag(priceOf(f.kind), box.x1, box.y1);
@@ -3794,7 +3818,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         // clickable area = just the sleeping body (the picture itself has a lot of empty padding around it)
         boxes.push({ id: p.uid, x0: ax + 66 * scale, x1: ax + 166 * scale, y0: ay + 38 * scale, y1: ay + 98 * scale, depth: dh.x + dh.y + 3 });
         list.push({
-          depth: p.lying ? pieceDepth(bedPiece()) + 0.35 : dh.x + dh.y + 0.6, // just after the bed itself, whatever its size
+          depth: p.lying ? (furniDepth.get(bedPiece().id) ?? pieceDepth(bedPiece())) + 0.35 : dh.x + dh.y + 0.6, // just after the bed itself, whatever its size
           draw: () => {
             if (limg) {
               g.drawImage(limg, ax, ay, lw, lh);
