@@ -355,14 +355,15 @@ export default class AvatarImager {
                 }).then(() => {
                     //console.log("drawing...");
 
+                    // Work out where every piece goes first. Long hair, wide hats and the like can reach past the edge of the fixed picture size,
+                    // so the picture is grown by however much sticks out (padL / padT tell the drawers how far it moved) instead of cutting it off.
+                    const draws: Array<{ img: any; x: number; y: number }> = [];
                     for (let chunk of chunks) {
                         if (this.offsets[chunk.lib].data != null && this.offsets[chunk.lib].data[chunk.getResourceName()] != null) {
-                            //console.log(chunk);
                             if (chunk.resource != null) {
                                 const baseH = avatarInfo.rectHeight - (avatarInfo.padY || 0) - (avatarInfo.padB || 0);
                                 let posX = -this.offsets[chunk.lib].data[chunk.getResourceName()].x + (avatarInfo.padX || 0);
                                 let posY = (baseH / 2) - this.offsets[chunk.lib].data[chunk.getResourceName()].y + baseH / 2.5 + (avatarInfo.padY || 0);
-                                //console.log("x: " + posX + " - y: " + posY + " - color: " + chunk.color);
 
                                 let img: any = chunk.resource;
                                 if (chunk.color != null) {
@@ -372,14 +373,25 @@ export default class AvatarImager {
                                     posX = -(posX + img.width - avatarInfo.rectWidth + 1);
                                     img = this.flipImage(img);
                                 }
-                                if (tempCtx != null) {
-                                    tempCtx.drawImage(img, posX, posY);
-                                }
-                            } else {
-                                //console.log("Missing resource: " + chunk.getResourceName());
+                                draws.push({ img, x: posX, y: posY });
                             }
                         }
                     }
+                    let padL = 0, padT = 0, padR = 0, padBot = 0;
+                    for (const d of draws) {
+                        padL = Math.max(padL, Math.ceil(-d.x));
+                        padT = Math.max(padT, Math.ceil(-d.y));
+                        padR = Math.max(padR, Math.ceil(d.x + d.img.width - avatarInfo.rectWidth));
+                        padBot = Math.max(padBot, Math.ceil(d.y + d.img.height - avatarInfo.rectHeight));
+                    }
+                    if (padL || padT || padR || padBot) {
+                        tempCanvas.width = avatarInfo.rectWidth + padL + padR;
+                        tempCanvas.height = avatarInfo.rectHeight + padT + padBot;
+                        tempCtx = tempCanvas.getContext('2d');
+                    }
+                    tempCanvas.padL = padL;
+                    tempCanvas.padT = padT;
+                    if (tempCtx != null) for (const d of draws) tempCtx.drawImage(d.img, d.x + padL, d.y + padT);
 
                     if (avatarInfo.isDownsampled) {
                         tempCanvas = this.downsampleImage(tempCanvas);

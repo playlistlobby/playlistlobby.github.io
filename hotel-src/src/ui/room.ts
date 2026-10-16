@@ -277,6 +277,9 @@ const LAY_DY = -76;
 /** Pixels from the feet line up to the top of the 64x110 avatar canvas (tuned against the bobba sprites). */
 const FEET_Y = 94;
 
+/** How far an avatar picture was grown to the left / top so nothing gets cut off (see avatar/AvatarImager.ts); drawers move it back by this much. */
+const padOf = (c: HTMLCanvasElement | null | undefined): { x: number; y: number } => ({ x: (c as any)?.padL || 0, y: (c as any)?.padT || 0 });
+
 export interface RoomApi {
   dispose(): void;
   /** the room stays mounted (so you stay in it) while you look at Character or Shop; show/hide pause and resume it */
@@ -3698,7 +3701,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         draw: () => {
           g.fillStyle = "rgba(0,0,0,0.18)";
           g.beginPath(); g.ellipse(sf.x, sf.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); g.fill();
-          if (simg) g.drawImage(simg, sf.x - 32 * scale, sf.y - FEET_Y * scale, simg.width * scale, simg.height * scale);
+          if (simg) g.drawImage(simg, sf.x - (32 + padOf(simg).x) * scale, sf.y - (FEET_Y + padOf(simg).y) * scale, simg.width * scale, simg.height * scale);
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
           const tw = g.measureText(SIXTY.name).width + 10;
           g.fillStyle = sHot ? "rgba(120,80,10,0.9)" : "rgba(0,0,0,0.55)";
@@ -3742,10 +3745,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
           g.restore();
           if (limg) {
-            g.drawImage(limg, lf.x - 32 * scale, lf.y - FEET_Y * scale, limg.width * scale, limg.height * scale);
+            g.drawImage(limg, lf.x - (32 + padOf(limg).x) * scale, lf.y - (FEET_Y + padOf(limg).y) * scale, limg.width * scale, limg.height * scale);
             if (lHot) {
               g.save(); g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.14 + 0.05 * pulse;
-              g.drawImage(limg, lf.x - 32 * scale, lf.y - FEET_Y * scale, limg.width * scale, limg.height * scale);
+              g.drawImage(limg, lf.x - (32 + padOf(limg).x) * scale, lf.y - (FEET_Y + padOf(limg).y) * scale, limg.width * scale, limg.height * scale);
               g.restore();
             }
           }
@@ -3779,8 +3782,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const c = feetOf(p, now);
         let lflash = 0;
         for (const fx of stabFx) { const t = (now - fx.start) / STAB_MS; if (t <= 1 && fx.to === p.uid) lflash = Math.max(lflash, flashAmount(t)); }
-        const ax = c.x + LAY_DX * scale;
-        const ay = c.y + LAY_DY * scale;
+        const ax = c.x + (LAY_DX - padOf(limg).x) * scale;
+        const ay = c.y + (LAY_DY - padOf(limg).y) * scale;
         const lw = (limg?.width ?? 110) * scale;
         const lh = (limg?.height ?? 64) * scale;
         // clickable area = just the sleeping body (the picture itself has a lot of empty padding around it)
@@ -3867,8 +3870,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           }
           const chemOn = !!p.chem && serverNow() < p.chem;
           if (img) {
-            const ax = feet.x + lunge.x - 32 * scale;
-            const ay = feet.y + lunge.y + lift - FEET_Y * scale;
+            const ax = feet.x + lunge.x - (32 + padOf(img).x) * scale;
+            const ay = feet.y + lunge.y + lift - (FEET_Y + padOf(img).y) * scale;
             if (glowing) { g.save(); g.shadowColor = `rgba(255,214,90,${(0.75 + 0.25 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 18 * pulse) * scale; }
             else if (chemOn) { g.save(); g.shadowColor = `hsla(${Math.floor(now / 2.5) % 360},100%,60%,0.95)`; g.shadowBlur = (14 + 14 * Math.abs(Math.sin(now / 90))) * scale; }
             g.drawImage(img, ax, ay, img.width * scale, img.height * scale);
