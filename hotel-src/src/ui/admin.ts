@@ -8,12 +8,13 @@ import { LOG_TYPES, logAction } from "../logger";
 import { social } from "../social";
 import { todayStart } from "../db";
 import { mountAdminShop } from "./adminShop";
+import { mountAdminPosters } from "./adminPosters";
 import { mountStudioHub } from "./studioHub";
 import type { Ctx } from "../main";
 
-type Tab = "players" | "messages" | "activity" | "shop" | "studio" | "settings";
+type Tab = "players" | "messages" | "activity" | "posters" | "shop" | "studio" | "settings";
 const TAB_LABELS: Array<[Tab, string]> = [
-  ["players", "Players"], ["messages", "Messages"], ["activity", "Activity"], ["shop", "Shop"], ["studio", "Studio"], ["settings", "Settings"],
+  ["players", "Players"], ["messages", "Messages"], ["activity", "Activity"], ["posters", "Posters"], ["shop", "Shop"], ["studio", "Studio"], ["settings", "Settings"],
 ];
 
 const fmt = (ts: number) => new Date(ts).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -64,7 +65,7 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
     tab = next;
     body.replaceChildren();
     tabsEl.replaceChildren(...TAB_LABELS.map(([id, label]) => h("button", { class: "tab" + (id === tab ? " on" : ""), onclick: () => show(id) }, label)));
-    const run = { players: accounts, messages, activity: actions, shop: (el: HTMLElement) => mountAdminShop(el, ctx), studio: (el: HTMLElement) => mountStudioHub(el, ctx), settings }[tab];
+    const run = { players: accounts, messages, activity: actions, posters: (el: HTMLElement) => mountAdminPosters(el, ctx), shop: (el: HTMLElement) => mountAdminShop(el, ctx), studio: (el: HTMLElement) => mountStudioHub(el, ctx), settings }[tab];
     void Promise.resolve(run(body)).then((d) => { if (tab === next) dispose = d ?? null; else d?.(); });
   }
 

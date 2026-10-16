@@ -41,6 +41,9 @@
         }
       }
     },
+    "posterMutes": {
+      ".read": "@ADMIN@"
+    },
     "logs": {
       ".read": "@ADMIN@",
       ".indexOn": [

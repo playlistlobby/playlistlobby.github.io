@@ -334,6 +334,10 @@ export const rewardSyringe = (p: Profile, who: "self" | "bag", roomId: string): 
 export async function debugCommand(p: Profile, cmd: "blood" | "weed" | "skip", n?: number): Promise<string> {
   return String((await call<{ note?: string }>(p, "debug", { cmd, n })).note ?? "");
 }
+/** Admin: take a picture off a poster, or mute / unmute a player from putting pictures on posters. */
+export async function posterAdminCall(p: Profile, args: object): Promise<void> {
+  await call(p, "posterAdmin", args);
+}
 /** /give <item> [amount] [ass]: any item (admin only). Resolves with the message. */
 export async function giveCommand(p: Profile, item: string, qty: number, ass: boolean): Promise<string> {
   return String((await call<{ note?: string }>(p, "debug", { cmd: "give", item, qty, ass })).note ?? "");

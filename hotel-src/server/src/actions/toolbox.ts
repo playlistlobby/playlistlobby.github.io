@@ -119,7 +119,11 @@ export const furniPlace: Action = {
     let img: string | undefined;
     if (kind === POSTER_KIND) {
       if (!wallPlaceOk(Number(a.x), Number(a.y), dir)) fail("A poster hangs on a wall: the back wall or the left wall.");
-      if (a.img !== undefined) { if (!posterImageOk(a.img)) fail("That picture can't be used."); img = a.img as string; }
+      if (a.img !== undefined) {
+        if (!posterImageOk(a.img)) fail("That picture can't be used.");
+        if (await c.db.get(`posterMutes/${c.uid}`)) fail("You can't put pictures on posters any more.");
+        img = a.img as string;
+      }
     } else if (a.img !== undefined) fail("Only a poster carries a picture.");
     c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : {}) };
     return {};
