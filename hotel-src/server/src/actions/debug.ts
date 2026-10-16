@@ -1,4 +1,4 @@
-// Test commands (/giveblud, /weed, /give, /skip). /giveblud and /give are open to everyone for now (TEMP); /weed is for the admin account only (and anyone in the local emulator).
+// Test commands (/giveblud, /weed, /give, /skip): for the admin account only (and anyone in the local emulator).
 import { Action, int, text } from "./util";
 import { fail } from "../ctx";
 import { skipTime } from "../skipTime";
@@ -9,8 +9,7 @@ import { STACKABLE } from "../../../src/shared/items";
 export const debug: Action = {
   async run(c, a) {
     const trusted = c.isAdmin || isEmulator(c.env);
-    // TEMP: /giveblud and /give are open to every player for now; only /weed stays admin-only (put the check back on all commands when it should be admin only again)
-    if (!trusted && a.cmd === "weed") fail("Unknown command.");
+    if (!trusted) fail("Unknown command.");
     const w = await c.user();
     if (a.cmd === "blood") {
       const n = int(a.n, 1, 1000, "amount");

@@ -2747,7 +2747,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       // TEMP-GIVEBLUD: testing command, remove together with the 'testBlood' rule in database.rules.template.json
       const skipM = /^\/skip\s+(\d{1,4})$/i.exec(text);
       if (skipM) { void testCommand("skip", Number(skipM[1])); return; } // TEMP: /skip <minutes> moves your plants, mixers and bins on in time
-      if (/^\/weed$/i.test(text)) { void testCommand("weed"); return; } // TEMP: testing command (admin only), remove when asked
+      if (/^\/weed$/i.test(text)) { void testCommand("weed"); return; } // TEMP: testing command (admin only)
       // TEMP: /give <item> [amount] [ass]: any item by its id or its name (admin only)
       const giveM = /^\/give(?:\s+(.+))?$/i.exec(text);
       if (giveM && !/^\/giveblud/i.test(text)) { void giveItem(giveM[1] ?? ""); return; }
@@ -3950,10 +3950,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (disposed) return;
       if (!meta) return kicked("That room doesn't exist.");
       const trespassNow = me.shroomUntil > serverNow();
-      if (!(await canEnter(meta, me.uid, social.friendUids(), trespassNow))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
+      if (!me.isAdmin && !(await canEnter(meta, me.uid, social.friendUids(), trespassNow))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
       if (disposed) return;
       // in on a shroom or DMT rather than by the door rules: when it wears off the door closes behind you (the database stops letting you in at that moment too)
-      if (trespassNow && !(await canEnter(meta, me.uid, social.friendUids(), false))) {
+      if (trespassNow && !me.isAdmin && !(await canEnter(meta, me.uid, social.friendUids(), false))) {
         const watch = window.setInterval(() => {
           if (disposed || me.shroomUntil > serverNow()) return;
           window.clearInterval(watch);
