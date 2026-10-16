@@ -43,7 +43,7 @@ Push-Location $server
 $file = Join-Path $env:TEMP ("stripe-secrets-" + [guid]::NewGuid().ToString("N") + ".json")
 try {
   # logged in to Cloudflare? (if not, a browser window opens: click Allow, then come back here)
-  $who = (node $wrangler whoami 2>&1 | Out-String)
+  $who = (cmd /c "node $wrangler whoami 2>&1" | Out-String) # (cmd does the redirect: PowerShell 5.1 would turn wrangler's harmless "out of date" warning into an error)
   if ($who -notmatch "You are logged in") {
     Write-Host "You need to log in to Cloudflare first: a browser window opens, click Allow."
     node $wrangler login

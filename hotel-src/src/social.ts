@@ -94,6 +94,17 @@ export async function publishProfile(p: Profile): Promise<void> {
 // ---- presence -----------------------------------------------------------------------
 /** A random id for this page load. The account's presence carries the id of the window that is signed in: one window per account. */
 export const SESSION_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+/**
+ * The id of the page this browser had open before this one (kept in its storage). When the account's seat still belongs to it, the page was only left
+ * (reloaded, or sent to Stripe and back), so the new page just takes the seat instead of being told the account is open somewhere else.
+ */
+const PREVIOUS_SID: string = (() => {
+  try {
+    const prev = localStorage.getItem("sixplanet.lastSid") ?? "";
+    localStorage.setItem("sixplanet.lastSid", SESSION_ID);
+    return prev;
+  } catch { return ""; }
+})();
 /** another window's seat counts as taken while its heartbeat is newer than this */
 const SEAT_STALE_MS = 3 * 60_000;
 
@@ -101,7 +112,7 @@ const SEAT_STALE_MS = 3 * 60_000;
 export async function otherWindowOpen(uid: string): Promise<boolean> {
   const taken = async (): Promise<boolean> => {
     const v = (await get(ref(db, `presence/${uid}`))).val() as { sid?: unknown; seen?: unknown } | null;
-    return !!v && typeof v.sid === "string" && v.sid !== SESSION_ID && typeof v.seen === "number" && serverNow() - v.seen < SEAT_STALE_MS;
+    return !!v && typeof v.sid === "string" && v.sid !== SESSION_ID && v.sid !== PREVIOUS_SID && typeof v.seen === "number" && serverNow() - v.seen < SEAT_STALE_MS;
   };
   if (!(await taken())) return false;
   await new Promise((r) => window.setTimeout(r, 2500));

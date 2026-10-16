@@ -1739,15 +1739,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** the CD to put in the player: the selected one, else the first one that isn't in a player already */
+  /** the CD you picked before walking over to the player (the selection is cleared on the way, so it is remembered here) */
+  let chosenCdSlot: number | null = null;
   function findCdSlot(): number {
     const ok = (i: number | null): i is number => i !== null && !!me.inventory[i] && isCdItem(me.inventory[i]!.item) && !me.inventory[i]!.inPlayer;
     if (ok(selectedSlot)) return selectedSlot;
+    if (ok(chosenCdSlot)) return chosenCdSlot;
     return me.inventory.findIndex((s) => !!s && isCdItem(s.item) && !s.inPlayer);
   }
 
   function startCd(fid: string): void {
     if (findCdSlot() < 0) { clearSelection(); return say("Your CD is already in the player.", "warn"); }
     if (cdPlaying()) { clearSelection(); return say(`The CD player is busy playing ${cdState!.byName}'s CD.`, "warn"); }
+    chosenCdSlot = findCdSlot(); // the CD you selected, not just the first one in your pocket
     pending = { type: "cd", fid, since: performance.now(), lastTry: 0 };
     clearSelection();
     say("You walk over to the CD player…");
@@ -1760,6 +1764,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const slot = findCdSlot();
       if (slot < 0) return;
       if (cdPlaying()) return say(`The CD player is busy playing ${cdState!.byName}'s CD.`, "warn");
+      chosenCdSlot = null;
       await insertCd(me, slot, roomId);
       panel.refresh();
       logAction(me, "cd", "put a CD in the CD player");
