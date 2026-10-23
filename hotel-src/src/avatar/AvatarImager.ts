@@ -157,10 +157,20 @@ export default class AvatarImager {
             drawParts = this.getDrawOrder("std", avatarInfo.direction);
         }
 
+        // A piece that takes over some layers of the look (a face item's face and eyes, a skeleton's whole skin) is drawn instead of those layers of the other
+        // pieces, so two faces are never drawn on top of each other. (meta.replaces: ["hd", "fc", "ey"])
+        const takeOver: Array<{ from: any; types: string[] }> = [];
+        for (let partSet of avatarInfo.figure) {
+            const own = this.figuredata?.settype?.[partSet.type]?.set?.[partSet.id]?.replaces;
+            if (Array.isArray(own) && own.length) takeOver.push({ from: partSet, types: own });
+        }
+
         const setParts: any = {};
         for (let partSet of avatarInfo.figure) {
             const parts = this.getPartColor(partSet);
+            const taken = new Set<string>(takeOver.filter((t) => t.from !== partSet).flatMap((t) => t.types));
             for (let type in parts) {
+                if (type !== "hidden" && taken.has(type)) continue;
                 if (setParts[type] == null) {
                     setParts[type] = [];
                 }
@@ -259,6 +269,7 @@ export default class AvatarImager {
         return new Promise((resolve, reject) => {
 
             Promise.all(offsetsPromises).then(() => {
+                if (avatarInfo.frame > 0) for (const chunk of chunks) this.cycleFrame(chunk, avatarInfo.frame);
                 let tempCanvas: any = document.createElement('canvas');
                 let tempCtx = tempCanvas.getContext('2d');
                 tempCanvas.width = avatarInfo.rectWidth;
@@ -515,6 +526,23 @@ export default class AvatarImager {
             this.chunks[resourceName] = chunk;
         }
         return chunk;
+    }
+
+    /**
+     * Garments from the Studio can carry an animation of their own (sparklers on a headband, wings, a waving cape) that the original Habbo animation tables
+     * know nothing about: such a part just shows its pictures one after the other, whatever the action is (standing, walking, sitting...).
+     */
+    cycleFrame(chunk: any, tick: number): void {
+        if (typeof chunk.lib !== "string" || !chunk.lib.startsWith("custom_")) return;
+        const table: any = { "wav": "Wave", "wlk": "Move", "spk": "Talk" }[chunk.action as string];
+        if (table && this.animation?.[table]?.part?.[chunk.type] != null) return; // the original tables describe this one
+        const data = this.offsets[chunk.lib]?.data;
+        if (!data) return;
+        const pre = chunk.isSmall ? "sh" : "h";
+        const dirs = [chunk.direction, 6 - chunk.direction, chunk.direction === 3 ? 7 : chunk.direction === 7 ? 3 : chunk.direction];
+        let n = 0;
+        while (n < 64 && dirs.some((d) => data[`${pre}_${chunk.action}_${chunk.type}_${chunk.partId}_${d}_${n}`] != null)) n++;
+        if (n > 1) { chunk.frame = tick % n; chunk.resFrame = chunk.frame; }
     }
 
     getFrameNumber(type: string, action: string, frame: number) {

@@ -37,6 +37,10 @@ export interface DesignMeta {
   updatedAt: number;
   /** drops of blood it costs by default (garments that ship with the game as shop items); the admin can still change it. 0/absent = free */
   price?: number;
+  /** layers of the rest of the look this piece is drawn instead of (a face item's face and eyes: ["hd", "fc", "ey"]), so two faces are never drawn on top of each other */
+  replaces?: string[];
+  /** it has an animation of its own while standing still (sparklers, a swishing tail): the room redraws a player wearing it every few frames */
+  fx?: boolean;
 }
 
 export interface SheetFrame {
@@ -145,6 +149,20 @@ export function invalidateDesign(id: string, partIds: string[] = []): void {
   clearAvatarCache();
 }
 
+const fxIds = new Set<string>();
+const fxCache = new Map<string, boolean>();
+/** Does this look (a figure string) include a garment that moves by itself while the player stands still? */
+export function figureAnimated(figure: string): boolean {
+  if (!fxIds.size) return false;
+  let r = fxCache.get(figure);
+  if (r === undefined) {
+    r = figure.split(".").some((p) => fxIds.has(p.split("-")[1] ?? ""));
+    if (fxCache.size > 500) fxCache.clear();
+    fxCache.set(figure, r);
+  }
+  return r;
+}
+
 export function registerDesign(meta: DesignMeta, loader: LibLoader): void {
   const settype = imager.figuredata?.settype?.[meta.slot];
   if (!settype) return;
@@ -159,7 +177,10 @@ export function registerDesign(meta: DesignMeta, loader: LibLoader): void {
     legacy: false,
     part: meta.parts.map((p) => ({ type: p.type, id: Number(p.partId ?? meta.id), colorable: p.colorable, index: p.index, colorindex: p.colorindex })),
     hidden: meta.hidden ?? [],
+    ...(meta.replaces?.length ? { replaces: meta.replaces } : {}),
   };
+  if (meta.fx) fxIds.add(meta.id); else fxIds.delete(meta.id);
+  fxCache.clear();
   for (const p of meta.parts) {
     imager.figuremap[p.type] ??= {};
     imager.figuremap[p.type][p.partId ?? meta.id] = lib;
@@ -177,6 +198,8 @@ export function unregisterDesign(id: string): void {
   }
   delete imager.customLibs[designLib(id)];
   registered.delete(id);
+  fxIds.delete(id);
+  fxCache.clear();
   invalidateDesign(id, (meta?.parts ?? []).flatMap((p) => (p.partId ? [p.partId] : [])));
 }
 
@@ -212,10 +235,12 @@ function normalizeMeta(id: string, v: any): DesignMeta | null {
   }));
   const price = Number(v.price) > 0 ? Math.round(Number(v.price)) : 0;
   const hidden: string[] = v.hidden ? (Array.isArray(v.hidden) ? v.hidden : Object.values(v.hidden)) : [];
+  const replaces: string[] = v.replaces ? (Array.isArray(v.replaces) ? v.replaces : Object.values<string>(v.replaces)) : [];
   return {
     id, name: String(v.name ?? id), slot: String(v.slot), gender: v.gender === "F" ? "F" : v.gender === "U" ? "U" : "M",
     base: { type: String(v.base?.type ?? v.slot), id: String(v.base?.id ?? "") }, parts, hidden, published: !!v.published,
     rev: Number(v.rev ?? 0), updatedAt: Number(v.updatedAt ?? 0), ...(price ? { price } : {}),
+    ...(replaces.length ? { replaces } : {}), ...(v.fx ? { fx: true } : {}),
   };
 }
 

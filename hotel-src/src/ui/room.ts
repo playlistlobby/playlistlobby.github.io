@@ -73,6 +73,7 @@ import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
 import { openCoinFlip, CoinFlipApi } from "./coinflip";
 import { watchFlips } from "../coinflip";
+import { figureAnimated } from "../designs";
 import { pickPosterPicture } from "./posterEditor";
 import { POSTER_KIND, POSTER_PRICE, POSTER_W, POSTER_H } from "../shared/furniture";
 import { MixerApi, openMixer } from "./mixer";
@@ -2836,8 +2837,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
       ? Math.floor((now - p.stepStart) / (stepOf(p) / 4)) % 4
-      : talking ? Math.floor(now / 140) % 2
+      : talking ? Math.floor(now / 140) % (figureAnimated(p.figure) ? 24 : 2)
       : em?.def.actions?.includes("wav") ? Math.floor(now / 250) % 2
+      : figureAnimated(p.figure) ? Math.floor(now / 110) % 24 // a garment with an animation of its own (sparklers...) keeps playing while you stand still
       : 0;
     return { opts: { figure: p.figure, dir, headDir: dir, actions, gesture, frame }, yOff };
   }
