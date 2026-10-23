@@ -896,6 +896,39 @@ async function emil6ToEmil(): Promise<void> {
   say(`emil6 to emil done: ${n} frames at ${FPS} fps, changes: ${names.join(", ")}`);
 }
 
+/** emil6 digs through the dumpster over and over; every time something turns up the game's "+1" blood pops up over his head */
+async function emil6Dumpster(): Promise<void> {
+  const W = 1100, H = 860, S = 4, FPS = 30, OUT = "animation-emil6-dumpster";
+  const base = lobbyDef([]);
+  const def: RoomDef = { ...base, furni: [
+    { id: "d1", kind: "dumpster", x: 3, y: 0, dir: 4 },
+    { id: "d2", kind: "dumpster", x: 5, y: 0, dir: 4 },
+  ] };
+  const scene = await basementScene(def, { x: iso(4.4, 1.2).x, y: iso(4.4, 1.2).y - 55 }, W, H, S, ["d1", "d2"]);
+  const icon = await loadImage("/items/blood.svg");
+  const img = (await renderAvatar({ figure: EMIL6, dir: 0, headDir: 0, actions: ["std"], gesture: "std", frame: 0 }))!;
+  const CYCLE = 2.0, DIG = 0.9, CYCLES = 4; // seconds: digging, then the find
+  const total = Math.round(CYCLE * CYCLES * FPS);
+  const f = scene.feetOf(4, 1);
+  for (let i = 0; i < total; i++) {
+    const t = i / FPS;
+    const k = Math.floor(t / CYCLE), local = t - k * CYCLE;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(scene.bg, 0, 0);
+    g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(f.x, f.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
+    // rummaging: quick little dips towards the dumpster while he digs, standing still the rest of the time
+    const dig = local < DIG ? Math.abs(Math.sin((local / DIG) * Math.PI * 3)) : 0;
+    g.drawImage(img, f.x + dig * 2.5 * S - (32 + padOf(img).x) * S, f.y - dig * 3 * S - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+    // the "+1" over his head, for every find
+    for (let q = 0; q <= k; q++) bloodPop(g, icon, "+1", f.x, f.y - 78 * S, (t - (q * CYCLE + DIG)) * 1000, S, 1100);
+    await save(`${OUT}/frames/frame-${String(i).padStart(3, "0")}.png`, c);
+  }
+  say(`emil6 dumpster done: ${total} frames at ${FPS} fps`);
+}
+
 async function spinAll(): Promise<void> {
   const accounts: Array<[string, string]> = [
     ["Emil", FIGURES.emil], ["bootyshaker", FIGURES.bootyshaker],
@@ -941,6 +974,7 @@ async function spinAll(): Promise<void> {
     else if (only === "sell") await sellToSixty();
     else if (only === "spin") await spinAll();
     else if (only === "morph") await emil6ToEmil();
+    else if (only === "dig") await emil6Dumpster();
     else if (only === "sixty") { loadEmojiFont(); await document.fonts.ready; await emil6Sixty(); }
     else if (only === "basement") { loadEmojiFont(); await document.fonts.ready; await bustedAndBroke(); await emil6Sleeping(); }
     else if (only === "weed") await weedGrowth();
