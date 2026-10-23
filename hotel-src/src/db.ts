@@ -298,6 +298,9 @@ export async function searchDumpster(p: Profile, canId: string, roomId: string):
   const r = await call<{ item?: string; items?: string[] }>(p, "dumpster", { can: canId, room: roomId });
   return r.items && r.items.length ? r.items.map(String) : [String(r.item)];
 }
+/** Taps a piece with several looks or animations: the server sends it on to its next one. */
+export const useFurniState = (p: Profile, room: string, id: string): Promise<{ st?: number }> => call(p, "furniState", { room, id });
+
 /** Swallows the super pill or drinks the lean (codeine) in a slot. */
 export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number; ms?: number; tripMs?: number }> => call(p, "consume", { slot });
 /** Uses two pocket items on each other (weed + paper, ...). Resolves with the message. */

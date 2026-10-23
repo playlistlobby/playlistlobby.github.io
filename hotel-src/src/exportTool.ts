@@ -480,8 +480,11 @@ async function jetSipLean(): Promise<void> {
   const img = (await renderAvatar({ figure: JET, dir: 3, headDir: 3, actions: ["std"], gesture: "std", frame: 0 }))!;
   const cup = await loadImage(ITEMS.codeine.icon);
   const HAND = [-10, -26]; // where the game holds the cup (KNIFE_HAND for this facing)
-  const mouth = { x: feet.x + 8 * S, y: feet.y - (FEET_Y - 52) * S };
-  const hand = { x: feet.x + HAND[0] * S, y: feet.y + HAND[1] * S };
+  const cs = 26 * S;
+  // the picture is square with the cup nearly filling it, so the rim is the top edge of the picture: the rim is what travels to the mouth
+  const hand = { x: feet.x + HAND[0] * S, y: feet.y + HAND[1] * S - cs * 0.8 };
+  const mouth = { x: feet.x + 2 * S, y: feet.y - 42 * S }; // measured on this character: the middle of the mouth, 42 art pixels up from the feet
+  const rim = { x: mouth.x + 2 * S, y: mouth.y + 1 * S };   // the rim touches the lower lip
   const ease = (u: number): number => u * u * (3 - 2 * u);
   let n = 0;
   const frames = 150;
@@ -498,22 +501,54 @@ async function jetSipLean(): Promise<void> {
       else if (cycle < 36) { lift = 1; tip = ease(Math.min(1, (cycle - 14) / 6)) * (cycle > 30 ? 1 - (cycle - 30) / 6 : 1); }
       else if (cycle < 50) lift = 1 - ease((cycle - 36) / 14);
     }
-    const tilt = lift * 0.12 + tip * 0.5;
+    const tilt = lift * 0.1 + tip * 0.22; // the cup tips a little more while drinking (turning about the rim)
     g.save();
     g.translate(feet.x, feet.y - tip * 0.6 * S);
     g.drawImage(img, -(32 + padOf(img).x) * S, -(FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
     g.restore();
-    const cx = hand.x + (mouth.x - hand.x) * lift, cy = hand.y + (mouth.y - hand.y) * lift;
-    const cs = 26 * S;
+    const px = hand.x + (rim.x - hand.x) * lift, py = hand.y + (rim.y - hand.y) * lift - tip * 0.6 * S;
     g.save();
-    g.translate(cx, cy - cs * 0.35);
+    g.translate(px, py);
     g.rotate(tilt);
     g.shadowColor = "rgba(0,0,0,0.75)"; g.shadowBlur = 3 * S;
-    g.drawImage(cup, -cs / 2, -cs * 0.5, cs, cs);
+    g.drawImage(cup, -cs / 2, -cs * 0.05, cs, cs);
     g.restore();
+    if (tip > 0.3) { // a little purple drips from the rim into the mouth while it is tipped
+      g.fillStyle = "#8a2fc4";
+      const dripH = (2 + 3 * Math.sin(i * 0.6)) * S;
+      g.fillRect(Math.round((rim.x - S) / S) * S, Math.round(rim.y / S) * S, 2 * S, dripH);
+    }
     await save(`animation-watchyojet-sipping-lean/frames/frame-${String(n++).padStart(3, "0")}.png`, c);
   }
   say(`sipping done: ${n} frames at 30 fps`);
+}
+
+/** A contact sheet of the new furniture as the game draws it: every piece in its default state at its shop facing (and one picture per further state), labelled. */
+async function newFurnitureSheet(): Promise<void> {
+  const { SHOP_PIECES, SHOP_KIND_PREFIX } = await import("./shared/furniture");
+  const { drawNitroFurni } = await import("./roomRender");
+  const first = SHOP_PIECES.findIndex((p) => p.id === "cheerbear");
+  const list = SHOP_PIECES.slice(first);
+  for (const p of list) await loadNitro(`furni/${SHOP_KIND_PREFIX}${p.id}.nitro`);
+  const cols = 8, cellW = 230, cellH = 230;
+  const rows = Math.ceil(list.length / cols);
+  const c = document.createElement("canvas");
+  c.width = cols * cellW; c.height = rows * cellH;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#4a525c"; g.fillRect(0, 0, c.width, c.height);
+  g.font = "bold 13px Verdana, sans-serif";
+  list.forEach((p, i) => {
+    const cx = (i % cols) * cellW + cellW / 2, cy = Math.floor(i / cols) * cellH + cellH * 0.62;
+    const kind = SHOP_KIND_PREFIX + p.id;
+    g.fillStyle = "#566069"; g.fillRect((i % cols) * cellW + 2, Math.floor(i / cols) * cellH + 2, cellW - 4, cellH - 4);
+    const toScreen = (q: { x: number; y: number }): { x: number; y: number } => ({ x: q.x + cx, y: q.y + cy });
+    const anim = { state: p.defaultState ?? 0, t: 900 };
+    drawNitroFurni(g, kind, 0, 0, p.showDir, toScreen, 1.2, 1, false, p.states || FURNI_KINDS[kind].nitro ? anim : undefined);
+    g.fillStyle = "#fff"; g.textAlign = "left";
+    g.fillText(`${p.id} ${p.w}x${p.h}${p.seat ? " seat" : ""}${p.surface ? " top" : ""}${p.small ? " small" : ""}${p.states ? " st" + p.states.join("") : ""}`, (i % cols) * cellW + 6, Math.floor(i / cols) * cellH + 16);
+  });
+  await save("shots/new-furniture-sheet.png", c);
+  say("sheet saved");
 }
 
 /** weed growing in a pot: planted, then the plant rises out of the soil until it is ready (the same reveal-from-the-bottom the game uses) */
@@ -570,8 +605,10 @@ async function spinAll(): Promise<void> {
     clearAvatarCache();
     say("avatar art and clothes ready");
     const only = new URLSearchParams(location.search).get("only"); // ?only=anim re-renders just the animation
-    if (only === "room") await roomForBlender();
+    if (only === "newsheet") await newFurnitureSheet();
+    else if (only === "room") await roomForBlender();
     else if (only === "jet") { await jetDressSmoke(); await jetSipLean(); }
+    else if (only === "sip") await jetSipLean();
     else if (only === "blood") await bloodDrops();
     else if (only === "sell") await sellToSixty();
     else if (only === "spin") await spinAll();

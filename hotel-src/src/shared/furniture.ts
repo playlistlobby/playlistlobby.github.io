@@ -1,6 +1,11 @@
 // Furniture that ships with the game, and how the shop room's daily four are picked and priced. Pure: the browser and the server both use it.
 /** Furniture that ships with the game and is sold in the shop room (10-25 drops). Each file is in public/furni/f_<id>.nitro. */
-export interface ShopPiece { id: string; label: string; icon: string; price: number; w: number; h: number; height: number; flat?: boolean; seat?: boolean; seatHeight?: number; /** the facing it has on its display platform in the shop */ showDir: number }
+export interface ShopPiece { id: string; label: string; icon: string; price: number; w: number; h: number; height: number; flat?: boolean; seat?: boolean; seatHeight?: number;
+  /** a table top: small things can stand on it, lifted by this many pixels */ surface?: number;
+  /** small enough to stand on a table top */ small?: boolean;
+  /** a piece with several looks or animations (a TV, a fridge, candles...): the animation numbers it has; tapping it goes to the next one */ states?: number[];
+  /** the one it shows when it is put down (candles burn, a TV is on) */ defaultState?: number;
+  /** the facing it has on its display platform in the shop */ showDir: number }
 export const SHOP_PIECES: ShopPiece[] = [
   { id: "bloodfloor", label: "Blood streak", icon: "🩸", price: 30, w: 1, h: 3, height: 3, flat: true, showDir: 2 },
   { id: "toastfriend", label: "Toast friend", icon: "🍞", price: 30, w: 1, h: 1, height: 30, showDir: 2 },
@@ -32,6 +37,46 @@ export const SHOP_PIECES: ShopPiece[] = [
   { id: "hotdogbed", label: "Hot dog bed", icon: "🌭", price: 66, w: 1, h: 3, height: 42, showDir: 2 },
   { id: "melodybed", label: "My Melody bed", icon: "🎀", price: 75, w: 2, h: 3, height: 64, showDir: 2 },
   { id: "royalbed", label: "Canopy bed", icon: "🛏️", price: 75, w: 2, h: 3, height: 51, showDir: 2 },
+  // ---- the second batch (candles, gothic and lodge pieces, chairs, tables, screens ...) ----
+  { id: "cheerbear", label: "Cheer bear plushie", icon: "🧸", price: 33, w: 1, h: 1, height: 35, small: true, showDir: 2 },
+  { id: "rareblock", label: "Laptop", icon: "💻", price: 45, w: 1, h: 1, height: 32, small: true, states: [0, 1], showDir: 2 },
+  { id: "scrapbook", label: "Scrapbook", icon: "📓", price: 30, w: 1, h: 1, height: 6, small: true, showDir: 2 },
+  { id: "discofloor", label: "Disco floor", icon: "🪩", price: 66, w: 2, h: 2, height: 3, flat: true, states: [0, 1, 2, 3], showDir: 2 },
+  { id: "marbleblock", label: "Marble block", icon: "⬜", price: 48, w: 1, h: 1, height: 32, surface: 32, states: [0, 1, 2], showDir: 2 },
+  { id: "gothcafesofa", label: "Gothic cafe sofa", icon: "🛋️", price: 63, w: 2, h: 1, height: 38, seat: true, seatHeight: 16, showDir: 2 },
+  { id: "candelabra", label: "Candelabra", icon: "🕯️", price: 39, w: 1, h: 1, height: 32, small: true, states: [0, 1], defaultState: 1, showDir: 2 },
+  { id: "gothcandles", label: "Gothic candles", icon: "🕯️", price: 33, w: 1, h: 1, height: 3, small: true, states: [0, 1], defaultState: 1, showDir: 0 },
+  { id: "gothchair", label: "Gothic chair", icon: "🪑", price: 54, w: 1, h: 1, height: 38, seat: true, seatHeight: 14, showDir: 2 },
+  { id: "gothtable", label: "Gothic table", icon: "🕯️", price: 72, w: 1, h: 5, height: 38, surface: 38, showDir: 2 },
+  { id: "hc261", label: "Lattice shelf", icon: "📚", price: 36, w: 1, h: 1, height: 3, states: [0, 1], showDir: 2 },
+  { id: "hc2611", label: "Ottoman", icon: "🪑", price: 36, w: 1, h: 1, height: 32, seat: true, seatHeight: 8, showDir: 2 },
+  { id: "hc2612", label: "Lounge chair", icon: "🛋️", price: 42, w: 1, h: 1, height: 32, seat: true, seatHeight: 14, showDir: 2 },
+  { id: "hc263", label: "Low pad", icon: "▭", price: 39, w: 1, h: 2, height: 13, flat: true, showDir: 2 },
+  { id: "hc266", label: "Book shelf", icon: "📚", price: 51, w: 1, h: 1, height: 66, states: [0, 1], showDir: 2 },
+  { id: "gamingtable", label: "Gaming table", icon: "🎮", price: 75, w: 2, h: 3, height: 42, surface: 42, states: [0, 1, 2, 3, 4, 5], showDir: 2 },
+  { id: "taintedchair", label: "Tainted chair", icon: "🪑", price: 54, w: 1, h: 1, height: 48, seat: true, seatHeight: 14, states: [0, 1], showDir: 2 },
+  { id: "infected", label: "Zombie", icon: "🧟", price: 57, w: 1, h: 1, height: 32, showDir: 2 },
+  { id: "makeshifttable", label: "Makeshift table", icon: "🔨", price: 60, w: 2, h: 1, height: 3, surface: 30, showDir: 2 },
+  { id: "gothcandle", label: "Goth candle", icon: "🕯️", price: 39, w: 1, h: 1, height: 54, small: true, states: [0, 1], showDir: 2 },
+  { id: "brickwall", label: "Brick wall", icon: "🧱", price: 69, w: 2, h: 1, height: 136, showDir: 2 },
+  { id: "lodgedesk", label: "Lodge desk", icon: "🪵", price: 66, w: 3, h: 1, height: 35, surface: 35, showDir: 2 },
+  { id: "lodgetv", label: "Lodge TV cabinet", icon: "📺", price: 48, w: 1, h: 1, height: 51, states: [0, 1, 2, 3, 4], defaultState: 1, showDir: 2 },
+  { id: "guarddog", label: "Guard dog", icon: "🐕", price: 57, w: 1, h: 1, height: 32, states: [0, 1], showDir: 2 },
+  { id: "fridge", label: "Fridge", icon: "🧊", price: 63, w: 1, h: 1, height: 90, states: [0, 1], showDir: 2 },
+  { id: "goldarmchair", label: "Gold armchair", icon: "🛋️", price: 60, w: 1, h: 1, height: 38, seat: true, seatHeight: 16, showDir: 2 },
+  { id: "starchair", label: "Star chair", icon: "⭐", price: 63, w: 1, h: 1, height: 42, seat: true, seatHeight: 16, states: [0, 1], showDir: 2 },
+  { id: "toilet", label: "Skull throne", icon: "💀", price: 45, w: 1, h: 1, height: 51, seat: true, seatHeight: 12, states: [0, 1], showDir: 2 },
+  { id: "widescreen", label: "Antique widescreen", icon: "📺", price: 66, w: 1, h: 2, height: 32, states: [0, 1, 2], defaultState: 1, showDir: 2 },
+  { id: "hsthodl", label: "Stock arcade", icon: "🕹️", price: 72, w: 1, h: 1, height: 96, states: [0, 1], showDir: 2 },
+  { id: "popcorn", label: "Popcorn machine", icon: "🍿", price: 69, w: 2, h: 1, height: 144, showDir: 2 },
+  { id: "doll9", label: "Creepy doll 9", icon: "🪆", price: 36, w: 1, h: 1, height: 32, small: true, showDir: 2 },
+  { id: "whippet", label: "Whippet", icon: "🐕", price: 45, w: 1, h: 1, height: 32, small: true, showDir: 2 },
+  { id: "regalsofa", label: "Regal black sofa", icon: "🛋️", price: 72, w: 2, h: 1, height: 38, seat: true, seatHeight: 16, showDir: 2 },
+  { id: "schoolchair", label: "Gold school chair", icon: "🪑", price: 54, w: 1, h: 1, height: 35, seat: true, seatHeight: 14, showDir: 2 },
+  { id: "schoolconsole", label: "Gold school console", icon: "🎛️", price: 51, w: 1, h: 1, height: 38, surface: 36, showDir: 2 },
+  { id: "randomizer", label: "Love booth", icon: "💘", price: 72, w: 4, h: 1, height: 45, states: [11, 12, 13, 14, 21, 22, 23, 24, 30, 31, 32], defaultState: 11, seat: true, seatHeight: 14, showDir: 2 },
+  { id: "barrel", label: "Barrel", icon: "🛢️", price: 42, w: 1, h: 1, height: 56, surface: 40, showDir: 2 },
+  { id: "coffin", label: "Black coffin", icon: "⚰️", price: 66, w: 1, h: 3, height: 35, states: [0, 1, 2, 3, 4, 5], showDir: 2 },
 ];
 export const SHOP_KIND_PREFIX = "f_";
 
@@ -46,6 +91,16 @@ export const SHIPPED_DIMS: Record<string, { w: number; h: number }> = {
 };
 
 // ---- the poster: a frame on the wall with a picture of the player's own in it ----------------------------------------
+/** the animation / look a multi-state piece goes to when it is tapped (a die-like piece picks any other one at random) */
+export function nextFurniState(kind: string, cur: number | undefined, rand: () => number = Math.random): number | null {
+  const p = SHOP_PIECES.find((x) => SHOP_KIND_PREFIX + x.id === kind);
+  const st = p?.states;
+  if (!p || !st || st.length < 2) return null;
+  const now = cur !== undefined && st.includes(cur) ? cur : p.defaultState ?? st[0];
+  if (p.id === "randomizer") { const others = st.filter((s) => s !== now); return others[Math.floor(rand() * others.length)]; }
+  return st[(st.indexOf(now) + 1) % st.length];
+}
+
 export const POSTER_KIND = "f_poster";
 /** the shop sells a poster for blood; a poster's picture is chosen when it is hung and then stays on it */
 export const POSTER_PRICE = 75;

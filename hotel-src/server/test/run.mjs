@@ -1249,6 +1249,33 @@ console.log("--- weak shrooms");
   ok("but it can be eaten", eat);
   check("same effect: 3 minutes of open doors", eat.state.shroomUntil - Date.now() > 170_000, String(eat.state.shroomUntil - Date.now()));
 }
+console.log("--- the second batch of furniture: tapping a multi-state piece");
+{
+  const k = await fresh("t_furnist");
+  await act(k, "sync");
+  const room = `u_${k.uid}`;
+  await owner("PUT", `roomsMeta/${room}`, { owner: k.uid, ownerName: "t_furnist", name: "t_furnist's room", access: "open", w: 14, h: 14, furni: { tv: { kind: "f_lodgetv", x: 8, y: 2, dir: 2 }, sofa: { kind: "f_sofa", x: 2, y: 2, dir: 2 }, die: { kind: "f_randomizer", x: 2, y: 8, dir: 2 } } });
+  bad("not standing in the room: nothing happens", await act(k, "furniState", { room, id: "tv" }));
+  await stand(k, room, 4, 4);
+  const s1 = await act(k, "furniState", { room, id: "tv" });
+  ok("tap the TV", s1);
+  check("it goes from its default (channel 1) to the next one", s1.data.st === 2, JSON.stringify(s1.data));
+  const rows = [];
+  for (let i = 0; i < 4; i++) rows.push((await act(k, "furniState", { room, id: "tv" })).data.st);
+  check("and round again: 3, 4, then off (0), then channel 1", JSON.stringify(rows) === JSON.stringify([3, 4, 0, 1]), JSON.stringify(rows));
+  check("the state is kept on the room's data for everybody", (await owner("GET", `roomsMeta/${room}/furni/tv/st`)) === 1);
+  bad("a piece with one look can't be tapped", await act(k, "furniState", { room, id: "sofa" }));
+  const d1 = await act(k, "furniState", { room, id: "die" });
+  ok("the love booth picks a state", d1);
+  check("one of its own", [11, 12, 13, 14, 21, 22, 23, 24, 30, 31, 32].includes(d1.data.st) && d1.data.st !== 11, JSON.stringify(d1.data));
+  // the new pieces can be put down (their sizes are known to the server)
+  const pl = await fresh("t_furnist2", { inventory: { 0: { item: "f_lodgedesk", qty: 1 }, 1: { item: "f_candelabra", qty: 1 } } });
+  await act(pl, "sync");
+  await owner("PUT", `roomsMeta/u_${pl.uid}`, { owner: pl.uid, ownerName: "t_furnist2", name: "x", access: "knock", w: 8, h: 8 });
+  await stand(pl, `u_${pl.uid}`, 6, 6);
+  ok("put down the desk", await act(pl, "furniPlace", { source: "inv", slot: 0, x: 2, y: 2, dir: 0 }));
+  ok("put down the candelabra (the pocket closes up, so it is slot 0 now)", await act(pl, "furniPlace", { source: "inv", slot: 0, x: 2, y: 2, dir: 2 }));
+}
 console.log("--- /skip");
 {
   const k = await fresh("t_skip", { inventory: { 0: { item: "kodimagnyl", qty: 1 }, 1: { item: "wateringcan_full", qty: 1 } } });

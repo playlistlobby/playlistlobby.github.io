@@ -54,18 +54,34 @@ export function whyNot(def: RoomDef, kind: string, spot: Spot, ignoreId: string 
       if ((f.dir ?? 4) === spot.dir && spot.x < f.x + q.w && f.x < spot.x + fp.w && spot.y < f.y + q.h && f.y < spot.y + fp.h) return "Something already hangs there.";
     }
   }
-  const taken = new Set<string>();
+  // tables (pieces with a top) carry one small thing per tile; everything else needs the tile to itself
+  const taken = new Set<string>(), tops = new Set<string>(), onTops = new Set<string>();
   for (const f of def.furni) {
     if (f.id === ignoreId || FURNI_KINDS[f.kind]?.flat) continue;
     const q = footprint(f.kind, f.dir);
-    for (let i = 0; i < q.w; i++) for (let j = 0; j < q.h; j++) taken.add(key(f.x + i, f.y + j));
+    if (FURNI_KINDS[f.kind]?.surface) { for (let i = 0; i < q.w; i++) for (let j = 0; j < q.h; j++) tops.add(key(f.x + i, f.y + j)); }
   }
+  for (const f of def.furni) {
+    if (f.id === ignoreId || FURNI_KINDS[f.kind]?.flat) continue;
+    const q = footprint(f.kind, f.dir);
+    for (let i = 0; i < q.w; i++) for (let j = 0; j < q.h; j++) {
+      const t = key(f.x + i, f.y + j);
+      if (FURNI_KINDS[f.kind]?.surface) continue;
+      if (FURNI_KINDS[f.kind]?.small && tops.has(t)) onTops.add(t); else taken.add(t);
+    }
+  }
+  for (const t of tops) taken.add(t); // (the table's own tiles)
   for (let i = 0; i < fp.w; i++) {
     for (let j = 0; j < fp.h; j++) {
       const x = spot.x + i, y = spot.y + j;
       if (isDoorTile(x, y, def.doorX)) return "Keep the doorway clear.";
-      if (!k.flat && taken.has(key(x, y))) return "Something is already there.";
-      if (!k.flat && occupied.has(key(x, y))) return "Someone is standing there.";
+      const t = key(x, y);
+      if (k.small && !k.flat && tops.has(t)) { // a small thing on a table top
+        if (onTops.has(t)) return "Something already stands there.";
+        continue;
+      }
+      if (!k.flat && (taken.has(t) || onTops.has(t))) return "Something is already there.";
+      if (!k.flat && occupied.has(t)) return "Someone is standing there.";
     }
   }
   return null;

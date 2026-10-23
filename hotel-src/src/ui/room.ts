@@ -18,7 +18,7 @@ import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
 import { plantThirsty, plantWatered } from "../db";
 import { giveCommand } from "../db";
-import { call, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
+import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
@@ -64,7 +64,7 @@ import {
   watchLobbyFurni,
   watchMeta,
 } from "../rooms";
-import { derive, loadNitro, NitroFurni, nitroIfReady, spritesFor } from "../nitro";
+import { AnimState, derive, isAnimated, loadNitro, NitroFurni, nitroIfReady, spritesFor } from "../nitro";
 import { onFurniShopChanged, picksToday, priceOf } from "../furniShop";
 import { FurniBuyApi, openFurniBuy } from "./furniBuy";
 import { openVending, VendingApi } from "./vendingShop";
@@ -501,6 +501,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
+    else if (hoverObj && (FURNI_KINDS[hoverObj.kind ?? ""]?.states?.length ?? 0) > 1) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to use`;
     else if (hoverObj && isBodyBag(hoverObj.kind)) text = "Body bag: use a syringe on it";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind ?? ""]?.plant) { const pf = def.furni.find((x) => x.id === hoverObj!.id); text = pf?.plant ? `Growing kit · ${Math.round(plantProgress(pf.plant) * 100)}% · water ${Math.round(plantWater(pf.plant) * 100)}%` : "Growing kit (empty): plant a seed"; }
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
@@ -821,6 +822,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj && isBodyBag(obj.kind) && !isDisplayPiece(obj.id)) opts.push({ label: "Draw blood", target: "Body bag", action: () => startUse(obj.id, null) });
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
+    if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
     if (isCdKind(obj?.kind)) {
@@ -3118,13 +3120,52 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { id: "", ...b, depth: f.x + f.y };
   }
 
-  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
+  /** when each multi-state piece went into the state it is in (so its animation starts from the beginning when it is tapped) */
+  const animClock = new Map<string, { st: number; at: number }>();
+  /** the animation a piece is in right now: its state and how long it has been in it (undefined for pieces that never move) */
+  function pieceAnim(f: { id?: string; kind: string; st?: number }, now: number): AnimState | undefined {
+    const k = FURNI_KINDS[f.kind];
+    if (!k?.nitro) return undefined;
+    const n = nitroIfReady(k.nitro);
+    if (!n || !isAnimated(n)) return undefined;
+    const st = f.st ?? k.defaultState ?? 0;
+    const id = f.id ?? f.kind;
+    let c = animClock.get(id);
+    if (!c || c.st !== st) { c = { st, at: now }; animClock.set(id, c); }
+    return { state: st, t: now - c.at };
+  }
+  /** the table top a small piece stands on (if its tile is under one) */
+  function tableUnder(f: { id?: string; kind: string; x: number; y: number }): PlacedFurni | undefined {
+    if (!FURNI_KINDS[f.kind]?.small) return undefined;
+    return def.furni.find((t) => {
+      if (t.id === f.id || !FURNI_KINDS[t.kind]?.surface) return false;
+      const q = footprint(t.kind, t.dir);
+      return f.x >= t.x && f.x < t.x + q.w && f.y >= t.y && f.y < t.y + q.h;
+    });
+  }
+  /** Taps a piece with several looks or animations: it goes on to the next one right away here, and the server tells everyone else. */
+  async function useFurni(id: string): Promise<void> {
+    const f = def.furni.find((x) => x.id === id);
+    const k = f ? FURNI_KINDS[f.kind] : undefined;
+    if (!f || !k?.states || k.states.length < 2 || !def.id.startsWith("u_")) return;
+    try {
+      const r = await useFurniState(me, def.id, id);
+      if (typeof r.st === "number") f.st = r.st; // (the room's data will say the same in a moment)
+      playSfx("select", 0.4);
+    } catch (err) { say((err as Error).message || "Nothing happens.", "warn"); }
+  }
+
+  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     if (k.opens === "mixer" && f.mix) return drawMixing(f, now);
     if (k.plant) return drawPlanter(f, now);
     if (k.poster) return drawPoster(f, now);
     if (k.nitro) {
-      const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
+      const tbl = tableUnder(f);
+      const lift = tbl ? FURNI_KINDS[tbl.kind].surface ?? 0 : 0; // a small piece on a table top stands on it
+      if (lift) { g.save(); g.translate(0, -lift * scale); }
+      const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now));
+      if (lift) { g.restore(); if (b) { b.y0 -= lift * scale; b.y1 -= lift * scale; } }
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
@@ -3674,6 +3715,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }
         if (!changed) break;
       }
+      for (const f of solid) { // a small piece on a table top is drawn just after that table
+        const t = tableUnder(f);
+        if (t) furniDepth.set(f.id, Math.max(furniDepth.get(f.id) ?? 0, (furniDepth.get(t.id) ?? 0) + 0.3));
+      }
     }
 
     for (const f of def.furni) {
@@ -3684,6 +3729,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && isDisplayPiece(f.id) && !furnishOn) drawPriceTag(priceOf(f.kind), box.x1, box.y1);
           if (box && furnishOn) pieceBoxes.push({ id: f.id, box, depth: box.depth });
           if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
           if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });

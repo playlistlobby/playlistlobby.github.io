@@ -6548,5 +6548,205 @@
   "en": "Admin. Treat what you see here as private.",
   "da": "Admin. Behandl det, du ser her, som privat.",
   "where": "src/ui/admin.ts"
+ },
+ "N199": {
+  "en": "Cheer bear plushie",
+  "da": "Cheer bear-bamse",
+  "where": "src/shared/furniture.ts"
+ },
+ "N200": {
+  "en": "Laptop",
+  "da": "Bærbar",
+  "where": "src/shared/furniture.ts"
+ },
+ "N201": {
+  "en": "Scrapbook",
+  "da": "Scrapbog",
+  "where": "src/shared/furniture.ts"
+ },
+ "N202": {
+  "en": "Disco floor",
+  "da": "Discogulv",
+  "where": "src/shared/furniture.ts"
+ },
+ "N203": {
+  "en": "Marble block",
+  "da": "Marmorblok",
+  "where": "src/shared/furniture.ts"
+ },
+ "N204": {
+  "en": "Gothic table",
+  "da": "Gotisk bord",
+  "where": "src/shared/furniture.ts"
+ },
+ "N205": {
+  "en": "Gothic candles",
+  "da": "Gotiske stearinlys",
+  "where": "src/shared/furniture.ts"
+ },
+ "N206": {
+  "en": "Gothic cafe sofa",
+  "da": "Gotisk cafésofa",
+  "where": "src/shared/furniture.ts"
+ },
+ "N207": {
+  "en": "Candelabra",
+  "da": "Lysestage",
+  "where": "src/shared/furniture.ts"
+ },
+ "N208": {
+  "en": "Gothic chair",
+  "da": "Gotisk stol",
+  "where": "src/shared/furniture.ts"
+ },
+ "N209": {
+  "en": "Lattice shelf",
+  "da": "Gitterhylde",
+  "where": "src/shared/furniture.ts"
+ },
+ "N210": {
+  "en": "Ottoman",
+  "da": "Puf",
+  "where": "src/shared/furniture.ts"
+ },
+ "N211": {
+  "en": "Lounge chair",
+  "da": "Loungestol",
+  "where": "src/shared/furniture.ts"
+ },
+ "N212": {
+  "en": "Low pad",
+  "da": "Lav pude",
+  "where": "src/shared/furniture.ts"
+ },
+ "N213": {
+  "en": "Book shelf",
+  "da": "Bogreol",
+  "where": "src/shared/furniture.ts"
+ },
+ "N214": {
+  "en": "Gaming table",
+  "da": "Gamingbord",
+  "where": "src/shared/furniture.ts"
+ },
+ "N215": {
+  "en": "Tainted chair",
+  "da": "Plettet stol",
+  "where": "src/shared/furniture.ts"
+ },
+ "N216": {
+  "en": "Zombie",
+  "da": "Zombie",
+  "where": "src/shared/furniture.ts"
+ },
+ "N217": {
+  "en": "Makeshift table",
+  "da": "Nødbord",
+  "where": "src/shared/furniture.ts"
+ },
+ "N218": {
+  "en": "Goth candle",
+  "da": "Goth-lys",
+  "where": "src/shared/furniture.ts"
+ },
+ "N219": {
+  "en": "Brick wall",
+  "da": "Murstensmur",
+  "where": "src/shared/furniture.ts"
+ },
+ "N220": {
+  "en": "Lodge desk",
+  "da": "Hytteskrivebord",
+  "where": "src/shared/furniture.ts"
+ },
+ "N221": {
+  "en": "Lodge TV cabinet",
+  "da": "Hytte-tv-skab",
+  "where": "src/shared/furniture.ts"
+ },
+ "N222": {
+  "en": "Guard dog",
+  "da": "Vagthund",
+  "where": "src/shared/furniture.ts"
+ },
+ "N223": {
+  "en": "Fridge",
+  "da": "Køleskab",
+  "where": "src/shared/furniture.ts"
+ },
+ "N224": {
+  "en": "Gold armchair",
+  "da": "Guld lænestol",
+  "where": "src/shared/furniture.ts"
+ },
+ "N225": {
+  "en": "Star chair",
+  "da": "Stjernestol",
+  "where": "src/shared/furniture.ts"
+ },
+ "N226": {
+  "en": "Skull throne",
+  "da": "Kranietrone",
+  "where": "src/shared/furniture.ts"
+ },
+ "N227": {
+  "en": "Stock arcade",
+  "da": "Aktiearkade",
+  "where": "src/shared/furniture.ts"
+ },
+ "N228": {
+  "en": "Antique widescreen",
+  "da": "Antik bredskærm",
+  "where": "src/shared/furniture.ts"
+ },
+ "N229": {
+  "en": "Popcorn machine",
+  "da": "Popcornmaskine",
+  "where": "src/shared/furniture.ts"
+ },
+ "N230": {
+  "en": "Creepy doll 9",
+  "da": "Uhyggelig dukke 9",
+  "where": "src/shared/furniture.ts"
+ },
+ "N231": {
+  "en": "Whippet",
+  "da": "Whippet",
+  "where": "src/shared/furniture.ts"
+ },
+ "N232": {
+  "en": "Regal black sofa",
+  "da": "Kongelig sort sofa",
+  "where": "src/shared/furniture.ts"
+ },
+ "N233": {
+  "en": "Gold school chair",
+  "da": "Guld skolestol",
+  "where": "src/shared/furniture.ts"
+ },
+ "N234": {
+  "en": "Gold school console",
+  "da": "Guld skolekonsol",
+  "where": "src/shared/furniture.ts"
+ },
+ "N235": {
+  "en": "Love booth",
+  "da": "Kærlighedsbås",
+  "where": "src/shared/furniture.ts"
+ },
+ "N236": {
+  "en": "Barrel",
+  "da": "Tønde",
+  "where": "src/shared/furniture.ts"
+ },
+ "N237": {
+  "en": "Black coffin",
+  "da": "Sort ligkiste",
+  "where": "src/shared/furniture.ts"
+ },
+ "N238": {
+  "en": "Rare block",
+  "da": "Sjælden blok",
+  "where": "src/shared/furniture.ts"
  }
 }

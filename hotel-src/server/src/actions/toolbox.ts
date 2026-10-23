@@ -5,7 +5,7 @@ import { Ctx, fail } from "../ctx";
 import { addToInv, MAX_FURNI, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
-import { POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
+import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
 
 const isPiece = async (c: Ctx, key: string): Promise<boolean> => !!SHIPPED_DIMS[key] || !!(await c.furniMeta())[key];
 const KEY_RE = /^[a-z0-9_]{1,30}$/;
@@ -127,6 +127,21 @@ export const furniPlace: Action = {
     } else if (a.img !== undefined) fail("Only a poster carries a picture.");
     c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : {}) };
     return {};
+  },
+};
+
+/** Tapping a piece with several looks or animations (a TV, a fridge, candles ...): anyone standing in the room sends it on to the next one. */
+export const furniState: Action = {
+  async run(c, a) {
+    const room = text(a.room, /^u_[A-Za-z0-9]{1,40}$/, "room");
+    await requireInRoom(c, room);
+    const id = text(a.id, ID_RE, "piece");
+    const row = await c.db.get<{ kind?: string; st?: number }>(`roomsMeta/${room}/furni/${id}`);
+    if (!row?.kind) return fail("That piece isn't here.");
+    const next = nextFurniState(row.kind, typeof row.st === "number" ? row.st : undefined);
+    if (next === null) return fail("Nothing happens.");
+    c.extra[`roomsMeta/${room}/furni/${id}/st`] = next;
+    return { st: next };
   },
 };
 

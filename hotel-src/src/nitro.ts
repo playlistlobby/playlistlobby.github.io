@@ -152,6 +152,56 @@ export interface SpriteDraw {
   dx: number; dy: number;
   flipH: boolean;
   isShadow: boolean;
+  /** "ADD": glows (flames, screens) are added to what is behind them instead of covering it */
+  ink?: "ADD";
+  /** 0-1 (the layer's own transparency) */
+  alpha?: number;
+  /** the layer's depth offset: higher is in front of the others of the same piece */
+  z: number;
+}
+
+interface LayerProps { ink?: string; alpha?: number; z?: number }
+interface AnimLayer { frameRepeat?: number; loopCount?: number; frameSequences?: Record<string, { frames?: Record<string, { id: number }> }> }
+interface Vis64 { layers?: Record<string, LayerProps>; animations?: Record<string, { layers?: Record<string, AnimLayer> }> }
+const visCache = new WeakMap<object, Vis64>();
+function vis64(json: NitroJson): Vis64 {
+  let v = visCache.get(json);
+  if (!v) {
+    const all = json.visualizations as Array<{ size?: number } & Vis64> | undefined;
+    v = all?.find((x) => x.size === 64) ?? {};
+    visCache.set(json, v);
+  }
+  return v;
+}
+
+/** How long one animation tick lasts (a frame stays up for frameRepeat ticks). */
+const TICK_MS = 83;
+/** Which look or animation a piece is in (its state number) and how long it has been in it. */
+export interface AnimState { state: number; t: number }
+
+/** The state numbers a piece can be in (animation numbers below 100 are states; the higher ones are one-off effects). */
+export function nitroStates(n: NitroFurni): number[] {
+  return Object.keys(vis64(n.json).animations ?? {}).map(Number).filter((x) => x < 100).sort((a, b) => a - b);
+}
+/** Does the piece have any animation at all (then it is drawn frame by frame)? */
+export const isAnimated = (n: NitroFurni): boolean => nitroStates(n).length > 0;
+
+/** The picture number a layer shows at this moment (null = it has no picture in this state: its default one). */
+function frameOf(a: AnimLayer | undefined, t: number): number | null {
+  const seqs = a?.frameSequences;
+  if (!seqs) return null;
+  const ids: number[] = [];
+  for (const key of Object.keys(seqs).sort((x, y) => Number(x) - Number(y))) {
+    const fr = seqs[key].frames ?? {};
+    for (const k of Object.keys(fr).sort((x, y) => Number(x) - Number(y))) ids.push(fr[k].id);
+  }
+  if (!ids.length) return null;
+  if (ids.length === 1) return ids[0];
+  const tick = Math.floor(Math.max(0, t) / (TICK_MS * Math.max(1, a!.frameRepeat ?? 1)));
+  const loops = a!.loopCount;
+  if (loops === 0) return ids[tick % ids.length]; // plays for ever
+  if (typeof loops === "number" && loops > 0) return ids[Math.min(tick, loops * ids.length - 1) % ids.length];
+  return ids[Math.min(tick, ids.length - 1)]; // plays once and stays on the last picture
 }
 
 /**
@@ -196,23 +246,30 @@ function cutOut(image: SheetImage, x: number, y: number, w: number, h: number): 
 }
 
 /** Everything to draw for one facing direction (falls back to the nearest direction that has art). */
-export function spritesFor(n: NitroFurni, dir: number, frame = 0): SpriteDraw[] {
+export function spritesFor(n: NitroFurni, dir: number, anim?: AnimState): SpriteDraw[] {
   const have = directionsOf(n);
   const d = have.includes(dir) ? dir : have.includes(dir % 4) ? dir % 4 : have[0] ?? 0;
   const out: SpriteDraw[] = [];
-  const state = frame === 0 ? firstState(n.json) : null;
+  const v = vis64(n.json);
+  const fixed = anim ? null : firstState(n.json);
+  const animLayers = anim ? v.animations?.[String(anim.state)]?.layers : undefined;
   for (const layer of n.layers) {
-    const want = state && layer in state ? state[layer] : null;
+    const idx = layer.charCodeAt(0) - 97;
+    let want: number | null;
+    if (anim) want = animLayers ? frameOf(animLayers[String(idx)], anim.t) : null;
+    else want = fixed && layer in fixed ? fixed[layer] : null;
     if (want !== null && !n.json.assets[`${n.name}_64_${layer}_${d}_${want}`]) continue; // this layer has nothing to show in that state (the open doors)
-    const key = `${n.name}_64_${layer}_${d}_${want ?? frame}`;
+    const key = `${n.name}_64_${layer}_${d}_${want ?? 0}`;
     const a = n.json.assets[key] ?? n.json.assets[`${n.name}_64_${layer}_${d}_0`];
     if (!a) continue;
     const f = n.json.spritesheet.frames[`${n.name}_${a.source ?? key}`];
     if (!f) continue;
+    const lp = v.layers?.[String(idx)];
     out.push({
       layer, image: cutOut(n.image, f.frame.x, f.frame.y, f.frame.w, f.frame.h), sx: 0, sy: 0, sw: f.frame.w, sh: f.frame.h,
       dx: a.flipH ? a.x - f.frame.w : -a.x, dy: -a.y, flipH: !!a.flipH, isShadow: layer === "sd", // a mirrored copy is mirrored about the anchor: the registration x is the original one
+      ...(lp?.ink === "ADD" ? { ink: "ADD" as const } : {}), ...(typeof lp?.alpha === "number" && lp.alpha < 255 ? { alpha: lp.alpha / 255 } : {}), z: lp?.z ?? 0,
     });
   }
-  return out;
+  return out.some((o) => o.z !== 0) ? out.map((o, i) => ({ o, i })).sort((p, q) => (p.o.isShadow === q.o.isShadow ? p.o.z - q.o.z || p.i - q.i : p.o.isShadow ? -1 : 1)).map((p) => p.o) : out; // (layers with a depth offset are drawn lowest first)
 }

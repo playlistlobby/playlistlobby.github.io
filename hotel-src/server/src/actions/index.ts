@@ -5,7 +5,7 @@ import { claimPurchases } from "./pay";
 import { eat, sixty, usePill } from "./quest";
 import { combineItems, consume, dumpster, fillCan, finishSmoke, flappy, harvest, light, plant, stab, syringe, water } from "./rewards";
 import { drop, pickup } from "./floor";
-import { furniMove, furniPlace, furniStore, storeItem, takeItem } from "./toolbox";
+import { furniMove, furniPlace, furniState, furniStore, storeItem, takeItem } from "./toolbox";
 import { tradeFinish } from "./trade";
 import { debug } from "./debug";
 import { posterAdmin } from "./posters";
@@ -19,7 +19,7 @@ export const ACTIONS: Record<string, Action> = {
   sixty, usePill, eat,
   consume, stab, syringe, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
   drop, pickup,
-  store: storeItem, take: takeItem, furniPlace, furniMove, furniStore,
+  store: storeItem, take: takeItem, furniPlace, furniMove, furniStore, furniState,
   tradeFinish,
   cdInsert, cdReturn, cdControl, mix, mixCollect,
   debug, posterAdmin,
