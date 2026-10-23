@@ -799,11 +799,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (target?.npc && target.uid !== me.uid) {
       opts.push({ label: "Talk", target: isShop ? LANDLORD.name : SIXTY.name, action: () => (isShop ? startLandlord() : startSixty()) });
     } else if (target && target.uid !== me.uid) {
-      if (item?.useOnPlayer === "stab" && !(target.uid === LEGEND.id && me.tutorial >= 2)) opts.push({ label: `Use ${item.name} →`, target: target.name, action: () => startStab(target.uid) });
-      if (hasKnife && item?.useOnPlayer !== "stab" && !(target.uid === LEGEND.id && me.tutorial >= 2)) opts.push({ label: "Stab", target: target.name, danger: true, action: () => startStab(target.uid) });
+      // (stabbing isn't in this menu: pick the knife and tap the player)
       if (target.uid !== LEGEND.id && social.isOnline(target.uid) && !target.sleeper) opts.push({ label: "Invite to trade", target: target.name, action: () => void social.inviteToTrade(target.uid).then(() => say(`You ask ${target.name} to trade. They have to accept.`), () => say("Couldn't send that trade invite.", "warn")) });
-      if (target.uid === LEGEND.id) { /* a stand-in: no friending him */ } else if (social.friends.has(target.uid)) opts.push({ label: "Message", target: target.name, action: () => window.dispatchEvent(new CustomEvent("open-chat", { detail: target.uid })) });
-      else opts.push({ label: "Add friend", target: target.name, action: () => social.sendRequest(target.name).then((s) => say(s), (err) => say((err as Error).message, "warn")) });
+      // their name opens their profile: friend, message, visit, gift... (no profile for the introduction's stand-in)
+      if (target.uid !== LEGEND.id) opts.push({ label: target.name, action: () => window.dispatchEvent(new CustomEvent("open-profile", { detail: target.uid })) });
+    } else if (target && target.uid === me.uid) {
+      opts.push({ label: "My profile", action: () => window.dispatchEvent(new CustomEvent("open-profile", { detail: me.uid })) });
     }
     const obj = pickObj(mx, my);
     if (obj?.kind === "arcade") opts.push({ label: "Play", target: "Arcade machine", action: () => startArcade(obj.id) });
@@ -4032,7 +4033,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
       boxes.push({ id: p.uid, x0: feet.x - 22 * scale, x1: feet.x + 22 * scale, y0: feet.y - FEET_Y * scale, y1: feet.y + 8 * scale, depth: pos.x + pos.y });
       list.push({
-        depth: aboveFrontPieces(pos.x + pos.y + 0.5 + (p.sit && !isMoving(p, now) ? 1.2 : 0), pos),
+        depth: aboveFrontPieces(pos.x + pos.y + 0.5 + (p.sit && !isMoving(p, now) ? 1.2 : 0) + (p.uid === me.uid ? 0.02 : 0), pos), // (you stand on top of anyone on your tile)
         draw: () => {
           g.fillStyle = "rgba(0,0,0,0.18)";
           g.beginPath();

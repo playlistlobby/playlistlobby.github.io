@@ -25,6 +25,18 @@ export interface PublicProfile {
   name: string;
   figure: string;
 }
+/** A gift waiting for me (gifts/<me>), or one I sent that was declined (giftReturns/<me>). */
+export interface Gift { id: string; from: string; fromName: string; item: string; qty: number; ass?: boolean; at: number }
+export type RelationKind = "partner" | "bff";
+/** Somebody asking to be my partner or best friend. */
+export interface RelationRequest { uid: string; name: string; kind: RelationKind }
+/** What the profile window shows about a player (profiles/<uid> and relations/<uid>). */
+export interface FullProfile extends PublicProfile { status: string; bg: string; relations: Array<{ uid: string; kind: RelationKind }> }
+export const PROFILE_BGS: Array<{ id: string; label: string; color: string }> = [
+  { id: "pink", label: "Pink", color: "#f3c6e0" }, { id: "blue", label: "Blue", color: "#bcd8f5" }, { id: "green", label: "Green", color: "#c3e8c6" },
+  { id: "purple", label: "Purple", color: "#d6c6f2" }, { id: "gold", label: "Gold", color: "#f4e2a6" }, { id: "dark", label: "Dark", color: "#555b6b" },
+];
+
 export interface Presence {
   name: string;
   /** room id the player is standing in, "" when browsing menus */
@@ -81,11 +93,21 @@ export async function fetchProfile(uid: string): Promise<PublicProfile | null> {
   return p;
 }
 
+/** Reads a player's profile page: name, look, status line, background and who their partner and best friends are. */
+export async function fetchFullProfile(uid: string): Promise<FullProfile | null> {
+  const [snap, rel] = await Promise.all([get(ref(db, `profiles/${uid}`)), get(ref(db, `relations/${uid}`)).catch(() => null)]);
+  if (!snap.exists()) return null;
+  const v = snap.val();
+  const relations = Object.entries<any>(rel?.val() ?? {}).filter(([, r]) => r && (r.kind === "partner" || r.kind === "bff")).map(([u, r]) => ({ uid: u, kind: r.kind as RelationKind }));
+  return { uid, name: String(v.name ?? "?"), figure: String(v.figure ?? ""), status: typeof v.status === "string" ? v.status : "", bg: typeof v.bg === "string" ? v.bg : "pink", relations };
+}
+
 /** Publishes name + look (readable by other players) and claims the username lookup entry. Idempotent. */
 export async function publishProfile(p: Profile): Promise<void> {
   profileCache.delete(p.uid);
   // the admin account is 6ixty: that is the name and look everybody else sees (friends list, sleeping in their room, ...)
-  await set(ref(db, `profiles/${p.uid}`), p.isAdmin ? { name: SIXTY.name, figure: sixtyLook().figure } : { name: p.name, figure: p.figure });
+  // (an update, not a set: the status line and background the player chose stay)
+  await update(ref(db, `profiles/${p.uid}`), p.isAdmin ? { name: SIXTY.name, figure: sixtyLook().figure } : { name: p.name, figure: p.figure });
   const claim = ref(db, `usernames/${p.name.toLowerCase()}`);
   const existing = await get(claim);
   if (!existing.exists()) await set(claim, p.uid).catch(() => undefined);
@@ -167,6 +189,11 @@ class SocialStore {
   knocks = new Map<string, Knock>();
   /** people who want to trade with me right now */
   tradeInvites = new Map<string, TradeInvite>();
+  /** gifts waiting for me, gifts of mine that were declined, and my partner / best friends (and who asks to be) */
+  gifts: Gift[] = [];
+  giftReturns: Gift[] = [];
+  relations = new Map<string, RelationKind>();
+  relationRequests = new Map<string, RelationRequest>();
   dms = new Map<string, DmMsg[]>();
   unread = new Map<string, number>();
   /** friend whose chat window is open (their messages don't count as unread) */
@@ -218,7 +245,7 @@ class SocialStore {
   }
   /** what the Friends button's red badge counts: unread messages, friend requests and people knocking */
   get badgeCount(): number {
-    return this.totalUnread + this.requests.size + this.knocks.size + this.tradeInvites.size;
+    return this.totalUnread + this.requests.size + this.knocks.size + this.tradeInvites.size + this.gifts.length + this.giftReturns.length + this.relationRequests.size;
   }
   /** the presence list has arrived (until then nobody can be called gone) */
   presenceLoaded = false;
@@ -285,6 +312,29 @@ class SocialStore {
         this.emit();
         fresh.forEach((k) => this.tradeInviteListeners.forEach((l) => l(k)));
       }, () => undefined),
+      onValue(ref(db, `gifts/${me.uid}`), (snap) => {
+        this.gifts = Object.entries<any>(snap.val() ?? {}).map(([id, v]) => ({ id, from: v.from, fromName: v.fromName ?? "?", item: v.item, qty: Number(v.qty) || 1, ass: !!v.ass, at: Number(v.at) || 0 })).sort((a, b) => a.at - b.at);
+        this.emit();
+      }, () => undefined),
+      onValue(ref(db, `giftReturns/${me.uid}`), (snap) => {
+        this.giftReturns = Object.entries<any>(snap.val() ?? {}).map(([id, v]) => ({ id, from: v.from, fromName: v.fromName ?? "?", item: v.item, qty: Number(v.qty) || 1, ass: !!v.ass, at: Number(v.at) || 0 })).sort((a, b) => a.at - b.at);
+        this.emit();
+      }, () => undefined),
+      onValue(ref(db, `relations/${me.uid}`), (snap) => {
+        const next = new Map<string, RelationKind>();
+        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) if (v && (v.kind === "partner" || v.kind === "bff")) next.set(uid, v.kind);
+        this.relations = next;
+        this.emit();
+      }, () => undefined),
+      onValue(ref(db, `relationRequests/${me.uid}`), async (snap) => {
+        const next = new Map<string, RelationRequest>();
+        await Promise.all(Object.entries<any>(snap.val() ?? {}).map(async ([uid, v]) => {
+          const pp = await fetchProfile(uid);
+          if (pp && (v?.kind === "partner" || v?.kind === "bff")) next.set(uid, { uid, name: pp.name, kind: v.kind });
+        }));
+        this.relationRequests = next;
+        this.emit();
+      }, () => undefined),
       onChildAdded(ref(db, `userTrades/${me.uid}`), (snap) => {
         const id = snap.key!;
         // only trades that start while I'm here open a window (older ones are finished by recoverTrades at sign-in)
@@ -315,6 +365,10 @@ class SocialStore {
     this.invites = [];
     this.knocks.clear();
     this.tradeInvites.clear();
+    this.gifts = [];
+    this.giftReturns = [];
+    this.relations.clear();
+    this.relationRequests.clear();
     this.dms.clear();
     this.unread.clear();
     this.openChat.clear();
@@ -378,9 +432,38 @@ class SocialStore {
     return remove(ref(db, `friendRequests/${this.me!.uid}/${from}`));
   }
 
+  /** Asks a friend to be my partner (only one) or best friend (up to three). They have to accept. */
+  async askRelation(uid: string, kind: RelationKind): Promise<void> {
+    const have = [...this.relations.values()];
+    if (this.relations.has(uid)) throw new Error("You're already that to each other. Remove it first to change it.");
+    if (kind === "partner" && have.includes("partner")) throw new Error("You've got a partner already. Remove them first.");
+    if (kind === "bff" && have.filter((k) => k === "bff").length >= 3) throw new Error("You already have 3 best friends.");
+    if (kind === "partner" && have.length >= 4) throw new Error("You can't have more than 4 close friends.");
+    await set(ref(db, `relationRequests/${uid}/${this.me!.uid}`), { kind, ts: serverTimestamp() });
+  }
+
+  /** Answers a partner / best friend request: both of you get each other on your profiles. */
+  async answerRelation(from: string, accept: boolean): Promise<void> {
+    const me = this.me!;
+    const req = this.relationRequests.get(from);
+    const updates: Record<string, unknown> = { [`relationRequests/${me.uid}/${from}`]: null };
+    if (accept && req) {
+      const since = serverNow();
+      updates[`relations/${me.uid}/${from}`] = { kind: req.kind, since };
+      updates[`relations/${from}/${me.uid}`] = { kind: req.kind, since };
+    }
+    await update(ref(db), updates);
+  }
+
+  /** Ends a partner / best friend bond (both sides). */
+  async removeRelation(uid: string): Promise<void> {
+    const me = this.me!;
+    await update(ref(db), { [`relations/${me.uid}/${uid}`]: null, [`relations/${uid}/${me.uid}`]: null });
+  }
+
   async removeFriend(uid: string): Promise<void> {
     const me = this.me!;
-    await update(ref(db), { [`friends/${me.uid}/${uid}`]: null, [`friends/${uid}/${me.uid}`]: null });
+    await update(ref(db), { [`friends/${me.uid}/${uid}`]: null, [`friends/${uid}/${me.uid}`]: null, [`relations/${me.uid}/${uid}`]: null, [`relations/${uid}/${me.uid}`]: null, [`relationRequests/${me.uid}/${uid}`]: null, [`relationRequests/${uid}/${me.uid}`]: null });
   }
 
   async sendDm(friend: string, text: string): Promise<void> {

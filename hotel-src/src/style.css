@@ -716,3 +716,42 @@ html.kb .side-host { display: none; }
 body.greenscreen { background: #00ff00 !important; }
 body.greenscreen .stage { background: #00ff00 !important; border-color: #00ff00; box-shadow: none; }
 body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .online, body.greenscreen .action-hint, body.greenscreen .chat-log, body.greenscreen .navbar { display: none !important; }
+
+/* ---- profile window (opened from a player's menu and from the friends list) ---- */
+.pw-overlay { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); background: rgba(0, 0, 0, .5); }
+.pw-card { width: min(600px, 100%); max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; background: #fbf7fb; color: #26303f; border: 3px solid #42203d; border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); }
+.pw-head-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: linear-gradient(#7fd0dc, #3a9bb0); color: #fff; font-size: 20px; text-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+.pw-head-bar strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pw-x { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; background: #d63a3a; color: #fff; font-size: 16px; cursor: pointer; }
+.pw-body { display: grid; grid-template-columns: 170px minmax(0, 1fr) 120px; gap: 0; min-height: 280px; }
+.pw-left { padding: 10px; display: flex; flex-direction: column; gap: 6px; background: #fff; border-right: 1px solid #d9d0dc; min-width: 0; }
+.pw-sec { font-weight: 700; color: #3b2a5a; margin-top: 4px; }
+.pw-btn { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 42px; padding: 6px 8px; border-radius: 10px; border: 1px solid #b9bfc9; background: linear-gradient(#f6f7f9, #dfe3e8); color: #26303f; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.pw-btn.primary { background: linear-gradient(#6fe08a, #34a85a); color: #fff; border-color: #2b8a4a; }
+.pw-btn:disabled { opacity: .5; cursor: default; }
+.pw-ico { font-size: 20px; flex: none; }
+.pw-lbl { min-width: 0; }
+.pw-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; }
+.pw-mid { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 14px 8px 18px; min-width: 0; min-height: 260px; }
+.pw-avatar { display: flex; justify-content: center; }
+.pw-avatar canvas { width: 128px; height: auto; image-rendering: pixelated; }
+.pw-bubble { align-self: stretch; margin-top: 8px; padding: 8px 10px; background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0, 0, 0, .25); font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; text-align: center; }
+.pw-right { padding: 10px; background: #fff; border-left: 1px solid #d9d0dc; }
+.pw-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pw-tile { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 2px solid #42203d; border-radius: 8px; background: #fff; overflow: visible; cursor: pointer; padding: 0; }
+.pw-tile.empty { border-style: dashed; border-color: #c9bfd0; color: #c9bfd0; cursor: default; }
+.pw-badge { position: absolute; top: -8px; right: -8px; font-size: 18px; }
+.pw-gift, .pw-edit { display: flex; flex-direction: column; gap: 6px; }
+.pw-grow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 14px; }
+.pw-gico { width: 28px; height: 28px; image-rendering: pixelated; }
+.pw-gname { flex: 1; min-width: 80px; }
+.pw-status-in { width: 100%; box-sizing: border-box; }
+.pw-sw { display: flex; flex-wrap: wrap; gap: 6px; }
+.pw-swatch { width: 32px; height: 32px; border-radius: 8px; border: 2px solid #b9bfc9; cursor: pointer; padding: 0; }
+.pw-swatch.on { border-color: #26303f; outline: 2px solid #fff; }
+@media (max-width: 560px) {
+  .pw-body { grid-template-columns: minmax(0, 1fr) 96px; }
+  .pw-mid { grid-column: 1; grid-row: 1; }
+  .pw-right { grid-column: 2; grid-row: 1; border-left: 0; background: transparent; }
+  .pw-left { grid-column: 1 / -1; grid-row: 2; border-right: 0; border-top: 1px solid #d9d0dc; }
+}

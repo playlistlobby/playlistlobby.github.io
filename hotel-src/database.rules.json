@@ -128,9 +128,45 @@
         "figure": {
           ".validate": "newData.isString() && newData.val().length < 200 && (newData.val() === root.child('users').child($uid).child('figure').val() || auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid')"
         },
+        "status": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "bg": {
+          ".validate": "newData.isString() && newData.val().matches(/^(pink|blue|green|purple|gold|dark)$/)"
+        },
         "$other": {
           ".validate": false
         }
+      }
+    },
+    "relations": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
+      "$uid": {
+        ".validate": "newData.numChildren() <= 4",
+        "$other": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth.uid === $uid && (!newData.exists() || root.child('relationRequests').child($uid).child($other).exists() || root.child('relations').child($other).child($uid).exists())) || (auth.uid === $other && (!newData.exists() || root.child('relationRequests').child(auth.uid).child($uid).exists())))",
+          ".validate": "newData.hasChildren(['kind', 'since']) && (newData.child('kind').val() === 'partner' || newData.child('kind').val() === 'bff') && newData.child('since').isNumber() && root.child('friends').child($uid).child($other).exists()"
+        }
+      }
+    },
+    "relationRequests": {
+      "$to": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $to",
+        "$from": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $from",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth.uid === $from && (!newData.exists() || root.child('friends').child($from).child($to).exists())) || (auth.uid === $to && !newData.exists()))",
+          ".validate": "newData.hasChildren(['kind', 'ts']) && (newData.child('kind').val() === 'partner' || newData.child('kind').val() === 'bff') && newData.child('ts').isNumber() && newData.child('ts').val() === now"
+        }
+      }
+    },
+    "gifts": {
+      "$to": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $to"
+      }
+    },
+    "giftReturns": {
+      "$from": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $from"
       }
     },
     "presence": {

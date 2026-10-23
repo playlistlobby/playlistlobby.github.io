@@ -341,6 +341,19 @@ export const rewardFlappyDrop = (p: Profile, roomId: string): Promise<unknown> =
 /** The syringe's drop: from yourself, or from a body bag in the room. */
 export const rewardSyringe = (p: Profile, who: "self" | "bag", roomId: string): Promise<unknown> => call(p, "syringe", { who, room: roomId });
 
+/** Sends an item from a pocket slot to a friend as a gift (items only; they can decline it). */
+export async function giftSend(p: Profile, to: string, slot: number, qty = 1): Promise<void> {
+  await call(p, "giftSend", { to, slot, qty });
+}
+/** Accepts a gift into your pocket, or declines it (it then waits for the sender to take back). */
+export async function giftAnswer(p: Profile, id: string, accept: boolean): Promise<{ item?: string; qty?: number }> {
+  return call<{ item?: string; qty?: number }>(p, "giftAnswer", { id, accept });
+}
+/** Takes back a gift that was declined. */
+export async function giftCollect(p: Profile, id: string): Promise<void> {
+  await call(p, "giftCollect", { id });
+}
+
 /** Admin: a backup right now. */
 export async function backupNow(p: Profile, note?: string): Promise<void> {
   await call(p, "backupNow", note ? { note } : {});

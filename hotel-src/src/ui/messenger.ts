@@ -1,6 +1,9 @@
 import { h, toast } from "./dom";
 import { headBox } from "./head";
-import { social, PublicProfile } from "../social";
+import { social, PublicProfile, RelationRequest, Gift } from "../social";
+import { giftAnswer, giftCollect } from "../db";
+import { itemDef } from "../items";
+import { openProfileWindow, ProfileWindowApi } from "./profileWindow";
 import { LOBBY_ID } from "../rooms";
 import { playSfx } from "../sfx";
 import { logAction } from "../logger";
@@ -72,6 +75,19 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
         h("button", { class: "btn small primary", title: "Accept", onclick: () => social.accept(r.uid).then(() => { playSfx("friend"); toast(`You and ${r.name} are friends now.`); }, () => toast("Couldn't accept that.", "err")) }, "✓"),
         h("button", { class: "btn small", title: "Decline", onclick: () => void social.decline(r.uid) }, "✕")));
 
+    const giftName = (g: Gift): string => `${g.qty > 1 ? `${g.qty} × ` : ""}${itemDef(g.item)?.name ?? g.item}${g.ass ? " (ass)" : ""}`;
+    const giftRows = social.gifts.map((g) =>
+      h("div", { class: "frow" }, h("span", { class: "fname" }, `🎁 ${g.fromName} sent you ${giftName(g)}`),
+        h("button", { class: "btn small primary", title: "Accept", onclick: () => giftAnswer(me, g.id, true).then(() => { playSfx("give", 0.5); toast(`You got ${giftName(g)}.`); }, (err) => toast((err as Error).message || "Couldn't take it.", "err")) }, "✓"),
+        h("button", { class: "btn small", title: "Decline", onclick: () => giftAnswer(me, g.id, false).then(() => toast("You sent it back."), (err) => toast((err as Error).message || "Couldn't do that.", "err")) }, "✕")));
+    const returnedRows = social.giftReturns.map((g) =>
+      h("div", { class: "frow" }, h("span", { class: "fname" }, `${giftName(g)} was declined`),
+        h("button", { class: "btn small primary", title: "Take it back", onclick: () => giftCollect(me, g.id).then(() => toast(`You took back ${giftName(g)}.`), (err) => toast((err as Error).message || "Couldn't take it back.", "err")) }, "Take back")));
+    const relRows = [...social.relationRequests.values()].map((r: RelationRequest) =>
+      h("div", { class: "frow" }, h("span", { class: "fname" }, `${r.kind === "partner" ? "💖" : "⭐"} ${r.name} wants to be your ${r.kind === "partner" ? "partner" : "best friend"}`),
+        h("button", { class: "btn small primary", title: "Accept", onclick: () => social.answerRelation(r.uid, true).then(() => { playSfx("friend"); toast(`You and ${r.name} are now ${r.kind === "partner" ? "partners" : "best friends"}.`); }, () => toast("Couldn't accept that.", "err")) }, "✓"),
+        h("button", { class: "btn small", title: "Decline", onclick: () => void social.answerRelation(r.uid, false) }, "✕")));
+
     const inviteRows = social.invites.map((i) =>
       h("div", { class: "frow" }, h("span", { class: "fname" }, `${i.fromName} invited you to "${i.roomName}"`),
         h("button", { class: "btn small primary", onclick: () => { void social.dismissInvite(i.id); ctx.navigate("room", { roomId: i.room }); } }, "Join"),
@@ -80,7 +96,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     // header + input are built once so typing isn't interrupted by presence updates
     if (!panel.firstChild) {
       panel.append(
-        h("div", { class: "fp-head" }, h("strong", {}, "Friends"), h("button", { class: "btn small", onclick: () => { open = false; renderPanel(); } }, "Close")),
+        h("div", { class: "fp-head" }, h("strong", {}, "Friends"), h("button", { class: "btn small", title: "Your profile", onclick: () => { open = false; renderPanel(); showProfile(me.uid); } }, "👤 Me"), h("button", { class: "btn small", onclick: () => { open = false; renderPanel(); } }, "Close")),
         h("form", { class: "row fp-add", onsubmit: (e: Event) => { e.preventDefault(); void addFriend(); } }, addInput, h("button", { class: "btn small", type: "submit" }, "Add")),
         dyn);
     }
@@ -88,6 +104,8 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
       ...(knockRows.length ? [h("div", { class: "fp-sec fp-knocks" }, h("div", { class: "fp-label" }, `Room requests (${knockRows.length})`), ...knockRows)] : []),
       ...(inviteRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, "Room invites"), ...inviteRows)] : []),
       ...(reqRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, `Friend requests (${reqRows.length})`), ...reqRows)] : []),
+      ...(relRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, "Partner and best friend requests"), ...relRows)] : []),
+      ...(giftRows.length || returnedRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, `Gifts (${giftRows.length + returnedRows.length})`), ...giftRows, ...returnedRows)] : []),
       h("div", { class: "fp-list" },
         ...(friends.length === 0
           ? [h("div", { class: "hint pad" }, "No friends yet. Add someone by username, or tap a player in a room.")]
@@ -105,11 +123,9 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
       h("span", { class: "dot " + (online ? (social.isIdle(f.uid) ? "idle" : "on") : "") }),
       h("span", { class: "fname", title: where, onclick: () => openChat(f.uid) }, f.name, h("span", { class: "fwhere" }, where)),
       unread ? h("span", { class: "badge" }, String(unread)) : null,
+      h("button", { class: "btn small", title: "Profile", onclick: () => { open = false; renderPanel(); showProfile(f.uid); } }, "👤"),
       h("button", { class: "btn small", title: "Message", onclick: () => openChat(f.uid) }, "💬"),
-      room ? h("button", { class: "btn small", title: room === LOBBY_ID ? "Go to the basement" : "Follow into their room", onclick: () => { open = false; renderPanel(); ctx.navigate("room", { roomId: room }); } }, "➜") : null,
-      h("button", { class: "btn small", title: "Remove friend", onclick: () => {
-        if (confirm(`Remove ${f.name} from your friends?`)) void social.removeFriend(f.uid).then(() => closeChat(f.uid));
-      } }, "✕"));
+      room ? h("button", { class: "btn small", title: room === LOBBY_ID ? "Go to the basement" : "Follow into their room", onclick: () => { open = false; renderPanel(); ctx.navigate("room", { roomId: room }); } }, "➜") : null);
   }
 
   // ---- chat windows --------------------------------------------------------------------
@@ -162,6 +178,15 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     social.openChat.delete(uid);
   }
 
+  // ---- profile window (opened from a player's menu in a room, and from the friends list) ----
+  let profileWin: ProfileWindowApi | null = null;
+  function showProfile(uid: string): void {
+    profileWin?.close();
+    profileWin = openProfileWindow(root, ctx, uid, () => { profileWin = null; });
+  }
+  const onOpenProfile = (e: Event) => showProfile((e as CustomEvent<string>).detail);
+  window.addEventListener("open-profile", onOpenProfile);
+
   const onOpenChat = (e: Event) => openChat((e as CustomEvent<string>).detail);
   window.addEventListener("open-chat", onOpenChat);
   // the Friends button in the top bar (phones) opens/closes the list the same way the corner button does
@@ -170,7 +195,14 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
 
   // ---- live updates ---------------------------------------------------------------------
   const baseTitle = document.title.replace(/^(d+) /, "");
+  const seenGifts = new Set<string>(social.gifts.map((g) => g.id));
   const offStore = social.subscribe(() => {
+    for (const g of social.gifts) {
+      if (seenGifts.has(g.id)) continue;
+      seenGifts.add(g.id);
+      playSfx("knock", 0.4);
+      toast(`🎁 ${g.fromName} sent you a gift. Open your friends list.`);
+    }
     const unread = social.totalUnread;
     document.title = unread ? `(${unread}) ${baseTitle}` : baseTitle;
     renderPanel();
@@ -227,6 +259,8 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     document.title = baseTitle;
     document.body.classList.remove("friends-open");
     window.removeEventListener("open-chat", onOpenChat);
+    window.removeEventListener("open-profile", onOpenProfile);
+    profileWin?.close();
     window.removeEventListener("toggle-friends", onToggleFriends);
     dock.remove();
     popups.remove();

@@ -9,6 +9,7 @@ import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, s
 import { tradeFinish } from "./trade";
 import { debug } from "./debug";
 import { backupNow, banPlayer } from "./admin";
+import { giftAnswer, giftCollect, giftSend } from "./gift";
 import { posterAdmin } from "./posters";
 import { cdControl, cdInsert, cdReturn } from "./cd";
 import { mix, mixCollect } from "./mixer";
@@ -23,5 +24,5 @@ export const ACTIONS: Record<string, Action> = {
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,
   tradeFinish,
   cdInsert, cdReturn, cdControl, mix, mixCollect,
-  debug, posterAdmin, backupNow, banPlayer,
+  debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };
