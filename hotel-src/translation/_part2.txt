@@ -306,7 +306,7 @@ T0695|Jacket|Jakke
 T0696|Jacket, left sleeve|Jakke, venstre ærme
 T0697|Jacket, right sleeve|Jakke, højre ærme
 T0698|Print|Print
-T0699|Chest item|Brystting
+T0699|Chest item|Misc
 T0700|Belt|Bælte
 T0701|Head|Hoved
 T0702|Body skin|Kropshud

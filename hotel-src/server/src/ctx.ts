@@ -1,7 +1,7 @@
 // What one action works with: the player(s) it touches (loaded once, changed in memory), the other writes it wants, and the shared
 // settings (prices, daily stock, uploaded furniture). `commit()` turns the changes into ONE atomic database write.
 import type { Caller } from "./auth";
-import { Env } from "./env";
+import { Env, isEmulator } from "./env";
 import { Rtdb } from "./rtdb";
 import { cloneSnapshot, compactInv, parseEconomy, Snapshot, snapshotPatch } from "../../src/shared/economy";
 import { DEFAULT_ITEM_PRICE, DISABLED_ITEMS, ITEM_DEFAULTS, ITEM_IDS } from "../../src/shared/items";
@@ -68,7 +68,30 @@ export class Ctx {
   }
   /** What the admin's game published: every clothing item that isn't free, with its price and whether it's on sale. */
   priceBook(): Promise<Record<string, PriceBookEntry>> {
-    return cached("priceBook", async () => (await this.db.get<Record<string, PriceBookEntry>>("config/priceBook/clothing")) ?? {});
+    return cached("priceBook", async () => {
+      const published = (await this.db.get<Record<string, PriceBookEntry>>("config/priceBook/clothing")) ?? {};
+      return { ...(await this.shippedShopPrices()), ...published }; // (what the admin's game published wins: it knows prices changed and items switched off)
+    });
+  }
+  /**
+   * The garments that ship with the game's shop (public/designs/shop/index.json on the game's own site) with their default prices, so a new piece can be bought
+   * the moment it is published, without waiting for the admin to open the game and publish the price list.
+   */
+  shippedShopPrices(): Promise<Record<string, PriceBookEntry>> {
+    return cached("shippedShop", async () => {
+      const base = (this.env.PUBLIC_URL || (isEmulator(this.env) ? "http://127.0.0.1:5173/" : "https://playlistmag.studio/hotel/")).replace(/\/?$/, "/");
+      const book: Record<string, PriceBookEntry> = {};
+      try {
+        const r = await fetch(`${base}designs/shop/index.json`);
+        if (!r.ok) return book;
+        const idx = (await r.json()) as Record<string, { slot?: string; price?: number }>;
+        for (const [id, v] of Object.entries(idx)) {
+          const p = Math.round(Number(v?.price));
+          if (/^[0-9]{1,7}$/.test(id) && typeof v?.slot === "string" && /^[a-z]{2}$/.test(v.slot) && p > 0) book[`${v.slot}_${id}`] = { p, on: 1 };
+        }
+      } catch { /* the site isn't reachable: only the published list counts */ }
+      return book;
+    });
   }
 
   /** A shop entry for an ordinary item or a piece sold by 6ixty / the vending machine (admin settings first, then the defaults). */

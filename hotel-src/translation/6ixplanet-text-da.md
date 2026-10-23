@@ -441,7 +441,7 @@ Fill in the Danish for each line. Keep anything in {curly brackets} exactly as i
   * Danish: Prints
 * **T0128** Chest items
 
-  * Danish: Brystting
+  * Danish: Misc
 * **T0129** Trousers
 
   * Danish: Bukser
@@ -2263,7 +2263,7 @@ Skriv  clear  for at bekræfte:
   * Danish: Print
 * **T0699** Chest item
 
-  * Danish: Brystting
+  * Danish: Misc
 * **T0700** Belt
 
   * Danish: Bælte

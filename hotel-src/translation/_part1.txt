@@ -80,7 +80,7 @@ T0124|Face items|Ansigtsting
 T0125|Shirts|Trøjer
 T0126|Jackets|Jakker
 T0127|Prints|Prints
-T0128|Chest items|Brystting
+T0128|Chest items|Misc
 T0129|Trousers|Bukser
 T0130|Belts|Bælter
 T0131|Stand-in track|Midlertidigt nummer

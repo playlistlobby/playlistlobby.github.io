@@ -636,7 +636,7 @@
  },
  "T0128": {
   "en": "Chest items",
-  "da": "Brystting",
+  "da": "Misc",
   "where": "src/catalog.ts:26"
  },
  "T0129": {
@@ -3491,7 +3491,7 @@
  },
  "T0699": {
   "en": "Chest item",
-  "da": "Brystting",
+  "da": "Misc",
   "where": "src/ui/painter.ts:9"
  },
  "T0700": {
