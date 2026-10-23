@@ -2095,6 +2095,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- the introduction (in the private copy of the basement) ---------------------------------------------
   /** The first three times you fill the watering can, the empty can and the sink in your room glow (counted on this device). */
   function sinkFills(): number { try { return Number(localStorage.getItem(`6ixplanet.sinkHint.${me.uid}`)) || 0; } catch { return 0; } }
+  /** After the introduction, until you have searched a dumpster once, they flash yellow in the basement. */
+  function lootHintOn(): boolean { return roomId === LOBBY_ID && !isTut && !me.isAdmin && me.tutorial >= 4 && Object.keys(me.dumpsters).length === 0; }
   function sinkHintOn(): boolean { return isOwnRoom && sinkFills() < 3 && findSlot(me.inventory, "wateringcan") >= 0 && findSlot(me.inventory, "wateringcan_full") < 0; } // (nothing flashes while you already carry a full can)
   /** points the player at the next thing: the knife (and the guy) in the pocket, then the pill */
   function tutorialGuide(): void {
@@ -3301,7 +3303,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const tbl = tableUnder(f);
       const lift = tbl ? FURNI_KINDS[tbl.kind].surface ?? 0 : 0; // a small piece on a table top stands on it
       if (lift) { g.save(); g.translate(0, -lift * scale); }
-      const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now));
+      let b: Box | null;
+      if (f.kind === "dumpster" && lootHintOn()) {
+        // the first time in the basement after the introduction the dumpsters flash yellow: you can search them
+        const pulse = 0.5 + 0.5 * Math.sin(now / 240);
+        g.save();
+        g.shadowColor = `rgba(255,214,40,${(0.8 + 0.2 * pulse).toFixed(2)})`;
+        g.shadowBlur = (10 + 26 * pulse) * scale;
+        b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now));
+        g.restore();
+        g.save();
+        g.globalCompositeOperation = "lighter";
+        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.5 * pulse, true, pieceAnim(f, now));
+        g.restore();
+      } else b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now));
       if (lift) { g.restore(); if (b) { b.y0 -= lift * scale; b.y1 -= lift * scale; } }
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
