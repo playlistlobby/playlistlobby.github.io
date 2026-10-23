@@ -98,10 +98,16 @@ export const buyFurni: Action = {
 };
 
 
+/** The landlord's window: in the shop room, or (the admin only) in his own room. */
+async function requireLandlord(c: { uid: string; isAdmin: boolean } & Parameters<typeof requireInRoom>[0]): Promise<void> {
+  if (c.isAdmin && (await c.db.get(`rooms/u_${c.uid}/players/${c.uid}`))) return;
+  await requireInRoom(c, "shop");
+}
+
 /** The landlord (in the shop room): the next of three room upgrades makes your room bigger. They have to be bought in order. */
 export const buyRoomUpgrade: Action = {
   async run(c) {
-    await requireInRoom(c, "shop");
+    await requireLandlord(c);
     const w = await c.user();
     const next = ROOM_UPGRADES[w.s.roomLevel];
     if (!next) fail("Your room is as big as it gets.");
@@ -119,7 +125,7 @@ export const buyRoomUpgrade: Action = {
 /** The landlord again: new colours for your floor, walls and carpet, 2 drops for each part that really changes. Patterns are gone: a colour replaces them. */
 export const roomColors: Action = {
   async run(c, a) {
-    await requireInRoom(c, "shop");
+    await requireLandlord(c);
     const hex = /^#[0-9a-fA-F]{6}$/;
     const pick = (v: unknown, what: string): string | undefined => (v === undefined ? undefined : text(v, hex, what).toLowerCase());
     const floor = pick(a.floor, "floor colour"), wall = pick(a.wall, "wall colour");
@@ -146,7 +152,7 @@ export const roomColors: Action = {
 /** The landlord's furniture: a new look for your bed and for your bag of clothes (a wardrobe). Bought once, then swapped for free; "default" goes back to the plain one. */
 export const roomSkins: Action = {
   async run(c, a) {
-    await requireInRoom(c, "shop");
+    await requireLandlord(c);
     const room = `u_${c.uid}`;
     const meta = await c.db.get<any>(`roomsMeta/${room}`);
     if (!meta?.owner) fail("You haven't got a room yet.");
@@ -211,7 +217,7 @@ export const roomSkins: Action = {
 /** The landlord's stash box: 20 drops, bought once. It then stands in your room (against a wall, where nothing else is) and keeps your things out of your pockets. */
 export const buyStashbox: Action = {
   async run(c) {
-    await requireInRoom(c, "shop");
+    await requireLandlord(c);
     const room = `u_${c.uid}`;
     const meta = await c.db.get<any>(`roomsMeta/${room}`);
     if (!meta?.owner) fail("You haven't got a room yet.");

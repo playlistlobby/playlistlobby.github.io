@@ -82,7 +82,7 @@ import { MixerApi, openMixer } from "./mixer";
 import { LandlordApi, openLandlord } from "./landlord";
 import { consumeItem } from "../db";
 import { FurnishApi, mountFurnishUi } from "./furnish";
-import { canTurn, defaultDir, isFixedPiece, nextDir, turnedWallSpot, wallSpot, movePiece, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
+import { canTurn, defaultDir, isFixedPiece, nextDir, turnedWallSpot, wallSpot, movePiece, placeFromCatalog, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
 import { Box, drawNitroSprites, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { fetchProfile, setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
@@ -336,6 +336,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const isOwnRoom = roomId === ownRoomId(me.uid);
   /** your own room, or (an account with the decorator power) any player's room: furniture and posters can be put down here */
   const adminLobbyEdit = me.isAdmin && roomId === LOBBY_ID; // the admin furnishes the basement from the same menu, with every piece there is
+  const adminOwnEdit = me.isAdmin && isOwnRoom; // the admin has every piece there is in his own room too (and the landlord's window)
   const mayFurnish = isOwnRoom || (me.decorator && roomId.startsWith("u_")) || adminLobbyEdit;
   /** the private copy of the basement a new player does the introduction in; it looks and works like the basement, but nobody else comes in */
   const isTut = roomId === tutRoomId(me.uid);
@@ -498,9 +499,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** Only for accounts with the decorator power, in somebody else's room: opens the furnishing menu there. */
   const decorateBtn = h("button", { class: "btn small decorate-btn hidden", onclick: () => enterFurnish() }, adminLobbyEdit ? "🛠 Edit room" : "🛠 Decorate");
   stage.append(decorateBtn);
+  /** The admin in his own room: the landlord's window (colours, bigger room, skins, stash box) without going to the shop. */
+  const landlordBtn = h("button", { class: "btn small decorate-btn landlord-btn hidden", onclick: () => { if (!landlordApi) landlordApi = openLandlord(stage, ctx, () => panel.refresh(), () => { landlordApi = null; }); } }, "🏠 Landlord");
+  stage.append(landlordBtn);
+  setTimeout(() => syncCarryTurn(), 0); // (show the buttons from the start, not only after the first hover)
   function syncCarryTurn(): void {
     const it = selectedDef();
     carryTurnBtn.classList.toggle("hidden", !(it?.furniture && !furnishOn && mayFurnish && FURNI_KINDS[it.id]?.rotatable));
+    landlordBtn.classList.toggle("hidden", !(adminOwnEdit && !furnishOn));
     decorateBtn.classList.toggle("hidden", !(((me.decorator && !isOwnRoom && roomId.startsWith("u_")) || adminLobbyEdit) && !furnishOn));
   }
   function updateHint(): void {
@@ -998,7 +1004,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       placing: () => fzPlacing,
       done: exitFurnish,
       turn: fzTurn,
-      ...(adminLobbyEdit ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter").sort((a, b) => FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}),
+      ...(adminLobbyEdit || adminOwnEdit ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter").sort((a, b) => FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}),
       store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (/^lobby\d+$/.test(f.id) ? Promise.reject(new Error("That one is built into the basement: move it instead.")) : isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one can't be removed.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
       startPlacing: (source, kind, slot) => { fzPlacing = { kind, source, slot }; fzDir = defaultDir(kind); fzSel = null; if (source === "inv" && slot !== undefined) { selectedSlot = slot; panel.setSelected(slot); } else if (selectedSlot !== null) clearSelection(); refreshFz(); },
       cancelPlacing: () => { fzPlacing = null; clearSelection(); refreshFz(); },
@@ -1053,7 +1059,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       img = pic;
     }
     try {
-      if (what.source === "catalog") await placeFurni(def.id, what.kind, spot.x, spot.y, spot.dir);
+      if (what.source === "catalog") await (adminLobbyEdit ? placeFurni(def.id, what.kind, spot.x, spot.y, spot.dir) : placeFromCatalog(me, def.id, what.kind, spot));
       else if (what.source === "inv") await placeFromInventory(me, def.id, what.slot!, spot, img);
       else await placeFromStorage(me, def.id, what.kind, spot, img);
       playSfx("select", 0.4);
@@ -2581,7 +2587,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const p = mine();
       if (!p || (!landlordApi && !vendingApi && !recordApi && !posterApi)) return;
       const t = currentTile(p);
-      if (landlordApi && cheb(t, { x: LANDLORD.x, y: LANDLORD.y }) > 3) landlordApi.close();
+      if (landlordApi && isShop && cheb(t, { x: LANDLORD.x, y: LANDLORD.y }) > 3) landlordApi.close();
       const vm = def.furni.find((f) => f.kind === "vending");
       if (vendingApi && vm && cheb(t, vm) > 3) vendingApi.close();
       const rp = def.furni.find((f) => f.kind === "recordplayer");

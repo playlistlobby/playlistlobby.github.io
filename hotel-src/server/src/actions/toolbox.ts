@@ -159,6 +159,12 @@ export const furniPlace: Action = {
       if (!dims) fail("That can't be put down.");
       if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir, size)) fail("That doesn't fit in the room.");
       w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1);
+    } else if (a.source === "catalog") { // the admin has every piece there is: nothing is taken from storage
+      if (!c.isAdmin) fail("Only the admin can do that.");
+      kind = text(a.kind, KEY_RE, "piece");
+      const dims = await c.placeableDims(kind);
+      if (!dims) fail("That can't be put down.");
+      if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir, size)) fail("That doesn't fit in the room.");
     } else {
       kind = text(a.kind, KEY_RE, "piece");
       if ((w.s.storage[kind] ?? 0) < 1) fail("There's none of that in storage.");

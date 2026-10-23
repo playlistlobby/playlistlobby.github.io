@@ -132,6 +132,11 @@ export async function placeFromStorage(p: Profile, roomId: string, kind: string,
   await call(p, "furniPlace", { room: roomId, source: "storage", kind, x: spot.x, y: spot.y, dir: spot.dir, ...(img ? { img } : {}) });
 }
 
+/** The admin puts any piece there is down in a room (nothing is taken from storage). */
+export async function placeFromCatalog(p: Profile, roomId: string, kind: string, spot: Spot): Promise<void> {
+  await call(p, "furniPlace", { room: roomId, source: "catalog", kind, x: spot.x, y: spot.y, dir: spot.dir });
+}
+
 /** Moves or turns a piece that is already in the room. The bed, bag, toolbox and sink live under their own names (looks only); every other piece goes through the server. */
 export async function movePiece(roomId: string, f: PlacedFurni, spot: Spot, p?: Profile): Promise<void> {
   if (isFixedPiece(f.id)) {
