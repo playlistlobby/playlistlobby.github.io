@@ -247,7 +247,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     ownerName: null,
     access: "open",
     w: 12,
-    h: 12,
+    h: 16, // 12 wide, and 16 down the left wall (it was 12: four tiles were added at the far end)
     theme: { ...GRIME_THEME },
     rug: null,
     // the Flappy Bird machine is part of the basement (it stands against the left wall, 8 tiles down from the back corner)
