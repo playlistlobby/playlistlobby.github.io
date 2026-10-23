@@ -2890,6 +2890,88 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.restore();
   }
 
+  /**
+   * What everybody can see of a player's high: a glow round the body and particles. It is worked out from what is shared in the room already
+   * (fast + fastMult, cup), so it needs no new database fields: the super pill (4x) is gold, LSD (3x) is a rainbow, the 2x speed drugs
+   * (thc-a, troll, DMT) are teal, and holding the lean's cup is purple. The research chemical has its own show and is left alone.
+   */
+  type Aura = { kind: "pill" | "lsd" | "speed" | "lean"; glow: string; blur: number };
+  function auraOf(p: Player, now: number): Aura | null {
+    const sn = serverNow();
+    if (p.chem && sn < p.chem) return null;
+    const beat = 0.5 + 0.5 * Math.sin(now / 160);
+    if (p.fast && sn < p.fast) {
+      const m = p.fastMult ?? 2;
+      if (m >= 4) return { kind: "pill", glow: `rgba(255,214,58,${(0.7 + 0.3 * beat).toFixed(2)})`, blur: (10 + 12 * beat) * scale };
+      if (m === 3 || (p.spin && sn < p.spin)) return { kind: "lsd", glow: `hsla(${Math.floor(now / 3) % 360},100%,62%,0.9)`, blur: (12 + 10 * beat) * scale };
+      return { kind: "speed", glow: `rgba(60,210,220,${(0.55 + 0.3 * beat).toFixed(2)})`, blur: (8 + 8 * beat) * scale };
+    }
+    if (p.cup && sn < p.cup) return { kind: "lean", glow: `rgba(150,90,230,${(0.6 + 0.25 * beat).toFixed(2)})`, blur: (9 + 7 * beat) * scale };
+    return null;
+  }
+  /** A little four-point twinkle, drawn on the pixel grid. */
+  function pxStar(cx: number, cy: number, arm: number, color: string): void {
+    const P = pxCell();
+    const gx = Math.round(cx / P) * P, gy = Math.round(cy / P) * P;
+    g.fillStyle = color;
+    g.fillRect(gx, gy, P, P);
+    for (let i = 1; i <= arm; i++) { g.fillRect(gx + i * P, gy, P, P); g.fillRect(gx - i * P, gy, P, P); g.fillRect(gx, gy + i * P, P, P); g.fillRect(gx, gy - i * P, P, P); }
+  }
+  /** (fx, fy) = the player's feet. */
+  function drawAuraParticles(a: Aura, fx: number, fy: number, now: number): void {
+    const s = scale;
+    g.save();
+    if (a.kind === "pill") { // lightning: streaks race up the body and gold sparks fly off
+      for (let i = 0; i < 9; i++) {
+        const t = (now / 380 + i * 0.37) % 1;
+        const x = fx + ((i % 5) - 2) * 6 * s + Math.sin(i * 7.3) * 2 * s;
+        const y = fy - t * 86 * s;
+        g.globalAlpha = (1 - t) * 0.9;
+        g.fillStyle = i % 2 ? "#ffe680" : "#fff6c9";
+        g.fillRect(Math.round(x), Math.round(y), pxCell(), Math.max(pxCell(), 9 * s * (1 - t * 0.5)));
+      }
+      for (let i = 0; i < 6; i++) {
+        const k = Math.floor(now / 140) + i * 11;
+        const ang = (k * 2.399) % (Math.PI * 2), rad = (14 + ((k * 7) % 12)) * s;
+        g.globalAlpha = 0.5 + 0.5 * Math.sin(now / 70 + i);
+        pxStar(fx + Math.cos(ang) * rad, fy - 44 * s + Math.sin(ang) * rad * 1.6, 1, "#ffd23a");
+      }
+    } else if (a.kind === "lsd") { // a ring of rainbow twinkles circling the body
+      for (let i = 0; i < 12; i++) {
+        const ang = now / 700 + (i / 12) * Math.PI * 2;
+        const rad = (20 + 5 * Math.sin(now / 300 + i * 2)) * s;
+        g.globalAlpha = 0.55 + 0.45 * Math.sin(now / 110 + i * 1.7);
+        pxStar(fx + Math.cos(ang) * rad, fy - 46 * s + Math.sin(ang) * rad * 1.9, i % 3 === 0 ? 2 : 1, `hsl(${(Math.floor(now / 5) + i * 30) % 360},100%,68%)`);
+      }
+    } else if (a.kind === "speed") { // rings spread out from the feet and little motes rise
+      for (let i = 0; i < 2; i++) {
+        const t = (now / 900 + i / 2) % 1;
+        g.globalAlpha = 0.65 * (1 - t);
+        g.strokeStyle = "#63e6ee"; g.lineWidth = Math.max(1.5, 1.6 * s);
+        g.beginPath(); g.ellipse(fx, fy, (8 + t * 22) * s, (4 + t * 11) * s, 0, 0, Math.PI * 2); g.stroke();
+      }
+      for (let i = 0; i < 8; i++) {
+        const t = (now / 1300 + i / 8) % 1;
+        g.globalAlpha = 0.85 * (1 - t);
+        pxBlob(fx + Math.sin(t * 6 + i * 2.2) * 13 * s, fy - (4 + t * 74) * s, 0.9 * s, "#8ff3f7");
+      }
+    } else { // lean: slow purple bubbles and a few twinkles
+      for (let i = 0; i < 9; i++) {
+        const t = (now / 2300 + i / 9) % 1;
+        const x = fx + Math.sin(t * 5 + i * 1.9) * 12 * s, y = fy - (6 + t * 78) * s;
+        g.globalAlpha = 0.7 * (1 - t);
+        pxBlob(x, y, (1.4 + t * 2.4) * s, "#9a5ae6");
+        g.globalAlpha = 0.9 * (1 - t);
+        pxBlob(x - 0.6 * s, y - 0.6 * s, 0.5 * s, "#e5d0ff");
+      }
+      for (let i = 0; i < 4; i++) {
+        g.globalAlpha = Math.max(0, Math.sin(now / 400 + i * 1.8));
+        pxStar(fx + Math.sin(i * 4.1) * 15 * s, fy - (24 + i * 16) * s, 1, "#d9b8ff");
+      }
+    }
+    g.restore();
+  }
+
   /** A cigarette at the mouth and a thin stream of smoke rising from the tip. (fx, fy) = the player's feet, `dir` the way they face. */
   function drawCigarette(fx: number, fy: number, dir: number, now: number, kind?: string): void {
     const blunt = kind === "blunt" || kind === "chudblunt", joint = kind === "joint" || kind === "hashjoint" || kind === "chudjoint";
@@ -2921,6 +3003,22 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     g.strokeStyle = "#ff6a1a"; g.lineWidth = 3 * s;
     g.beginPath(); g.moveTo(tipx - (side || 1) * 1.6 * s, tipy - 0.3 * s); g.lineTo(tipx, tipy); g.stroke();
+    }
+    // the tip glows and flicks off sparks: orange, pink for hash, green for chud
+    {
+      const hot = kind === "hashjoint" ? "255,110,170" : chud ? "110,255,140" : "255,150,40";
+      const pulse = 0.55 + 0.45 * Math.sin(now / 240);
+      const gr = g.createRadialGradient(tipx, tipy, 0, tipx, tipy, (blunt ? 11 : 8) * s * (0.8 + 0.4 * pulse));
+      gr.addColorStop(0, `rgba(${hot},${(0.75 * pulse + 0.2).toFixed(2)})`);
+      gr.addColorStop(1, `rgba(${hot},0)`);
+      g.fillStyle = gr;
+      g.beginPath(); g.arc(tipx, tipy, (blunt ? 11 : 8) * s * (0.8 + 0.4 * pulse), 0, Math.PI * 2); g.fill();
+      for (let i = 0; i < 4; i++) {
+        const u = now / 800 + i / 4, t = u % 1, k = Math.floor(u);
+        g.globalAlpha = 1 - t;
+        pxBlob(tipx + Math.sin(k * 3.7 + i * 5.1) * 7 * s * t, tipy - t * 16 * s, 0, `rgb(${hot})`);
+      }
+      g.globalAlpha = 1;
     }
     // smoke: a few soft puffs that drift up, widen and fade
     for (let i = 0; i < 6; i++) {
@@ -3953,13 +4051,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             g.beginPath(); g.arc(gx, gy, gr, 0, Math.PI * 2); g.fill();
           }
           const chemOn = !!p.chem && serverNow() < p.chem;
+          const aura = glowing ? null : auraOf(p, now);
           if (img) {
             const ax = feet.x + lunge.x - (32 + padOf(img).x) * scale;
             const ay = feet.y + lunge.y + lift - (FEET_Y + padOf(img).y) * scale;
             if (glowing) { g.save(); g.shadowColor = `rgba(255,214,90,${(0.75 + 0.25 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 18 * pulse) * scale; }
             else if (chemOn) { g.save(); g.shadowColor = `hsla(${Math.floor(now / 2.5) % 360},100%,60%,0.95)`; g.shadowBlur = (14 + 14 * Math.abs(Math.sin(now / 90))) * scale; }
+            else if (aura) { g.save(); g.shadowColor = aura.glow; g.shadowBlur = aura.blur; }
             g.drawImage(img, ax, ay, img.width * scale, img.height * scale);
-            if (glowing || chemOn) g.restore();
+            if (glowing || chemOn || aura) g.restore();
+            if (aura) drawAuraParticles(aura, feet.x + lunge.x, feet.y + lunge.y + lift, now);
             if (chemOn) { // smoke pours off you
               for (let i = 0; i < 10; i++) {
                 const t = (now / 1400 + i / 10) % 1;
