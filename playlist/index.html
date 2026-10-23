@@ -2908,7 +2908,7 @@ async function firebaseApi(cfg){
     async sendAdminEmail(u,name){ if(!WEB3FORMS_KEY) return false;
       try{ const r=await fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({access_key:WEB3FORMS_KEY,subject:'Playlist — approve a new admin device',from_name:'Playlist',
-          message:'A device ("'+name+'") is asking to become a Playlist admin.\n\nApprove it by opening this on your admin phone:\nhttps://playlistlobby.github.io/?adminapprove='+u+'\n\nIf this was not you, ignore this email and nothing happens.'})});
+          message:'A device ("'+name+'") is asking to become a Playlist admin.\n\nApprove it by opening this on your admin phone:\n'+location.origin+'/playlist/?adminapprove='+u+'\n\nIf this was not you, ignore this email and nothing happens.'})});
         return r.ok; }catch(e){ console.error(e); return false; } },
     // door staff: the same idea as the admin, checked against config/door
     async doorLogin(key,name){ try{ await fs.setDoc(fs.doc(db,"doorSessions",uid()),{key,ts:fs.serverTimestamp(),...(name?{name}:{})}); return true; }catch{ return false; } },

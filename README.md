@@ -1,6 +1,6 @@
 # playlistlobby.github.io
 
-The site at https://playlistlobby.github.io/ is an iOS 6 style home screen on a white page with two apps:
+The site lives at https://playlistmag.studio/ (custom domain, see `CNAME`; the old https://playlistlobby.github.io/ address redirects to it). The root page opens the game (`/hotel/`) straight away; the Playlist app is at `/playlist/`. The pieces:
 
 | App | URL | What | Where in this repo |
 |---|---|---|---|
