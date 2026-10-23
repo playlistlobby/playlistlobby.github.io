@@ -352,6 +352,20 @@ async function bloodDrops(): Promise<void> {
   say(`blood drops done: ${total} frames at ${FPS} fps`);
 }
 
+/** a seamless loop of the "-1" (a stab or a payment costs one blood): one pop per loop, the last frames are empty so it restarts cleanly */
+async function bloodMinusLoop(): Promise<void> {
+  const icon = await loadImage("/items/blood.svg");
+  const S = 5, W = 640, H = 360, FPS = 30, life = 1100;
+  const total = 45; // 1.5 s per loop
+  for (let i = 0; i < total; i++) {
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    bloodPop(c.getContext("2d")!, icon, "-1", W / 2, H - 70, (i / FPS) * 1000, S, life);
+    await save(`animation-blood-minus-one-loop/frames/frame-${String(i).padStart(3, "0")}.png`, c);
+  }
+  say(`blood -1 loop done: ${total} frames at ${FPS} fps`);
+}
+
 /** someone (Emil) sells things to 6ixty: each thing flies over to him and the drops of blood he pays pop up over the seller */
 async function sellToSixty(): Promise<void> {
   const S = 5, W = 900, H = 640, FPS = 30;
@@ -971,6 +985,7 @@ async function spinAll(): Promise<void> {
     else if (only === "jet") { await jetDressSmoke(); await jetSipLean(); }
     else if (only === "sip") await jetSipLean();
     else if (only === "blood") await bloodDrops();
+    else if (only === "minus") await bloodMinusLoop();
     else if (only === "sell") await sellToSixty();
     else if (only === "spin") await spinAll();
     else if (only === "morph") await emil6ToEmil();
