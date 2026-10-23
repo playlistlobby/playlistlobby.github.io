@@ -3,8 +3,10 @@
 import { avatarsReady, clearAvatarCache, renderAvatar } from "./avatarService";
 import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns } from "./designs";
 import { derive, loadNitro, spritesFor, type NitroFurni } from "./nitro";
-import { FURNI_KINDS, defFromMeta, type RoomMeta } from "./rooms";
-import { shade, TILE_W, WALL_H } from "./roomRender";
+import { FURNI_KINDS, defFromMeta, lobbyDef, type RoomMeta, type RoomDef } from "./rooms";
+import { shade, TILE_W, TILE_H, WALL_H, iso, renderRoomShell, ensureFurniSprites, ensureBasementArt, drawNitroFurni } from "./roomRender";
+import { SPIN_DIRS } from "./emotes";
+import { loadEmojiFont } from "./emojiFont";
 import { ITEMS } from "./items";
 
 const log = document.getElementById("log")!;
@@ -568,6 +570,206 @@ async function weedGrowth(): Promise<void> {
 }
 
 /** every account's character spins once, then the next account's takes over in the same spot: it looks like one player spinning and changing outfit */
+// ---- scenes in the basement: busted and broke take LSD on the starter bed, emil6 sleeps on one --------------------------------------------
+const BUSTED = "hd-209-1.hr-98173-9002.he-98089-71.fa-97045.ch-98188-1408.cc-98015-64.ca-98155.lg-98198-80.sh-98139.wa-98169-71"; // emil5's look
+const BROKE = FIGURES.emil; // emil's look
+const EMIL6 = "hd-190-10.hr-98095-35.fa-98057.ch-804-64.lg-98129-82.sh-98139";
+const LAY_DX = -76, LAY_DY = -76; // where the game draws a lying player, relative to the bed's head tile
+
+async function basementScene(def: RoomDef, cam: { x: number; y: number }, W: number, H: number, S: number, order: string[]): Promise<{ bg: HTMLCanvasElement; feetOf: (tx: number, ty: number) => { x: number; y: number } }> {
+  await ensureBasementArt();
+  await ensureFurniSprites(def);
+  const shell = renderRoomShell(def);
+  const toScreen = (p: { x: number; y: number }): { x: number; y: number } => ({ x: W / 2 + (p.x - cam.x) * S, y: H / 2 + (p.y - cam.y) * S });
+  const bg = document.createElement("canvas");
+  bg.width = W; bg.height = H;
+  const g = bg.getContext("2d")!;
+  const o = toScreen({ x: -shell.origin.x, y: -shell.origin.y });
+  g.imageSmoothingEnabled = true;
+  g.drawImage(shell.canvas, o.x, o.y, shell.canvas.width * S, shell.canvas.height * S);
+  g.imageSmoothingEnabled = false;
+  for (const id of order) { // back to front
+    const f = def.furni.find((q) => q.id === id)!;
+    if (!drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, S)) throw new Error("art not loaded: " + f.kind);
+  }
+  return { bg, feetOf: (tx, ty) => { const w = iso(tx, ty); return toScreen({ x: w.x, y: w.y + TILE_H / 2 }); } };
+}
+
+function nameTag(g: CanvasRenderingContext2D, S: number, name: string, x: number, y: number): void {
+  g.save();
+  g.font = `${Math.round(10 * S)}px Verdana, 'Apple Color Emoji', sans-serif`;
+  const tw = g.measureText(name).width + 10 * S;
+  g.fillStyle = "rgba(0,0,0,0.55)";
+  g.beginPath(); g.roundRect(x - tw / 2, y, tw, 14 * S, 5 * S); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "top"; g.textAlign = "center";
+  g.fillText(name, x, y + 2 * S);
+  g.restore();
+}
+
+/** a four-point twinkle on the pixel grid (like the game's own) */
+function star(g: CanvasRenderingContext2D, P: number, cx: number, cy: number, arm: number, color: string): void {
+  const gx = Math.round(cx / P) * P, gy = Math.round(cy / P) * P;
+  g.fillStyle = color;
+  g.fillRect(gx, gy, P, P);
+  for (let i = 1; i <= arm; i++) { g.fillRect(gx + i * P, gy, P, P); g.fillRect(gx - i * P, gy, P, P); g.fillRect(gx, gy + i * P, P, P); g.fillRect(gx, gy - i * P, P, P); }
+}
+
+async function bustedAndBroke(): Promise<void> {
+  const W = 1400, H = 900, S = 3, FPS = 30, OUT = "animation-busted-and-broke-lsd";
+  const base = lobbyDef([]);
+  const def: RoomDef = { ...base, furni: [
+    { id: "d1", kind: "dumpster", x: 3, y: 0, dir: 4 },
+    { id: "d2", kind: "dumpster", x: 5, y: 0, dir: 4 },
+  ] };
+  const scene = await basementScene(def, { x: iso(4.6, 2.6).x, y: iso(4.6, 2.6).y - 30 }, W, H, S, ["d1", "d2"]);
+  const lsd = await loadImage(ITEMS.lsd.icon);
+  const STEP = 160; // ms per tile: LSD is 3x speed (the game's step is 480 ms)
+  const chain = (pts: Array<[number, number]>): Array<[number, number]> => { // the tiles between the waypoints, one step at a time (diagonals allowed)
+    const out: Array<[number, number]> = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      let [x, y] = out[out.length - 1];
+      const [tx, ty] = pts[i];
+      while (x !== tx || y !== ty) { x += Math.sign(tx - x); y += Math.sign(ty - y); out.push([x, y]); }
+    }
+    return out;
+  };
+  const people = [
+    { name: "busted", figure: BUSTED, late: 0, start: [3, 2] as [number, number], run: chain([[3, 2], [6, 5], [2, 4], [4, 1], [7, 3], [3, 5], [5, 2], [3, 4]]), end: [3, 4] as [number, number] },
+    { name: "broke", figure: BROKE, late: 5, start: [5, 2] as [number, number], run: chain([[5, 2], [2, 3], [6, 4], [3, 1], [7, 5], [4, 3], [6, 1], [6, 4]]), end: [6, 4] as [number, number] },
+  ];
+  const T_IDLE = 0.9, T_TAKE = 1.0, T_RUN = 3.2, T_STUMBLE = 0.9, T_SLEEP = 2.8;
+  const total = Math.round((T_IDLE + T_TAKE + T_RUN + T_STUMBLE + T_SLEEP) * FPS);
+  const glyphs: Array<{ who: number; born: number; ox: number }> = [];
+  const lastGlyph = [-1e9, -1e9];
+  const lay = new Map<string, HTMLCanvasElement>();
+  let n = 0;
+  for (let i = 0; i < total; i++) {
+    const t = i / FPS, ms = t * 1000;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(scene.bg, 0, 0);
+    const tTake = t - T_IDLE, tRun = t - T_IDLE - T_TAKE, tStumble = tRun - T_RUN, tSleep = tStumble - T_STUMBLE;
+    const draws: Array<{ depth: number; draw: () => void }> = [];
+    for (let k = 0; k < people.length; k++) {
+      const p = people[k];
+      const mine = tRun - p.late / FPS; // this one's own clock in the trip (the second one starts a moment later)
+      const running = mine >= 0 && tStumble < 0;
+      // where the feet are: standing on the start tile, running along the path (one tile per STEP), then slowing to a stop on the end tile
+      let pos = { x: p.start[0], y: p.start[1] };
+      if (mine >= 0) {
+        const steps = mine * 1000 / STEP;
+        const i0 = Math.min(p.run.length - 1, Math.floor(steps)), i1 = Math.min(p.run.length - 1, i0 + 1), fr = Math.min(1, steps - i0);
+        pos = { x: p.run[i0][0] + (p.run[i1][0] - p.run[i0][0]) * fr, y: p.run[i0][1] + (p.run[i1][1] - p.run[i0][1]) * fr };
+        if (steps >= p.run.length - 1) pos = { x: p.end[0], y: p.end[1] };
+      }
+      const w = iso(pos.x, pos.y);
+      const f = scene.feetOf(pos.x, pos.y);
+      void w;
+      const beat = 0.5 + 0.5 * Math.sin(ms / 160);
+      const done = tStumble >= 0;
+      const fallen = tSleep >= 0.1 + p.late / 60; // they go down one after the other
+      let img: HTMLCanvasElement;
+      let dx = 0, dy = 0;
+      if (fallen) {
+        const key = p.figure;
+        if (!lay.has(key)) lay.set(key, (await renderAvatar({ figure: p.figure, dir: 2, headDir: 2, actions: ["lay"], gesture: "std", frame: 0 }))!);
+        img = lay.get(key)!;
+      } else {
+        const dir = running ? SPIN_DIRS[Math.floor((mine * 1000) / 140) % 8] : 3;
+        const gesture = done ? "eyb" : "std";
+        img = (await renderAvatar({ figure: p.figure, dir, headDir: dir, actions: [running ? "wlk" : "std"], gesture, frame: running ? Math.floor(ms / 40) % 4 : 0 }))!;
+        if (done) dx = Math.sin(ms / 120) * 3 * Math.min(1, tStumble * 2); // swaying on their feet before they drop
+      }
+      draws.push({ depth: pos.x + pos.y + (fallen ? 0.6 : 0.5), draw: () => {
+        if (fallen) {
+          g.drawImage(img, f.x + (LAY_DX - padOf(img).x) * S, f.y + (LAY_DY - padOf(img).y) * S, img.width * S, img.height * S);
+          return;
+        }
+        if (!running) { g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(f.x, f.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill(); }
+        else { g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(f.x, f.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill(); }
+        g.save();
+        if (running) { g.shadowColor = `hsla(${Math.floor(ms / 3) % 360},100%,62%,0.9)`; g.shadowBlur = (12 + 10 * beat) * S; }
+        g.drawImage(img, f.x + dx * S - (32 + padOf(img).x) * S, f.y + dy * S - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+        g.restore();
+        if (running) { // a ring of rainbow twinkles round the body
+          for (let q = 0; q < 12; q++) {
+            const ang = ms / 700 + (q / 12) * Math.PI * 2;
+            const rad = (20 + 5 * Math.sin(ms / 300 + q * 2)) * S;
+            g.save(); g.globalAlpha = 0.55 + 0.45 * Math.sin(ms / 110 + q * 1.7);
+            star(g, S, f.x + Math.cos(ang) * rad, f.y - 46 * S + Math.sin(ang) * rad * 1.9, q % 3 === 0 ? 2 : 1, `hsl(${(Math.floor(ms / 5) + q * 30) % 360},100%,68%)`);
+            g.restore();
+          }
+        }
+        // taking it: the little pattern lifts to the mouth and is gone
+        const tk = (tTake - p.late / FPS) / 0.7;
+        if (tk >= 0 && tk < 1 && tRun < 0) {
+          const sz = 18 * S * (1 - 0.4 * tk);
+          const yy = f.y - (30 + 34 * tk) * S, xx = f.x + 16 * S * (1 - tk);
+          g.save(); g.globalAlpha = tk < 0.8 ? 1 : (1 - tk) / 0.2;
+          g.drawImage(lsd, xx - sz / 2, yy - sz / 2, sz, sz);
+          g.restore();
+          if (tk > 0.75) star(g, S, f.x, f.y - 74 * S, 2, "#fff");
+        }
+      } });
+      if (!fallen) draws.push({ depth: 99, draw: () => nameTag(g, S, p.name, f.x, f.y + 8 * S) });
+      // asleep: zzz drift up from the head (the game's sleep emote)
+      if (fallen && ms - lastGlyph[k] > 420) { lastGlyph[k] = ms; glyphs.push({ who: k, born: ms, ox: (Math.random() - 0.5) * 30 }); }
+    }
+    draws.sort((a, b) => a.depth - b.depth);
+    for (const d of draws) d.draw();
+    g.save();
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = `${Math.round(20 * S)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    for (let q = glyphs.length - 1; q >= 0; q--) {
+      const gl = glyphs[q], age = ms - gl.born;
+      if (age > 1500) { glyphs.splice(q, 1); continue; }
+      const e = people[gl.who].end;
+      const f = scene.feetOf(e[0], e[1]);
+      g.globalAlpha = Math.max(0, 1 - age / 1500);
+      g.fillText("💤", f.x + 40 * S + gl.ox * S, f.y - 34 * S - age * 0.035 * S);
+    }
+    g.restore();
+    await save(`${OUT}/frames/frame-${String(n++).padStart(3, "0")}.png`, c);
+  }
+  say(`busted and broke done: ${n} frames at ${FPS} fps`);
+}
+
+async function emil6Sleeping(): Promise<void> {
+  const W = 1120, H = 760, S = 4, FPS = 30, OUT = "animation-emil6-sleeping";
+  const base = lobbyDef([]);
+  const def: RoomDef = { ...base, furni: [{ id: "bed", kind: "bed", x: 5, y: 7, dir: 2 }] };
+  const scene = await basementScene(def, { x: iso(6.5, 7.5).x, y: iso(6.5, 7.5).y - 10 }, W, H, S, ["bed"]);
+  const limg = (await renderAvatar({ figure: EMIL6, dir: 2, headDir: 2, actions: ["lay"], gesture: "std", frame: 0 }))!;
+  const total = 7 * FPS;
+  const glyphs: Array<{ born: number; ox: number }> = [];
+  let last = -1e9, n = 0;
+  for (let i = 0; i < total; i++) {
+    const ms = (i / FPS) * 1000;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(scene.bg, 0, 0);
+    const f = scene.feetOf(5, 7);
+    g.drawImage(limg, f.x + (LAY_DX - padOf(limg).x) * S, f.y + (LAY_DY - padOf(limg).y) * S, limg.width * S, limg.height * S);
+    if (ms - last > 1100) { last = ms; glyphs.push({ born: ms, ox: 10 + (Math.random() - 0.5) * 16 }); } // the sleepers' zzz (the game: one every 1.1 s)
+    g.save();
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = `${Math.round(20 * S)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    for (let q = glyphs.length - 1; q >= 0; q--) {
+      const gl = glyphs[q], age = ms - gl.born;
+      if (age > 1900) { glyphs.splice(q, 1); continue; }
+      g.globalAlpha = Math.max(0, 1 - age / 1900);
+      g.fillText("💤", f.x + 40 * S + gl.ox * S, f.y - 34 * S - age * 0.035 * S);
+    }
+    g.restore();
+    await save(`${OUT}/frames/frame-${String(n++).padStart(3, "0")}.png`, c);
+  }
+  say(`emil6 sleeping done: ${n} frames at ${FPS} fps`);
+}
+
 async function spinAll(): Promise<void> {
   const accounts: Array<[string, string]> = [
     ["Emil", FIGURES.emil], ["bootyshaker", FIGURES.bootyshaker],
@@ -612,6 +814,7 @@ async function spinAll(): Promise<void> {
     else if (only === "blood") await bloodDrops();
     else if (only === "sell") await sellToSixty();
     else if (only === "spin") await spinAll();
+    else if (only === "basement") { loadEmojiFont(); await document.fonts.ready; await bustedAndBroke(); await emil6Sleeping(); }
     else if (only === "weed") await weedGrowth();
     else if (only === "anim") await stabAnimation();
     else { await furniture(); await icons(); await avatars(); await stabAnimation(); }
