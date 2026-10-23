@@ -1386,17 +1386,17 @@
  },
  "T0278": {
   "en": "you earned your first blood. come back in about {when}, I will have another job.",
-  "da": "du tjente dit første blod. kom tilbage om cirka {when}, så har jeg et andet job.",
+  "da": "du tjente dit første blod. kom tilbage om cirka {when}, så har jeg et andet job 4u.",
   "where": "src/npc.ts:66"
  },
  "T0279": {
   "en": "now go over and use the knife on that guy.",
-  "da": "gå nu over og brug kniven på ham der.",
+  "da": "Stab ham der, han er annoying as fuck.",
   "where": "src/npc.ts:69"
  },
  "T0280": {
   "en": "the knife. that guy. go.",
-  "da": "kniven. ham der. afsted.",
+  "da": "kniven. ham der. hvad du bange for .",
   "where": "src/npc.ts:70"
  },
  "T0281": {
@@ -1406,12 +1406,12 @@
  },
  "T0282": {
   "en": "eat this pill.",
-  "da": "spis den her pille.",
+  "da": "Pop den her pille.",
   "where": "src/npc.ts:72"
  },
  "T0283": {
   "en": "eat the pill.",
-  "da": "spis pillen.",
+  "da": "spis pillen goy.",
   "where": "src/npc.ts:73"
  },
  "T0284": {
@@ -1421,7 +1421,7 @@
  },
  "T0285": {
   "en": "take this",
-  "da": "tag den her",
+  "da": "Tag den her",
   "where": "src/npc.ts:75"
  },
  "T0286": {
@@ -3951,7 +3951,7 @@
  },
  "T0791": {
   "en": "He isn't getting up.",
-  "da": "Han rejser sig ikke.",
+  "da": "han er dead as fuck.",
   "where": "src/ui/room.ts:943"
  },
  "T0792": {
@@ -4436,7 +4436,7 @@
  },
  "T0888": {
   "en": "You swallow the pill. Give it a moment…",
-  "da": "Du sluger pillen. Giv det et øjeblik…",
+  "da": "Du sluger pillen. broooo…",
   "where": "src/ui/room.ts:1983"
  },
  "T0889": {
@@ -5861,7 +5861,7 @@
  },
  "N061": {
   "en": "The door is locked. Finish what Sixty wants first.",
-  "da": "Døren er låst. Gør færdig hvad Sixty vil have først.",
+  "da": "Døren er låst. 6ix vil ikke lukke dig ud.",
   "where": "src/ui/room.ts"
  },
  "N062": {
