@@ -239,9 +239,9 @@ async function stabAnimation(): Promise<void> {
  * 6ixty's room for Blender: the floor and the two walls as flat pictures (the same colours, checker, rug and baseboards the game draws), and every piece of furniture as its own
  * transparent picture plus where it stands (tile, and where the picture's top-left corner sits relative to the piece's anchor), written to room.json.
  */
-async function roomForBlender(): Promise<void> {
-  const meta = (await (await fetch("/export-data/room6ixty.json")).json()) as RoomMeta;
-  const def = defFromMeta("u_6ixty", meta);
+async function roomForBlender(which: "6ixty" | "lobby" = "6ixty"): Promise<void> {
+  const DIR = which === "lobby" ? "public-room-blender/" : "6ixty-room-blender/";
+  const def = which === "lobby" ? lobbyDef([]) : defFromMeta("u_6ixty", (await (await fetch("/export-data/room6ixty.json")).json()) as RoomMeta);
   const t = def.theme, W = def.w, H = def.h, T = 64; // 64 picture pixels per tile on the floor
   // floor, seen from straight above: the game's checker (tiles with a faint edge) and the rug with its darker border
   const fl = document.createElement("canvas");
@@ -255,7 +255,7 @@ async function roomForBlender(): Promise<void> {
     fg.fillRect(tx * T, ty * T, T, T);
     fg.strokeStyle = "rgba(0,0,0,0.12)"; fg.lineWidth = 2; fg.strokeRect(tx * T + 1, ty * T + 1, T - 2, T - 2);
   }
-  await save("6ixty-room-blender/textures/floor.png", fl);
+  await save(DIR + "textures/floor.png", fl);
   // walls: the plain colour, a baseboard along the bottom, a thin darker edge (the right wall is lit more than the left one)
   const wall = async (name: string, tiles: number, light: number, board: number): Promise<void> => {
     const c = document.createElement("canvas");
@@ -264,7 +264,7 @@ async function roomForBlender(): Promise<void> {
     g.fillStyle = shade(t.wall, light); g.fillRect(0, 0, c.width, c.height);
     g.fillStyle = shade(t.wall, board); g.fillRect(0, c.height - 20, c.width, 20);
     g.strokeStyle = shade(t.wall, 0.8); g.lineWidth = 2; g.strokeRect(1, 1, c.width - 2, c.height - 2);
-    await save("6ixty-room-blender/textures/" + name + ".png", c);
+    await save(DIR + "textures/" + name + ".png", c);
   };
   await wall("wall-back", W, 1, 0.72); // the wall along game y = 0
   await wall("wall-left", H, 0.88, 0.64); // the wall along game x = 0
@@ -288,12 +288,12 @@ async function roomForBlender(): Promise<void> {
       let tx = f.x, ty = f.y;
       if (k.wall) { if (dir === 2) tx -= 0.5; else ty -= 0.5; } // wall pieces hang on the wall plane, not on the floor tile
       const file = `furniture/${f.id}-${f.kind}.png`;
-      await save("6ixty-room-blender/" + file, box.canvas);
+      await save(DIR + file, box.canvas);
       manifest.push({ id: f.id, kind: f.kind, png: file, anchorTileX: tx, anchorTileY: ty, ox: box.x0, oy: box.y0, pw: box.canvas.width / K, ph: box.canvas.height / K, flat: !!k.flat, wall: !!k.wall, dir });
     } catch (e) { say("skipped " + f.kind + ": " + (e as Error).message); }
   }
-  const json = JSON.stringify({ w: W, h: H, wallHeightPx: WALL_H, tilePx: TILE_W, theme: t, rug: def.rug, floor: "textures/floor.png", wallBack: "textures/wall-back.png", wallLeft: "textures/wall-left.png", pieces: manifest }, null, 1);
-  await fetch(SAVE + "6ixty-room-blender/room.json", { method: "POST", body: new Blob([json]) });
+  const json = JSON.stringify({ w: W, h: H, doors: which === "lobby" ? [{ x: def.doorX, color: "#8a8f98", label: "Home" }, ...(def.extraDoors ?? []).map((d) => ({ x: d.x, color: d.yellow ? "#e0b020" : "#8a8f98", label: d.label }))] : [], wallHeightPx: WALL_H, tilePx: TILE_W, theme: t, rug: def.rug, floor: "textures/floor.png", wallBack: "textures/wall-back.png", wallLeft: "textures/wall-left.png", pieces: manifest }, null, 1);
+  await fetch(SAVE + DIR + "room.json", { method: "POST", body: new Blob([json]) });
   say(`room export done: ${manifest.length} pieces`);
 }
 
@@ -982,6 +982,7 @@ async function spinAll(): Promise<void> {
     const only = new URLSearchParams(location.search).get("only"); // ?only=anim re-renders just the animation
     if (only === "newsheet") await newFurnitureSheet();
     else if (only === "room") await roomForBlender();
+    else if (only === "lobby") await roomForBlender("lobby");
     else if (only === "jet") { await jetDressSmoke(); await jetSipLean(); }
     else if (only === "sip") await jetSipLean();
     else if (only === "blood") await bloodDrops();
