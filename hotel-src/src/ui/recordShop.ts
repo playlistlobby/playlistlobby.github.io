@@ -75,7 +75,7 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
     body.replaceChildren(
       row(freak.icon, "Freakme", "One song, for blood. One per player.", freakBtn),
       ...(me.isAdmin || me.name.toLowerCase() === "emil" ? [row(itemDef("cigarette")!.icon, "Test item", "Only you can see this: 2.50 kr (the least Stripe takes) for one cigarette, to try the payment.", h("button", { class: "btn small primary", disabled: paying, onclick: () => void pay("test") }, paying ? "…" : kr(TEST_PRICE_ORE)))] : []),
-      row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "A CD with one of three songs. You never get the same one twice. Real money.", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
+      row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "en af tre sange fra blodig oktober leaked, du for aldrig den samme cd igen", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
       h("div", { class: "hint" }, "Real money is paid on a payment page, and you come back to the game afterwards."));
   }
   render();
