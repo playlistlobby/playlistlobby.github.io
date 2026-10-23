@@ -38,7 +38,7 @@ export async function createBackup(env: Env, kind: BackupIndexEntry["kind"], not
     if (Object.keys(part).length) roomOut[id] = part;
   }
   const entry: BackupIndexEntry = { at, kind, ...(note ? { note } : {}), accounts: Object.keys(userOut).length, rooms: Object.keys(roomOut).length, totalBlood };
-  await db.patch({ [`backupData/${at}`]: { users: userOut, rooms: roomOut }, [`backupBlood/${at}`]: bloodOf, [`backupIndex/${at}`]: entry });
+  await db.patch({ [`backupData/${at}`]: { users: userOut, rooms: roomOut }, [`backupBlood/${at}`]: bloodOf, [`backupIndex/${at}`]: entry, bloodBoard: bloodOf }); // (bloodBoard is the public ranking the door list uses: refreshed here for everyone)
   await pruneBackups(db, at);
   return entry;
 }
@@ -76,6 +76,7 @@ export async function rollbackTo(env: Env, ts: number, by: string, ban: string[]
     if (!nowUsers.has(uid)) continue;
     users++;
     for (const k of USER_BACKUP_KEYS) updates[`users/${uid}/${k}`] = saved?.[k] ?? null;
+    updates[`bloodBoard/${uid}`] = Number(saved?.blood) || null;
   }
   for (const [id, saved] of Object.entries(data.rooms ?? {})) {
     if (!nowRooms.has(id)) continue;

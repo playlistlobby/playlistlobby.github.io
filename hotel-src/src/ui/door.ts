@@ -6,6 +6,8 @@ import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import { findSlot } from "../items";
 import { call, serverNow } from "../db";
+import { onValue, ref } from "firebase/database";
+import { db } from "../firebase";
 import type { Ctx } from "../main";
 
 export interface DoorApi {
@@ -23,6 +25,10 @@ interface Row {
   /** online but hasn't touched anything for 15 minutes */
   idle: boolean;
   count: number;
+  /** how much blood the owner has (the server keeps it in bloodBoard) */
+  blood: number;
+  /** 1 = the richest player */
+  rank: number;
 }
 
 const KNOCK_TIMEOUT_MS = 60_000;
@@ -35,6 +41,9 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   const me = ctx.profile;
   const mineId = ownRoomId(me.uid);
   let rooms: Record<string, RoomMeta> = {};
+  /** every player's blood (bloodBoard/<uid>, written by the server): open rooms are listed richest first, so the rich get the visitors */
+  let board: Record<string, number> = {};
+  let ranks = new Map<string, number>();
   let search = "";
   let searched: { uid: string; name: string } | { none: true } | null = null;
   let knocking: { row: Row; state: "waiting" | "declined" | "none" } | null = null;
@@ -70,6 +79,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   function rowFor(id: string, meta: RoomMeta): Row {
     return {
       owner: meta.owner, roomId: id, roomName: meta.name, ownerName: meta.ownerName, access: normAccess(meta.access),
+      blood: board[meta.owner] ?? 0, rank: ranks.get(meta.owner) ?? 0,
       friend: social.friends.has(meta.owner), online: social.isOnline(meta.owner), idle: social.isIdle(meta.owner), count: social.roomCounts().get(id) ?? 0,
     };
   }
@@ -79,8 +89,9 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
       .filter(([id, m]) => id.startsWith("u_") && m.owner !== me.uid && id !== currentRoom)
       .map(([id, m]) => rowFor(id, m));
     const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
+    // friends first, then the rooms open to everyone (richest owner first), then the knock rooms (richest first too)
     return visible.sort((a, b) =>
-      Number(b.friend) - Number(a.friend) || Number(b.online) - Number(a.online) || Number(a.idle) - Number(b.idle) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, me.isAdmin ? 300 : 40); // (online first, active before idle)
+      Number(b.friend) - Number(a.friend) || Number(b.access === "open") - Number(a.access === "open") || b.blood - a.blood || Number(b.online) - Number(a.online) || Number(a.idle) - Number(b.idle) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, me.isAdmin ? 300 : 40);
   }
 
   /** a shroom or DMT is working: every door is open */
@@ -107,6 +118,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
       h("div", { class: "door-row-main" },
         h("div", { class: "door-row-name" }, r.roomName),
         h("div", { class: "hint" }, `${r.ownerName} · ${sub}${r.idle ? " · idle" : ""}${r.count ? ` · ${r.count} inside` : ""}`)),
+      r.access === "open" && r.rank > 0 && r.rank <= 50 ? h("span", { class: "door-rank", title: "Ranked by blood: the richest players are on top" }, `#${r.rank}`) : null,
       // a little profile button (just the icon) next to Visit / Knock: the owner's profile page
       h("button", { class: "btn small door-profile", title: `${r.ownerName}'s profile`, "aria-label": `${r.ownerName}'s profile`, onclick: (e: Event) => { if (chosen(e)) { close(); window.dispatchEvent(new CustomEvent("open-profile", { detail: r.owner })); } } }, "👤"),
       actionFor(r));
@@ -205,12 +217,18 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     stopKnock?.();
     window.clearTimeout(knockTimer);
     offRooms();
+    offBoard();
     offSocial();
     el.remove();
     onClose();
   }
 
   const offRooms = watchAllRooms((r) => { rooms = r; render(); });
+  const offBoard = onValue(ref(db, "bloodBoard"), (snap) => {
+    board = (snap.val() ?? {}) as Record<string, number>;
+    ranks = new Map(Object.entries(board).filter(([, b]) => Number(b) > 0).sort((a, b) => Number(b[1]) - Number(a[1])).map(([uid], i) => [uid, i + 1]));
+    if (!knocking && document.activeElement !== input) render();
+  }, () => undefined);
   const offSocial = social.subscribe(() => { if (!knocking && document.activeElement !== input) render(); });
   render();
   return { close };

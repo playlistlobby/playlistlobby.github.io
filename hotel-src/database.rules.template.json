@@ -41,6 +41,9 @@
         }
       }
     },
+    "bloodBoard": {
+      ".read": "@PW@"
+    },
     "bans": {
       ".read": "@ADMIN@"
     },

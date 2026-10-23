@@ -122,6 +122,7 @@ export class Ctx {
       w.s.inventory = compactInv(w.s.inventory);
       Object.assign(updates, snapshotPatch(w.uid, w.before, w.s));
       this.ledger(updates, w);
+      if (w.s.blood !== w.before.blood) updates[`bloodBoard/${w.uid}`] = w.s.blood; // (the door list ranks open rooms by it)
     }
     await this.db.patch(updates);
     return this.works.get(this.uid)?.s ?? null;

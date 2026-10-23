@@ -8003,5 +8003,10 @@
   "en": "Everyone is stopped for a few seconds. Every account's blood, pockets, toolbox, stash box and what they own, and the furniture in every room, go back to {…}. Everything since is lost, for everybody. Accounts made after the backup, names, looks, friends and chat are not touched. A backup of right now is made first, so you can go forward again.",
   "da": "Alle bliver stoppet i et par sekunder. Alle kontoers blod, lommer, værktøjskasse, gemmeboks og det de ejer, og møblerne i alle værelser, går tilbage til {…}. Alt siden er tabt, for alle. Konti lavet efter backuppen, navne, looks, venner og chat bliver ikke rørt. Der laves først en backup af lige nu, så du kan gå frem igen.",
   "where": "src/ui/adminEconomy.ts:231"
+ },
+ "N490": {
+  "en": "Ranked by blood: the richest players are on top",
+  "da": "Rangeret efter blod: de rigeste spillere er øverst",
+  "where": "src/ui/door.ts"
  }
 }
