@@ -770,6 +770,132 @@ async function emil6Sleeping(): Promise<void> {
   say(`emil6 sleeping done: ${n} frames at ${FPS} fps`);
 }
 
+/** emil6 keeps sleeping on the bed; 6ixty walks in from the corner of the room, stops beside the bed and says his line */
+async function emil6Sixty(): Promise<void> {
+  const W = 1400, H = 900, S = 3, FPS = 30, OUT = "animation-emil6-sleeping-sixty";
+  const LINE = "Du er broke as fuccc";
+  const base = lobbyDef([]);
+  const def: RoomDef = { ...base, furni: [{ id: "bed", kind: "bed", x: 5, y: 7, dir: 2 }] };
+  const scene = await basementScene(def, { x: iso(5.8, 7.6).x, y: iso(5.8, 7.6).y - 10 }, W, H, S, ["bed"]);
+  const limg = (await renderAvatar({ figure: EMIL6, dir: 2, headDir: 2, actions: ["lay"], gesture: "std", frame: 0 }))!;
+  const SIXTY = FIGURES["6ixty"];
+  const path: Array<[number, number]> = [[0, 12], [1, 11], [2, 10], [3, 9], [4, 9], [5, 9]]; // in from the left corner, along the floor to the bed's side
+  const STEP = 480; // ms per tile (the game's walking speed)
+  const dirOf = (dx: number, dy: number): number => ({ "0,-1": 0, "1,-1": 1, "1,0": 2, "1,1": 3, "0,1": 4, "-1,1": 5, "-1,0": 6, "-1,-1": 7 } as Record<string, number>)[`${Math.sign(dx)},${Math.sign(dy)}`] ?? 0;
+  const T_SLEEP = 2.4, T_WALK = ((path.length - 1) * STEP) / 1000, T_TURN = 0.6, T_TALK = 3.4, T_END = 1.2;
+  const total = Math.round((T_SLEEP + T_WALK + T_TURN + T_TALK + T_END) * FPS);
+  const glyphs: Array<{ born: number; ox: number }> = [];
+  let last = -1e9, n = 0;
+  const bubble = (g: CanvasRenderingContext2D, text: string, name: string, cx: number, bottomY: number, alpha: number): void => {
+    const font = `${Math.round(12 * S)}px Verdana, 'Apple Color Emoji', sans-serif`;
+    g.save();
+    g.font = font;
+    const lh = 15 * S;
+    const nameW = (g.font = `bold ${font}`, g.measureText(name).width);
+    g.font = font;
+    const boxW = Math.max(g.measureText(text).width + 18 * S, nameW + 18 * S);
+    const boxH = 2 * lh + 8 * S;
+    const x = cx - boxW / 2, y = bottomY - boxH - 8 * S;
+    g.globalAlpha = alpha;
+    g.fillStyle = "#fff"; g.strokeStyle = "rgba(0,0,0,0.35)"; g.lineWidth = S;
+    g.beginPath(); g.roundRect(x, y, boxW, boxH, 8 * S); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(cx - 5 * S, y + boxH); g.lineTo(cx, y + boxH + 7 * S); g.lineTo(cx + 5 * S, y + boxH); g.fill();
+    g.fillStyle = "#111"; g.textBaseline = "top";
+    g.font = `bold ${font}`; g.fillText(name, x + 9 * S, y + 5 * S);
+    g.font = font; g.fillText(text, x + 9 * S, y + 5 * S + lh);
+    g.restore();
+  };
+  for (let i = 0; i < total; i++) {
+    const t = i / FPS, ms = t * 1000;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(scene.bg, 0, 0);
+    // emil6, asleep on the bed, zzz every 1.1 s
+    const f = scene.feetOf(5, 7);
+    g.drawImage(limg, f.x + (LAY_DX - padOf(limg).x) * S, f.y + (LAY_DY - padOf(limg).y) * S, limg.width * S, limg.height * S);
+    if (ms - last > 1100) { last = ms; glyphs.push({ born: ms, ox: 10 + (Math.random() - 0.5) * 16 }); }
+    // 6ixty
+    const tWalk = t - T_SLEEP, tTalk = t - T_SLEEP - T_WALK - T_TURN;
+    if (tWalk >= 0) {
+      const steps = (tWalk * 1000) / STEP;
+      const i0 = Math.min(path.length - 1, Math.floor(steps)), i1 = Math.min(path.length - 1, i0 + 1), fr = Math.min(1, steps - i0);
+      const pos = { x: path[i0][0] + (path[i1][0] - path[i0][0]) * fr, y: path[i0][1] + (path[i1][1] - path[i0][1]) * fr };
+      const walking = steps < path.length - 1;
+      const dir = walking ? dirOf(path[i1][0] - path[i0][0], path[i1][1] - path[i0][1]) : tTalk >= -0.05 ? 0 : 1; // a beat to turn towards the bed
+      const talking = tTalk >= 0 && tTalk < T_TALK;
+      const img = (await renderAvatar({ figure: SIXTY, dir, headDir: dir, actions: [walking ? "wlk" : "std"], gesture: talking ? "spk" : "std", frame: walking ? Math.floor((tWalk * 1000) / (STEP / 4)) % 4 : talking ? Math.floor(ms / 140) % 2 : 0 }))!;
+      const sf = scene.feetOf(pos.x, pos.y);
+      g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(sf.x, sf.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
+      g.drawImage(img, sf.x - (32 + padOf(img).x) * S, sf.y - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+      if (talking) bubble(g, LINE, "6ixty", sf.x, sf.y - (FEET_Y + 4) * S, Math.min(1, tTalk / 0.15, (T_TALK - tTalk) / 0.3));
+    }
+    g.save();
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = `${Math.round(20 * S)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    for (let q = glyphs.length - 1; q >= 0; q--) {
+      const gl = glyphs[q], age = ms - gl.born;
+      if (age > 1900) { glyphs.splice(q, 1); continue; }
+      g.globalAlpha = Math.max(0, 1 - age / 1900);
+      g.fillText("💤", f.x + 40 * S + gl.ox * S, f.y - 34 * S - age * 0.035 * S);
+    }
+    g.restore();
+    await save(`${OUT}/frames/frame-${String(n++).padStart(3, "0")}.png`, c);
+  }
+  say(`emil6 + 6ixty done: ${n} frames at ${FPS} fps`);
+}
+
+/** emil6 changes one piece at a time (shoes, trousers, top, jacket, chest piece, belt, hair, hat, the face piece comes off) until he looks like emil */
+async function emil6ToEmil(): Promise<void> {
+  const S = 6, W = 700, H = 760, FPS = 30, OUT = "animation-emil6-to-emil";
+  const feet = { x: W / 2, y: H - 70 };
+  const part = (fig: string, type: string): string | undefined => fig.split(".").find((p) => p.split("-")[0] === type);
+  const from = EMIL6, to = FIGURES.emil;
+  // each change: the part type and what it becomes (nothing = taken off), in the order they happen
+  const order = ["sh", "lg", "ch", "cc", "ca", "wa", "hr", "ha", "fa"];
+  const stages: string[] = [from];
+  let cur = from.split(".");
+  const names: string[] = [];
+  for (const t of order) {
+    const a = part(from, t), b = part(to, t);
+    if (a === b) continue;
+    cur = cur.filter((p) => p.split("-")[0] !== t);
+    if (b) cur.push(b);
+    // keep the order of the figure string the way the game writes it
+    const rank = ["hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", "cp", "ca", "lg", "sh", "wa"];
+    cur.sort((x, y) => rank.indexOf(x.split("-")[0]) - rank.indexOf(y.split("-")[0]));
+    stages.push(cur.join("."));
+    names.push(t);
+  }
+  const imgs: HTMLCanvasElement[] = [];
+  for (const fig of stages) imgs.push((await renderAvatar({ figure: fig, dir: 3, headDir: 3, actions: ["std"], gesture: "std", frame: 0 }))!);
+  const draw = (g: CanvasRenderingContext2D, img: HTMLCanvasElement, dy: number, flash: number): void => {
+    g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(feet.x, feet.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
+    let pic = img;
+    if (flash > 0.02) { // a quick white flash as each piece changes
+      pic = document.createElement("canvas"); pic.width = img.width; pic.height = img.height;
+      const x = pic.getContext("2d")!; x.drawImage(img, 0, 0); x.globalCompositeOperation = "source-atop"; x.fillStyle = `rgba(255,255,255,${flash})`; x.fillRect(0, 0, pic.width, pic.height);
+    }
+    g.drawImage(pic, feet.x - (32 + padOf(img).x) * S, feet.y + dy - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+  };
+  let n = 0;
+  const out = async (c: HTMLCanvasElement): Promise<void> => { await save(`${OUT}/frames/frame-${String(n++).padStart(3, "0")}.png`, c); };
+  const blank = (): { c: HTMLCanvasElement; g: CanvasRenderingContext2D } => { const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d")!; g.imageSmoothingEnabled = false; return { c, g }; };
+  for (let i = 0; i < 18; i++) { const { c, g } = blank(); draw(g, imgs[0], 0, 0); await out(c); } // emil6 as he is
+  const PER = 11;
+  for (let k = 1; k < imgs.length; k++) {
+    for (let i = 0; i < PER; i++) { // the piece changes: a hop and a flash, then a short pause
+      const { c, g } = blank();
+      const hop = i < 6 ? Math.sin((i / 6) * Math.PI) * 5 * S : 0;
+      draw(g, i < 3 ? imgs[k - 1] : imgs[k], -hop, Math.max(0, 0.8 - Math.abs(i - 3) * 0.2));
+      await out(c);
+    }
+  }
+  for (let i = 0; i < 30; i++) { const { c, g } = blank(); draw(g, imgs[imgs.length - 1], 0, 0); await out(c); } // emil
+  say(`emil6 to emil done: ${n} frames at ${FPS} fps, changes: ${names.join(", ")}`);
+}
+
 async function spinAll(): Promise<void> {
   const accounts: Array<[string, string]> = [
     ["Emil", FIGURES.emil], ["bootyshaker", FIGURES.bootyshaker],
@@ -814,6 +940,8 @@ async function spinAll(): Promise<void> {
     else if (only === "blood") await bloodDrops();
     else if (only === "sell") await sellToSixty();
     else if (only === "spin") await spinAll();
+    else if (only === "morph") await emil6ToEmil();
+    else if (only === "sixty") { loadEmojiFont(); await document.fonts.ready; await emil6Sixty(); }
     else if (only === "basement") { loadEmojiFont(); await document.fonts.ready; await bustedAndBroke(); await emil6Sleeping(); }
     else if (only === "weed") await weedGrowth();
     else if (only === "anim") await stabAnimation();
