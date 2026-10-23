@@ -12,11 +12,13 @@ export interface FurnishHost {
   /** the piece that is selected in the room, if any */
   selected(): PlacedFurni | null;
   /** the piece you picked up from the tray and are about to put down */
-  placing(): { kind: string; source: "inv" | "storage" } | null;
+  placing(): { kind: string; source: "inv" | "storage" | "catalog" } | null;
+  /** the admin in the basement: every piece there is, instead of storage and pocket (put down from the catalogue, "Remove" instead of "Store") */
+  catalog?(): string[];
   done(): void;
   turn(): void;
   store(): void;
-  startPlacing(source: "inv" | "storage", kind: string, slot?: number): void;
+  startPlacing(source: "inv" | "storage" | "catalog", kind: string, slot?: number): void;
   cancelPlacing(): void;
   storeFromInventory(slot: number, qty?: number): void;
   takeFromStorage(kind: string, qty?: number): void;
@@ -34,6 +36,7 @@ export interface FurnishApi {
  */
 export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
   let tab: "storage" | "inventory" = "storage";
+  let search = "";
   const top = h("div", { class: "fz-top" });
   const bar = h("div", { class: "fz-bar" });
   const tray = h("div", { class: "fz-tray" });
@@ -59,12 +62,25 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
       bar.replaceChildren(
         h("div", { class: "fz-sel" }, h("b", {}, k?.label ?? sel.kind), h("span", { class: "hint" }, "Drag it to move it.")),
         ...(canTurn(sel) ? [h("button", { class: "btn small", onclick: () => fh.turn() }, "⟳ Turn")] : []),
-        ...(isFixedPiece(sel.id) && sel.id !== "boombox" ? [] : [h("button", { class: "btn small", onclick: () => fh.store() }, "📦 Store")]));
+        ...(isFixedPiece(sel.id) && sel.id !== "boombox" ? [] : [h("button", { class: "btn small", onclick: () => fh.store() }, fh.catalog ? "🗑 Remove" : "📦 Store")]));
     } else {
       bar.replaceChildren(h("div", { class: "fz-sel hint" }, "Tap a piece to select it, then drag it. Tap a piece below to put it down."));
     }
 
     tray.style.display = placing ? "none" : ""; // while you're choosing where to put a piece down, the tray steps out of the way so the whole room shows
+    if (fh.catalog) { // the admin in the basement: every piece, with a search box
+      const q = search.trim().toLowerCase();
+      const kinds = fh.catalog().filter((k) => !q || FURNI_KINDS[k].label.toLowerCase().includes(q) || k.toLowerCase().includes(q));
+      const box = h("input", { type: "search", class: "input", placeholder: "Search furniture", value: search, style: { width: "170px" }, oninput: (e: Event) => { search = (e.target as HTMLInputElement).value; render(); } }) as HTMLInputElement;
+      const keep = document.activeElement === box || search !== "";
+      tray.replaceChildren(
+        h("div", { class: "fz-tabs" }, h("button", { class: "tab on" }, `All furniture (${kinds.length})`), box, h("span", { class: "hint" }, "Tap a piece, then a spot in the room. Drag a placed piece to move it.")),
+        h("div", { class: "fz-list" }, ...kinds.map((kind) => h("div", { class: "fz-cell", title: FURNI_KINDS[kind].label },
+          h("button", { class: "fz-pick", onclick: () => fh.startPlacing("catalog", kind) }, h("img", { src: furniIcon(kind), alt: FURNI_KINDS[kind].label, draggable: false })),
+          h("div", { class: "fz-name" }, FURNI_KINDS[kind].label)))));
+      if (keep) { const nb = tray.querySelector("input"); if (nb) { (nb as HTMLInputElement).focus(); (nb as HTMLInputElement).setSelectionRange(search.length, search.length); } }
+      return;
+    }
     const stored = Object.entries(p.storage).filter(([k, n]) => n > 0 && (FURNI_KINDS[k] || itemDef(parseStoreKey(k).item)));
     // the toolbox only takes furniture now; seeds, weed, pills and the like go in the stash box (the landlord sells it)
     const carried = p.inventory.map((s, slot) => ({ s, slot })).filter((e): e is { s: NonNullable<typeof e.s>; slot: number } => !!e.s && !!FURNI_KINDS[e.s.item] && /^[fx]_/.test(e.s.item));

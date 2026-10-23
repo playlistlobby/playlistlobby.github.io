@@ -335,7 +335,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let dropConfirmApi: DropConfirmApi | null = null;
   const isOwnRoom = roomId === ownRoomId(me.uid);
   /** your own room, or (an account with the decorator power) any player's room: furniture and posters can be put down here */
-  const mayFurnish = isOwnRoom || (me.decorator && roomId.startsWith("u_"));
+  const adminLobbyEdit = me.isAdmin && roomId === LOBBY_ID; // the admin furnishes the basement from the same menu, with every piece there is
+  const mayFurnish = isOwnRoom || (me.decorator && roomId.startsWith("u_")) || adminLobbyEdit;
   /** the private copy of the basement a new player does the introduction in; it looks and works like the basement, but nobody else comes in */
   const isTut = roomId === tutRoomId(me.uid);
   const isBasement = roomId === LOBBY_ID || isTut;
@@ -374,7 +375,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let furnishOn = false;
   let furnishUi: FurnishApi | null = null;
   let fzSel: string | null = null;
-  let fzPlacing: { kind: string; source: "inv" | "storage"; slot?: number } | null = null;
+  let fzPlacing: { kind: string; source: "inv" | "storage" | "catalog"; slot?: number } | null = null;
   let fzDir = 6;
   let fzDrag: { id: string; kind: string; grab: Pt; moved: boolean; spot: Spot } | null = null;
   let furniBoxes: Array<{ id: string; box: Box; depth: number }> = [];
@@ -495,12 +496,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const carryTurnBtn = h("button", { class: "btn small carry-turn hidden", title: "Turn", onclick: () => { const it = selectedDef(); if (it?.furniture) toolDir = nextDir(it.id, toolDir || defaultDir(it.id)); } }, "⟳ Turn");
   stage.append(carryTurnBtn);
   /** Only for accounts with the decorator power, in somebody else's room: opens the furnishing menu there. */
-  const decorateBtn = h("button", { class: "btn small decorate-btn hidden", onclick: () => enterFurnish() }, "🛠 Decorate");
+  const decorateBtn = h("button", { class: "btn small decorate-btn hidden", onclick: () => enterFurnish() }, adminLobbyEdit ? "🛠 Edit room" : "🛠 Decorate");
   stage.append(decorateBtn);
   function syncCarryTurn(): void {
     const it = selectedDef();
     carryTurnBtn.classList.toggle("hidden", !(it?.furniture && !furnishOn && mayFurnish && FURNI_KINDS[it.id]?.rotatable));
-    decorateBtn.classList.toggle("hidden", !(me.decorator && !isOwnRoom && roomId.startsWith("u_") && !furnishOn));
+    decorateBtn.classList.toggle("hidden", !(((me.decorator && !isOwnRoom && roomId.startsWith("u_")) || adminLobbyEdit) && !furnishOn));
   }
   function updateHint(): void {
     syncCarryTurn();
@@ -988,6 +989,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     pending = null;
     furnishOn = true;
     fzSel = null; fzPlacing = null; fzDrag = null;
+    syncCarryTurn();
     canvas.style.cursor = "grab";
     furnishUi = mountFurnishUi(stage, {
       profile: me,
@@ -996,7 +998,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       placing: () => fzPlacing,
       done: exitFurnish,
       turn: fzTurn,
-      store: () => { const f = fzPiece(); if (f) void storeFromRoom(me, def.id, f).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
+      ...(adminLobbyEdit ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter").sort((a, b) => FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}),
+      store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one is built into the basement.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
       startPlacing: (source, kind, slot) => { fzPlacing = { kind, source, slot }; fzDir = defaultDir(kind); fzSel = null; if (source === "inv" && slot !== undefined) { selectedSlot = slot; panel.setSelected(slot); } else if (selectedSlot !== null) clearSelection(); refreshFz(); },
       cancelPlacing: () => { fzPlacing = null; clearSelection(); refreshFz(); },
       storeFromInventory: (slot, qty) => void storeFromInventory(me, slot, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),
@@ -1007,6 +1010,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function exitFurnish(): void {
     if (!furnishOn) return;
     furnishOn = false;
+    syncCarryTurn();
     fzSel = null; fzPlacing = null; fzDrag = null;
     furnishUi?.dispose();
     furnishUi = null;
@@ -1027,7 +1031,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { x: t.x - Math.floor((fp.w - 1) / 2), y: t.y - Math.floor((fp.h - 1) / 2) };
   };
 
-  async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage"; slot?: number }, dir: number): Promise<void> {
+  /** moves or turns a piece: the basement's pieces are rewritten in its own list (the ones built into the basement can't move) */
+  async function movePieceHere(f: PlacedFurni, spot: Spot): Promise<void> {
+    if (!adminLobbyEdit) return movePiece(def.id, f, spot, me);
+    if (isFixedLobbyPiece(f.id)) throw new Error("That one is built into the basement.");
+    await update(ref(db, `lobby/furni/${f.id}`), { x: spot.x, y: spot.y, dir: spot.dir || null });
+  }
+  async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage" | "catalog"; slot?: number }, dir: number): Promise<void> {
     const o = originFor(what.kind, dir, t);
     // a wall piece (a poster) snaps to the nearest wall instead of standing where you tapped
     const spot: Spot = FURNI_KINDS[what.kind].wall ? wallSpot(def, what.kind, t, dir) : { x: o.x, y: o.y, dir: FURNI_KINDS[what.kind].rotatable ? dir : 0 };
@@ -1042,7 +1052,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       img = pic;
     }
     try {
-      if (what.source === "inv") await placeFromInventory(me, def.id, what.slot!, spot, img);
+      if (what.source === "catalog") await placeFurni(def.id, what.kind, spot.x, spot.y, spot.dir);
+      else if (what.source === "inv") await placeFromInventory(me, def.id, what.slot!, spot, img);
       else await placeFromStorage(me, def.id, what.kind, spot, img);
       playSfx("select", 0.4);
       clearSelection();
@@ -1064,7 +1075,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const spot: Spot = FURNI_KINDS[f.kind].wall ? turnedWallSpot(def, f.kind, f) : { x: Math.min(f.x, def.w - fp.w), y: Math.min(f.y, def.h - fp.h), dir };
     const why = whyNot(def, f.kind, spot, f.id, othersOccupy());
     if (why) return say(why, "warn");
-    void movePiece(def.id, f, spot, me).catch((err) => say((err as Error).message || "Couldn't turn that.", "warn"));
+    void movePieceHere(f, spot).catch((err) => say((err as Error).message || "Couldn't turn that.", "warn"));
   }
 
   const pieceAtPointer = (m: Pt, t: Pt | null) => {
@@ -1086,7 +1097,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const spot: Spot = FURNI_KINDS[sel.kind].wall ? wallSpot(def, sel.kind, t) : { x: t.x, y: t.y, dir: sel.dir ?? 0 };
         const why = whyNot(def, sel.kind, spot, sel.id, othersOccupy());
         if (why) say(why, "warn");
-        else void movePiece(def.id, sel, spot, me).catch((err) => say((err as Error).message || "Couldn't move that.", "warn"));
+        else void movePieceHere(sel, spot).catch((err) => say((err as Error).message || "Couldn't move that.", "warn"));
         return;
       }
     }
@@ -1115,7 +1126,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!f || !d.moved) return;
     const why = whyNot(def, f.kind, d.spot, f.id, othersOccupy());
     if (why) return say(why, "warn");
-    void movePiece(def.id, f, d.spot, me).catch((err) => say((err as Error).message || "Couldn't move that.", "warn"));
+    void movePieceHere(f, d.spot).catch((err) => say((err as Error).message || "Couldn't move that.", "warn"));
   };
   canvas.addEventListener("pointerup", fzRelease);
   canvas.addEventListener("pointercancel", () => { fzDrag = null; });
