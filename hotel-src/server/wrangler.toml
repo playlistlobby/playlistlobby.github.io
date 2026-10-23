@@ -7,7 +7,7 @@ compatibility_date = "2025-01-01"
 FIREBASE_PROJECT_ID = "playlist-lobby"
 DB_URL = "https://playlist-lobby-default-rtdb.europe-west1.firebasedatabase.app"
 ALLOWED_ORIGINS = "https://playlistlobby.github.io,http://playlistmag.studio,https://playlistmag.studio,https://www.playlistmag.studio,http://127.0.0.1:5173,http://localhost:5173"
-ADMIN_EMAIL = "admin@users.bobba.invalid"
+ADMIN_EMAIL = "adminsidia@users.bobba.invalid"
 
 # One Durable Object holds the per-player and per-room locks, so two requests can never change the same pocket at the same time.
 [[durable_objects.bindings]]

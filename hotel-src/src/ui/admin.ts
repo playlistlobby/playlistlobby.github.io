@@ -45,7 +45,7 @@ async function loadUsers(): Promise<UserRec[]> {
 
 const headThumb = headBox;
 
-/** The admin app. Only the account with username "admin" gets here, and the database rules enforce it. */
+/** The admin app. Only the account with username "adminsidia" gets here, and the database rules enforce it. */
 export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
   let tab: Tab = "players";
   let dispose: (() => void) | null = null;

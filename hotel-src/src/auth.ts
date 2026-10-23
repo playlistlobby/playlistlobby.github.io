@@ -17,11 +17,11 @@ const NAME_RE = /^[A-Za-z0-9_.-]{3,16}$/;
 // ".invalid" is a reserved TLD that can never receive mail. Trade-off: no email-based password reset.
 const toEmail = (username: string) => `${username.toLowerCase()}@users.bobba.invalid`;
 
-/** The admin is the account with username "admin". database.rules.json recognises it by this same address. */
-export const ADMIN_USERNAME = "admin";
+/** The admin is the account with username "adminsidia". database.rules.json and the server recognise it by this same address. */
+export const ADMIN_USERNAME = "adminsidia";
 export const ADMIN_EMAIL = toEmail(ADMIN_USERNAME);
 export const isAdminUser = (user: { email?: string | null } | null): boolean => !!user && user.email === ADMIN_EMAIL;
-const RESERVED = new Set([ADMIN_USERNAME, "administrator", "moderator", "staff", "6ixplanet"]);
+const RESERVED = new Set([ADMIN_USERNAME, "admin", "administrator", "moderator", "staff", "6ixplanet"]);
 
 export function friendlyError(err: unknown): string {
   const code = (err as { code?: string })?.code ?? "";
@@ -62,8 +62,30 @@ export async function register(username: string, password: string): Promise<Prof
   }
 }
 
+// Against guessing passwords: after 4 wrong tries in a row this browser has to wait (30 seconds, then twice as long after each further miss, at most 15 minutes).
+// (This only slows down someone using the game's own page; Firebase itself also slows down repeated wrong tries on its side.)
+const FAIL_KEY = "sixplanet.loginFails";
+const WRONG_CODES = new Set(["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found"]);
+function failState(): { n: number; until: number } {
+  try { const v = JSON.parse(localStorage.getItem(FAIL_KEY) ?? "null"); if (v && typeof v.n === "number" && typeof v.until === "number") return v; } catch { /* no storage */ }
+  return { n: 0, until: 0 };
+}
+const saveFails = (v: { n: number; until: number }): void => { try { localStorage.setItem(FAIL_KEY, JSON.stringify(v)); } catch { /* no storage */ } };
+
 export async function login(username: string, password: string): Promise<void> {
-  await signInWithEmailAndPassword(auth, toEmail(username.trim()), password);
+  const st = failState();
+  const left = Math.ceil((st.until - Date.now()) / 1000);
+  if (left > 0) throw new Error("Too many wrong tries. Wait " + (left > 90 ? Math.ceil(left / 60) + " minutes" : left + " seconds") + " and try again.");
+  try {
+    await signInWithEmailAndPassword(auth, toEmail(username.trim()), password);
+    saveFails({ n: 0, until: 0 });
+  } catch (err) {
+    if (WRONG_CODES.has((err as { code?: string })?.code ?? "")) {
+      const n = st.n + 1;
+      saveFails({ n, until: n >= 4 ? Date.now() + Math.min(15 * 60_000, 30_000 * 2 ** (n - 4)) : 0 });
+    }
+    throw err;
+  }
 }
 
 /** Change the signed-in account's password (needs the current one again, like any sensible app). */
