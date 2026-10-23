@@ -145,7 +145,6 @@
     "relations": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
       "$uid": {
-        ".validate": "newData.numChildren() <= 4",
         "$other": {
           ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth.uid === $uid && (!newData.exists() || root.child('relationRequests').child($uid).child($other).exists() || root.child('relations').child($other).child($uid).exists())) || (auth.uid === $other && (!newData.exists() || root.child('relationRequests').child(auth.uid).child($uid).exists())))",
           ".validate": "newData.hasChildren(['kind', 'since']) && (newData.child('kind').val() === 'partner' || newData.child('kind').val() === 'bff') && newData.child('since').isNumber() && root.child('friends').child($uid).child($other).exists()"
