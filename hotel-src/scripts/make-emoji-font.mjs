@@ -1,8 +1,9 @@
 // Makes public/fonts/AppleColorEmoji.ttf: a small copy of the Apple emoji font that holds only the emoji this game uses (the whole font is huge).
-//   1. Get "AppleColorEmoji-Linux.ttf" (the build for browsers / Linux, a normal TTF) from https://github.com/samuelngs/apple-emoji-ttf/releases
+//   1. Get a CBDT build of Apple Color Emoji (a normal TTF that browsers can draw). The one in use is src/AppleColorEmoji.ttf (iOS 16.4) from https://github.com/jarpex/ttf-ios-emoji;
+//      https://github.com/samuelngs/apple-emoji-ttf also has one in its releases.
 //   2. pip install fonttools
 //   3. node scripts/make-emoji-font.mjs path/to/AppleColorEmoji-Linux.ttf   (optional 2nd argument: where to write it)
-// Apple Color Emoji belongs to Apple: check that you may publish it on your site before you commit the result.
+// Run it again whenever a new emoji is added to the game. Apple Color Emoji belongs to Apple (the source repo lists its license as unknown): check that you may publish it before you keep it on a public site.
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
