@@ -1,4 +1,4 @@
-// Test commands (/giveblud, /weed, /give, /skip): for the admin account only (and anyone in the local emulator).
+// Test commands (/giveblud, /weed, /give, /skip): for the admin account only (and anyone in the local emulator); the account "emil" also gets /giveblud and /skip.
 import { Action, int, text } from "./util";
 import { fail } from "../ctx";
 import { skipTime } from "../skipTime";
@@ -6,9 +6,13 @@ import { isEmulator } from "../env";
 import { addToInv } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
 
+const TESTER_EMAIL = "emil@users.bobba.invalid";
+
 export const debug: Action = {
   async run(c, a) {
-    const trusted = c.isAdmin || isEmulator(c.env);
+    // the account "emil" may use /giveblud and /skip too (not the item commands)
+    const tester = c.caller.email.toLowerCase() === TESTER_EMAIL && (a.cmd === "blood" || a.cmd === "skip");
+    const trusted = c.isAdmin || isEmulator(c.env) || tester;
     if (!trusted) fail("Unknown command.");
     const w = await c.user();
     if (a.cmd === "blood") {
