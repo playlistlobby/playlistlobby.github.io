@@ -70,6 +70,7 @@ cam_d = bpy.data.cameras.new("Camera"); cam_d.type = "ORTHO"; cam_d.ortho_scale 
 cam = bpy.data.objects.new("Camera", cam_d); sc.collection.objects.link(cam); sc.camera = cam
 ctr = Vector((H / 2, W / 2, WALLH * 0.3)); dist = 60
 cam.rotation_euler = (math.radians(60), 0, math.radians(135))
+cam["sprite_turn_limit"] = 60.0  # degrees the furniture may turn away from the game's view (set 180 for always facing the camera, 0 to freeze them)
 fwd = cam.rotation_euler.to_matrix() @ Vector((0, 0, -1))
 cam.location = ctr - fwd * dist
 cam.data.clip_start, cam.data.clip_end = 0.1, 400
@@ -88,7 +89,13 @@ for p in R["pieces"]:
     m = mat_image(p["id"], os.path.join(D, p["png"]), alpha=True)
     ob = quad(p["id"] + " " + p["kind"], [(-hw, 0, 0), (hw, 0, 0), (hw, 0, hh), (-hw, 0, hh)], [(0, 0), (1, 0), (1, 1), (0, 1)], m, furn)
     ob.location = pivot
-    cr = ob.constraints.new("COPY_ROTATION"); cr.target = cam; cr.name = "Face camera"; cr.use_x = False; cr.use_y = False  # only turns round the vertical, so it never leans into the floor
+    # faces the camera, but only up to "sprite_turn_limit" degrees away from the game's view (so it never turns edge-on): its turn = the camera's turn, clamped (wrap-safe)
+    ob.rotation_euler = (0, 0, math.radians(135))
+    dr = ob.driver_add("rotation_euler", 2).driver
+    dr.type = "SCRIPTED"
+    v = dr.variables.new(); v.name = "cz"; v.type = "TRANSFORMS"; v.targets[0].id = cam; v.targets[0].transform_type = "ROT_Z"; v.targets[0].transform_space = "WORLD_SPACE"
+    v2 = dr.variables.new(); v2.name = "lim"; v2.type = "SINGLE_PROP"; v2.targets[0].id = cam; v2.targets[0].data_path = '["sprite_turn_limit"]'
+    dr.expression = "radians(135) + max(-radians(lim), min(radians(lim), (cz - radians(135) + pi) % (2 * pi) - pi))"
     ob["kind"] = p["kind"]
 
 sc.render.filepath = os.path.join(D, "game_view_preview.png")
