@@ -239,7 +239,13 @@ export const isLobby = (id: string) => id === LOBBY_ID;
 export const GRIME_THEME: RoomTheme = { floorA: "#5f6262", floorB: "#686b6b", wall: "#575c5d", rug: false, rugColor: "#000000", style: "grime" };
 
 /** The public room: an empty, filthy concrete cell. Everything in it was put there by the admin (Room > 🏠 tab). */
+/** the pieces that belong to the basement itself; the admin can move them (the move is saved in the basement's furniture list under the same id, and wins over these spots) */
+const LOBBY_BUILTIN: PlacedFurni[] = [
+  { id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, { id: "lobby3", kind: "dumpster", x: 0, y: 6, dir: 2 },
+  { id: "lobby4", kind: "slot", x: 0, y: 5, dir: 0 }, { id: "lobby5", kind: "dumpster", x: 11, y: 14, dir: 2 },
+];
 export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
+  const builtin = LOBBY_BUILTIN.map((b) => { const o = extras.find((e) => e.id === b.id); return o && Number.isFinite(o.x) && Number.isFinite(o.y) ? { ...b, x: o.x, y: o.y, dir: o.dir ?? 0 } : b; });
   return {
     id: LOBBY_ID,
     name: "Basement",
@@ -251,7 +257,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     theme: { ...GRIME_THEME },
     rug: null,
     // the Flappy Bird machine is part of the basement (it stands against the left wall, 8 tiles down from the back corner)
-    furni: [{ id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, { id: "lobby3", kind: "dumpster", x: 0, y: 6, dir: 2 }, { id: "lobby4", kind: "slot", x: 0, y: 5, dir: 0 }, { id: "lobby5", kind: "dumpster", x: 11, y: 14, dir: 2 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
+    furni: [...builtin, ...extras.filter((f) => FURNI_KINDS[f.kind] && !LOBBY_BUILTIN.some((b) => b.id === f.id))],
     doorX: DOOR_X,
     // the yellow door on the other side of 6ixty leads to the shop
     extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }],

@@ -999,7 +999,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       done: exitFurnish,
       turn: fzTurn,
       ...(adminLobbyEdit ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter").sort((a, b) => FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}),
-      store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one is built into the basement.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
+      store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (/^lobby\d+$/.test(f.id) ? Promise.reject(new Error("That one is built into the basement: move it instead.")) : isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one can't be removed.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
       startPlacing: (source, kind, slot) => { fzPlacing = { kind, source, slot }; fzDir = defaultDir(kind); fzSel = null; if (source === "inv" && slot !== undefined) { selectedSlot = slot; panel.setSelected(slot); } else if (selectedSlot !== null) clearSelection(); refreshFz(); },
       cancelPlacing: () => { fzPlacing = null; clearSelection(); refreshFz(); },
       storeFromInventory: (slot, qty) => void storeFromInventory(me, slot, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),
@@ -1034,7 +1034,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** moves or turns a piece: the basement's pieces are rewritten in its own list (the ones built into the basement can't move) */
   async function movePieceHere(f: PlacedFurni, spot: Spot): Promise<void> {
     if (!adminLobbyEdit) return movePiece(def.id, f, spot, me);
-    if (isFixedLobbyPiece(f.id)) throw new Error("That one is built into the basement.");
+    if (/^lobby\d+$/.test(f.id)) { await set(ref(db, `lobby/furni/${f.id}`), { kind: f.kind, x: spot.x, y: spot.y, ...(spot.dir ? { dir: spot.dir } : {}) }); return; } // a piece built into the basement: its new spot is kept under its own id
+    if (isFixedLobbyPiece(f.id)) throw new Error("That one can't be moved.");
     await update(ref(db, `lobby/furni/${f.id}`), { x: spot.x, y: spot.y, dir: spot.dir || null });
   }
   async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage" | "catalog"; slot?: number }, dir: number): Promise<void> {
