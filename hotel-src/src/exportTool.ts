@@ -3,8 +3,9 @@
 import { avatarsReady, clearAvatarCache, renderAvatar } from "./avatarService";
 import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns } from "./designs";
 import { derive, loadNitro, spritesFor, type NitroFurni } from "./nitro";
-import { FURNI_KINDS, defFromMeta, lobbyDef, type RoomMeta, type RoomDef } from "./rooms";
-import { shade, TILE_W, TILE_H, WALL_H, iso, renderRoomShell, ensureFurniSprites, ensureBasementArt, drawNitroFurni } from "./roomRender";
+import { FURNI_KINDS, defFromMeta, footprint, isDoorTile, lobbyDef, type RoomMeta, type RoomDef } from "./rooms";
+import { whyNot } from "./furnishing";
+import { shade, TILE_W, TILE_H, WALL_H, iso, renderRoomShell, ensureFurniSprites, ensureBasementArt, drawNitroFurni, drawRoomDoor, ensureDoorArt } from "./roomRender";
 import { SPIN_DIRS } from "./emotes";
 import { loadEmojiFont } from "./emojiFont";
 import { ITEMS } from "./items";
@@ -649,6 +650,150 @@ async function chatRoom(): Promise<void> {
   say(`chat room done: ${total} frames at ${FPS} fps`);
 }
 
+/** the admin account's room (export-data/roomadmin.json, a copy of its real room) growing with the landlord's upgrades: 8x8 with the starter pieces -> 10x10 -> 12x12 -> 14x14 with everything in it (the real room), the player walking to the middle each time */
+async function roomUpgradeAnim(): Promise<void> {
+  const W = 1920, H = 1300, S = 2, FPS = 30, OUT = "animation-room-upgrade";
+  const final = (await (await fetch("/export-data/roomadmin.json")).json()) as RoomMeta;
+  const ADMIN_FIGURE = "hd-200-10.hr-99001-35.ea-99011-9004.ch-3506-9003.cc-99003-9001.lg-99002-9002.sh-99010-9001.wa-99006-9001-1408"; // the admin account's look
+  const entries = Object.entries(final.furni ?? {}).filter(([, f]) => FURNI_KINDS[f.kind]).sort(([a], [b]) => (a < b ? -1 : 1)); // oldest first: the order he put them in
+  const finalTheme = final.theme ?? {};
+  const icon = await loadImage("/items/blood.svg");
+  type Stage = { size: number; theme: Record<string, unknown>; skins: { bed?: string; bag?: string }; fixed: boolean; add: string[]; limit?: number; price: number };
+  const stages: Stage[] = [
+    { size: 8, theme: { ...finalTheme }, skins: {}, fixed: false, add: [], limit: 0, price: 0 },
+    { size: 10, theme: { ...finalTheme }, skins: {}, fixed: false, add: [], limit: 5, price: 25 },
+    { size: 12, theme: { ...finalTheme }, skins: final.skins ?? {}, fixed: false, add: [], limit: 12, price: 50 },
+    { size: 14, theme: { ...finalTheme }, skins: final.skins ?? {}, fixed: true, add: [], limit: 999, price: 80 },
+  ];
+  // build each stage's room: the pieces so far, plus the new ones that really fit (checked with the game's own rule)
+  const defs: RoomDef[] = [];
+  const have: Record<string, NonNullable<RoomMeta["furni"]>[string]> = {};
+  for (const st of stages) {
+    const mk = (): RoomDef => defFromMeta("u_admin", { owner: "admin", ownerName: "6ixty", name: "", access: "knock", w: st.size, h: st.size, theme: st.theme as RoomMeta["theme"], skins: st.skins, ...(st.fixed ? { bed: final.bed, bag: final.bag, toolbox: final.toolbox, sink: final.sink, boombox: final.boombox, stashbox: final.stashbox } : {}), furni: { ...have } });
+    let added = 0;
+    for (const [id, f] of entries) { // the next pieces (in the order he put them down) that fit this size and don't collide
+      if (added >= (st.limit ?? 0)) break;
+      if (id in have || f.x >= st.size || f.y >= st.size) continue;
+      const why = st.fixed ? null : whyNot(mk(), f.kind, { x: f.x, y: f.y, dir: f.dir ?? 0 }, null, new Set());
+      if (why) continue;
+      have[id] = { ...f, mixJob: undefined, plantedAt: undefined, crop: undefined };
+      added++;
+    }
+    defs.push(mk());
+  }
+  await ensureDoorArt();
+  for (const d of defs) { await ensureFurniSprites(d); }
+  const shells = defs.map((d) => renderRoomShell(d));
+  const mid = iso(7, 7);
+  const toScreen = (p: { x: number; y: number }): { x: number; y: number } => ({ x: W / 2 + (p.x - mid.x) * S, y: H / 2 + (p.y - mid.y) * S + 130 });
+  const feetOf = (tx: number, ty: number): { x: number; y: number } => { const w = iso(tx, ty); return toScreen({ x: w.x, y: w.y + TILE_H / 2 }); };
+  const spots = new Map<RoomDef, { x: number; y: number }>();
+  const centre = (d: RoomDef): { x: number; y: number } => {
+    const got = spots.get(d);
+    if (got) return got;
+    const taken = new Set<string>();
+    for (const f of d.furni) {
+      if (FURNI_KINDS[f.kind]?.flat || FURNI_KINDS[f.kind]?.wall) continue;
+      const fp = footprint(f.kind, f.dir);
+      for (let i = 0; i < fp.w; i++) for (let j = 0; j < fp.h; j++) taken.add((f.x + i) + "," + (f.y + j));
+    }
+    const mx = d.w / 2 - 0.5, my = d.h / 2 - 0.5;
+    let best = { x: Math.round(mx), y: Math.round(my) }, bestCost = 1e9;
+    for (let x = 1; x < d.w; x++) for (let y = 1; y < d.h; y++) {
+      if (taken.has(x + "," + y) || taken.has((x + 1) + "," + y) || taken.has(x + "," + (y + 1)) || isDoorTile(x, y, d.doorX)) continue; // (nothing on the tile, nor right in front of it to hide him)
+      const cost = Math.hypot(x - mx, y - my) + (x + y > mx + my ? 0.4 : 0);
+      if (cost < bestCost) { bestCost = cost; best = { x, y }; }
+    }
+    spots.set(d, best);
+    return best;
+  };
+  // timeline
+  const T_TRANS = 0.9;
+  const starts: number[] = [];
+  const bornOf: Array<Map<string, number>> = [];
+  let tNow = 0;
+  const seen = new Set<string>();
+  defs.forEach((d, si) => {
+    starts.push(tNow);
+    const born = new Map<string, number>();
+    let n = 0;
+    for (const f of d.furni) {
+      const key = `${f.id}|${f.kind}|${f.x},${f.y}|${f.dir ?? 0}`;
+      if (seen.has(key)) { born.set(f.id, -1); continue; }
+      seen.add(key);
+      born.set(f.id, tNow + (si === 0 ? 0.3 : T_TRANS - 0.2) + n * (si === 3 ? 0.1 : 0.2));
+      n++;
+    }
+    bornOf.push(born);
+    tNow += (si === 0 ? 0.3 : T_TRANS - 0.2) + n * (si === 3 ? 0.1 : 0.2) + (si === 3 ? 2.2 : 1.1);
+  });
+  const total = Math.round(tNow * FPS);
+  const SIXTY = ADMIN_FIGURE;
+  const ease = (u: number): number => u * u * (3 - 2 * u);
+  const stageAt = (t: number): number => { let s = 0; for (let i = 0; i < starts.length; i++) if (t >= starts[i]) s = i; return s; };
+  // where the player is: standing in the middle of the current room, walking to the new middle during an upgrade
+  const playerAt = (t: number): { x: number; y: number; walking: boolean; dir: number } => {
+    const si = stageAt(t), c = centre(defs[si]);
+    if (si === 0) return { ...c, walking: false, dir: 3 };
+    const p = centre(defs[si - 1]), u = Math.max(0, Math.min(1, (t - starts[si] - 0.1) / (T_TRANS - 0.1)));
+    return { x: p.x + (c.x - p.x) * ease(u), y: p.y + (c.y - p.y) * ease(u), walking: u > 0 && u < 1, dir: 3 };
+  };
+  const drawStage = async (g: CanvasRenderingContext2D, si: number, t: number, alpha: number, withPlayer: boolean): Promise<void> => {
+    const d = defs[si], shell = shells[si];
+    g.save();
+    g.globalAlpha = alpha;
+    g.imageSmoothingEnabled = true;
+    const o = toScreen({ x: -shell.origin.x, y: -shell.origin.y });
+    g.drawImage(shell.canvas, o.x, o.y, shell.canvas.width * S, shell.canvas.height * S);
+    g.imageSmoothingEnabled = false;
+    drawRoomDoor(g, d.doorX, toScreen, S, 0, false); // the door in the back wall
+    const items: Array<{ depth: number; fn: () => void }> = [];
+    for (const f of d.furni) {
+      const born = bornOf[si].get(f.id) ?? -1;
+      const age = born < 0 ? 9 : t - born;
+      if (age < 0) continue;
+      const base = feetOf(f.x + 0.5, f.y + 0.5);
+      const k = age >= 0.4 ? 1 : age < 0.28 ? 0.35 + (1.12 - 0.35) * ease(age / 0.28) : 1.12 - 0.12 * ease((age - 0.28) / 0.12);
+      const a = Math.min(1, age / 0.12);
+      items.push({ depth: f.x + f.y + 0.01 * (f.kind === "f_label" ? -50 : 0), fn: () => {
+        g.save();
+        g.globalAlpha = alpha * a;
+        g.translate(base.x, base.y); g.scale(k, k); g.translate(-base.x, -base.y);
+        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, S);
+        g.restore();
+      } });
+    }
+    if (withPlayer) {
+      const pl = playerAt(t);
+      const walkFrame = Math.floor((t * 1000) / 120) % 4;
+      const img = (await renderAvatar({ figure: SIXTY, dir: pl.dir, headDir: pl.dir, actions: [pl.walking ? "wlk" : "std"], gesture: "std", frame: pl.walking ? walkFrame : 0 }))!;
+      const f = feetOf(pl.x, pl.y);
+      items.push({ depth: pl.x + pl.y + 0.6, fn: () => {
+        g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(f.x, f.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
+        g.drawImage(img, f.x - (32 + padOf(img).x) * S, f.y - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+      } });
+    }
+    items.sort((p, q) => p.depth - q.depth).forEach((i) => i.fn());
+    g.restore();
+  };
+  for (let i = 0; i < total; i++) {
+    const t = i / FPS;
+    const si = stageAt(t);
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    const u = si === 0 ? 1 : Math.min(1, (t - starts[si]) / T_TRANS);
+    if (u < 1) await drawStage(g, si - 1, t, 1, false); // the old room fades into the new one
+    await drawStage(g, si, t, ease(u), true);
+    if (si > 0 && u < 1) { g.save(); g.globalCompositeOperation = "source-atop"; g.fillStyle = `rgba(255,255,255,${(0.55 * (1 - u) * (1 - u)).toFixed(3)})`; g.fillRect(0, 0, W, H); g.restore(); } // (a flash over the room only, the background stays clear)
+    if (si > 0) { // what it cost, over the player's head
+      const pl = playerAt(t), f = feetOf(pl.x, pl.y);
+      bloodPop(g, icon, `-${stages[si].price}`, f.x, f.y - (FEET_Y + 20) * S, (t - starts[si] - 0.1) * 1000, S, 1500);
+    }
+    await save(`${OUT}/frames/frame-${String(i).padStart(3, "0")}.png`, c);
+  }
+  say(`room upgrade done: ${total} frames at ${FPS} fps; stages: ${defs.map((d) => `${d.w}x${d.h}/${d.furni.length}`).join(", ")}`);
+}
+
 /** A contact sheet of the new furniture as the game draws it: every piece in its default state at its shop facing (and one picture per further state), labelled. */
 async function newFurnitureSheet(): Promise<void> {
   const { SHOP_PIECES, SHOP_KIND_PREFIX } = await import("./shared/furniture");
@@ -1104,6 +1249,7 @@ async function spinAll(): Promise<void> {
     else if (only === "sixty") { loadEmojiFont(); await document.fonts.ready; await emil6Sixty(); }
     else if (only === "basement") { loadEmojiFont(); await document.fonts.ready; await bustedAndBroke(); await emil6Sleeping(); }
     else if (only === "chat") { loadEmojiFont(); await document.fonts.ready; await chatRoom(); }
+    else if (only === "upgrade") await roomUpgradeAnim();
     else if (only === "weed") await weedGrowth();
     else if (only === "anim") await stabAnimation();
     else { await furniture(); await icons(); await avatars(); await stabAnimation(); }
