@@ -389,6 +389,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const input = h("input", { class: "chat-input", type: "text", maxLength: MAX_CHARS, placeholder: "Say something, or try /dance. Tap the floor to walk.", autocomplete: "off" });
   const sendBtn = h("button", { class: "btn primary", type: "submit" }, "Send");
   const stage = h("div", { class: "stage" }, canvas, online, log, actionHint, roomTitle);
+  let greenScreen = false; // /greenscreen (Emil and the admin): a flat chroma-green room for filming
   const sideHost = h("div", { class: "side-host" });
   root.append(h("div", { class: "room" },
     h("div", { class: "room-main" }, stage, sideHost),
@@ -2750,6 +2751,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (text.startsWith("/")) {
       // TEMP-GIVEBLUD: testing command, remove together with the 'testBlood' rule in database.rules.template.json
+      if (/^\/greenscreen$/i.test(text)) { // for filming ads: the room's floor and walls become pure chroma green, and the menus hide (type it again to go back)
+        if (!(me.isAdmin || me.decorator)) { say("Unknown command.", "warn"); return; }
+        greenScreen = !greenScreen;
+        document.body.classList.toggle("greenscreen", greenScreen);
+        say(greenScreen ? "Green screen on. Type /greenscreen again to bring the room back." : "Green screen off.");
+        return;
+      }
       const skipM = /^\/skip\s+(\d{1,4})$/i.exec(text);
       if (skipM) { void testCommand("skip", Number(skipM[1])); return; } // TEMP: /skip <minutes> moves your plants, mixers and bins on in time
       if (/^\/weed$/i.test(text)) { void testCommand("weed"); return; } // TEMP: testing command (admin only)
@@ -3583,7 +3591,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.imageSmoothingEnabled = scale < 1;
     g.clearRect(0, 0, canvas.width, canvas.height);
-    g.drawImage(floor, offX - floorOrigin.x * scale, offY - floorOrigin.y * scale, floor.width * scale, floor.height * scale);
+    if (greenScreen) { g.fillStyle = "#00ff00"; g.fillRect(0, 0, canvas.width, canvas.height); } // chroma green instead of the floor and the walls
+    else g.drawImage(floor, offX - floorOrigin.x * scale, offY - floorOrigin.y * scale, floor.width * scale, floor.height * scale);
     if (introUntil && performance.now() >= introUntil) {
       // eyes open: get out of bed and stand next to it
       const mp = mine();
@@ -3593,8 +3602,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // until you've opened the door once, it flashes to show you where to go
     const flashing = isOwnRoom && !me.seenDoor && !introUntil && started;
     const glow = Math.max(hoverDoor ? 1 : 0, flashing ? 0.55 + 0.45 * Math.sin(performance.now() / 280) : 0);
-    doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime");
-    extraDoorBoxes = (def.extraDoors ?? []).map((d, i) => ({ door: d, box: drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : 0, d.yellow ? "yellow" : def.theme.style === "grime") }));
+    if (!greenScreen) doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime");
+    extraDoorBoxes = greenScreen ? [] : (def.extraDoors ?? []).map((d, i) => ({ door: d, box: drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : 0, d.yellow ? "yellow" : def.theme.style === "grime") }));
 
     if (!started) return;
     for (const p of players.values()) advance(p, now);
@@ -4008,6 +4017,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   function dispose(): void {
     disposed = true;
+    document.body.classList.remove("greenscreen");
     cancelAnimationFrame(raf);
     resizeObs.disconnect();
     window.removeEventListener("keydown", onKey);

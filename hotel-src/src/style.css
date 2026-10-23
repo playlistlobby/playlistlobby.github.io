@@ -711,3 +711,8 @@ html.kb .side-host { display: none; }
 .cd-popup .cd-row { flex-wrap: wrap; }
 .cd-popup .btn { white-space: nowrap; }
 .cd-popup .cd-bar { width: 100%; box-sizing: border-box; }
+
+/* /greenscreen: a flat chroma-green stage with the menus out of the way (for filming the ad) */
+body.greenscreen { background: #00ff00 !important; }
+body.greenscreen .stage { background: #00ff00 !important; border-color: #00ff00; box-shadow: none; }
+body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .online, body.greenscreen .action-hint, body.greenscreen .chat-log, body.greenscreen .navbar { display: none !important; }
