@@ -74,6 +74,7 @@ import { openStashBox, StashApi } from "./stashbox";
 import { openCoinFlip, CoinFlipApi } from "./coinflip";
 import { watchFlips } from "../coinflip";
 import { figureAnimated } from "../designs";
+import { lighterStage, markLighterStep } from "../lighterHint";
 import { flappyRunStart, flappySubmit, watchFlappyBoard } from "../db";
 import { pickPosterPicture } from "./posterEditor";
 import { POSTER_KIND, POSTER_PRICE, POSTER_W, POSTER_H } from "../shared/furniture";
@@ -403,6 +404,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const canvas = h("canvas", { class: "room-canvas" });
   const log = h("div", { class: "chat-log" });
   const online = h("div", { class: "online", title: "Who's in this room", onclick: () => online.classList.toggle("open") });
+  if (roomId === SHOP_ID) markLighterStep(me, "door"); // (the lighter job: you have been through the shop's door)
   const roomTitle = h("div", { class: "room-title" }, isBasement ? "Main Lobby" : "Loading room…");
   const actionHint = h("div", { class: "action-hint hidden" });
   const input = h("input", { class: "chat-input", type: "text", maxLength: MAX_CHARS, placeholder: "Say something, or try /dance. Tap the floor to walk.", autocomplete: "off" });
@@ -1453,6 +1455,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   function openVendingShop(): void {
     if (vendingApi) return;
+    markLighterStep(me, "vending");
     vendingApi = openVending(stage, ctx, () => panel.refresh(), () => { vendingApi = null; });
   }
 
@@ -2098,14 +2101,26 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** After the introduction, until you have searched a dumpster once, they flash yellow in the basement. */
   function lootHintOn(): boolean { return roomId === LOBBY_ID && !isTut && !me.isAdmin && me.tutorial >= 4 && Object.keys(me.dumpsters).length === 0; }
   function sinkHintOn(): boolean { return isOwnRoom && sinkFills() < 3 && findSlot(me.inventory, "wateringcan") >= 0 && findSlot(me.inventory, "wateringcan_full") < 0; } // (nothing flashes while you already carry a full can)
+  /** The growing kit 6ixty pays for the lighter job: in your own room it flashes in your pocket until you have put one down (kept per player in this browser). */
+  function potHintOn(): boolean {
+    if (!isOwnRoom || isTut || me.tutorial < 6) return false;
+    const k = `sixplanet.potPlaced.${me.uid}`;
+    try {
+      if (localStorage.getItem(k)) return false;
+      if (def.furni.some((q) => q.kind === "f_planter")) { localStorage.setItem(k, "1"); return false; } // one stands in the room: it has been put down
+    } catch { /* private mode: it just keeps flashing until the kit is gone from the pocket */ }
+    return findSlot(me.inventory, "f_planter") >= 0;
+  }
   /** points the player at the next thing: the knife (and the guy) in the pocket, then the pill */
   function tutorialGuide(): void {
     if (disposed) return;
     const knife = findSlot(me.inventory, "knife");
     const pill = findSlot(me.inventory, "pill");
     if (!isTut) {
+      const kit = potHintOn() ? findSlot(me.inventory, "f_planter") : -1;
       const can = sinkHintOn() ? findSlot(me.inventory, "wateringcan") : -1;
-      if (can >= 0 && selectedSlot !== can) panel.guide(can); // the empty watering can glows (and so does the sink) for your first three fills
+      if (kit >= 0 && selectedSlot !== kit) panel.guide(kit); // the growing kit from 6ixty flashes in your pocket until you have put it down in your room
+      else if (can >= 0 && selectedSlot !== can) panel.guide(can); // the empty watering can glows (and so does the sink) for your first three fills
       else panel.guide(null);
       return;
     }
@@ -3304,8 +3319,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const lift = tbl ? FURNI_KINDS[tbl.kind].surface ?? 0 : 0; // a small piece on a table top stands on it
       if (lift) { g.save(); g.translate(0, -lift * scale); }
       let b: Box | null;
-      if (f.kind === "dumpster" && lootHintOn()) {
-        // the first time in the basement after the introduction the dumpsters flash yellow: you can search them
+      if ((f.kind === "dumpster" && lootHintOn()) || (f.kind === "vending" && isShop && lighterStage(me) === "vending")) {
+        // the dumpsters flash yellow the first time in the basement after the introduction (you can search them), and the vending machine on the lighter job
         const pulse = 0.5 + 0.5 * Math.sin(now / 240);
         g.save();
         g.shadowColor = `rgba(255,214,40,${(0.8 + 0.2 * pulse).toFixed(2)})`;
@@ -3775,7 +3790,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const flashing = isOwnRoom && !me.seenDoor && !introUntil && started;
     const glow = Math.max(hoverDoor ? 1 : 0, flashing ? 0.55 + 0.45 * Math.sin(performance.now() / 280) : 0);
     if (!greenScreen) doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime");
-    extraDoorBoxes = greenScreen ? [] : (def.extraDoors ?? []).map((d, i) => ({ door: d, box: drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : 0, d.yellow ? "yellow" : def.theme.style === "grime") }));
+    const doorHint = roomId === LOBBY_ID && lighterStage(me) === "door"; // the lighter job: the shop's door flashes until you have been through it
+    extraDoorBoxes = greenScreen ? [] : (def.extraDoors ?? []).map((d, i) => {
+      const flash = doorHint && d.to === SHOP_ID;
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 240);
+      if (flash) { g.save(); g.shadowColor = `rgba(255,214,40,${(0.8 + 0.2 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 26 * pulse) * scale; }
+      const box = drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : flash ? 2.2 * pulse : 0, d.yellow ? "yellow" : def.theme.style === "grime");
+      if (flash) g.restore();
+      return { door: d, box };
+    });
 
     if (!started) return;
     for (const p of players.values()) advance(p, now);
@@ -3916,7 +3939,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         draw: () => {
           g.fillStyle = "rgba(0,0,0,0.18)";
           g.beginPath(); g.ellipse(sf.x, sf.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); g.fill();
-          if (simg) g.drawImage(simg, sf.x - (32 + padOf(simg).x) * scale, sf.y - (FEET_Y + padOf(simg).y) * scale, simg.width * scale, simg.height * scale);
+          if (simg) {
+            const flash = lighterStage(me) === "give"; // the lighter job: he flashes until you have given him the lighter
+            const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 240);
+            g.save();
+            if (flash) { g.shadowColor = `rgba(255,214,40,${(0.8 + 0.2 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 26 * pulse) * scale; }
+            g.drawImage(simg, sf.x - (32 + padOf(simg).x) * scale, sf.y - (FEET_Y + padOf(simg).y) * scale, simg.width * scale, simg.height * scale);
+            g.restore();
+          }
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
           const tw = g.measureText(SIXTY.name).width + 10;
           g.fillStyle = sHot ? "rgba(120,80,10,0.9)" : "rgba(0,0,0,0.55)";

@@ -1425,13 +1425,13 @@
   "where": "src/npc.ts:75"
  },
  "T0286": {
-  "en": "that is what a lighter costs. go buy one in the shop, the yellow door.",
-  "da": "det er hvad en lighter koster. gå og køb en i shoppen, den gule dør.",
+  "en": "Gå ind i butikken og køb en lighter til mig",
+  "da": "Gå ind i butikken og køb en lighter til mig",
   "where": "src/npc.ts:76"
  },
  "T0287": {
-  "en": "bring it back to me when you have it.",
-  "da": "bring den tilbage til mig når du har den.",
+  "en": "Så giv mig den her når du har købt den",
+  "da": "Så giv mig den her når du har købt den",
   "where": "src/npc.ts:77"
  },
  "T0288": {

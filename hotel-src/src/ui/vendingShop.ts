@@ -4,6 +4,7 @@ import { vendLeft } from "../shared/economy";
 import { BLOOD_ICON, itemDef, VENDING_STOCK } from "../items";
 import { itemEntry, onShopConfig } from "../shopConfig";
 import { logAction } from "../logger";
+import { lighterStage } from "../lighterHint";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 
@@ -28,7 +29,8 @@ export function openVending(host: HTMLElement, ctx: Ctx, onChange: () => void, o
       const price = s.fixedPrice ?? itemEntry(s.id).price;
       const left = vendLeft(me, s.id, serverNow()); // the mixer and the growing kit have a daily stock
       const affordable = me.blood >= price && (left === null || left > 0);
-      return h("div", { class: "sixty-row" },
+      const flash = s.item === "lighter" && lighterStage(me) === "lighter"; // the lighter job: the lighter flashes until you have bought one
+      return h("div", { class: "sixty-row" + (flash ? " flash-hint" : "") },
         h("img", { src: def.icon, alt: def.name, class: "sixty-ico" }),
         h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, s.label), h("div", { class: "hint" }, s.qty > 1 ? `${s.qty} in a pack.` : def.examine), ...(left !== null ? [h("div", { class: "hint" }, left > 0 ? `${left} left today` : "Sold out today. New stock tomorrow.")] : [])),
         h("button", {
