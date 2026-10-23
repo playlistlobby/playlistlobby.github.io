@@ -652,7 +652,7 @@ async function chatRoom(): Promise<void> {
 
 /** the admin account's room (export-data/roomadmin.json, a copy of its real room) growing with the landlord's upgrades: 8x8 with the starter pieces -> 10x10 -> 12x12 -> 14x14 with everything in it (the real room), the player walking to the middle each time */
 async function roomUpgradeAnim(): Promise<void> {
-  const W = 1920, H = 1300, S = 2, FPS = 30, OUT = "animation-room-upgrade";
+  const W = 1920, H = 1300, S = 2, FPS = 25, OUT = "animation-room-upgrade";
   const final = (await (await fetch("/export-data/roomadmin.json")).json()) as RoomMeta;
   const ADMIN_FIGURE = "hd-200-10.hr-99001-35.ea-99011-9004.ch-3506-9003.cc-99003-9001.lg-99002-9002.sh-99010-9001.wa-99006-9001-1408"; // the admin account's look
   const entries = Object.entries(final.furni ?? {}).filter(([, f]) => FURNI_KINDS[f.kind]).sort(([a], [b]) => (a < b ? -1 : 1)); // oldest first: the order he put them in
@@ -707,28 +707,34 @@ async function roomUpgradeAnim(): Promise<void> {
     spots.set(d, best);
     return best;
   };
-  // timeline
-  const T_TRANS = 0.9;
+  // timeline: one steady stream. The pieces pop in at an even pace for the whole clip (no pauses), and each upgrade is a quick fade that starts just before its first new piece
+  const T_TRANS = 0.5, T_FIRST = 0.2, T_LAST = 4.35, T_END = 5.0;
+  const seen = new Set<string>();
+  const fresh: Array<Set<string>> = defs.map((d) => {
+    const ids = new Set<string>();
+    for (const f of d.furni) { const key = f.id + "|" + f.kind + "|" + f.x + "," + f.y + "|" + (f.dir ?? 0); if (!seen.has(key)) { seen.add(key); ids.add(f.id); } }
+    return ids;
+  });
+  const nAll = fresh.reduce((n, x) => n + x.size, 0);
+  const step = (T_LAST - T_FIRST) / Math.max(1, nAll - 1);
   const starts: number[] = [];
   const bornOf: Array<Map<string, number>> = [];
-  let tNow = 0;
-  const seen = new Set<string>();
+  let k = 0;
   defs.forEach((d, si) => {
-    starts.push(tNow);
     const born = new Map<string, number>();
-    let n = 0;
+    let first = -1;
     for (const f of d.furni) {
-      const key = `${f.id}|${f.kind}|${f.x},${f.y}|${f.dir ?? 0}`;
-      if (seen.has(key)) { born.set(f.id, -1); continue; }
-      seen.add(key);
-      born.set(f.id, tNow + (si === 0 ? 0.3 : T_TRANS - 0.2) + n * (si === 3 ? 0.1 : 0.2));
-      n++;
+      if (!fresh[si].has(f.id)) { born.set(f.id, -1); continue; }
+      const t = T_FIRST + k++ * step;
+      if (first < 0) first = t;
+      born.set(f.id, t);
     }
     bornOf.push(born);
-    tNow += (si === 0 ? 0.3 : T_TRANS - 0.2) + n * (si === 3 ? 0.1 : 0.2) + (si === 3 ? 2.2 : 1.1);
+    starts.push(si === 0 ? 0 : Math.max(0.05, first - 0.3));
   });
+  const tNow = T_END;
   const total = Math.round(tNow * FPS);
-  const SIXTY = ADMIN_FIGURE;
+  const SIXTY = FIGURES.emil; // the player in the middle: emil
   const ease = (u: number): number => u * u * (3 - 2 * u);
   const stageAt = (t: number): number => { let s = 0; for (let i = 0; i < starts.length; i++) if (t >= starts[i]) s = i; return s; };
   // where the player is: standing in the middle of the current room, walking to the new middle during an upgrade
