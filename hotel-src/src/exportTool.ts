@@ -268,6 +268,15 @@ async function roomForBlender(which: "6ixty" | "lobby" = "6ixty"): Promise<void>
   };
   await wall("wall-back", W, 1, 0.72); // the wall along game y = 0
   await wall("wall-left", H, 0.88, 0.64); // the wall along game x = 0
+  // the basement has its own painted floor and walls (the same pictures the game lays over the room): they replace the generated ones
+  const tex = { floor: "textures/floor.png", wallBack: "textures/wall-back.png", wallLeft: "textures/wall-left.png" };
+  if (which === "lobby") {
+    for (const [key, src, name] of [["floor", "floor", "floor"], ["wallBack", "wall_right", "wall-back"], ["wallLeft", "wall_left", "wall-left"]] as const) {
+      const blob = await (await fetch(`/textures/basement/${src}.jpg`)).blob();
+      await fetch(SAVE + DIR + `textures/${name}.jpg`, { method: "POST", body: blob });
+      tex[key] = `textures/${name}.jpg`;
+    }
+  }
 
   // furniture
   const K = 4;
@@ -292,7 +301,7 @@ async function roomForBlender(which: "6ixty" | "lobby" = "6ixty"): Promise<void>
       manifest.push({ id: f.id, kind: f.kind, png: file, anchorTileX: tx, anchorTileY: ty, ox: box.x0, oy: box.y0, pw: box.canvas.width / K, ph: box.canvas.height / K, flat: !!k.flat, wall: !!k.wall, dir });
     } catch (e) { say("skipped " + f.kind + ": " + (e as Error).message); }
   }
-  const json = JSON.stringify({ w: W, h: H, doors: which === "lobby" ? [{ x: def.doorX, color: "#8a8f98", label: "Home" }, ...(def.extraDoors ?? []).map((d) => ({ x: d.x, color: d.yellow ? "#e0b020" : "#8a8f98", label: d.label }))] : [], wallHeightPx: WALL_H, tilePx: TILE_W, theme: t, rug: def.rug, floor: "textures/floor.png", wallBack: "textures/wall-back.png", wallLeft: "textures/wall-left.png", pieces: manifest }, null, 1);
+  const json = JSON.stringify({ w: W, h: H, doors: which === "lobby" ? [{ x: def.doorX, color: "#8a8f98", label: "Home" }, ...(def.extraDoors ?? []).map((d) => ({ x: d.x, color: d.yellow ? "#e0b020" : "#8a8f98", label: d.label }))] : [], wallHeightPx: WALL_H, tilePx: TILE_W, theme: t, rug: def.rug, floor: tex.floor, wallBack: tex.wallBack, wallLeft: tex.wallLeft, pieces: manifest }, null, 1);
   await fetch(SAVE + DIR + "room.json", { method: "POST", body: new Blob([json]) });
   say(`room export done: ${manifest.length} pieces`);
 }

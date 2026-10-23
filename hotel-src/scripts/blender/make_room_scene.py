@@ -57,7 +57,7 @@ furn = bpy.data.collections.new("Furniture"); sc.collection.children.link(furn)
 # Blender X = game y, Blender Y = game x
 quad("Floor", [(0, 0, 0), (0, W, 0), (H, W, 0), (H, 0, 0)], [(0, 1), (1, 1), (1, 0), (0, 0)], mat_image("Floor", os.path.join(D, R["floor"])), room)
 quad("WallBack", [(0, 0, 0), (0, W, 0), (0, W, WALLH), (0, 0, WALLH)], [(0, 0), (1, 0), (1, 1), (0, 1)], mat_image("WallBack", os.path.join(D, R["wallBack"])), room)
-quad("WallLeft", [(0, 0, 0), (H, 0, 0), (H, 0, WALLH), (0, 0, WALLH)], [(0, 0), (1, 0), (1, 1), (0, 1)], mat_image("WallLeft", os.path.join(D, R["wallLeft"])), room)
+quad("WallLeft", [(0, 0, 0), (H, 0, 0), (H, 0, WALLH), (0, 0, WALLH)], [(1, 0), (0, 0), (0, 1), (1, 1)], mat_image("WallLeft", os.path.join(D, R["wallLeft"])), room)
 
 # doors on the back wall (game y = 0), one tile wide
 for d in R.get("doors", []):
@@ -84,11 +84,11 @@ for p in R["pieces"]:
     # the floor point under the sprite's bottom middle (same spot on screen): the pivot goes there, so it stands on the floor and turns round it
     t = y0 * math.cos(math.radians(30)) / math.sin(math.radians(30))
     pivot = anchor + right * cx + upv * y0 + fwd * t
-    hw, hh = p["pw"] / S / 2, p["ph"] / S
+    hw, hh = p["pw"] / S / 2, p["ph"] / S / math.cos(math.radians(30))  # stands upright, so it is stretched by 1/cos30 to fill the same picture height from the game camera
     m = mat_image(p["id"], os.path.join(D, p["png"]), alpha=True)
-    ob = quad(p["id"] + " " + p["kind"], [(-hw, 0, 0), (hw, 0, 0), (hw, hh, 0), (-hw, hh, 0)], [(0, 0), (1, 0), (1, 1), (0, 1)], m, furn)
+    ob = quad(p["id"] + " " + p["kind"], [(-hw, 0, 0), (hw, 0, 0), (hw, 0, hh), (-hw, 0, hh)], [(0, 0), (1, 0), (1, 1), (0, 1)], m, furn)
     ob.location = pivot
-    cr = ob.constraints.new("COPY_ROTATION"); cr.target = cam; cr.name = "Face camera"
+    cr = ob.constraints.new("COPY_ROTATION"); cr.target = cam; cr.name = "Face camera"; cr.use_x = False; cr.use_y = False  # only turns round the vertical, so it never leans into the floor
     ob["kind"] = p["kind"]
 
 sc.render.filepath = os.path.join(D, "game_view_preview.png")
