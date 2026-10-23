@@ -1,3 +1,4 @@
+/* Emoji: the font "Apple Color Emoji" is registered by src/emojiFont.ts (the device's own on iPhone and Mac, a small file from public/fonts/ elsewhere). It is last before the generic fallback in --font. */
 /* 6ixPlanet: iOS 6 look, matching the Playlist app.
    Measurements follow the Figma "Legacy iOS UI Kit" (320x568 design frame): 20px status bar, 44px navigation bar,
    57px app icons with a 10px radius, 11px bold icon labels. --u is one design pixel and grows on bigger screens. */
@@ -13,7 +14,7 @@
   --red: #d63a30;
   --green: #4cae3c;
   --gold: #c58a00;
-  --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font: "Helvetica Neue", Helvetica, Arial, "Apple Color Emoji", sans-serif;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -719,47 +720,58 @@ body.greenscreen .stage { background: #00ff00 !important; border-color: #00ff00;
 body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .online, body.greenscreen .action-hint, body.greenscreen .chat-log, body.greenscreen .navbar { display: none !important; }
 
 /* ---- profile window (opened from a player's menu and from the friends list) ----
-   Styled after the iOS 6 UI kit: the dark glossy navigation bar with a bar button, grouped white rows with thin separators, light bevelled buttons. */
-.pw-overlay { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); background: rgba(0, 0, 0, .5); }
-.pw-card { width: min(600px, 100%); max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; background: #c5ccd4; color: #000; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; border: 2px solid rgba(255, 255, 255, .7); border-radius: 10px; box-shadow: 0 0 .5px 1px rgba(0, 0, 0, .4), 0 4px 10px rgba(0, 0, 0, .55); }
-.pw-head-bar { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 7px 6px; background: linear-gradient(180deg, #545454 0%, #414141 33%, #2a2b2a 67%, #171617 100%); box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .2), inset 0 1px 0 rgba(255, 255, 255, .1), inset 0 -1px 0 #000; }
-.pw-head-bar strong { flex: 1; min-width: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c8c8c8; font-size: 20px; text-shadow: 0 -1px 0 rgba(0, 0, 0, .8); }
+   Styled after the iOS 6 UI kit: the black glossy navigation bar with a blue "Done" bar button, grouped white rows with coloured icon squares
+   (like the Settings app), a photo-frame for the avatar, a Messages-style grey bubble for the status, and round notification badges. */
+.pw-overlay { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); background: rgba(0, 0, 0, .55); }
+.pw-card { width: min(620px, 100%); max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; background: #c5ccd4; color: #000; font-family: "Helvetica Neue", Helvetica, Arial, "Apple Color Emoji", sans-serif; border-radius: 9px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .8), 0 8px 24px rgba(0, 0, 0, .65); }
+.pw-head-bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 7px 6px; border-radius: 9px 9px 0 0; background: linear-gradient(180deg, #5a5a5a 0%, #444 33%, #2c2d2c 67%, #181718 100%); box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .25), inset 0 1px 0 rgba(255, 255, 255, .1), inset 0 -1px 0 #000, 0 2px 3px rgba(0, 0, 0, .35); }
+.pw-head-bar strong { flex: 1; min-width: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d4d4d4; font-size: 20px; text-shadow: 0 -1px 0 rgba(0, 0, 0, .8); }
 .pw-spacer { width: 58px; flex: none; }
-.pw-x { flex: none; width: 58px; height: 29px; border: 1px solid #000; border-radius: 5px; color: #c8c8c8; font: bold 12px "Helvetica Neue", Helvetica, Arial, sans-serif; text-shadow: 0 -1px 0 rgba(0, 0, 0, .8); background: linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, .06) 52%, rgba(0, 0, 0, .15) 52%, rgba(0, 0, 0, .05) 100%), #3a3a3a; box-shadow: inset 0 0 2px #000, 0 .5px .25px rgba(255, 255, 255, .2); cursor: pointer; }
-.pw-body { display: grid; grid-template-columns: 220px minmax(0, 1fr) 124px; min-height: 280px; background: repeating-linear-gradient(90deg, #c5ccd4 0 2px, #cbd2d8 2px 4px); }
+.pw-x { flex: none; width: 58px; height: 29px; border: 1px solid #0c2252; border-radius: 5px; color: #fff; font: bold 13px "Helvetica Neue", Helvetica, Arial, sans-serif; text-shadow: 0 -1px 0 rgba(0, 0, 0, .55); background: linear-gradient(180deg, rgba(255, 255, 255, .45) 0%, rgba(255, 255, 255, .12) 50%, rgba(255, 255, 255, 0) 50.5%, rgba(255, 255, 255, .06) 100%), #1d4a9e; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 .5px 0 rgba(255, 255, 255, .25); cursor: pointer; }
+.pw-x:active { filter: brightness(.8); }
+.pw-body { display: grid; grid-template-columns: 230px minmax(0, 1fr) 128px; min-height: 300px; border-radius: 0 0 9px 9px; background-color: #c5ccd4; background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, .16) 0 1px, transparent 1px 3px), repeating-linear-gradient(0deg, rgba(0, 0, 0, .04) 0 1px, transparent 1px 3px); }
 .pw-left { padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.pw-sec { margin: 6px 4px 0; color: #4c566c; font-weight: 700; font-size: 16px; text-shadow: 0 1px 0 rgba(255, 255, 255, .8); }
-.pw-group { background: #fff; border: 1px solid #ababab; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 0 rgba(255, 255, 255, .6); }
-.pw-btn { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 6px 10px; border: 0; border-top: 1px solid rgba(0, 0, 0, .12); background: #fff; color: #000; font: inherit; font-size: 17px; text-align: left; cursor: pointer; }
+.pw-sec { margin: 8px 6px 0; color: #4c566c; font-weight: 700; font-size: 17px; text-shadow: 0 1px 0 rgba(255, 255, 255, .85); }
+.pw-sec.small { margin: 0 0 6px; font-size: 14px; text-align: center; }
+.pw-group { background: #fff; border: 1px solid #a9adb3; border-radius: 9px; overflow: hidden; box-shadow: 0 1px 0 rgba(255, 255, 255, .7); }
+.pw-btn { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 46px; padding: 8px 10px; border: 0; border-top: 1px solid #d9d9d9; border-radius: 0; background: #fff; color: #000; font: inherit; font-size: 17px; font-weight: 700; text-align: left; cursor: pointer; }
 .pw-group > :first-child { border-top: 0; }
-.pw-btn:active:not(:disabled) { background: linear-gradient(#3b8cf0, #1560d8); color: #fff; }
-.pw-btn.primary { color: #24539c; font-weight: 700; }
-.pw-btn:disabled { color: #9aa0a8; cursor: default; }
-.pw-btn:disabled .pw-ico { filter: grayscale(1); opacity: .5; }
-.pw-ico { font-size: 20px; flex: none; }
+.pw-btn:active:not(:disabled) { background: linear-gradient(#4a9af7, #1b6cdc); color: #fff; }
+.pw-btn:disabled { color: #a0a5ad; cursor: default; }
+.pw-btn:disabled .pw-ico { filter: grayscale(1); opacity: .45; }
+.pw-btn.primary { color: #1a4fa6; }
+.pw-ico { flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 7px; font-size: 17px; line-height: 1; border: 1px solid rgba(0, 0, 0, .28); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 1px 1px rgba(0, 0, 0, .2); }
+.tone-green { background: linear-gradient(#7fe08c, #2a9d41); } .tone-red { background: linear-gradient(#f5807a, #c52a22); } .tone-orange { background: linear-gradient(#ffc468, #e5780b); }
+.tone-blue { background: linear-gradient(#6db4fa, #1c6ed8); } .tone-teal { background: linear-gradient(#6fdbe2, #1f93a3); } .tone-purple { background: linear-gradient(#c79bf5, #7647c7); }
+.tone-pink { background: linear-gradient(#ff9fc4, #d9407e); } .tone-yellow { background: linear-gradient(#ffe97a, #e0a800); } .tone-gray { background: linear-gradient(#c8ccd3, #868c97); }
 .pw-lbl { flex: 1; min-width: 0; }
-.pw-chev { flex: none; color: #b0b4bb; font-size: 22px; line-height: 1; }
-.pw-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; font-size: 16px; }
-.pw-mid { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 14px 10px 18px; min-width: 0; min-height: 260px; }
-.pw-avatar { display: flex; justify-content: center; }
-.pw-avatar canvas { width: 128px; height: auto; image-rendering: pixelated; }
-.pw-bubble { align-self: stretch; margin-top: 8px; padding: 8px 10px; background: #fff; border: 1px solid #ababab; border-radius: 10px; box-shadow: 0 1px 2px rgba(0, 0, 0, .3), inset 0 1px 0 #fff; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; text-align: center; }
-.pw-right { padding: 10px 14px 10px 8px; }
-.pw-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pw-tile { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #bfbfbf; border-radius: 3px; background: linear-gradient(#efefef, #dbdbdb); box-shadow: 0 1px 0 #fff, inset 0 2px .5px #fff; cursor: pointer; padding: 0; }
-.pw-tile.empty { border-style: dashed; border-color: #a4abb5; background: transparent; box-shadow: none; color: #a4abb5; cursor: default; }
-.pw-badge { position: absolute; top: -9px; right: -9px; font-size: 18px; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .4)); }
+.pw-chev { flex: none; color: #b5b8be; font-size: 26px; line-height: 1; font-weight: 400; }
+.pw-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px; font-size: 16px; font-weight: 700; }
+.pw-mid { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; margin: 10px 0; padding: 16px 12px 14px; min-width: 0; min-height: 270px; border-radius: 10px; background: linear-gradient(180deg, rgba(255, 255, 255, .45) 0%, rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, .1) 100%), var(--pw-bg, #f3c6e0); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(0, 0, 0, .25), 0 1px 0 rgba(255, 255, 255, .8); }
+.pw-avatar { position: relative; display: flex; justify-content: center; }
+.pw-avatar::after { content: ""; position: absolute; left: 50%; bottom: -4px; width: 90px; height: 16px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(rgba(0, 0, 0, .35), rgba(0, 0, 0, 0) 70%); z-index: 0; }
+.pw-avatar canvas, .pw-avatar .fig { position: relative; z-index: 1; width: 128px; height: auto; image-rendering: pixelated; }
+.pw-bubble { position: relative; align-self: stretch; margin-top: 18px; padding: 9px 12px; background: linear-gradient(#f6f6f8, #d8d8de); border: 1px solid #9a9aa4; border-radius: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, .35), inset 0 1px 0 #fff; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; text-align: center; }
+.pw-bubble::before { content: ""; position: absolute; top: -9px; left: 50%; width: 14px; height: 14px; margin-left: -7px; transform: rotate(45deg); background: #f6f6f8; border-left: 1px solid #9a9aa4; border-top: 1px solid #9a9aa4; border-top-left-radius: 3px; }
+.pw-bubble.empty { color: #7b7f88; font-style: italic; }
+.pw-right { padding: 12px 14px 10px 6px; }
+.pw-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 10px; }
+.pw-tile { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; border-radius: 6px; background: #e9ecf0; box-shadow: 0 1px 3px rgba(0, 0, 0, .55); cursor: pointer; padding: 0; }
+.pw-tile.empty { border: 2px dashed #9aa3b0; background: rgba(255, 255, 255, .25); box-shadow: none; color: #9aa3b0; cursor: default; }
+.pw-badge { position: absolute; top: -10px; right: -10px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #fff; color: #fff; font-size: 12px; line-height: 1; font-weight: 700; text-shadow: 0 -1px 0 rgba(0, 0, 0, .4); box-shadow: 0 1px 3px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .5); }
+.pw-badge.heart { background: linear-gradient(#ff7a7a, #d8121b); }
+.pw-badge.star { background: linear-gradient(#ffd75a, #e08b00); }
 .pw-gift, .pw-edit { display: flex; flex-direction: column; gap: 6px; }
-.pw-grow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 10px; background: #fff; border: 1px solid #ababab; border-radius: 8px; font-size: 15px; }
+.pw-grow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; background: #fff; border: 1px solid #a9adb3; border-radius: 9px; font-size: 16px; font-weight: 700; }
 .pw-gico { width: 28px; height: 28px; image-rendering: pixelated; }
 .pw-gname { flex: 1; min-width: 80px; }
-.pw-status-in { width: 100%; box-sizing: border-box; }
-.pw-sw { display: flex; flex-wrap: wrap; gap: 6px; }
-.pw-swatch { width: 34px; height: 34px; border-radius: 6px; border: 1px solid #8f96a1; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6); cursor: pointer; padding: 0; }
-.pw-swatch.on { border-color: #1560d8; outline: 2px solid #fff; box-shadow: 0 0 0 3px #1560d8; }
-@media (max-width: 560px) {
-  .pw-body { grid-template-columns: minmax(0, 1fr) 100px; }
-  .pw-mid { grid-column: 1; grid-row: 1; }
-  .pw-right { grid-column: 2; grid-row: 1; }
+.pw-status-in { width: 100%; box-sizing: border-box; min-height: 38px; padding: 6px 10px; border: 1px solid #a9adb3; border-radius: 9px; background: #fff; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .25); font: inherit; font-size: 16px; }
+.pw-sw { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 4px; }
+.pw-swatch { width: 36px; height: 36px; border-radius: 8px; border: 1px solid rgba(0, 0, 0, .35); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 1px 1px rgba(0, 0, 0, .25); cursor: pointer; padding: 0; }
+.pw-swatch.on { outline: 3px solid #1b6cdc; outline-offset: 1px; }
+@media (max-width: 580px) {
+  .pw-body { grid-template-columns: minmax(0, 1fr) 128px; }
+  .pw-mid { grid-column: 1; grid-row: 1; margin: 10px 0 10px 10px; }
+  .pw-right { grid-column: 2; grid-row: 1; padding-right: 20px; }
   .pw-left { grid-column: 1 / -1; grid-row: 2; }
 }

@@ -224,7 +224,7 @@ async function stabAnimation(): Promise<void> {
       const sx = cb.x, sy = cb.y - 34 * S - rise, r = 11 * S;
       g.save(); g.globalAlpha = t > 0.95 ? Math.max(0, (1.15 - t) / 0.2) : 1;
       g.beginPath(); g.arc(sx, sy, r, 0, Math.PI * 2); g.fillStyle = "#2f67a8"; g.fill(); g.lineWidth = 2 * S / 2; g.strokeStyle = "#0b2a52"; g.stroke();
-      g.fillStyle = "#fff"; g.font = `bold ${Math.round(13 * S)}px Verdana, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("0", sx, sy + S);
+      g.fillStyle = "#fff"; g.font = `bold ${Math.round(13 * S)}px Verdana, 'Apple Color Emoji', sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("0", sx, sy + S);
       g.restore();
     }
     frames.push(c);
@@ -318,7 +318,7 @@ function bloodPop(g: CanvasRenderingContext2D, icon: HTMLImageElement, text: str
   g.save();
   g.globalAlpha = Math.max(0, Math.min(1, (life - ageMs) / (life * 0.45)));
   const fsz = 16 * S;
-  g.font = `bold ${fsz}px Verdana, sans-serif`;
+  g.font = `bold ${fsz}px Verdana, 'Apple Color Emoji', sans-serif`;
   g.textAlign = "center"; g.textBaseline = "middle";
   g.lineWidth = 3 * S / 2; g.strokeStyle = "#000"; g.lineJoin = "round";
   const fy = y - ageMs * 0.04 * S;
@@ -536,7 +536,7 @@ async function newFurnitureSheet(): Promise<void> {
   c.width = cols * cellW; c.height = rows * cellH;
   const g = c.getContext("2d")!;
   g.fillStyle = "#4a525c"; g.fillRect(0, 0, c.width, c.height);
-  g.font = "bold 13px Verdana, sans-serif";
+  g.font = "bold 13px Verdana, 'Apple Color Emoji', sans-serif";
   list.forEach((p, i) => {
     const cx = (i % cols) * cellW + cellW / 2, cy = Math.floor(i / cols) * cellH + cellH * 0.62;
     const kind = SHOP_KIND_PREFIX + p.id;

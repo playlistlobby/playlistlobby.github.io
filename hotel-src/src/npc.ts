@@ -77,6 +77,7 @@ export const SIXTY_LINES = {
   lighterJob2: "bring it back to me when you have it.",
   lighterAgain: "no lighter yet. the shop, the yellow door.",
   lighterDone: "good. that is your pay.",
+  lighterKit: "take this too. plant something.",
   shop: "what do you need?",
   full: "your pockets are full. clear some space.",
 };

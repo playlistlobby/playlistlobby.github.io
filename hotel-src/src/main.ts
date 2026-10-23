@@ -1,6 +1,7 @@
 import { onAuthStateChanged, User } from "firebase/auth";
 import { ref, remove, update } from "firebase/database";
 import { SIXTY, watchSixtyLook } from "./npc";
+import { loadEmojiFont } from "./emojiFont";
 import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
 import { createProfile, loadProfile, Profile, watchEconomy } from "./db";
@@ -374,6 +375,7 @@ if (!firebaseReady) {
   showSetup();
 } else {
   showLoading("Connecting…");
+  loadEmojiFont();
   onAuthStateChanged(auth, (user) => {
     if (!authState.registering) route(user);
   });

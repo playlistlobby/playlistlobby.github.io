@@ -6748,5 +6748,1260 @@
   "en": "Rare block",
   "da": "Sjælden blok",
   "where": "src/shared/furniture.ts"
+ },
+ "N239": {
+  "en": "Too many wrong tries. Wait",
+  "da": "For mange forkerte forsøg. Vent",
+  "where": "src/auth.ts:78"
+ },
+ "N240": {
+  "en": "minutes",
+  "da": "minutter",
+  "where": "src/auth.ts:78"
+ },
+ "N241": {
+  "en": "seconds",
+  "da": "sekunder",
+  "where": "src/auth.ts:78"
+ },
+ "N242": {
+  "en": "and try again.",
+  "da": "og prøv igen.",
+  "where": "src/auth.ts:78"
+ },
+ "N243": {
+  "en": "Something already stands there.",
+  "da": "Der står allerede noget der.",
+  "where": "src/furnishing.ts:80"
+ },
+ "N244": {
+  "en": "You got the {…} CD!",
+  "da": "Du fik cd'en {…}!",
+  "where": "src/payReturn.ts:19"
+ },
+ "N245": {
+  "en": "Stash box",
+  "da": "Gemmeboks",
+  "where": "src/rooms.ts:106"
+ },
+ "N246": {
+  "en": "Record table",
+  "da": "Pladebord",
+  "where": "src/rooms.ts:115"
+ },
+ "N247": {
+  "en": "Stabbing players",
+  "da": "Stik af spillere",
+  "where": "src/shared/backup.ts:42"
+ },
+ "N248": {
+  "en": "Syringe (self and body bags)",
+  "da": "Sprøjte (dig selv og ligposer)",
+  "where": "src/shared/backup.ts:43"
+ },
+ "N249": {
+  "en": "6ixty's jobs",
+  "da": "6ixtys jobs",
+  "where": "src/shared/backup.ts:45"
+ },
+ "N250": {
+  "en": "Selling to 6ixty",
+  "da": "Salg til 6ixty",
+  "where": "src/shared/backup.ts:46"
+ },
+ "N251": {
+  "en": "Trades with other players",
+  "da": "Byt med andre spillere",
+  "where": "src/shared/backup.ts:47"
+ },
+ "N252": {
+  "en": "Account sync",
+  "da": "Konto-synkronisering",
+  "where": "src/shared/backup.ts:48"
+ },
+ "N253": {
+  "en": "Admin command /giveblud",
+  "da": "Admin-kommando /giveblud",
+  "where": "src/shared/backup.ts:49"
+ },
+ "N254": {
+  "en": "Admin commands",
+  "da": "Admin-kommandoer",
+  "where": "src/shared/backup.ts:50"
+ },
+ "N255": {
+  "en": "Buying from 6ixty",
+  "da": "Køb hos 6ixty",
+  "where": "src/shared/backup.ts:51"
+ },
+ "N256": {
+  "en": "Posters",
+  "da": "Plakater",
+  "where": "src/shared/backup.ts:54"
+ },
+ "N257": {
+  "en": "Furniture shop",
+  "da": "Møbelshop",
+  "where": "src/shared/backup.ts:55"
+ },
+ "N258": {
+  "en": "Clothes",
+  "da": "Tøj",
+  "where": "src/shared/backup.ts:56"
+ },
+ "N259": {
+  "en": "Room colours",
+  "da": "Værelsesfarver",
+  "where": "src/shared/backup.ts:58"
+ },
+ "N260": {
+  "en": "Bed and wardrobe looks",
+  "da": "Look til seng og garderobe",
+  "where": "src/shared/backup.ts:59"
+ },
+ "N261": {
+  "en": "cigarette butt",
+  "da": "cigaretskod",
+  "where": "src/shared/economy.ts:15"
+ },
+ "N262": {
+  "en": "shroom spores",
+  "da": "svampesporer",
+  "where": "src/shared/economy.ts:17"
+ },
+ "N263": {
+  "en": "Blue",
+  "da": "Blå",
+  "where": "src/social.ts:36"
+ },
+ "N264": {
+  "en": "Green",
+  "da": "Grøn",
+  "where": "src/social.ts:36"
+ },
+ "N265": {
+  "en": "Purple",
+  "da": "Lilla",
+  "where": "src/social.ts:37"
+ },
+ "N266": {
+  "en": "Gold",
+  "da": "Guld",
+  "where": "src/social.ts:37"
+ },
+ "N267": {
+  "en": "Dark",
+  "da": "Mørk",
+  "where": "src/social.ts:37"
+ },
+ "N268": {
+  "en": "You're already that to each other. Remove it first to change it.",
+  "da": "I er allerede det for hinanden. Fjern det først for at ændre det.",
+  "where": "src/social.ts:438"
+ },
+ "N269": {
+  "en": "You've got a partner already. Remove them first.",
+  "da": "Du har allerede en partner. Fjern dem først.",
+  "where": "src/social.ts:439"
+ },
+ "N270": {
+  "en": "You already have 3 best friends.",
+  "da": "Du har allerede 3 bedste venner.",
+  "where": "src/social.ts:440"
+ },
+ "N271": {
+  "en": "You can't have more than 4 close friends.",
+  "da": "Du kan ikke have mere end 4 nære venner.",
+  "where": "src/social.ts:441"
+ },
+ "N272": {
+  "en": "Economy",
+  "da": "Økonomi",
+  "where": "src/ui/admin.ts:18"
+ },
+ "N273": {
+  "en": "{m} min ago",
+  "da": "for {m} min siden",
+  "where": "src/ui/adminEconomy.ts:27"
+ },
+ "N274": {
+  "en": "{…} h {…} min ago",
+  "da": "for {…} t {…} min siden",
+  "where": "src/ui/adminEconomy.ts:27"
+ },
+ "N275": {
+  "en": "Pockets",
+  "da": "Lommer",
+  "where": "src/ui/adminEconomy.ts:39"
+ },
+ "N276": {
+  "en": "Search accounts…",
+  "da": "Søg efter konti…",
+  "where": "src/ui/adminEconomy.ts:60"
+ },
+ "N277": {
+  "en": "Accounts",
+  "da": "Konti",
+  "where": "src/ui/adminEconomy.ts:64"
+ },
+ "N278": {
+  "en": "Couldn't read the economy data (are the new database rules deployed?)",
+  "da": "Kunne ikke læse økonomidataen (er de nye databaseregler lagt på?)",
+  "where": "src/ui/adminEconomy.ts:86"
+ },
+ "N279": {
+  "en": "{when}: {fmt} blood",
+  "da": "{when}: {fmt} blod",
+  "where": "src/ui/adminEconomy.ts:116"
+ },
+ "N280": {
+  "en": "now · {fmt}",
+  "da": "nu · {fmt}",
+  "where": "src/ui/adminEconomy.ts:125"
+ },
+ "N281": {
+  "en": "Blood in circulation at each backup (grey) and now (red). A sudden jump is worth a look.",
+  "da": "Blod i omløb ved hver backup (grå) og nu (rød). Et pludseligt hop er værd at kigge på.",
+  "where": "src/ui/adminEconomy.ts:126"
+ },
+ "N282": {
+  "en": "Nothing tracked yet.",
+  "da": "Intet registreret endnu.",
+  "where": "src/ui/adminEconomy.ts:143"
+ },
+ "N283": {
+  "en": "Where blood comes from, and where it goes",
+  "da": "Hvor blodet kommer fra, og hvor det går hen",
+  "where": "src/ui/adminEconomy.ts:146"
+ },
+ "N284": {
+  "en": "Counted since tracking started. Tracked: {fmt} now in circulation from tracked changes. The other {fmt} was already there before tracking started.",
+  "da": "Talt siden registreringen begyndte. Registreret: {fmt} i omløb fra registrerede ændringer. De andre {fmt} var der allerede, før registreringen begyndte.",
+  "where": "src/ui/adminEconomy.ts:147"
+ },
+ "N285": {
+  "en": "Earned",
+  "da": "Tjent",
+  "where": "src/ui/adminEconomy.ts:148"
+ },
+ "N286": {
+  "en": "Spent or given away",
+  "da": "Brugt eller givet væk",
+  "where": "src/ui/adminEconomy.ts:148"
+ },
+ "N287": {
+  "en": "most: {name}",
+  "da": "mest: {name}",
+  "where": "src/ui/adminEconomy.ts:159"
+ },
+ "N288": {
+  "en": "last backup ({length} kept)",
+  "da": "seneste backup ({length} gemt)",
+  "where": "src/ui/adminEconomy.ts:160"
+ },
+ "N289": {
+  "en": "{name} · {fmt} blood",
+  "da": "{name} · {fmt} blod",
+  "where": "src/ui/adminEconomy.ts:174"
+ },
+ "N290": {
+  "en": "{name} is banned.",
+  "da": "{name} er bandlyst.",
+  "where": "src/ui/adminEconomy.ts:177"
+ },
+ "N291": {
+  "en": "{name} can play again.",
+  "da": "{name} kan spille igen.",
+  "where": "src/ui/adminEconomy.ts:177"
+ },
+ "N292": {
+  "en": "Unban",
+  "da": "Ophæv bandlysning",
+  "where": "src/ui/adminEconomy.ts:178"
+ },
+ "N293": {
+  "en": "Ban",
+  "da": "Bandlys",
+  "where": "src/ui/adminEconomy.ts:178"
+ },
+ "N294": {
+  "en": "Got blood from",
+  "da": "Fik blod fra",
+  "where": "src/ui/adminEconomy.ts:180"
+ },
+ "N295": {
+  "en": "Spent on",
+  "da": "Brugt på",
+  "where": "src/ui/adminEconomy.ts:181"
+ },
+ "N296": {
+  "en": "Holds ({fmt})",
+  "da": "Har ({fmt})",
+  "where": "src/ui/adminEconomy.ts:182"
+ },
+ "N297": {
+  "en": "Blood changes, last 72 hours",
+  "da": "Blodændringer, seneste 72 timer",
+  "where": "src/ui/adminEconomy.ts:185"
+ },
+ "N298": {
+  "en": "Blood changes, last few hours",
+  "da": "Blodændringer, seneste timer",
+  "where": "src/ui/adminEconomy.ts:185"
+ },
+ "N299": {
+  "en": "Couldn't read the history",
+  "da": "Kunne ikke læse historikken",
+  "where": "src/ui/adminEconomy.ts:186"
+ },
+ "N300": {
+  "en": "Show 72 hours",
+  "da": "Vis 72 timer",
+  "where": "src/ui/adminEconomy.ts:186"
+ },
+ "N301": {
+  "en": "Nothing in this period.",
+  "da": "Intet i denne periode.",
+  "where": "src/ui/adminEconomy.ts:190"
+ },
+ "N302": {
+  "en": "Account",
+  "da": "Konto",
+  "where": "src/ui/adminEconomy.ts:198"
+ },
+ "N303": {
+  "en": "Blood",
+  "da": "Blod",
+  "where": "src/ui/adminEconomy.ts:198"
+ },
+ "N304": {
+  "en": "Items",
+  "da": "Ting",
+  "where": "src/ui/adminEconomy.ts:198"
+ },
+ "N305": {
+  "en": "Tracked",
+  "da": "Registreret",
+  "where": "src/ui/adminEconomy.ts:198"
+ },
+ "N306": {
+  "en": "earned minus spent since tracking started",
+  "da": "tjent minus brugt siden registreringen begyndte",
+  "where": "src/ui/adminEconomy.ts:203"
+ },
+ "N307": {
+  "en": "Showing 200 of {length}. Use the search.",
+  "da": "Viser 200 af {length}. Brug søgningen.",
+  "where": "src/ui/adminEconomy.ts:206"
+ },
+ "N308": {
+  "en": "rolled the server back to {when}",
+  "da": "rullede serveren tilbage til {when}",
+  "where": "src/ui/adminEconomy.ts:223"
+ },
+ "N309": {
+  "en": "Rolled back: {users} accounts and {rooms} rooms put back. A safety backup of the moment before was kept.",
+  "da": "Rullet tilbage: {users} konti og {rooms} værelser er sat tilbage. En sikkerhedsbackup af øjeblikket før blev gemt.",
+  "where": "src/ui/adminEconomy.ts:226"
+ },
+ "N310": {
+  "en": "Rolling back…",
+  "da": "Ruller tilbage…",
+  "where": "src/ui/adminEconomy.ts:228"
+ },
+ "N311": {
+  "en": "Roll the server back",
+  "da": "Rul serveren tilbage",
+  "where": "src/ui/adminEconomy.ts:228"
+ },
+ "N312": {
+  "en": "Roll back to {when} ({ago})",
+  "da": "Rul tilbage til {when} ({ago})",
+  "where": "src/ui/adminEconomy.ts:230"
+ },
+ "N313": {
+  "en": "how they were then ({fmt} blood in {accounts} accounts)",
+  "da": "som de var dengang ({fmt} blod i {accounts} konti)",
+  "where": "src/ui/adminEconomy.ts:231"
+ },
+ "N314": {
+  "en": "Ban while you roll back (these gained the most blood since that backup):",
+  "da": "Bandlys mens du ruller tilbage (disse fik mest blod siden den backup):",
+  "where": "src/ui/adminEconomy.ts:232"
+ },
+ "N315": {
+  "en": "+{fmt} blood since",
+  "da": "+{fmt} blod siden",
+  "where": "src/ui/adminEconomy.ts:236"
+ },
+ "N316": {
+  "en": "Nobody has more blood than then.",
+  "da": "Ingen har mere blod end dengang.",
+  "where": "src/ui/adminEconomy.ts:237"
+ },
+ "N317": {
+  "en": "type ROLLBACK to confirm",
+  "da": "skriv ROLLBACK for at bekræfte",
+  "where": "src/ui/adminEconomy.ts:239"
+ },
+ "N318": {
+  "en": "Taken about every 20 minutes and kept {…} hours. Use one to roll the server back if somebody finds a dupe or an exploit: roll back, ban them, then fix it.",
+  "da": "Tages cirka hvert 20. minut og gemmes i {…} timer. Brug en til at rulle serveren tilbage, hvis nogen finder en dupe eller et hul: rul tilbage, bandlys dem, og ret det så.",
+  "where": "src/ui/adminEconomy.ts:250"
+ },
+ "N319": {
+  "en": "Backup made.",
+  "da": "Backup lavet.",
+  "where": "src/ui/adminEconomy.ts:251"
+ },
+ "N320": {
+  "en": "Back up now",
+  "da": "Tag backup nu",
+  "where": "src/ui/adminEconomy.ts:251"
+ },
+ "N321": {
+  "en": "Kind",
+  "da": "Slags",
+  "where": "src/ui/adminEconomy.ts:254"
+ },
+ "N322": {
+  "en": "Roll back…",
+  "da": "Rul tilbage…",
+  "where": "src/ui/adminEconomy.ts:261"
+ },
+ "N323": {
+  "en": "No backups yet. The server makes the first one within about 20 minutes of someone playing, or press Back up now.",
+  "da": "Ingen backups endnu. Serveren laver den første inden for cirka 20 minutter efter, nogen spiller, eller tryk Tag backup nu.",
+  "where": "src/ui/adminEconomy.ts:261"
+ },
+ "N324": {
+  "en": "Rollbacks so far",
+  "da": "Tilbagerulninger indtil nu",
+  "where": "src/ui/adminEconomy.ts:262"
+ },
+ "N325": {
+  "en": "{when}: back to {when} · {fmt} accounts, {fmt} rooms{…} · safety backup {when}",
+  "da": "{when}: tilbage til {when} · {fmt} konti, {fmt} værelser{…} · sikkerhedsbackup {when}",
+  "where": "src/ui/adminEconomy.ts:262"
+ },
+ "N326": {
+  "en": "· banned {…}",
+  "da": "· bandlyste {…}",
+  "where": "src/ui/adminEconomy.ts:262"
+ },
+ "N327": {
+  "en": "Latest blood changes",
+  "da": "Seneste blodændringer",
+  "where": "src/ui/adminEconomy.ts:263"
+ },
+ "N328": {
+  "en": "No blood changes recorded yet.",
+  "da": "Ingen blodændringer registreret endnu.",
+  "where": "src/ui/adminEconomy.ts:269"
+ },
+ "N329": {
+  "en": "Couldn't read the backups (are the new database rules deployed?)",
+  "da": "Kunne ikke læse backups (er de nye databaseregler lagt på?)",
+  "where": "src/ui/adminEconomy.ts:274"
+ },
+ "N330": {
+  "en": "Filter by owner or room…",
+  "da": "Filtrér efter ejer eller værelse…",
+  "where": "src/ui/adminPosters.ts:22"
+ },
+ "N331": {
+  "en": "Every picture on a poster, newest first, live",
+  "da": "Hvert billede på en plakat, nyeste først, live",
+  "where": "src/ui/adminPosters.ts:23"
+ },
+ "N332": {
+  "en": "Muted from posters:",
+  "da": "Udelukket fra plakater:",
+  "where": "src/ui/adminPosters.ts:38"
+ },
+ "N333": {
+  "en": "unmuted {…} from posters",
+  "da": "ophævede udelukkelse af {…} fra plakater",
+  "where": "src/ui/adminPosters.ts:40"
+ },
+ "N334": {
+  "en": "Unmute",
+  "da": "Ophæv udelukkelse",
+  "where": "src/ui/adminPosters.ts:40"
+ },
+ "N335": {
+  "en": "(in {ownerName}'s room)",
+  "da": "(i {ownerName}s værelse)",
+  "where": "src/ui/adminPosters.ts:47"
+ },
+ "N336": {
+  "en": "took a poster picture down ({who})",
+  "da": "tog et plakatbillede ned ({who})",
+  "where": "src/ui/adminPosters.ts:49"
+ },
+ "N337": {
+  "en": "The picture was taken down.",
+  "da": "Billedet blev taget ned.",
+  "where": "src/ui/adminPosters.ts:49"
+ },
+ "N338": {
+  "en": "unmuted {who} from posters",
+  "da": "ophævede udelukkelse af {who} fra plakater",
+  "where": "src/ui/adminPosters.ts:51"
+ },
+ "N339": {
+  "en": "Mute {who} from posters and take down all their pictures?",
+  "da": "Udeluk {who} fra plakater og tag alle deres billeder ned?",
+  "where": "src/ui/adminPosters.ts:52"
+ },
+ "N340": {
+  "en": "muted {who} from posters",
+  "da": "udelukkede {who} fra plakater",
+  "where": "src/ui/adminPosters.ts:52"
+ },
+ "N341": {
+  "en": "{who} is muted.",
+  "da": "{who} er udelukket.",
+  "where": "src/ui/adminPosters.ts:52"
+ },
+ "N342": {
+  "en": "Mute + delete all",
+  "da": "Udeluk + slet alle",
+  "where": "src/ui/adminPosters.ts:52"
+ },
+ "N343": {
+  "en": "No pictures on any poster.",
+  "da": "Ingen billeder på nogen plakat.",
+  "where": "src/ui/adminPosters.ts:53"
+ },
+ "N344": {
+  "en": "Couldn't read the rooms",
+  "da": "Kunne ikke læse værelserne",
+  "where": "src/ui/adminPosters.ts:68"
+ },
+ "N345": {
+  "en": "Couldn't read the poster mutes (the new database rules may not be deployed yet)",
+  "da": "Kunne ikke læse plakat-udelukkelserne (de nye databaseregler er måske ikke lagt på endnu)",
+  "where": "src/ui/adminPosters.ts:69"
+ },
+ "N346": {
+  "en": "admin: always open",
+  "da": "admin: altid åben",
+  "where": "src/ui/door.ts:103"
+ },
+ "N347": {
+  "en": "{ownerName}'s profile",
+  "da": "{ownerName}s profil",
+  "where": "src/ui/door.ts:111"
+ },
+ "N348": {
+  "en": "Copied {length} names ({what}).",
+  "da": "Kopierede {length} navne ({what}).",
+  "where": "src/ui/editor.ts:144"
+ },
+ "N349": {
+  "en": "Couldn't copy.",
+  "da": "Kunne ikke kopiere.",
+  "where": "src/ui/editor.ts:144"
+ },
+ "N350": {
+  "en": "Copy names: {label} ({length})",
+  "da": "Kopiér navne: {label} ({length})",
+  "where": "src/ui/editor.ts:146"
+ },
+ "N351": {
+  "en": "Copy all names",
+  "da": "Kopiér alle navne",
+  "where": "src/ui/editor.ts:147"
+ },
+ "N352": {
+  "en": "Click to copy",
+  "da": "Klik for at kopiere",
+  "where": "src/ui/editor.ts:165"
+ },
+ "N353": {
+  "en": "Copied {slotId}-{id}",
+  "da": "Kopierede {slotId}-{id}",
+  "where": "src/ui/editor.ts:165"
+ },
+ "N354": {
+  "en": "Store furniture here. Things like seeds and weed go in a stash box (the landlord sells them).",
+  "da": "Gem møbler her. Ting som frø og weed kommer i en gemmeboks (udlejeren sælger dem).",
+  "where": "src/ui/furnish.ts:96"
+ },
+ "N355": {
+  "en": "Nothing in storage. Pick a piece up with Store, or put furniture you carry into storage from the Carrying tab.",
+  "da": "Intet på lager. Tag et møbel op med Gem, eller læg møbler du bærer på lager fra fanen Bærer.",
+  "where": "src/ui/furnish.ts:97"
+ },
+ "N356": {
+  "en": "Stash box · keeps your things out of your pockets",
+  "da": "Gemmeboks · holder dine ting ude af lommerne",
+  "where": "src/ui/landlord.ts:169"
+ },
+ "N357": {
+  "en": "The stash box is in your room, against a wall.",
+  "da": "Gemmeboksen står i dit værelse, op ad en væg.",
+  "where": "src/ui/landlord.ts:180"
+ },
+ "N358": {
+  "en": "{STASHBOX_PRICE} drops",
+  "da": "{STASHBOX_PRICE} dråber",
+  "where": "src/ui/landlord.ts:185"
+ },
+ "N359": {
+  "en": "🎁 {fromName} sent you {giftName}",
+  "da": "🎁 {fromName} sendte dig {giftName}",
+  "where": "src/ui/messenger.ts:80"
+ },
+ "N360": {
+  "en": "You got {giftName}.",
+  "da": "Du fik {giftName}.",
+  "where": "src/ui/messenger.ts:81"
+ },
+ "N361": {
+  "en": "Couldn't take it.",
+  "da": "Kunne ikke tage imod den.",
+  "where": "src/ui/messenger.ts:81"
+ },
+ "N362": {
+  "en": "You sent it back.",
+  "da": "Du sendte den tilbage.",
+  "where": "src/ui/messenger.ts:82"
+ },
+ "N363": {
+  "en": "{giftName} was declined",
+  "da": "{giftName} blev afvist",
+  "where": "src/ui/messenger.ts:84"
+ },
+ "N364": {
+  "en": "Take it back",
+  "da": "Tag den tilbage",
+  "where": "src/ui/messenger.ts:85"
+ },
+ "N365": {
+  "en": "You took back {giftName}.",
+  "da": "Du tog {giftName} tilbage.",
+  "where": "src/ui/messenger.ts:85"
+ },
+ "N366": {
+  "en": "Couldn't take it back.",
+  "da": "Kunne ikke tage den tilbage.",
+  "where": "src/ui/messenger.ts:85"
+ },
+ "N367": {
+  "en": "Take back",
+  "da": "Tag tilbage",
+  "where": "src/ui/messenger.ts:85"
+ },
+ "N368": {
+  "en": "{…} {name} wants to be your {…}",
+  "da": "{…} {name} vil være din {…}",
+  "where": "src/ui/messenger.ts:87"
+ },
+ "N369": {
+  "en": "You and {name} are now {…}.",
+  "da": "Du og {name} er nu {…}.",
+  "where": "src/ui/messenger.ts:88"
+ },
+ "N370": {
+  "en": "Your profile",
+  "da": "Din profil",
+  "where": "src/ui/messenger.ts:99"
+ },
+ "N371": {
+  "en": "👤 Me",
+  "da": "👤 Mig",
+  "where": "src/ui/messenger.ts:99"
+ },
+ "N372": {
+  "en": "Partner and best friend requests",
+  "da": "Anmodninger om partner og bedste ven",
+  "where": "src/ui/messenger.ts:107"
+ },
+ "N373": {
+  "en": "Gifts ({…})",
+  "da": "Gaver ({…})",
+  "where": "src/ui/messenger.ts:108"
+ },
+ "N374": {
+  "en": "Profile",
+  "da": "Profil",
+  "where": "src/ui/messenger.ts:126"
+ },
+ "N375": {
+  "en": "🎁 {fromName} sent you a gift. Open your friends list.",
+  "da": "🎁 {fromName} sendte dig en gave. Åbn din venneliste.",
+  "where": "src/ui/messenger.ts:204"
+ },
+ "N376": {
+  "en": "Poster picture",
+  "da": "Plakatbillede",
+  "where": "src/ui/posterEditor.ts:46"
+ },
+ "N377": {
+  "en": "🖼️ Poster",
+  "da": "🖼️ Plakat",
+  "where": "src/ui/posterEditor.ts:47"
+ },
+ "N378": {
+  "en": "This is you",
+  "da": "Det er dig",
+  "where": "src/ui/profileWindow.ts:91"
+ },
+ "N379": {
+  "en": "Customize",
+  "da": "Tilpas",
+  "where": "src/ui/profileWindow.ts:91"
+ },
+ "N380": {
+  "en": "You are friends",
+  "da": "I er venner",
+  "where": "src/ui/profileWindow.ts:92"
+ },
+ "N381": {
+  "en": "You are not friends",
+  "da": "I er ikke venner",
+  "where": "src/ui/profileWindow.ts:92"
+ },
+ "N382": {
+  "en": "Remove {name}?",
+  "da": "Fjern {name}?",
+  "where": "src/ui/profileWindow.ts:96"
+ },
+ "N383": {
+  "en": "{name} isn't your friend any more.",
+  "da": "{name} er ikke din ven mere.",
+  "where": "src/ui/profileWindow.ts:97"
+ },
+ "N384": {
+  "en": "End partnership",
+  "da": "Afslut partnerskab",
+  "where": "src/ui/profileWindow.ts:100"
+ },
+ "N385": {
+  "en": "Not best friends",
+  "da": "Ikke bedste venner",
+  "where": "src/ui/profileWindow.ts:100"
+ },
+ "N386": {
+  "en": "Best friends",
+  "da": "Bedste venner",
+  "where": "src/ui/profileWindow.ts:102"
+ },
+ "N387": {
+  "en": "You asked {name} to be your best friend.",
+  "da": "Du bad {name} om at være din bedste ven.",
+  "where": "src/ui/profileWindow.ts:102"
+ },
+ "N388": {
+  "en": "Ask to be best friends (up to 3)",
+  "da": "Bed om at være bedste venner (op til 3)",
+  "where": "src/ui/profileWindow.ts:102"
+ },
+ "N389": {
+  "en": "Be partners",
+  "da": "Bliv partnere",
+  "where": "src/ui/profileWindow.ts:103"
+ },
+ "N390": {
+  "en": "You asked {name} to be your partner.",
+  "da": "Du bad {name} om at være din partner.",
+  "where": "src/ui/profileWindow.ts:103"
+ },
+ "N391": {
+  "en": "Ask to be partners (only one)",
+  "da": "Bed om at være partnere (kun én)",
+  "where": "src/ui/profileWindow.ts:103"
+ },
+ "N392": {
+  "en": "Actions",
+  "da": "Handlinger",
+  "where": "src/ui/profileWindow.ts:109"
+ },
+ "N393": {
+  "en": "Room closed",
+  "da": "Værelse lukket",
+  "where": "src/ui/profileWindow.ts:110"
+ },
+ "N394": {
+  "en": "No room",
+  "da": "Intet værelse",
+  "where": "src/ui/profileWindow.ts:110"
+ },
+ "N395": {
+  "en": "Their room is closed to you",
+  "da": "Deres værelse er lukket for dig",
+  "where": "src/ui/profileWindow.ts:112"
+ },
+ "N396": {
+  "en": "Go to their room",
+  "da": "Gå til deres værelse",
+  "where": "src/ui/profileWindow.ts:112"
+ },
+ "N397": {
+  "en": "Send a message",
+  "da": "Send en besked",
+  "where": "src/ui/profileWindow.ts:113"
+ },
+ "N398": {
+  "en": "Only friends can message each other",
+  "da": "Kun venner kan skrive til hinanden",
+  "where": "src/ui/profileWindow.ts:113"
+ },
+ "N399": {
+  "en": "They have to be online",
+  "da": "De skal være online",
+  "where": "src/ui/profileWindow.ts:114"
+ },
+ "N400": {
+  "en": "Send gift",
+  "da": "Send gave",
+  "where": "src/ui/profileWindow.ts:115"
+ },
+ "N401": {
+  "en": "Send an item as a gift",
+  "da": "Send en ting som gave",
+  "where": "src/ui/profileWindow.ts:115"
+ },
+ "N402": {
+  "en": "Gifts go to friends",
+  "da": "Gaver går til venner",
+  "where": "src/ui/profileWindow.ts:115"
+ },
+ "N403": {
+  "en": "You knock on {name}'s door. Waiting…",
+  "da": "Du banker på {name}s dør. Venter…",
+  "where": "src/ui/profileWindow.ts:125"
+ },
+ "N404": {
+  "en": "{name} didn't let you in.",
+  "da": "{name} lukkede dig ikke ind.",
+  "where": "src/ui/profileWindow.ts:128"
+ },
+ "N405": {
+  "en": "Couldn't knock.",
+  "da": "Kunne ikke banke på.",
+  "where": "src/ui/profileWindow.ts:130"
+ },
+ "N406": {
+  "en": "Send a gift to {name}",
+  "da": "Send en gave til {name}",
+  "where": "src/ui/profileWindow.ts:137"
+ },
+ "N407": {
+  "en": "They can accept it or decline it. Items only, no blood.",
+  "da": "De kan tage imod den eller afvise den. Kun ting, ikke blod.",
+  "where": "src/ui/profileWindow.ts:138"
+ },
+ "N408": {
+  "en": "{name} is on its way to {name}.",
+  "da": "{name} er på vej til {name}.",
+  "where": "src/ui/profileWindow.ts:141"
+ },
+ "N409": {
+  "en": "Give 1",
+  "da": "Giv 1",
+  "where": "src/ui/profileWindow.ts:145"
+ },
+ "N410": {
+  "en": "You aren't carrying anything you can give.",
+  "da": "Du bærer ikke på noget, du kan give væk.",
+  "where": "src/ui/profileWindow.ts:147"
+ },
+ "N411": {
+  "en": "What's on your mind? (shows next to you)",
+  "da": "Hvad tænker du på? (vises ved siden af dig)",
+  "where": "src/ui/profileWindow.ts:152"
+ },
+ "N412": {
+  "en": "Your status",
+  "da": "Din status",
+  "where": "src/ui/profileWindow.ts:156"
+ },
+ "N413": {
+  "en": "Status saved.",
+  "da": "Status gemt.",
+  "where": "src/ui/profileWindow.ts:158"
+ },
+ "N414": {
+  "en": "Save status",
+  "da": "Gem status",
+  "where": "src/ui/profileWindow.ts:158"
+ },
+ "N415": {
+  "en": "Background",
+  "da": "Baggrund",
+  "where": "src/ui/profileWindow.ts:159"
+ },
+ "N416": {
+  "en": "Background changed.",
+  "da": "Baggrund ændret.",
+  "where": "src/ui/profileWindow.ts:160"
+ },
+ "N417": {
+  "en": "Your partner and best friends",
+  "da": "Din partner og dine bedste venner",
+  "where": "src/ui/profileWindow.ts:161"
+ },
+ "N418": {
+  "en": "Open a friend's profile and tap Best friends or Be partners. They have to accept.",
+  "da": "Åbn en vens profil og tryk Bedste venner eller Bliv partnere. De skal acceptere.",
+  "where": "src/ui/profileWindow.ts:162"
+ },
+ "N419": {
+  "en": "Nobody yet.",
+  "da": "Ingen endnu.",
+  "where": "src/ui/profileWindow.ts:165"
+ },
+ "N420": {
+  "en": "Open profile",
+  "da": "Åbn profil",
+  "where": "src/ui/profileWindow.ts:173"
+ },
+ "N421": {
+  "en": "Best friend",
+  "da": "Bedste ven",
+  "where": "src/ui/profileWindow.ts:173"
+ },
+ "N422": {
+  "en": "Close friends",
+  "da": "Nære venner",
+  "where": "src/ui/profileWindow.ts:178"
+ },
+ "N423": {
+  "en": "Partner and best friends",
+  "da": "Partner og bedste venner",
+  "where": "src/ui/profileWindow.ts:178"
+ },
+ "N424": {
+  "en": "This player has no profile.",
+  "da": "Denne spiller har ingen profil.",
+  "where": "src/ui/profileWindow.ts:185"
+ },
+ "N425": {
+  "en": "Tap Customize to write a status.",
+  "da": "Tryk Tilpas for at skrive en status.",
+  "where": "src/ui/profileWindow.ts:194"
+ },
+ "N426": {
+  "en": "No status yet.",
+  "da": "Ingen status endnu.",
+  "where": "src/ui/profileWindow.ts:194"
+ },
+ "N427": {
+  "en": "💿 Record player",
+  "da": "💿 Pladespiller",
+  "where": "src/ui/recordShop.ts:23"
+ },
+ "N428": {
+  "en": "mystery CD",
+  "da": "mystery-cd",
+  "where": "src/ui/recordShop.ts:36"
+ },
+ "N429": {
+  "en": "Turn",
+  "da": "Drej",
+  "where": "src/ui/room.ts:476"
+ },
+ "N430": {
+  "en": "🛠 Decorate",
+  "da": "🛠 Indret",
+  "where": "src/ui/room.ts:479"
+ },
+ "N431": {
+  "en": "Stash box: keep your things here",
+  "da": "Gemmeboks: opbevar dine ting her",
+  "where": "src/ui/room.ts:504"
+ },
+ "N432": {
+  "en": "{label}: tap to use",
+  "da": "{label}: tryk for at bruge",
+  "where": "src/ui/room.ts:507"
+ },
+ "N433": {
+  "en": "My profile",
+  "da": "Min profil",
+  "where": "src/ui/room.ts:807"
+ },
+ "N434": {
+  "en": "Tap a free spot to move it there.",
+  "da": "Tryk på et frit sted for at flytte den derhen.",
+  "where": "src/ui/room.ts:1073"
+ },
+ "N435": {
+  "en": "Ass weed",
+  "da": "Røvweed",
+  "where": "src/ui/room.ts:1373"
+ },
+ "N436": {
+  "en": "You collect {…} {…} from the mixer.",
+  "da": "Du henter {…} {…} fra mixeren.",
+  "where": "src/ui/room.ts:1633"
+ },
+ "N437": {
+  "en": "Skip",
+  "da": "Spring over",
+  "where": "src/ui/room.ts:1678"
+ },
+ "N438": {
+  "en": "Green screen on. Type /greenscreen again to bring the room back.",
+  "da": "Greenscreen til. Skriv /greenscreen igen for at få værelset tilbage.",
+  "where": "src/ui/room.ts:2770"
+ },
+ "N439": {
+  "en": "Green screen off.",
+  "da": "Greenscreen fra.",
+  "where": "src/ui/room.ts:2770"
+ },
+ "N440": {
+  "en": "Nothing happens.",
+  "da": "Der sker ingenting.",
+  "where": "src/ui/room.ts:3263"
+ },
+ "N441": {
+  "en": "Sell",
+  "da": "Sælg",
+  "where": "src/ui/sixtyShop.ts:73"
+ },
+ "N442": {
+  "en": "🎁 Stash box",
+  "da": "🎁 Gemmeboks",
+  "where": "src/ui/stashbox.ts:30"
+ },
+ "N443": {
+  "en": "In the box ({…}) · free pockets: {freeSlots}",
+  "da": "I boksen ({…}) · frie lommer: {freeSlots}",
+  "where": "src/ui/stashbox.ts:58"
+ },
+ "N444": {
+  "en": "Nothing in the box yet. Put what you carry in it to free your pockets.",
+  "da": "Intet i boksen endnu. Læg det du bærer på i den for at frigøre lommerne.",
+  "where": "src/ui/stashbox.ts:61"
+ },
+ "N445": {
+  "en": "You're carrying:",
+  "da": "Du bærer på:",
+  "where": "src/ui/stashbox.ts:62"
+ },
+ "N446": {
+  "en": "Put in",
+  "da": "Læg i",
+  "where": "src/ui/stashbox.ts:64"
+ },
+ "N447": {
+  "en": "Nothing to put in. Pots and mixers fit here too; other furniture goes in the toolbox.",
+  "da": "Intet at lægge i. Potter og mixere kan også være her; andre møbler kommer i værktøjskassen.",
+  "where": "src/ui/stashbox.ts:65"
+ },
+ "N448": {
+  "en": "You can trade {left} more blood in the next 24 hours (the limit is {TRADE_BLOOD_CAP}).",
+  "da": "Du kan bytte {left} mere blod i de næste 24 timer (grænsen er {TRADE_BLOOD_CAP}).",
+  "where": "src/ui/trade.ts:134"
+ },
+ "N449": {
+  "en": "{left} left today",
+  "da": "{left} tilbage i dag",
+  "where": "src/ui/vendingShop.ts:33"
+ },
+ "N450": {
+  "en": "Unknown action.",
+  "da": "Ukendt handling.",
+  "where": "server/src/actions/admin.ts:11"
+ },
+ "N451": {
+  "en": "You can't ban yourself.",
+  "da": "Du kan ikke bandlyse dig selv.",
+  "where": "server/src/actions/admin.ts:23"
+ },
+ "N452": {
+  "en": "Nothing to move on.",
+  "da": "Intet at spole frem.",
+  "where": "server/src/actions/cd.ts:82"
+ },
+ "N453": {
+  "en": "(test) {n} minutes went by. The plants, mixers and bins moved on.",
+  "da": "(test) {n} minutter gik. Planterne, mixerne og skraldespandene kom videre.",
+  "where": "server/src/actions/debug.ts:28"
+ },
+ "N454": {
+  "en": "Your pocket hasn't got room for it. Make some space first.",
+  "da": "Din lomme har ikke plads til den. Gør plads først.",
+  "where": "server/src/actions/gift.ts:22"
+ },
+ "N455": {
+  "en": "You can't send a gift to yourself.",
+  "da": "Du kan ikke sende en gave til dig selv.",
+  "where": "server/src/actions/gift.ts:31"
+ },
+ "N456": {
+  "en": "You can only send gifts to your friends.",
+  "da": "Du kan kun sende gaver til dine venner.",
+  "where": "server/src/actions/gift.ts:32"
+ },
+ "N457": {
+  "en": "They have too many gifts waiting. Try again later.",
+  "da": "De har for mange gaver, der venter. Prøv igen senere.",
+  "where": "server/src/actions/gift.ts:33"
+ },
+ "N458": {
+  "en": "That can't be given away.",
+  "da": "Den kan ikke gives væk.",
+  "where": "server/src/actions/gift.ts:40"
+ },
+ "N459": {
+  "en": "That gift is gone.",
+  "da": "Den gave er væk.",
+  "where": "server/src/actions/gift.ts:55"
+ },
+ "N460": {
+  "en": "The mixer starts up. It needs {…} minutes.",
+  "da": "Mixeren starter. Den skal bruge {…} minutter.",
+  "where": "server/src/actions/mixer.ts:35"
+ },
+ "N461": {
+  "en": "That poster isn't there any more.",
+  "da": "Den plakat er der ikke mere.",
+  "where": "server/src/actions/posters.ts:19"
+ },
+ "N462": {
+  "en": "Bad request.",
+  "da": "Ugyldig forespørgsel.",
+  "where": "server/src/actions/posters.ts:37"
+ },
+ "N463": {
+  "en": "You can't stab someone who plays on your device.",
+  "da": "Du kan ikke stikke en, der spiller på din enhed.",
+  "where": "server/src/actions/rewards.ts:25"
+ },
+ "N464": {
+  "en": "You already have a stash box.",
+  "da": "Du har allerede en gemmeboks.",
+  "where": "server/src/actions/shop.ts:219"
+ },
+ "N465": {
+  "en": "There's no space in your room for it. Make some room first.",
+  "da": "Der er ikke plads til den i dit værelse. Gør plads først.",
+  "where": "server/src/actions/shop.ts:238"
+ },
+ "N466": {
+  "en": "A CD is playing. Stop it first.",
+  "da": "En cd spiller. Stop den først.",
+  "where": "server/src/actions/toolbox.ts:16"
+ },
+ "N467": {
+  "en": "That isn't your room.",
+  "da": "Det er ikke dit værelse.",
+  "where": "server/src/actions/toolbox.ts:28"
+ },
+ "N468": {
+  "en": "The toolbox only takes furniture. Things like seeds, weed and pills go in a stash box: the landlord sells them.",
+  "da": "Værktøjskassen tager kun møbler. Ting som frø, weed og piller kommer i en gemmeboks: udlejeren sælger dem.",
+  "where": "server/src/actions/toolbox.ts:49"
+ },
+ "N469": {
+  "en": "The boombox can't be carried around: put it down in your room.",
+  "da": "Boomboxen kan ikke bæres rundt: sæt den ned i dit værelse.",
+  "where": "server/src/actions/toolbox.ts:64"
+ },
+ "N470": {
+  "en": "You haven't got a stash box. The landlord sells them.",
+  "da": "Du har ikke en gemmeboks. Udlejeren sælger dem.",
+  "where": "server/src/actions/toolbox.ts:89"
+ },
+ "N471": {
+  "en": "Only pots and mixers fit in the stash box. The rest of the furniture goes in the toolbox.",
+  "da": "Kun potter og mixere kan være i gemmeboksen. Resten af møblerne kommer i værktøjskassen.",
+  "where": "server/src/actions/toolbox.ts:98"
+ },
+ "N472": {
+  "en": "The stash box is full of those.",
+  "da": "Gemmeboksen er fuld af dem.",
+  "where": "server/src/actions/toolbox.ts:102"
+ },
+ "N473": {
+  "en": "There's none of that in the stash box.",
+  "da": "Der er ingen af dem i gemmeboksen.",
+  "where": "server/src/actions/toolbox.ts:116"
+ },
+ "N474": {
+  "en": "You can't put pictures on posters any more.",
+  "da": "Du kan ikke sætte billeder på plakater mere.",
+  "where": "server/src/actions/toolbox.ts:176"
+ },
+ "N475": {
+  "en": "That piece isn't here.",
+  "da": "Det møbel er ikke her.",
+  "where": "server/src/actions/toolbox.ts:192"
+ },
+ "N476": {
+  "en": "That isn't yours to move.",
+  "da": "Det er ikke dit at flytte.",
+  "where": "server/src/actions/toolbox.ts:207"
+ },
+ "N477": {
+  "en": "That isn't yours to take.",
+  "da": "Det er ikke dit at tage.",
+  "where": "server/src/actions/toolbox.ts:228"
+ },
+ "N478": {
+  "en": "{…} can only trade {left} more blood for now (the limit is {TRADE_BLOOD_CAP} per 24 hours).",
+  "da": "{…} kan kun bytte {left} mere blod lige nu (grænsen er {TRADE_BLOOD_CAP} pr. 24 timer).",
+  "where": "server/src/actions/trade.ts:54"
+ },
+ "N479": {
+  "en": "You",
+  "da": "Du",
+  "where": "server/src/actions/trade.ts:54"
+ },
+ "N480": {
+  "en": "That backup is gone.",
+  "da": "Den backup er væk.",
+  "where": "server/src/backup.ts:68"
+ },
+ "N481": {
+  "en": "before going back to {…}",
+  "da": "før tilbagerulning til {…}",
+  "where": "server/src/backup.ts:69"
+ },
+ "N482": {
+  "en": "rolled back to {…}",
+  "da": "rullet tilbage til {…}",
+  "where": "server/src/backup.ts:98"
+ },
+ "N483": {
+  "en": "Mystery CD (Blodig oktober)",
+  "da": "Mystery-cd (Blodig oktober)",
+  "where": "server/src/pay.ts:16"
+ },
+ "N484": {
+  "en": "Full album CD (Blodig oktober)",
+  "da": "Fuldt album-cd (Blodig oktober)",
+  "where": "server/src/pay.ts:16"
+ },
+ "N485": {
+  "en": "Bad product.",
+  "da": "Ugyldigt produkt.",
+  "where": "server/src/pay.ts:43"
+ },
+ "N486": {
+  "en": "The payment page couldn't be made{…}.",
+  "da": "Betalingssiden kunne ikke laves{…}.",
+  "where": "server/src/pay.ts:74"
+ },
+ "N487": {
+  "en": "take this too. plant something.",
+  "da": "tag den her også. plant noget.",
+  "where": "src/npc.ts:80"
+ },
+ "N488": {
+  "en": "+1 Growing kit",
+  "da": "+1 Growth kit",
+  "where": "src/ui/room.ts:2052"
+ },
+ "N489": {
+  "en": "Everyone is stopped for a few seconds. Every account's blood, pockets, toolbox, stash box and what they own, and the furniture in every room, go back to {…}. Everything since is lost, for everybody. Accounts made after the backup, names, looks, friends and chat are not touched. A backup of right now is made first, so you can go forward again.",
+  "da": "Alle bliver stoppet i et par sekunder. Alle kontoers blod, lommer, værktøjskasse, gemmeboks og det de ejer, og møblerne i alle værelser, går tilbage til {…}. Alt siden er tabt, for alle. Konti lavet efter backuppen, navne, looks, venner og chat bliver ikke rørt. Der laves først en backup af lige nu, så du kan gå frem igen.",
+  "where": "src/ui/adminEconomy.ts:231"
  }
 }

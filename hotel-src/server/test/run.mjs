@@ -94,7 +94,7 @@ console.log("--- the introduction and the lighter job");
   ok("buy a lighter from the vending machine", await act(u, "buyVending", { id: "lighter" }));
   const jr = await act(u, "sixty", { step: "jobReward" });
   ok("reward with the lighter", jr);
-  check("just the 5 blood, no syringe", total(jr.state.inventory, "syringe") === 0 && jr.state.blood === 7 - 2 + 5);
+  check("the 5 blood and a growing kit, no syringe", total(jr.state.inventory, "syringe") === 0 && total(jr.state.inventory, "f_planter") === 1 && jr.state.blood === 7 - 2 + 5);
 }
 
 console.log("--- shops can't be fooled");

@@ -77,9 +77,9 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
     busy = false; if (!closed) render();
   }
 
-  function btn(icon: string, label: string, onclick: () => void, opts: { disabled?: boolean; title?: string; primary?: boolean } = {}): HTMLElement {
+  function btn(icon: string, label: string, onclick: () => void, opts: { disabled?: boolean; title?: string; primary?: boolean; tone?: string } = {}): HTMLElement {
     return h("button", { class: "pw-btn" + (opts.primary ? " primary" : ""), disabled: !!opts.disabled || busy, title: opts.title ?? label, onclick },
-      h("span", { class: "pw-ico" }, icon), h("span", { class: "pw-lbl" }, label), h("span", { class: "pw-chev" }, "›"));
+      h("span", { class: "pw-ico tone-" + (opts.tone ?? "gray") }, icon), h("span", { class: "pw-lbl" }, label), h("span", { class: "pw-chev" }, "›"));
   }
   /** a grouped list like the iOS 6 settings tables: one rounded box, rows split by thin lines */
   const group = (...rows: HTMLElement[]): HTMLElement => h("div", { class: "pw-group" }, ...rows);
@@ -88,7 +88,7 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
   function actions(): HTMLElement[] {
     const name = prof!.name;
     const rel = social.relations.get(uid);
-    if (isMe()) return [h("div", { class: "pw-sec" }, "This is you"), group(btn("✏️", "Customize", () => { view = "edit"; render(); }, { primary: true }))];
+    if (isMe()) return [h("div", { class: "pw-sec" }, "This is you"), group(btn("✏️", "Customize", () => { view = "edit"; render(); }, { primary: true, tone: "blue" }))];
     const out: HTMLElement[] = [h("div", { class: "pw-sec" }, friend() ? "You are friends" : "You are not friends")];
     if (friend()) {
       const rows: HTMLElement[] = [];
@@ -96,23 +96,23 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
         ? h("div", { class: "pw-confirm" }, `Remove ${name}?`,
             h("button", { class: "btn small primary", onclick: () => void act(async () => { await social.removeFriend(uid); confirmRemove = false; logAction(me, "friend", `removed ${name}`); return `${name} isn't your friend any more.`; }) }, "Yes"),
             h("button", { class: "btn small", onclick: () => { confirmRemove = false; render(); } }, "No"))
-        : btn("💔", "Remove friend", () => { confirmRemove = true; render(); }));
-      if (rel) rows.push(btn("✖️", rel === "partner" ? "End partnership" : "Not best friends", () => void act(async () => { await social.removeRelation(uid); return "Done."; })));
+        : btn("💔", "Remove friend", () => { confirmRemove = true; render(); }, { tone: "red" }));
+      if (rel) rows.push(btn("✖️", rel === "partner" ? "End partnership" : "Not best friends", () => void act(async () => { await social.removeRelation(uid); return "Done."; }), { tone: "gray" }));
       else {
-        rows.push(btn("⭐", "Best friends", () => void act(async () => { await social.askRelation(uid, "bff"); return `You asked ${name} to be your best friend.`; }), { title: "Ask to be best friends (up to 3)" }));
-        rows.push(btn("💖", "Be partners", () => void act(async () => { await social.askRelation(uid, "partner"); return `You asked ${name} to be your partner.`; }), { title: "Ask to be partners (only one)" }));
+        rows.push(btn("⭐", "Best friends", () => void act(async () => { await social.askRelation(uid, "bff"); return `You asked ${name} to be your best friend.`; }), { title: "Ask to be best friends (up to 3)", tone: "yellow" }));
+        rows.push(btn("💖", "Be partners", () => void act(async () => { await social.askRelation(uid, "partner"); return `You asked ${name} to be your partner.`; }), { title: "Ask to be partners (only one)", tone: "pink" }));
       }
       out.push(group(...rows));
     } else {
-      out.push(group(btn("➕", "Add friend", () => void act(async () => social.sendRequest(name).then((s) => { logAction(me, "friend", `asked ${name}`); return s; })), { primary: true })));
+      out.push(group(btn("➕", "Add friend", () => void act(async () => social.sendRequest(name).then((s) => { logAction(me, "friend", `asked ${name}`); return s; })), { primary: true, tone: "green" })));
     }
     out.push(h("div", { class: "pw-sec" }, "Actions"));
     const visitLabel = visit === "go" ? "Visit" : visit === "knock" ? (knocking ? "Knocking…" : "Knock") : visit === "closed" ? "Room closed" : "No room";
     out.push(group(
-      btn("🏠", visitLabel, () => doVisit(), { disabled: visit === "closed" || visit === "none" || knocking, title: visit === "closed" ? "Their room is closed to you" : "Go to their room" }),
-      btn("💬", "Message", () => { window.dispatchEvent(new CustomEvent("open-chat", { detail: uid })); close(); }, { disabled: !friend(), title: friend() ? "Send a message" : "Only friends can message each other" }),
-      btn("🔁", "Trade", () => void act(async () => { await social.inviteToTrade(uid); return `You ask ${name} to trade. They have to accept.`; }), { disabled: !online(), title: online() ? "Invite to trade" : "They have to be online" }),
-      btn("🎁", "Send gift", () => { view = "gift"; render(); }, { disabled: !friend(), title: friend() ? "Send an item as a gift" : "Gifts go to friends" })));
+      btn("🏠", visitLabel, () => doVisit(), { disabled: visit === "closed" || visit === "none" || knocking, title: visit === "closed" ? "Their room is closed to you" : "Go to their room", tone: "orange" }),
+      btn("💬", "Message", () => { window.dispatchEvent(new CustomEvent("open-chat", { detail: uid })); close(); }, { disabled: !friend(), title: friend() ? "Send a message" : "Only friends can message each other", tone: "blue" }),
+      btn("🔁", "Trade", () => void act(async () => { await social.inviteToTrade(uid); return `You ask ${name} to trade. They have to accept.`; }), { disabled: !online(), title: online() ? "Invite to trade" : "They have to be online", tone: "teal" }),
+      btn("🎁", "Send gift", () => { view = "gift"; render(); }, { disabled: !friend(), title: friend() ? "Send an item as a gift" : "Gifts go to friends", tone: "purple" })));
     return out;
   }
 
@@ -170,31 +170,34 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
   function tiles(): HTMLElement {
     const rels = [...(prof!.relations)].sort((a, b) => Number(b.kind === "partner") - Number(a.kind === "partner")).slice(0, 4);
     const slots: Array<HTMLElement> = rels.map((r) => {
-      const tile = h("button", { class: "pw-tile", title: "Open profile", onclick: () => void load(r.uid) }, h("span", { class: "pw-head" }), h("span", { class: "pw-badge" }, r.kind === "partner" ? "💖" : "⭐"));
+      const tile = h("button", { class: "pw-tile", title: "Open profile", onclick: () => void load(r.uid) }, h("span", { class: "pw-head" }), h("span", { class: "pw-badge " + (r.kind === "partner" ? "heart" : "star"), title: r.kind === "partner" ? "Partner" : "Best friend" }, r.kind === "partner" ? "♥" : "★"));
       void fetchProfile(r.uid).then((p) => { if (p) { tile.title = p.name; tile.querySelector(".pw-head")?.replaceWith(headBox(p.figure)); } });
       return tile;
     });
     while (slots.length < 4) slots.push(h("span", { class: "pw-tile empty" }, "·"));
-    return h("div", { class: "pw-tiles", "aria-label": "Partner and best friends" }, ...slots);
+    return h("div", { class: "pw-close" }, h("div", { class: "pw-sec small" }, "Close friends"), h("div", { class: "pw-tiles", "aria-label": "Partner and best friends" }, ...slots));
   }
 
   function render(): void {
     if (closed) return;
-    const closeBtn = h("button", { class: "pw-x", "aria-label": "Close", onclick: () => close() }, "Close");
+    const closeBtn = h("button", { class: "pw-x", "aria-label": "Done", onclick: () => close() }, "Done");
     if (loading || !prof) {
-      card.replaceChildren(h("div", { class: "pw-head-bar" }, closeBtn, h("strong", {}, loading ? "Loading…" : "Profile"), h("span", { class: "pw-spacer" })), h("div", { class: "pw-body" }, h("div", { class: "hint pad" }, loading ? "" : "This player has no profile.")));
+      card.replaceChildren(h("div", { class: "pw-head-bar" }, h("span", { class: "pw-spacer" }), h("strong", {}, loading ? "Loading…" : "Profile"), closeBtn), h("div", { class: "pw-body" }, h("div", { class: "hint pad" }, loading ? "" : "This player has no profile.")));
       return;
     }
     const who = prof;
     const avatar = h("div", { class: "pw-avatar" });
     void renderAvatar({ figure: who.figure, dir: 2, headDir: 2 }).then((c) => { if (c && !closed && prof === who) avatar.replaceChildren(copyOf(c)); });
     const dot = h("span", { class: "dot " + (online() ? (social.isIdle(uid) ? "idle" : "on") : "") });
-    const bubble = h("div", { class: "pw-bubble" }, who.status || (isMe() ? "Tap Customize to write a status." : "No status yet."));
+    const mid = h("div", { class: "pw-mid" });
+    mid.style.setProperty("--pw-bg", bgColor());
+    const bubble = h("div", { class: "pw-bubble" + (who.status ? "" : " empty") }, who.status || (isMe() ? "Tap Customize to write a status." : "No status yet."));
+    mid.append(avatar, bubble);
     card.replaceChildren(
-      h("div", { class: "pw-head-bar" }, closeBtn, h("strong", {}, who.name, " ", dot), h("span", { class: "pw-spacer" })),
+      h("div", { class: "pw-head-bar" }, h("span", { class: "pw-spacer" }), h("strong", {}, who.name, " ", dot), closeBtn),
       h("div", { class: "pw-body" },
         h("div", { class: "pw-left" }, ...(view === "gift" ? [giftView()] : view === "edit" ? [editView()] : actions())),
-        h("div", { class: "pw-mid", style: { background: bgColor() } }, avatar, bubble),
+        mid,
         h("div", { class: "pw-right" }, tiles())));
   }
 

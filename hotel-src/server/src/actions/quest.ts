@@ -51,9 +51,13 @@ export const sixty: Action = {
       case "jobReward": {
         if (s.tutorial !== 5) fail("He has nothing for you right now.");
         if (findSlot(s.inventory, "lighter") < 0) fail("You haven't got a lighter.");
-        s.blood += JOB_REWARD; // just the 5 drops (no syringe any more)
+        // the pay: 5 drops and a growing kit (checked first, so a full pocket doesn't cost anything)
+        const kit = addToInv(s.inventory, { item: "f_planter", qty: 1 });
+        if (!kit) fail("Your inventory is full");
+        s.inventory = kit!;
+        s.blood += JOB_REWARD;
         s.tutorial = 6;
-        return {};
+        return { kit: true };
       }
       default:
         return fail("Unknown step.");

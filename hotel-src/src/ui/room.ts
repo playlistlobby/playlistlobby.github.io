@@ -25,7 +25,7 @@ import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
 import { LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
-import { BLOOD_ICON, findSlot, growMsOf, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
+import { BLOOD_ICON, findSlot, furniIcon, growMsOf, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
 import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
@@ -150,7 +150,7 @@ const posterBlank: HTMLCanvasElement = (() => {
   c.width = POSTER_W; c.height = POSTER_H;
   const g = c.getContext("2d")!;
   g.fillStyle = "#000"; g.fillRect(0, 0, POSTER_W, POSTER_H);
-  g.fillStyle = "#e6e6e6"; g.font = "bold 30px Verdana, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillStyle = "#e6e6e6"; g.font = "bold 30px Verdana, 'Apple Color Emoji', sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
   g.fillText("?", POSTER_W / 2, POSTER_H / 2 + 2);
   return c;
 })();
@@ -2037,6 +2037,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         ctx.refreshHeader();
         playSfx("give", 0.6);
         giftPop(`+${price} Blood`, bloodImg);
+        void furniIcon("f_planter"); // (the picture for the pay is ready when you come back)
         logAction(me, "room", `got ${price} drops from 6ixty for a lighter`);
         sixtySay(SIXTY_LINES.lighterJob, 4200);
         sixtyAfter(4500, () => sixtySay(SIXTY_LINES.lighterJob2, 6500));
@@ -2048,8 +2049,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         panel.refresh();
         playSfx("give", 0.6);
         giftPop(`+${JOB_REWARD} Blood`, bloodImg);
-        logAction(me, "room", "brought 6ixty the lighter");
+        sixtyAfter(900, () => giftPop("+1 Growing kit", loadImg(furniIcon("f_planter")))); // the pay is 5 drops and a growing kit
+        logAction(me, "room", "brought 6ixty the lighter (got 5 drops and a growing kit)");
         sixtySay(SIXTY_LINES.lighterDone, 3200);
+        sixtyAfter(3400, () => sixtySay(SIXTY_LINES.lighterKit, 4200));
       } else if (me.tutorial === 4) {
         sixtySay(`come back in about ${waitText(jobWaitMs(me))}. I'll have another job for you.`, 4200);
         openSixtyWindow();
@@ -3057,7 +3060,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.fillStyle = done ? "#ffd75a" : "#e0a030"; g.fillRect(cx - bw / 2, y, bw * prog, bh);
     if (done) {
       const bounce = Math.sin(now / 260) * 2 * scale;
-      g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`; g.textAlign = "center"; g.textBaseline = "bottom";
+      g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`; g.textAlign = "center"; g.textBaseline = "bottom";
       g.lineWidth = 3; g.strokeStyle = "#000"; g.strokeText("ready!", cx, y - 3 * scale + bounce);
       g.fillStyle = "#ffe9a0"; g.fillText("ready!", cx, y - 3 * scale + bounce);
       g.textAlign = "start";
@@ -3121,7 +3124,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         bar(y + bh + 3 * scale, water, water > 0 ? "#4aa8e8" : "#7a2a2a"); // water
         if (prog >= 1) {
           const bounce = Math.sin(now / 260) * 2 * scale;
-          g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`; g.textAlign = "center"; g.textBaseline = "bottom";
+          g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`; g.textAlign = "center"; g.textBaseline = "bottom";
           g.lineWidth = 3; g.strokeStyle = "#000"; g.strokeText("ready!", cx, y - 3 * scale + bounce);
           g.fillStyle = "#c8ff8a"; g.fillText("ready!", cx, y - 3 * scale + bounce);
           g.textAlign = "start";
@@ -3147,7 +3150,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function drawPriceTag(price: number, right: number, bottom: number): void {
     const fs = Math.round(11 * Math.max(1, scale));
     g.save();
-    g.font = `bold ${fs}px Verdana, sans-serif`;
+    g.font = `bold ${fs}px Verdana, 'Apple Color Emoji', sans-serif`;
     const label = String(price);
     const ic = fs + 2;
     const w = g.measureText(label).width + ic + 14, hgt = fs + 8;
@@ -3387,7 +3390,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function drawBubble(text: string, name: string, cx: number, bottomY: number, alpha: number): void {
-    const font = `${Math.round(12 * Math.max(1, scale))}px Verdana, sans-serif`;
+    const font = `${Math.round(12 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
     g.font = font;
     const maxW = 190 * Math.max(1, scale);
     const words = text.split(" ");
@@ -3487,7 +3490,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.strokeStyle = "#0b2a52";
         g.stroke();
         g.fillStyle = "#fff";
-        g.font = `bold ${Math.round(13 * Math.max(1, scale))}px Verdana, sans-serif`;
+        g.font = `bold ${Math.round(13 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
         g.textAlign = "center";
         g.textBaseline = "middle";
         g.fillText("0", sx, sy + 1);
@@ -3566,7 +3569,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // emote glyphs floating above heads
     g.textAlign = "center";
     g.textBaseline = "middle";
-    g.font = `${Math.round(20 * Math.max(1, scale))}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+    g.font = `${Math.round(20 * Math.max(1, scale))}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
     for (const gl of glyphs) {
       const p = players.get(gl.uid);
       if (!p) continue;
@@ -3583,7 +3586,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const life = f.life ?? 1100;
       g.globalAlpha = Math.max(0, Math.min(1, (life - age) / (life * 0.45)));
       const fsz = Math.round(16 * Math.max(1, scale));
-      g.font = `bold ${fsz}px Verdana, sans-serif`;
+      g.font = `bold ${fsz}px Verdana, 'Apple Color Emoji', sans-serif`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.lineWidth = 3;
@@ -3861,7 +3864,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             if (hot) { g.strokeStyle = "rgba(255,226,122,0.95)"; g.lineWidth = 2; g.beginPath(); g.ellipse(c.x, c.y + 1 * scale, 15 * scale, 7 * scale, 0, 0, Math.PI * 2); g.stroke(); }
             if (im.complete && im.naturalWidth) g.drawImage(im, c.x - sz / 2, c.y - sz * 0.9, sz, sz);
             if (d.qty > 1) {
-              g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
+              g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
               g.textAlign = "right"; g.textBaseline = "alphabetic";
               g.lineWidth = 3; g.strokeStyle = "rgba(0,0,0,0.8)"; g.strokeText(String(d.qty), c.x + sz / 2, c.y - 2 * scale);
               g.fillStyle = "#ffe27a"; g.fillText(String(d.qty), c.x + sz / 2, c.y - 2 * scale);
@@ -3891,7 +3894,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.fillStyle = "rgba(0,0,0,0.18)";
           g.beginPath(); g.ellipse(sf.x, sf.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); g.fill();
           if (simg) g.drawImage(simg, sf.x - (32 + padOf(simg).x) * scale, sf.y - (FEET_Y + padOf(simg).y) * scale, simg.width * scale, simg.height * scale);
-          g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
+          g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
           const tw = g.measureText(SIXTY.name).width + 10;
           g.fillStyle = sHot ? "rgba(120,80,10,0.9)" : "rgba(0,0,0,0.55)";
           g.beginPath(); g.roundRect(sf.x - tw / 2, sf.y + 7 * scale, tw, 14 * Math.max(1, scale), 5); g.fill();
@@ -3985,7 +3988,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
               if (lflash > 0.02) g.drawImage(redWash(limg, lflash), ax, ay, lw, lh);
             }
             const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
-            g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
+            g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
             const label = p.sleeper ? `${p.name} 💤` : p.name;
             const tw = g.measureText(label).width + 10;
             g.fillStyle = targeted ? "rgba(150,20,20,0.85)" : "rgba(0,0,0,0.55)";
@@ -4086,7 +4089,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (cupOut && !cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
-          g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, sans-serif`;
+          g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
           const shownLabel = p.chud && serverNow() < p.chud ? "chud" : p.name; // the plain chud joint: your name reads "chud" for a while
           const tw = g.measureText(shownLabel).width + 10;
           g.fillStyle = targeted ? "rgba(150,20,20,0.85)" : "rgba(0,0,0,0.55)";
@@ -4099,7 +4102,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.fillText(shownLabel, feet.x, feet.y + 9 * scale);
           if (glowing) { // a little arrow bobbing over his head
             g.fillStyle = "#ffd54a";
-            g.font = `${Math.round(16 * Math.max(1, scale))}px Verdana, sans-serif`;
+            g.font = `${Math.round(16 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
             g.fillText("▼", feet.x, feet.y - (FEET_Y + 14) * scale + Math.sin(now / 200) * 4 * scale);
           }
           g.textAlign = "start";
