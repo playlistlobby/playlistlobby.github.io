@@ -185,9 +185,9 @@ T0244|Somebody threw it out|Nogen smed den ud. Blodet er ikke helt koldt endnu. 
 T0245|Knife|Kniv
 T0246|A small, sharp knife|En lille, skarp kniv. Brug den på en anden spiller: du kan stikke hver person en gang om dagen, og hvert stik giver en dråbe blod.
 T0247|{label}: furniture|{label}: møbel. Klik på det, så et ledigt sted i dit eget værelse for at stille det ned. Din værktøjskasse kan også gemme det.
-T0248|Staff can see chat|Staff kan se chat, private beskeder og aktivitet på 6ixPlanet.
+T0248|Staff can see chat|Staff kan se chat, private beskeder og aktivitet på Blodig oktober.
 T0249|Almost there|Næsten der
-T0250|6ixPlanet needs a Firebase|6ixPlanet needs a Firebase project. Add your config to
+T0250|Blodig oktober needs a Firebase|Blodig oktober needs a Firebase project. Add your config to
 T0251|Firebase console|Firebase console → create a project → add a Web app, copy its config
 T0252|Build → Realtime Database|Build → Realtime Database → create a database
 T0253|Or run the local emulators|Or run the local emulators:
@@ -202,8 +202,8 @@ T0261|Password|Adgangskode
 T0262|Sign in to hang out|Log ind for at hænge ud.
 T0263|(running against local Firebase|(running against local Firebase emulators)
 T0264|Already open|Allerede åben
-T0265|This account is open in another window or device|Denne konto er åben i et andet vindue eller en anden enhed. 6ixPlanet kan kun spilles ét sted ad gangen. Luk det der, og prøv igen.
-T0266|This account was opened in another window|Denne konto blev åbnet i et andet vindue, så dette er stoppet. 6ixPlanet kan kun spilles ét sted ad gangen.
+T0265|This account is open in another window or device|Denne konto er åben i et andet vindue eller en anden enhed. Blodig oktober kan kun spilles ét sted ad gangen. Luk det der, og prøv igen.
+T0266|This account was opened in another window|Denne konto blev åbnet i et andet vindue, så dette er stoppet. Blodig oktober kan kun spilles ét sted ad gangen.
 T0267|Try again|Prøv igen
 T0268|Loading your character|Henter din karakter…
 T0269|Couldn't load|Kunne ikke indlæse

@@ -13,7 +13,7 @@ type Status = "open" | "paid" | "claimed" | "stuck";
 interface Purchase { uid: string; product: PayProduct; amount: number; status: Status; at: number; session: string; paidAt?: number; item?: string }
 interface UserPurchase { product: PayProduct; status: Status; at: number }
 
-const NAMES: Record<PayProduct, string> = { mystery: "Mystery CD (6ixPlanet)", album: "Full album CD (6ixPlanet)" };
+const NAMES: Record<PayProduct, string> = { mystery: "Mystery CD (Blodig oktober)", album: "Full album CD (Blodig oktober)" };
 const AMOUNT: Record<PayProduct, number> = { mystery: MYSTERY_PRICE_ORE, album: ALBUM_PRICE_ORE };
 
 export class PayError extends Error {
@@ -44,7 +44,7 @@ export async function startCheckout(env: Env, uid: string, product: unknown): Pr
   const db = new Rtdb(env);
   const now = Date.now();
   await checkEligible(db, uid, product, now);
-  const publicUrl = (env.PUBLIC_URL || (isEmulator(env) ? "http://127.0.0.1:5173/" : "https://playlistlobby.github.io/hotel/")).replace(/\/?$/, "/");
+  const publicUrl = (env.PUBLIC_URL || (isEmulator(env) ? "http://127.0.0.1:5173/" : "https://playlistmag.studio/hotel/")).replace(/\/?$/, "/");
   let session = "";
   let url = "";
   let status: Status = "open";

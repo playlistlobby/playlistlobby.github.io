@@ -1,12 +1,12 @@
-# 6ixPlanet: all the text in the game
+# Blodig oktober: all the text in the game
 
 Fill in the Danish for each line. Keep anything in {curly brackets} exactly as it is (it is replaced by a name or a number in the game).
 
 ## index.html
 
-* **T0001** 6ixPlanet
+* **T0001** Blodig oktober
 
-  * Danish: 6ixPlanet
+  * Danish: Blodig oktober
 
 ## server/src/actions/account.ts
 
@@ -826,13 +826,13 @@ Fill in the Danish for each line. Keep anything in {curly brackets} exactly as i
 
 ## src/main.ts
 
-* **T0248** Staff can see chat, private messages and activity on 6ixPlanet.
+* **T0248** Staff can see chat, private messages and activity on Blodig oktober.
 
   * Danish:
 * **T0249** Almost there
 
   * Danish:
-* **T0250** 6ixPlanet needs a Firebase project. Add your config to
+* **T0250** Blodig oktober needs a Firebase project. Add your config to
 
   * Danish:
 * **T0251** Firebase console → create a project → add a Web app, copy its config
@@ -877,10 +877,10 @@ Fill in the Danish for each line. Keep anything in {curly brackets} exactly as i
 * **T0264** Already open
 
   * Danish:
-* **T0265** This account is open in another window or device. 6ixPlanet can only be played from one place at a time. Close it there, then try again.
+* **T0265** This account is open in another window or device. Blodig oktober can only be played from one place at a time. Close it there, then try again.
 
   * Danish:
-* **T0266** This account was opened in another window, so this one has been stopped. 6ixPlanet can only be played from one place at a time.
+* **T0266** This account was opened in another window, so this one has been stopped. Blodig oktober can only be played from one place at a time.
 
   * Danish:
 * **T0267** Try again

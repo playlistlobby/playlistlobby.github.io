@@ -1,106 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="da">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#ffffff">
-  <title>Playlist Lobby</title>
-  <link rel="icon" href="playlist/assets/app-icon-192.png">
-  <link rel="apple-touch-icon" href="playlist/assets/apple-touch-icon.png">
-  <style>
-    /* iOS 6 home screen on a white page. The measurements, gloss and label style are the same as the Playlist app's own
-       home screen (taken from the Figma "Legacy iOS UI Kit", 320x568 frame): 57px icons with a 10px radius, 11px bold labels.
-       --u is one design pixel; it grows on bigger screens. */
-    :root { --u: clamp(1px, calc(min(100vw, 560px) / 320), 1.75px); --gloss: url("playlist/assets/ios6/icon-gloss.png"); }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; margin: 0; }
-    body {
-      background: radial-gradient(140% 110% at 50% 38%, #ffffff 0%, #ffffff 55%, #f6f9f7 85%, #eef4f0 100%), #fff;
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #2c3136; overflow: hidden;
-    }
-    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
-    .sb-status {
-      position: fixed; z-index: 3; top: 0; left: 0; right: 0; height: calc(20px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 6px 0;
-      display: flex; align-items: center; justify-content: space-between; background: linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.46));
-      color: #fff; font: 700 12px/20px "Helvetica Neue", Helvetica, Arial, sans-serif; text-shadow: 0 -1px 0 rgba(0,0,0,.6); user-select: none; -webkit-user-select: none;
-    }
-    .sb-status > span { display: flex; align-items: center; gap: 4px; }
-    .sb-time { position: absolute; left: 50%; transform: translateX(-50%); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
-    .sb-bars { display: flex; align-items: flex-end; gap: 1px; height: 9px; }
-    .sb-bars i { width: 2.5px; background: #fff; border-radius: .5px; box-shadow: 0 -1px 0 rgba(0,0,0,.35); }
-    .sb-status svg { display: block; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.45)); }
-
-    .screen {
-      position: absolute; inset: 0; display: grid; place-items: start center; padding-top: calc(20px + env(safe-area-inset-top) + max(56px, 17vh));
-      transform-origin: var(--ox, 50%) var(--oy, 40%); transition: opacity .38s ease, transform .45s cubic-bezier(.3,.8,.3,1);
-    }
-    .screen.out { opacity: 0; transform: scale(1.7); } /* opening an app zooms into its icon, like iOS */
-    .grid { display: flex; gap: calc(44 * var(--u)); align-items: flex-start; }
-
-    .app { display: flex; flex-direction: column; align-items: center; gap: calc(5 * var(--u)); color: #2c3136; text-decoration: none; -webkit-touch-callout: none; outline: none; }
-    .icon {
-      position: relative; display: block; width: calc(57 * var(--u)); height: calc(57 * var(--u)); border-radius: calc(10 * var(--u));
-      background: #333 center / cover no-repeat;
-      box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(30,50,40,.28), 0 calc(8 * var(--u)) calc(16 * var(--u)) calc(-6 * var(--u)) rgba(30,50,40,.25);
-    }
-    .icon::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--gloss) center / 100% 100% no-repeat; opacity: .6; mix-blend-mode: soft-light; pointer-events: none; }
-    .icon::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(0,0,0,.45); opacity: 0; transition: opacity .12s; z-index: 1; }
-    .app:active .icon::before, .app.pressed .icon::before { opacity: 1; } /* iOS 6 darkens a tapped icon */
-    .app:focus-visible .icon { box-shadow: 0 0 0 2px rgba(60,120,220,.8), 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.4); }
-    .label { font: 700 calc(11 * var(--u)) / 1.2 "Helvetica Neue", Helvetica, Arial, sans-serif; color: #2c3136; text-shadow: 0 1px 0 rgba(255,255,255,.9); white-space: nowrap; }
-
-    footer { position: fixed; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom)); text-align: center; font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif; color: #9aa3a0; }
-    footer a { color: #8a9490; }
-    @media (prefers-reduced-motion: reduce) { .screen { transition: opacity .2s ease; } .screen.out { transform: none; } }
-  </style>
+  <meta name="theme-color" content="#000000">
+  <title>Blodig oktober</title>
+  <meta http-equiv="refresh" content="0; url=hotel/">
+  <link rel="canonical" href="hotel/">
+  <script>location.replace('hotel/' + location.search + location.hash);</script>
+  <style>html, body { background: #000; margin: 0; }</style>
 </head>
 <body>
-  <div class="sb-status" aria-hidden="true">
-    <span><span class="sb-bars"><i style="height:3px"></i><i style="height:4.5px"></i><i style="height:6px"></i><i style="height:7.5px"></i><i style="height:9px"></i></span>
-      SAB
-      <svg width="13" height="10" viewBox="0 0 13 10"><path d="M6.5 2.2c1.9 0 3.6.7 4.9 1.9l1-1C10.8 1.6 8.8.8 6.5.8S2.2 1.6.6 3.1l1 1C2.9 2.9 4.6 2.2 6.5 2.2zm0 2.6c1.2 0 2.2.4 3 1.2l1-1C9.4 4 8 3.4 6.5 3.4S3.6 4 2.5 5l1 1c.8-.8 1.8-1.2 3-1.2zm0 2.6c-.5 0-.9.2-1.2.5L6.5 9.2l1.2-1.3c-.3-.3-.7-.5-1.2-.5z" fill="#fff"/></svg></span>
-    <span class="sb-time" id="time">9:41 AM</span>
-    <span>100% <svg width="23" height="11" viewBox="0 0 23 11"><rect x=".6" y=".6" width="19" height="9.8" rx="1.6" fill="none" stroke="#fff" stroke-width="1.2"/><rect x="2" y="2" width="16.2" height="7" rx=".6" fill="#fff"/><rect x="20.4" y="3.4" width="1.8" height="4.2" rx=".6" fill="#fff"/></svg></span>
-  </div>
-
-  <main class="screen" id="screen">
-    <h1 class="sr">Playlist Lobby</h1>
-    <nav class="grid" aria-label="Apps">
-      <a class="app" href="playlist/">
-        <span class="icon" style="background-image:url('icons/playlist.svg')"></span>
-        <span class="label">Playlist</span>
-      </a>
-      <a class="app" href="hotel/">
-        <span class="icon" style="background-image:url('icons/6.svg')"></span>
-        <span class="label">6</span>
-      </a>
-    </nav>
-  </main>
-
-  <footer>6 is open source (GPL-3.0): <a href="https://github.com/playlistlobby/playlistlobby.github.io/tree/main/hotel-src">source</a></footer>
-
-  <script>
-    // live clock in the status bar, formatted like iOS ("9:41 AM")
-    const timeEl = document.getElementById('time');
-    const tick = () => { const d = new Date(), h = d.getHours() % 12 || 12; timeEl.textContent = h + ':' + String(d.getMinutes()).padStart(2, '0') + (d.getHours() < 12 ? ' AM' : ' PM'); };
-    tick(); setInterval(tick, 10000);
-
-    // tapping an app zooms into its icon, then opens it (plain links still work without JavaScript)
-    const screen = document.getElementById('screen');
-    for (const a of document.querySelectorAll('.app')) {
-      a.addEventListener('click', (e) => {
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // let "open in new tab" behave normally
-        e.preventDefault();
-        const r = a.querySelector('.icon').getBoundingClientRect();
-        screen.style.setProperty('--ox', (r.left + r.width / 2) + 'px');
-        screen.style.setProperty('--oy', (r.top + r.height / 2) + 'px');
-        screen.classList.add('out');
-        setTimeout(() => { location.href = a.href; }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 150 : 330);
-      });
-    }
-    // coming back with the browser's back button should not leave the page zoomed out
-    addEventListener('pageshow', () => screen.classList.remove('out'));
-  </script>
+  <a href="hotel/" style="color:#fff;font:16px sans-serif">Blodig oktober</a>
 </body>
 </html>

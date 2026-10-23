@@ -33,7 +33,7 @@ import { otherWindowOpen, publishProfile, releasePresence, social, startPresence
 
 startUpdateCheck(); // a phone that still runs an old copy reloads to the new one
 
-export const APP_NAME = "6ixPlanet";
+export const APP_NAME = "Blodig oktober";
 
 export type View = "room" | "customize" | "shop" | "admin" | "npc";
 
@@ -75,7 +75,7 @@ function showSetup(): void {
     h("div", { class: "center-screen" },
       h("div", { class: "panel auth" },
         h("h1", {}, "Almost there"),
-        h("p", {}, "6ixPlanet needs a Firebase project. Add your config to ", h("code", {}, "src/firebaseConfig.ts"), ":"),
+        h("p", {}, "Blodig oktober needs a Firebase project. Add your config to ", h("code", {}, "src/firebaseConfig.ts"), ":"),
         h("ol", {},
           h("li", {}, "Firebase console → create a project → add a Web app, copy its config"),
           h("li", {}, "Build → Authentication → enable the Email/Password provider (usernames are mapped onto it; no real emails are used)"),
@@ -153,8 +153,8 @@ function showLocked(why: "busy" | "taken"): void {
   app.append(h("div", { class: "center-screen" }, h("div", { class: "panel auth" },
     h("h1", {}, "Already open"),
     h("p", {}, why === "busy"
-      ? "This account is open in another window or device. 6ixPlanet can only be played from one place at a time. Close it there, then try again."
-      : "This account was opened in another window, so this one has been stopped. 6ixPlanet can only be played from one place at a time."),
+      ? "This account is open in another window or device. Blodig oktober can only be played from one place at a time. Close it there, then try again."
+      : "This account was opened in another window, so this one has been stopped. Blodig oktober can only be played from one place at a time."),
     h("div", { class: "row" }, h("button", { class: "btn primary", onclick: () => location.reload() }, "Try again")))));
 }
 
@@ -284,7 +284,7 @@ async function showHotel(user: User): Promise<void> {
   startPresence(p);
   // a crashed or reloaded earlier visit can leave a ghost of you standing in a room; clear those before walking in
   for (const room of [LOBBY_ID, ownRoomId(p.uid), tutRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
-  logAction(p, "login", "opened 6ixPlanet");
+  logAction(p, "login", "opened Blodig oktober");
   const stopMessenger = mountMessenger(shell, ctx);
   void collectPaidCds(p); // back from the payment page, or an earlier payment still waiting: the CD is handed over
   const stopTrades = mountTrades(ctx);

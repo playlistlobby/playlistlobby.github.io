@@ -137,7 +137,7 @@ export async function importFiles(d: Draft, files: File[]): Promise<ImportReport
 }
 
 // ---- exporting a template pack ------------------------------------------------------------------------------
-const README = `6ixPlanet clothing template
+const README = `Blodig oktober clothing template
 ===========================
 
 frames/                every sprite frame of this design as its own transparent PNG
