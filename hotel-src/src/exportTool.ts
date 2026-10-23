@@ -3,7 +3,8 @@
 import { avatarsReady, clearAvatarCache, renderAvatar } from "./avatarService";
 import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns } from "./designs";
 import { derive, loadNitro, spritesFor, type NitroFurni } from "./nitro";
-import { FURNI_KINDS } from "./rooms";
+import { FURNI_KINDS, defFromMeta, type RoomMeta } from "./rooms";
+import { shade, TILE_W, WALL_H } from "./roomRender";
 import { ITEMS } from "./items";
 
 const log = document.getElementById("log")!;
@@ -46,7 +47,7 @@ function trimmed(c: HTMLCanvasElement, pad = 4): HTMLCanvasElement {
 
 interface Layer { n: NitroFurni; dir: number; nudge?: { x: number; y: number }; /** show only the bottom part (a plant that is still growing) */ grow?: number }
 /** Draws furniture layers (no floor shadow) around their common anchor, at art scale k. */
-function composite(layers: Layer[], k: number): HTMLCanvasElement {
+function composite(layers: Layer[], k: number, trim = true): HTMLCanvasElement {
   const items = layers.flatMap((l) => spritesFor(l.n, l.dir).filter((s) => !s.isShadow && s.sw > 2 && s.sh > 2).map((s) => ({ l, s, x: s.dx + (l.nudge?.x ?? 0), y: s.dy + (l.nudge?.y ?? 0) })));
   const x0 = Math.min(...items.map((i) => i.x)), y0 = Math.min(...items.map((i) => i.y));
   const x1 = Math.max(...items.map((i) => i.x + i.s.sw)), y1 = Math.max(...items.map((i) => i.y + i.s.sh));
@@ -68,7 +69,7 @@ function composite(layers: Layer[], k: number): HTMLCanvasElement {
     else g.drawImage(it.s.image, it.s.sx, it.s.sy, it.s.sw, it.s.sh, px, py, it.s.sw * k, it.s.sh * k);
     g.restore();
   }
-  return trimmed(c);
+  return trim ? trimmed(c) : c; // (animations keep the same size on every frame: no trimming)
 }
 
 const needNitro = async (path: string): Promise<NitroFurni> => { const n = await loadNitro(path); if (!n) throw new Error("missing " + path); return n; };
@@ -92,6 +93,17 @@ async function furniture(): Promise<void> {
       }
     } catch (e) { say("skipped " + name + ": " + (e as Error).message); }
   }
+  const kit = await potKit();
+  const { pot, foliage, shrooms, place } = kit;
+  for (const [stage, grow] of [["seedling", 0.34], ["growing", 0.67], ["ready", 1]] as Array<[string, number]>) {
+    await save(`weed/weed-in-pot-${stage}.png`, composite([pot, { n: foliage, dir: 2, nudge: place(foliage, 0.64), grow }], K));
+    await save(`shrooms/shrooms-in-pot-${stage}.png`, composite([pot, { n: shrooms, dir: 2, nudge: place(shrooms, 0.95), grow }], K));
+  }
+  await save("weed/weed-plant-only.png", composite([{ n: foliage, dir: 2 }], K));
+  say("furniture done");
+}
+
+async function potKit(): Promise<{ pot: Layer; foliage: NitroFurni; shrooms: NitroFurni; place: (art: NitroFurni, frac: number) => { x: number; y: number } }> {
   // the growing kit: a pot, with weed growing in it (the leaves of an old plant, everything that isn't green wiped out: the same trick the game uses) or shrooms
   const potN = await needNitro("furni/f_flowerpot.nitro");
   const pk = FURNI_KINDS.f_planter;
@@ -115,12 +127,7 @@ async function furniture(): Promise<void> {
     return s0 ? { x: (pk.nudge?.x ?? 0) - (s0.dx + s0.sw / 2), y: (pk.nudge?.y ?? 0) - 22 - (s0.dy + Math.round(s0.sh * frac) - 1) } : { x: 0, y: 0 };
   };
   const pot: Layer = { n: potN, dir: 2, nudge: pk.nudge };
-  for (const [stage, grow] of [["seedling", 0.34], ["growing", 0.67], ["ready", 1]] as Array<[string, number]>) {
-    await save(`weed/weed-in-pot-${stage}.png`, composite([pot, { n: foliage, dir: 2, nudge: place(foliage, 0.64), grow }], K));
-    await save(`shrooms/shrooms-in-pot-${stage}.png`, composite([pot, { n: shrooms, dir: 2, nudge: place(shrooms, 0.95), grow }], K));
-  }
-  await save("weed/weed-plant-only.png", composite([{ n: foliage, dir: 2 }], K));
-  say("furniture done");
+  return { pot, foliage, shrooms, place };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -177,7 +184,7 @@ function redWash(img: HTMLCanvasElement, alpha: number): HTMLCanvasElement {
 async function stabAnimation(): Promise<void> {
   const S = 5; // art pixel -> picture pixels
   const emil = (await renderAvatar({ figure: FIGURES.emil, dir: 2, headDir: 2, actions: ["std"], gesture: "std", frame: 0 }))!;
-  const booty = (await renderAvatar({ figure: FIGURES.bootyshaker, dir: 6, headDir: 6, actions: ["std"], gesture: "std", frame: 0 }))!;
+  const booty = (await renderAvatar({ figure: FIGURES.bootyshaker, dir: 4, headDir: 4, actions: ["std"], gesture: "std", frame: 0 }))!;
   const knife = await loadImage(ITEMS.knife.icon);
   const W = 760, H = 640;
   const feetA = { x: 210, y: 560 }, feetB = { x: 560, y: 560 }; // two characters standing face to face
@@ -226,6 +233,336 @@ async function stabAnimation(): Promise<void> {
   say(`animation done: ${frames.length} frames at ${FPS} fps`);
 }
 
+/**
+ * 6ixty's room for Blender: the floor and the two walls as flat pictures (the same colours, checker, rug and baseboards the game draws), and every piece of furniture as its own
+ * transparent picture plus where it stands (tile, and where the picture's top-left corner sits relative to the piece's anchor), written to room.json.
+ */
+async function roomForBlender(): Promise<void> {
+  const meta = (await (await fetch("/export-data/room6ixty.json")).json()) as RoomMeta;
+  const def = defFromMeta("u_6ixty", meta);
+  const t = def.theme, W = def.w, H = def.h, T = 64; // 64 picture pixels per tile on the floor
+  // floor, seen from straight above: the game's checker (tiles with a faint edge) and the rug with its darker border
+  const fl = document.createElement("canvas");
+  fl.width = W * T; fl.height = H * T;
+  const fg = fl.getContext("2d")!;
+  for (let ty = 0; ty < H; ty++) for (let tx = 0; tx < W; tx++) {
+    const r = def.rug;
+    const rug = !!r && tx >= r.x0 && tx < r.x0 + r.w && ty >= r.y0 && ty < r.y0 + r.h;
+    const edge = rug && !!r && (tx === r.x0 || tx === r.x0 + r.w - 1 || ty === r.y0 || ty === r.y0 + r.h - 1);
+    fg.fillStyle = rug ? shade(t.rugColor, edge ? 0.88 : 1) : (tx + ty) % 2 ? t.floorA : t.floorB;
+    fg.fillRect(tx * T, ty * T, T, T);
+    fg.strokeStyle = "rgba(0,0,0,0.12)"; fg.lineWidth = 2; fg.strokeRect(tx * T + 1, ty * T + 1, T - 2, T - 2);
+  }
+  await save("6ixty-room-blender/textures/floor.png", fl);
+  // walls: the plain colour, a baseboard along the bottom, a thin darker edge (the right wall is lit more than the left one)
+  const wall = async (name: string, tiles: number, light: number, board: number): Promise<void> => {
+    const c = document.createElement("canvas");
+    c.width = tiles * T; c.height = WALL_H * 2;
+    const g = c.getContext("2d")!;
+    g.fillStyle = shade(t.wall, light); g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = shade(t.wall, board); g.fillRect(0, c.height - 20, c.width, 20);
+    g.strokeStyle = shade(t.wall, 0.8); g.lineWidth = 2; g.strokeRect(1, 1, c.width - 2, c.height - 2);
+    await save("6ixty-room-blender/textures/" + name + ".png", c);
+  };
+  await wall("wall-back", W, 1, 0.72); // the wall along game y = 0
+  await wall("wall-left", H, 0.88, 0.64); // the wall along game x = 0
+
+  // furniture
+  const K = 4;
+  const kit = await potKit();
+  const manifest: Array<Record<string, unknown>> = [];
+  for (const f of def.furni) {
+    const k = FURNI_KINDS[f.kind];
+    if (!k?.nitro) continue;
+    try {
+      const n = await needNitro(k.nitro);
+      const dir = f.dir ?? 0;
+      const layers: Layer[] = [{ n, dir, nudge: k.nudge }];
+      if (f.kind === "f_planter") {
+        const crop = f.plant?.crop === "shroom" ? "shroom" : "weed";
+        if (f.plant) layers.push({ n: crop === "shroom" ? kit.shrooms : kit.foliage, dir: 2, nudge: kit.place(crop === "shroom" ? kit.shrooms : kit.foliage, crop === "shroom" ? 0.95 : 0.64) });
+      }
+      const box = compositeBox(layers, K);
+      let tx = f.x, ty = f.y;
+      if (k.wall) { if (dir === 2) tx -= 0.5; else ty -= 0.5; } // wall pieces hang on the wall plane, not on the floor tile
+      const file = `furniture/${f.id}-${f.kind}.png`;
+      await save("6ixty-room-blender/" + file, box.canvas);
+      manifest.push({ id: f.id, kind: f.kind, png: file, anchorTileX: tx, anchorTileY: ty, ox: box.x0, oy: box.y0, pw: box.canvas.width / K, ph: box.canvas.height / K, flat: !!k.flat, wall: !!k.wall, dir });
+    } catch (e) { say("skipped " + f.kind + ": " + (e as Error).message); }
+  }
+  const json = JSON.stringify({ w: W, h: H, wallHeightPx: WALL_H, tilePx: TILE_W, theme: t, rug: def.rug, floor: "textures/floor.png", wallBack: "textures/wall-back.png", wallLeft: "textures/wall-left.png", pieces: manifest }, null, 1);
+  await fetch(SAVE + "6ixty-room-blender/room.json", { method: "POST", body: new Blob([json]) });
+  say(`room export done: ${manifest.length} pieces`);
+}
+
+/** like composite(), but untrimmed and returning where the picture's top-left corner sits relative to the anchor (in art pixels) */
+function compositeBox(layers: Layer[], k: number): { canvas: HTMLCanvasElement; x0: number; y0: number } {
+  const items = layers.flatMap((l) => spritesFor(l.n, l.dir).filter((s) => !s.isShadow && s.sw > 2 && s.sh > 2).map((s) => ({ l, s, x: s.dx + (l.nudge?.x ?? 0), y: s.dy + (l.nudge?.y ?? 0) })));
+  const x0 = Math.min(...items.map((i) => i.x)), y0 = Math.min(...items.map((i) => i.y));
+  const x1 = Math.max(...items.map((i) => i.x + i.s.sw)), y1 = Math.max(...items.map((i) => i.y + i.s.sh));
+  const c = document.createElement("canvas");
+  c.width = Math.ceil((x1 - x0) * k); c.height = Math.ceil((y1 - y0) * k);
+  const g = c.getContext("2d")!;
+  g.imageSmoothingEnabled = false;
+  for (const it of items) {
+    const px = (it.x - x0) * k, py = (it.y - y0) * k;
+    if (it.s.flipH) { g.save(); g.translate(px + it.s.sw * k, py); g.scale(-1, 1); g.drawImage(it.s.image, it.s.sx, it.s.sy, it.s.sw, it.s.sh, 0, 0, it.s.sw * k, it.s.sh * k); g.restore(); }
+    else g.drawImage(it.s.image, it.s.sx, it.s.sy, it.s.sw, it.s.sh, px, py, it.s.sw * k, it.s.sh * k);
+  }
+  return { canvas: c, x0, y0 };
+}
+
+/** the game's floating "+1" over a head: a blood drop and the number, with a little pop as it appears, rising and fading (src/ui/room.ts, "floating +1") */
+function bloodPop(g: CanvasRenderingContext2D, icon: HTMLImageElement, text: string, x: number, y: number, ageMs: number, S: number, life = 1100): void {
+  if (ageMs < 0 || ageMs > life) return;
+  g.save();
+  g.globalAlpha = Math.max(0, Math.min(1, (life - ageMs) / (life * 0.45)));
+  const fsz = 16 * S;
+  g.font = `bold ${fsz}px Verdana, sans-serif`;
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.lineWidth = 3 * S / 2; g.strokeStyle = "#000"; g.lineJoin = "round";
+  const fy = y - ageMs * 0.04 * S;
+  const sz = fsz * 1.7;
+  const tw = g.measureText(text).width;
+  const pop = 1 + 0.35 * Math.max(0, 1 - ageMs / 260);
+  const left = x - (sz + 4 * S + tw) / 2;
+  const fx = left + sz + 4 * S + tw / 2;
+  g.imageSmoothingEnabled = false;
+  g.drawImage(icon, left + sz / 2 - (sz * pop) / 2, fy - (sz * pop) / 2, sz * pop, sz * pop);
+  g.strokeText(text, fx, fy);
+  g.fillStyle = "#ff5252"; g.fillText(text, fx, fy);
+  g.restore();
+}
+
+/** blood drops going +1, +1, +1 */
+async function bloodDrops(): Promise<void> {
+  const icon = await loadImage(ITEMS.knife ? "/items/blood.svg" : "/items/blood.svg");
+  const S = 5, W = 640, H = 360, FPS = 30;
+  const gap = 14, life = 1100;
+  const total = gap * 2 + Math.round((life / 1000) * FPS) + 8;
+  for (let i = 0; i < total; i++) {
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    for (let k = 0; k < 3; k++) bloodPop(g, icon, "+1", W / 2, H - 70, ((i - 4 - k * gap) / FPS) * 1000, S, life);
+    await save(`animation-blood-drops-plus-one/frames/frame-${String(i).padStart(3, "0")}.png`, c);
+  }
+  say(`blood drops done: ${total} frames at ${FPS} fps`);
+}
+
+/** someone (Emil) sells things to 6ixty: each thing flies over to him and the drops of blood he pays pop up over the seller */
+async function sellToSixty(): Promise<void> {
+  const S = 5, W = 900, H = 640, FPS = 30;
+  const emil = (await renderAvatar({ figure: FIGURES.emil, dir: 2, headDir: 2, actions: ["std"], gesture: "std", frame: 0 }))!;
+  const sixty = (await renderAvatar({ figure: FIGURES["6ixty"], dir: 3, headDir: 3, actions: ["std"], gesture: "std", frame: 0 }))!; // facing the camera (dir 3): his umbrella covers his whole head from the front; from the side his head pokes out of its edge
+  const blood = await loadImage("/items/blood.svg");
+  const sells: Array<{ icon: string; pays: number }> = [{ icon: ITEMS.weed.icon, pays: 6 }, { icon: ITEMS.shroom.icon, pays: 14 }, { icon: ITEMS.lsd.icon, pays: 22 }];
+  const icons = await Promise.all(sells.map((x) => loadImage(x.icon)));
+  const feetA = { x: 230, y: 560 }, feetB = { x: 680, y: 560 };
+  const LEAD = 6, EACH = 38, TAIL = 26;
+  const total = LEAD + EACH * sells.length + TAIL;
+  const chestA = { x: feetA.x + 40, y: feetA.y - 40 * S }, chestB = { x: feetB.x - 20, y: feetB.y - 40 * S };
+  for (let i = 0; i < total; i++) {
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    g.imageSmoothingEnabled = false;
+    // 6ixty gives a little hop each time he takes something; Emil leans in as he holds it out
+    let hopB = 0, leanA = 0;
+    sells.forEach((_, k) => {
+      const t = i - LEAD - k * EACH;
+      if (t >= 22 && t < 30) hopB = Math.sin(((t - 22) / 8) * Math.PI) * 6 * S;
+      if (t >= 6 && t < 22) leanA = Math.sin(((t - 6) / 16) * Math.PI) * 8 * S;
+    });
+    const shadow = (f: { x: number; y: number }): void => { g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(f.x, f.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill(); };
+    const draw = (img: HTMLCanvasElement, f: { x: number; y: number }, dx: number, dy: number): void => {
+      shadow(f);
+      g.drawImage(img, f.x + dx - (32 + padOf(img).x) * S, f.y + dy - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+    };
+    draw(sixty, feetB, 0, -hopB);
+    draw(emil, feetA, leanA, 0);
+    sells.forEach((sell, k) => {
+      const t = i - LEAD - k * EACH;
+      const img = icons[k];
+      const sz = 36 * S;
+      if (t >= 4 && t < 22) { // the thing is held out, then thrown across in an arc
+        const u = Math.max(0, (t - 8) / 14);
+        const e = u * u * (3 - 2 * u);
+        const x = chestA.x + (chestB.x - chestA.x) * e, y = chestA.y + (chestB.y - chestA.y) * e - Math.sin(e * Math.PI) * 70 * S / 2 - (t < 8 ? (t - 4) * S : 4 * S);
+        const spin = e * Math.PI * 0.6;
+        g.save(); g.translate(x, y); g.rotate(spin); g.drawImage(img, -sz / 2, -sz / 2, sz, sz); g.restore();
+      }
+      bloodPop(g, blood, `+${sell.pays}`, feetA.x + leanA, feetA.y - 80 * S, ((t - 22) / FPS) * 1000, S, 1300); // 6ixty pays: the drops pop up over the seller
+    });
+    await save(`animation-sell-to-6ixty/frames/frame-${String(i).padStart(3, "0")}.png`, c);
+  }
+  say(`sell animation done: ${total} frames at ${FPS} fps`);
+}
+
+const JET = "hd-600-1.hr-98092.he-98089-80.ea-98051.fa-98060-71.ch-98029.ca-98003-71.lg-98121-1408.sh-98139.wa-98147-71"; // WatchYoJet's look
+
+/** the game's own cigarette / joint / blunt at the mouth with its drifting smoke (src/ui/room.ts drawCigarette), drawn as chunky pixels */
+function drawBlunt(g: CanvasRenderingContext2D, S: number, fx: number, fy: number, dir: number, nowMs: number, ember = 1): void {
+  const blob = (cx: number, cy: number, r: number, color: string): void => {
+    const P = S, n = Math.max(0, Math.round(r / P)), gx = Math.round(cx / P), gy = Math.round(cy / P);
+    g.fillStyle = color;
+    for (let dy = -n; dy <= n; dy++) { let w = 0; while ((w + 1) * (w + 1) + dy * dy <= n * n + n) w++; if (n === 0) w = 0; g.fillRect((gx - w) * P, (gy + dy) * P, (2 * w + 1) * P, P); }
+  };
+  const side = dir >= 1 && dir <= 3 ? 1 : dir >= 5 && dir <= 7 ? -1 : 0;
+  const mx = fx + side * 5 * S, my = fy - (FEET_Y - 51) * S;
+  const tipx = mx + (side || 1) * 11 * S, tipy = my + 2.5 * S;
+  g.save();
+  g.lineCap = "round";
+  g.strokeStyle = "rgba(30,24,20,0.75)"; g.lineWidth = 5 * S;
+  g.beginPath(); g.moveTo(mx, my); g.lineTo(tipx, tipy); g.stroke();
+  g.strokeStyle = "#8b5a2b"; g.lineWidth = 3.4 * S;
+  g.beginPath(); g.moveTo(mx, my); g.lineTo(tipx, tipy); g.stroke();
+  g.strokeStyle = `rgba(255,106,26,${ember})`; g.lineWidth = 3 * S;
+  g.beginPath(); g.moveTo(tipx - (side || 1) * 1.6 * S, tipy - 0.3 * S); g.lineTo(tipx, tipy); g.stroke();
+  for (let i = 0; i < 6; i++) {
+    const t = (nowMs / 1900 + i / 6) % 1;
+    const px = tipx + Math.sin(t * 7 + i * 1.7) * 3.5 * S + t * 3 * S * (side || 1);
+    const py = tipy - t * 36 * S;
+    blob(px, py, (1.6 + t * 4.2) * S, `rgba(222,224,230,${(0.5 * (1 - t)).toFixed(3)})`);
+  }
+  g.restore();
+}
+
+/** watchyoJet: nothing on, then the outfit appears piece by piece, then a blunt */
+async function jetDressSmoke(): Promise<void> {
+  const S = 6, W = 700, H = 720, FPS = 30;
+  const feet = { x: W / 2, y: H - 60 };
+  const parts = JET.split(".");
+  const typeOf = (p: string): string => p.split("-")[0];
+  const order = ["sh", "lg", "ch", "ca", "wa", "hr", "fa", "he", "ea"]; // shoes up to the hair and the face things
+  const stages: string[] = [parts.filter((p) => typeOf(p) === "hd").join(".")]; // just the body and the head
+  const have: string[] = [stages[0]];
+  for (const t of order) { const p = parts.filter((q) => typeOf(q) === t); if (!p.length) continue; have.push(...p); stages.push(have.join(".")); }
+  const imgs: HTMLCanvasElement[] = [];
+  for (const fig of stages) imgs.push((await renderAvatar({ figure: fig, dir: 3, headDir: 3, actions: ["std"], gesture: "std", frame: 0 }))!);
+  const draw = (g: CanvasRenderingContext2D, img: HTMLCanvasElement, dy: number, flash: number): void => {
+    g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(feet.x, feet.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
+    let pic = img;
+    if (flash > 0.02) { // a quick white flash as each piece appears
+      pic = document.createElement("canvas"); pic.width = img.width; pic.height = img.height;
+      const x = pic.getContext("2d")!; x.drawImage(img, 0, 0); x.globalCompositeOperation = "source-atop"; x.fillStyle = `rgba(255,255,255,${flash})`; x.fillRect(0, 0, pic.width, pic.height);
+    }
+    g.drawImage(pic, feet.x - (32 + padOf(img).x) * S, feet.y + dy - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+  };
+  let n = 0;
+  const out = async (c: HTMLCanvasElement): Promise<void> => { await save(`animation-watchyojet-dress-and-smoke/frames/frame-${String(n++).padStart(3, "0")}.png`, c); };
+  const blank = (): { c: HTMLCanvasElement; g: CanvasRenderingContext2D } => { const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d")!; g.imageSmoothingEnabled = false; return { c, g }; };
+  for (let i = 0; i < 12; i++) { const { c, g } = blank(); draw(g, imgs[0], 0, 0); await out(c); } // nothing on
+  const PER = 9;
+  for (let k = 1; k < imgs.length; k++) for (let i = 0; i < PER; i++) { // each piece pops on: a hop and a flash
+    const { c, g } = blank();
+    const hop = i < 5 ? Math.sin((i / 5) * Math.PI) * 4 * S : 0;
+    draw(g, imgs[k], -hop, Math.max(0, 0.7 - i * 0.18));
+    await out(c);
+  }
+  const dressed = imgs[imgs.length - 1];
+  for (let i = 0; i < 14; i++) { const { c, g } = blank(); draw(g, dressed, 0, 0); await out(c); } // posing
+  const SMOKE = 120;
+  for (let i = 0; i < SMOKE; i++) { // the blunt is lit and smoked: now and then a drag (a small lift of the head, the ember glowing)
+    const { c, g } = blank();
+    const drag = Math.max(0, Math.sin((i / 40) * Math.PI * 2 - 0.6));
+    draw(g, dressed, -drag * 1.5 * S, 0);
+    drawBlunt(g, S, feet.x, feet.y - drag * 1.5 * S, 3, (i / FPS) * 1000, i < 4 ? 0.2 : 0.6 + 0.4 * drag);
+    await out(c);
+  }
+  say(`dress and smoke done: ${n} frames at ${FPS} fps, ${stages.length} stages`);
+}
+
+/** watchyoJet sipping lean: the cup is lifted to the mouth, tipped, lowered, twice */
+async function jetSipLean(): Promise<void> {
+  const S = 6, W = 700, H = 720;
+  const feet = { x: W / 2, y: H - 60 };
+  const img = (await renderAvatar({ figure: JET, dir: 3, headDir: 3, actions: ["std"], gesture: "std", frame: 0 }))!;
+  const cup = await loadImage(ITEMS.codeine.icon);
+  const HAND = [-10, -26]; // where the game holds the cup (KNIFE_HAND for this facing)
+  const mouth = { x: feet.x + 8 * S, y: feet.y - (FEET_Y - 52) * S };
+  const hand = { x: feet.x + HAND[0] * S, y: feet.y + HAND[1] * S };
+  const ease = (u: number): number => u * u * (3 - 2 * u);
+  let n = 0;
+  const frames = 150;
+  for (let i = 0; i < frames; i++) {
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    g.imageSmoothingEnabled = false;
+    g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(feet.x, feet.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
+    // two sips: lift (14 frames), tip and hold (22), lower (14), rest
+    const cycle = (i - 14) % 62;
+    let lift = 0, tip = 0;
+    if (i >= 14 && i < 14 + 124) {
+      if (cycle < 14) lift = ease(cycle / 14);
+      else if (cycle < 36) { lift = 1; tip = ease(Math.min(1, (cycle - 14) / 6)) * (cycle > 30 ? 1 - (cycle - 30) / 6 : 1); }
+      else if (cycle < 50) lift = 1 - ease((cycle - 36) / 14);
+    }
+    const tilt = lift * 0.12 + tip * 0.5;
+    g.save();
+    g.translate(feet.x, feet.y - tip * 0.6 * S);
+    g.drawImage(img, -(32 + padOf(img).x) * S, -(FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+    g.restore();
+    const cx = hand.x + (mouth.x - hand.x) * lift, cy = hand.y + (mouth.y - hand.y) * lift;
+    const cs = 26 * S;
+    g.save();
+    g.translate(cx, cy - cs * 0.35);
+    g.rotate(tilt);
+    g.shadowColor = "rgba(0,0,0,0.75)"; g.shadowBlur = 3 * S;
+    g.drawImage(cup, -cs / 2, -cs * 0.5, cs, cs);
+    g.restore();
+    await save(`animation-watchyojet-sipping-lean/frames/frame-${String(n++).padStart(3, "0")}.png`, c);
+  }
+  say(`sipping done: ${n} frames at 30 fps`);
+}
+
+/** weed growing in a pot: planted, then the plant rises out of the soil until it is ready (the same reveal-from-the-bottom the game uses) */
+async function weedGrowth(): Promise<void> {
+  const { pot, foliage, place } = await potKit();
+  const K = 12, FPS = 30;
+  const seedFrames = 12, growFrames = 90, holdFrames = 24;
+  const total = seedFrames + growFrames + holdFrames;
+  for (let i = 0; i < total; i++) {
+    const prog = Math.max(0, Math.min(1, (i - seedFrames) / growFrames));
+    const shown = i < seedFrames ? 0 : 0.34 + 0.66 * prog; // the game's own curve: a seedling shows at once, the full plant when grown
+    const layers: Layer[] = [pot];
+    if (shown > 0) layers.push({ n: foliage, dir: 2, nudge: place(foliage, 0.64), grow: shown });
+    await save(`animation-weed-growing/frames/frame-${String(i).padStart(3, "0")}.png`, composite(layers, K, false));
+  }
+  say(`weed growth done: ${total} frames at ${FPS} fps`);
+}
+
+/** every account's character spins once, then the next account's takes over in the same spot: it looks like one player spinning and changing outfit */
+async function spinAll(): Promise<void> {
+  const accounts: Array<[string, string]> = [
+    ["Emil", FIGURES.emil], ["bootyshaker", FIGURES.bootyshaker],
+    ["Emil2", "hd-180-1369.hr-98095-40.ch-98049-83.lg-98126.sh-908-1320"],
+    ["Emil3", "hd-190-1.hr-98093-9002.he-98089-1408.fa-98060-80.ch-98047-64.cc-98025-81.lg-98120-9002.sh-98134-1408"],
+    ["emoney6", "hd-200-10.hr-98108-45.ea-98055-1408.ch-98044-80.cc-98016-1408.lg-98118-1408.sh-98132-9001"],
+    ["les", "hd-206-10.hr-98101-35.ea-98052-71.fa-1212.ch-98050-9001.ca-98008-1408.lg-98117-9001.sh-98137-9001"],
+    ["les2", "hd-209-8.hr-115-34.ch-807-9004.lg-98118-74.sh-98143"],
+    ["6ixty", FIGURES["6ixty"]],
+  ];
+  const S = 6, W = 700, H = 760, FPS_PER_DIR = 4; // the game turns every 140 ms (4 frames at 30 fps)
+  const SPIN = [2, 3, 4, 5, 6, 7, 0, 1];
+  let n = 0;
+  for (const [name, figure] of accounts) {
+    for (const dir of SPIN) {
+      const img = await renderAvatar({ figure, dir, headDir: dir, actions: ["std"], gesture: "std", frame: 0 });
+      if (!img) continue;
+      const c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      const g = c.getContext("2d")!;
+      g.imageSmoothingEnabled = false;
+      const feet = { x: W / 2, y: H - 80 };
+      g.drawImage(img, feet.x - (32 + padOf(img).x) * S, feet.y - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+      for (let r = 0; r < FPS_PER_DIR; r++) await save(`animation-spin-all-accounts/frames/frame-${String(n++).padStart(3, "0")}.png`, c);
+    }
+    say("spun " + name);
+  }
+  say(`spin done: ${n} frames at 30 fps`);
+}
+
 (async () => {
   try {
     await avatarsReady;
@@ -233,8 +570,14 @@ async function stabAnimation(): Promise<void> {
     clearAvatarCache();
     say("avatar art and clothes ready");
     const only = new URLSearchParams(location.search).get("only"); // ?only=anim re-renders just the animation
-    if (!only) { await furniture(); await icons(); await avatars(); }
-    await stabAnimation();
+    if (only === "room") await roomForBlender();
+    else if (only === "jet") { await jetDressSmoke(); await jetSipLean(); }
+    else if (only === "blood") await bloodDrops();
+    else if (only === "sell") await sellToSixty();
+    else if (only === "spin") await spinAll();
+    else if (only === "weed") await weedGrowth();
+    else if (only === "anim") await stabAnimation();
+    else { await furniture(); await icons(); await avatars(); await stabAnimation(); }
     say("ALL DONE");
     document.title = "export done";
   } catch (e) { say("ERROR: " + (e as Error).message); document.title = "export error"; }
