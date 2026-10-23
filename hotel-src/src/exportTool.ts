@@ -548,6 +548,107 @@ async function jetSipLean(): Promise<void> {
   say(`sipping done: ${n} frames at 30 fps`);
 }
 
+/** the public room full of people (most of the accounts, no name tags): chatting in the game's own bubbles, some sipping lean or smoking, a few wandering about */
+async function chatRoom(): Promise<void> {
+  const W = 1920, H = 1240, S = 2, FPS = 30, OUT = "animation-chatroom";
+  const def = lobbyDef([]);
+  const order = [...def.furni].sort((a, b) => a.x + a.y - (b.x + b.y)).map((f) => f.id); // back to front
+  const mid = iso(6, 8.5);
+  const scene = await basementScene(def, { x: mid.x, y: mid.y - 20 }, W, H, S, order);
+  const STEP = 480; // ms per tile
+  type Who = { fig: string; x: number; y: number; dir: number; act?: "lean" | "cig" | "joint" | "blunt"; say?: [number, string]; patrol?: Array<[number, number]> };
+  const cast: Who[] = [
+    { fig: FIGURES.emil, x: 3, y: 4, dir: 3, say: [0.4, "fuck going on"] },
+    { fig: FIGURES.bootyshaker, x: 5, y: 6, dir: 2, say: [1.9, "talmat"], patrol: [[5, 6], [5, 7], [6, 7], [6, 6]] },
+    { fig: "hd-180-1369.hr-98095-40.ch-98049-83.lg-98126.sh-908-1320", x: 7, y: 3, dir: 5, say: [3.2, "yooo i er alle fattige det mega tragisk :<<<<<<"] },
+    { fig: "hd-190-1.hr-98093-9002.he-98089-1408.fa-98060-80.ch-98047-64.cc-98025-81.lg-98120-9002.sh-98134-1408", x: 8, y: 7, dir: 3, act: "joint", say: [5.4, "stfu"] },
+    { fig: "hd-200-10.hr-98108-45.ea-98055-1408.ch-98044-80.cc-98016-1408.lg-98118-1408.sh-98132-9001", x: 4, y: 9, dir: 3, act: "lean", say: [6.3, "stfu"] },
+    { fig: "hd-206-10.hr-98101-35.ea-98052-71.fa-1212.ch-98050-9001.ca-98008-1408.lg-98117-9001.sh-98137-9001", x: 9, y: 10, dir: 5, say: [7.7, "søger nk tast123"] },
+    { fig: "hd-209-8.hr-115-34.ch-807-9004.lg-98118-74.sh-98143", x: 10, y: 4, dir: 4, act: "cig", say: [9.3, "sælger drugz msg mig"] },
+    { fig: FIGURES["6ixty"], x: 10, y: 7, dir: 5 },
+    { fig: BUSTED, x: 2, y: 12, dir: 3, act: "lean" },
+    { fig: JET, x: 6, y: 11, dir: 4, act: "blunt", patrol: [[6, 11], [7, 11], [7, 12], [6, 12]] },
+    { fig: EMIL6, x: 9, y: 12, dir: 5, patrol: [[9, 12], [9, 9], [10, 9], [10, 12]] },
+  ];
+  const dirOf = (dx: number, dy: number): number => ({ "0,-1": 0, "1,-1": 1, "1,0": 2, "1,1": 3, "0,1": 4, "-1,1": 5, "-1,0": 6, "-1,-1": 7 } as Record<string, number>)[`${Math.sign(dx)},${Math.sign(dy)}`] ?? 0;
+  const cup = await loadImage(ITEMS.codeine.icon);
+  const total = Math.round(13 * FPS);
+  const bubbleOf = (g: CanvasRenderingContext2D, text: string, cx: number, bottomY: number, alpha: number): void => {
+    const font = `${Math.round(12 * S)}px Verdana, 'Apple Color Emoji', sans-serif`;
+    g.save();
+    g.font = font;
+    const maxW = 190 * S, lines: string[] = [];
+    let cur = "";
+    for (const w of text.split(" ")) { const trial = cur ? cur + " " + w : w; if (g.measureText(trial).width > maxW && cur) { lines.push(cur); cur = w; } else cur = trial; }
+    if (cur) lines.push(cur);
+    const lh = 15 * S, boxW = Math.max(...lines.map((l) => g.measureText(l).width)) + 18 * S, boxH = lines.length * lh + 8 * S;
+    const x = cx - boxW / 2, y = bottomY - boxH - 8 * S;
+    g.globalAlpha = alpha;
+    g.fillStyle = "#fff"; g.strokeStyle = "rgba(0,0,0,0.35)"; g.lineWidth = S;
+    g.beginPath(); g.roundRect(x, y, boxW, boxH, 8 * S); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(cx - 5 * S, y + boxH); g.lineTo(cx, y + boxH + 7 * S); g.lineTo(cx + 5 * S, y + boxH); g.fill();
+    g.fillStyle = "#111"; g.textBaseline = "top";
+    lines.forEach((l, i) => g.fillText(l, x + 9 * S, y + 4 * S + i * lh));
+    g.restore();
+  };
+  const ease = (u: number): number => u * u * (3 - 2 * u);
+  for (let i = 0; i < total; i++) {
+    const t = i / FPS, ms = t * 1000;
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d")!;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(scene.bg, 0, 0);
+    const draws: Array<{ depth: number; fn: () => void }> = [];
+    const bubbles: Array<() => void> = [];
+    for (let k = 0; k < cast.length; k++) {
+      const w = cast[k];
+      let pos = { x: w.x, y: w.y }, dir = w.dir, walking = false, frame = 0;
+      if (w.patrol) { // round the little loop, standing a while at each corner
+        const P = w.patrol, per = 1400 + STEP;
+        const leg = Math.floor((ms + k * 700) / per) % P.length, within = (ms + k * 700) % per;
+        const a = P[leg], b = P[(leg + 1) % P.length];
+        const fr = Math.max(0, (within - 1400) / STEP);
+        pos = { x: a[0] + (b[0] - a[0]) * fr, y: a[1] + (b[1] - a[1]) * fr };
+        if (fr > 0) { walking = true; dir = dirOf(b[0] - a[0], b[1] - a[1]); frame = Math.floor((within - 1400) / (STEP / 4)) % 4; }
+      }
+      const talking = !!w.say && ms >= w.say[0] * 1000 && ms < w.say[0] * 1000 + 700;
+      const img = (await renderAvatar({ figure: w.fig, dir, headDir: dir, actions: [walking ? "wlk" : "std"], gesture: talking ? "spk" : "std", frame: walking ? frame : talking ? Math.floor(ms / 140) % 2 : 0 }))!;
+      const f = scene.feetOf(pos.x, pos.y);
+      draws.push({ depth: pos.x + pos.y, fn: () => {
+        g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(f.x, f.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
+        g.drawImage(img, f.x - (32 + padOf(img).x) * S, f.y - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+        if (w.act === "lean") { // a sip every ~4 s: lift, tip, lower; purple bubbles drift up all the time
+          const HAND = [-10, -26], cs = 26 * S;
+          const hand = { x: f.x + HAND[0] * S, y: f.y + HAND[1] * S - cs * 0.8 }, rim = { x: f.x + 4 * S, y: f.y - 41 * S };
+          const cyc = ((ms + k * 1300) % 4200) / 1000;
+          const lift = cyc < 0.5 ? ease(cyc / 0.5) : cyc < 1.7 ? 1 : cyc < 2.2 ? 1 - ease((cyc - 1.7) / 0.5) : 0;
+          const tip = cyc > 0.5 && cyc < 1.7 ? Math.sin(((cyc - 0.5) / 1.2) * Math.PI) : 0;
+          g.save();
+          g.translate(hand.x + (rim.x - hand.x) * lift, hand.y + (rim.y - hand.y) * lift);
+          g.rotate(lift * 0.1 + tip * 0.22);
+          g.shadowColor = "rgba(0,0,0,0.75)"; g.shadowBlur = 3 * S;
+          g.drawImage(cup, -cs / 2, -cs * 0.05, cs, cs);
+          g.restore();
+          for (let q = 0; q < 8; q++) {
+            const u = (ms / 2300 + q / 8) % 1, px = f.x + Math.sin(u * 5 + q * 1.9) * 12 * S, py = f.y - (6 + u * 78) * S, r = (1.4 + u * 2.4) * S;
+            g.fillStyle = `rgba(154,90,230,${(0.7 * (1 - u)).toFixed(3)})`;
+            const cell = S, sz = Math.max(cell, Math.round((2 * r) / cell) * cell);
+            g.fillRect(Math.round((px - r) / cell) * cell, Math.round((py - r) / cell) * cell, sz, sz);
+          }
+        } else if (w.act) drawBlunt(g, S, f.x, f.y, dir, ms + k * 400);
+      } });
+      if (w.say) {
+        const age = ms - w.say[0] * 1000, life = w.say[1].length > 20 ? 4200 : 2700;
+        if (age >= 0 && age < life) bubbles.push(() => bubbleOf(g, w.say![1], f.x, f.y - (FEET_Y + 4) * S, Math.min(1, age / 120, (life - age) / 500)));
+      }
+    }
+    draws.sort((a, b) => a.depth - b.depth).forEach((d) => d.fn());
+    bubbles.forEach((b) => b());
+    await save(`${OUT}/frames/frame-${String(i).padStart(3, "0")}.png`, c);
+  }
+  say(`chat room done: ${total} frames at ${FPS} fps`);
+}
+
 /** A contact sheet of the new furniture as the game draws it: every piece in its default state at its shop facing (and one picture per further state), labelled. */
 async function newFurnitureSheet(): Promise<void> {
   const { SHOP_PIECES, SHOP_KIND_PREFIX } = await import("./shared/furniture");
@@ -1002,6 +1103,7 @@ async function spinAll(): Promise<void> {
     else if (only === "dig") await emil6Dumpster();
     else if (only === "sixty") { loadEmojiFont(); await document.fonts.ready; await emil6Sixty(); }
     else if (only === "basement") { loadEmojiFont(); await document.fonts.ready; await bustedAndBroke(); await emil6Sleeping(); }
+    else if (only === "chat") { loadEmojiFont(); await document.fonts.ready; await chatRoom(); }
     else if (only === "weed") await weedGrowth();
     else if (only === "anim") await stabAnimation();
     else { await furniture(); await icons(); await avatars(); await stabAnimation(); }
