@@ -72,6 +72,9 @@ export const STASHBOX_PRICE = 20;
 export const STASHBOX_OWNED_KEY = "stashbox";
 /** the only furniture the stash box takes (the growing kit and the mixer); the rest of the furniture goes in the toolbox */
 export const STASH_PIECES: ReadonlySet<string> = new Set(["f_planter", "f_mixer"]);
+/** Blood can only be handed over in trades up to this much per player in any 24 hours (so blood from a glitch can't be spread fast). Counted on the one who gives it. */
+export const TRADE_BLOOD_CAP = 1000;
+export const TRADE_BLOOD_WINDOW_MS = DAY_MS;
 export const STORAGE_MAX_PIECES = 99;
 export const STORAGE_MAX_ITEMS = 9999;
 
@@ -90,6 +93,8 @@ export interface Snapshot {
   storage: Record<string, number>;
   /** what is in the stash box: item (or "ass_<item>", or a pot / mixer piece) -> how many */
   stash: Record<string, number>;
+  /** blood given away in trades: the window started at `at` (ms) and `n` has gone since (a new window starts with the next trade after 24 hours) */
+  tradeCap: { at: number; n: number };
   /** who this player has stabbed, and when: target uid -> start (ms, UTC midnight) of that day */
   stabs: Record<string, number>;
   /** when each garbage can was last searched (can id -> ms) */
@@ -119,6 +124,9 @@ export interface Snapshot {
   questAt: number;
   sixty: { knifeAt: number; syringeGiven: boolean };
 }
+
+/** How much blood this player can still hand over in trades right now. */
+export const tradeBloodLeft = (s: { tradeCap: { at: number; n: number } }, now: number): number => (now - s.tradeCap.at >= TRADE_BLOOD_WINDOW_MS ? TRADE_BLOOD_CAP : Math.max(0, TRADE_BLOOD_CAP - s.tradeCap.n));
 
 export const todayStartAt = (now: number): number => now - (now % DAY_MS);
 
@@ -162,6 +170,7 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     inventory,
     storage: Object.fromEntries(Object.entries(nums(v.storage)).filter(([, n]) => n > 0)),
     stash: Object.fromEntries(Object.entries(nums(v.stash)).filter(([, n]) => n > 0)),
+    tradeCap: { at: Number(v.tradeCap?.at) || 0, n: Number(v.tradeCap?.n) || 0 },
     stabs: nums(v.stabs),
     dumpsters: nums(v.dumpsters),
     boostUntil: Number(v.boostUntil) || 0,
@@ -193,6 +202,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
   for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "speedMult", "leanUntil", "cupUntil", "shroomUntil", "chemUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
     if (before[k] !== after[k]) patch[base + k] = after[k];
   }
+  if (before.tradeCap.at !== after.tradeCap.at || before.tradeCap.n !== after.tradeCap.n) patch[`${base}tradeCap`] = after.tradeCap;
   if (before.sixty.knifeAt !== after.sixty.knifeAt) patch[`${base}sixty/knifeAt`] = after.sixty.knifeAt;
   if (before.sixty.syringeGiven !== after.sixty.syringeGiven) patch[`${base}sixty/syringeGiven`] = after.sixty.syringeGiven;
   for (let i = 0; i < INV_SIZE; i++) if (!same(before.inventory[i] ?? null, after.inventory[i] ?? null)) patch[`${base}inventory/${i}`] = after.inventory[i] ?? null;

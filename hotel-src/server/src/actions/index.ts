@@ -8,6 +8,7 @@ import { drop, pickup } from "./floor";
 import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, storeItem, takeItem } from "./toolbox";
 import { tradeFinish } from "./trade";
 import { debug } from "./debug";
+import { backupNow, banPlayer } from "./admin";
 import { posterAdmin } from "./posters";
 import { cdControl, cdInsert, cdReturn } from "./cd";
 import { mix, mixCollect } from "./mixer";
@@ -22,5 +23,5 @@ export const ACTIONS: Record<string, Action> = {
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,
   tradeFinish,
   cdInsert, cdReturn, cdControl, mix, mixCollect,
-  debug, posterAdmin,
+  debug, posterAdmin, backupNow, banPlayer,
 };

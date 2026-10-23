@@ -6,6 +6,7 @@ import { Rtdb } from "./rtdb";
 import { cloneSnapshot, compactInv, parseEconomy, Snapshot, snapshotPatch } from "../../src/shared/economy";
 import { DEFAULT_ITEM_PRICE, DISABLED_ITEMS, ITEM_DEFAULTS, ITEM_IDS } from "../../src/shared/items";
 import { SHIPPED_DIMS } from "../../src/shared/furniture";
+import { hourBucket } from "../../src/shared/backup";
 
 /** A mistake the player made (not enough blood, full pocket...): its text is shown to them. */
 export class GameError extends Error {}
@@ -40,6 +41,9 @@ export class Ctx {
   readonly extra: Record<string, unknown> = {};
   /** a hash of this request's device (dv...): accounts that share one are peers (see peers/<uid>) */
   net: string[] = [];
+  /** which action this is (for the blood ledger), and an optional detail the action adds (who was stabbed, which admin command) */
+  action = "";
+  note = "";
 
   constructor(readonly env: Env, readonly db: Rtdb, readonly caller: Caller) {}
 
@@ -98,12 +102,26 @@ export class Ctx {
     return w;
   }
 
+  /**
+   * The blood ledger: every change to anybody's blood is written in the same atomic update as the change itself, with what caused it
+   * (ledger/<hour>/<uid>/<id>), and added to running totals per player and source (users/<uid>/bloodBy/earned|spent/<source>). The admin app reads these.
+   */
+  private ledger(updates: Record<string, unknown>, w: Work): void {
+    const d = w.s.blood - w.before.blood;
+    if (!d) return;
+    const src = (this.action || "unknown").replace(/[^A-Za-z0-9_-]/g, "_") + (this.action === "debug" && this.note ? `:${this.note.replace(/[^A-Za-z0-9_-]/g, "_")}` : "");
+    const id = `${this.now.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    updates[`ledger/${hourBucket(this.now)}/${w.uid}/${id}`] = { t: this.now, a: src, ...(this.note ? { n: this.note.slice(0, 60) } : {}), d, b: w.s.blood };
+    updates[`users/${w.uid}/bloodBy/${d > 0 ? "earned" : "spent"}/${src}`] = { ".sv": { increment: Math.abs(d) } };
+  }
+
   /** Writes everything in one atomic update; returns the acting player's new state. */
   async commit(): Promise<Snapshot | null> {
     const updates: Record<string, unknown> = { ...this.extra };
     for (const w of this.works.values()) {
       w.s.inventory = compactInv(w.s.inventory);
       Object.assign(updates, snapshotPatch(w.uid, w.before, w.s));
+      this.ledger(updates, w);
     }
     await this.db.patch(updates);
     return this.works.get(this.uid)?.s ?? null;

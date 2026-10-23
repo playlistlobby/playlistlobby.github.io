@@ -14,6 +14,7 @@ export const debug: Action = {
     const tester = c.caller.email.toLowerCase() === TESTER_EMAIL && (a.cmd === "blood" || a.cmd === "skip");
     const trusted = c.isAdmin || isEmulator(c.env) || tester;
     if (!trusted) fail("Unknown command.");
+    c.note = typeof a.cmd === "string" ? a.cmd : ""; // (the blood ledger says which admin command it was)
     const w = await c.user();
     if (a.cmd === "blood") {
       const n = int(a.n, 1, 1000, "amount");

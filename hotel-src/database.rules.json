@@ -1,10 +1,10 @@
 {
   "rules": {
     "users": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
       "$uid": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid && !data.exists() && newData.hasChildren(['name', 'gender', 'figure', 'blood']) && newData.child('blood').val() === 0",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid && !data.exists() && newData.hasChildren(['name', 'gender', 'figure', 'blood']) && newData.child('blood').val() === 0",
         "name": {
           ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 16 && newData.val().matches(/^[A-Za-z0-9_.-]+$/)"
         },
@@ -21,11 +21,11 @@
           ".validate": "newData.isNumber()"
         },
         "seenDoor": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
           ".validate": "newData.isBoolean()"
         },
         "wardrobe": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
           "$slot": {
             ".validate": "$slot.matches(/^[0-7]$/) && newData.hasChildren(['figure', 'gender'])",
             "figure": {
@@ -41,22 +41,40 @@
         }
       }
     },
+    "bans": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'"
+    },
+    "backupIndex": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'"
+    },
+    "backupBlood": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'"
+    },
+    "backupData": {
+      ".read": false
+    },
+    "rollbackLog": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'"
+    },
+    "ledger": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'"
+    },
     "posterMutes": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'"
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'"
     },
     "logs": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
       ".indexOn": [
         "ts"
       ],
       "$id": {
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && newData.child('uid').val() === auth.uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && !data.exists() && newData.child('uid').val() === auth.uid",
         ".validate": "newData.hasChildren(['uid', 'name', 'type', 'detail', 'ts']) && newData.child('type').isString() && newData.child('type').val().matches(/^[a-z_]{2,20}$/) && newData.child('detail').isString() && newData.child('detail').val().length <= 160 && newData.child('name').isString() && newData.child('name').val().length <= 16 && newData.child('ts').val() === now"
       }
     },
     "config": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
-      ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
+      ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
       "shop": {
         "$section": {
           "$key": {
@@ -94,21 +112,21 @@
     },
     "usernames": {
       "$name": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && newData.val() === auth.uid",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && !data.exists() && newData.val() === auth.uid",
         ".validate": "newData.isString()"
       }
     },
     "profiles": {
       "$uid": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name', 'figure'])",
         "name": {
           ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 16"
         },
         "figure": {
-          ".validate": "newData.isString() && newData.val().length < 200 && (newData.val() === root.child('users').child($uid).child('figure').val() || auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid')"
+          ".validate": "newData.isString() && newData.val().length < 200 && (newData.val() === root.child('users').child($uid).child('figure').val() || auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid')"
         },
         "$other": {
           ".validate": false
@@ -116,9 +134,9 @@
       }
     },
     "presence": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
       "$uid": {
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name'])",
         "name": {
           ".validate": "newData.isString() && newData.val().length <= 16"
@@ -145,32 +163,32 @@
     },
     "friends": {
       "$uid": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
         "$friend": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ((auth.uid === $uid && (!newData.exists() || root.child('friendRequests').child($uid).child($friend).exists() || root.child('friends').child($friend).child($uid).exists())) || (auth.uid === $friend && (!newData.exists() || root.child('friendRequests').child(auth.uid).child($uid).exists())))",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth.uid === $uid && (!newData.exists() || root.child('friendRequests').child($uid).child($friend).exists() || root.child('friends').child($friend).child($uid).exists())) || (auth.uid === $friend && (!newData.exists() || root.child('friendRequests').child(auth.uid).child($uid).exists())))",
           ".validate": "newData.hasChildren(['since']) && newData.child('since').isNumber()"
         }
       }
     },
     "friendRequests": {
       "$to": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $to",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $to",
         "$from": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (($from === auth.uid && $from !== $to && !root.child('friends').child($to).child($from).exists()) || (auth.uid === $to && !newData.exists()))",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && (($from === auth.uid && $from !== $to && !root.child('friends').child($to).child($from).exists()) || (auth.uid === $to && !newData.exists()))",
           ".validate": "newData.hasChildren(['ts']) && newData.child('ts').isNumber()"
         }
       }
     },
     "dms": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
       "$uid": {
         "$other": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
           ".indexOn": [
             "ts"
           ],
           "$msg": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && newData.child('from').val() === auth.uid && (auth.uid === $uid || auth.uid === $other) && root.child('friends').child($uid).child($other).exists() && root.child('friends').child($other).child($uid).exists()",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && !data.exists() && newData.child('from').val() === auth.uid && (auth.uid === $uid || auth.uid === $other) && root.child('friends').child($uid).child($other).exists() && root.child('friends').child($other).child($uid).exists()",
             ".validate": "newData.hasChildren(['from', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 200 && newData.child('ts').isNumber()"
           }
         }
@@ -178,55 +196,55 @@
     },
     "invites": {
       "$to": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $to",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $to",
         "$id": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ((auth.uid === $to && !newData.exists()) || (!data.exists() && newData.child('from').val() === auth.uid && root.child('friends').child($to).child(auth.uid).exists()))",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth.uid === $to && !newData.exists()) || (!data.exists() && newData.child('from').val() === auth.uid && root.child('friends').child($to).child(auth.uid).exists()))",
           ".validate": "newData.hasChildren(['room', 'roomName', 'from', 'fromName', 'ts'])"
         }
       }
     },
     "roomInvites": {
       "$room": {
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && root.child('roomsMeta').child($room).child('owner').val() === auth.uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && root.child('roomsMeta').child($room).child('owner').val() === auth.uid",
         "$uid": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid && !newData.exists()",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid && !newData.exists()",
           ".validate": "newData.val() === true"
         }
       }
     },
     "knocks": {
       "$owner": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $owner",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $owner",
         "$visitor": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $visitor",
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ((auth.uid === $visitor && $visitor !== $owner && (!newData.exists() || root.child('roomsMeta').child('u_' + $owner).child('access').val() !== 'closed' && root.child('roomsMeta').child('u_' + $owner).child('access').val() !== 'none')) || (auth.uid === $owner && !newData.exists()))",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $visitor",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth.uid === $visitor && $visitor !== $owner && (!newData.exists() || root.child('roomsMeta').child('u_' + $owner).child('access').val() !== 'closed' && root.child('roomsMeta').child('u_' + $owner).child('access').val() !== 'none')) || (auth.uid === $owner && !newData.exists()))",
           ".validate": "newData.hasChildren(['name', 'ts']) && newData.child('name').isString() && newData.child('name').val().length <= 16 && newData.child('ts').isNumber() && newData.child('ts').val() === now"
         }
       }
     },
     "tradeInvites": {
       "$to": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $to",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $to",
         "$from": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ((auth.uid === $from && $from !== $to) || auth.uid === $to)",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth.uid === $from && $from !== $to) || auth.uid === $to)",
           ".validate": "newData.hasChildren(['name', 'ts']) && newData.child('name').isString() && newData.child('name').val().length <= 16 && newData.child('ts').isNumber()"
         }
       }
     },
     "userTrades": {
       "$uid": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid",
         "$id": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (auth.uid === $uid || newData.parent().parent().parent().child('trades').child($id).child('b').val() === auth.uid || newData.parent().parent().parent().child('trades').child($id).child('a').val() === auth.uid)",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && (auth.uid === $uid || newData.parent().parent().parent().child('trades').child($id).child('b').val() === auth.uid || newData.parent().parent().parent().child('trades').child($id).child('a').val() === auth.uid)",
           ".validate": "newData.val() === true"
         }
       }
     },
     "trades": {
       "$id": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (data.child('a').val() === auth.uid || data.child('b').val() === auth.uid)",
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && newData.child('b').val() === auth.uid && newData.child('a').val() !== auth.uid",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && (data.child('a').val() === auth.uid || data.child('b').val() === auth.uid)",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && !data.exists() && newData.child('b').val() === auth.uid && newData.child('a').val() !== auth.uid",
         ".validate": "newData.hasChildren(['a', 'b', 'status'])",
         "a": {
           ".validate": "newData.isString() && newData.val().length <= 40"
@@ -243,12 +261,12 @@
           }
         },
         "status": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (data.parent().child('a').val() === auth.uid || data.parent().child('b').val() === auth.uid) && data.val() !== 'done' && newData.val() !== 'done'",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && (data.parent().child('a').val() === auth.uid || data.parent().child('b').val() === auth.uid) && data.val() !== 'done' && newData.val() !== 'done'",
           ".validate": "newData.val() === 'open' || newData.val() === 'cancelled'"
         },
         "offer": {
           "$u": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $u && (data.parent().parent().child('a').val() === auth.uid || data.parent().parent().child('b').val() === auth.uid) && data.parent().parent().child('status').val() !== 'done' && !newData.parent().parent().child('ready').exists() && !newData.parent().parent().child('confirm').exists()",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $u && (data.parent().parent().child('a').val() === auth.uid || data.parent().parent().child('b').val() === auth.uid) && data.parent().parent().child('status').val() !== 'done' && !newData.parent().parent().child('ready').exists() && !newData.parent().parent().child('confirm').exists()",
             ".validate": "newData.hasChildren(['blood']) && newData.child('blood').isNumber() && newData.child('blood').val() >= 0 && newData.child('blood').val() <= 99999",
             "blood": {
               ".validate": "true"
@@ -277,13 +295,13 @@
         },
         "ready": {
           "$u": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (data.parent().parent().child('a').val() === auth.uid || data.parent().parent().child('b').val() === auth.uid) && data.parent().parent().child('status').val() !== 'done' && (auth.uid === $u || !newData.exists())",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && (data.parent().parent().child('a').val() === auth.uid || data.parent().parent().child('b').val() === auth.uid) && data.parent().parent().child('status').val() !== 'done' && (auth.uid === $u || !newData.exists())",
             ".validate": "newData.val() === true"
           }
         },
         "confirm": {
           "$u": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (data.parent().parent().child('a').val() === auth.uid || data.parent().parent().child('b').val() === auth.uid) && data.parent().parent().child('status').val() !== 'done' && (auth.uid === $u || !newData.exists())",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && (data.parent().parent().child('a').val() === auth.uid || data.parent().parent().child('b').val() === auth.uid) && data.parent().parent().child('status').val() !== 'done' && (auth.uid === $u || !newData.exists())",
             ".validate": "newData.val() === true"
           }
         },
@@ -294,9 +312,9 @@
     },
     "furni": {
       "meta": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
         "$kind": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
           ".validate": "$kind.matches(/^x_[a-z0-9_]{1,24}$/) && newData.hasChildren(['name', 'w', 'h', 'players', 'flat'])",
           "name": {
             ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 28"
@@ -337,9 +355,9 @@
         }
       },
       "sheet": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
         "$kind": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
           ".validate": "$kind.matches(/^x_[a-z0-9_]{1,24}$/) && newData.hasChildren(['png', 'json'])",
           "png": {
             ".validate": "newData.isString() && newData.val().length < 700000"
@@ -355,8 +373,8 @@
     },
     "lobby": {
       "furni": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
         "$f": {
           ".validate": "newData.hasChildren(['kind', 'x', 'y'])",
           "kind": {
@@ -379,9 +397,9 @@
     },
     "designs": {
       "meta": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
         "$id": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
           ".validate": "$id.matches(/^[0-9]{5,7}$/) && newData.hasChildren(['name', 'slot', 'gender', 'parts', 'published'])",
           "name": {
             ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 28"
@@ -419,9 +437,9 @@
         }
       },
       "sheet": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
         "$id": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
           ".validate": "$id.matches(/^[0-9]{5,7}$/) && newData.hasChildren(['png', 'frames'])",
           "png": {
             ".validate": "newData.isString() && newData.val().length < 900000"
@@ -436,23 +454,23 @@
       }
     },
     "roomsMeta": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password'",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
       "$room": {
-        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && $room === 'u_' + auth.uid && !newData.child('furni').exists() && !newData.child('skins').exists()",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && !data.exists() && $room === 'u_' + auth.uid && !newData.child('furni').exists() && !newData.child('skins').exists()",
         ".validate": "newData.hasChildren(['owner', 'ownerName', 'name', 'access', 'w', 'h'])",
         "owner": {
           ".validate": "newData.val() === $room.replace('u_', '')"
         },
         "ownerName": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           ".validate": "newData.isString() && newData.val().length <= 16"
         },
         "name": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 28"
         },
         "access": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           ".validate": "newData.val() === 'open' || newData.val() === 'knock' || newData.val() === 'closed' || newData.val() === 'none' || newData.val() === 'friends' || newData.val() === 'invite'"
         },
         "w": {
@@ -499,7 +517,7 @@
           }
         },
         "bed": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
@@ -514,7 +532,7 @@
           }
         },
         "bag": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
@@ -529,7 +547,7 @@
           }
         },
         "toolbox": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
@@ -544,7 +562,7 @@
           }
         },
         "stashbox": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
@@ -559,7 +577,7 @@
           }
         },
         "boombox": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
@@ -574,7 +592,7 @@
           }
         },
         "sink": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
@@ -630,7 +648,7 @@
           ".validate": false
         },
         "intercom": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.parent().child('owner').val() === auth.uid",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
@@ -647,12 +665,12 @@
       }
     },
     "rooms": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'",
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
       "$room": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now))",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now))",
         "players": {
           "$uid": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.uid === $uid && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now))",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.uid === $uid && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now))",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
             "smoke": {
               ".validate": "newData.isNumber()"
@@ -667,7 +685,7 @@
               ".validate": "newData.isBoolean()"
             },
             "sixty": {
-              ".validate": "newData.val() === true && auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid'"
+              ".validate": "newData.val() === true && auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'"
             },
             "emote": {
               "id": {
@@ -708,25 +726,25 @@
             "ts"
           ],
           "$msg": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now)) && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now)) && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
             ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0"
           }
         },
         "drops": {
           "$tile": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now)) && data.exists() && !newData.exists() && data.child('exp').exists() && data.child('exp').val() <= now",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now)) && data.exists() && !newData.exists() && data.child('exp').exists() && data.child('exp').val() <= now",
             ".validate": "false"
           }
         },
         "cdplayer": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.exists() && !newData.exists() && data.child('endsAt').val() < now && !data.child('pausedAt').exists()"
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && data.exists() && !newData.exists() && data.child('endsAt').val() < now && !data.child('pausedAt').exists()"
         },
         "events": {
           ".indexOn": [
             "ts"
           ],
           "$event": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !data.exists() && newData.child('from').val() === auth.uid && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now))",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && !data.exists() && newData.child('from').val() === auth.uid && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now))",
             ".validate": "newData.hasChildren(['type', 'from', 'to', 'ts']) && ((newData.child('type').val() === 'stab' && newData.child('to').val() !== auth.uid && (root.child('rooms').child($room).child('players').child(newData.child('to').val()).exists() || root.child('roomsMeta').child($room).child('owner').val() === newData.child('to').val())) || (newData.child('type').val() === 'syringe' && newData.child('to').val() === auth.uid))"
           }
         }

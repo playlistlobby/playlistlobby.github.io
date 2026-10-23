@@ -41,6 +41,24 @@
         }
       }
     },
+    "bans": {
+      ".read": "@ADMIN@"
+    },
+    "backupIndex": {
+      ".read": "@ADMIN@"
+    },
+    "backupBlood": {
+      ".read": "@ADMIN@"
+    },
+    "backupData": {
+      ".read": false
+    },
+    "rollbackLog": {
+      ".read": "@ADMIN@"
+    },
+    "ledger": {
+      ".read": "@ADMIN@"
+    },
     "posterMutes": {
       ".read": "@ADMIN@"
     },

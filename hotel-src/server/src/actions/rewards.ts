@@ -23,6 +23,7 @@ export const stab: Action = {
     if (me && theirs && typeof theirs.x === "number" && typeof theirs.y === "number" && cheb(me, { x: theirs.x, y: theirs.y }) > 3) fail("They're too far away.");
     if (!(await c.db.get(`profiles/${target}/name`))) fail("They aren't a player.");
     if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't stab someone who plays on your device."); // (accounts from one device: no farming your own accounts)
+    c.note = target; // (the blood ledger says who was stabbed)
     const w = await c.user();
     const s = w.s;
     if (findSlot(s.inventory, "knife") < 0) fail("You need a knife for that.");

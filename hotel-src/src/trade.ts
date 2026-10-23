@@ -7,6 +7,7 @@ import { addToInv, call } from "./db";
 import type { Profile } from "./db";
 import type { Inventory } from "./items";
 import { NO_DROP } from "./shared/items";
+import { tradeBloodLeft } from "./shared/economy";
 
 export interface TradeItem { item: string; qty: number; ass?: boolean }
 export interface TradeOffer { blood: number; items: Record<string, TradeItem> }
@@ -73,7 +74,7 @@ export function offerRemove(offer: TradeOffer, slot: number, step: number): Trad
 }
 
 export function offerBlood(p: Profile, offer: TradeOffer, delta: number): TradeOffer {
-  return { ...offer, blood: Math.max(0, Math.min(p.blood, offer.blood + delta)) };
+  return { ...offer, blood: Math.max(0, Math.min(p.blood, tradeBloodLeft(p, Date.now()), offer.blood + delta)) };
 }
 
 const tradePath = (id: string) => `trades/${id}`;

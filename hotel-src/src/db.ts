@@ -73,6 +73,8 @@ export interface Profile {
   storage: Record<string, number>;
   /** what is in the stash box (the landlord sells it): item (or "ass_<item>", or a pot / mixer) -> how many */
   stash: Record<string, number>;
+  /** blood given away in trades in the last 24 hours (see TRADE_BLOOD_CAP) */
+  tradeCap: { at: number; n: number };
   /** the introduction and 6ixty's jobs: 0 = just woke up, 1 = has the knife, 2 = stabbed the guy (first 5 drops), 3 = has the pill, 4 = introduction done (the door leads to the real basement),
    *  5 = got the money for a lighter (go buy one), 6 = brought it back: got 5 drops and the syringe */
   tutorial: number;
@@ -127,6 +129,7 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.vend = s.vend;
   p.storage = s.storage;
   p.stash = s.stash;
+  p.tradeCap = s.tradeCap;
   p.stabs = s.stabs;
   p.dumpsters = s.dumpsters;
   p.boostUntil = s.boostUntil;
@@ -213,6 +216,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     roomLevel: 0,
     storage: {},
     stash: {},
+    tradeCap: { at: 0, n: 0 },
     tutorial: 0,
     questAt: 0,
     syringeSelfAt: 0,
@@ -336,6 +340,19 @@ export async function rewardStab(p: Profile, targetUid: string, roomId: string):
 export const rewardFlappyDrop = (p: Profile, roomId: string): Promise<unknown> => call(p, "flappy", { room: roomId });
 /** The syringe's drop: from yourself, or from a body bag in the room. */
 export const rewardSyringe = (p: Profile, who: "self" | "bag", roomId: string): Promise<unknown> => call(p, "syringe", { who, room: roomId });
+
+/** Admin: a backup right now. */
+export async function backupNow(p: Profile, note?: string): Promise<void> {
+  await call(p, "backupNow", note ? { note } : {});
+}
+/** Admin: put the server back to the backup taken at `ts` and ban `ban` (account ids). Everything stops for a moment while it runs. */
+export async function rollbackServer(p: Profile, ts: number, ban: string[]): Promise<{ users: number; rooms: number; safety: number }> {
+  return call<{ users: number; rooms: number; safety: number }>(p, "backupRollback", { ts, confirm: true, ban });
+}
+/** Admin: ban or unban an account. */
+export async function banAccount(p: Profile, uid: string, on: boolean, reason?: string): Promise<void> {
+  await call(p, "banPlayer", { uid, on, ...(reason ? { reason } : {}) });
+}
 
 /** The landlord's stash box (20 drops, once). It then stands in your room. */
 export async function buyStashbox(p: Profile): Promise<number> {

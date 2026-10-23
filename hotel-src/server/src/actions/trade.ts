@@ -2,7 +2,7 @@
 // and swaps everything in one atomic write. Nothing is ever "in the middle", so nobody can lose or duplicate anything.
 import { Action, ID_RE, text } from "./util";
 import { fail } from "../ctx";
-import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, takeQtyFrom, TRADE_BLOOD_CAP, tradeBloodLeft, TRADE_BLOOD_WINDOW_MS } from "../../../src/shared/economy";
 import { NO_DROP } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
@@ -19,6 +19,8 @@ function parseOffer(raw: any): Offer {
   }
   return { blood: Math.max(0, Math.floor(Number(raw?.blood) || 0)), items };
 }
+
+const sidesName = (sides: Array<{ w: { uid: string }; name: string }>, uid: string): string => sides.find((s) => s.w.uid === uid)?.name ?? "They";
 
 export const tradeFinish: Action = {
   async locks(c, a) {
@@ -46,6 +48,13 @@ export const tradeFinish: Action = {
     const received = new Map<string, Array<{ item: string; qty: number; ass: boolean }>>([[A, []], [B, []]]);
     for (const { w, offer, other } of sides) {
       if (offer.blood > w.s.blood) fail("Somebody doesn't have that much blood any more.");
+      if (offer.blood > 0) {
+        // at most 1000 blood handed over in trades per player per 24 hours
+        const left = tradeBloodLeft(w.s, c.now);
+        if (offer.blood > left) fail(`${w.uid === c.uid ? "You" : sidesName(sides, w.uid)} can only trade ${left} more blood for now (the limit is ${TRADE_BLOOD_CAP} per 24 hours).`);
+        const fresh = c.now - w.s.tradeCap.at >= TRADE_BLOOD_WINDOW_MS;
+        w.s.tradeCap = { at: fresh ? c.now : w.s.tradeCap.at, n: (fresh ? 0 : w.s.tradeCap.n) + offer.blood };
+      }
       let inv: Inventory = w.s.inventory;
       for (const it of offer.items) {
         const have = inv[it.slot];

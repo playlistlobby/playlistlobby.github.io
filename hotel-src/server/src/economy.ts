@@ -5,6 +5,8 @@ import { Caller } from "./auth";
 import { Ctx, GameError } from "./ctx";
 import { Env } from "./env";
 import { Rtdb } from "./rtdb";
+import { createBackup, rollbackTo } from "./backup";
+import { BACKUP_EVERY_MS } from "../../src/shared/backup";
 import { FLOOR_SPAWN_CHANCE, FLOOR_SPAWN_ITEMS, FLOOR_SPAWN_MAX, FLOOR_SPAWN_MS } from "../../src/shared/economy";
 
 interface Bucket { tokens: number; at: number }
@@ -14,6 +16,10 @@ const BURST = 25;
 export class Economy {
   private tails = new Map<string, Promise<void>>();
   private buckets = new Map<string, Bucket>();
+  /** while a rollback runs nothing else may change anything: new actions are turned away, and the rollback waits for the running ones */
+  private frozen = false;
+  private inflight = 0;
+  private bans: { at: number; set: Set<string> } | null = null;
 
   constructor(private state: DurableObjectState, private env: Env) {}
 
@@ -25,6 +31,7 @@ export class Economy {
   /** Every 10 minutes: a 25% chance that a weed seed or a cigarette turns up on the floor of the public room (2 at most lying there). */
   async alarm(): Promise<void> {
     await this.state.storage.setAlarm(Date.now() + FLOOR_SPAWN_MS);
+    await this.maybeBackup();
     if (Math.random() >= FLOOR_SPAWN_CHANCE) return;
     const release = await this.lock("room:lobby"); // the same lock drop / pickup use for this room
     try {
@@ -48,6 +55,50 @@ export class Economy {
       console.error("floor spawn failed", e);
     } finally {
       release();
+    }
+  }
+
+  /** An automatic backup when the last one is old enough (the alarm runs every 10 minutes, so that is about every 20). Never lets a failed backup stop the rest of the alarm. */
+  private async maybeBackup(): Promise<void> {
+    try {
+      const last = (await this.state.storage.get<number>("lastBackupAt")) ?? 0;
+      if (this.frozen || Date.now() - last < BACKUP_EVERY_MS) return;
+      await createBackup(this.env, "auto");
+      await this.state.storage.put("lastBackupAt", Date.now());
+    } catch (e) {
+      console.error("backup failed", e);
+    }
+  }
+
+  private async isBanned(uid: string): Promise<boolean> {
+    if (!this.bans || Date.now() - this.bans.at > 15_000) {
+      try { this.bans = { at: Date.now(), set: new Set(await new Rtdb(this.env).keys("bans")) }; } catch { return this.bans?.set.has(uid) ?? false; }
+    }
+    return this.bans.set.has(uid);
+  }
+
+  /** Rolling the server back to a backup (admin only): stop new actions, let the running ones finish, put the backup back, and ban the accounts the admin picked. */
+  private async rollback(caller: Caller, args: Record<string, unknown>): Promise<Response> {
+    if (!caller.isAdmin) return json({ ok: false, error: "Unknown request." }, 400);
+    const ts = Number(args.ts);
+    if (!Number.isInteger(ts) || ts <= 0 || args.confirm !== true) return json({ ok: false, error: "Bad request." }, 400);
+    const ban = Array.isArray(args.ban) ? args.ban.filter((u): u is string => typeof u === "string" && u !== caller.uid).slice(0, 50) : [];
+    if (this.frozen) return json({ ok: false, error: "A rollback is already running." }, 409);
+    this.frozen = true;
+    try {
+      const until = Date.now() + 30_000;
+      while (this.inflight > 0 && Date.now() < until) await new Promise((r) => setTimeout(r, 100));
+      if (this.inflight > 0) return json({ ok: false, error: "The server was too busy to stop. Try again." }, 503);
+      const entry = await rollbackTo(this.env, ts, caller.uid, ban);
+      this.bans = null; // the new bans count at once
+      const me = await new Ctx(this.env, new Rtdb(this.env), caller).user(); // (the admin's own pockets may have been put back too: the app shows the new ones)
+      return json({ ok: true, state: me.s, data: entry }, 200);
+    } catch (e) {
+      if (e instanceof GameError) return json({ ok: false, error: e.message }, 400);
+      console.error("rollback failed", e);
+      return json({ ok: false, error: "The rollback failed part of the way. Check the data before opening the game again." }, 500);
+    } finally {
+      this.frozen = false;
     }
   }
 
@@ -81,14 +132,20 @@ export class Economy {
     void this.ensureAlarm();
     const { caller, action } = body;
     const args = (body.args && typeof body.args === "object" ? body.args : {}) as Record<string, unknown>;
+    if (action === "backupRollback") return this.rollback(caller, args);
     const def = Object.prototype.hasOwnProperty.call(ACTIONS, action) ? ACTIONS[action] : undefined;
     if (!def) return json({ ok: false, error: "Unknown request." }, 400);
+    if (this.frozen) return json({ ok: false, error: "The server is being repaired. Try again in a minute." }, 503);
+    if (!caller.isAdmin && (await this.isBanned(caller.uid))) return json({ ok: false, error: "This account has been banned." }, 403);
     if (this.tooFast(caller.uid)) return json({ ok: false, error: "Slow down a little." }, 429);
 
     const db = new Rtdb(this.env);
     const c = new Ctx(this.env, db, caller);
+    c.action = action;
     if (Array.isArray(body.net)) c.net = body.net.filter((k): k is string => typeof k === "string" && /^dv[0-9a-f]{18}$/.test(k)).slice(0, 4);
     const releases: Array<() => void> = [];
+    if (this.frozen) return json({ ok: false, error: "The server is being repaired. Try again in a minute." }, 503); // (a rollback may have started while we looked up the ban list; nothing awaits between here and the count)
+    this.inflight++;
     try {
       const keys = new Set<string>([`user:${caller.uid}`]);
       try { for (const k of (await def.locks?.(c, args)) ?? []) keys.add(k); } catch (e) { if (e instanceof GameError) return json({ ok: false, error: e.message }, 400); throw e; }
@@ -103,6 +160,7 @@ export class Economy {
       return json({ ok: false, error: "The server had a problem. Try again." }, 500);
     } finally {
       for (const r of releases.reverse()) r();
+      this.inflight--;
     }
   }
 }
