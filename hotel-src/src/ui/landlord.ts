@@ -1,8 +1,8 @@
 import { h, toast } from "./dom";
-import { buyRoomColors, buyRoomSkins, buyRoomUpgrade } from "../db";
+import { buyRoomColors, buyRoomSkins, buyRoomUpgrade, buyStashbox } from "../db";
 import { defFromMeta, ownRoomId, RoomMeta, RoomTheme, watchMeta, RUG_COLORS, WALL_COLORS } from "../rooms";
 import { BAG_SKINS, BED_SKINS, RoomSkin, skinOf, skinOwnedKey, SkinPart } from "../shared/skins";
-import { BASE_ROOM_SIZE, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES } from "../shared/economy";
+import { BASE_ROOM_SIZE, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, STASHBOX_OWNED_KEY, STASHBOX_PRICE } from "../shared/economy";
 import { ensureFurniSprites, ensureTextures, renderRoomPreview } from "../roomRender";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
@@ -137,7 +137,7 @@ export function openLandlord(host: HTMLElement, ctx: Ctx, onChange: () => void, 
     const price = cost();
     const shownRug = draft.rug !== undefined ? (draft.rug === "none" ? undefined : draft.rug) : t.rug ? t.rugColor : undefined;
     const noRug = draft.rug !== undefined ? draft.rug === "none" : !t.rug;
-    shownKey = `${me.blood}|${me.roomLevel}`;
+    shownKey = `${me.blood}|${me.roomLevel}|${me.owned[STASHBOX_OWNED_KEY] ? 1 : 0}`;
     const scrolled = el.scrollTop; // keep the window where it is: a re-draw must never move a button under your finger
     const roomContent: HTMLElement[] = [
       h("div", { class: "hint" }, `Your room is ${size} × ${size}.`),
@@ -164,6 +164,25 @@ export function openLandlord(host: HTMLElement, ctx: Ctx, onChange: () => void, 
                 },
               }, `${u.price} drops`));
       }),
+      h("div", { class: "ll-label" }, "Stash box"),
+      h("div", { class: "ll-row" + (me.owned[STASHBOX_OWNED_KEY] ? " owned" : "") },
+        h("span", { class: "ll-name" }, "Stash box · keeps your things out of your pockets"),
+        me.owned[STASHBOX_OWNED_KEY]
+          ? h("span", { class: "ll-done" }, "✓ bought")
+          : h("button", {
+              class: "btn small primary",
+              disabled: me.blood < STASHBOX_PRICE || busy,
+              onclick: async () => {
+                busy = true; render();
+                try {
+                  await buyStashbox(me);
+                  playSfx("give", 0.5);
+                  toast("The stash box is in your room, against a wall.");
+                  onChange();
+                } catch (err) { toast((err as Error).message || "Couldn't do that.", "err"); }
+                busy = false; render();
+              },
+            }, `${STASHBOX_PRICE} drops`)),
       h("div", { class: "ll-label" }, `Colours · ${RECOLOR_PRICE} drops for each part you change`),
       preview(),
       h("div", { class: "ll-part" }, "Floor"),
@@ -200,7 +219,7 @@ export function openLandlord(host: HTMLElement, ctx: Ctx, onChange: () => void, 
   }
   render();
   // follows changes made elsewhere (blood spent, level bought); doesn't rebuild the window for nothing, or while the colour box is open
-  const tick = window.setInterval(() => { if (`${me.blood}|${me.roomLevel}` !== shownKey && !el.contains(document.activeElement)) render(); }, 1500);
+  const tick = window.setInterval(() => { if (`${me.blood}|${me.roomLevel}|${me.owned[STASHBOX_OWNED_KEY] ? 1 : 0}` !== shownKey && !el.contains(document.activeElement)) render(); }, 1500);
   function close(): void {
     if (closed) return;
     closed = true;

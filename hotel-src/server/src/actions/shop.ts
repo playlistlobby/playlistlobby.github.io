@@ -1,7 +1,7 @@
 // Buying from 6ixty, the vending machine and the shop room's daily pieces. The server decides what is on sale and for how much.
 import { Action, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
-import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, STASHBOX_OWNED_KEY, STASHBOX_PRICE, takeQtyFrom } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPicksToday, furniPrice, POSTER_KIND, POSTER_PRICE, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
 import { todayStartAt, vendLeft } from "../../../src/shared/economy";
@@ -182,6 +182,7 @@ export const roomSkins: Action = {
         const bedFp = skinFootprint("bed", meta.skins?.bed, 2);
         cover(bedPos.x, bedPos.y, bedFp.w, bedFp.h);
         for (const k of ["toolbox", "sink", "boombox"] as const) { if (k === "boombox" && meta.boombox?.gone) continue; const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
+        if (meta.stashbox) cover(Number(meta.stashbox.x) || 0, Number(meta.stashbox.y) || 0, 1, 1);
         const dimsOf = await c.furniMeta();
         for (const f of Object.values<any>(meta.furni ?? {})) {
           const d = SHIPPED_DIMS[f?.kind] ?? dimsOf[f?.kind] ?? { w: 1, h: 1 };
@@ -204,6 +205,41 @@ export const roomSkins: Action = {
     if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
     w.s.blood -= price;
     return { price, parts };
+  },
+};
+
+/** The landlord's stash box: 20 drops, bought once. It then stands in your room (against a wall, where nothing else is) and keeps your things out of your pockets. */
+export const buyStashbox: Action = {
+  async run(c) {
+    await requireInRoom(c, "shop");
+    const room = `u_${c.uid}`;
+    const meta = await c.db.get<any>(`roomsMeta/${room}`);
+    if (!meta?.owner) fail("You haven't got a room yet.");
+    const w = await c.user();
+    if (w.s.owned[STASHBOX_OWNED_KEY] || meta.stashbox) fail("You already have a stash box.");
+    if (w.s.blood < STASHBOX_PRICE) fail(`You need ${STASHBOX_PRICE - w.s.blood} more drops`);
+    const size = await roomSize(c, room);
+    const taken = new Set<string>();
+    const cover = (x: number, y: number, cw: number, ch: number): void => { for (let i = 0; i < cw; i++) for (let j = 0; j < ch; j++) taken.add(`${x + i},${y + j}`); };
+    const bedPos = { ...DEFAULT_PIECE_POS.bed, ...(meta.bed ?? {}) };
+    const bedFp = skinFootprint("bed", meta.skins?.bed, 2);
+    cover(bedPos.x, bedPos.y, bedFp.w, bedFp.h);
+    const bagPos = { ...DEFAULT_PIECE_POS.bag, ...(meta.bag ?? {}) };
+    const bagFp = skinFootprint("bag", meta.skins?.bag, bagPos.dir ?? 2);
+    cover(bagPos.x, bagPos.y, bagFp.w, bagFp.h);
+    for (const k of ["toolbox", "sink", "boombox"] as const) { if (k === "boombox" && meta.boombox?.gone) continue; const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
+    const dimsOf = await c.furniMeta();
+    for (const f of Object.values<any>(meta.furni ?? {})) {
+      const d = SHIPPED_DIMS[f?.kind] ?? dimsOf[f?.kind] ?? { w: 1, h: 1 };
+      const swap = f?.dir === 2 || f?.dir === 6;
+      cover(Number(f?.x) || 0, Number(f?.y) || 0, swap ? d.h : d.w, swap ? d.w : d.h);
+    }
+    const spot = nearestWallSpot(size, taken, { w: 1, h: 1 }, { x: 2, y: 0 });
+    if (!spot) fail("There's no space in your room for it. Make some room first.");
+    w.s.blood -= STASHBOX_PRICE;
+    w.s.owned[STASHBOX_OWNED_KEY] = true;
+    c.extra[`roomsMeta/${room}/stashbox`] = { x: spot!.x, y: spot!.y, dir: spot!.dir === 2 ? 2 : 4 };
+    return { price: STASHBOX_PRICE };
   },
 };
 

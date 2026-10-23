@@ -543,6 +543,21 @@
             ".validate": false
           }
         },
+        "stashbox": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+          },
+          "dir": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
         "boombox": {
           ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && data.parent().child('owner').val() === auth.uid",
           "x": {

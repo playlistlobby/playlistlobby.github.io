@@ -70,6 +70,7 @@ import { FurniBuyApi, openFurniBuy } from "./furniBuy";
 import { openVending, VendingApi } from "./vendingShop";
 import { openRecordShop, RecordShopApi } from "./recordShop";
 import { openPosterShop, PosterShopApi } from "./posterShop";
+import { openStashBox, StashApi } from "./stashbox";
 import { pickPosterPicture } from "./posterEditor";
 import { POSTER_KIND, POSTER_PRICE, POSTER_W, POSTER_H } from "../shared/furniture";
 import { MixerApi, openMixer } from "./mixer";
@@ -345,6 +346,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let vendingApi: VendingApi | null = null;
   let recordApi: RecordShopApi | null = null;
   let posterApi: PosterShopApi | null = null;
+  let stashApi: StashApi | null = null;
   let landlordApi: LandlordApi | null = null;
   let landlordBubble: Bubble | null = null;
   let landlordLast: HTMLCanvasElement | undefined;
@@ -499,6 +501,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
     else if (hoverObj && (hoverObj.kind === "recordplayer" || hoverObj.kind === "vinyltable")) text = "Record player: CDs";
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
+    else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind ?? ""]?.states?.length ?? 0) > 1) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to use`;
@@ -773,7 +776,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "landlord") startLandlord();
@@ -822,6 +825,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj && isBodyBag(obj.kind) && !isDisplayPiece(obj.id)) opts.push({ label: "Draw blood", target: "Body bag", action: () => startUse(obj.id, null) });
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
+    if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
@@ -1298,6 +1302,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     vendingApi?.close();
     recordApi?.close();
     posterApi?.close();
+    stashApi?.close();
     landlordApi?.close();
     sixtyShop?.close();
   }
@@ -1614,6 +1619,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const opens = FURNI_KINDS[f.kind].opens;
         if (opens === "furnish") enterFurnish();
         else if (opens === "vending") openVendingShop();
+        else if (opens === "stash") { if (!stashApi) stashApi = openStashBox(stage, ctx, () => panel.refresh(), () => { stashApi = null; }); }
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "records") { if (!recordApi) recordApi = openRecordShop(stage, ctx, () => panel.refresh(), () => { recordApi = null; }); }
         else if (opens === "mixer") {
@@ -3297,7 +3303,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const noHint = k.opens === "mixer"; // the mixer glows like the rest, but has no little icon floating over it
+        const noHint = k.opens === "mixer" || k.opens === "stash"; // the mixer glows like the rest, but has no little icon floating over it
         const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
         const hint = k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
@@ -4178,6 +4184,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     vendingApi?.close();
     recordApi?.close();
     posterApi?.close();
+    stashApi?.close();
     landlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();

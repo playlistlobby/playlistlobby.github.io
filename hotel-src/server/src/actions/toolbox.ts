@@ -2,8 +2,8 @@
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
 import { Action, ID_RE, int, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
-import { addToInv, MAX_FURNI, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
-import { STACKABLE } from "../../../src/shared/items";
+import { addToInv, MAX_FURNI, STASH_PIECES, STASHBOX_OWNED_KEY, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
+import { isFurniItem, STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
 import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
 
@@ -45,8 +45,10 @@ export const storeItem: Action = {
     if (take > it!.qty) fail("You haven't got that many.");
     const key = it!.ass ? `ass_${it!.item}` : it!.item;
     if (!KEY_RE.test(key)) fail("That can't be stored.");
+    // the toolbox is for furniture only now: seeds, weed, pills and the like go in the stash box (which the landlord sells)
+    if (!(await isPiece(c, key))) fail("The toolbox only takes furniture. Things like seeds, weed and pills go in a stash box: the landlord sells them.");
     const have = w.s.storage[key] ?? 0;
-    if (have + take > ((await isPiece(c, key)) ? STORAGE_MAX_PIECES : STORAGE_MAX_ITEMS)) fail("Storage is full of those.");
+    if (have + take > STORAGE_MAX_PIECES) fail("Storage is full of those.");
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, take);
     w.s.storage[key] = have + take;
     return {};
@@ -75,6 +77,56 @@ export const takeItem: Action = {
     }
     w.s.inventory = inv;
     if (have - take > 0) w.s.storage[key] = have - take; else delete w.s.storage[key];
+    return {};
+  },
+};
+
+/** Puts what you carry into the stash box (you need to own one): any thing, and pots and mixers; the rest of the furniture stays toolbox only. Ass weed is kept apart as "ass_<item>". */
+export const stashStore: Action = {
+  async run(c, a) {
+    await requireOwnRoom(c);
+    const w = await c.user();
+    if (!w.s.owned[STASHBOX_OWNED_KEY]) fail("You haven't got a stash box. The landlord sells them.");
+    const slot = int(a.slot, 0, 27, "slot");
+    const it = w.s.inventory[slot];
+    if (!it) fail("You aren't carrying that.");
+    if (it!.lit) fail("Wait for it to burn out first.");
+    if (it!.inPlayer) fail("That's in the player right now.");
+    const take = int(a.qty ?? 1, 1, 999, "amount");
+    if (take > it!.qty) fail("You haven't got that many.");
+    const piece = isFurniItem(it!.item);
+    if (piece && !STASH_PIECES.has(it!.item)) fail("Only pots and mixers fit in the stash box. The rest of the furniture goes in the toolbox.");
+    const key = it!.ass ? `ass_${it!.item}` : it!.item;
+    if (!KEY_RE.test(key)) fail("That can't be stored.");
+    const have = w.s.stash[key] ?? 0;
+    if (have + take > (piece ? STORAGE_MAX_PIECES : STORAGE_MAX_ITEMS)) fail("The stash box is full of those.");
+    w.s.inventory = takeQtyFrom(w.s.inventory, slot, take);
+    w.s.stash[key] = have + take;
+    return {};
+  },
+};
+
+/** Takes things back out of the stash box (stackable items share a slot, everything else needs one slot each). */
+export const stashTake: Action = {
+  async run(c, a) {
+    await requireOwnRoom(c);
+    const w = await c.user();
+    const key = text(a.key, KEY_RE, "item");
+    const have = w.s.stash[key] ?? 0;
+    if (have < 1) fail("There's none of that in the stash box.");
+    const take = Math.min(int(a.qty ?? 1, 1, 9999, "amount"), have);
+    const ass = key.startsWith("ass_");
+    const item = ass ? key.slice(4) : key;
+    if (!(await c.validItem())(item)) fail("That doesn't exist any more.");
+    let inv = w.s.inventory;
+    const parts = STACKABLE.has(item) ? [take] : Array.from({ length: take }, () => 1);
+    for (const q of parts) {
+      const next = addToInv(inv, { item, qty: q, ...(ass ? { ass: true } : {}) });
+      if (!next) fail("Your inventory is full.");
+      inv = next!;
+    }
+    w.s.inventory = inv;
+    if (have - take > 0) w.s.stash[key] = have - take; else delete w.s.stash[key];
     return {};
   },
 };

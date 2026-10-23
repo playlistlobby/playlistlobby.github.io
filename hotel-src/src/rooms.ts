@@ -38,7 +38,7 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -102,6 +102,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the same boombox as a piece you carry: take it out of the room into your pocket, put it down anywhere, trade it or sell it
   f_boombox: { id: "f_boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true },
   boombox: { id: "boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true, fixed: true },
+  // the stash box the landlord sells (20 drops): a gift box that keeps what you don't want in your pockets
+  stashbox: { id: "stashbox", label: "Stash box", icon: "🎁", w: 1, h: 1, height: 36, color: "#8a5fd0", placeable: false, fixed: true, opens: "stash", nitro: "furni/stashbox.nitro", rotatable: true },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
   // posters: a frame on the wall; the picture inside is the player's own (chosen when it is hung). The one in the shop room is for sale.
@@ -291,7 +293,7 @@ export function shopDef(picks: string[]): RoomDef {
 }
 
 /** The built-in lobby pieces can't be picked up; the ones the admin added can. */
-export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id === SINK_ID || id === BOOMBOX_ID || id.startsWith("shop_");
+export const isFixedLobbyPiece = (id: string) => /^lobby\d+$/.test(id) || id === BED_ID || id === BAG_ID || id === TOOLBOX_ID || id === SINK_ID || id === BOOMBOX_ID || id === STASH_ID || id.startsWith("shop_");
 
 export function watchLobbyFurni(cb: (extras: PlacedFurni[]) => void): Unsubscribe {
   return onValue(ref(db, "lobby/furni"), (s) => {
@@ -308,6 +310,7 @@ export const BED = { x: 3, y: 0, dir: 2 };
 export const BAG_ID = "bag";
 export const BAG = { x: 7, y: 0, dir: 2 };
 /** The toolbox starts between the bed and the bag. */
+export const STASH_ID = "stashbox";
 export const TOOLBOX_ID = "toolbox";
 export const TOOLBOX = { x: 6, y: 0, dir: 4 };
 /** The sink starts in the far left corner of the room, facing the camera. */
@@ -334,6 +337,8 @@ export interface RoomMeta {
   bed?: { x: number; y: number; dir?: number };
   bag?: { x: number; y: number; dir?: number };
   toolbox?: { x: number; y: number; dir?: number };
+  /** only there once the landlord has sold you one (the server writes where it first stands) */
+  stashbox?: { x: number; y: number; dir?: number };
   sink?: { x: number; y: number; dir?: number };
   boombox?: { x: number; y: number; dir?: number; /** taken out of the room (it is in somebody's pocket as f_boombox) */ gone?: boolean };
   /** the looks bought from the landlord (the server writes these): ids from shared/skins.ts */
@@ -355,7 +360,7 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
     .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}) } } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
   const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), boombox = at(meta.boombox, BOOMBOX);
-  furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]));
+  furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]), ...(meta.stashbox && Number.isFinite(meta.stashbox.x) && Number.isFinite(meta.stashbox.y) ? [{ id: STASH_ID, kind: "stashbox", x: meta.stashbox.x, y: meta.stashbox.y, dir: meta.stashbox.dir ?? 2 }] : []));
   // the landlord makes rooms bigger (the server writes w and h)
   const side = (n: unknown) => (typeof n === "number" && n >= ROOM_W && n <= 14 ? Math.floor(n) : ROOM_W);
   const w = side(meta.w), h = side(meta.h);

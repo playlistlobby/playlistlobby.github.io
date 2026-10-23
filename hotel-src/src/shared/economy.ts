@@ -67,6 +67,11 @@ export const lighterHex = (hex: string, by = 9): string => "#" + [1, 3, 5].map((
 export const roomSizeAt = (level: number): number => (level > 0 ? ROOM_UPGRADES[Math.min(level, ROOM_UPGRADES.length) - 1].size : BASE_ROOM_SIZE);
 /** the mixer works for this long on every batch */
 export const MIX_MS = 10 * 60_000;
+/** The stash box the landlord sells: keeps things (not furniture) out of your pockets; pots and mixers fit in it too. */
+export const STASHBOX_PRICE = 20;
+export const STASHBOX_OWNED_KEY = "stashbox";
+/** the only furniture the stash box takes (the growing kit and the mixer); the rest of the furniture goes in the toolbox */
+export const STASH_PIECES: ReadonlySet<string> = new Set(["f_planter", "f_mixer"]);
 export const STORAGE_MAX_PIECES = 99;
 export const STORAGE_MAX_ITEMS = 9999;
 
@@ -83,6 +88,8 @@ export interface Snapshot {
   inventory: Inventory;
   /** furniture and things kept in the toolbox: kind (or "ass_<item>") -> how many */
   storage: Record<string, number>;
+  /** what is in the stash box: item (or "ass_<item>", or a pot / mixer piece) -> how many */
+  stash: Record<string, number>;
   /** who this player has stabbed, and when: target uid -> start (ms, UTC midnight) of that day */
   stabs: Record<string, number>;
   /** when each garbage can was last searched (can id -> ms) */
@@ -154,6 +161,7 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     mixed: Object.fromEntries(Object.entries((v.mixed ?? {}) as Record<string, unknown>).filter(([, x]) => x === true).map(([k]) => [k, true as const])),
     inventory,
     storage: Object.fromEntries(Object.entries(nums(v.storage)).filter(([, n]) => n > 0)),
+    stash: Object.fromEntries(Object.entries(nums(v.stash)).filter(([, n]) => n > 0)),
     stabs: nums(v.stabs),
     dumpsters: nums(v.dumpsters),
     boostUntil: Number(v.boostUntil) || 0,
@@ -188,7 +196,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
   if (before.sixty.knifeAt !== after.sixty.knifeAt) patch[`${base}sixty/knifeAt`] = after.sixty.knifeAt;
   if (before.sixty.syringeGiven !== after.sixty.syringeGiven) patch[`${base}sixty/syringeGiven`] = after.sixty.syringeGiven;
   for (let i = 0; i < INV_SIZE; i++) if (!same(before.inventory[i] ?? null, after.inventory[i] ?? null)) patch[`${base}inventory/${i}`] = after.inventory[i] ?? null;
-  for (const m of ["storage", "stabs", "dumpsters", "owned", "mixed", "vend"] as const) {
+  for (const m of ["storage", "stash", "stabs", "dumpsters", "owned", "mixed", "vend"] as const) {
     const b = before[m] as Record<string, unknown>, a = after[m] as Record<string, unknown>;
     for (const k of new Set([...Object.keys(b), ...Object.keys(a)])) if (!same(b[k], a[k])) patch[`${base}${m}/${k}`] = k in a ? a[k] : null;
   }

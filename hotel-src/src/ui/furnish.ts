@@ -66,7 +66,8 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
 
     tray.style.display = placing ? "none" : ""; // while you're choosing where to put a piece down, the tray steps out of the way so the whole room shows
     const stored = Object.entries(p.storage).filter(([k, n]) => n > 0 && (FURNI_KINDS[k] || itemDef(parseStoreKey(k).item)));
-    const carried = p.inventory.map((s, slot) => ({ s, slot })).filter((e): e is { s: NonNullable<typeof e.s>; slot: number } => !!e.s && ((!!FURNI_KINDS[e.s.item] && /^[fx]_/.test(e.s.item)) || (!!itemDef(e.s.item) && isStorable(e.s))));
+    // the toolbox only takes furniture now; seeds, weed, pills and the like go in the stash box (the landlord sells it)
+    const carried = p.inventory.map((s, slot) => ({ s, slot })).filter((e): e is { s: NonNullable<typeof e.s>; slot: number } => !!e.s && !!FURNI_KINDS[e.s.item] && /^[fx]_/.test(e.s.item));
     // a thing (cigarettes, weed, a lighter...): not placed in the room, only stored and taken out, one or all of them at a time
     const thingCell = (key: string, count: number, buttons: Array<{ label: string; run: () => void }>) => {
       const { item, ass } = parseStoreKey(key);
@@ -92,8 +93,8 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
       h("div", { class: "fz-tabs" },
         h("button", { class: "tab" + (tab === "storage" ? " on" : ""), onclick: () => { tab = "storage"; render(); } }, `Storage (${stored.reduce((a, [, n]) => a + n, 0)})`),
         h("button", { class: "tab" + (tab === "inventory" ? " on" : ""), onclick: () => { tab = "inventory"; render(); } }, `Carrying (${carried.length})`),
-        h("span", { class: "hint" }, tab === "storage" ? `Free pockets: ${freeSlots(p)}` : "Store pieces and things (cigarettes, weed...) to keep your pockets free.")),
-      h("div", { class: "fz-list" }, ...(cells.length ? cells : [h("div", { class: "hint" }, tab === "storage" ? "Nothing in storage. Pick a piece up with Store, or put what you carry into storage from the Carrying tab." : "You aren't carrying anything you can store. Furniture comes from the shop (the yellow door in the basement).")])));
+        h("span", { class: "hint" }, tab === "storage" ? `Free pockets: ${freeSlots(p)}` : "Store furniture here. Things like seeds and weed go in a stash box (the landlord sells them).")),
+      h("div", { class: "fz-list" }, ...(cells.length ? cells : [h("div", { class: "hint" }, tab === "storage" ? "Nothing in storage. Pick a piece up with Store, or put furniture you carry into storage from the Carrying tab." : "You aren't carrying anything you can store. Furniture comes from the shop (the yellow door in the basement).")])));
     void storedCount;
   }
   render();

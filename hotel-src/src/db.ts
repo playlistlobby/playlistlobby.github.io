@@ -71,6 +71,8 @@ export interface Profile {
   roomLevel: number;
   /** furniture and things kept in the toolbox's storage: kind (or "ass_<item>") -> how many */
   storage: Record<string, number>;
+  /** what is in the stash box (the landlord sells it): item (or "ass_<item>", or a pot / mixer) -> how many */
+  stash: Record<string, number>;
   /** the introduction and 6ixty's jobs: 0 = just woke up, 1 = has the knife, 2 = stabbed the guy (first 5 drops), 3 = has the pill, 4 = introduction done (the door leads to the real basement),
    *  5 = got the money for a lighter (go buy one), 6 = brought it back: got 5 drops and the syringe */
   tutorial: number;
@@ -124,6 +126,7 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.joinAt = s.joinAt;
   p.vend = s.vend;
   p.storage = s.storage;
+  p.stash = s.stash;
   p.stabs = s.stabs;
   p.dumpsters = s.dumpsters;
   p.boostUntil = s.boostUntil;
@@ -209,6 +212,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     catsCarved: 0,
     roomLevel: 0,
     storage: {},
+    stash: {},
     tutorial: 0,
     questAt: 0,
     syringeSelfAt: 0,
@@ -332,6 +336,19 @@ export async function rewardStab(p: Profile, targetUid: string, roomId: string):
 export const rewardFlappyDrop = (p: Profile, roomId: string): Promise<unknown> => call(p, "flappy", { room: roomId });
 /** The syringe's drop: from yourself, or from a body bag in the room. */
 export const rewardSyringe = (p: Profile, who: "self" | "bag", roomId: string): Promise<unknown> => call(p, "syringe", { who, room: roomId });
+
+/** The landlord's stash box (20 drops, once). It then stands in your room. */
+export async function buyStashbox(p: Profile): Promise<number> {
+  return Number((await call<{ price?: number }>(p, "buyStashbox", {})).price) || 0;
+}
+/** Puts `qty` of what is in a pocket slot into the stash box. */
+export async function stashPut(p: Profile, slot: number, qty = 1): Promise<void> {
+  await call(p, "stashStore", { slot, qty });
+}
+/** Takes `qty` of a stash box entry back into your pockets. */
+export async function stashGet(p: Profile, key: string, qty = 1): Promise<void> {
+  await call(p, "stashTake", { key, qty });
+}
 
 /** The test commands (/giveblud, /weed). The server only listens to the admin. Resolves with the message. */
 export async function debugCommand(p: Profile, cmd: "blood" | "weed" | "skip", n?: number): Promise<string> {
