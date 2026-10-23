@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Blodig oktober app icon export (dev only)</title>
+  <style>body { background: #444; color: #fff; font: 14px Verdana, sans-serif; padding: 16px; } #log { white-space: pre-wrap; }</style>
+</head>
+<body>
+  <div id="log">starting…</div>
+  <script type="module">
+    // Dev tool: draws the iOS 6 style app icon (off-white glossy rounded square with the blood drop) and the same with the name under it, saves PNGs through scripts/export-server.mjs.
+    const SAVE = "http://127.0.0.1:8799/save?path=";
+    const OUT = "app-icon/";
+    const save = (name, c) => new Promise((res) => c.toBlob(async (b) => { await fetch(SAVE + OUT + name, { method: "POST", body: b }); res(); }, "image/png"));
+    const img = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+    const drop = await img("/items/blood.svg");
+    const wall = await img("/ios6/wallpaper-real.jpg");
+    const FONT = `"Helvetica Neue", Helvetica, Arial, sans-serif`;
+    const rr = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+
+    /** the icon at size s (px) drawn at (x, y): iOS 6 look = rounded square (22.5%), soft top-to-bottom gradient, a glossy highlight over the top half, thin dark rim, drop shadow */
+    function icon(g, x, y, s, shadow = true) {
+      const r = s * 0.225;
+      g.save();
+      if (shadow) { g.shadowColor = "rgba(0,0,0,0.45)"; g.shadowBlur = s * 0.05; g.shadowOffsetY = s * 0.02; }
+      rr(g, x, y, s, s, r);
+      const base = g.createLinearGradient(0, y, 0, y + s);
+      base.addColorStop(0, "#fbf9f4"); base.addColorStop(1, "#e6e2d8");
+      g.fillStyle = base; g.fill();
+      g.restore();
+      g.save();
+      rr(g, x, y, s, s, r); g.clip();
+      // the drop (pixel art, no smoothing), with a faint shadow under it
+      const d = s * 0.62;
+      g.imageSmoothingEnabled = false;
+      g.save(); g.shadowColor = "rgba(90,0,0,0.35)"; g.shadowBlur = s * 0.03; g.shadowOffsetY = s * 0.015;
+      g.drawImage(drop, x + (s - d) / 2, y + (s - d) / 2 + s * 0.01, d, d); g.restore();
+      // gloss: the classic curved highlight over the upper half
+      const gl = g.createLinearGradient(0, y, 0, y + s * 0.5);
+      gl.addColorStop(0, "rgba(255,255,255,0.85)"); gl.addColorStop(1, "rgba(255,255,255,0.22)");
+      g.beginPath();
+      g.ellipse(x + s / 2, y - s * 0.62, s * 1.1, s * 1.12, 0, 0, Math.PI * 2);
+      g.fillStyle = gl; g.fill();
+      // inner rim
+      g.restore();
+      g.save(); rr(g, x + 0.5, y + 0.5, s - 1, s - 1, r); g.lineWidth = Math.max(1, s * 0.004); g.strokeStyle = "rgba(0,0,0,0.35)"; g.stroke(); g.restore();
+      g.save(); rr(g, x + s * 0.004, y + s * 0.004, s * 0.992, s * 0.992, r); g.lineWidth = Math.max(1, s * 0.004); g.strokeStyle = "rgba(255,255,255,0.55)"; g.stroke(); g.restore();
+    }
+    /** the home-screen name under an icon: white bold text with a dark shadow */
+    function label(g, text, cx, y, s) {
+      g.save();
+      g.font = `bold ${s * 0.115}px ${FONT}`; g.textAlign = "center"; g.textBaseline = "top";
+      g.shadowColor = "rgba(0,0,0,0.85)"; g.shadowBlur = s * 0.012; g.shadowOffsetY = s * 0.012;
+      g.fillStyle = "#fff"; g.fillText(text, cx, y);
+      g.restore();
+    }
+    const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+
+    // 1) icon only, transparent, 1024
+    { const c = mk(1088, 1088); icon(c.getContext("2d"), 32, 32, 1024); await save("blodig-oktober-icon.png", c); }
+    // 2) icon with the name under it, transparent
+    { const S = 1024, c = mk(1400, 1400); const g = c.getContext("2d"); icon(g, 188, 90, S); label(g, "Blodig oktober", 700, 90 + S + 50, S); await save("blodig-oktober-icon-with-name.png", c); }
+    // 3) the same on the iOS 6 wallpaper, like a home screen
+    { const S = 1024, c = mk(1400, 1400); const g = c.getContext("2d");
+      const k = Math.max(1400 / wall.width, 1400 / wall.height); g.drawImage(wall, (1400 - wall.width * k) / 2, (1400 - wall.height * k) / 2, wall.width * k, wall.height * k);
+      icon(g, 188, 90, S); label(g, "Blodig oktober", 700, 90 + S + 50, S); await save("blodig-oktober-icon-on-wallpaper.png", c); }
+    document.getElementById("log").textContent = "ALL DONE"; document.title = "export done";
+  </script>
+</body>
+</html>
