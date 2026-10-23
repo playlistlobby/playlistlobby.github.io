@@ -107,6 +107,8 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
       h("div", { class: "door-row-main" },
         h("div", { class: "door-row-name" }, r.roomName),
         h("div", { class: "hint" }, `${r.ownerName} · ${sub}${r.idle ? " · idle" : ""}${r.count ? ` · ${r.count} inside` : ""}`)),
+      // a little profile button (just the icon) next to Visit / Knock: the owner's profile page
+      h("button", { class: "btn small door-profile", title: `${r.ownerName}'s profile`, "aria-label": `${r.ownerName}'s profile`, onclick: (e: Event) => { if (chosen(e)) { close(); window.dispatchEvent(new CustomEvent("open-profile", { detail: r.owner })); } } }, "👤"),
       actionFor(r));
   }
 

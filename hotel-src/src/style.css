@@ -532,6 +532,7 @@ html.kb .side-host { display: none; }
 .door-row { display: flex; align-items: center; gap: 8px; min-height: 54px; padding: 8px 10px; border-top: 1px solid #e1e4e9; }
 .door-row:first-child { border-top: 0; }
 .door-row-main { flex: 1; min-width: 0; }
+.door-profile { flex: none; padding-left: 8px; padding-right: 8px; min-width: 0; }
 .door-row-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .door-knock { display: grid; justify-items: center; gap: 10px; padding: 22px 8px; text-align: center; }
 .door-knock-ico { font-size: 44px; }
