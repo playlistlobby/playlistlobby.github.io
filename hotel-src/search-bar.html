@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Search bar export (dev only)</title>
+  <style>body { background: #444; color: #fff; font: 14px Verdana, sans-serif; padding: 16px; } #log { white-space: pre-wrap; }</style>
+</head>
+<body>
+  <div id="log">starting…</div>
+  <script type="module">
+    // Dev tool: the game's iOS 6 "Messages" chat bar (src/style.css .chat-bar / .chat-input / .btn.primary) as a search field with a web address being typed into it,
+    // on the profile window's pinstripe background (.pw-body). Saves PNG frames through scripts/export-server.mjs:
+    //   search-bar/background.png, search-bar/bar-typed.png, animation-search-bar/frames (on the background), animation-search-bar-transparent/frames (the bar alone)
+    const SAVE = "http://127.0.0.1:8799/save?path=";
+    const save = (name, c) => new Promise((res) => c.toBlob(async (b) => { await fetch(SAVE + name, { method: "POST", body: b }); res(); }, "image/png"));
+    const W = 1920, H = 1080, S = 3; // S = picture pixels per CSS pixel
+    const URLTEXT = "playlistmag.studio/hotel";
+    const FONT = `"Helvetica Neue", Helvetica, Arial, sans-serif`;
+    const BAR = { w: 560, h: 58 }; // CSS px
+    const rr = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+    const lin = (g, y0, y1, stops) => { const gr = g.createLinearGradient(0, y0, 0, y1); stops.forEach(([o, c]) => gr.addColorStop(o, c)); return gr; };
+
+    /** the profile window's background: #c5ccd4 with the fine vertical white and horizontal dark pinstripes, plus a soft light in the middle and darker corners */
+    function background(g, w, h) {
+      g.fillStyle = "#c5ccd4"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "rgba(255,255,255,0.16)";
+      for (let x = 0; x < w; x += 3 * S) g.fillRect(x, 0, S, h);
+      g.fillStyle = "rgba(0,0,0,0.04)";
+      for (let y = 0; y < h; y += 3 * S) g.fillRect(0, y, w, S);
+      const glow = g.createRadialGradient(w / 2, h * 0.46, h * 0.05, w / 2, h * 0.5, h * 0.95);
+      glow.addColorStop(0, "rgba(255,255,255,0.45)"); glow.addColorStop(0.55, "rgba(255,255,255,0.08)"); glow.addColorStop(1, "rgba(40,55,80,0.28)");
+      g.fillStyle = glow; g.fillRect(0, 0, w, h);
+    }
+
+    /** the bar itself, drawn with its top-left at (x, y) in picture pixels. typed = characters shown, caret = caret visible, pressed = Go button held down */
+    function bar(g, x, y, typed, caret, pressed) {
+      const s = S, bw = BAR.w * s, bh = BAR.h * s;
+      g.save();
+      g.translate(x, y);
+      // soft shadow under the bar
+      g.save(); g.shadowColor = "rgba(20,30,50,0.45)"; g.shadowBlur = 18 * s; g.shadowOffsetY = 5 * s; rr(g, 0, 0, bw, bh, 12 * s); g.fillStyle = "#8794ae"; g.fill(); g.restore();
+      // the bar: the Messages bar gradient, a thin dark border and a light line along the top
+      rr(g, 0, 0, bw, bh, 12 * s); g.fillStyle = lin(g, 0, bh, [[0, "#b4c0d4"], [0.5, "#8794ae"], [0.51, "#7a88a2"], [1, "#8693ac"]]); g.fill();
+      g.lineWidth = s; g.strokeStyle = "#4b5a78"; rr(g, s / 2, s / 2, bw - s, bh - s, 12 * s); g.stroke();
+      g.strokeStyle = "rgba(255,255,255,0.45)"; g.beginPath(); g.moveTo(8 * s, 1.5 * s); g.lineTo(bw - 8 * s, 1.5 * s); g.stroke();
+      // the white pill
+      const px = 9 * s, py = 9 * s, pw = bw - 9 * s - 88 * s, ph = bh - 18 * s;
+      rr(g, px, py, pw, ph, ph / 2); g.fillStyle = "#fff"; g.fill();
+      g.save(); rr(g, px, py, pw, ph, ph / 2); g.clip(); // inset shadow along the top inside the pill
+      g.fillStyle = lin(g, py, py + 7 * s, [[0, "rgba(0,0,0,0.38)"], [1, "rgba(0,0,0,0)"]]); g.fillRect(px, py, pw, 7 * s); g.restore();
+      g.lineWidth = s; g.strokeStyle = "#55627c"; rr(g, px + s / 2, py + s / 2, pw - s, ph - s, ph / 2); g.stroke();
+      // magnifying glass
+      const mx = px + 19 * s, my = py + ph / 2 - 1 * s;
+      g.strokeStyle = "#8a909b"; g.lineWidth = 2.4 * s; g.lineCap = "round";
+      g.beginPath(); g.arc(mx, my, 6.2 * s, 0, Math.PI * 2); g.stroke();
+      g.beginPath(); g.moveTo(mx + 4.6 * s, my + 4.6 * s); g.lineTo(mx + 9.5 * s, my + 9.5 * s); g.stroke();
+      // the text and caret
+      g.font = `${22 * s}px ${FONT}`; g.textBaseline = "middle"; g.textAlign = "left"; g.fillStyle = "#1d232b";
+      const tx = px + 40 * s, ty = py + ph / 2 + 1 * s;
+      const shown = URLTEXT.slice(0, typed);
+      g.fillText(shown, tx, ty);
+      if (caret) { const cx = tx + g.measureText(shown).width + 1.5 * s; g.fillStyle = "#2a6fe0"; g.fillRect(cx, py + 8 * s, 2 * s, ph - 16 * s); }
+      // the Go button (the game's blue primary button)
+      const gx = bw - 8 * s - 70 * s, gy = 9 * s, gw = 70 * s, gh = bh - 18 * s;
+      rr(g, gx, gy, gw, gh, 8 * s);
+      g.fillStyle = pressed ? lin(g, gy, gy + gh, [[0, "#3d6fc4"], [0.5, "#1f4fb0"], [0.51, "#1a43a0"], [1, "#2a5cc0"]]) : lin(g, gy, gy + gh, [[0, "#78a6f4"], [0.5, "#3b78e6"], [0.51, "#1f5ad6"], [1, "#3f7ae6"]]);
+      g.fill();
+      g.lineWidth = s; g.strokeStyle = "#1a3f95"; rr(g, gx + s / 2, gy + s / 2, gw - s, gh - s, 8 * s); g.stroke();
+      if (!pressed) { g.strokeStyle = "rgba(255,255,255,0.45)"; g.beginPath(); g.moveTo(gx + 6 * s, gy + 1.5 * s); g.lineTo(gx + gw - 6 * s, gy + 1.5 * s); g.stroke(); }
+      g.font = `bold ${19 * s}px ${FONT}`; g.textAlign = "center"; g.textBaseline = "middle";
+      g.shadowColor = "rgba(0,0,0,0.5)"; g.shadowOffsetY = -s; g.shadowBlur = 0; g.fillStyle = "#fff";
+      g.fillText("Go", gx + gw / 2, gy + gh / 2 + s);
+      g.restore();
+    }
+
+    const bx = Math.round((W - BAR.w * S) / 2), by = Math.round(H / 2 - (BAR.h * S) / 2);
+    const mk = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
+    // stills
+    { const c = mk(); background(c.getContext("2d"), W, H); await save("search-bar/background.png", c); }
+    { const c = mk(); const g = c.getContext("2d"); background(g, W, H); bar(g, bx, by, URLTEXT.length, false, false); await save("search-bar/bar-typed-on-background.png", c); }
+    { const c = mk(); bar(c.getContext("2d"), bx, by, URLTEXT.length, false, false); await save("search-bar/bar-typed-transparent.png", c); }
+    // the animation: caret blinks, the address is typed at an uneven human pace, a short pause, then Go is pressed
+    const FPS = 30;
+    const times = []; let t = 0.7; // when each character appears (seconds)
+    for (let i = 0; i < URLTEXT.length; i++) { t += 0.085 + 0.07 * Math.abs(Math.sin(i * 2.7 + 1)) + (URLTEXT[i - 1] === "." || URLTEXT[i - 1] === "/" ? 0.09 : 0); times.push(t); }
+    const tPress = t + 0.8, tEnd = tPress + 1.4;
+    const total = Math.round(tEnd * FPS);
+    for (let i = 0; i < total; i++) {
+      const now = i / FPS;
+      const typed = times.filter((x) => x <= now).length;
+      const lastKey = typed ? times[typed - 1] : 0;
+      const caret = typed < URLTEXT.length || now < tPress ? (now - lastKey < 0.35 ? true : Math.floor(now / 0.53) % 2 === 0) : false;
+      const pressed = now >= tPress && now < tPress + 0.18;
+      for (const [dir, withBg] of [["animation-search-bar", true], ["animation-search-bar-transparent", false]]) {
+        const c = mk(), g = c.getContext("2d");
+        if (withBg) background(g, W, H);
+        bar(g, bx, by, typed, caret, pressed);
+        await save(`${dir}/frames/frame-${String(i).padStart(3, "0")}.png`, c);
+      }
+    }
+    document.getElementById("log").textContent = `ALL DONE: ${total} frames`; document.title = "export done";
+  </script>
+</body>
+</html>
