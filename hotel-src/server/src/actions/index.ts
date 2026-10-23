@@ -8,6 +8,7 @@ import { drop, pickup } from "./floor";
 import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, storeItem, takeItem } from "./toolbox";
 import { tradeFinish } from "./trade";
 import { debug } from "./debug";
+import { flipCancel, flipPost, flipTake } from "./coinflip";
 import { backupNow, banPlayer } from "./admin";
 import { giftAnswer, giftCollect, giftSend } from "./gift";
 import { posterAdmin } from "./posters";
@@ -22,7 +23,7 @@ export const ACTIONS: Record<string, Action> = {
   consume, stab, syringe, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
   drop, pickup,
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,
-  tradeFinish,
+  tradeFinish, flipPost, flipTake, flipCancel,
   cdInsert, cdReturn, cdControl, mix, mixCollect,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

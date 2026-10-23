@@ -121,6 +121,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   cdplayer: { id: "cdplayer", label: "CD player", icon: "💿", w: 1, h: 1, height: 38, color: "#2d3140", placeable: false },
   // the Flappy Bird arcade machine (Habbo's cupcake-duck cabinet) in the basement: click it and you play Flappy Bird
   flappy: { id: "flappy", label: "Flappy Bird arcade", icon: "🐤", w: 1, h: 2, height: 80, color: "#2a2218", placeable: false, nitro: "furni/arcade_flappy.nitro", rotatable: true },
+  // the coin flip machine on the far side of the dumpster next to the Flappy Bird machine: click it to post or take a coin flip for blood
+  slot: { id: "slot", label: "Coin flip machine", icon: "🪙", w: 1, h: 1, height: 78, color: "#7a2a2a", placeable: false, nitro: "furni/slot.nitro", rotatable: true },
   // the alley dumpster next to the Flappy Bird machine: search it (every 10 minutes) for a cigarette or a dead cat
   dumpster: { id: "dumpster", label: "Dumpster", icon: "🗑️", w: 2, h: 1, height: 52, color: "#2c3a2c", placeable: false, nitro: "furni/alley_dumpster.nitro", rotatable: true },
   // the bed every player room has (a fixed piece: not in the furniture menu, not stored in the database)
@@ -130,7 +132,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "slot"]);
 /** the CD player in the basement or a boombox: both play the CD you use on them */
 export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox";
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
@@ -249,7 +251,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     theme: { ...GRIME_THEME },
     rug: null,
     // the Flappy Bird machine is part of the basement (it stands against the left wall, 8 tiles down from the back corner)
-    furni: [{ id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, { id: "lobby3", kind: "dumpster", x: 0, y: 6, dir: 2 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
+    furni: [{ id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, { id: "lobby3", kind: "dumpster", x: 0, y: 6, dir: 2 }, { id: "lobby4", kind: "slot", x: 0, y: 5, dir: 0 }, ...extras.filter((f) => FURNI_KINDS[f.kind])],
     doorX: DOOR_X,
     // the yellow door on the other side of 6ixty leads to the shop
     extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }],
@@ -258,7 +260,8 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
 
 /** The private copy of the basement: the same room without the pieces the admin put in it, and its door leads back to your own room. */
 export function tutDef(uid: string): RoomDef {
-  return { ...lobbyDef([]), id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [] };
+  const lobby = lobbyDef([]);
+  return { ...lobby, id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [], furni: lobby.furni.filter((f) => f.kind !== "slot") }; // (no coin flips during the introduction)
 }
 
 /** Where the four daily pieces stand in the shop room (every piece is placed facing the same way, each in its own 3x3 corner). */

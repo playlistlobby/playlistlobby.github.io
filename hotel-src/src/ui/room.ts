@@ -71,6 +71,8 @@ import { openVending, VendingApi } from "./vendingShop";
 import { openRecordShop, RecordShopApi } from "./recordShop";
 import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
+import { openCoinFlip, CoinFlipApi } from "./coinflip";
+import { watchFlips } from "../coinflip";
 import { pickPosterPicture } from "./posterEditor";
 import { POSTER_KIND, POSTER_PRICE, POSTER_W, POSTER_H } from "../shared/furniture";
 import { MixerApi, openMixer } from "./mixer";
@@ -308,6 +310,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const me = ctx.profile;
   const players = new Map<string, Player>();
   const unsubs: Unsubscribe[] = [];
+  // the coin flip machine: it spins whenever a flip is settled (for everyone in the basement), and the one who posted the flip is told how it went
+  if (roomId === LOBBY_ID) {
+    unsubs.push(watchFlips(me, (flip) => {
+      slotSpinUntil = performance.now() + 3400;
+      if (flip.by !== me.uid) return;
+      const coin = flip.result === "heads" ? "Heads" : "Tails";
+      const winnings = flip.stake * 2;
+      const lost = flip.stake;
+      say(flip.winner === me.uid ? `${flip.takerName} took your coin flip: ${coin}. You won ${winnings} blood.` : `${flip.takerName} took your coin flip: ${coin}. You lost ${lost} blood.`);
+      ctx.refreshHeader();
+    }));
+  }
   let disposed = false;
   let started = false;
   let active = true;
@@ -347,6 +361,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let recordApi: RecordShopApi | null = null;
   let posterApi: PosterShopApi | null = null;
   let stashApi: StashApi | null = null;
+  let coinApi: CoinFlipApi | null = null;
   let landlordApi: LandlordApi | null = null;
   let landlordBubble: Bubble | null = null;
   let landlordLast: HTMLCanvasElement | undefined;
@@ -499,6 +514,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && isDisplayPiece(hoverObj.id)) text = `${FURNI_KINDS[hoverObj.kind!].label} · ${priceOf(hoverObj.kind!)} drops (click to buy)`;
     else if (hoverObj && hoverObj.kind === "wardrobe") text = "Wardrobe: the clothing shop";
     else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
+    else if (hoverObj && hoverObj.kind === "slot") text = "Coin flip machine: put blood on heads or tails";
     else if (hoverObj && (hoverObj.kind === "recordplayer" || hoverObj.kind === "vinyltable")) text = "Record player: CDs";
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
@@ -809,6 +825,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const obj = pickObj(mx, my);
     if (obj?.kind === "arcade") opts.push({ label: "Play", target: "Arcade machine", action: () => startArcade(obj.id) });
     if (obj?.kind === "flappy") opts.push({ label: "Play", target: "Flappy Bird", action: () => startArcade(obj.id) });
+    if (obj?.kind === "slot") opts.push({ label: "Play", target: "Coin flip machine", action: () => startArcade(obj.id) });
     if (obj?.kind === "npc") {
       opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
       if (me.isAdmin) opts.push({ label: "Change look", target: SIXTY.name, action: () => ctx.navigate("npc") });
@@ -1304,6 +1321,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recordApi?.close();
     posterApi?.close();
     stashApi?.close();
+    coinApi?.close();
     landlordApi?.close();
     sixtyShop?.close();
   }
@@ -1639,6 +1657,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       else if (job.type === "dumpster") void searchTheDumpster(job.fid);
       else if (job.type === "use") void interactWith(f, job.slot ?? null);
+      else if (f.kind === "slot") { if (!coinApi) coinApi = openCoinFlip(stage, ctx, () => { panel.refresh(); ctx.refreshHeader(); }, () => { coinApi = null; }); }
       else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
         collectBlood: async () => {
           try {
@@ -3230,13 +3249,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** when each multi-state piece went into the state it is in (so its animation starts from the beginning when it is tapped) */
   const animClock = new Map<string, { st: number; at: number }>();
+  let slotSpinUntil = 0;
   /** the animation a piece is in right now: its state and how long it has been in it (undefined for pieces that never move) */
   function pieceAnim(f: { id?: string; kind: string; st?: number }, now: number): AnimState | undefined {
     const k = FURNI_KINDS[f.kind];
     if (!k?.nitro) return undefined;
     const n = nitroIfReady(k.nitro);
     if (!n || !isAnimated(n)) return undefined;
-    const st = f.st ?? k.defaultState ?? 0;
+    const st = f.kind === "slot" ? (now < slotSpinUntil ? 1 : 0) : f.st ?? k.defaultState ?? 0; // the coin flip machine spins while a flip is being settled
     const id = f.id ?? f.kind;
     let c = animClock.get(id);
     if (!c || c.st !== st) { c = { st, at: now }; animClock.set(id, c); }
@@ -4189,6 +4209,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recordApi?.close();
     posterApi?.close();
     stashApi?.close();
+    coinApi?.close();
     landlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();

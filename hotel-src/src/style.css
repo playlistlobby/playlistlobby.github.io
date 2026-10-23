@@ -776,3 +776,88 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
   .pw-right { grid-column: 2; grid-row: 1; padding-right: 20px; }
   .pw-left { grid-column: 1 / -1; grid-row: 2; }
 }
+
+
+/* ---- the coin flip machine's window: the Playlist app's Coin Flip (iOS 6 Game Center look), with blood instead of likes ---- */
+.cf-overlay { --spring: cubic-bezier(.34, 1.56, .64, 1); position: fixed; inset: 0; z-index: 62; background: rgba(0, 0, 0, .65); display: grid; place-items: center; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+.cf-app { position: relative; display: flex; flex-direction: column; width: min(520px, 100%); height: min(100%, 780px); overflow: hidden; border-radius: 10px; border: 1px solid #000; background: #2c8a4c url("/ui/gc/felt-green.jpg") center / 256px; color: #fff; box-shadow: 0 10px 40px rgba(0, 0, 0, .7); font-family: Georgia, "Times New Roman", serif; }
+.cf-app button { font-family: inherit; cursor: pointer; border: 0; padding: 0; }
+.cf-nav { flex: none; position: relative; display: flex; align-items: center; justify-content: center; height: 44px; background: #8a3d17 url("/ui/gc/wood.jpg") center / 320px; box-shadow: inset 0 1px 0 rgba(255, 220, 180, .45), inset 0 -1px 0 rgba(40, 12, 0, .55), 0 2px 6px rgba(0, 0, 0, .45); }
+.cf-nav strong { font: 700 20px "Helvetica Neue", Helvetica, Arial, sans-serif; color: #fff; text-shadow: 0 -1px 0 rgba(60, 20, 0, .7); }
+.cf-nav .cf-x { position: absolute; right: 8px; top: 8px; height: 29px; padding: 0 12px; border: 1px solid rgba(50, 15, 0, .75); border-radius: 5px; background: rgba(70, 25, 0, .28); color: #fff; font: 700 13px "Helvetica Neue", Helvetica, Arial, sans-serif; text-shadow: 0 -1px 0 rgba(60, 20, 0, .7); }
+.cf-body { flex: 1; min-height: 0; overflow-y: auto; }
+.cf-blood { width: 1em; height: 1em; vertical-align: -.12em; margin-right: .2em; }
+.gc-body{padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+.gc-hero{position:relative;display:flex;align-items:center;gap:10px;padding:16px 14px 16px 18px;background:#6e1030 url("/ui/gc/felt-red.jpg") center/256px;   box-shadow:inset 0 -1px 0 rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.12)}
+.gc-hero-txt{flex:1;min-width:0}
+.gc-title{margin:0;font:700 44px/1 Oswald,Impact,"Arial Narrow",sans-serif;letter-spacing:.01em;color:#fff;text-shadow:0 2px 0 rgba(40,0,15,.55)}
+.gc-hero p{margin:6px 0 0;font:400 13px/17px Georgia,"Times New Roman",serif;color:#f5dfe7}
+.gc-tabs{display:flex;padding:5px 8px 7px;background:#5c0c27 url("/ui/gc/felt-red.jpg") center/256px;border-bottom:1px solid rgba(0,0,0,.35)}
+.gc-tabs button{flex:1;height:26px;font:700 13px/24px "Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;border:1.5px solid #e4de6c;margin-left:-1.5px;background:rgba(0,0,0,.08);text-shadow:0 -1px 0 rgba(0,0,0,.4)}
+.gc-tabs button:first-child{margin-left:0}
+.gc-tabs button[aria-selected=true]{background:linear-gradient(#f6f39a,#dcd856);color:#3d3a0e;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.gc-n{display:inline-block;min-width:18px;margin-left:5px;padding:0 5px;border-radius:9px;background:#d9262c;color:#fff;font-size:11px;line-height:16px;text-shadow:none}
+.gc-n:empty{display:none}
+.gc-pane{width:min(460px,calc(100% - 20px));margin:0 auto}
+.gc-head{margin:16px 0 10px;text-align:center;font:400 17px/22px Georgia,"Times New Roman",serif;color:#eeea84;text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.gc-head b{color:#fff}
+.gc-card,.gc-list{border:1.5px solid rgba(230,224,110,.9);background:rgba(8,60,28,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.gc-cell{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:50px;padding:6px 12px;font:400 17px Georgia,"Times New Roman",serif;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+.gc-cell+.gc-cell{border-top:1.5px solid rgba(230,224,110,.55)}
+.gc-cell.sides{flex-wrap:wrap}
+.gc-step{display:flex;align-items:center;gap:0;border:1.5px solid #e4de6c;border-radius:4px;overflow:hidden}
+.gc-step button{width:40px;height:34px;font:400 24px/1 Georgia,serif;color:#3d3a0e;background:linear-gradient(#f6f39a,#dcd856)}
+.gc-step button:disabled{opacity:.45}
+.gc-step b{min-width:64px;text-align:center;font:700 19px/34px Georgia,serif;color:#fff}
+
+.cf-sides{display:flex;gap:8px}
+.cf-side{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px 0 5px;border-radius:20px;font:400 16px Georgia,serif;color:#fff;border:1.5px solid rgba(230,224,110,.5);background:rgba(0,0,0,.12);transition:transform .2s var(--spring)}
+.cf-side.on{border-color:#f3ee8a;background:rgba(243,238,138,.2);box-shadow:0 0 14px rgba(255,248,170,.5)}
+.cf-side:active{transform:scale(.95)}
+.cf-chip{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 16px/1 Georgia,serif;font-style:normal;color:#9a6406;   background:radial-gradient(circle at 36% 30%,#fff7c8,#f7d35c 30%,#d99b1c 75%,#9a6206);box-shadow:inset 0 0 0 2px #f0c64a,inset 0 0 0 3px #a86d0a,0 1px 2px rgba(0,0,0,.4)}
+.gc-ribbon{position:relative;display:block;margin:18px auto 0;width:min(250px,72%);height:36px;font:400 18px/36px Georgia,"Times New Roman",serif;color:#2c6a37;   background:linear-gradient(#f2ee8c,#d8d44e);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 2px 3px rgba(0,0,0,.3);text-shadow:0 1px 0 rgba(255,255,255,.5);transition:transform .15s,filter .15s}
+.gc-ribbon::before,.gc-ribbon::after{content:"";position:absolute;top:7px;width:24px;height:36px;background:linear-gradient(#cfcb46,#aeaa32);z-index:-1;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,38% 50%)}
+.gc-ribbon::before{left:-16px}
+.gc-ribbon::after{right:-16px;transform:scaleX(-1)}
+.gc-ribbon:active{transform:translateY(1px);filter:brightness(.92)}
+.gc-ribbon:disabled{filter:grayscale(.6) brightness(.8);opacity:.7}
+.gc-ribbon.sm{display:inline-block;margin:0;width:auto;min-width:64px;padding:0 12px;height:30px;font-size:15px;line-height:30px}
+.gc-ribbon.sm::before,.gc-ribbon.sm::after{display:none}
+.gc-ribbon.red{color:#fff;background:linear-gradient(#e0566f,#b21d3c);text-shadow:0 -1px 0 rgba(0,0,0,.3)}
+.gc-note{margin:16px 6px 0;text-align:center;font:400 13px/18px Georgia,serif;color:rgba(255,255,255,.8)}
+.gc-row{display:flex;align-items:center;gap:10px;min-height:54px;padding-right:10px}
+.gc-row+.gc-row{border-top:1.5px solid rgba(230,224,110,.55)}
+.gc-num{align-self:stretch;width:48px;flex:none;display:grid;place-items:center;background:#6e1030 url("/ui/gc/felt-red.jpg") center/256px;   font:700 15px Georgia,serif;color:#f3e57e;border-right:1.5px solid rgba(230,224,110,.55)}
+.gc-row .orb{width:34px;height:34px;box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.4)}
+.gc-who{flex:1;min-width:0}
+.gc-who b{display:block;font:400 17px/21px Georgia,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+.gc-who small{display:block;font:400 12px/15px Georgia,serif;color:#eeea84}
+.gc-tag{font:700 13px Georgia,serif;padding:3px 8px;border-radius:4px}
+.gc-tag.win{color:#3d3a0e;background:#f2ee8c}
+.gc-tag.lose{color:#fff;background:rgba(178,29,60,.85)}
+.gc-tag.gone{color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.4)}
+.gc-empty{margin:0;padding:18px 12px;text-align:center;font:400 15px Georgia,serif;color:rgba(255,255,255,.85)}
+/* the coin: two faces and a thick gold edge, tossed in 3D */
+.cf-coin{position:relative;width:150px;height:150px;transform-style:preserve-3d}
+.cf-coin>i{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;font-style:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;   background:radial-gradient(circle at 36% 30%,#fff7c8 0,#f7d35c 22%,#e0a624 55%,#a86d0a 100%);   box-shadow:inset 0 0 0 7px #eab93c,inset 0 0 0 9px #9a6406,inset 0 0 0 11px #f5d36a,inset 0 6px 14px rgba(255,255,255,.55),inset 0 -8px 16px rgba(80,40,0,.45)}
+.cf-coin>i.h{transform:translateZ(5px)}
+.cf-coin>i.t{transform:rotateX(180deg) translateZ(5px)}
+.cf-coin>i.e{backface-visibility:visible;-webkit-backface-visibility:visible;background:#b07a14;box-shadow:none}
+.cf-coin b{font:700 62px/1 Georgia,serif;color:#b27a0e;text-shadow:0 1px 0 #fff3b0,0 -1px 0 #7a4c02}
+.cf-coin small{position:absolute;bottom:24px;left:0;right:0;text-align:center;font:700 11px Georgia,serif;letter-spacing:.25em;color:#8a5a06}
+.cf-coin.sm{width:74px;height:74px}
+.cf-coin.sm>i.h{transform:translateZ(2px)}
+.cf-coin.sm>i.t{transform:rotateY(180deg) translateZ(2px)}
+.cf-coin.sm b{font-size:32px}
+.cf-coin.sm.spin{animation:cfspin 5s linear infinite}
+@keyframes cfspin{to{transform:rotateY(360deg)}}
+.cf-mini-toss{perspective:400px;flex:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))}
+.cf-stage{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;   background:radial-gradient(circle at 50% 45%,rgba(20,90,45,.55),rgba(5,30,15,.88));-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:fadein .25s}
+@keyframes fadein{from{opacity:0}}
+.cf-toss{perspective:900px;height:170px;display:flex;align-items:flex-end;justify-content:center}
+.cf-shadow{width:120px;height:18px;margin-top:6px;border-radius:50%;background:radial-gradient(rgba(0,0,0,.5),rgba(0,0,0,0) 70%)}
+.cf-res{margin:22px 0 0;min-height:44px;font:700 38px/44px Oswald,Impact,"Arial Narrow",sans-serif;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.cf-res.win{color:#f6f29a;text-shadow:0 0 18px rgba(255,248,170,.8),0 2px 0 rgba(0,0,0,.35);animation:popin .5s var(--spring)}
+.cf-res-sub{margin:4px 0 0;min-height:20px;font:400 15px/20px Georgia,serif;color:rgba(255,255,255,.88)}
+@keyframes popin { from { transform: scale(.6); opacity: 0; } }
+.cf-overlay [hidden] { display: none !important; }

@@ -8023,5 +8023,195 @@
   "en": "Partner",
   "da": "Kæreste",
   "where": "src/ui/profileWindow.ts:173"
+ },
+ "N494": {
+  "en": "Coin Flip",
+  "da": "Plat eller krone",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N495": {
+  "en": "COIN FLIP",
+  "da": "PLAT ELLER KRONE",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N496": {
+  "en": "Put your blood on heads or tails. The winner takes both stakes.",
+  "da": "Sæt dit blod på krone eller plat. Vinderen tager begge indsatser.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N497": {
+  "en": "Open Flips",
+  "da": "Åbne kast",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N498": {
+  "en": "History",
+  "da": "Historik",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N499": {
+  "en": "You have {bal} blood",
+  "da": "Du har {bal} blod",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N500": {
+  "en": "Stake",
+  "da": "Indsats",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N501": {
+  "en": "Your side",
+  "da": "Din side",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N502": {
+  "en": "Heads",
+  "da": "Krone",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N503": {
+  "en": "Tails",
+  "da": "Plat",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N504": {
+  "en": "HEADS",
+  "da": "KRONE",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N505": {
+  "en": "TAILS",
+  "da": "PLAT",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N506": {
+  "en": "Post Flip",
+  "da": "Opret kast",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N507": {
+  "en": "You need at least 1 blood to play.",
+  "da": "Du skal bruge mindst 1 blod for at spille.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N508": {
+  "en": "You already have {maxOpen} open flips. Take one back or wait for somebody to take it.",
+  "da": "Du har allerede {maxOpen} åbne kast. Tag et tilbage, eller vent på at nogen tager det.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N509": {
+  "en": "Post a flip and anyone can take it (they get {theirSide}). Up to {maxFlip} blood per flip.",
+  "da": "Opret et kast, så kan alle tage det (de får {theirSide}). Op til {maxFlip} blod pr. kast.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N510": {
+  "en": "Your flip",
+  "da": "Dit kast",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N511": {
+  "en": "You picked",
+  "da": "Du valgte",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N512": {
+  "en": "Picked",
+  "da": "Valgte",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N513": {
+  "en": "Just now",
+  "da": "Lige nu",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N514": {
+  "en": "{hours} h ago",
+  "da": "for {hours} t siden",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N515": {
+  "en": "Tap again",
+  "da": "Tryk igen",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N516": {
+  "en": "No open flips right now. Post one from Play.",
+  "da": "Ingen åbne kast lige nu. Opret et under Spil.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N517": {
+  "en": "❖ 1 Open Flip ❖",
+  "da": "❖ 1 åbent kast ❖",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N518": {
+  "en": "❖ {count} Open Flips ❖",
+  "da": "❖ {count} åbne kast ❖",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N519": {
+  "en": "❖ Your Flips ❖",
+  "da": "❖ Dine kast ❖",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N520": {
+  "en": "Your finished flips show up here.",
+  "da": "Dine afsluttede kast vises her.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N521": {
+  "en": "Your {amount} blood flip is up. You'll hear when somebody takes it.",
+  "da": "Dit kast på {amount} blod er oppe. Du hører det, når nogen tager det.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N522": {
+  "en": "Couldn't post the flip.",
+  "da": "Kunne ikke oprette kastet.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N523": {
+  "en": "{stake} blood is back in your pocket.",
+  "da": "{stake} blod er tilbage i din lomme.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N524": {
+  "en": "Somebody else took that flip first, or the connection dropped.",
+  "da": "En anden tog det kast først, eller forbindelsen røg.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N525": {
+  "en": "YOU WIN {prize}",
+  "da": "DU VINDER {prize}",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N526": {
+  "en": "It landed on {landed}. You beat {vs}.",
+  "da": "Den landede på {landed}. Du slog {vs}.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N527": {
+  "en": "It landed on {landed}. You lost {st} blood to {vs}.",
+  "da": "Den landede på {landed}. Du tabte {st} blod til {vs}.",
+  "where": "src/ui/coinflip.ts"
+ },
+ "N528": {
+  "en": "Coin flip machine",
+  "da": "Plat-eller-krone-maskine",
+  "where": "src/ui/room.ts"
+ },
+ "N529": {
+  "en": "Coin flip machine: put blood on heads or tails",
+  "da": "Plat-eller-krone-maskine: sæt blod på krone eller plat",
+  "where": "src/ui/room.ts"
+ },
+ "N530": {
+  "en": "{takerName} took your coin flip: {coin}. You won {winnings} blood.",
+  "da": "{takerName} tog dit kast: {coin}. Du vandt {winnings} blod.",
+  "where": "src/ui/room.ts"
+ },
+ "N531": {
+  "en": "{takerName} took your coin flip: {coin}. You lost {lost} blood.",
+  "da": "{takerName} tog dit kast: {coin}. Du tabte {lost} blod.",
+  "where": "src/ui/room.ts"
  }
 }
