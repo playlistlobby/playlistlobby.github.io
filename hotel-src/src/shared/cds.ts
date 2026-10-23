@@ -36,7 +36,6 @@ export const ALBUM_CD = "cd_album";
 /** the key in `owned` once a CD is bought (never bought twice) */
 export const cdOwnedKey = (item: string): string => `item_${item}`;
 
-/** Real money, in øre (100 øre = 1 kr). Stripe's own minimum for a card payment in kroner is 2.50 kr, so the mystery CD is exactly at the limit. */
-export const MYSTERY_PRICE_ORE = 250;
-export const ALBUM_PRICE_ORE = 500;
+/** Real money, in øre (100 øre = 1 kr): the mystery CD costs 150 kr. (The full album is no longer sold; players who bought it keep it, and an old paid order is still handed over.) */
+export const MYSTERY_PRICE_ORE = 15_000;
 export type PayProduct = "mystery" | "album";

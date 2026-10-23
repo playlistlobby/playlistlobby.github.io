@@ -36,7 +36,7 @@ async function call(action: string, args: object, forceToken: boolean): Promise<
 }
 
 /** Starts paying real money for a CD: resolves with the address of the payment page (Stripe), where the player is sent. */
-export async function startPayment(product: "mystery" | "album"): Promise<string> {
+export async function startPayment(product: "mystery"): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new ApiError("Please log in again.", 401);
   let r: Response;

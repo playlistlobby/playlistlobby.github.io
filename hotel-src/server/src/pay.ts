@@ -5,7 +5,7 @@
 // Records live at purchases/<session> (the whole story) and userPurchases/<uid>/<session> (what a player has bought); only this server writes them.
 import { Env, isEmulator } from "./env";
 import { Rtdb } from "./rtdb";
-import { ALBUM_CD, ALBUM_PRICE_ORE, cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE, PayProduct } from "../../src/shared/cds";
+import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE, PayProduct } from "../../src/shared/cds";
 
 /** a checkout that was started but not paid counts as "on its way" for this long (so nobody can open ten and pay for ten) */
 const OPEN_MS = 45 * 60_000;
@@ -13,23 +13,18 @@ type Status = "open" | "paid" | "claimed" | "stuck";
 interface Purchase { uid: string; product: PayProduct; amount: number; status: Status; at: number; session: string; paidAt?: number; item?: string }
 interface UserPurchase { product: PayProduct; status: Status; at: number }
 
-const NAMES: Record<PayProduct, string> = { mystery: "Mystery CD (Blodig oktober)", album: "Full album CD (Blodig oktober)" };
-const AMOUNT: Record<PayProduct, number> = { mystery: MYSTERY_PRICE_ORE, album: ALBUM_PRICE_ORE };
+const NAMES = { mystery: "Mystery CD (Blodig oktober)" };
+const AMOUNT = { mystery: MYSTERY_PRICE_ORE };
 
 export class PayError extends Error {
   constructor(msg: string, readonly status = 400) { super(msg); }
 }
 
-/** Can this player buy this now? Mystery: three in all, never the same twice. Album: one. */
-async function checkEligible(db: Rtdb, uid: string, product: PayProduct, now: number): Promise<void> {
+/** Can this player buy this now? Mystery: three in all, never the same twice. (The album is not sold any more.) */
+async function checkEligible(db: Rtdb, uid: string, product: "mystery", now: number): Promise<void> {
   const owned = (await db.get<Record<string, boolean>>(`users/${uid}/owned`)) ?? {};
   const mine = Object.values((await db.get<Record<string, UserPurchase>>(`userPurchases/${uid}`)) ?? {});
   const onItsWay = (p: UserPurchase): boolean => p.status === "paid" || (p.status === "open" && now - p.at < OPEN_MS);
-  if (product === "album") {
-    if (owned[cdOwnedKey(ALBUM_CD)]) throw new PayError("You already have the full album.");
-    if (mine.some((p) => p.product === "album" && onItsWay(p))) throw new PayError("You're already buying the album. Finish that first.");
-    return;
-  }
   const have = MYSTERY_CDS.filter((i) => owned[cdOwnedKey(i)]).length;
   const coming = mine.filter((p) => p.product === "mystery" && onItsWay(p)).length;
   if (have >= MYSTERY_CDS.length) throw new PayError("You have all three mystery CDs. There are none left.");
@@ -40,7 +35,7 @@ const rand = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)),
 
 /** POST /pay/checkout { product } with the login token: returns { url } to send the player to. */
 export async function startCheckout(env: Env, uid: string, product: unknown): Promise<{ url: string }> {
-  if (product !== "mystery" && product !== "album") throw new PayError("Bad product.");
+  if (product !== "mystery") throw new PayError("Bad product.");
   const db = new Rtdb(env);
   const now = Date.now();
   await checkEligible(db, uid, product, now);

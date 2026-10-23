@@ -815,13 +815,14 @@ console.log("--- CDs: the record player in the shop, paying, the album");
   }
   const fourth = await checkout(m, "mystery");
   check("a fourth mystery CD can't be bought", fourth.ok === false && fourth.status === 400, JSON.stringify(fourth));
-  // the album: one, red
+  // the full album is not sold any more: a new checkout is refused, but an old paid order still gets its album
   const al = await checkout(m, "album");
-  check("album checkout works", al.ok === true, JSON.stringify(al));
+  check("the album can't be bought any more", al.ok === false && al.status === 400, JSON.stringify(al));
+  const oldSid = `cs_old_${Date.now()}`;
+  await owner("PUT", `purchases/${oldSid}`, { uid: m.uid, product: "album", amount: 500, status: "paid", at: Date.now(), session: oldSid });
+  await owner("PUT", `userPurchases/${m.uid}/${oldSid}`, { product: "album", status: "paid", at: Date.now() });
   const alc = await act(m, "claimPurchases");
-  check("the album arrives", alc.data.items[0] === "cd_album" && total(alc.state.inventory, "cd_album") === 1, JSON.stringify(alc.data));
-  const al2 = await checkout(m, "album");
-  check("a second album can't be bought", al2.ok === false, JSON.stringify(al2));
+  check("an old paid album order still arrives", alc.data.items[0] === "cd_album" && total(alc.state.inventory, "cd_album") === 1, JSON.stringify(alc.data));
   bad("the paid CDs can't be dropped", await act(m, "drop", { slot: slotOf(alc.state, "cd_album"), qty: 1 }));
   // the webhook: only a signed message from Stripe marks a payment as paid
   const w = await fresh("t_cd3");
