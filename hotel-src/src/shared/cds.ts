@@ -38,4 +38,7 @@ export const cdOwnedKey = (item: string): string => `item_${item}`;
 
 /** Real money, in øre (100 øre = 1 kr): the mystery CD costs 150 kr. (The full album is no longer sold; players who bought it keep it, and an old paid order is still handed over.) */
 export const MYSTERY_PRICE_ORE = 15_000;
-export type PayProduct = "mystery" | "album";
+/** A test item for trying the real payment (only emil and the admin can buy it): 2.50 kr, because that is the least Stripe takes for a card payment in kroner. It hands over one cigarette. */
+export const TEST_PRICE_ORE = 250;
+export const TEST_BUYERS = ["emil@users.bobba.invalid"];
+export type PayProduct = "mystery" | "album" | "test";

@@ -155,6 +155,20 @@ export function randomFurniPicks(day: number, pool: string[], count = PICKS_PER_
   return list.slice(0, Math.min(count, list.length));
 }
 
+/**
+ * The shop room's stock changes twice a day, at 6 in the morning and 6 in the evening (Danish time). This is the moment the current stock started
+ * (ms since 1970): it stands in for "the day" everywhere the shop's stock is picked, so the same four pieces show for 12 hours.
+ */
+export function furniPeriodStart(now: number): number {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Copenhagen", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(new Date(now));
+  const g = (t: string): number => Number(parts.find((p) => p.type === t)!.value);
+  const offset = Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"), g("second")) - Math.floor(now / 1000) * 1000; // Danish time minus UTC
+  const midnight = Date.UTC(g("year"), g("month") - 1, g("day"));
+  const h = g("hour");
+  const localStart = h >= 18 ? midnight + 18 * 3_600_000 : h >= 6 ? midnight + 6 * 3_600_000 : midnight - 6 * 3_600_000;
+  return localStart - offset;
+}
+
 /** Today's four pieces: the admin's choice if they made one for today, else the random pick. `known` says which kinds exist. */
 export function furniPicksToday(dayStart: number, cfg: FurniShopCfg, pool: string[], known: (kind: string) => boolean): string[] {
   const mine = cfg.day === dayStart ? cfg.picks.filter(known) : [];

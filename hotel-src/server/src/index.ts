@@ -37,7 +37,7 @@ export default {
       try {
         const who = await verifyToken((request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, ""), env);
         const body = (await request.json().catch(() => ({}))) as { product?: unknown };
-        return reply({ ok: true, ...(await startCheckout(env, who.uid, body.product)) });
+        return reply({ ok: true, ...(await startCheckout(env, who.uid, body.product, who)) });
       } catch (e) {
         if (e instanceof PayError) return reply({ ok: false, error: e.message }, e.status);
         console.error("checkout failed", e);

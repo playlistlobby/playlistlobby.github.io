@@ -210,7 +210,7 @@ export function mountAdminShop(root: HTMLElement, ctx: Ctx): () => void {
       body.replaceChildren(
         h("div", { class: "panel" },
           h("h3", {}, "Shop room: today's four pieces"),
-          h("p", { class: "hint" }, `Everyone sees the same four. They change at midnight (UTC). ${pinned ? "You changed today's pick: it stays until midnight." : "Today's pick is random (the same for everyone)."}`),
+          h("p", { class: "hint" }, `Everyone sees the same four. They change at 6 in the morning and 6 in the evening (Danish time). ${pinned ? "You changed today's pick: it stays until midnight." : "Today's pick is random (the same for everyone)."}`),
           ...Array.from({ length: Math.min(PICKS_PER_DAY, picks.length) }, (_, i) => slot(i)),
           h("div", { class: "row", style: { marginTop: "8px" } },
             h("button", { class: "btn small", onclick: async () => { try { await saveTodayPicks(randomPicks(todayStart() + Math.floor(Math.random() * 1e6) * 86_400_000)); saved("rerolled the shop's furniture"); } catch { failed(); } } }, "Reroll"),

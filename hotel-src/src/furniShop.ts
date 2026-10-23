@@ -1,13 +1,14 @@
-// The shop room's daily stock: 4 pieces picked from the pool, the same for everybody, changing at midnight UTC.
+// The shop room's stock: 4 pieces picked from the pool, the same for everybody, changing at 6 in the morning and 6 in the evening (Danish time).
 // The pick is a seeded shuffle of the day number, so every player sees the same four without anything being stored; the admin can
 // swap pieces or change prices (Admin > Shop > Furniture), which is stored at config/furniShop and wins for that day.
 import { onValue, ref, remove, set, Unsubscribe } from "firebase/database";
 import { db } from "./firebase";
 import { FURNI_KINDS, SHOP_KIND_PREFIX, SHOP_PIECES } from "./rooms";
-import { furniPicksToday, furniPrice, MAX_PRICE, MIN_PRICE, PICKS_PER_DAY, randomFurniPicks } from "./shared/furniture";
+import { furniPeriodStart, furniPicksToday, furniPrice, MAX_PRICE, MIN_PRICE, PICKS_PER_DAY, randomFurniPicks } from "./shared/furniture";
 export { MAX_PRICE, MIN_PRICE, PICKS_PER_DAY };
 import { listFurni } from "./furniDefs";
-import { todayStart } from "./db";
+import { serverNow } from "./db";
+const todayStart = (): number => furniPeriodStart(serverNow()); // (the stock's own "day": 12 hours long)
 
 
 interface Config { day: number; picks: string[]; prices: Record<string, number> }

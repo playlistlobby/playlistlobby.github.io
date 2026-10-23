@@ -15,6 +15,16 @@ export const claimPurchases: Action = {
     let full = false;
     for (const [id, p] of paid) {
       let item: string | null = null;
+      if (p.product === "test") { // the test item: one cigarette, as often as it is bought
+        const next = addToInv(w.s.inventory, { item: "cigarette", qty: 1 });
+        if (!next) { full = true; break; }
+        w.s.inventory = next;
+        c.extra[`purchases/${id}/status`] = "claimed";
+        c.extra[`purchases/${id}/item`] = "cigarette";
+        c.extra[`userPurchases/${c.uid}/${id}/status`] = "claimed";
+        items.push("cigarette");
+        continue;
+      }
       if (p.product === "album") {
         item = w.s.owned[cdOwnedKey(ALBUM_CD)] ? null : ALBUM_CD;
       } else {

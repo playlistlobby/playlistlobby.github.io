@@ -5,7 +5,7 @@
 // Records live at purchases/<session> (the whole story) and userPurchases/<uid>/<session> (what a player has bought); only this server writes them.
 import { Env, isEmulator } from "./env";
 import { Rtdb } from "./rtdb";
-import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE, PayProduct } from "../../src/shared/cds";
+import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE, PayProduct, TEST_BUYERS, TEST_PRICE_ORE } from "../../src/shared/cds";
 
 /** a checkout that was started but not paid counts as "on its way" for this long (so nobody can open ten and pay for ten) */
 const OPEN_MS = 45 * 60_000;
@@ -13,15 +13,16 @@ type Status = "open" | "paid" | "claimed" | "stuck";
 interface Purchase { uid: string; product: PayProduct; amount: number; status: Status; at: number; session: string; paidAt?: number; item?: string }
 interface UserPurchase { product: PayProduct; status: Status; at: number }
 
-const NAMES = { mystery: "Mystery CD (Blodig oktober)" };
-const AMOUNT = { mystery: MYSTERY_PRICE_ORE };
+const NAMES = { mystery: "Mystery CD (Blodig oktober)", test: "Test item (Blodig oktober)" };
+const AMOUNT = { mystery: MYSTERY_PRICE_ORE, test: TEST_PRICE_ORE };
 
 export class PayError extends Error {
   constructor(msg: string, readonly status = 400) { super(msg); }
 }
 
 /** Can this player buy this now? Mystery: three in all, never the same twice. (The album is not sold any more.) */
-async function checkEligible(db: Rtdb, uid: string, product: "mystery", now: number): Promise<void> {
+async function checkEligible(db: Rtdb, uid: string, product: "mystery" | "test", now: number): Promise<void> {
+  if (product === "test") return; // (the buyer was checked in startCheckout)
   const owned = (await db.get<Record<string, boolean>>(`users/${uid}/owned`)) ?? {};
   const mine = Object.values((await db.get<Record<string, UserPurchase>>(`userPurchases/${uid}`)) ?? {});
   const onItsWay = (p: UserPurchase): boolean => p.status === "paid" || (p.status === "open" && now - p.at < OPEN_MS);
@@ -34,8 +35,9 @@ async function checkEligible(db: Rtdb, uid: string, product: "mystery", now: num
 const rand = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, "0")).join("");
 
 /** POST /pay/checkout { product } with the login token: returns { url } to send the player to. */
-export async function startCheckout(env: Env, uid: string, product: unknown): Promise<{ url: string }> {
-  if (product !== "mystery") throw new PayError("Bad product.");
+export async function startCheckout(env: Env, uid: string, product: unknown, who: { email: string; isAdmin: boolean }): Promise<{ url: string }> {
+  if (product !== "mystery" && product !== "test") throw new PayError("Bad product.");
+  if (product === "test" && !who.isAdmin && !TEST_BUYERS.includes(who.email.toLowerCase())) throw new PayError("Bad product.");
   const db = new Rtdb(env);
   const now = Date.now();
   await checkEligible(db, uid, product, now);
