@@ -6901,7 +6901,7 @@
  },
  "N269": {
   "en": "You've got a partner already. Remove them first.",
-  "da": "Du har allerede en partner. Fjern dem først.",
+  "da": "Du har allerede en kæreste. Fjern dem først.",
   "where": "src/social.ts:439"
  },
  "N270": {
@@ -7395,13 +7395,13 @@
   "where": "src/ui/messenger.ts:85"
  },
  "N368": {
-  "en": "{…} {name} wants to be your {…}",
-  "da": "{…} {name} vil være din {…}",
+  "en": "💖 {name} wants to be your partner",
+  "da": "💖 {name} vil være din kæreste",
   "where": "src/ui/messenger.ts:87"
  },
  "N369": {
-  "en": "You and {name} are now {…}.",
-  "da": "Du og {name} er nu {…}.",
+  "en": "You and {name} are now partners.",
+  "da": "Du og {name} er nu kærester.",
   "where": "src/ui/messenger.ts:88"
  },
  "N370": {
@@ -7416,7 +7416,7 @@
  },
  "N372": {
   "en": "Partner and best friend requests",
-  "da": "Anmodninger om partner og bedste ven",
+  "da": "Anmodninger om kæreste og bedste ven",
   "where": "src/ui/messenger.ts:107"
  },
  "N373": {
@@ -7476,7 +7476,7 @@
  },
  "N384": {
   "en": "End partnership",
-  "da": "Afslut partnerskab",
+  "da": "Slut med kæresten",
   "where": "src/ui/profileWindow.ts:100"
  },
  "N385": {
@@ -7501,17 +7501,17 @@
  },
  "N389": {
   "en": "Be partners",
-  "da": "Bliv partnere",
+  "da": "Bliv kærester",
   "where": "src/ui/profileWindow.ts:103"
  },
  "N390": {
   "en": "You asked {name} to be your partner.",
-  "da": "Du bad {name} om at være din partner.",
+  "da": "Du bad {name} om at være din kæreste.",
   "where": "src/ui/profileWindow.ts:103"
  },
  "N391": {
   "en": "Ask to be partners (only one)",
-  "da": "Bed om at være partnere (kun én)",
+  "da": "Bed om at blive kærester (kun én)",
   "where": "src/ui/profileWindow.ts:103"
  },
  "N392": {
@@ -7641,12 +7641,12 @@
  },
  "N417": {
   "en": "Your partner and best friends",
-  "da": "Din partner og dine bedste venner",
+  "da": "Din kæreste og dine bedste venner",
   "where": "src/ui/profileWindow.ts:161"
  },
  "N418": {
   "en": "Open a friend's profile and tap Best friends or Be partners. They have to accept.",
-  "da": "Åbn en vens profil og tryk Bedste venner eller Bliv partnere. De skal acceptere.",
+  "da": "Åbn en vens profil og tryk Bedste venner eller Bliv kærester. De skal acceptere.",
   "where": "src/ui/profileWindow.ts:162"
  },
  "N419": {
@@ -7671,7 +7671,7 @@
  },
  "N423": {
   "en": "Partner and best friends",
-  "da": "Partner og bedste venner",
+  "da": "Kæreste og bedste venner",
   "where": "src/ui/profileWindow.ts:178"
  },
  "N424": {
@@ -8008,5 +8008,20 @@
   "en": "Ranked by blood: the richest players are on top",
   "da": "Rangeret efter blod: de rigeste spillere er øverst",
   "where": "src/ui/door.ts"
+ },
+ "N491": {
+  "en": "⭐ {name} wants to be your best friend",
+  "da": "⭐ {name} vil være din bedste ven",
+  "where": "src/ui/messenger.ts:87"
+ },
+ "N492": {
+  "en": "You and {name} are now best friends.",
+  "da": "Du og {name} er nu bedste venner.",
+  "where": "src/ui/messenger.ts:88"
+ },
+ "N493": {
+  "en": "Partner",
+  "da": "Kæreste",
+  "where": "src/ui/profileWindow.ts:173"
  }
 }

@@ -84,8 +84,8 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
       h("div", { class: "frow" }, h("span", { class: "fname" }, `${giftName(g)} was declined`),
         h("button", { class: "btn small primary", title: "Take it back", onclick: () => giftCollect(me, g.id).then(() => toast(`You took back ${giftName(g)}.`), (err) => toast((err as Error).message || "Couldn't take it back.", "err")) }, "Take back")));
     const relRows = [...social.relationRequests.values()].map((r: RelationRequest) =>
-      h("div", { class: "frow" }, h("span", { class: "fname" }, `${r.kind === "partner" ? "💖" : "⭐"} ${r.name} wants to be your ${r.kind === "partner" ? "partner" : "best friend"}`),
-        h("button", { class: "btn small primary", title: "Accept", onclick: () => social.answerRelation(r.uid, true).then(() => { playSfx("friend"); toast(`You and ${r.name} are now ${r.kind === "partner" ? "partners" : "best friends"}.`); }, () => toast("Couldn't accept that.", "err")) }, "✓"),
+      h("div", { class: "frow" }, h("span", { class: "fname" }, r.kind === "partner" ? `💖 ${r.name} wants to be your partner` : `⭐ ${r.name} wants to be your best friend`),
+        h("button", { class: "btn small primary", title: "Accept", onclick: () => social.answerRelation(r.uid, true).then(() => { playSfx("friend"); toast(r.kind === "partner" ? `You and ${r.name} are now partners.` : `You and ${r.name} are now best friends.`); }, () => toast("Couldn't accept that.", "err")) }, "✓"),
         h("button", { class: "btn small", title: "Decline", onclick: () => void social.answerRelation(r.uid, false) }, "✕")));
 
     const inviteRows = social.invites.map((i) =>
