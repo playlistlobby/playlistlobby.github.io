@@ -1092,7 +1092,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     hover = t;
     if (fzPlacing) { if (t) void putDown(t, fzPlacing, fzDir); return; }
     const f = pieceAtPointer(m, t);
-    if (!f && fzSel && t && e.pointerType !== "mouse") { // on a phone: a piece is selected and you tap an empty spot, it goes there (no dragging needed)
+    if (!f && fzSel && t && (e.pointerType !== "mouse" || adminLobbyEdit)) { // on a phone: a piece is selected and you tap an empty spot, it goes there (no dragging needed)
       const sel = fzPiece();
       if (sel) {
         const spot: Spot = FURNI_KINDS[sel.kind].wall ? wallSpot(def, sel.kind, t) : { x: t.x, y: t.y, dir: sel.dir ?? 0 };
