@@ -3504,27 +3504,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.drawImage(knifeImg, -s / 2, -s / 2, s, s);
         g.restore();
       }
-      if (t >= 0.3 && t < 1.15) {
-        const rise = Math.min(1, (t - 0.3) / 0.5) * 14 * scale;
-        const sx = cb.x;
-        const sy = cb.y - 34 * scale - rise;
-        const r = 11 * Math.max(1, scale);
-        g.save();
-        g.globalAlpha = t > 0.95 ? Math.max(0, (1.15 - t) / 0.2) : 1;
-        g.beginPath();
-        g.arc(sx, sy, r, 0, Math.PI * 2);
-        g.fillStyle = "#2f67a8"; // OSRS "blocked" splat: the stab does 0
-        g.fill();
-        g.lineWidth = 2;
-        g.strokeStyle = "#0b2a52";
-        g.stroke();
-        g.fillStyle = "#fff";
-        g.font = `bold ${Math.round(13 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
-        g.textAlign = "center";
-        g.textBaseline = "middle";
-        g.fillText("0", sx, sy + 1);
-        g.restore();
-      }
     }
 
     // syringe pressed into the arm
