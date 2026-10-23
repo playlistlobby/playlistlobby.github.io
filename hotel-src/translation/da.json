@@ -3536,7 +3536,7 @@
  },
  "T0708": {
   "en": "Back",
-  "da": "Bagfra",
+  "da": "Back",
   "where": "src/ui/painter.ts:94"
  },
  "T0709": {
@@ -7451,7 +7451,7 @@
  },
  "N379": {
   "en": "Customize",
-  "da": "Tilpas",
+  "da": "Edit",
   "where": "src/ui/profileWindow.ts:91"
  },
  "N380": {
@@ -7681,7 +7681,7 @@
  },
  "N425": {
   "en": "Tap Customize to write a status.",
-  "da": "Tryk Tilpas for at skrive en status.",
+  "da": "Tryk Edit for at skrive en status.",
   "where": "src/ui/profileWindow.ts:194"
  },
  "N426": {

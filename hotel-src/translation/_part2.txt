@@ -315,7 +315,7 @@ T0704|Down-right (default)|Ned til højre (standard)
 T0705|Front|Front
 T0706|Right|Højre
 T0707|Up-right|Op til højre
-T0708|Back|Bagfra
+T0708|Back|Back
 T0709|Colour|Farve
 T0710|Pencil|Blyant
 T0711|Eraser|Viskelæder
