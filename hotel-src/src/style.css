@@ -382,6 +382,16 @@ button, input, select { font-family: var(--font); }
 .furni-buy-img { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; background: rgba(255, 255, 255, .08); border-radius: 8px; padding: 4px; }
 .fb-stage { position: relative; height: min(70vh, 540px); width: calc(min(70vh, 540px) * 9 / 16); aspect-ratio: 9 / 16; max-width: 100%; margin: 0 auto 6px; border-radius: 8px; overflow: hidden; background: #4ec0ca; touch-action: none; user-select: none; -webkit-user-select: none; }
 .fb-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.fb-trophy { position: absolute; top: 8px; left: 8px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; border: 2px solid #543847; background: #ded895; font-size: 18px; line-height: 1; cursor: pointer; }
+.fb-board { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: rgba(20, 14, 18, .95); color: #fff; }
+.fb-board[hidden] { display: none; }
+.fb-board-head { display: flex; align-items: center; justify-content: space-between; font-size: 18px; padding-right: 40px; }
+.fb-board-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.fb-board-row { display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 6px; background: rgba(255, 255, 255, .08); }
+.fb-board-row.me { background: rgba(222, 216, 149, .35); font-weight: 700; }
+.fb-rank { width: 24px; text-align: right; color: #ded895; }
+.fb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fb-score { font-weight: 700; }
 .door-actions { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .sixty-shop { width: 280px; max-width: calc(100% - 20px); left: 10px; right: auto; top: 44px; max-height: calc(100% - 60px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .sixty-pick { display: grid; gap: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.12); }

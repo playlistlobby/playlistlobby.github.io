@@ -336,6 +336,19 @@ export async function harvestPlant(p: Profile, _roomId: string, fid: string, _pl
 export async function rewardStab(p: Profile, targetUid: string, roomId: string): Promise<number> {
   return Number((await call<{ gain?: number }>(p, "stab", { target: targetUid, room: roomId })).gain) || 1;
 }
+/** A Flappy Bird run starts (the server notes the time: a score is only believed if it fits the time the run took). */
+export const flappyRunStart = (p: Profile): Promise<unknown> => call(p, "flappyStart");
+/** The score of the run that just ended: it goes on the scoreboard if it is the player's best. */
+export const flappySubmit = (p: Profile, score: number): Promise<{ best: number; improved: boolean }> => call(p, "flappyScore", { score });
+export interface BoardRow { uid: string; name: string; score: number }
+/** Follows the Flappy Bird scoreboard (best score per player, highest first); returns the stop function. */
+export function watchFlappyBoard(cb: (rows: BoardRow[]) => void): Unsubscribe {
+  return onValue(ref(db, "flappyBoard"), (snap) => {
+    const rows = Object.entries<any>(snap.val() ?? {}).filter(([, v]) => v && typeof v.score === "number").map(([uid, v]) => ({ uid, name: String(v.name ?? "?"), score: v.score as number }));
+    rows.sort((a, b) => b.score - a.score);
+    cb(rows);
+  }, () => cb([]));
+}
 /** A drop of blood caught in Flappy Bird. */
 export const rewardFlappyDrop = (p: Profile, roomId: string): Promise<unknown> => call(p, "flappy", { room: roomId });
 /** The syringe's drop: from yourself, or from a body bag in the room. */

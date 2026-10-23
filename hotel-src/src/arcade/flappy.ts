@@ -6,7 +6,7 @@ import type { ArcadeGame } from "./arcade";
 
 /**
  * Flappy Bird, ported from the Playlist app (the same numbers as the original: a 100 px gap, pipes 144 px apart).
- * Tap, click or press Space / Up to flap. The best score is kept in this browser; there's no leaderboard here.
+ * Tap, click or press Space / Up to flap. The best score is kept in this browser, and the best score of every player is on the scoreboard (the trophy button).
  * The world is 288 x 512 units and is drawn at the screen's full resolution so the pixel art stays sharp.
  */
 const FB = { W: 288, H: 512, GROUND: 400, GAP: 100, SPEED: 2, GRAV: 0.25, FLAP: -4.6, PIPE_W: 52, SPACING: 144, BX: 60 };
@@ -49,6 +49,27 @@ export const flappy: ArcadeGame = {
       } catch { /* no audio: the game still plays */ }
     };
 
+    // ---- the scoreboard: the trophy button opens the best scores of everybody ----
+    let boardRows: Array<{ uid: string; name: string; score: number }> = [];
+    const boardList = h("div", { class: "fb-board-list" });
+    const boardPanel = h("div", { class: "fb-board", hidden: true },
+      h("div", { class: "fb-board-head" }, h("strong", {}, "Scoreboard"), h("button", { class: "btn small", type: "button", onclick: (e: Event) => { e.stopPropagation(); boardPanel.hidden = true; } }, "Close")),
+      boardList);
+    const drawBoard = (): void => {
+      const me = api.myUid;
+      const top = boardRows.slice(0, 10);
+      const rows = top.map((r, i) => h("div", { class: "fb-board-row" + (r.uid === me ? " me" : "") }, h("span", { class: "fb-rank" }, String(i + 1)), h("span", { class: "fb-name" }, r.name), h("span", { class: "fb-score" }, String(r.score))));
+      const mine = boardRows.findIndex((r) => r.uid === me);
+      if (mine >= 10) rows.push(h("div", { class: "fb-board-row me" }, h("span", { class: "fb-rank" }, String(mine + 1)), h("span", { class: "fb-name" }, boardRows[mine].name), h("span", { class: "fb-score" }, String(boardRows[mine].score))));
+      boardList.replaceChildren(...(rows.length ? rows : [h("div", { class: "hint" }, "No scores yet. Be the first!")]));
+    };
+    const stopBoard = api.watchBoard?.((rows) => { boardRows = rows; drawBoard(); });
+    if (api.watchBoard) {
+      stage.append(
+        h("button", { class: "fb-trophy", type: "button", title: "Scoreboard", onclick: (e: Event) => { e.stopPropagation(); drawBoard(); boardPanel.hidden = !boardPanel.hidden; } }, "🏆"),
+        boardPanel);
+    }
+
     const dropImg = new Image();
     dropImg.src = BLOOD_ICON;
     const floats: Float[] = [];
@@ -63,6 +84,7 @@ export const flappy: ArcadeGame = {
     function flap(): void {
       if (fb.state === "ready") {
         fb.state = "play";
+        api.startRun?.();
         fb.pipes = [];
         for (let x = FB.W + 40; x < FB.W + 40 + FB.SPACING * Math.ceil((FB.W + FB.PIPE_W) / FB.SPACING + 1); x += FB.SPACING) fb.pipes.push({ x, gap: gapY(), passed: false });
       }
@@ -75,6 +97,7 @@ export const flappy: ArcadeGame = {
       if (navigator.vibrate) navigator.vibrate(60);
       sfx("hit", 0.7);
       if (fb.y + 12 < FB.GROUND) window.setTimeout(() => sfx("die", 0.6), 300); // hit a pipe: the fall
+      if (fb.score > 0) void api.submitScore?.(fb.score).catch(() => undefined); // onto the scoreboard, if it is your best
       if (fb.score > fb.best) {
         fb.best = fb.score; fb.newBest = fb.score > 0;
         try { localStorage.setItem(BEST_KEY, String(fb.best)); } catch { /* private window: just not kept */ }
@@ -227,6 +250,7 @@ export const flappy: ArcadeGame = {
 
     return () => {
       cancelAnimationFrame(raf);
+      stopBoard?.();
       ro.disconnect();
       window.removeEventListener("keydown", onKey);
       canvas.removeEventListener("pointerdown", onPointer);

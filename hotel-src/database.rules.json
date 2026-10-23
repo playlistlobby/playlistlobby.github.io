@@ -47,6 +47,9 @@
     "coinflips": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()"
     },
+    "flappyBoard": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()"
+    },
     "bans": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'"
     },

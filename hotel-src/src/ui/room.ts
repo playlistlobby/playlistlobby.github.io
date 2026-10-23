@@ -74,6 +74,7 @@ import { openStashBox, StashApi } from "./stashbox";
 import { openCoinFlip, CoinFlipApi } from "./coinflip";
 import { watchFlips } from "../coinflip";
 import { figureAnimated } from "../designs";
+import { flappyRunStart, flappySubmit, watchFlappyBoard } from "../db";
 import { pickPosterPicture } from "./posterEditor";
 import { POSTER_KIND, POSTER_PRICE, POSTER_W, POSTER_H } from "../shared/furniture";
 import { MixerApi, openMixer } from "./mixer";
@@ -1660,6 +1661,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (job.type === "use") void interactWith(f, job.slot ?? null);
       else if (f.kind === "slot") { if (!coinApi) coinApi = openCoinFlip(stage, ctx, () => { panel.refresh(); ctx.refreshHeader(); }, () => { coinApi = null; }); }
       else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
+        myUid: me.uid,
+        ...(roomId === LOBBY_ID ? {
+          startRun: () => { void flappyRunStart(me).catch(() => undefined); },
+          submitScore: (score: number) => flappySubmit(me, score),
+          watchBoard: (cb: (rows: Array<{ uid: string; name: string; score: number }>) => void) => watchFlappyBoard(cb),
+        } : {}),
         collectBlood: async () => {
           try {
             await rewardFlappyDrop(me, roomId);

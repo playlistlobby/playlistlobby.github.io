@@ -8213,5 +8213,15 @@
   "en": "{takerName} took your coin flip: {coin}. You lost {lost} blood.",
   "da": "{takerName} tog dit kast: {coin}. Du tabte {lost} blod.",
   "where": "src/ui/room.ts"
+ },
+ "N532": {
+  "en": "Scoreboard",
+  "da": "Rangliste",
+  "where": "src/arcade/flappy.ts"
+ },
+ "N533": {
+  "en": "No scores yet. Be the first!",
+  "da": "Ingen scorer endnu. Vær den første!",
+  "where": "src/arcade/flappy.ts"
  }
 }

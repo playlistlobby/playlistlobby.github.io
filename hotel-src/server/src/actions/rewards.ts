@@ -80,7 +80,7 @@ export const dumpster: Action = {
     if (room !== "lobby" && room !== `tut_${c.uid}`) fail("There's no bin here.");
     await requireInRoom(c, room);
     const extras = (await c.db.get<Record<string, { kind?: string }>>("lobby/furni")) ?? {};
-    if (can !== "lobby2" && can !== "lobby3" && extras[can]?.kind !== "dumpster") fail("That isn't a bin.");
+    if (can !== "lobby2" && can !== "lobby3" && can !== "lobby5" && extras[can]?.kind !== "dumpster") fail("That isn't a bin.");
     const w = await c.user();
     const last = w.s.dumpsters[can] ?? 0;
     const reload = c.now < w.s.leanUntil ? DUMPSTER_MS / 2 : DUMPSTER_MS; // the lean halves the wait

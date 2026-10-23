@@ -47,6 +47,9 @@
     "coinflips": {
       ".read": "@PW@"
     },
+    "flappyBoard": {
+      ".read": "@PW@"
+    },
     "bans": {
       ".read": "@ADMIN@"
     },
