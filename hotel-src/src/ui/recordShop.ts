@@ -3,7 +3,7 @@ import { buyRecordCd } from "../db";
 import { startPayment } from "../api";
 import { BLOOD_ICON, itemDef } from "../items";
 import { itemEntry, onShopConfig } from "../shopConfig";
-import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE, TEST_PRICE_ORE } from "../shared/cds";
+import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE } from "../shared/cds";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
@@ -27,7 +27,7 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
   let paying = false;
 
   /** sends the player to the payment page (they come back to the game afterwards and the CD is handed over) */
-  async function pay(product: "mystery" | "test"): Promise<void> {
+  async function pay(product: "mystery"): Promise<void> {
     if (paying) return;
     paying = true;
     render();
@@ -74,7 +74,6 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
         }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${freakPrice}`);
     body.replaceChildren(
       row(freak.icon, "Freakme", "One song, for blood. One per player.", freakBtn),
-      ...(me.isAdmin || me.name.toLowerCase() === "emil" ? [row(itemDef("cigarette")!.icon, "Test item", "Only you can see this: 2.50 kr (the least Stripe takes) for one cigarette, to try the payment.", h("button", { class: "btn small primary", disabled: paying, onclick: () => void pay("test") }, paying ? "…" : kr(TEST_PRICE_ORE)))] : []),
       row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "en af tre sange fra blodig oktober leaked, du for aldrig den samme cd igen", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
       h("div", { class: "hint" }, "Real money is paid on a payment page, and you come back to the game afterwards."));
   }
