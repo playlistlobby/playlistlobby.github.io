@@ -13,11 +13,11 @@ interface OpenFlip { by: string; name: string; stake: number; side: "heads" | "t
 const newId = (now: number): string => `${now.toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
 /** counts a stake against the player's 24 hour blood limit (or says no) */
-function useLimit(c: Ctx, w: { s: { tradeCap: { at: number; n: number } } }, stake: number): void {
+function useLimit(c: Ctx, w: { s: { tradeCap: { at: number; n: number }; noTradeLimit?: boolean } }, stake: number): void {
   const left = tradeBloodLeft(w.s, c.now);
   if (stake > left) fail(`You can only put ${left} more blood into trades and flips for now (the limit is ${TRADE_BLOOD_CAP} per 24 hours).`);
   const fresh = c.now - w.s.tradeCap.at >= TRADE_BLOOD_WINDOW_MS;
-  w.s.tradeCap = { at: fresh ? c.now : w.s.tradeCap.at, n: (fresh ? 0 : w.s.tradeCap.n) + stake };
+  if (!w.s.noTradeLimit) w.s.tradeCap = { at: fresh ? c.now : w.s.tradeCap.at, n: (fresh ? 0 : w.s.tradeCap.n) + stake };
 }
 
 /** finished flips older than a day leave the board */

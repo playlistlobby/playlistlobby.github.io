@@ -53,7 +53,7 @@ export const tradeFinish: Action = {
         const left = tradeBloodLeft(w.s, c.now);
         if (offer.blood > left) fail(`${w.uid === c.uid ? "You" : sidesName(sides, w.uid)} can only trade ${left} more blood for now (the limit is ${TRADE_BLOOD_CAP} per 24 hours).`);
         const fresh = c.now - w.s.tradeCap.at >= TRADE_BLOOD_WINDOW_MS;
-        w.s.tradeCap = { at: fresh ? c.now : w.s.tradeCap.at, n: (fresh ? 0 : w.s.tradeCap.n) + offer.blood };
+        if (!w.s.noTradeLimit) w.s.tradeCap = { at: fresh ? c.now : w.s.tradeCap.at, n: (fresh ? 0 : w.s.tradeCap.n) + offer.blood };
       }
       let inv: Inventory = w.s.inventory;
       for (const it of offer.items) {

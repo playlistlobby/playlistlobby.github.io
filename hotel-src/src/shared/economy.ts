@@ -99,6 +99,8 @@ export interface Snapshot {
   stash: Record<string, number>;
   /** blood given away in trades: the window started at `at` (ms) and `n` has gone since (a new window starts with the next trade after 24 hours) */
   tradeCap: { at: number; n: number };
+  /** no 24 hour limit on blood in trades and flips (set by hand on the account: users/<uid>/noTradeLimit) */
+  noTradeLimit: boolean;
   /** who this player has stabbed, and when: target uid -> start (ms, UTC midnight) of that day */
   stabs: Record<string, number>;
   /** when each garbage can was last searched (can id -> ms) */
@@ -130,7 +132,7 @@ export interface Snapshot {
 }
 
 /** How much blood this player can still hand over in trades right now. */
-export const tradeBloodLeft = (s: { tradeCap: { at: number; n: number } }, now: number): number => (now - s.tradeCap.at >= TRADE_BLOOD_WINDOW_MS ? TRADE_BLOOD_CAP : Math.max(0, TRADE_BLOOD_CAP - s.tradeCap.n));
+export const tradeBloodLeft = (s: { tradeCap: { at: number; n: number }; noTradeLimit?: boolean }, now: number): number => (s.noTradeLimit ? Infinity : now - s.tradeCap.at >= TRADE_BLOOD_WINDOW_MS ? TRADE_BLOOD_CAP : Math.max(0, TRADE_BLOOD_CAP - s.tradeCap.n));
 
 export const todayStartAt = (now: number): number => now - (now % DAY_MS);
 
@@ -175,6 +177,7 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     storage: Object.fromEntries(Object.entries(nums(v.storage)).filter(([, n]) => n > 0)),
     stash: Object.fromEntries(Object.entries(nums(v.stash)).filter(([, n]) => n > 0)),
     tradeCap: { at: Number(v.tradeCap?.at) || 0, n: Number(v.tradeCap?.n) || 0 },
+    noTradeLimit: v.noTradeLimit === true,
     stabs: nums(v.stabs),
     dumpsters: nums(v.dumpsters),
     boostUntil: Number(v.boostUntil) || 0,

@@ -77,6 +77,8 @@ export interface Profile {
   stash: Record<string, number>;
   /** blood given away in trades in the last 24 hours (see TRADE_BLOOD_CAP) */
   tradeCap: { at: number; n: number };
+  /** no 24 hour limit on blood in trades (see Snapshot.noTradeLimit) */
+  noTradeLimit: boolean;
   /** the introduction and 6ixty's jobs: 0 = just woke up, 1 = has the knife, 2 = stabbed the guy (first 5 drops), 3 = has the pill, 4 = introduction done (the door leads to the real basement),
    *  5 = got the money for a lighter (go buy one), 6 = brought it back: got 5 drops and the syringe */
   tutorial: number;
@@ -132,6 +134,7 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.storage = s.storage;
   p.stash = s.stash;
   p.tradeCap = s.tradeCap;
+  p.noTradeLimit = s.noTradeLimit;
   p.stabs = s.stabs;
   p.dumpsters = s.dumpsters;
   p.boostUntil = s.boostUntil;
@@ -220,6 +223,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     storage: {},
     stash: {},
     tradeCap: { at: 0, n: 0 },
+    noTradeLimit: false,
     tutorial: 0,
     questAt: 0,
     syringeSelfAt: 0,
