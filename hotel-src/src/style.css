@@ -820,6 +820,10 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .gc-step{display:flex;align-items:center;gap:0;border:1.5px solid #e4de6c;border-radius:4px;overflow:hidden}
 .gc-step button{width:40px;height:34px;font:400 24px/1 Georgia,serif;color:#3d3a0e;background:linear-gradient(#f6f39a,#dcd856)}
 .gc-step button:disabled{opacity:.45}
+.gc-cell.quick{justify-content:center;gap:6px;min-height:42px}
+.gc-chip{min-width:52px;height:30px;padding:0 8px;border:1.5px solid #e4de6c;border-radius:4px;font:700 15px/1 Georgia,serif;color:#3d3a0e;background:linear-gradient(#f6f39a,#dcd856)}
+.gc-chip.on{background:linear-gradient(#dcd856,#f6f39a);box-shadow:inset 0 1px 3px rgba(0,0,0,.35)}
+.gc-chip:disabled{opacity:.45}
 .gc-step b{min-width:64px;text-align:center;font:700 19px/34px Georgia,serif;color:#fff}
 
 .cf-sides{display:flex;gap:8px}

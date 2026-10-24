@@ -72,6 +72,7 @@ export function openCoinFlip(_host: HTMLElement, ctx: Ctx, onChange: () => void,
             h("button", { type: "button", "aria-label": "Less", disabled: stake <= 1, onclick: () => { stake = Math.max(1, stake - 1); render(); } }, "−"),
             h("b", {}, drop(), String(stake)),
             h("button", { type: "button", "aria-label": "More", disabled: stake >= maxStake(), onclick: () => { stake = Math.min(maxStake(), stake + 1); render(); } }, "+"))),
+        h("div", { class: "gc-cell quick" }, ...[10, 50, 100, 250, 500].map((n) => h("button", { type: "button", class: "gc-chip" + (stake === Math.min(n, maxStake()) ? " on" : ""), disabled: balance() < 1, onclick: () => { stake = Math.min(n, maxStake()); render(); } }, n === 500 ? "Max" : String(n)))),
         h("div", { class: "gc-cell sides" }, h("span", {}, "Your side"), h("div", { class: "cf-sides" }, sideBtn("heads"), sideBtn("tails")))),
       h("button", { type: "button", class: "gc-ribbon", disabled: !can, onclick: () => post() }, "Post Flip"),
       h("p", { class: "gc-note" }, bal < 1
