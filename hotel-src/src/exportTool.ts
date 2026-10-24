@@ -705,94 +705,84 @@ async function roomUpgradeAnim(): Promise<void> {
     const cost = Math.hypot(x - bigC, y - bigC) + Math.hypot(x - smallC, y - smallC);
     if (cost < tileCost) { tileCost = cost; tile = { x, y }; }
   }
-  // timeline: one steady stream. The pieces drop in at an even pace for the whole clip (no pauses); each upgrade is the room growing outwards (a soft wipe) that starts just before its first new piece
-  const T_TRANS = 1.0, T_FIRST = 0.25, T_LAST = 4.3, T_END = 5.0, T_POP = 0.45;
-  const keyOf = (f: { id: string; kind: string; x: number; y: number; dir?: number }): string => f.id + "|" + f.kind + "|" + f.x + "," + f.y + "|" + (f.dir ?? 0);
-  const seen = new Set<string>();
-  const fresh: Array<Set<string>> = defs.map((d) => {
-    const ids = new Set<string>();
-    for (const f of d.furni) { if (!seen.has(keyOf(f))) { seen.add(keyOf(f)); ids.add(f.id); } }
-    return ids;
-  });
-  const nAll = fresh.reduce((n, x) => n + x.size, 0);
-  const step = (T_LAST - T_FIRST) / Math.max(1, nAll - 1);
+  // timeline (5 s): it speeds up. The starter pieces come one by one, each upgrade then comes sooner and its pieces land faster than the last one's, a short hold at the end
+  const STARTS = [0, 1.1, 2.1, 2.95], TT = [0, 0.55, 0.45, 0.4], GAP = [0.15, 0.1, 0.06, 0.045], T_END = 5.0;
   const starts: number[] = [];
   const bornOf: Array<Map<string, number>> = [];
-  let k = 0;
+  const seen = new Set<string>();
   defs.forEach((d, si) => {
+    starts.push(STARTS[si]);
     const born = new Map<string, number>();
-    let first = -1;
+    let n = 0;
     for (const f of d.furni) {
-      if (!fresh[si].has(f.id)) { born.set(f.id, -1); continue; }
-      const t = T_FIRST + k++ * step;
-      if (first < 0) first = t;
-      born.set(f.id, t);
+      const key = f.id + "|" + f.kind + "|" + f.x + "," + f.y + "|" + (f.dir ?? 0);
+      if (seen.has(key)) { born.set(f.id, -1); continue; }
+      seen.add(key);
+      born.set(f.id, STARTS[si] + (si === 0 ? 0.25 : TT[si] - 0.2) + n * GAP[si]);
+      n++;
     }
     bornOf.push(born);
-    starts.push(si === 0 ? 0 : Math.max(0.05, first - 0.45));
   });
-  const total = Math.round(T_END * FPS);
+  const tNow = T_END;
+  const total = Math.round(tNow * FPS);
+  const SIXTY = FIGURES.emil; // the player in the middle: emil
   const ease = (u: number): number => u * u * (3 - 2 * u);
   const stageAt = (t: number): number => { let s = 0; for (let i = 0; i < starts.length; i++) if (t >= starts[i]) s = i; return s; };
-  const playerImg = (await renderAvatar({ figure: FIGURES.emil, dir: 3, headDir: 3, actions: ["std"], gesture: "std", frame: 0 }))!;
-  const shellAt = (si: number, g: CanvasRenderingContext2D): void => {
-    const shell = shells[si];
+  const playerAt = (_t: number): { x: number; y: number; walking: boolean; dir: number } => ({ x: tile.x, y: tile.y, walking: false, dir: 3 });
+  const drawStage = async (g: CanvasRenderingContext2D, si: number, t: number, alpha: number, withPlayer: boolean): Promise<void> => {
+    const d = defs[si], shell = shells[si];
+    g.save();
+    g.globalAlpha = alpha;
+    g.imageSmoothingEnabled = true;
     const o = toScreen({ x: -shell.origin.x, y: -shell.origin.y });
     g.drawImage(shell.canvas, o.x, o.y, shell.canvas.width * S, shell.canvas.height * S);
-  };
-  /** the part of the room that has "grown" so far: floor and both walls out to (wx, wy) tiles */
-  const growClip = (g: CanvasRenderingContext2D, wx: number, wy: number): void => {
-    const p = (x: number, y: number, dz: number): { x: number; y: number } => { const q = toScreen(iso(x, y)); return { x: q.x, y: q.y - dz * S }; };
-    const up = WALL_H + 6, down = -12;
-    const pts = [p(0, 0, up), p(wx, 0, up), p(wx, 0, down), p(wx, wy, down), p(0, wy, down), p(0, wy, up)];
-    g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y))); g.closePath(); g.clip();
+    g.imageSmoothingEnabled = false;
+    drawRoomDoor(g, d.doorX, toScreen, S, 0, false); // the door in the back wall
+    const items: Array<{ depth: number; fn: () => void }> = [];
+    for (const f of d.furni) {
+      const born = bornOf[si].get(f.id) ?? -1;
+      const age = born < 0 ? 9 : t - born;
+      if (age < 0) continue;
+      const base = feetOf(f.x + 0.5, f.y + 0.5);
+      const k = age >= 0.4 ? 1 : age < 0.28 ? 0.35 + (1.12 - 0.35) * ease(age / 0.28) : 1.12 - 0.12 * ease((age - 0.28) / 0.12);
+      const a = Math.min(1, age / 0.12);
+      items.push({ depth: f.x + f.y + 0.01 * (f.kind === "f_label" ? -50 : 0), fn: () => {
+        g.save();
+        g.globalAlpha = alpha * a;
+        g.translate(base.x, base.y); g.scale(k, k); g.translate(-base.x, -base.y);
+        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, S);
+        g.restore();
+      } });
+    }
+    if (withPlayer) {
+      const pl = playerAt(t);
+      const walkFrame = Math.floor((t * 1000) / 120) % 4;
+      const img = (await renderAvatar({ figure: SIXTY, dir: pl.dir, headDir: pl.dir, actions: [pl.walking ? "wlk" : "std"], gesture: "std", frame: pl.walking ? walkFrame : 0 }))!;
+      const f = feetOf(pl.x, pl.y);
+      items.push({ depth: pl.x + pl.y + 0.6, fn: () => {
+        g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(f.x, f.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
+        g.drawImage(img, f.x - (32 + padOf(img).x) * S, f.y - (FEET_Y + padOf(img).y) * S, img.width * S, img.height * S);
+      } });
+    }
+    items.sort((p, q) => p.depth - q.depth).forEach((i) => i.fn());
+    g.restore();
   };
   for (let i = 0; i < total; i++) {
     const t = i / FPS;
     const si = stageAt(t);
     const c = document.createElement("canvas"); c.width = W; c.height = H;
     const g = c.getContext("2d")!;
-    const u = si === 0 ? 1 : Math.min(1, (t - starts[si]) / T_TRANS);
-    // the room: the old one, with the new one growing out over it
-    g.imageSmoothingEnabled = true;
-    if (u < 1) {
-      shellAt(si - 1, g);
-      const e = ease(u), from = defs[si - 1].w, to = defs[si].w;
-      g.save(); growClip(g, from + (to - from) * e, from + (to - from) * e); shellAt(si, g); g.restore();
-    } else shellAt(si, g);
-    g.imageSmoothingEnabled = false;
-    drawRoomDoor(g, defs[si].doorX, toScreen, S, 0, false); // the door in the back wall
-    // every piece: new ones drop in softly; ones that move away in the last upgrade fade out while their new copy fades in
-    const items: Array<{ depth: number; fn: () => void }> = [];
-    const addPiece = (f: { id: string; kind: string; x: number; y: number; dir?: number }, alpha: number, lift: number): void => {
-      if (alpha <= 0) return;
-      items.push({ depth: f.x + f.y + (f.kind === "f_label" ? -50 : 0), fn: () => {
-        g.save(); g.globalAlpha = alpha; g.translate(0, -lift * S);
-        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, S);
-        g.restore();
-      } });
-    };
-    for (const f of defs[si].furni) {
-      const born = bornOf[si].get(f.id) ?? -1;
-      const age = born < 0 ? 9 : t - born;
-      if (age < 0) continue;
-      const a = ease(Math.min(1, age / T_POP));
-      addPiece(f, a, (1 - a) * 22);
+    const u = si === 0 ? 1 : Math.min(1, (t - starts[si]) / TT[si]);
+    if (u < 1) await drawStage(g, si - 1, t, 1, false); // the old room fades into the new one
+    await drawStage(g, si, t, ease(u), true);
+    if (si > 0 && u < 1) { g.save(); g.globalCompositeOperation = "source-atop"; g.fillStyle = `rgba(255,255,255,${(0.55 * (1 - u) * (1 - u)).toFixed(3)})`; g.fillRect(0, 0, W, H); g.restore(); } // (a flash over the room only, the background stays clear)
+    if (si > 0) { // what it cost, over the player's head
+      const pl = playerAt(t), f = feetOf(pl.x, pl.y);
+      bloodPop(g, icon, `-${stages[si].price}`, f.x, f.y - (FEET_Y + 20) * S, (t - starts[si] - 0.1) * 1000, S, 1500);
     }
-    if (si > 0 && u < 1) {
-      const keys = new Set(defs[si].furni.map(keyOf));
-      for (const f of defs[si - 1].furni) if (!keys.has(keyOf(f))) addPiece(f, 1 - ease(Math.min(1, u * 2.2)), 0);
-    }
-    const pf = feetOf(tile.x, tile.y);
-    items.push({ depth: tile.x + tile.y + 0.6, fn: () => {
-      g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(pf.x, pf.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
-      g.drawImage(playerImg, pf.x - (32 + padOf(playerImg).x) * S, pf.y - (FEET_Y + padOf(playerImg).y) * S, playerImg.width * S, playerImg.height * S);
-    } });
-    items.sort((p, q) => p.depth - q.depth).forEach((it) => it.fn());
-    if (si > 0) bloodPop(g, icon, `-${stages[si].price}`, pf.x, pf.y - (FEET_Y + 20) * S, (t - starts[si] - 0.1) * 1000, S, 1500); // what it cost, over the player's head
     await save(`${OUT}/frames/frame-${String(i).padStart(3, "0")}.png`, c);
   }
-  say(`room upgrade done: ${total} frames at ${FPS} fps; stages: ${defs.map((d) => `${d.w}x${d.h}/${d.furni.length}`).join(", ")}; player on ${tile.x},${tile.y}`);
+  say(`room upgrade done: ${total} frames at ${FPS} fps; stages: ${defs.map((d) => `${d.w}x${d.h}/${d.furni.length}`).join(", ")}`);
 }
 
 /** A contact sheet of the new furniture as the game draws it: every piece in its default state at its shop facing (and one picture per further state), labelled. */
