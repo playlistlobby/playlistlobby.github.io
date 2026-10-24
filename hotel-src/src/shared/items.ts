@@ -63,8 +63,8 @@ export function parseInventoryWith(raw: unknown, valid: (id: string) => boolean)
   return inv;
 }
 
-/** Things that can never be put on the floor or traded (the knife stays with you). */
-export const NO_DROP: ReadonlySet<string> = new Set(["knife", "cd_yellow", "cd_green", "cd_blue", "cd_album"]); // (the CDs bought with real money stay with the one who bought them)
+/** Things that can never be put on the floor, given or traded (the knife stays with you). */
+export const NO_DROP: ReadonlySet<string> = new Set(["knife", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
 
 /** First slot holding `item`. Items that are loaned out (inPlayer) don't count as available. */
 export const findSlot = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item && !s.inPlayer);
