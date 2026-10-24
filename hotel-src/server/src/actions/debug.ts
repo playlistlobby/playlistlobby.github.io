@@ -1,4 +1,5 @@
 // Test commands (/giveblud, /weed, /give, /skip): for the admin account only (and anyone in the local emulator); the account "emil" also gets /giveblud and /skip.
+// An account with users/<uid>/commands = true (set by hand, like the decorator power) gets all of them too.
 import { Action, int, text } from "./util";
 import { fail } from "../ctx";
 import { skipTime } from "../skipTime";
@@ -12,10 +13,10 @@ export const debug: Action = {
   async run(c, a) {
     // the account "emil" may use /giveblud and /skip too (not the item commands)
     const tester = c.caller.email.toLowerCase() === TESTER_EMAIL && (a.cmd === "blood" || a.cmd === "skip");
-    const trusted = c.isAdmin || isEmulator(c.env) || tester;
+    const w = await c.user();
+    const trusted = c.isAdmin || isEmulator(c.env) || tester || w.raw.commands === true;
     if (!trusted) fail("Unknown command.");
     c.note = typeof a.cmd === "string" ? a.cmd : ""; // (the blood ledger says which admin command it was)
-    const w = await c.user();
     if (a.cmd === "blood") {
       const n = int(a.n, 1, 1000, "amount");
       w.s.blood += n;

@@ -47,6 +47,8 @@ export interface Profile {
   seenDoor: boolean;
   /** may place furniture and posters in other players' rooms (set by hand on the account, see users/<uid>/decorator) */
   decorator: boolean;
+  /** may use the test commands (/giveblud, /give, /weed, /skip, /greenscreen), like the admin (set by hand on the account, see users/<uid>/commands) */
+  commands: boolean;
   /** how far the player is with 6ixty: knifeAt = when he gave the knife (0 = not met yet) */
   sixty: { knifeAt: number; syringeGiven: boolean };
   /** when each garbage can was last searched (can id -> server time, ms) */
@@ -202,6 +204,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     isAdmin,
     seenDoor: !!v.seenDoor,
     decorator: v.decorator === true,
+    commands: v.commands === true,
     sixty: { knifeAt: 0, syringeGiven: false },
     dumpsters: {},
     boostUntil: 0,

@@ -2832,7 +2832,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (text.startsWith("/")) {
       // TEMP-GIVEBLUD: testing command, remove together with the 'testBlood' rule in database.rules.template.json
       if (/^\/greenscreen$/i.test(text)) { // for filming ads: the room's floor and walls become pure chroma green, and the menus hide (type it again to go back)
-        if (!(me.isAdmin || me.decorator)) { say("Unknown command.", "warn"); return; }
+        if (!(me.isAdmin || me.decorator || me.commands)) { say("Unknown command.", "warn"); return; }
         greenScreen = !greenScreen;
         document.body.classList.toggle("greenscreen", greenScreen);
         say(greenScreen ? "Green screen on. Type /greenscreen again to bring the room back." : "Green screen off.");
