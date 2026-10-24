@@ -147,27 +147,49 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
     return () => { token++; off?.(); };
   }
 
-  // ---- public chat ----------------------------------------------------------------------
+  // ---- public chat: everything ever said, kept forever in chatLog (rooms/<room>/chat only holds the last 15 minutes) ----------------------
   async function chat(el: HTMLElement): Promise<() => void> {
     if (!users.length) users = await loadUsers();
     let filter = "";
-    let rows: Array<{ ts: number; uid: string; name: string; text: string }> = [];
+    let room = "";
+    let limit = 500;
+    let off: (() => void) | null = null;
+    let rows: Array<{ ts: number; uid: string; name: string; text: string; room: string }> = [];
     const host = h("div", { class: "scroll-box" });
+    const roomLabel = (id: string): string => {
+      if (id === "lobby") return "Basement";
+      if (id === "shop") return "Shop";
+      if (id.startsWith("tut_")) return "Tutorial";
+      const owner = id.startsWith("u_") ? names().get(id.slice(2)) : null;
+      return owner ? `${owner}'s room` : id;
+    };
+    const roomSel = h("select", { onchange: () => { room = roomSel.value; draw(); } });
     const search = h("input", { class: "mini-input", placeholder: "Filter by name or text…", oninput: () => { filter = search.value.trim().toLowerCase(); draw(); } });
+    const info = h("span", { class: "hint" });
+    const more = h("button", { class: "btn small", onclick: () => { limit += 2000; load(); } }, "Load older");
+    const all = h("button", { class: "btn small", onclick: () => { limit = 1_000_000; load(); } }, "Load everything");
     function draw(): void {
-      const shown = rows.filter((r) => !filter || r.name.toLowerCase().includes(filter) || r.text.toLowerCase().includes(filter));
+      const rooms = [...new Set(rows.map((r) => r.room))].sort((x, y) => roomLabel(x).localeCompare(roomLabel(y)));
+      roomSel.replaceChildren(h("option", { value: "" }, "All rooms"), ...rooms.map((r) => h("option", { value: r, ...(r === room ? { selected: "selected" } : {}) }, roomLabel(r))));
+      const shown = rows.filter((r) => (!room || r.room === room) && (!filter || r.name.toLowerCase().includes(filter) || r.text.toLowerCase().includes(filter)));
       host.replaceChildren(h("table", { class: "atable" },
-        h("thead", {}, h("tr", {}, ...["Time", "User", "Message"].map((c) => h("th", {}, c)))),
-        h("tbody", {}, ...shown.map((r) => h("tr", {}, h("td", { class: "hint" }, fmt(r.ts)), h("td", {}, h("b", {}, r.name)), h("td", {}, r.text))))));
+        h("thead", {}, h("tr", {}, ...["Time", "Room", "User", "Message"].map((c) => h("th", {}, c)))),
+        h("tbody", {}, ...shown.map((r) => h("tr", {}, h("td", { class: "hint" }, fmt(r.ts)), h("td", { class: "hint" }, roomLabel(r.room)), h("td", {}, h("b", {}, r.name)), h("td", {}, r.text))))));
+      info.textContent = `${shown.length} shown of ${rows.length} loaded (oldest first, live)`;
+      more.style.display = all.style.display = rows.length >= limit ? "" : "none";
       host.scrollTop = host.scrollHeight;
     }
-    el.append(h("div", { class: "admin-bar" }, search, h("span", { class: "hint" }, "Basement chat, last 300 messages, live")), host);
-    const off = onValue(query(ref(db, "rooms/lobby/chat"), orderByChild("ts"), limitToLast(300)), (snap) => {
-      rows = [];
-      snap.forEach((c) => { const v = c.val(); rows.push({ ts: v.ts ?? 0, uid: v.uid, name: v.name ?? "?", text: v.text ?? "" }); });
-      draw();
-    }, () => toast("Couldn't read the chat", "err"));
-    return off;
+    function load(): void {
+      off?.();
+      off = onValue(query(ref(db, "chatLog"), orderByChild("ts"), limitToLast(limit)), (snap) => {
+        rows = [];
+        snap.forEach((c) => { const v = c.val(); rows.push({ ts: v.ts ?? 0, uid: v.uid, name: v.name ?? "?", text: v.text ?? "", room: v.room ?? "?" }); });
+        draw();
+      }, () => toast("Couldn't read the chat", "err"));
+    }
+    el.append(h("div", { class: "admin-bar" }, roomSel, search, info, more, all), host);
+    load();
+    return () => off?.();
   }
 
   // ---- private messages -------------------------------------------------------------------

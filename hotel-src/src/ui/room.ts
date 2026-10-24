@@ -2393,7 +2393,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     at(buffer, () => {
       if (disposed) return stop(true);
       faintUntil = performance.now() + 60_000;
-      push(chatRef, { uid: me.uid, name: shownName, text: "Faaaahhhh shii", ts: serverTimestamp() }).catch(console.warn);
+      sendChat("Faaaahhhh shii");
       p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
       p.faint = true; // they go down
       update(myRef, { lay: true, sit: null }).catch(() => undefined);
@@ -2494,6 +2494,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const playersRef = ref(db, `rooms/${roomId}/players`);
   const myRef = ref(db, `rooms/${roomId}/players/${me.uid}`);
   const chatRef = ref(db, `rooms/${roomId}/chat`);
+  /** a chat line goes to the room (where it fades after 15 minutes) and, in the same write, to chatLog: the admin's permanent archive (nobody can change or delete an entry) */
+  function sendChat(text: string): void {
+    const id = push(chatRef).key!;
+    const msg = { uid: me.uid, name: shownName, text, ts: serverTimestamp() };
+    update(ref(db), { [`rooms/${roomId}/chat/${id}`]: msg, [`chatLog/${id}`]: { ...msg, room: roomId } }).catch(console.warn);
+  }
   const eventsRef = ref(db, `rooms/${roomId}/events`);
   const joinedAt = serverNow();
 
@@ -2844,7 +2850,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (EMOTE_BY_ID[id]) return performEmote(id);
       return say(`Unknown command. Emotes: ${Object.keys(EMOTE_BY_ID).map((e) => "/" + e).join(" ")}`, "warn");
     }
-    push(chatRef, { uid: me.uid, name: shownName, text, ts: serverTimestamp() }).catch(console.warn);
+    sendChat(text);
   }
 
   // ---- render helpers ----------------------------------------------------------------

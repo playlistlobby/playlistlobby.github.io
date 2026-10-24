@@ -81,6 +81,18 @@
         ".validate": "newData.hasChildren(['uid', 'name', 'type', 'detail', 'ts']) && newData.child('type').isString() && newData.child('type').val().matches(/^[a-z_]{2,20}$/) && newData.child('detail').isString() && newData.child('detail').val().length <= 160 && newData.child('name').isString() && newData.child('name').val().length <= 16 && newData.child('ts').val() === now"
       }
     },
+    "chatLog": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
+      ".indexOn": [
+        "ts",
+        "room",
+        "uid"
+      ],
+      "$id": {
+        ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && !data.exists() && newData.exists() && newData.child('uid').val() === auth.uid",
+        ".validate": "newData.hasChildren(['uid', 'name', 'text', 'room', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('room').isString() && newData.child('room').val().length <= 40 && newData.child('ts').val() === now"
+      }
+    },
     "config": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()",
       ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid'",
