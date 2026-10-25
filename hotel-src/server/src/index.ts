@@ -1,5 +1,5 @@
 // The public face of the server: CORS, who is asking, then hand the request to the economy.
-import { verifyToken } from "./auth";
+import { applyRole, verifyToken } from "./auth";
 import { handleWebhook, PayError, startCheckout } from "./pay";
 import type { Env } from "./env";
 export { Economy } from "./economy";
@@ -36,7 +36,7 @@ export default {
     if (url.pathname === "/pay/checkout" && request.method === "POST") {
       if (origin && !env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).includes(origin)) return reply({ ok: false, error: "Not allowed." }, 403);
       try {
-        const who = await verifyToken((request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, ""), env);
+        const who = await applyRole(await verifyToken((request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, ""), env), env);
         if (env.MAINTENANCE && !who.isAdmin) return reply({ ok: false, error: env.MAINTENANCE, maintenance: true }, 503);
         const body = (await request.json().catch(() => ({}))) as { product?: unknown; color?: unknown; name?: unknown };
         return reply({ ok: true, ...(await startCheckout(env, who.uid, body.product, body)) });
@@ -52,7 +52,7 @@ export default {
 
     const auth = request.headers.get("authorization") ?? "";
     let caller;
-    try { caller = await verifyToken(auth.replace(/^Bearer\s+/i, ""), env); } catch { return reply({ ok: false, error: "Please log in again." }, 401); }
+    try { caller = await applyRole(await verifyToken(auth.replace(/^Bearer\s+/i, ""), env), env); } catch { return reply({ ok: false, error: "Please log in again." }, 401); }
 
     if (env.MAINTENANCE && !caller.isAdmin) return reply({ ok: false, error: env.MAINTENANCE, maintenance: true }, 503); // (the game is closed: everybody but the admin)
 

@@ -1,0 +1,187 @@
+// Moderation tests: roles (admin, mod), mutes, temporary bans, new accounts keep quiet, the accounts a player made, reports
+//   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: npm test (server/)
+import { createHmac } from "node:crypto";
+const DB = "http://127.0.0.1:9000";
+const NS = "demo-hotel-default-rtdb";
+const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts";
+const API = "http://127.0.0.1:8787";
+
+async function account(name) {
+  const email = `${name}@users.bobba.invalid`;
+  for (const mode of ["signUp", "signInWithPassword"]) {
+    const r = await fetch(`${AUTH}:${mode}?key=x`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password: "secret1", returnSecureToken: true }) });
+    const j = await r.json();
+    if (j.idToken) return { uid: j.localId, token: j.idToken, name };
+  }
+  throw new Error("auth failed for " + name);
+}
+const owner = async (method, path, body) => {
+  const r = await fetch(`${DB}/${path}.json?ns=${NS}`, { method, headers: { Authorization: "Bearer owner", "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  return r.json();
+};
+const act = async (who, a, args = {}) => {
+  for (let tries = 0; ; tries++) {
+    const r = await fetch(`${API}/act`, { method: "POST", headers: { authorization: `Bearer ${who.token}`, "content-type": "application/json", ...(who.device ? { "x-device": who.device } : {}) }, body: JSON.stringify({ a, args }) });
+    const j = await r.json();
+    if (r.status === 429 && tries < 12 && !process.env.NO_RETRY) { await new Promise((x) => setTimeout(x, 800)); continue; } // the anti-spam limit: wait and go on
+    return { status: r.status, ...j };
+  }
+};
+let fails = 0, passes = 0;
+const check = (label, cond, extra = "") => { if (cond) passes++; else fails++; console.log(`${cond ? "PASS" : "FAIL"}  ${label} ${cond ? "" : extra}`); };
+const ok = (label, r) => check(label, r.ok === true, JSON.stringify(r).slice(0, 160));
+const bad = (label, r, status) => check(label, r.ok === false && (!status || r.status === status), JSON.stringify(r).slice(0, 160));
+const fresh = async (name, extra = {}) => {
+  const u = await account(name);
+  await owner("PUT", `users/${u.uid}`, { name, gender: "M", figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", blood: 0, createdAt: Date.now(), ...extra });
+  await owner("PUT", `profiles/${u.uid}`, { name, figure: "x" });
+  await owner("DELETE", `rooms/lobby/players/${u.uid}`); await owner("DELETE", `rooms/shop/players/${u.uid}`); await owner("DELETE", `rooms/tut_${u.uid}`); await owner("DELETE", `rooms/u_${u.uid}`); await owner("DELETE", `roomsMeta/u_${u.uid}`);
+  return u;
+};
+const stand = (u, room, x = 5, y = 5) => owner("PUT", `rooms/${room}/players/${u.uid}`, { name: u.name, figure: "x", x, y, dir: 2 });
+const state = async (u) => (await act(u, "sync")).state;
+const total = (inv, item) => inv.reduce((n, s) => n + (s && s.item === item ? s.qty : 0), 0);
+
+const sleepMs = (ms) => new Promise((x) => setTimeout(x, ms));
+const clientWrite = (u, path, v, method = "PUT") => fetch(`${DB}/${path}.json?ns=${NS}&auth=${u.token}`, { method, body: JSON.stringify(v) });
+const clientRead = (u, path) => fetch(`${DB}/${path}.json?ns=${NS}&auth=${u.token}`);
+const refused = (r) => r.status === 401 || r.status === 403;
+const OLD = { createdAt: Date.now() - 3_600_000 };
+const say = (u, room, text) => clientWrite(u, `rooms/${room}/chat/m${Math.random().toString(36).slice(2)}`, { uid: u.uid, name: u.name, text, ts: { ".sv": "timestamp" } });
+const sayLog = (u, room, text) => clientWrite(u, `chatLog/m${Math.random().toString(36).slice(2)}`, { uid: u.uid, name: u.name, text, room, ts: { ".sv": "timestamp" } });
+const inLobby = async (u) => { await act(u, "sync"); await stand(u, "lobby", 4, 4); };
+
+console.log("--- roles");
+await owner("DELETE", "reports"); await owner("DELETE", "modLog");
+const adm = await fresh("adminsidia", { blood: 0 }); await act(adm, "sync");
+const mod = await fresh("t_mod_m", { blood: 0, ...OLD }), mod2 = await fresh("t_mod_m2", { blood: 0, ...OLD });
+const p1 = await fresh("t_mod_p1", { blood: 0, ...OLD }), p2 = await fresh("t_mod_p2", { blood: 0, ...OLD }), p3 = await fresh("t_mod_p3", { blood: 0, ...OLD }), p4 = await fresh("t_mod_p4", { blood: 0, ...OLD });
+for (const u of [mod, mod2, p1, p2, p3, p4]) await act(u, "sync");
+await owner("DELETE", "roles"); await owner("DELETE", "mutes");
+for (const u of [mod, mod2, p1, p2, p3, p4]) { await owner("DELETE", `bans/${u.uid}`); await owner("DELETE", `reportLog/${u.uid}`); }
+bad("a player can't promote", await act(p1, "modPromote", { uid: p2.uid, role: "mod" }));
+bad("a player can't mute", await act(p1, "modMute", { uid: p2.uid }));
+bad("a player can't ban", await act(p1, "modBan", { uid: p2.uid }));
+ok("the admin makes a mod", await act(adm, "modPromote", { uid: mod.uid, role: "mod" }));
+ok("and another", await act(adm, "modPromote", { uid: mod2.uid, role: "mod" }));
+check("roles/<uid> says mod", (await owner("GET", `roles/${mod.uid}`)) === "mod");
+bad("a mod can't promote", await act(mod, "modPromote", { uid: p1.uid, role: "mod" }));
+const emil = await fresh("t_mod_emil", { blood: 0, ...OLD }); await act(emil, "sync");
+await owner("PUT", `roles/${emil.uid}`, "admin");
+await sleepMs(16000); // (roles are remembered for 15 seconds)
+ok("a second admin (roles/<uid> = admin) can promote", await act(emil, "modPromote", { uid: p4.uid, role: "mod" }));
+ok("and demote again", await act(emil, "modPromote", { uid: p4.uid, role: "none" }));
+check("p4 is no mod", (await owner("GET", `roles/${p4.uid}`)) === null);
+
+console.log("--- mutes");
+await inLobby(p1);
+check("an old account chats in the basement", (await say(p1, "lobby", "hi")).status === 200);
+const mu = await act(mod, "modMute", { uid: p1.uid, minutes: 5 });
+ok("a mod mutes (the minutes he asks for do not count: an hour)", mu);
+const m = await owner("GET", `mutes/${p1.uid}`);
+check("for an hour", m && Math.abs(m.until - Date.now() - 3_600_000) < 15_000 && m.by === mod.uid, JSON.stringify(m));
+check("the room chat is refused now", refused(await say(p1, "lobby", "still here")));
+check("so is the archive line", refused(await sayLog(p1, "lobby", "still here")));
+check("the player sees his own mute", (await clientRead(p1, `mutes/${p1.uid}`)).status === 200 && refused(await clientRead(p1, `mutes/${p2.uid}`)));
+bad("a mod can't mute a mod", await act(mod, "modMute", { uid: mod2.uid }));
+bad("or an admin", await act(mod, "modMute", { uid: adm.uid }));
+bad("or himself", await act(mod, "modMute", { uid: mod.uid }));
+ok("the mod unmutes", await act(mod, "modMute", { uid: p1.uid, on: false }));
+check("chat works again", (await say(p1, "lobby", "back")).status === 200);
+await owner("PUT", `mutes/${p1.uid}`, { until: Date.now() - 1000, by: mod.uid });
+check("a mute that ran out lets the chat through", (await say(p1, "lobby", "again")).status === 200);
+const am = await act(adm, "modMute", { uid: p1.uid, minutes: 5 });
+check("the admin chooses the time (5 minutes)", am.ok === true && Math.abs((await owner("GET", `mutes/${p1.uid}`)).until - Date.now() - 300_000) < 15_000);
+await owner("DELETE", `mutes/${p1.uid}`);
+
+console.log("--- new accounts keep quiet in the public rooms");
+{
+  const nu = await fresh("t_mod_new", { blood: 0 }); // (made just now)
+  await inLobby(nu);
+  check("a new account can't chat in the basement", refused(await say(nu, "lobby", "free lemonade")));
+  check("or put it in the archive", refused(await sayLog(nu, "lobby", "free lemonade")));
+  await owner("PUT", `rooms/u_${nu.uid}/players/${nu.uid}`, { name: nu.name, figure: "x", x: 1, y: 1, dir: 2 });
+  await owner("PUT", `roomsMeta/u_${nu.uid}`, { owner: nu.uid, ownerName: nu.name, name: "r", access: "open", w: 8, h: 8 });
+  check("but may in its own room", (await say(nu, `u_${nu.uid}`, "hello")).status === 200);
+  await owner("PUT", `users/${nu.uid}/createdAt`, Date.now() - 200_000);
+  check("after three minutes it can", (await say(nu, "lobby", "hi all")).status === 200);
+}
+
+console.log("--- bans");
+ok("a mod bans (the minutes do not count: 30)", await act(mod, "modBan", { uid: p2.uid, minutes: 600 }));
+const b = await owner("GET", `bans/${p2.uid}`);
+check("for 30 minutes", b && Math.abs(b.until - Date.now() - 1_800_000) < 15_000, JSON.stringify(b));
+await sleepMs(16000); // (the server remembers the bans for 15 seconds)
+const r = await act(p2, "sync");
+check("the banned player is turned away and told for how long", r.ok === false && /30 more minutes|29 more minutes/.test(r.error ?? ""), JSON.stringify(r).slice(0, 150));
+check("and the database shuts him out", refused(await clientRead(p2, `profiles/${p2.uid}`)));
+await owner("PUT", `bans/${p2.uid}/until`, Date.now() - 1000);
+check("a ban that ran out opens the database again", (await clientRead(p2, `profiles/${p2.uid}`)).status === 200);
+await sleepMs(16000);
+ok("and the server lets him in", await act(p2, "sync"));
+bad("a mod can't ban a mod", await act(mod, "modBan", { uid: mod2.uid }));
+bad("or an admin", await act(mod, "modBan", { uid: adm.uid }));
+ok("the admin bans for good (no minutes)", await act(adm, "modBan", { uid: p3.uid, reason: "bots" }));
+const b3 = await owner("GET", `bans/${p3.uid}`);
+check("without an end", b3 && b3.until === undefined && b3.reason === "bots", JSON.stringify(b3));
+bad("a mod can't lift a ban for good", await act(mod, "modBan", { uid: p3.uid, on: false }));
+ok("the admin can", await act(adm, "modBan", { uid: p3.uid, on: false }));
+check("(gone)", (await owner("GET", `bans/${p3.uid}`)) === null);
+await act(mod, "modBan", { uid: p4.uid });
+ok("a mod lifts a short ban", await act(mod, "modBan", { uid: p4.uid, on: false }));
+
+console.log("--- the accounts a player made");
+{
+  const bots = [];
+  for (const sfx of ["aa1", "bb2", "cc3", "dd4"]) {
+    const nm = `bobot${sfx}`;
+    const u = await fresh(nm, { blood: 0, ...OLD });
+    await owner("PUT", `usernames/${nm}`, u.uid); await owner("PUT", `profiles/${u.uid}`, { name: nm, figure: "x" });
+    bots.push(u);
+  }
+  await owner("PUT", `peers/${bots[0].uid}/${p1.uid}`, true);
+  const al = await act(mod, "modAlts", { uid: bots[0].uid });
+  ok("the mod looks up the other accounts", al);
+  const names = (al.data?.accounts ?? []).map((x) => x.name).sort();
+  check("the ones with a similar name and the one on the same device", JSON.stringify(names) === JSON.stringify(["bobotbb2", "bobotcc3", "bobotdd4", "t_mod_p1"]), JSON.stringify(names));
+  bad("a player can't", await act(p1, "modAlts", { uid: bots[0].uid }));
+  const many = await act(mod, "modBanMany", { uids: bots.map((x) => x.uid).concat([mod2.uid, adm.uid, mod.uid]) });
+  check("bans all four at once (the mods and the admin in the list are skipped)", many.data?.banned === 4, JSON.stringify(many));
+  check("each for 30 minutes", bots.every(async (x) => !!(await owner("GET", `bans/${x.uid}`)).until));
+  for (const x of bots) await owner("DELETE", `bans/${x.uid}`);
+}
+
+console.log("--- the chat mod page reads, players do not");
+check("a mod reads the archive", (await fetch(`${DB}/chatLog.json?ns=${NS}&auth=${mod.token}&orderBy=%22ts%22&limitToLast=1`)).status === 200);
+check("a player does not", refused(await fetch(`${DB}/chatLog.json?ns=${NS}&auth=${p1.token}&orderBy=%22ts%22&limitToLast=1`)));
+check("a mod reads the bans", (await clientRead(mod, "bans")).status === 200 && refused(await clientRead(p1, "bans")));
+check("and the roles", (await clientRead(mod, "roles")).status === 200 && refused(await clientRead(p1, "roles")));
+check("a player reads his own role only", (await clientRead(p1, `roles/${p1.uid}`)).status === 200 && refused(await clientRead(p1, `roles/${mod.uid}`)));
+check("nobody writes a role from the page", refused(await clientWrite(p1, `roles/${p1.uid}`, "admin")) && refused(await clientWrite(mod, `roles/${mod.uid}`, "admin")));
+
+console.log("--- reports");
+ok("a report", await act(p1, "reportPlayer", { uid: p2.uid, reason: "spams" }));
+bad("not the same player twice", await act(p1, "reportPlayer", { uid: p2.uid, reason: "again" }));
+bad("not yourself", await act(p1, "reportPlayer", { uid: p1.uid, reason: "me" }));
+bad("with a reason", await act(p1, "reportPlayer", { uid: p3.uid, reason: "  " }));
+ok("a second", await act(p1, "reportPlayer", { uid: p3.uid, reason: "bot" }));
+ok("a third", await act(p1, "reportPlayer", { uid: p4.uid, reason: "rude" }));
+bad("a fourth account in an hour", await act(p1, "reportPlayer", { uid: mod2.uid, reason: "no" }));
+const reps = Object.values((await owner("GET", "reports")) ?? {});
+check("three reports are there, with the names", reps.length === 3 && reps.some((x) => x.targetName === "t_mod_p2" && x.fromName === "t_mod_p1" && x.reason === "spams"), JSON.stringify(reps).slice(0, 200));
+check("a mod reads the reports, a player does not", (await clientRead(mod, "reports")).status === 200 && refused(await clientRead(p1, "reports")));
+const old = Object.entries((await owner("GET", `reportLog/${p1.uid}`)) ?? {});
+for (const [id, v] of old) await owner("PUT", `reportLog/${p1.uid}/${id}/t`, v.t - 3_700_000);
+ok("an hour later the limit is gone", await act(p1, "reportPlayer", { uid: mod2.uid, reason: "fine now" }));
+const rid = Object.keys((await owner("GET", "reports")))[0];
+bad("a player can't clear a report", await act(p1, "modDismissReport", { id: rid }));
+ok("a mod does", await act(mod, "modDismissReport", { id: rid }));
+check("(gone)", (await owner("GET", `reports/${rid}`)) === null);
+
+console.log("--- the log");
+const log = Object.values((await owner("GET", "modLog")) ?? {});
+check("what the mods did is written down", log.some((x) => x.what === "mute" && x.byName === "t_mod_m") && log.some((x) => x.what === "ban") && log.some((x) => x.what === "promote"), JSON.stringify(log).slice(0, 200));
+
+await owner("DELETE", "roles"); await owner("DELETE", "mutes"); await owner("DELETE", "reports");
+console.log(`\n${passes} passed, ${fails} failed`);
+process.exit(fails ? 1 : 0);

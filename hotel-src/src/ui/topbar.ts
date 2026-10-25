@@ -7,6 +7,8 @@ import type { View } from "../main";
 export interface TopBarOpts {
   appName: string;
   isAdmin: boolean;
+  /** a mod or an admin: the 🛡 button (top right) opens the chat mod page */
+  isMod?: boolean;
   onNav(view: View): void;
   onLogout(): void;
 }
@@ -61,7 +63,8 @@ export function topBar(o: TopBarOpts): TopBarApi {
     setTimeout(() => window.addEventListener("pointerdown", away), 0);
   } }, "⚙");
 
-  const right = h("div", { class: "nav-right" }, menuBtn);
+  const modBtn = o.isMod ? h("button", { class: "barbtn nav-mod", title: "Moderation", "aria-label": "Moderation", onclick: () => o.onNav("mod") }, "🛡") : null;
+  const right = h("div", { class: "nav-right" }, ...(modBtn ? [modBtn] : []), menuBtn);
   const el = h("header", { class: "navbar" },
     h("div", { class: "nav-left" }, friendsBtn, h("div", { class: "nav-logo" }, h("img", { src: BLOOD_ICON, alt: "", class: "blood-ico" }), o.appName)),
     pill, right);

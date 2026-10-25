@@ -72,7 +72,25 @@
       }
     },
     "bans": {
-      ".read": "@ADMIN@"
+      ".read": "@MOD@"
+    },
+    "roles": {
+      ".read": "@MOD@",
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "mutes": {
+      ".read": "@MOD@",
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "reports": {
+      ".read": "@MOD@"
+    },
+    "modLog": {
+      ".read": "@MOD@"
     },
     "backupIndex": {
       ".read": "@ADMIN@"
@@ -103,14 +121,14 @@
       }
     },
     "chatLog": {
-      ".read": "@ADMIN@",
+      ".read": "@MOD@",
       ".indexOn": [
         "ts",
         "room",
         "uid"
       ],
       "$id": {
-        ".write": "@PW@ && !data.exists() && newData.exists() && newData.child('uid').val() === auth.uid",
+        ".write": "@PW@ && !data.exists() && newData.exists() && newData.child('uid').val() === auth.uid && @UNMUTED@ && ((newData.child('room').val() !== 'lobby' && newData.child('room').val() !== 'shop') || @AGED@)",
         ".validate": "newData.hasChildren(['uid', 'name', 'text', 'room', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('room').isString() && newData.child('room').val().length <= 40 && newData.child('ts').val() === now"
       }
     },
@@ -155,7 +173,7 @@
     "usernames": {
       "$name": {
         ".read": "@PW@",
-        ".write": "@PW@ && !data.exists() && newData.val() === auth.uid",
+        ".write": "@PW@ && !data.exists() && newData.val() === auth.uid && !$name.matches(/^(blodigoktober|lemonadekober)/)",
         ".validate": "newData.isString()"
       }
     },
@@ -806,7 +824,7 @@
             "ts"
           ],
           "$msg": {
-            ".write": "@PW@ && @IN@ && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
+            ".write": "@PW@ && @IN@ && ((!data.exists() && newData.child('uid').val() === auth.uid && @UNMUTED@ && (($room !== 'lobby' && $room !== 'shop') || @AGED@)) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
             ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0",
             "fx": {
               ".validate": "newData.isString() && (newData.val() === 'shake' || newData.val() === 'wave' || newData.val() === 'rainbow' || newData.val() === 'pulse' || newData.val() === 'big') && root.child('users').child(auth.uid).child('owned').child('ducky_fx').exists()"

@@ -20,7 +20,7 @@ export class Economy {
   /** while a rollback runs nothing else may change anything: new actions are turned away, and the rollback waits for the running ones */
   private frozen = false;
   private inflight = 0;
-  private bans: { at: number; set: Set<string> } | null = null;
+  private bans: { at: number; map: Record<string, { until?: number }> } | null = null;
 
   constructor(private state: DurableObjectState, private env: Env) {}
 
@@ -104,11 +104,15 @@ export class Economy {
     }
   }
 
-  private async isBanned(uid: string): Promise<boolean> {
+  /** a ban is for good, or until `until` (a mod's ban lasts 30 minutes). Returns 0 when not banned, Infinity for good, else the time it ends. */
+  private async bannedUntil(uid: string): Promise<number> {
     if (!this.bans || Date.now() - this.bans.at > 15_000) {
-      try { this.bans = { at: Date.now(), set: new Set(await new Rtdb(this.env).keys("bans")) }; } catch { return this.bans?.set.has(uid) ?? false; }
+      try { this.bans = { at: Date.now(), map: (await new Rtdb(this.env).get<Record<string, { until?: number }>>("bans")) ?? {} }; } catch { if (!this.bans) return 0; }
     }
-    return this.bans.set.has(uid);
+    const b = this.bans.map[uid];
+    if (!b) return 0;
+    if (typeof b.until !== "number") return Infinity;
+    return b.until > Date.now() ? b.until : 0;
   }
 
   /** Rolling the server back to a backup (admin only): stop new actions, let the running ones finish, put the backup back, and ban the accounts the admin picked. */
@@ -170,7 +174,10 @@ export class Economy {
     const def = Object.prototype.hasOwnProperty.call(ACTIONS, action) ? ACTIONS[action] : undefined;
     if (!def) return json({ ok: false, error: "Unknown request." }, 400);
     if (this.frozen) return json({ ok: false, error: "The server is being repaired. Try again in a minute." }, 503);
-    if (!caller.isAdmin && (await this.isBanned(caller.uid))) return json({ ok: false, error: "This account has been banned." }, 403);
+    if (!caller.isAdmin) {
+      const until = await this.bannedUntil(caller.uid);
+      if (until) return json({ ok: false, error: until === Infinity ? "This account has been banned." : `You are banned for ${Math.max(1, Math.ceil((until - Date.now()) / 60000))} more minutes.` }, 403);
+    }
     if (this.tooFast(caller.uid)) return json({ ok: false, error: "Slow down a little." }, 429);
 
     const db = new Rtdb(this.env);

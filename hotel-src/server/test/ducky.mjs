@@ -94,7 +94,7 @@ console.log("--- the machine: paying and getting");
 
 console.log("--- name colour and the chat tool");
 {
-  const a = await fresh("t_du_c", { blood: 0 }); await inShop(a);
+  const a = await fresh("t_du_c", { blood: 0, createdAt: Date.now() - 3_600_000 }); await inShop(a);
   check("a colour is needed", (await checkout(a, "color")).ok === false);
   check("not just any text", (await checkout(a, "color", { color: "red" })).ok === false);
   check("too dark to read", (await checkout(a, "color", { color: "#101010" })).ok === false);
@@ -108,7 +108,7 @@ console.log("--- name colour and the chat tool");
   const node = (u, nc) => clientWrite(u, `rooms/shop/players/${u.uid}`, { name: u.name, figure: "x", x: 3, y: 3, dir: 2, nc });
   check("the player node may show the bought colour", (await node(a, "#33c7ff")).status === 200);
   check("but not another one", refused(await node(a, "#ff0000")));
-  const b = await fresh("t_du_nocolor", { blood: 0 }); await inShop(b);
+  const b = await fresh("t_du_nocolor", { blood: 0, createdAt: Date.now() - 3_600_000 }); await inShop(b);
   check("a colour that was never bought is refused", refused(await node(b, "#ff0000")));
 
   const msg = (u, extra) => clientWrite(u, `rooms/shop/chat/m${Math.random().toString(36).slice(2)}`, { uid: u.uid, name: u.name, text: "hi", ts: { ".sv": "timestamp" }, ...extra });

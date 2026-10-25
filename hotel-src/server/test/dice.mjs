@@ -48,7 +48,7 @@ const refused = (r) => r.status === 401 || r.status === 403;
 const sleep = (ms) => new Promise((x) => setTimeout(x, ms));
 
 console.log("--- buying the dice at the pay2win machine (500 blood)");
-const a = await fresh("t_dice_a", { blood: 520 });
+const a = await fresh("t_dice_a", { blood: 520, createdAt: Date.now() - 3_600_000 });
 await act(a, "sync");
 bad("not from across the map", await act(a, "duckyBuy", { product: "dice" })); // (not standing in the shop)
 await inShop(a);

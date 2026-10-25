@@ -49,6 +49,7 @@ export class Ctx {
 
   get uid(): string { return this.caller.uid; }
   get isAdmin(): boolean { return this.caller.isAdmin; }
+  get isMod(): boolean { return this.caller.isMod; }
 
   // ---- shared settings ------------------------------------------------------------------------------------------------
   shop(): Promise<ShopConfig> { return cached("shop", async () => (await this.db.get<ShopConfig>("config/shop")) ?? {}); }

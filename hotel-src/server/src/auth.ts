@@ -1,11 +1,14 @@
 // Checks the Firebase ID token the browser sends. In production the signature is verified against Google's public keys;
 // with the Auth emulator (ENV=emulator) tokens are unsigned, so only their contents are read.
 import { Env, isEmulator } from "./env";
+import { Rtdb } from "./rtdb";
 
 export interface Caller {
   uid: string;
   email: string;
   isAdmin: boolean;
+  /** a mod, or an admin (admins can do everything mods can) */
+  isMod: boolean;
 }
 
 const b64urlToBytes = (s: string): Uint8Array => {
@@ -47,5 +50,22 @@ export async function verifyToken(token: string, env: Env): Promise<Caller> {
   const email = String(claims.email ?? "");
   const provider = claims.firebase?.sign_in_provider;
   if (!uid || !email || provider !== "password") throw new Error("not a hotel account");
-  return { uid, email, isAdmin: email.toLowerCase() === env.ADMIN_EMAIL.toLowerCase() };
+  const isAdmin = email.toLowerCase() === env.ADMIN_EMAIL.toLowerCase();
+  return { uid, email, isAdmin, isMod: isAdmin };
+}
+
+const roles = new Map<string, { at: number; role: string | null }>();
+/** The roles page (roles/<uid>) makes more admins and the mods: looked up (and remembered for 15 seconds) once the token is checked. */
+export async function applyRole(caller: Caller, env: Env): Promise<Caller> {
+  if (caller.isAdmin) return caller;
+  let hit = roles.get(caller.uid);
+  if (!hit || Date.now() - hit.at > 15_000) {
+    let role: string | null = hit?.role ?? null;
+    try { role = await new Rtdb(env).get<string>(`roles/${caller.uid}`); } catch { /* keep what we had */ }
+    hit = { at: Date.now(), role };
+    roles.set(caller.uid, hit);
+  }
+  if (hit.role === "admin") return { ...caller, isAdmin: true, isMod: true };
+  if (hit.role === "mod") return { ...caller, isMod: true };
+  return caller;
 }
