@@ -1,7 +1,7 @@
 // The public face of the server: CORS, who is asking, then hand the request to the economy.
 import { applyRole, verifyToken } from "./auth";
 import { Rtdb } from "./rtdb";
-import { ipKey } from "../../src/shared/mod";
+import { CHATMOD_NAME, ipKey } from "../../src/shared/mod";
 import { handleWebhook, PayError, startCheckout } from "./pay";
 import type { Env } from "./env";
 export { Economy } from "./economy";
@@ -65,16 +65,19 @@ export default {
     let caller;
     try { caller = await applyRole(await verifyToken(auth.replace(/^Bearer\s+/i, ""), env), env); } catch { return reply({ ok: false, error: "Please log in again." }, 401); }
 
-    if (env.MAINTENANCE && !caller.isAdmin) return reply({ ok: false, error: env.MAINTENANCE, maintenance: true }, 503); // (the game is closed: everybody but the admin)
-    const ip = request.headers.get("cf-connecting-ip") ?? "";
-    if (ip && !caller.isAdmin && (await ipBanned(env, ip))) return reply({ ok: false, error: "This connection has been banned." }, 403);
-
     const raw = await request.text();
     if (raw.length > MAX_BODY_IDEA) return reply({ ok: false, error: "Too big." }, 413);
     let parsed: { a?: unknown; args?: unknown };
     try { parsed = JSON.parse(raw); } catch { return reply({ ok: false, error: "Bad request." }, 400); }
     if (typeof parsed.a !== "string") return reply({ ok: false, error: "Bad request." }, 400);
     if (raw.length > MAX_BODY && parsed.a !== "ideaPost") return reply({ ok: false, error: "Too big." }, 413);
+
+    // the game is closed: everybody but the admin gets the text (except the making of the chat mod account, so the mods can get in)
+    const nameArg = ((parsed.args as { name?: unknown } | undefined)?.name);
+    const openForChatMod = parsed.a === "register" && typeof nameArg === "string" && nameArg.toLowerCase() === CHATMOD_NAME;
+    if (env.MAINTENANCE && !caller.isAdmin && !openForChatMod) return reply({ ok: false, error: env.MAINTENANCE, maintenance: true }, 503);
+    const ip = request.headers.get("cf-connecting-ip") ?? "";
+    if (ip && !caller.isAdmin && (await ipBanned(env, ip))) return reply({ ok: false, error: "This connection has been banned." }, 403);
 
     // which browser this is, as a short hash: accounts that log in from the same one are "peers" (they can't stab each other)
     const net: string[] = [];

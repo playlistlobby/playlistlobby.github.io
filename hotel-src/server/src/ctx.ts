@@ -143,7 +143,8 @@ export class Ctx {
 
   /** Writes everything in one atomic update; returns the acting player's new state. */
   async commit(): Promise<Snapshot | null> {
-    await this.user(); // (the answer always carries the caller's state, also for an action that only touched a table or somebody else: the game reads it from every answer)
+    try { await this.user(); } catch (e) { if (!(e instanceof GameError)) throw e; } // (an account that has no profile yet (it is being made) has no state to answer with)
+    // (the answer always carries the caller's state, also for an action that only touched a table or somebody else: the game reads it from every answer)
     const updates: Record<string, unknown> = { ...this.extra };
     for (const w of this.works.values()) {
       w.s.inventory = compactInv(w.s.inventory);

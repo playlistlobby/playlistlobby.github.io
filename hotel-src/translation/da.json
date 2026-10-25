@@ -9668,5 +9668,35 @@
   "en": "You are banned for {…} more minutes.",
   "da": "Du er bandlyst i {…} minutter endnu.",
   "where": "server/src/economy.ts"
+ },
+ "N1402": {
+  "en": "That username is not allowed.",
+  "da": "Det brugernavn er ikke tilladt.",
+  "where": "server/src/actions/signup.ts"
+ },
+ "N1403": {
+  "en": "That name does not match the account.",
+  "da": "Det navn passer ikke til kontoen.",
+  "where": "server/src/actions/signup.ts"
+ },
+ "N1404": {
+  "en": "Too many accounts have been made from this connection today. Try again tomorrow.",
+  "da": "Der er lavet for mange konti fra denne forbindelse i dag. Prøv igen i morgen.",
+  "where": "server/src/actions/signup.ts"
+ },
+ "N1405": {
+  "en": "Too many accounts have been made on this device today. Try again tomorrow.",
+  "da": "Der er lavet for mange konti på denne enhed i dag. Prøv igen i morgen.",
+  "where": "server/src/actions/signup.ts"
+ },
+ "N1406": {
+  "en": "A lot of people are signing up right now. Try again in a few minutes.",
+  "da": "Der er mange der tilmelder sig lige nu. Prøv igen om lidt.",
+  "where": "server/src/actions/signup.ts"
+ },
+ "N1407": {
+  "en": "This connection has been banned.",
+  "da": "Denne forbindelse er blevet bandlyst.",
+  "where": "server/src/index.ts"
  }
 }

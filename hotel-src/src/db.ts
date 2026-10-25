@@ -189,7 +189,7 @@ export function watchEconomy(p: Profile): Unsubscribe {
 /** A brand-new player: the base profile (no blood, nothing carried); the server hands out the starter things on the first sync. */
 export async function createProfile(uid: string, name: string): Promise<Profile> {
   // figure "" marks a player who hasn't been through the customizer yet.
-  await set(ref(db, `users/${uid}`), { name, gender: "M", figure: "", blood: 0, createdAt: serverTimestamp() });
+  await act("register", { name }); // (the server makes the profile and keeps account spam out: only it can write users/<uid>)
   const p = await loadProfile(uid);
   if (!p) throw new Error("Couldn't create the profile.");
   return p;

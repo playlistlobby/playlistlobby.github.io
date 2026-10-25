@@ -18,8 +18,9 @@ import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick }
 import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
 import { duckyBuy } from "./ducky";
 import { craft, mine } from "./mines";
-import { modAlts, modBan, modBanMany, modBlood, modDismissReport, modIpBan, modIps, modKick, modMute, modNotice, modPromote, reportPlayer } from "./mod";
+import { modAlts, modBan, modBanMany, modBlood, modDismissReport, modIpBan, modIps, modKick, modMute, modNotice, modPromote, modRename, reportPlayer } from "./mod";
 import { rollDice } from "./dice";
+import { register } from "./signup";
 import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
 
 /** Every thing the browser may ask for. Anything not listed here cannot be done: the browser can't write economy data itself. */
@@ -34,8 +35,8 @@ export const ACTIONS: Record<string, Action> = {
   cdInsert, cdReturn, cdControl, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   ideaPost, ideaComment, ideaLike, ideaDelete,
-  duckyBuy, rollDice,
-  modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick,
+  duckyBuy, rollDice, register,
+  modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick, modRename,
   raffleBuy, raffleCollect, raffleRemove, raffleTick,
   mine, craft,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
