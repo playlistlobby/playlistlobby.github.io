@@ -72,8 +72,30 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
             } catch (err) { toast((err as Error).message, "err"); }
           },
         }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${freakPrice}`);
+    const blodig = itemDef("cd_blodig")!;
+    const blodigPrice = itemEntry("cd_blodig").price;
+    const haveBlodig = !!me.owned[cdOwnedKey("cd_blodig")];
+    const blodigBtn = haveBlodig
+      ? h("button", { class: "btn small", disabled: true, title: "You already bought that CD." }, "Owned")
+      : h("button", {
+          class: "btn small primary",
+          disabled: me.blood < blodigPrice,
+          title: me.blood < blodigPrice ? `You need ${blodigPrice - me.blood} more drops` : "",
+          onclick: async () => {
+            try {
+              await buyRecordCd(me, "cd_blodig");
+              ctx.refreshHeader();
+              logAction(me, "buy", `bought the Blodig oktober CD for ${blodigPrice}`);
+              playSfx("coins", 0.5);
+              toast("The CD was added to your inventory.");
+              onChange();
+              render();
+            } catch (err) { toast((err as Error).message, "err"); }
+          },
+        }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${blodigPrice}`);
     body.replaceChildren(
       row(freak.icon, "Freakme", "One song, for blood. One per player.", freakBtn),
+      row(blodig.icon, "Blodig oktober", "One song, for blood. One per player.", blodigBtn),
       row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "en af tre sange fra blodig oktober leaked, du for aldrig den samme cd igen", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
       h("div", { class: "hint" }, "Real money is paid on a payment page, and you come back to the game afterwards."));
   }

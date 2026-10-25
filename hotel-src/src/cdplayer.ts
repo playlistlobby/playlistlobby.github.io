@@ -19,6 +19,7 @@ export const CD_TRACKS: Record<string, CdTrack> = {
   freakme: { id: "freakme", title: "Freakme", artist: "Freakme", url: assetUrl("music/cd-freakme.mp3") },
   moyo: { id: "moyo", title: "Freakme", artist: "Freakme", url: assetUrl("music/cd-freakme.mp3") }, // (the old name: a CD that is still playing from before)
   standin: { id: "standin", title: "Stand-in track", artist: "swap me in src/cdplayer.ts", url: assetUrl("music/cd-standin.mp3") },
+  "blodig-oktober-cd": { id: "blodig-oktober-cd", title: "Blodig oktober", artist: "Em", url: assetUrl("music/cd-blodigoktober.mp3") }, // (the CD for 5 blood from the record box)
   // the three mystery CDs
   "ahmingud": { id: "ahmingud", title: "Åhmingud", artist: "Em", url: assetUrl("music/album-ahmingud.mp3") },
   "blodig-oktober": { id: "blodig-oktober", title: "Blodig oktober", artist: "Em", url: assetUrl("music/album-blodig-oktober.mp3") },

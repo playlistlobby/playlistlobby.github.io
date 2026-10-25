@@ -5,6 +5,7 @@ import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, STASHBOX_OWNED_KEY,
 import { DISABLED_ITEMS, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPeriodStart, furniPicksToday, furniPrice, POSTER_KIND, POSTER_PRICE, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
 import { todayStartAt, vendLeft } from "../../../src/shared/economy";
+import { BLOOD_CDS, cdOwnedKey } from "../../../src/shared/cds";
 import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, skinOf, skinOwnedKey, SkinPart } from "../../../src/shared/skins";
 
 /** 6ixty's shelf: his stock plus whatever else the admin switched on (never the leftovers: butts and dead cats). */
@@ -12,7 +13,7 @@ export const buySixty: Action = {
   async run(c, a) {
     const id = text(a.item, /^[a-z0-9_]{1,30}$/, "item");
     if (id === "dice") fail("He doesn't sell that."); // the dice are sold in the pay2win machine
-    if (id === "cd") fail("He doesn't sell that."); // the Freakme CD is sold at the record player in the shop now
+    if (id === "cd" || id === "cd_blodig") fail("He doesn't sell that."); // the Freakme CD is sold at the record player in the shop now
     const known = SIXTY_STOCK.includes(id) || (ITEM_IDS.has(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt");
     if (!known) fail("He doesn't sell that.");
     const entry = await c.itemEntry(id);
@@ -27,19 +28,22 @@ export const buySixty: Action = {
   },
 };
 
-/** The record player in the shop room: the Freakme CD for blood (one per player, ever: it comes back after it has played). The CDs for real money are bought through /pay/checkout. */
+/** The record player in the shop room: the Freakme CD and the Blodig oktober CD for blood (one of each per player, ever: it comes back after it has played). The CDs for real money are bought through /pay/checkout. */
 export const buyRecord: Action = {
-  async run(c) {
+  async run(c, a) {
     await requireInRoom(c, "shop");
+    const item = a?.item === undefined ? "cd" : text(a.item, /^[a-z_]{2,20}$/, "CD");
+    if (!BLOOD_CDS.includes(item)) fail("That CD isn't sold for blood.");
     const w = await c.user();
-    if (w.s.owned.item_cd) fail("You already bought your CD.");
-    const price = (await c.itemEntry("cd")).price;
+    const key = cdOwnedKey(item);
+    if (w.s.owned[key]) fail("You already bought that CD.");
+    const price = (await c.itemEntry(item)).price;
     if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
-    const next = addToInv(w.s.inventory, { item: "cd", qty: 1 });
+    const next = addToInv(w.s.inventory, { item, qty: 1 });
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;
     w.s.blood -= price;
-    w.s.owned.item_cd = true;
+    w.s.owned[key] = true;
     return { price };
   },
 };
