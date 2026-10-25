@@ -416,8 +416,9 @@ export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: 
   if (!n) return null;
   const fp = footprint(kindId, dir);
   // a wall item hangs on the wall plane, not on the floor tile: the back wall is the line y = 0, the left wall x = 0
-  if (k.wall) { if (dir === 2) tx -= 0.5; else ty -= 0.5; }
-  return drawNitroSprites(g, n, fp.w, fp.h, tx, ty, dir, k.nudge, toScreen, scale, alpha, skipShadow, anim, part);
+  let artDir = dir;
+  if (k.wall) { if (dir === 2) { tx -= 0.5; if (k.wallArt) artDir = k.wallArt.left; } else { ty -= 0.5; if (k.wallArt) artDir = k.wallArt.back; } }
+  return drawNitroSprites(g, n, fp.w, fp.h, tx, ty, artDir, k.nudge, toScreen, scale, alpha, skipShadow, anim, part);
 }
 
 // ---- the door -------------------------------------------------------------------------------------------

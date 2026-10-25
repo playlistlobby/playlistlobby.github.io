@@ -38,7 +38,9 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky";
+  /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
+  wallArt?: { left: number; back: number };
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -128,7 +130,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the pay2win machine in the shop room, on the left wall next to the record table: things for real money (a starter package, a name colour, a chat tool, a room advert, a new name)
   ducky: { id: "ducky", label: "pay2win", icon: "💸", w: 1, h: 1, height: 78, color: "#e8a020", placeable: false, nitro: "furni/ducky_machine.nitro", rotatable: true, fixed: true, opens: "ducky" },
   // the ideas board on the basement's left wall (Habbo's cork board with pictures): click it and the board opens, where everybody posts pictures and ideas
-  ideaboard: { id: "ideaboard", label: "Ideas board", icon: "💡", w: 1, h: 1, height: 60, color: "#a8793c", placeable: false, nitro: "furni/f_ideaboard.nitro", rotatable: true, flat: true, wall: true, opens: "ideas" },
+  ideaboard: { id: "ideaboard", label: "Ideas board", icon: "💡", w: 1, h: 1, height: 60, color: "#a8793c", placeable: false, nitro: "furni/f_ideaboard.nitro", rotatable: true, flat: true, wall: true, wallArt: { left: 0, back: 2 }, opens: "ideas" },
   // the alley dumpster next to the Flappy Bird machine: search it (every 10 minutes) for a cigarette or a dead cat
   dumpster: { id: "dumpster", label: "Dumpster", icon: "🗑️", w: 2, h: 1, height: 52, color: "#2c3a2c", placeable: false, nitro: "furni/alley_dumpster.nitro", rotatable: true },
   // the bed every player room has (a fixed piece: not in the furniture menu, not stored in the database)
