@@ -49,7 +49,7 @@ export interface Presence {
 }
 
 /** No heartbeat for this long = the session is dead, whatever the database still says. */
-export const STALE_MS = 6 * 60_000;
+export const STALE_MS = 12 * 60_000; // (a phone that was put down stops its heartbeat for a while: it is not gone, so it stays drawn for everybody)
 const HEARTBEAT_MS = 60_000;
 let beat: number | undefined;
 export interface DmMsg {
@@ -149,27 +149,72 @@ export function watchSession(uid: string, onTaken: () => void): Unsubscribe {
   });
 }
 
+/** What this window's presence says (kept so it can be put back whole). null: this window has no presence (it gave up its seat, or logged out). */
+let current: { p: Profile; room: string; idle: boolean } | null = null;
+let stopConnWatch: (() => void) | null = null;
+let stopActivity: (() => void) | null = null;
+
+/** the whole presence entry, written again (after the connection dropped and the server ran the clean-up, or when the heartbeat finds it gone) */
+function assertPresence(withDisconnect: boolean): void {
+  if (!current) return;
+  const { p, room, idle } = current;
+  const r = ref(db, `presence/${p.uid}`);
+  if (withDisconnect) void onDisconnect(r).remove();
+  void update(r, { name: p.name, room, seen: serverTimestamp(), sid: SESSION_ID, ...(idle ? { idle: true } : {}) }).catch(() => undefined);
+}
+
+function stopWatching(): void {
+  stopConnWatch?.(); stopConnWatch = null;
+  stopActivity?.(); stopActivity = null;
+}
+
 /** This window gave up its seat without leaving: stop the heartbeat and the clean-up that would wipe the other window's presence. */
 export function releasePresence(uid: string): void {
   window.clearInterval(beat);
+  current = null;
+  stopWatching();
   void onDisconnect(ref(db, `presence/${uid}`)).cancel();
 }
 
+/**
+ * The player's presence (who is online, in which room). Invisible players came from this going missing while the page was still open: a phone that loses its
+ * connection for a moment gets its presence wiped by the server (the clean-up for a closed page), and nothing wrote it back, so everybody else saw the player as gone.
+ * Now the presence is written whole every minute, again when the page comes back to the front or the connection returns, and on every tap (at most every 20 seconds).
+ */
 export function startPresence(p: Profile, room = ""): void {
   const r = ref(db, `presence/${p.uid}`);
+  stopWatching();
+  current = { p, room, idle: false };
   void onDisconnect(r).remove();
   void set(r, { name: p.name, room, since: serverTimestamp(), seen: serverTimestamp(), sid: SESSION_ID });
   window.clearInterval(beat);
-  beat = window.setInterval(() => { void update(r, { seen: serverTimestamp() }).catch(() => undefined); }, HEARTBEAT_MS);
+  beat = window.setInterval(() => assertPresence(false), HEARTBEAT_MS);
+  let first = true;
+  stopConnWatch = onValue(ref(db, ".info/connected"), (s) => {
+    if (s.val() !== true) return;
+    if (first) { first = false; return; }
+    assertPresence(true); // (back online: the server has probably run the clean-up meanwhile)
+  });
+  let last = 0;
+  const poke = (): void => { const now = Date.now(); if (now - last < 20_000 || document.hidden) return; last = now; assertPresence(false); };
+  const onShow = (): void => { if (!document.hidden) { last = Date.now(); assertPresence(true); } };
+  document.addEventListener("visibilitychange", onShow);
+  window.addEventListener("focus", onShow);
+  window.addEventListener("pointerdown", poke, { passive: true });
+  stopActivity = () => { document.removeEventListener("visibilitychange", onShow); window.removeEventListener("focus", onShow); window.removeEventListener("pointerdown", poke); };
 }
 export function setPresenceRoom(p: Profile, room: string): void {
+  if (current) current.room = room;
   void update(ref(db, `presence/${p.uid}`), { room }).catch(() => undefined);
 }
 export function setPresenceIdle(p: Profile, idle: boolean): void {
+  if (current) current.idle = idle;
   void update(ref(db, `presence/${p.uid}`), { idle: idle ? true : null }).catch(() => undefined);
 }
 export function stopPresence(p: Profile): void {
   window.clearInterval(beat);
+  current = null;
+  stopWatching();
   const r = ref(db, `presence/${p.uid}`);
   void onDisconnect(r).cancel();
   void remove(r).catch(() => undefined);
