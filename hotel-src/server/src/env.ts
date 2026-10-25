@@ -18,6 +18,8 @@ export interface Env {
   STRIPE_SECRET_KEY?: string;
   /** secret: the signing secret (whsec_...) of the Stripe webhook that points at /pay/webhook */
   STRIPE_WEBHOOK_SECRET?: string;
+  /** while this has a text the game is closed for everybody but the admin, and players see the text (see server/src/index.ts and src/maintenance.ts) */
+  MAINTENANCE?: string;
   /** where Stripe sends people back to: the game's address with a trailing slash */
   PUBLIC_URL?: string;
 }
