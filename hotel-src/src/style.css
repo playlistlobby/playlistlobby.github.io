@@ -968,7 +968,6 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 
 /* ---- the Ducky machine ---- */
 .ducky-shop { width: 300px; }
-.ducky-test { padding: 4px 8px; border-radius: 6px; text-align: center; font-weight: 800; font-size: 11px; letter-spacing: .5px; color: #3a2a00; background: #ffd54a; }
 .ducky-card { display: grid; gap: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, .12); }
 .ducky-card:last-of-type { border-bottom: 0; }
 .ducky-ico { font-family: var(--font); width: 36px; height: 36px; display: grid; place-items: center; font-size: 22px; border-radius: 8px; background: rgba(255, 255, 255, .1); }

@@ -36,12 +36,12 @@ async function call(action: string, args: object, forceToken: boolean): Promise<
 }
 
 /** Starts paying real money for a CD: resolves with the address of the payment page (Stripe), where the player is sent. */
-export async function startPayment(product: "mystery"): Promise<string> {
+export async function startPayment(product: string, params: { color?: string; name?: string } = {}): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new ApiError("Please log in again.", 401);
   let r: Response;
   try {
-    r = await fetch(`${base()}/pay/checkout`, { method: "POST", headers: { authorization: `Bearer ${await user.getIdToken()}`, "content-type": "application/json" }, body: JSON.stringify({ product }) });
+    r = await fetch(`${base()}/pay/checkout`, { method: "POST", headers: { authorization: `Bearer ${await user.getIdToken()}`, "content-type": "application/json" }, body: JSON.stringify({ product, ...params }) });
   } catch (err) {
     if (err instanceof ApiError) throw err;
     throw new ApiError("Can't reach the game server. Check your connection.", 0);

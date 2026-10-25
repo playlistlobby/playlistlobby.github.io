@@ -9233,5 +9233,40 @@
   "en": "A pill and kodimagnyl, ground into a white powder: 1 fentanyl.",
   "da": "En pille og kodimagnyl, malet til hvidt pulver: 1 fentanyl.",
   "where": "src/shared/items.ts"
+ },
+ "N1315": {
+  "en": "{stuck} Your payment is safe: tell the admin and you get it sorted.",
+  "da": "{stuck} Din betaling er i sikkerhed: sig det til admin, så bliver det ordnet.",
+  "where": "src/payReturn.ts"
+ },
+ "N1316": {
+  "en": "Your payment is on its way. It arrives as soon as it has been received (log in again if it takes long).",
+  "da": "Din betaling er på vej. Det kommer så snart den er modtaget (log ind igen hvis det tager lang tid).",
+  "where": "src/payReturn.ts"
+ },
+ "N1317": {
+  "en": "That one is paid on the payment page.",
+  "da": "Den betales på betalingssiden.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1318": {
+  "en": "Buy the name colour first.",
+  "da": "Køb navnefarven først.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1319": {
+  "en": "You already have a name colour: change it for free in the machine.",
+  "da": "Du har allerede en navnefarve: skift den gratis i automaten.",
+  "where": "server/src/pay.ts"
+ },
+ "N1320": {
+  "en": "You already have that.",
+  "da": "Du har allerede det.",
+  "where": "server/src/pay.ts"
+ },
+ "N1321": {
+  "en": "You're already paying for that. Finish that first.",
+  "da": "Du er allerede i gang med at betale for det. Gør den færdig først.",
+  "where": "server/src/pay.ts"
  }
 }

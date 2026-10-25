@@ -270,9 +270,9 @@ export async function buyRecordCd(p: Profile): Promise<void> {
 }
 
 /** Hands over the CDs that have been paid for (the payment may take a few seconds to arrive). Resolves with the item ids that landed in the pocket. */
-export async function claimPurchases(p: Profile): Promise<{ items: string[]; full: boolean }> {
-  const r = await call<{ items?: string[]; full?: boolean }>(p, "claimPurchases", {});
-  return { items: r.items ?? [], full: !!r.full };
+export async function claimPurchases(p: Profile): Promise<{ items: string[]; full: boolean; ducky: Array<{ product: string; color?: string; name?: string; stuck?: string }> }> {
+  const r = await call<{ items?: string[]; full?: boolean; ducky?: Array<{ product: string; color?: string; name?: string; stuck?: string }> }>(p, "claimPurchases", {});
+  return { items: r.items ?? [], full: !!r.full, ducky: r.ducky ?? [] };
 }
 
 /** Buys the next room upgrade from the landlord (the server checks the price and makes the room bigger). Resolves with the new size. */

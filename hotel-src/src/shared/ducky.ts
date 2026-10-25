@@ -1,9 +1,6 @@
 // The Ducky machine in the shop: things you buy with real money (øre: 100 øre = 1 kr). Pure data: the browser and the server both use it.
 // While the machine is in test mode (the local server) a buy goes straight through without paying; paying through Stripe comes when it is published.
 
-/** while true the machine is a test version: nothing is charged (the server only sells on the local emulators). Set to false when Stripe is wired in. */
-export const DUCKY_TEST_MODE = true;
-
 export type DuckyProduct = "starter" | "color" | "fx" | "rename";
 
 export interface DuckyDef {
@@ -21,6 +18,12 @@ export const DUCKY_PRODUCTS: DuckyDef[] = [
   { id: "rename", ore: 1000 },
 ];
 export const duckyDef = (id: unknown): DuckyDef | undefined => DUCKY_PRODUCTS.find((p) => p.id === id);
+/** what a purchase of one of them is called when it is paid for (Stripe, and the purchase records): "ducky_starter" ... */
+export type DuckyPayProduct = `ducky_${DuckyProduct}`;
+export const duckyPayId = (id: DuckyProduct): DuckyPayProduct => `ducky_${id}`;
+export const duckyOfPayId = (id: unknown): DuckyDef | undefined => (typeof id === "string" && id.startsWith("ducky_") ? duckyDef(id.slice(6)) : undefined);
+/** the name on the payment page */
+export const DUCKY_PAY_NAMES: Record<DuckyProduct, string> = { starter: "pay2win: Startpakke", color: "pay2win: Navnefarve", fx: "pay2win: Chat-værktøj", rename: "pay2win: Skift navn" };
 
 /** the starter package: 3 growing kits, 3 mixers and 50 blood (it takes six free pocket slots) */
 export const DUCKY_STARTER = { items: [{ item: "f_planter", qty: 3 }, { item: "f_mixer", qty: 3 }], blood: 50 };

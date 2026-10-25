@@ -1,8 +1,9 @@
 // The pay2win machine in the shop room: a starter package, a name colour, the chat tool and a new name, all for real money.
-// TEST VERSION: nothing is charged yet (the buy goes straight through on the local server); paying through Stripe comes when it is published.
+// Everything here is paid on the payment page (Stripe) and handed over when you are back (src/payReturn.ts); only changing the colour you already bought is free.
 import { h, toast } from "./dom";
 import { call } from "../db";
-import { CHAT_COLORS, DUCKY_TEST_MODE, duckyDef, isHexColor, kr, NEW_NAME_RE, readableOnDark } from "../shared/ducky";
+import { startPayment } from "../api";
+import { CHAT_COLORS, duckyDef, duckyPayId, isHexColor, kr, NEW_NAME_RE, readableOnDark } from "../shared/ducky";
 import type { DuckyProduct } from "../shared/ducky";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
@@ -25,26 +26,28 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
   let pickedColor = me.nameColor ?? CHAT_COLORS[3];
   let newName = "";
 
-  async function buy(product: DuckyProduct, extra: Record<string, unknown> = {}): Promise<void> {
+  /** the colour you already own changes for free; everything else sends you to the payment page (and what you chose comes with you: the colour, the new name) */
+  async function buy(product: DuckyProduct, extra: { color?: string; name?: string } = {}): Promise<void> {
     if (busy) return;
     busy = true;
     render();
     try {
-      const r = await call<{ color?: string; name?: string; free?: boolean }>(me, "duckyBuy", { product, ...extra });
-      ctx.refreshHeader();
-      playSfx("coins", 0.5);
-      logAction(me, "buy", `bought "${product}" from pay2win (test)`);
-      onChange();
-      open = null;
-      if (product === "starter") toast("The starter package is in your pockets, and 50 blood.");
-      else if (product === "color" && r.color) { me.nameColor = r.color; window.dispatchEvent(new CustomEvent("name-color", { detail: r.color })); toast(r.free ? "Your name colour changed." : "Your name has a colour now."); }
-      else if (product === "fx") { toast("The chat tool is yours: tap the ✨ next to the chat bar."); window.dispatchEvent(new Event("pocket-changed")); }
-      else if (product === "rename" && r.name) {
-        toast(`You are ${r.name} now. The page reloads.`);
-        window.setTimeout(() => window.location.reload(), 1600); // (everything shows the new name from the start)
+      if (product === "color" && me.owned.ducky_color) {
+        const r = await call<{ color?: string }>(me, "duckyBuy", { product, ...extra });
+        playSfx("select", 0.5);
+        logAction(me, "buy", "changed the name colour at pay2win");
+        if (r.color) { me.nameColor = r.color; window.dispatchEvent(new CustomEvent("name-color", { detail: r.color })); }
+        toast("Your name colour changed.");
+        open = null;
+      } else {
+        const url = await startPayment(duckyPayId(product), extra);
+        logAction(me, "buy", `went to pay for "${product}" at pay2win`);
+        window.location.assign(url);
+        return; // (the page goes away: nothing to redraw)
       }
     } catch (err) { toast((err as Error).message || "The machine is stuck.", "err"); }
-    finally { busy = false; render(); }
+    busy = false;
+    render();
   }
 
   function card(product: DuckyProduct, name: string, hint: string, action: HTMLElement | null, input?: HTMLElement): HTMLElement {
@@ -80,7 +83,6 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
       h("div", { class: "hint" }, "3-16 letters, numbers, . _ -  Your password stays the same."));
 
     body.replaceChildren(
-      ...(DUCKY_TEST_MODE ? [h("div", { class: "ducky-test" }, "TEST VERSION: nothing is charged yet.")] : []),
       card("starter", "Starter package", "3 growing kits, 3 mixers and 50 blood. Only once.",
         starterHave ? ownedBtn() : buyBtn("starter", () => void buy("starter"))),
       card("color", "Name colour", colorHave ? "Your name has its own colour. Change it whenever you like." : "Your name in a colour of your own, over your head and in the chat.",
@@ -91,7 +93,7 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
       card("rename", "Change your name", "Pick a new username. Your things, friends and room come with you.",
         open === "rename" ? h("button", { class: "btn small", onclick: () => { open = null; render(); } }, "Close") : h("button", { class: "btn small primary", disabled: busy, onclick: () => { open = "rename"; render(); } }, price("rename")),
         open === "rename" ? nameInput : undefined),
-      h("div", { class: "hint" }, DUCKY_TEST_MODE ? "When the machine opens for real you pay on a payment page, and come back to the game afterwards." : "You pay on a payment page, and come back to the game afterwards."));
+      h("div", { class: "hint" }, "You pay on a payment page, and come back to the game afterwards."));
   }
   render();
 

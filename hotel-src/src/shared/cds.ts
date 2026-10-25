@@ -38,4 +38,4 @@ export const cdOwnedKey = (item: string): string => `item_${item}`;
 
 /** Real money, in øre (100 øre = 1 kr): the mystery CD costs 150 kr. (The full album is no longer sold; players who bought it keep it, and an old paid order is still handed over.) */
 export const MYSTERY_PRICE_ORE = 15_000;
-export type PayProduct = "mystery" | "album";
+export type PayProduct = "mystery" | "album" | `ducky_${string}`;

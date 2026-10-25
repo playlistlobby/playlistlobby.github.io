@@ -6,15 +6,15 @@
 import { Env, isEmulator } from "./env";
 import { Rtdb } from "./rtdb";
 import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE, PayProduct } from "../../src/shared/cds";
+import { DUCKY_PAY_NAMES, DuckyDef, duckyOfPayId, isHexColor, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../src/shared/ducky";
 
 /** a checkout that was started but not paid counts as "on its way" for this long (so nobody can open ten and pay for ten) */
 const OPEN_MS = 45 * 60_000;
 type Status = "open" | "paid" | "claimed" | "stuck";
-interface Purchase { uid: string; product: PayProduct; amount: number; status: Status; at: number; session: string; paidAt?: number; item?: string }
+interface Purchase { uid: string; product: PayProduct; amount: number; status: Status; at: number; session: string; paidAt?: number; item?: string; /** what was chosen before paying (the colour, the new name) */ params?: { color?: string; name?: string } }
 interface UserPurchase { product: PayProduct; status: Status; at: number }
 
 const NAMES = { mystery: "Mystery CD (Blodig oktober)" };
-const AMOUNT = { mystery: MYSTERY_PRICE_ORE };
 
 export class PayError extends Error {
   constructor(msg: string, readonly status = 400) { super(msg); }
@@ -33,12 +33,44 @@ async function checkEligible(db: Rtdb, uid: string, product: "mystery", now: num
 
 const rand = (): string => Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, "0")).join("");
 
-/** POST /pay/checkout { product } with the login token: returns { url } to send the player to. */
-export async function startCheckout(env: Env, uid: string, product: unknown): Promise<{ url: string }> {
-  if (product !== "mystery") throw new PayError("Bad product.");
+/** Can this player buy this thing from the pay2win machine now? Returns what has to be remembered about the purchase (the colour, the new name). */
+async function checkDucky(db: Rtdb, uid: string, def: DuckyDef, body: { color?: unknown; name?: unknown }, now: number): Promise<{ color?: string; name?: string }> {
+  const owned = (await db.get<Record<string, boolean>>(`users/${uid}/owned`)) ?? {};
+  const mine = Object.values((await db.get<Record<string, UserPurchase>>(`userPurchases/${uid}`)) ?? {});
+  const onItsWay = (p: UserPurchase): boolean => p.status === "paid" || (p.status === "open" && now - p.at < OPEN_MS);
+  const coming = mine.some((p) => p.product === `ducky_${def.id}` && onItsWay(p));
+  if (def.once && owned[def.once]) throw new PayError(def.id === "color" ? "You already have a name colour: change it for free in the machine." : "You already have that.");
+  if (coming) throw new PayError("You're already paying for that. Finish that first.");
+  if (def.id === "color") {
+    if (!isHexColor(body.color)) throw new PayError("Pick a colour.");
+    if (!readableOnDark(body.color)) throw new PayError("That colour is too dark to read. Pick a lighter one.");
+    return { color: body.color.toLowerCase() };
+  }
+  if (def.id === "rename") {
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    if (!NEW_NAME_RE.test(name)) throw new PayError("A name is 3-16 characters: letters, numbers, . _ -");
+    if (RESERVED_NAMES.has(name.toLowerCase())) throw new PayError("That name is reserved.");
+    const old = String((await db.get<string>(`users/${uid}/name`)) ?? "");
+    if (name === old) throw new PayError("That is already your name.");
+    const holder = await db.get<string>(`usernames/${name.toLowerCase()}`);
+    if (holder !== null && holder !== uid) throw new PayError("That name is taken.");
+    return { name };
+  }
+  return {};
+}
+
+/** POST /pay/checkout { product, ... } with the login token: returns { url } to send the player to. */
+export async function startCheckout(env: Env, uid: string, product: unknown, body: { color?: unknown; name?: unknown } = {}): Promise<{ url: string }> {
+  const dk = duckyOfPayId(product);
+  if (product !== "mystery" && !dk) throw new PayError("Bad product.");
   const db = new Rtdb(env);
   const now = Date.now();
-  await checkEligible(db, uid, product, now);
+  let params: { color?: string; name?: string } | undefined;
+  if (dk) params = await checkDucky(db, uid, dk, body, now);
+  else await checkEligible(db, uid, "mystery", now);
+  const productId = product as PayProduct;
+  const amount = dk ? dk.ore : MYSTERY_PRICE_ORE;
+  const label = dk ? DUCKY_PAY_NAMES[dk.id] : NAMES.mystery;
   const publicUrl = (env.PUBLIC_URL || (isEmulator(env) ? "http://127.0.0.1:5173/" : "https://playlistmag.studio/hotel/")).replace(/\/?$/, "/");
   let session = "";
   let url = "";
@@ -56,11 +88,11 @@ export async function startCheckout(env: Env, uid: string, product: unknown): Pr
       cancel_url: `${publicUrl}?pay=cancel`,
       client_reference_id: uid,
       "metadata[uid]": uid,
-      "metadata[product]": product,
+      "metadata[product]": productId,
       "line_items[0][quantity]": "1",
       "line_items[0][price_data][currency]": "dkk",
-      "line_items[0][price_data][unit_amount]": String(AMOUNT[product]),
-      "line_items[0][price_data][product_data][name]": NAMES[product],
+      "line_items[0][price_data][unit_amount]": String(amount),
+      "line_items[0][price_data][product_data][name]": label,
     });
     const r = await fetch("https://api.stripe.com/v1/checkout/sessions", { method: "POST", headers: { authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, "content-type": "application/x-www-form-urlencoded" }, body: form });
     const j = (await r.json().catch(() => null)) as { id?: string; url?: string; error?: { message?: string } } | null;
@@ -71,8 +103,8 @@ export async function startCheckout(env: Env, uid: string, product: unknown): Pr
     session = j.id;
     url = j.url;
   }
-  const rec: Purchase = { uid, product, amount: AMOUNT[product], status, at: now, session, ...(status === "paid" ? { paidAt: now } : {}) };
-  const mine: UserPurchase = { product, status, at: now };
+  const rec: Purchase = { uid, product: productId, amount, status, at: now, session, ...(status === "paid" ? { paidAt: now } : {}), ...(params && Object.keys(params).length ? { params } : {}) };
+  const mine: UserPurchase = { product: productId, status, at: now };
   await db.patch({ [`purchases/${session}`]: rec, [`userPurchases/${uid}/${session}`]: mine });
   return { url };
 }
