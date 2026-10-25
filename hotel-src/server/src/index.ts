@@ -5,6 +5,7 @@ import type { Env } from "./env";
 export { Economy } from "./economy";
 
 const MAX_BODY = 16_000; // (a poster's picture travels with the request that hangs it)
+const MAX_BODY_IDEA = 300_000; // (a picture on the ideas board travels with its post)
 
 function cors(env: Env, origin: string | null): Record<string, string> {
   const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim());
@@ -53,10 +54,11 @@ export default {
     try { caller = await verifyToken(auth.replace(/^Bearer\s+/i, ""), env); } catch { return reply({ ok: false, error: "Please log in again." }, 401); }
 
     const raw = await request.text();
-    if (raw.length > MAX_BODY) return reply({ ok: false, error: "Too big." }, 413);
+    if (raw.length > MAX_BODY_IDEA) return reply({ ok: false, error: "Too big." }, 413);
     let parsed: { a?: unknown; args?: unknown };
     try { parsed = JSON.parse(raw); } catch { return reply({ ok: false, error: "Bad request." }, 400); }
     if (typeof parsed.a !== "string") return reply({ ok: false, error: "Bad request." }, 400);
+    if (raw.length > MAX_BODY && parsed.a !== "ideaPost") return reply({ ok: false, error: "Too big." }, 413);
 
     // which browser this is, as a short hash: accounts that log in from the same one are "peers" (they can't stab each other)
     const net: string[] = [];

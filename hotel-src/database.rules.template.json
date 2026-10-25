@@ -47,6 +47,14 @@
     "flappyBoard": {
       ".read": "@PW@"
     },
+    "ideas": {
+      ".read": "@PW@"
+    },
+    "ideasImg": {
+      "$id": {
+        ".read": "@PW@"
+      }
+    },
     "bans": {
       ".read": "@ADMIN@"
     },

@@ -8578,5 +8578,155 @@
   "en": "DU OD'EDE PÅ FENT",
   "da": "DU OD'EDE PÅ FENT",
   "where": "src/ui/room.ts"
+ },
+ "N1184": {
+  "en": "Ideas board: post pictures and ideas",
+  "da": "Idétavle: slå billeder og idéer op",
+  "where": "src/ui/room.ts"
+ },
+ "N1185": {
+  "en": "Ideas board",
+  "da": "Idétavle",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1186": {
+  "en": "Comment",
+  "da": "Kommentar",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1187": {
+  "en": "Ideas",
+  "da": "Idéer",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1188": {
+  "en": "Title",
+  "da": "Titel",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1189": {
+  "en": "Tell us more (if you want)",
+  "da": "Fortæl mere (hvis du vil)",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1190": {
+  "en": "Text",
+  "da": "Tekst",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1191": {
+  "en": "Add picture",
+  "da": "Tilføj billede",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1192": {
+  "en": "Post",
+  "da": "Slå op",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1193": {
+  "en": "New post",
+  "da": "Nyt opslag",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1194": {
+  "en": "Unlike",
+  "da": "Fjern like",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1195": {
+  "en": "Like",
+  "da": "Like",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1196": {
+  "en": "{cn} comments",
+  "da": "{cn} kommentarer",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1197": {
+  "en": "Nothing here yet. Tap + to post something. Posts stay for {hours} hours.",
+  "da": "Intet her endnu. Tryk på + for at slå noget op. Opslag bliver oppe i {hours} timer.",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1198": {
+  "en": "Delete “{title}”? It is removed for everybody.",
+  "da": "Slet “{title}”? Det fjernes for alle.",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1199": {
+  "en": "Post deleted.",
+  "da": "Opslaget er slettet.",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1200": {
+  "en": "No comments yet.",
+  "da": "Ingen kommentarer endnu.",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1201": {
+  "en": "Comment not posted. Try again.",
+  "da": "Kommentaren blev ikke sendt. Prøv igen.",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1202": {
+  "en": "Give your post a title.",
+  "da": "Giv dit opslag en titel.",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1203": {
+  "en": "Posted. It stays up for {hours} hours.",
+  "da": "Slået op. Det bliver oppe i {hours} timer.",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1204": {
+  "en": "Post not sent. Try again.",
+  "da": "Opslaget blev ikke sendt. Prøv igen.",
+  "where": "src/ui/ideasBoard.ts"
+ },
+ "N1205": {
+  "en": "That file can't be read.",
+  "da": "Den fil kan ikke læses.",
+  "where": "src/ideas.ts"
+ },
+ "N1206": {
+  "en": "That picture is too big.",
+  "da": "Det billede er for stort.",
+  "where": "src/ideas.ts"
+ },
+ "N1207": {
+  "en": "Write something in the {what}.",
+  "da": "Skriv noget i {what}.",
+  "where": "server/src/actions/ideas.ts"
+ },
+ "N1208": {
+  "en": "The {what} can be {max} characters at most.",
+  "da": "{what} må højst være {max} tegn.",
+  "where": "server/src/actions/ideas.ts"
+ },
+ "N1209": {
+  "en": "Wait a moment before you post again ({…} s).",
+  "da": "Vent lidt før du slår op igen ({…} s).",
+  "where": "server/src/actions/ideas.ts"
+ },
+ "N1210": {
+  "en": "Bad post.",
+  "da": "Ugyldigt opslag.",
+  "where": "server/src/actions/ideas.ts"
+ },
+ "N1211": {
+  "en": "That post is gone.",
+  "da": "Det opslag er væk.",
+  "where": "server/src/actions/ideas.ts"
+ },
+ "N1212": {
+  "en": "Not so fast.",
+  "da": "Ikke så hurtigt.",
+  "where": "server/src/actions/ideas.ts"
+ },
+ "N1213": {
+  "en": "That isn't yours.",
+  "da": "Det er ikke dit.",
+  "where": "server/src/actions/ideas.ts"
  }
 }

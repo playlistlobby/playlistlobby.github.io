@@ -15,6 +15,7 @@ import { posterAdmin } from "./posters";
 import { cdControl, cdInsert, cdReturn } from "./cd";
 import { mix, mixCollect } from "./mixer";
 import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick } from "./roulette";
+import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
 
 /** Every thing the browser may ask for. Anything not listed here cannot be done: the browser can't write economy data itself. */
 export const ACTIONS: Record<string, Action> = {
@@ -27,5 +28,6 @@ export const ACTIONS: Record<string, Action> = {
   tradeFinish, flappyStart, flappyScore,
   cdInsert, cdReturn, cdControl, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
+  ideaPost, ideaComment, ideaLike, ideaDelete,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

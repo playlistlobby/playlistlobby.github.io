@@ -38,7 +38,7 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -125,6 +125,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   rtable: { id: "rtable", label: "Roulette table", icon: "🔫", w: 2, h: 1, height: 36, color: "#6b5a48", placeable: false, nitro: "furni/f_makeshifttable.nitro", rotatable: true, surface: 36 },
   rchair: { id: "rchair", label: "Roulette chair", icon: "🪑", w: 1, h: 1, height: 38, color: "#6b5a48", placeable: false, nitro: "furni/f_cratechairlight.nitro", rotatable: true, seat: true, seatHeight: 14 },
   gunrack: { id: "gunrack", label: "Gun rack", icon: "🔫", w: 1, h: 1, height: 20, color: "#6b5a48", placeable: false, nitro: "furni/f_gunrack.nitro", rotatable: true, small: true },
+  // the ideas board on the basement's left wall (Habbo's cork board with pictures): click it and the board opens, where everybody posts pictures and ideas
+  ideaboard: { id: "ideaboard", label: "Ideas board", icon: "💡", w: 1, h: 1, height: 60, color: "#a8793c", placeable: false, nitro: "furni/f_ideaboard.nitro", rotatable: true, flat: true, wall: true, opens: "ideas" },
   // the alley dumpster next to the Flappy Bird machine: search it (every 10 minutes) for a cigarette or a dead cat
   dumpster: { id: "dumpster", label: "Dumpster", icon: "🗑️", w: 2, h: 1, height: 52, color: "#2c3a2c", placeable: false, nitro: "furni/alley_dumpster.nitro", rotatable: true },
   // the bed every player room has (a fixed piece: not in the furniture menu, not stored in the database)
@@ -134,7 +136,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard"]);
 /** the CD player in the basement or a boombox: both play the CD you use on them */
 export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox";
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
@@ -244,10 +246,12 @@ export const GRIME_THEME: RoomTheme = { floorA: "#5f6262", floorB: "#686b6b", wa
 /** the pieces that belong to the basement itself; the admin can move them (the move is saved in the basement's furniture list under the same id, and wins over these spots) */
 const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, { id: "lobby3", kind: "dumpster", x: 0, y: 6, dir: 2 },
-  { id: "lobby5", kind: "dumpster", x: 11, y: 14, dir: 2 },
+  { id: "lobby5", kind: "dumpster", x: 0, y: 13, dir: 2 }, // (the left wall, between the Flappy machine and the roulette table; the live basement already had it moved here)
   // Russian roulette against the left wall at the far end: chair, two-tile table, chair along the wall (the way it stands in emil's room), and the gun rack on the table
   { id: "lobby6", kind: "rtable", x: 0, y: 16, dir: 2 }, { id: "lobby7", kind: "rchair", x: 0, y: 15, dir: 4 }, { id: "lobby8", kind: "rchair", x: 0, y: 18, dir: 0 },
   { id: "lobby9", kind: "gunrack", x: 0, y: 16, dir: 2 },
+  // the ideas board hangs on the left wall between the bin and the roulette table
+  { id: "lobby10", kind: "ideaboard", x: 0, y: 15, dir: 2 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
@@ -274,7 +278,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
 /** The private copy of the basement: the same room without the pieces the admin put in it, and its door leads back to your own room. */
 export function tutDef(uid: string): RoomDef {
   const lobby = lobbyDef([]);
-  return { ...lobby, id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [], furni: lobby.furni.filter((f) => !ROULETTE_KINDS.has(f.kind)) }; // (no roulette during the introduction)
+  return { ...lobby, id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [], furni: lobby.furni.filter((f) => !ROULETTE_KINDS.has(f.kind) && f.kind !== "ideaboard") }; // (no roulette and no ideas board during the introduction)
 }
 
 /** Where the four daily pieces stand in the shop room (every piece is placed facing the same way, each in its own 3x3 corner). */

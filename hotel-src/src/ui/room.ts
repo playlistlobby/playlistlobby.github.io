@@ -74,6 +74,7 @@ import { openVending, VendingApi } from "./vendingShop";
 import { openRecordShop, RecordShopApi } from "./recordShop";
 import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
+import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { figureAnimated } from "../designs";
 import { lighterStage, markLighterStep } from "../lighterHint";
 import { flappyRunStart, flappySubmit, watchFlappyBoard } from "../db";
@@ -362,6 +363,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let recordApi: RecordShopApi | null = null;
   let posterApi: PosterShopApi | null = null;
   let stashApi: StashApi | null = null;
+  let ideasApi: IdeasBoardApi | null = null;
+  function openIdeas(): void { if (!ideasApi) ideasApi = openIdeasBoard(stage, ctx, () => { ideasApi = null; }); }
   let landlordApi: LandlordApi | null = null;
   let landlordBubble: Bubble | null = null;
   let landlordLast: HTMLCanvasElement | undefined;
@@ -528,6 +531,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && (hoverObj.kind === "recordplayer" || hoverObj.kind === "vinyltable")) text = "Record player: CDs";
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
+    else if (hoverObj && hoverObj.kind === "ideaboard") text = "Ideas board: post pictures and ideas";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind ?? ""]?.states?.length ?? 0) > 1) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to use`;
@@ -675,6 +679,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
    * side by side have sprites that overlap, but the tile you click is the one you get). Only if no piece stands on that tile, whatever picture is under the pointer.
    */
   function pickObj(mx: number, my: number): Hitbox | null {
+    // something hanging on a wall (the ideas board) wins where it is drawn: the floor tile "under" it belongs to a bin or a chair
+    for (const b of objBoxes) {
+      const k = FURNI_KINDS[def.furni.find((q) => q.id === b.id)?.kind ?? ""];
+      if (k?.wall && mx >= b.x0 && mx <= b.x1 && my >= b.y0 && my <= b.y1) return b;
+    }
     const t = tileAt(mx, my);
     if (t) {
       let best: Hitbox | null = null;
@@ -802,7 +811,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "landlord") startLandlord();
@@ -855,6 +864,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
+    if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
@@ -1348,6 +1358,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recordApi?.close();
     posterApi?.close();
     stashApi?.close();
+    ideasApi?.close();
     landlordApi?.close();
     sixtyShop?.close();
   }
@@ -1667,6 +1678,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "vending") openVendingShop();
         else if (opens === "stash") { if (!stashApi) stashApi = openStashBox(stage, ctx, () => panel.refresh(), () => { stashApi = null; }); }
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
+        else if (opens === "ideas") openIdeas();
         else if (opens === "records") { if (!recordApi) recordApi = openRecordShop(stage, ctx, () => panel.refresh(), () => { recordApi = null; }); }
         else if (opens === "mixer") {
           if (mixerApi) { /* already open */ }
@@ -3417,6 +3429,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.restore();
       } else b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now), f.kind === "rchair" ? "back" : undefined); // (a roulette chair's backrest is drawn after the player in it: see below)
       if (lift) { g.restore(); if (b) { b.y0 -= lift * scale; b.y1 -= lift * scale; } }
+      if (b && f.kind === "ideaboard" && !furnishOn) { // the ideas board glows a little (more when you point at it), so people notice it is there
+        const hot = !!f.id && hoverObj?.id === f.id;
+        const pulse = 0.5 + 0.5 * Math.sin(now / 450);
+        const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, r = 44 * scale * (hot ? 1.3 : 1);
+        g.save();
+        g.globalCompositeOperation = "lighter";
+        const halo = g.createRadialGradient(cx, cy, 3 * scale, cx, cy, r);
+        const a = 0.14 + 0.06 * pulse + (hot ? 0.16 : 0);
+        halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
+        halo.addColorStop(1, "rgba(255,200,40,0)");
+        g.fillStyle = halo;
+        g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
@@ -4378,6 +4404,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recordApi?.close();
     posterApi?.close();
     stashApi?.close();
+    ideasApi?.close();
     landlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();
