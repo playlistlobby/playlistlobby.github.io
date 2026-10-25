@@ -8533,5 +8533,10 @@
   "en": "How much blood do you want to put at stake?",
   "da": "Hvor meget blood vil du sætte på spil?",
   "where": "src/ui/rouletteTable.ts"
+ },
+ "N1175": {
+  "en": "Put {stake} blood at stake for a 50% chance to double it?",
+  "da": "Sæt {stake} blod på spil i en 50% chance for at fordoble dem?",
+  "where": "src/ui/rouletteTable.ts"
  }
 }

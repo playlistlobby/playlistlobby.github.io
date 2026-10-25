@@ -242,7 +242,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
       const win = h("div", { class: "drop-win rt-win", role: "dialog", "aria-label": "Russian roulette" },
         h("div", { class: "drop-title" }, "Russian roulette"),
         h("div", { class: "rt-ask" }, h("b", {}, host), " has put ", h("img", { src: BLOOD_ICON, alt: "", class: "rt-drop" }), h("b", {}, String(stake)), " on the table."),
-        h("div", { class: "hint" }, `Play for ${stake} blood? You put the same amount down. One bullet, six chambers, you take turns pulling the trigger. Lose and you are dead. Win and you take both stakes.`),
+        h("div", { class: "rt-ask" }, `Put ${stake} blood at stake for a 50% chance to double it?`),
         h("div", { class: "drop-buttons" }, no, yes));
       const ov = overlay(win);
       let done = false;
