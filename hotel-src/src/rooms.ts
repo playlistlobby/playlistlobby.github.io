@@ -334,7 +334,7 @@ export function shopDef(picks: string[], raffleKind?: string): RoomDef {
     // the raffle machine further down the same wall, on a marble block; the rare piece it gives away stands beside it
     { id: "shop_raffle_table", kind: "raffletable", x: 0, y: 11, dir: 2 }, { id: "shop_raffle", kind: "gacha", x: 0, y: 11, dir: 2 },
   ];
-  if (raffleKind && FURNI_KINDS[raffleKind]) furni.push({ id: RAFFLE_PRIZE_ID, kind: raffleKind, x: 1, y: 12, dir: SHOP_PIECES.find((p) => SHOP_KIND_PREFIX + p.id === raffleKind)?.showDir ?? 2 });
+  if (raffleKind && FURNI_KINDS[raffleKind]) furni.push({ id: RAFFLE_PRIZE_ID, kind: raffleKind, x: 0, y: 12, dir: SHOP_PIECES.find((p) => SHOP_KIND_PREFIX + p.id === raffleKind)?.showDir ?? 2 });
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;
     const slot = SHOP_SLOTS[i];
