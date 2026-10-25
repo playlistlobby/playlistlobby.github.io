@@ -461,7 +461,7 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 12"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 20"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 26"
           },
           "dir": {
             ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6"
