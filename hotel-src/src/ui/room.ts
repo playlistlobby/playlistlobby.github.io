@@ -4617,7 +4617,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (v.round && v.round.prize !== before) applyDef(shopDef(picksToday(), v.round.prize));
         announceWin(me, v.last, () => { void call(me, "sync").then(() => { panel.refresh(); ctx.refreshHeader(); }, () => undefined); });
       }));
-      const drawWatch = window.setInterval(() => { if (!disposed && raffleNow.round && serverNow() >= raffleNow.round.drawAt) void call(me, "raffleTick").catch(() => undefined); }, 5000);
+      const drawWatch = window.setInterval(() => { if (!disposed && raffleNow.round && serverNow() >= raffleNow.round.drawAt) void call(me, "raffleTick").catch(() => undefined); }, 30_000);
       unsubs.push(() => window.clearInterval(drawWatch));
       void call(me, "raffleTick").catch(() => undefined); // (no round yet, or a draw that is due)
       return;
