@@ -3722,7 +3722,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.arc(cx, cy, r, 0, Math.PI * 2);
         g.fill();
         g.restore();
+        const onTable = tableUnder(f), liftUp = onTable ? (FURNI_KINDS[onTable.kind].surface ?? 0) * scale : 0; // (a piece on a table top is drawn again up there, not on the floor)
+        if (liftUp) { g.save(); g.translate(0, -liftUp); }
         drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, true); // the bag again, on top of the halo (its shadow is already down)
+        if (liftUp) g.restore();
         if (hot) {
           g.save();
           g.globalCompositeOperation = "lighter";

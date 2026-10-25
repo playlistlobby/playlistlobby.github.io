@@ -132,8 +132,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   gunrack: { id: "gunrack", label: "Gun rack", icon: "🔫", w: 1, h: 1, height: 20, color: "#6b5a48", placeable: false, nitro: "furni/f_gunrack.nitro", rotatable: true, small: true },
   // the pay2win machine in the shop room, on the left wall next to the record table: things for real money (a starter package, a name colour, a chat tool, a room advert, a new name)
   ducky: { id: "ducky", label: "pay2win", icon: "💸", w: 1, h: 1, height: 78, color: "#e8a020", placeable: false, nitro: "furni/ducky_machine.nitro", rotatable: true, fixed: true, opens: "ducky" },
-  // the raffle in the shop room: a royal gacha machine on a marble block (tap either): tickets for a rare piece, drawn every day at 16:00 (see src/shared/raffle.ts)
-  raffletable: { id: "raffletable", label: "Raffle", icon: "🎟️", w: 1, h: 1, height: 32, color: "#cfcfcf", placeable: false, nitro: "furni/f_marbleblock.nitro", rotatable: true, fixed: true, surface: 32, opens: "raffle" },
+  // the raffle in the shop room: a royal gacha machine on the elven square end table (tap either): tickets for a rare piece, drawn every day at 16:00 (see src/shared/raffle.ts)
+  raffletable: { id: "raffletable", label: "Raffle", icon: "🎟️", w: 1, h: 1, height: 30, color: "#cfcfcf", placeable: false, nitro: "furni/easter_c26_elvensquareendtable.nitro", rotatable: true, fixed: true, surface: 30, opens: "raffle" },
   gacha: { id: "gacha", label: "Royal gacha", icon: "🎰", w: 1, h: 1, height: 64, color: "#d4a017", placeable: false, nitro: "furni/gacha_c25_royalgachab.nitro", rotatable: true, fixed: true, small: true, opens: "raffle" },
   // ---- the mines (a door in the basement): ore rocks to mine, an anvil to craft on, and things to look at (all fixed pieces, only drawn here) ----
   mrock: { id: "mrock", label: "Iron rock", icon: "🪨", w: 1, h: 1, height: 40, color: "#5b4a40", placeable: false, nitro: "furni/mine_rock.nitro", rotatable: true, fixed: true, opens: "mine" },
