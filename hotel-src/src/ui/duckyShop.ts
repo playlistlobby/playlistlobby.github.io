@@ -1,8 +1,8 @@
-// The Ducky machine in the shop room: a starter package, a name colour, the chat tool, a room advert and a new name, all for real money.
+// The pay2win machine in the shop room: a starter package, a name colour, the chat tool and a new name, all for real money.
 // TEST VERSION: nothing is charged yet (the buy goes straight through on the local server); paying through Stripe comes when it is published.
 import { h, toast } from "./dom";
 import { call } from "../db";
-import { CHAT_COLORS, DUCKY_AD_MS, DUCKY_TEST_MODE, duckyDef, isHexColor, kr, NEW_NAME_RE, readableOnDark } from "../shared/ducky";
+import { CHAT_COLORS, DUCKY_TEST_MODE, duckyDef, isHexColor, kr, NEW_NAME_RE, readableOnDark } from "../shared/ducky";
 import type { DuckyProduct } from "../shared/ducky";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
@@ -10,14 +10,13 @@ import type { Ctx } from "../main";
 
 export interface DuckyShopApi { close(): void }
 
-const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", ad: "📣", rename: "🏷️" };
-const hours = Math.round(DUCKY_AD_MS / 3_600_000);
+const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", rename: "🏷️" };
 
 export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): DuckyShopApi {
   const me = ctx.profile;
   const body = h("div", { class: "sixty-body" });
-  const el = h("div", { class: "cd-popup sixty-shop ducky-shop", role: "dialog", "aria-label": "Ducky machine" },
-    h("div", { class: "cd-head" }, h("strong", {}, "🦆 Ducky machine"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
+  const el = h("div", { class: "cd-popup sixty-shop ducky-shop", role: "dialog", "aria-label": "pay2win" },
+    h("div", { class: "cd-head" }, h("strong", {}, "💸 pay2win"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
     body);
   host.append(el);
   let closed = false;
@@ -31,16 +30,15 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
     busy = true;
     render();
     try {
-      const r = await call<{ color?: string; name?: string; free?: boolean; until?: number }>(me, "duckyBuy", { product, ...extra });
+      const r = await call<{ color?: string; name?: string; free?: boolean }>(me, "duckyBuy", { product, ...extra });
       ctx.refreshHeader();
       playSfx("coins", 0.5);
-      logAction(me, "buy", `bought "${product}" from the Ducky machine (test)`);
+      logAction(me, "buy", `bought "${product}" from pay2win (test)`);
       onChange();
       open = null;
       if (product === "starter") toast("The starter package is in your pockets, and 50 blood.");
       else if (product === "color" && r.color) { me.nameColor = r.color; window.dispatchEvent(new CustomEvent("name-color", { detail: r.color })); toast(r.free ? "Your name colour changed." : "Your name has a colour now."); }
       else if (product === "fx") { toast("The chat tool is yours: tap the ✨ next to the chat bar."); window.dispatchEvent(new Event("pocket-changed")); }
-      else if (product === "ad") toast(`Your room is first in the door list for ${hours} hours.`);
       else if (product === "rename" && r.name) {
         toast(`You are ${r.name} now. The page reloads.`);
         window.setTimeout(() => window.location.reload(), 1600); // (everything shows the new name from the start)
@@ -90,8 +88,6 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
         open === "color" ? colorInput : undefined),
       card("fx", "Chat tool", "A ✨ next to the chat bar: shaky, wavy and rainbow text, and coloured text.",
         fxHave ? ownedBtn() : buyBtn("fx", () => void buy("fx"))),
-      card("ad", "Advertise your room", `Your room is first in the door list for ${hours} hours. Buy again to add more time.`,
-        buyBtn("ad", () => void buy("ad"))),
       card("rename", "Change your name", "Pick a new username. Your things, friends and room come with you.",
         open === "rename" ? h("button", { class: "btn small", onclick: () => { open = null; render(); } }, "Close") : h("button", { class: "btn small primary", disabled: busy, onclick: () => { open = "rename"; render(); } }, price("rename")),
         open === "rename" ? nameInput : undefined),

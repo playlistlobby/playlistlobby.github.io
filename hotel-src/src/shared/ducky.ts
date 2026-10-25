@@ -4,7 +4,7 @@
 /** while true the machine is a test version: nothing is charged (the server only sells on the local emulators). Set to false when Stripe is wired in. */
 export const DUCKY_TEST_MODE = true;
 
-export type DuckyProduct = "starter" | "color" | "fx" | "ad" | "rename";
+export type DuckyProduct = "starter" | "color" | "fx" | "rename";
 
 export interface DuckyDef {
   id: DuckyProduct;
@@ -18,15 +18,12 @@ export const DUCKY_PRODUCTS: DuckyDef[] = [
   { id: "starter", ore: 3000, once: "ducky_starter" },
   { id: "color", ore: 1500, once: "ducky_color" },
   { id: "fx", ore: 2000, once: "ducky_fx" },
-  { id: "ad", ore: 1000 },
   { id: "rename", ore: 500 },
 ];
 export const duckyDef = (id: unknown): DuckyDef | undefined => DUCKY_PRODUCTS.find((p) => p.id === id);
 
 /** the starter package: 3 growing kits, 3 mixers and 50 blood (it takes six free pocket slots) */
 export const DUCKY_STARTER = { items: [{ item: "f_planter", qty: 3 }, { item: "f_mixer", qty: 3 }], blood: 50 };
-/** how long a room advert lasts (buying again adds the time on) */
-export const DUCKY_AD_MS = 3 * 60 * 60_000;
 
 /** the effects of the chat tool: the way the text moves, and the colours it can have */
 export const CHAT_EFFECTS = ["shake", "wave", "rainbow", "pulse", "big"] as const;

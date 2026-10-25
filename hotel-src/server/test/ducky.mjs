@@ -103,18 +103,10 @@ console.log("--- name colour and the chat tool");
   check("so is a colour that is not one", refused(await msg(a, { fc: "red" })));
 }
 
-console.log("--- the room advert");
+console.log("--- no room advert any more");
 {
   const a = await fresh("t_du_ad", { blood: 0 }); await inShop(a);
-  bad("no room, nothing to advertise", await act(a, "duckyBuy", { product: "ad" }));
-  await put(`roomsMeta/u_${a.uid}`, { owner: a.uid, ownerName: "t_du_ad", name: "t_du_ad's room", access: "open", w: 8, h: 8 });
-  ok("advertise the room", await act(a, "duckyBuy", { product: "ad" }));
-  const until = await owner("GET", `roomsMeta/u_${a.uid}/adUntil`);
-  check("for three hours", until > Date.now() + 2.9 * 3600_000 && until < Date.now() + 3.1 * 3600_000, String(until - Date.now()));
-  ok("again", await act(a, "duckyBuy", { product: "ad" }));
-  const until2 = await owner("GET", `roomsMeta/u_${a.uid}/adUntil`);
-  check("the time is added on", until2 >= until + 3 * 3600_000 - 5000, String(until2 - until));
-  check("nobody can write the advert time themselves", refused(await clientWrite(a, `roomsMeta/u_${a.uid}/adUntil`, Date.now() + 99 * 3600_000)));
+  bad("the machine does not sell adverts", await act(a, "duckyBuy", { product: "ad" }));
 }
 
 console.log("--- renaming");

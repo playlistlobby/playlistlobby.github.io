@@ -106,7 +106,7 @@ import type { Ctx } from "../main";
 /** The hanger that floats above the bag of clothes in your own room (it's Habbo's own wardrobe icon). */
 const hangerImg = new Image();
 hangerImg.src = assetUrl("ui/hanger.png");
-/** the little pixel "dk" that floats over the Ducky machine (it is the Dankort mark: you pay with real money there) */
+/** the little pixel "dkk" that floats over the pay2win machine while you point at it (you pay with real money there) */
 const dkImg = new Image();
 dkImg.src = assetUrl("ui/dk.png");
 /** the game controller that floats over the arcade machine and the roulette table when you point at them (Habbo's silver controller icon) */
@@ -555,7 +555,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
     else if (hoverObj && hoverObj.kind === "ideaboard") text = "Ideas board: post pictures and ideas";
-    else if (hoverObj && hoverObj.kind === "ducky") text = "Ducky machine: things for real money";
+    else if (hoverObj && hoverObj.kind === "ducky") text = "pay2win: things for real money";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind ?? ""]?.states?.length ?? 0) > 1) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to use`;
@@ -889,7 +889,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
     if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
-    if (obj?.kind === "ducky") opts.push({ label: "Shop", target: "Ducky machine", action: () => startBag(obj.id) });
+    if (obj?.kind === "ducky") opts.push({ label: "Shop", target: "pay2win", action: () => startBag(obj.id) });
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
@@ -3526,7 +3526,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" ? true : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
         const hint = k.opens === "ducky" ? dkImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
           const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);

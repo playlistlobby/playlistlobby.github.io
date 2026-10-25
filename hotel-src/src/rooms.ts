@@ -125,8 +125,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   rtable: { id: "rtable", label: "Roulette table", icon: "🔫", w: 2, h: 1, height: 36, color: "#6b5a48", placeable: false, nitro: "furni/f_makeshifttable.nitro", rotatable: true, surface: 36 },
   rchair: { id: "rchair", label: "Roulette chair", icon: "🪑", w: 1, h: 1, height: 38, color: "#6b5a48", placeable: false, nitro: "furni/f_cratechairlight.nitro", rotatable: true, seat: true, seatHeight: 14 },
   gunrack: { id: "gunrack", label: "Gun rack", icon: "🔫", w: 1, h: 1, height: 20, color: "#6b5a48", placeable: false, nitro: "furni/f_gunrack.nitro", rotatable: true, small: true },
-  // the Ducky machine in the shop room, on the left wall next to the record table: things for real money (a starter package, a name colour, a chat tool, a room advert, a new name)
-  ducky: { id: "ducky", label: "Ducky machine", icon: "🦆", w: 1, h: 1, height: 78, color: "#e8a020", placeable: false, nitro: "furni/ducky_machine.nitro", rotatable: true, fixed: true, opens: "ducky" },
+  // the pay2win machine in the shop room, on the left wall next to the record table: things for real money (a starter package, a name colour, a chat tool, a room advert, a new name)
+  ducky: { id: "ducky", label: "pay2win", icon: "💸", w: 1, h: 1, height: 78, color: "#e8a020", placeable: false, nitro: "furni/ducky_machine.nitro", rotatable: true, fixed: true, opens: "ducky" },
   // the ideas board on the basement's left wall (Habbo's cork board with pictures): click it and the board opens, where everybody posts pictures and ideas
   ideaboard: { id: "ideaboard", label: "Ideas board", icon: "💡", w: 1, h: 1, height: 60, color: "#a8793c", placeable: false, nitro: "furni/f_ideaboard.nitro", rotatable: true, flat: true, wall: true, opens: "ideas" },
   // the alley dumpster next to the Flappy Bird machine: search it (every 10 minutes) for a cigarette or a dead cat
@@ -352,8 +352,7 @@ export interface RoomMeta {
   owner: string;
   ownerName: string;
   name: string;
-  /** until when the room is advertised (bought at the Ducky machine; written only by the server): it is first in the door list */
-  adUntil?: number;
+  
   access: Access | "friends" | "invite";
   w: number;
   h: number;

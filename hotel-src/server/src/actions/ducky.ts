@@ -1,15 +1,14 @@
-// The Ducky machine in the shop: things that cost real money (see src/shared/ducky.ts). TEST MODE: while the machine runs on the local server (the Firebase emulators)
+// The pay2win machine in the shop: things that cost real money (see src/shared/ducky.ts). TEST MODE: while the machine runs on the local server (the Firebase emulators)
 // a buy goes straight through without paying; in production it says the machine isn't open yet, until paying through Stripe is wired in.
 //   starter  3 growing kits, 3 mixers and 50 blood (once)
 //   color    your name in a colour of your own (once; after that you can change the colour as often as you like)
 //   fx       the chat tool: shaky, wavy, rainbow text and colours (once)
-//   ad       your room is shown first in the door list for a while (buying again adds the time)
 //   rename   a new username: the sign-in address, the profile and the room names follow
 import { Action, requireInRoom } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv } from "../../../src/shared/economy";
 import { INV_SIZE } from "../../../src/shared/items";
-import { DUCKY_AD_MS, DUCKY_STARTER, duckyDef, isHexColor, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../../src/shared/ducky";
+import { DUCKY_STARTER, duckyDef, isHexColor, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../../src/shared/ducky";
 import { isEmulator } from "../env";
 import { setSignInEmail } from "../authAdmin";
 
@@ -19,7 +18,7 @@ export const duckyBuy: Action = {
   /** a rename claims a name: nobody else may take it while this runs */
   locks: (c, a) => (typeof a?.name === "string" ? [`name:${a.name.toLowerCase()}`] : []),
   async run(c, a) {
-    if (!isEmulator(c.env)) fail("The Ducky machine isn't open yet.");
+    if (!isEmulator(c.env)) fail("pay2win isn't open yet.");
     await requireInRoom(c, "shop");
     const def = duckyDef(a.product);
     if (!def) fail("The machine doesn't sell that.");
@@ -56,15 +55,6 @@ export const duckyBuy: Action = {
       if (have) fail("You already have the chat tool.");
       s.owned.ducky_fx = true;
       return { ok: true };
-    }
-
-    if (def!.id === "ad") {
-      const room = `u_${c.uid}`;
-      const meta = await c.db.get<{ adUntil?: number }>(`roomsMeta/${room}`);
-      if (!meta) fail("You haven't got a room to advertise.");
-      const until = Math.max(c.now, Number(meta!.adUntil) || 0) + DUCKY_AD_MS;
-      c.extra[`roomsMeta/${room}/adUntil`] = until;
-      return { ok: true, until };
     }
 
     // rename
