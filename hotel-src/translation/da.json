@@ -9568,5 +9568,105 @@
   "en": "One player can hold {RAFFLE_MAX_PER_PLAYER} tickets at most: you can buy {…} more.",
   "da": "En spiller kan højst have {RAFFLE_MAX_PER_PLAYER} lodder: du kan købe {…} mere.",
   "where": "server/src/actions/raffle.ts"
+ },
+ "N1382": {
+  "en": "Report",
+  "da": "Anmeld",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1383": {
+  "en": "Tell the moderators about this player",
+  "da": "Fortæl moderatorerne om denne spiller",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1384": {
+  "en": "Spam or bots",
+  "da": "Spam eller bots",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1385": {
+  "en": "Rude or harassing",
+  "da": "Uhøflig eller chikanerende",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1386": {
+  "en": "Scam or cheating",
+  "da": "Svindel eller snyd",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1387": {
+  "en": "Something illegal",
+  "da": "Noget ulovligt",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1388": {
+  "en": "Other",
+  "da": "Andet",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1389": {
+  "en": "More (what happened?)",
+  "da": "Mere (hvad skete der?)",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1390": {
+  "en": "Report {name}",
+  "da": "Anmeld {name}",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1391": {
+  "en": "The moderators see your report. You can report {REPORT_LIMIT} different accounts an hour, so only report real problems.",
+  "da": "Moderatorerne kan se din anmeldelse. Du kan anmelde {REPORT_LIMIT} forskellige konti i timen, så anmeld kun rigtige problemer.",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1392": {
+  "en": "Thank you. The moderators will look at it.",
+  "da": "Tak. Moderatorerne kigger på det.",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1393": {
+  "en": "Send the report",
+  "da": "Send anmeldelsen",
+  "where": "src/ui/profileWindow.ts"
+ },
+ "N1394": {
+  "en": "You are muted for {…} more minutes.",
+  "da": "Du er gjort tavs i {…} minutter endnu.",
+  "where": "src/ui/room.ts"
+ },
+ "N1395": {
+  "en": "New accounts can chat here after {…} minutes. You can chat in your own room now.",
+  "da": "Nye konti kan chatte her efter {…} minutter. Du kan chatte i dit eget værelse nu.",
+  "where": "src/ui/room.ts"
+ },
+ "N1396": {
+  "en": "You can't report yourself.",
+  "da": "Du kan ikke anmelde dig selv.",
+  "where": "server/src/actions/mod.ts"
+ },
+ "N1397": {
+  "en": "Say what it is about.",
+  "da": "Skriv hvad det handler om.",
+  "where": "server/src/actions/mod.ts"
+ },
+ "N1398": {
+  "en": "You have already reported that player.",
+  "da": "Du har allerede anmeldt den spiller.",
+  "where": "server/src/actions/mod.ts"
+ },
+ "N1399": {
+  "en": "You can report {REPORT_LIMIT} accounts an hour. Try again later.",
+  "da": "Du kan anmelde {REPORT_LIMIT} konti i timen. Prøv igen senere.",
+  "where": "server/src/actions/mod.ts"
+ },
+ "N1400": {
+  "en": "This account has been banned.",
+  "da": "Denne konto er blevet bandlyst.",
+  "where": "server/src/economy.ts"
+ },
+ "N1401": {
+  "en": "You are banned for {…} more minutes.",
+  "da": "Du er bandlyst i {…} minutter endnu.",
+  "where": "server/src/economy.ts"
  }
 }

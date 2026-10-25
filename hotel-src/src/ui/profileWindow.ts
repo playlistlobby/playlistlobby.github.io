@@ -3,7 +3,8 @@ import { db } from "../firebase";
 import { h, toast } from "./dom";
 import { headBox } from "./head";
 import { renderAvatar } from "../avatarService";
-import { giftSend } from "../db";
+import { call, giftSend } from "../db";
+import { REPORT_LIMIT } from "../shared/mod";
 import { itemDef } from "../items";
 import { canEnter, fetchMeta, ownRoomId } from "../rooms";
 import { fetchProfile, FullProfile, fetchFullProfile, PROFILE_BGS, RelationKind, social } from "../social";
@@ -38,7 +39,7 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
   let prof: FullProfile | null = null;
   let loading = true;
   let visit: Visit = "none";
-  let view: "main" | "gift" | "edit" = "main";
+  let view: "main" | "gift" | "edit" | "report" = "main";
   let busy = false;
   let confirmRemove = false;
   let stopKnock: (() => void) | null = null;
@@ -112,8 +113,30 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
       btn("🏠", visitLabel, () => doVisit(), { disabled: visit === "closed" || visit === "none" || knocking, title: visit === "closed" ? "Their room is closed to you" : "Go to their room", tone: "orange" }),
       btn("💬", "Message", () => { window.dispatchEvent(new CustomEvent("open-chat", { detail: uid })); close(); }, { disabled: !friend(), title: friend() ? "Send a message" : "Only friends can message each other", tone: "blue" }),
       btn("🔁", "Trade", () => void act(async () => { await social.inviteToTrade(uid); return `You ask ${name} to trade. They have to accept.`; }), { disabled: !online(), title: online() ? "Invite to trade" : "They have to be online", tone: "teal" }),
-      btn("🎁", "Send gift", () => { view = "gift"; render(); }, { disabled: !friend(), title: friend() ? "Send an item as a gift" : "Gifts go to friends", tone: "purple" })));
+      btn("🎁", "Send gift", () => { view = "gift"; render(); }, { disabled: !friend(), title: friend() ? "Send an item as a gift" : "Gifts go to friends", tone: "purple" }),
+      btn("🚩", "Report", () => { view = "report"; render(); }, { title: "Tell the moderators about this player", tone: "red" })));
     return out;
+  }
+
+  /** Report a player to the moderators (they see it in the chat mod page). You can report 3 different accounts an hour. */
+  function reportView(): HTMLElement {
+    const REASONS = ["Spam or bots", "Rude or harassing", "Scam or cheating", "Something illegal", "Other"];
+    let picked = REASONS[0];
+    const more = h("input", { class: "mini-input", maxLength: 100, placeholder: "More (what happened?)" }) as HTMLInputElement;
+    const chips = h("div", { class: "pw-sw" });
+    const paint = (): void => chips.replaceChildren(...REASONS.map((r) => h("button", { class: "btn small" + (picked === r ? " primary" : ""), type: "button", onclick: () => { picked = r; paint(); } }, r)));
+    paint();
+    return h("div", { class: "pw-edit" },
+      h("div", { class: "pw-sec" }, `Report ${prof!.name}`),
+      h("div", { class: "hint" }, `The moderators see your report. You can report ${REPORT_LIMIT} different accounts an hour, so only report real problems.`),
+      chips, more,
+      h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => {
+        await call(me, "reportPlayer", { uid, reason: `${picked}${more.value.trim() ? ": " + more.value.trim() : ""}` });
+        logAction(me, "friend", `reported ${prof!.name}`);
+        view = "main";
+        return "Thank you. The moderators will look at it.";
+      }) }, "Send the report"),
+      h("button", { class: "btn small", onclick: () => { view = "main"; render(); } }, "Back"));
   }
 
   function doVisit(): void {
@@ -196,7 +219,7 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
     card.replaceChildren(
       h("div", { class: "pw-head-bar" }, h("span", { class: "pw-spacer" }), h("strong", {}, who.name, " ", dot), closeBtn),
       h("div", { class: "pw-body" },
-        h("div", { class: "pw-left" }, ...(view === "gift" ? [giftView()] : view === "edit" ? [editView()] : actions())),
+        h("div", { class: "pw-left" }, ...(view === "gift" ? [giftView()] : view === "edit" ? [editView()] : view === "report" ? [reportView()] : actions())),
         mid,
         h("div", { class: "pw-right" }, tiles())));
   }

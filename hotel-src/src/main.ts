@@ -9,6 +9,9 @@ import { collectPaidCds } from "./payReturn";
 import { checkRaffleAtLogin } from "./raffle";
 import { startUpdateCheck } from "./updateCheck";
 import { startMaintenanceWatch } from "./maintenance";
+import { loadRole, watchMute } from "./roles";
+import { mountModPage } from "./ui/modPage";
+import { CHATMOD_NAME } from "./shared/mod";
 import { publishPriceBook } from "./priceBook";
 import { avatarsReady } from "./avatarService";
 import { loadCatalog } from "./catalog";
@@ -39,7 +42,7 @@ startMaintenanceWatch(); // the game can be closed for a while (a message over e
 
 export const APP_NAME = "Blodig oktober";
 
-export type View = "room" | "customize" | "shop" | "admin" | "npc";
+export type View = "room" | "customize" | "shop" | "admin" | "npc" | "mod";
 
 export interface NavOpts {
   /** which room to open when view is "room" (defaults to the last room you were in, at first your own) */
@@ -200,6 +203,18 @@ async function showHotel(user: User): Promise<void> {
     return;
   }
   const p = profile;
+  await loadRole(p);
+  if (p.isMod && p.name.toLowerCase() === CHATMOD_NAME) { // the chat mod login: no game, only the live chat and the moderation tools
+    clear();
+    const shell = h("div", { class: "shell modonly" }, h("header", { class: "navbar" }, h("div", { class: "nav-left" }, h("div", { class: "nav-logo" }, "🛡 Chat mod")), h("span", {}), h("div", { class: "nav-right" }, h("button", { class: "btn small", onclick: () => void doLogout() }, "Log out"))));
+    const host = h("main", { class: "page" });
+    shell.append(host);
+    app.append(shell);
+    mountModPage(host, { profile: p } as unknown as Ctx);
+    stopShop(); stopDesigns(); stopFurni();
+    return;
+  }
+  const stopMute = watchMute(p);
   // one window per account: a second window can't get in while the first is open (two windows could drop the same item twice)
   if (await otherWindowOpen(p.uid)) {
     stopShop(); stopDesigns(); stopFurni();
@@ -253,6 +268,7 @@ async function showHotel(user: User): Promise<void> {
   bar = topBar({
     appName: APP_NAME,
     isAdmin: p.isAdmin,
+    isMod: p.isMod,
     onNav: (v) => go(v),
     onLogout: () => void doLogout(),
   });
@@ -304,6 +320,7 @@ async function showHotel(user: User): Promise<void> {
   bar.setBadge(social.badgeCount);
   shellCleanup = () => {
     stopEconomy();
+    stopMute();
     stopPriceBook();
     stopSixtyLook?.();
     stopIdle();
@@ -328,6 +345,7 @@ async function showHotel(user: User): Promise<void> {
 
   function go(view: View, opts: NavOpts = {}): void {
     if ((view === "admin" || view === "npc") && !p.isAdmin) view = "room";
+    if (view === "mod" && !p.isMod) view = "room";
     if (view === "room") {
       let target = opts.roomId ?? lastRoomId;
       // until the introduction is over, the basement is the private copy (nobody else is in it)
@@ -360,7 +378,8 @@ async function showHotel(user: User): Promise<void> {
       else if (view === "npc") pageCleanup = mountCharacter(pageHost, "npc");
       else if (view === "shop") pageCleanup = mountShop(pageHost, ctx);
       else if (view === "admin") pageCleanup = mountAdmin(pageHost, ctx);
-      if (view === "shop" || view === "admin") {
+      else if (view === "mod") pageCleanup = mountModPage(pageHost, ctx);
+      if (view === "shop" || view === "admin" || view === "mod") {
         // no Room tab any more: these pages have a Go back button at the bottom, like the Character page
         pageHost.append(h("div", { class: "page-back" }, h("button", { class: "btn", onclick: () => go("room") }, "Go back")));
       }

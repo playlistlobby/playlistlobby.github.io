@@ -45,6 +45,14 @@ export interface Profile {
   syringeDay: number;
   /** the admin account (username "admin") gets the Admin app */
   isAdmin: boolean;
+  /** a mod or an admin (the 🛡 button and the chat mod page), see src/roles.ts */
+  isMod: boolean;
+  /** "admin" / "mod" from roles/<uid> (the first admin account is isAdmin instead) */
+  role: "admin" | "mod" | null;
+  /** muted until this time (server time, ms): the chat is refused meanwhile */
+  mutedUntil: number;
+  /** when the account was made (server time, ms; 0 = unknown) */
+  createdAt: number;
   /** has opened the door at least once (until then the door flashes to show where to go) */
   seenDoor: boolean;
   /** may place furniture and posters in other players' rooms (set by hand on the account, see users/<uid>/decorator) */
@@ -208,6 +216,10 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     stabs: {},
     syringeDay: v.syringeDay ?? 0,
     isAdmin,
+    isMod: isAdmin,
+    role: null,
+    mutedUntil: 0,
+    createdAt: 0,
     seenDoor: !!v.seenDoor,
     nameColor: typeof v.nameColor === "string" && /^#[0-9a-f]{6}$/i.test(v.nameColor) ? v.nameColor : undefined,
     decorator: v.decorator === true,

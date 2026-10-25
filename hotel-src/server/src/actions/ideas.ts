@@ -101,7 +101,7 @@ export const ideaDelete: Action = {
       const pid = typeof a.post === "string" && ID_RE.test(a.post) ? a.post : fail("Bad post.");
       const cm = await c.db.get<{ uid?: string }>(`ideas/comments/${pid}/${a.comment}`);
       if (!cm) return {};
-      if (cm.uid !== c.uid && !c.isAdmin) fail("That isn't yours.");
+      if (cm.uid !== c.uid && !c.isMod) fail("That isn't yours.");
       c.extra[`ideas/comments/${pid}/${a.comment}`] = null;
       const post = await c.db.get<PostRow>(`ideas/posts/${pid}`);
       if (post) c.extra[`ideas/posts/${pid}/cn`] = Math.max(0, (Number(post.cn) || 0) - 1);
@@ -110,7 +110,7 @@ export const ideaDelete: Action = {
     const pid = typeof a.post === "string" && ID_RE.test(a.post) ? a.post : fail("Bad post.");
     const post = await c.db.get<PostRow>(`ideas/posts/${pid}`);
     if (!post) return {};
-    if (post.uid !== c.uid && !c.isAdmin) fail("That isn't yours.");
+    if (post.uid !== c.uid && !c.isMod) fail("That isn't yours.");
     removePost(c, pid);
     return {};
   },

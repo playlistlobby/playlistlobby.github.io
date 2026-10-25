@@ -17,6 +17,7 @@ import { mix, mixCollect } from "./mixer";
 import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick } from "./roulette";
 import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
 import { duckyBuy } from "./ducky";
+import { modAlts, modBan, modBanMany, modDismissReport, modMute, modPromote, reportPlayer } from "./mod";
 import { rollDice } from "./dice";
 import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
 
@@ -33,6 +34,7 @@ export const ACTIONS: Record<string, Action> = {
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   ideaPost, ideaComment, ideaLike, ideaDelete,
   duckyBuy, rollDice,
+  modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer,
   raffleBuy, raffleCollect, raffleRemove, raffleTick,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

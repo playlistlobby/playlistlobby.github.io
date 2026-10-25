@@ -28,6 +28,7 @@ import { logAction } from "../logger";
 import { BLOOD_ICON, findSlot, furniIcon, growMsOf, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
 import { isLaced, unlaced } from "../shared/items";
 import { DICE_GAP_MS } from "../shared/dice";
+import { NEW_ACCOUNT_CHAT_MS } from "../shared/mod";
 import { showDeathScreen } from "./deathScreen";
 import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
@@ -2633,6 +2634,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   unsubs.push(() => { window.removeEventListener("pocket-changed", syncFxBtn); window.removeEventListener("name-color", onNameColor); });
   /** a chat line goes to the room (where it fades after 15 minutes) and, in the same write, to chatLog: the admin's permanent archive (nobody can change or delete an entry) */
   function sendChat(text: string): void {
+    // a moderator has muted you, or the account is too new to chat in the public rooms: the database refuses the line, so say why instead of letting it vanish
+    if (me.mutedUntil > serverNow()) { say(`You are muted for ${Math.max(1, Math.ceil((me.mutedUntil - serverNow()) / 60000))} more minutes.`, "warn"); return; }
+    if ((roomId === LOBBY_ID || roomId === SHOP_ID) && me.createdAt && serverNow() - me.createdAt < NEW_ACCOUNT_CHAT_MS) { say(`New accounts can chat here after ${Math.ceil(NEW_ACCOUNT_CHAT_MS / 60000)} minutes. You can chat in your own room now.`, "warn"); return; }
     const id = push(chatRef).key!;
     const msg = { uid: me.uid, name: shownName, text, ts: serverTimestamp(), ...(me.owned.ducky_fx && chatFx.fx ? { fx: chatFx.fx } : {}), ...(me.owned.ducky_fx && chatFx.fc ? { fc: chatFx.fc } : {}) };
     update(ref(db), { [`rooms/${roomId}/chat/${id}`]: msg, [`chatLog/${id}`]: { ...msg, room: roomId } }).catch(console.warn);
