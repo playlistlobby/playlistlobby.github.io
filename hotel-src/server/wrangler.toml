@@ -8,6 +8,8 @@ FIREBASE_PROJECT_ID = "playlist-lobby"
 DB_URL = "https://playlist-lobby-default-rtdb.europe-west1.firebasedatabase.app"
 ALLOWED_ORIGINS = "https://playlistlobby.github.io,https://playlistmag.studio,https://www.playlistmag.studio,http://127.0.0.1:5173,http://localhost:5173"
 ADMIN_EMAIL = "adminsidia@users.bobba.invalid"
+# CLOSED: while this line is here only the admin can play and everybody else sees the text. To open the game again delete the line and run `wrangler deploy`.
+MAINTENANCE = "brb guys, vi skal lige lave noget moderation tools"
 
 # One Durable Object holds the per-player and per-room locks, so two requests can never change the same pocket at the same time.
 [[durable_objects.bindings]]

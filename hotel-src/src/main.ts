@@ -8,6 +8,7 @@ import { createProfile, loadProfile, Profile, watchEconomy } from "./db";
 import { collectPaidCds } from "./payReturn";
 import { checkRaffleAtLogin } from "./raffle";
 import { startUpdateCheck } from "./updateCheck";
+import { startMaintenanceWatch } from "./maintenance";
 import { publishPriceBook } from "./priceBook";
 import { avatarsReady } from "./avatarService";
 import { loadCatalog } from "./catalog";
@@ -34,6 +35,7 @@ import { watchFurniShop } from "./furniShop";
 import { otherWindowOpen, publishProfile, releasePresence, social, startPresence, stopPresence, watchSession } from "./social";
 
 startUpdateCheck(); // a phone that still runs an old copy reloads to the new one
+startMaintenanceWatch(); // the game can be closed for a while (a message over everything)
 
 export const APP_NAME = "Blodig oktober";
 

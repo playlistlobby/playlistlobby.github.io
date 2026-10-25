@@ -26,7 +26,7 @@ export default {
     const reply = (v: unknown, status = 200) => new Response(JSON.stringify(v), { status, headers: { ...headers, "content-type": "application/json" } });
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     const url = new URL(request.url);
-    if (url.pathname === "/" || url.pathname === "/health") return reply({ ok: true });
+    if (url.pathname === "/" || url.pathname === "/health") return reply({ ok: true, ...(env.MAINTENANCE ? { maintenance: env.MAINTENANCE } : {}) });
     // Stripe tells us a payment went through (no browser, no login: the signature is the proof)
     if (url.pathname === "/pay/webhook" && request.method === "POST") {
       const r = await handleWebhook(env, await request.text(), request.headers.get("stripe-signature"));
@@ -37,6 +37,7 @@ export default {
       if (origin && !env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).includes(origin)) return reply({ ok: false, error: "Not allowed." }, 403);
       try {
         const who = await verifyToken((request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, ""), env);
+        if (env.MAINTENANCE && !who.isAdmin) return reply({ ok: false, error: env.MAINTENANCE, maintenance: true }, 503);
         const body = (await request.json().catch(() => ({}))) as { product?: unknown; color?: unknown; name?: unknown };
         return reply({ ok: true, ...(await startCheckout(env, who.uid, body.product, body)) });
       } catch (e) {
@@ -52,6 +53,8 @@ export default {
     const auth = request.headers.get("authorization") ?? "";
     let caller;
     try { caller = await verifyToken(auth.replace(/^Bearer\s+/i, ""), env); } catch { return reply({ ok: false, error: "Please log in again." }, 401); }
+
+    if (env.MAINTENANCE && !caller.isAdmin) return reply({ ok: false, error: env.MAINTENANCE, maintenance: true }, 503); // (the game is closed: everybody but the admin)
 
     const raw = await request.text();
     if (raw.length > MAX_BODY_IDEA) return reply({ ok: false, error: "Too big." }, 413);

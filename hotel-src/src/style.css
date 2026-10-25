@@ -978,6 +978,9 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .raffle-qty { min-width: 32px; text-align: center; font-size: 18px; }
 .raffle-win { display: grid; gap: 6px; padding: 8px; border-radius: 8px; background: rgba(70, 211, 105, .18); border: 1px solid rgba(70, 211, 105, .6); }
 .raffle-last { text-align: center; }
+.maint { position: fixed; inset: 0; z-index: 100000; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at center, #2b0d0d, #0b0404); color: #ffe9e9; text-align: center; }
+.maint-text { max-width: 520px; font: 800 clamp(20px, 5vw, 34px) var(--font); line-height: 1.35; text-shadow: 0 2px 0 #300; }
+.maint-dot { position: fixed; right: 6px; bottom: 6px; width: 28px; height: 28px; border: 0; background: transparent; color: rgba(255, 255, 255, .15); cursor: pointer; }
 .raffle-admin { display: grid; gap: 4px; padding: 6px; border-radius: 8px; background: rgba(0, 0, 0, .3); border: 1px dashed rgba(255, 255, 255, .3); max-height: 180px; overflow-y: auto; }
 .raffle-admin-t { font: 700 12px var(--font); color: #ffd54a; }
 .raffle-admin-row { display: flex; align-items: center; gap: 4px; font-size: 13px; }
