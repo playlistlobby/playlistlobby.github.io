@@ -21,7 +21,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   const me = ctx.profile;
   const isAdmin = me.isAdmin || me.role === "admin";
   const stops: Array<() => void> = [];
-  let tab: "live" | "reports" | "uploads" | "log" = "live";
+  let tab: "live" | "dms" | "reports" | "uploads" | "staff" | "log" = "live";
   let picked: Pick | null = null;
   let alts: Alt[] | null = null;
   let recent: ChatRow[] | null = null;
@@ -31,6 +31,11 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   let ideas: Array<{ id: string; uid: string; name: string; title: string; text?: string; img?: boolean; ts: number }> = [];
   let log: Array<{ byName: string; what: string; targetName: string; detail?: string; at: number }> = [];
   let pausedLive = false;
+  interface DmRow { from: string; fromName?: string; to: string; text: string; ts: number }
+  const dmRows: DmRow[] = [];
+  const names = new Map<string, string>();
+  let staff: Record<string, string> = {};
+  let threads: Array<{ other: string; msgs: Array<{ from: string; text: string; ts: number }> }> | null = null;
   let busy = false;
   const liveRows: ChatRow[] = [];
 
@@ -59,7 +64,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
     paintSide();
   }
   async function select(uid: string, name: string): Promise<void> {
-    alts = null; recent = null; ips = null;
+    alts = null; recent = null; ips = null; threads = null;
     await loadPlayer({ uid, name });
   }
   async function findByName(name: string): Promise<void> {
@@ -81,6 +86,18 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
     try { ips = (await call<{ ips: Array<{ ip: string; at: number; banned: boolean }> }>(me, "modIps", { uid: picked.uid })).ips; } catch (err) { toast((err as Error).message, "err"); return; }
     paintSide();
   }
+  const nameOf = (uid: string): string => {
+    if (!names.has(uid)) { names.set(uid, uid.slice(0, 6)); void get(ref(db, `profiles/${uid}/name`)).then((s) => { if (typeof s.val() === "string") { names.set(uid, s.val() as string); if (tab === "staff" || tab === "dms") paintBody(); if (threads) paintSide(); } }, () => undefined); }
+    return names.get(uid)!;
+  };
+  /** every private conversation of the player (dms/<uid>/<friend>/...): who they wrote to, and what */
+  async function showThreads(): Promise<void> {
+    if (!picked) return;
+    const snap = await get(ref(db, `dms/${picked.uid}`));
+    const all = (snap.val() ?? {}) as Record<string, Record<string, { from: string; text: string; ts: number }>>;
+    threads = Object.entries(all).map(([other, m]) => ({ other, msgs: Object.values(m).sort((a, b) => a.ts - b.ts).slice(-40) })).sort((a, b) => (b.msgs[b.msgs.length - 1]?.ts ?? 0) - (a.msgs[a.msgs.length - 1]?.ts ?? 0));
+    paintSide();
+  }
   async function showAlts(): Promise<void> {
     if (!picked) return;
     try { alts = (await call<{ accounts: Alt[] }>(me, "modAlts", { uid: picked.uid })).accounts; } catch (err) { toast((err as Error).message, "err"); return; }
@@ -96,6 +113,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
       h("button", { class: "btn small", type: "button", title: `Mute for ${MOD_MUTE_MS / 60000} minutes`, onclick: () => void run(`${p.name} is muted.`, () => call(me, "modMute", { uid: p.uid })) }, compact ? "🔇 1h" : "🔇 Mute 1 hour"),
       h("button", { class: "btn small", type: "button", title: `Ban for ${MOD_BAN_MS / 60000} minutes`, onclick: () => void run(`${p.name} is banned for 30 minutes.`, () => call(me, "modBan", { uid: p.uid, minutes: 30 })) }, compact ? "⛔ 30m" : "⛔ Ban 30 minutes"),
     ];
+    if (isAdmin || me.muteForever) btns.push(h("button", { class: "btn small", type: "button", title: "Mute for good", onclick: () => { if (confirm(`Mute ${p.name} for good?`)) void run(`${p.name} is muted for good.`, () => call(me, "modMute", { uid: p.uid, forever: true })); } }, compact ? "🔇 ∞" : "🔇 Mute forever"));
     if (isAdmin) btns.push(h("button", { class: "btn small danger", type: "button", title: "Ban for good", onclick: () => { if (confirm(`Ban ${p.name} for good?`)) void run(`${p.name} is banned.`, () => call(me, "modBan", { uid: p.uid })); } }, compact ? "⛔ Ban" : "⛔ Ban for good"));
     void muted;
     return btns;
@@ -103,7 +121,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
 
   function paintTabs(): void {
     const t = (id: typeof tab, label: string): HTMLElement => h("button", { class: "mp-tab" + (tab === id ? " on" : ""), type: "button", onclick: () => { tab = id; paint(); } }, label);
-    tabs.replaceChildren(t("live", "💬 Live chat"), t("reports", `🚩 Reports${reports.length ? ` (${reports.length})` : ""}`), t("uploads", "🖼 Uploads"), t("log", "📜 Log"),
+    tabs.replaceChildren(t("live", "💬 Live chat"), t("dms", "✉ Private"), t("reports", `🚩 Reports${reports.length ? ` (${reports.length})` : ""}`), t("uploads", "🖼 Uploads"), ...(isAdmin ? [t("staff", "🛡 Staff")] : []), t("log", "📜 Log"),
       ...(isAdmin ? [h("form", { class: "mp-find mp-all", onsubmit: (e: Event) => { e.preventDefault(); const i = (e.currentTarget as HTMLFormElement).querySelector("input")!; const t = i.value; if (t.trim() && confirm("Put this message on EVERYBODY's screen?")) void run("Sent to everybody.", async () => { await call(me, "modNotice", { uid: "all", kind: "msg", text: t }); i.value = ""; }); } },
         h("input", { class: "mini-input", maxLength: 200, placeholder: "Message to everybody…", "aria-label": "Message to everybody" }), h("button", { class: "btn small", type: "submit" }, "📢 All"))] : []),
       h("form", { class: "mp-find", onsubmit: (e: Event) => { e.preventDefault(); const i = (e.currentTarget as HTMLFormElement).querySelector("input")!; void findByName(i.value); } },
@@ -125,6 +143,19 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
     if (tab === "live") {
       body.replaceChildren(h("div", { class: "mp-bar" }, h("label", {}, h("input", { type: "checkbox", checked: pausedLive, onchange: (e: Event) => { pausedLive = (e.target as HTMLInputElement).checked; if (!pausedLive) paintLive(); } }), " Pause scrolling"), h("span", { class: "hint" }, "Every message in every room, live. Tap a name to see the player.")), live);
       paintLive();
+    } else if (tab === "dms") {
+      body.replaceChildren(h("div", { class: "hint" }, "Private messages between friends, as they are sent (only from now on: to read an older talk, open a player and press ✉ Their private messages)."), ...(dmRows.length ? [...dmRows].reverse().slice(0, 150).map((m) => h("div", { class: "mp-line" },
+        h("span", { class: "mp-time" }, when(m.ts)), name(m.from, m.fromName ?? nameOf(m.from)), h("span", { class: "hint" }, "→"), name(m.to, nameOf(m.to)), h("span", { class: "mp-text" }, m.text),
+        h("span", { class: "mp-q" }, ...actionsFor({ uid: m.from, name: m.fromName ?? nameOf(m.from) }, true)))) : [h("div", { class: "hint pad" }, "No private messages yet.")]));
+    } else if (tab === "staff") {
+      const nameIn = h("input", { class: "mini-input", placeholder: "Make somebody a mod: their name", "aria-label": "Name" }) as HTMLInputElement;
+      body.replaceChildren(
+        h("form", { class: "mp-card", onsubmit: (e: Event) => { e.preventDefault(); const n = nameIn.value.trim().toLowerCase(); if (!n) return; void run("Done.", async () => { const uid = (await get(ref(db, `usernames/${n}`))).val() as string | null; if (!uid) throw new Error("No player with that name."); await call(me, "modPromote", { uid, role: "mod" }); nameIn.value = ""; }); } },
+          h("div", { class: "mp-sec" }, "Make a mod"), nameIn, h("button", { class: "btn small primary", type: "submit" }, "Make mod")),
+        h("div", { class: "mp-sec" }, "Staff"),
+        ...Object.entries(staff).map(([uid, role]) => h("div", { class: "mp-card" }, name(uid, nameOf(uid)), h("span", { class: "mp-role" }, role),
+          role === "mod" ? h("button", { class: "btn small", type: "button", onclick: () => void run("No longer a mod.", () => call(me, "modPromote", { uid, role: "none" })) }, "Take away mod") : h("span", {}))),
+        h("div", { class: "hint" }, "The admins are Emil, adminsidia and playlistmod. Admins are set by hand."));
     } else if (tab === "reports") {
       body.replaceChildren(...(reports.length ? reports.map((r) => h("div", { class: "mp-card" },
         h("div", {}, name(r.from, r.fromName), " reported ", name(r.target, r.targetName), h("span", { class: "hint" }, ` · ${ago(r.at)}`)),
@@ -163,7 +194,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
     side.replaceChildren(
       h("div", { class: "mp-sidehead" }, h("div", {}, h("div", { class: "mp-pname" }, p.name, status.role ? h("span", { class: "mp-role" }, status.role) : h("span", {})), h("div", { class: "hint mp-uid" }, p.uid)),
         h("button", { class: "btn small mp-closebtn", type: "button", "aria-label": "Close", onclick: () => { picked = null; paintSide(); } }, "✕")),
-      h("div", { class: "mp-status" }, muted ? `🔇 muted ${mins(status.mute)} more min` : "not muted", " · ", banned ? (status.ban!.until ? `⛔ banned ${mins(status.ban!.until)} more min` : "⛔ banned for good") : "not banned"),
+      h("div", { class: "mp-status" }, muted ? (status.mute - Date.now() > 365 * 24 * 3_600_000 ? "🔇 muted for good" : `🔇 muted ${mins(status.mute)} more min`) : "not muted", " · ", banned ? (status.ban!.until ? `⛔ banned ${mins(status.ban!.until)} more min` : "⛔ banned for good") : "not banned"),
       sec("Quick", row(...actionsFor(p)),
         row(...(muted ? [btn("Unmute", () => void run("Unmuted.", () => call(me, "modMute", { uid: p.uid, on: false })))] : []),
           ...(banned ? [btn("Unban", () => void run("Unbanned.", () => call(me, "modBan", { uid: p.uid, on: false })))] : []))),
@@ -185,7 +216,8 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
         row(status.role === "mod" ? btn("Take away mod", () => void run("No longer a mod.", () => call(me, "modPromote", { uid: p.uid, role: "none" })))
           : status.role === "admin" ? h("span", { class: "hint" }, "admin") : btn("Make mod", () => void run(`${p.name} is a mod now.`, () => call(me, "modPromote", { uid: p.uid, role: "mod" })), "primary")),
         row(btn("🌐 Addresses", () => void showIps()))) : h("span", {}),
-      sec("Look", row(btn("🕵 Other accounts", () => void showAlts()), btn("💬 What they said", () => void showRecent()))),
+      sec("Look", row(btn("🕵 Other accounts", () => void showAlts()), btn("💬 What they said", () => void showRecent()), btn("✉ Their private messages", () => void showThreads()))),
+      ...(threads ? [h("div", { class: "mp-sec" }, `Private messages (${threads.length} talks)`), ...(threads.length ? threads.flatMap((t) => [h("div", { class: "mp-sec small" }, `with ${nameOf(t.other)}`), ...t.msgs.map((m) => h("div", { class: "mp-line small" }, h("span", { class: "mp-time" }, ago(m.ts)), h("b", {}, m.from === p.uid ? p.name : nameOf(m.from)), h("span", { class: "mp-text" }, m.text)))]) : [h("div", { class: "hint" }, "No private talks.")])] : []),
       ...(ips ? [h("div", { class: "mp-sec" }, `Addresses (${ips.length})`), ...(ips.length ? ips.map((x) => h("div", { class: "mp-alt" }, `${x.ip}`, h("span", { class: "hint" }, ` ${ago(x.at)}${x.banned ? " · banned" : ""}`))) : [h("div", { class: "hint" }, "None noted yet (it is noted when they log in on the live game).")])] : []),
       ...(alts ? [h("div", { class: "mp-sec" }, `Other accounts (${alts.length})`),
         ...(alts.length ? [btn(`Ban all ${alts.filter((a) => !a.banned).length}`, () => { const ids = alts!.filter((a) => !a.banned).map((a) => a.uid); if (ids.length && confirm(`Ban ${ids.length} accounts${isAdmin ? " for good" : " for 30 minutes"}?`)) void run(`${ids.length} accounts banned.`, () => call(me, "modBanMany", { uids: ids })); }, "danger")] : [h("div", { class: "hint" }, "None found.")]),
@@ -203,6 +235,14 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
     if (liveRows.length > 400) liveRows.shift();
     if (tab === "live") { live.append(chatLine(m)); if (live.childElementCount > 400) live.firstElementChild?.remove(); if (!pausedLive) live.scrollTop = live.scrollHeight; }
   }, (err) => toast(`Can't read the chat: ${err.message}`, "err")));
+  stops.push(onChildAdded(query(ref(db, "dmLog"), orderByChild("ts"), limitToLast(100)), (s) => {
+    const m = s.val() as DmRow | null;
+    if (!m || typeof m.text !== "string") return;
+    dmRows.push(m);
+    if (dmRows.length > 400) dmRows.shift();
+    if (tab === "dms") paintBody();
+  }, () => undefined));
+  stops.push(onValue(ref(db, "roles"), (s) => { staff = (s.val() ?? {}) as Record<string, string>; if (tab === "staff") paintBody(); }, () => undefined));
   stops.push(onValue(ref(db, "reports"), (s) => {
     reports = Object.entries((s.val() ?? {}) as Record<string, Omit<(typeof reports)[number], "id">>).map(([id, r]) => ({ id, ...r })).sort((a, b) => b.at - a.at);
     paintTabs(); if (tab === "reports") paintBody();

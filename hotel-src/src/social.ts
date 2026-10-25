@@ -470,7 +470,8 @@ class SocialStore {
     const me = this.me!;
     const id = push(ref(db, `dms/${me.uid}/${friend}`)).key!;
     const msg = { from: me.uid, text: text.slice(0, 200), ts: serverTimestamp() };
-    await update(ref(db), { [`dms/${me.uid}/${friend}/${id}`]: msg, [`dms/${friend}/${me.uid}/${id}`]: msg });
+    // (and a copy in the moderators' log, dmLog: the chat mod page shows private messages too)
+    await update(ref(db), { [`dms/${me.uid}/${friend}/${id}`]: msg, [`dms/${friend}/${me.uid}/${id}`]: msg, [`dmLog/${id}`]: { ...msg, to: friend, fromName: me.name } });
   }
 
   async inviteToRoom(friend: string, roomId: string, roomName: string): Promise<void> {

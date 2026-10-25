@@ -49,6 +49,8 @@ export interface Profile {
   isMod: boolean;
   /** "admin" / "mod" from roles/<uid> (the first admin account is isAdmin instead) */
   role: "admin" | "mod" | null;
+  /** may mute for good (admins, and mods with perks/<uid>/muteForever) */
+  muteForever: boolean;
   /** muted until this time (server time, ms): the chat is refused meanwhile */
   mutedUntil: number;
   /** when the account was made (server time, ms; 0 = unknown) */
@@ -218,6 +220,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     isAdmin,
     isMod: isAdmin,
     role: null,
+    muteForever: false,
     mutedUntil: 0,
     createdAt: 0,
     seenDoor: !!v.seenDoor,

@@ -85,6 +85,12 @@
         ".read": "@PW@ && auth.uid === $uid"
       }
     },
+    "perks": {
+      ".read": "@MOD@",
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
     "reports": {
       ".read": "@MOD@"
     },
@@ -288,8 +294,18 @@
         }
       }
     },
+    "dmLog": {
+      ".read": "@MOD@",
+      ".indexOn": [
+        "ts"
+      ],
+      "$id": {
+        ".write": "@PW@ && @KNOWN@ && @UNMUTED@ && !data.exists() && newData.exists() && newData.child('from').val() === auth.uid",
+        ".validate": "newData.hasChildren(['from', 'to', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 200 && newData.child('ts').val() === now && (!newData.child('fromName').exists() || (newData.child('fromName').isString() && newData.child('fromName').val().length <= 40))"
+      }
+    },
     "dms": {
-      ".read": "@ADMIN@",
+      ".read": "@MOD@",
       "$uid": {
         "$other": {
           ".read": "@PW@ && auth.uid === $uid",
@@ -297,7 +313,7 @@
             "ts"
           ],
           "$msg": {
-            ".write": "@PW@ && !data.exists() && newData.child('from').val() === auth.uid && (auth.uid === $uid || auth.uid === $other) && root.child('friends').child($uid).child($other).exists() && root.child('friends').child($other).child($uid).exists()",
+            ".write": "@PW@ && @UNMUTED@ && !data.exists() && newData.child('from').val() === auth.uid && (auth.uid === $uid || auth.uid === $other) && root.child('friends').child($uid).child($other).exists() && root.child('friends').child($other).child($uid).exists()",
             ".validate": "newData.hasChildren(['from', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 200 && newData.child('ts').isNumber()"
           }
         }

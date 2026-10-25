@@ -9,7 +9,7 @@ import { Action, int, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { setSignInEmail } from "../authAdmin";
 import { NEW_NAME_RE, RESERVED_NAMES } from "../../../src/shared/ducky";
-import { ipKey, MOD_BAN_MS, MOD_MUTE_MS, NOTICE_MAX, REPORT_LIMIT, REPORT_WINDOW_MS } from "../../../src/shared/mod";
+import { ipKey, MOD_BAN_MS, MOD_MUTE_MS, MUTE_FOREVER_MS, NOTICE_MAX, REPORT_LIMIT, REPORT_WINDOW_MS } from "../../../src/shared/mod";
 
 const UID_RE = /^[A-Za-z0-9]{10,40}$/;
 const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
@@ -59,10 +59,12 @@ export const modMute: Action = {
       await note(c, "unmute", uid, name);
       return { ok: true };
     }
-    const minutes = c.isAdmin && a.minutes !== undefined ? int(a.minutes, 1, 10080, "minutes") : MOD_MUTE_MS / 60000;
-    const until = c.now + minutes * 60000;
+    const forever = a.forever === true;
+    if (forever && !c.isAdmin && (await c.db.get(`perks/${c.uid}/muteForever`)) !== true) fail("You can mute for an hour.");
+    const minutes = forever ? 0 : c.isAdmin && a.minutes !== undefined ? int(a.minutes, 1, 10080, "minutes") : MOD_MUTE_MS / 60000;
+    const until = forever ? c.now + MUTE_FOREVER_MS : c.now + minutes * 60000;
     c.extra[`mutes/${uid}`] = { until, by: c.uid, byName: await callerName(c), ...(reasonOf(a) ? { reason: reasonOf(a) } : {}) };
-    await note(c, "mute", uid, name, `${minutes} min${reasonOf(a) ? ": " + reasonOf(a) : ""}`);
+    await note(c, "mute", uid, name, `${forever ? "forever" : minutes + " min"}${reasonOf(a) ? ": " + reasonOf(a) : ""}`);
     return { until };
   },
 };

@@ -2,6 +2,8 @@
 /** a mod mutes for an hour and bans for half an hour; the admin chooses */
 export const MOD_MUTE_MS = 60 * 60_000;
 export const MOD_BAN_MS = 30 * 60_000;
+/** a mute "forever" (admins, and mods who have perks/<uid>/muteForever) */
+export const MUTE_FOREVER_MS = 10 * 365 * 24 * 3_600_000;
 /** a player can report this many different accounts in an hour */
 export const REPORT_LIMIT = 3;
 export const REPORT_WINDOW_MS = 60 * 60_000;
