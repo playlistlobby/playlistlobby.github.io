@@ -140,6 +140,7 @@ export class Ctx {
 
   /** Writes everything in one atomic update; returns the acting player's new state. */
   async commit(): Promise<Snapshot | null> {
+    await this.user(); // (the answer always carries the caller's state, also for an action that only touched a table or somebody else: the game reads it from every answer)
     const updates: Record<string, unknown> = { ...this.extra };
     for (const w of this.works.values()) {
       w.s.inventory = compactInv(w.s.inventory);

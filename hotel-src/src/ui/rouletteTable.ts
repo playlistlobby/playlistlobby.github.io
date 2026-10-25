@@ -333,7 +333,8 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
     // a table seen for the first time (you just came in): show it as it is, play nothing
     if (first && next.status !== "waiting") {
       playedSeq = next.seq;
-      if (next.status === "over" && next.dead) { gore = { start: now - Math.max(0, env.serverNow() - (next.endAt ?? next.at)) - 2500, seed: next.at % 100000, uid: next.dead, seat: seatOfUid(next, next.dead) }; headGoneAt = gore.start; }
+      // (an old finished game that nobody cleared away yet is not shown: nobody is dead any more)
+      if (next.status === "over" && next.dead && !rouletteExpired(next, env.serverNow())) { gore = { start: now - Math.max(0, env.serverNow() - (next.endAt ?? next.at)) - 2500, seed: next.at % 100000, uid: next.dead, seat: seatOfUid(next, next.dead) }; headGoneAt = gore.start; }
       return;
     }
     if (prev && prev.status === "waiting" && next.status === "playing") {
@@ -503,7 +504,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
   }
 
   function imageFor(uid: string, img: HTMLCanvasElement, opts: RenderOpts, now: number): HTMLCanvasElement {
-    if (!gore || gore.uid !== uid || now < headGoneAt) return img;
+    if (!gore || gore.uid !== uid || now < headGoneAt || !onDeathChair(uid)) return img; // (the head is only missing while they are still in the chair: somebody who comes back has their head)
     const ho = getCached({ ...opts, headOnly: true });
     if (!ho) { void renderAvatar({ ...opts, headOnly: true }); return img; }
     return withoutHead(img, ho);
@@ -524,8 +525,15 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
     g.restore();
   }
 
+  /** is this player (still) sitting in the chair where they died? */
+  function onDeathChair(uid: string): boolean {
+    if (!gore) return false;
+    const c = chairs()[gore.seat], t = env.tileOf(uid);
+    return !!c && !!t && t.x === c.x && t.y === c.y;
+  }
+
   function drawBody(g: CanvasRenderingContext2D, uid: string, feet: P, now: number): void {
-    if (!gore || gore.uid !== uid || now < gore.start) return;
+    if (!gore || gore.uid !== uid || now < gore.start || !onDeathChair(uid)) return;
     const cs = chairs();
     const dir = cs[gore.seat]?.dir ?? 0;
     const s = env.scale();

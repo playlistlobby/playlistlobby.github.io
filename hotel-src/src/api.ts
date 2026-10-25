@@ -52,12 +52,12 @@ export async function startPayment(product: "mystery"): Promise<string> {
 }
 
 /** Asks the server to do something. Resolves with the player's new state; rejects with a message that can be shown to the player. */
-export async function act<T = Record<string, any>>(action: string, args: object = {}): Promise<{ state: Snapshot; data: T }> {
+export async function act<T = Record<string, any>>(action: string, args: object = {}): Promise<{ state?: Snapshot; data: T }> {
   let r = await call(action, args, false);
   if (r.status === 401) r = await call(action, args, true); // the login token may just have expired
   const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string; state?: Snapshot; data?: T } | null;
-  if (!j || !j.ok || !j.state) throw new ApiError(trServer(j?.error ?? "The server had a problem. Try again."), r.status);
+  if (!j || !j.ok) throw new ApiError(trServer(j?.error ?? "The server had a problem. Try again."), r.status); // (an answer without a state is fine: the action just didn't touch the player)
   const data = (j.data ?? {}) as Record<string, unknown>;
   if (typeof data.note === "string") data.note = trServer(data.note); // the server writes its notes in English
-  return { state: j.state, data: data as T };
+  return { ...(j.state ? { state: j.state } : {}), data: data as T };
 }

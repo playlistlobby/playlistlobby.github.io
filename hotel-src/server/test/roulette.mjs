@@ -99,6 +99,7 @@ console.log("--- roulette: a whole game");
     bad("the other one cannot pull out of turn", await act(other, "roulettePull"));
     const r = await act(holder, "roulettePull");
     ok("pull " + (pulls + 1), r);
+    check("the answer to a pull carries the player's state (the game says the server had a problem without it)", !!r.state);
     pulls++;
     if (r.data.dead) { dead = holder; break; }
     check("the gun was passed", (await owner("GET", TABLE)).turn === other.uid);

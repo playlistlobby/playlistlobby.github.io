@@ -161,7 +161,7 @@ const itemOk = (id: string): boolean => !!itemDef(id) && !DISABLED_ITEMS.has(id)
 /** Asks the server to do something and applies the answer to the profile. Resolves with whatever extra the server said (a message, an item...). */
 export async function call<T = Record<string, any>>(p: Profile, action: string, args: object = {}): Promise<T> {
   const r = await act<T>(action, args);
-  applyState(p, r.state);
+  if (r.state) applyState(p, r.state);
   window.dispatchEvent(new Event("pocket-changed"));
   return r.data;
 }
@@ -190,6 +190,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
   if (!snap.exists()) return null;
   const v = snap.val();
   const { state } = await act("sync"); // the server gives accounts made before something existed what they are due
+  if (!state) throw new Error("The server had a problem. Try again.");
   const profile: Profile = {
     uid,
     name: v.name,
