@@ -165,7 +165,7 @@ export class Economy {
   }
 
   async fetch(request: Request): Promise<Response> {
-    let body: { caller: Caller; action: string; args: unknown; net?: unknown };
+    let body: { caller: Caller; action: string; args: unknown; net?: unknown; ip?: unknown };
     try { body = (await request.json()) as typeof body; } catch { return json({ ok: false, error: "Bad request." }, 400); }
     void this.ensureAlarm();
     const { caller, action } = body;
@@ -183,6 +183,7 @@ export class Economy {
     const db = new Rtdb(this.env);
     const c = new Ctx(this.env, db, caller);
     c.action = action;
+    if (typeof body.ip === "string" && /^[0-9a-fA-F:.]{3,45}$/.test(body.ip)) c.ip = body.ip;
     if (Array.isArray(body.net)) c.net = body.net.filter((k): k is string => typeof k === "string" && /^dv[0-9a-f]{18}$/.test(k)).slice(0, 4);
     const releases: Array<() => void> = [];
     if (this.frozen) return json({ ok: false, error: "The server is being repaired. Try again in a minute." }, 503); // (a rollback may have started while we looked up the ban list; nothing awaits between here and the count)

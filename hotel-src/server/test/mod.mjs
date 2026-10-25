@@ -178,6 +178,57 @@ bad("a player can't clear a report", await act(p1, "modDismissReport", { id: rid
 ok("a mod does", await act(mod, "modDismissReport", { id: rid }));
 check("(gone)", (await owner("GET", `reports/${rid}`)) === null);
 
+console.log("--- blood, warnings, messages, kicks, addresses (full privileges)");
+{
+  const v = await fresh("t_mod_v", { blood: 50, ...OLD }); await act(v, "sync");
+  bad("a mod can't give blood", await act(mod, "modBlood", { uid: v.uid, delta: 100 }));
+  ok("the admin gives 100", await act(adm, "modBlood", { uid: v.uid, delta: 100 }));
+  check("150 blood", (await state(v)).blood === 150);
+  ok("and takes 500 (it stops at 0)", await act(adm, "modBlood", { uid: v.uid, delta: -500 }));
+  check("0 blood", (await state(v)).blood === 0);
+  const led = JSON.stringify((await owner("GET", `users/${v.uid}/bloodBy`)) ?? {});
+  check("the blood ledger knows where it came from", /modBlood/.test(led), led);
+  bad("not nothing", await act(adm, "modBlood", { uid: v.uid, delta: 0 }));
+  ok("a mod warns", await act(mod, "modNotice", { uid: v.uid, kind: "warn", text: "stop spamming" }));
+  ok("a mod writes a message", await act(mod, "modNotice", { uid: v.uid, kind: "msg", text: "hello there" }));
+  const ns = Object.values((await owner("GET", `notices/${v.uid}`)) ?? {});
+  check("both are on his notice board", ns.length === 2 && ns.some((n) => n.kind === "warn" && n.text === "stop spamming") && ns.some((n) => n.kind === "msg"), JSON.stringify(ns));
+  check("he reads his own notices, nobody else's", (await clientRead(v, `notices/${v.uid}`)).status === 200 && refused(await clientRead(v, `notices/${p1.uid}`)));
+  check("and he writes none", refused(await clientWrite(v, `notices/${v.uid}/x`, { kind: "msg", text: "x", at: 1 })));
+  bad("a mod can't write to everybody", await act(mod, "modNotice", { uid: "all", kind: "msg", text: "hi all" }));
+  ok("the admin can", await act(adm, "modNotice", { uid: "all", kind: "msg", text: "server news" }));
+  check("everybody reads that board", (await clientRead(p1, "notices/_all")).status === 200);
+  bad("not an empty message", await act(adm, "modNotice", { uid: v.uid, kind: "warn", text: "   " }));
+  bad("not to an admin", await act(mod, "modNotice", { uid: adm.uid, kind: "warn", text: "hey" }));
+  ok("a mod kicks", await act(mod, "modKick", { uid: v.uid, reason: "spam" }));
+  const k = await owner("GET", `kicks/${v.uid}`);
+  check("the kick is written", k && k.reason === "spam" && Math.abs(k.at - Date.now()) < 10000, JSON.stringify(k));
+  check("he can read his own kick", (await clientRead(v, `kicks/${v.uid}`)).status === 200);
+  bad("a player can't kick", await act(p1, "modKick", { uid: v.uid }));
+  // addresses: noted at login, banned by the admin
+  const withIp = (u, a, args, ip) => fetch(`${API}/act`, { method: "POST", headers: { authorization: `Bearer ${u.token}`, "content-type": "application/json", "cf-connecting-ip": ip }, body: JSON.stringify({ a, args }) }).then(async (r) => ({ status: r.status, ...(await r.json()) }));
+  const w = await fresh("t_mod_w", { blood: 0, ...OLD });
+  ok("login from an address", await withIp(w, "sync", {}, "203.0.113.7"));
+  const ipsAfter = await owner("GET", `ips/${w.uid}`);
+  check("the address is noted", ipsAfter && Object.values(ipsAfter)[0].ip === "203.0.113.7", JSON.stringify(ipsAfter));
+  bad("a mod can't see addresses", await act(mod, "modIps", { uid: w.uid }));
+  const il = await act(adm, "modIps", { uid: w.uid });
+  check("the admin sees it", il.data?.ips?.[0]?.ip === "203.0.113.7", JSON.stringify(il).slice(0, 150));
+  bad("a mod can't ban an address", await act(mod, "modIpBan", { uid: w.uid }));
+  ok("the admin bans the address", await act(adm, "modIpBan", { uid: w.uid }));
+  check("it is on the list", (await owner("GET", "bannedIps/203_0_113_7")) !== null);
+  await sleepMs(16000);
+  const other = await fresh("t_mod_other", { blood: 0, ...OLD });
+  const blocked = await withIp(other, "sync", {}, "203.0.113.7");
+  check("anybody from that address is turned away", blocked.status === 403 && /connection has been banned/.test(blocked.error ?? ""), JSON.stringify(blocked).slice(0, 150));
+  ok("from another address the game works", await withIp(other, "sync", {}, "198.51.100.9"));
+  ok("the admin is never turned away", await withIp(adm, "sync", {}, "203.0.113.7"));
+  ok("the admin lifts it", await act(adm, "modIpBan", { uid: w.uid, on: false }));
+  await sleepMs(16000);
+  ok("and the address works again", await withIp(other, "sync", {}, "203.0.113.7"));
+  await owner("DELETE", "bannedIps"); await owner("DELETE", `ips`); await owner("DELETE", "notices"); await owner("DELETE", "kicks");
+}
+
 console.log("--- the log");
 const log = Object.values((await owner("GET", "modLog")) ?? {});
 check("what the mods did is written down", log.some((x) => x.what === "mute" && x.byName === "t_mod_m") && log.some((x) => x.what === "ban") && log.some((x) => x.what === "promote"), JSON.stringify(log).slice(0, 200));

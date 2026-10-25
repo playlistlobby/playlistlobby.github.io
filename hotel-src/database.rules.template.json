@@ -92,6 +92,21 @@
     "modLog": {
       ".read": "@MOD@"
     },
+    "notices": {
+      ".read": "@MOD@",
+      "_all": {
+        ".read": "@PW@"
+      },
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "kicks": {
+      ".read": "@MOD@",
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
     "backupIndex": {
       ".read": "@ADMIN@"
     },

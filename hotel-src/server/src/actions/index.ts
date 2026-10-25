@@ -18,7 +18,7 @@ import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick }
 import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
 import { duckyBuy } from "./ducky";
 import { craft, mine } from "./mines";
-import { modAlts, modBan, modBanMany, modDismissReport, modMute, modPromote, reportPlayer } from "./mod";
+import { modAlts, modBan, modBanMany, modBlood, modDismissReport, modIpBan, modIps, modKick, modMute, modNotice, modPromote, reportPlayer } from "./mod";
 import { rollDice } from "./dice";
 import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
 
@@ -35,7 +35,7 @@ export const ACTIONS: Record<string, Action> = {
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   ideaPost, ideaComment, ideaLike, ideaDelete,
   duckyBuy, rollDice,
-  modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer,
+  modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick,
   raffleBuy, raffleCollect, raffleRemove, raffleTick,
   mine, craft,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,

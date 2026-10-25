@@ -10,3 +10,7 @@ export const NEW_ACCOUNT_CHAT_MS = 3 * 60_000;
 /** the account whose login is the chat mod page: it only shows the live chat and the moderation tools */
 export const CHATMOD_NAME = "playlistmod";
 export type Role = "admin" | "mod";
+/** a network address as a database key (no dots allowed in keys) */
+export const ipKey = (ip: string): string => ip.replace(/[.#$\[\]/]/g, "_");
+/** the longest message a moderator can put on a screen */
+export const NOTICE_MAX = 200;

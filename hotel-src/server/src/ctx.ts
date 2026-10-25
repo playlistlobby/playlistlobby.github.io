@@ -41,6 +41,8 @@ export class Ctx {
   readonly extra: Record<string, unknown> = {};
   /** a hash of this request's device (dv...): accounts that share one are peers (see peers/<uid>) */
   net: string[] = [];
+  /** the network address this request came from (production only; the moderators can see it and ban it) */
+  ip = "";
   /** which action this is (for the blood ledger), and an optional detail the action adds (who was stabbed, which admin command) */
   action = "";
   note = "";
