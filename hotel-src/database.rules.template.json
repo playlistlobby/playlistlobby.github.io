@@ -50,6 +50,22 @@
     "ideas": {
       ".read": "@PW@"
     },
+    "raffle": {
+      "round": {
+        ".read": "@PW@"
+      },
+      "tickets": {
+        ".read": "@PW@"
+      },
+      "last": {
+        ".read": "@PW@"
+      },
+      "prizes": {
+        "$uid": {
+          ".read": "@PW@ && auth.uid === $uid"
+        }
+      }
+    },
     "ideasImg": {
       "$id": {
         ".read": "@PW@"
