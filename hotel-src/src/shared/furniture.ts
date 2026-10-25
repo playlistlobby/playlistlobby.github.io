@@ -5,7 +5,8 @@ export interface ShopPiece { id: string; label: string; icon: string; price: num
   /** small enough to stand on a table top */ small?: boolean;
   /** a piece with several looks or animations (a TV, a fridge, candles...): the animation numbers it has; tapping it goes to the next one */ states?: number[];
   /** the one it shows when it is put down (candles burn, a TV is on) */ defaultState?: number;
-  /** the facing it has on its display platform in the shop */ showDir: number }
+  /** the facing it has on its display platform in the shop */ showDir: number;
+  /** a rare piece: only the raffle gives it away (never in the shop's daily four, and 6ixty does not buy it) */ rare?: boolean }
 export const SHOP_PIECES: ShopPiece[] = [
   { id: "bloodfloor", label: "Blood streak", icon: "🩸", price: 30, w: 1, h: 3, height: 3, flat: true, showDir: 2 },
   { id: "toastfriend", label: "Toast friend", icon: "🍞", price: 30, w: 1, h: 1, height: 30, showDir: 2 },
@@ -79,6 +80,11 @@ export const SHOP_PIECES: ShopPiece[] = [
   { id: "coffin", label: "Black coffin", icon: "⚰️", price: 66, w: 1, h: 3, height: 35, states: [0, 1, 2, 3, 4, 5], showDir: 2 },
   { id: "cratechairlight", label: "Crate chair", icon: "📦", price: 45, w: 1, h: 1, height: 38, seat: true, seatHeight: 14, showDir: 2 },
   { id: "makeshifttable", label: "Makeshift table", icon: "🕯️", price: 54, w: 2, h: 1, height: 36, surface: 36, showDir: 2 },
+  // ---- the rares: only the raffle in the shop room gives them away (see src/shared/raffle.ts) ----
+  { id: "rarecloud", label: "Cotton cloud", icon: "☁️", price: 500, w: 1, h: 1, height: 40, rare: true, showDir: 2 },
+  { id: "raresnow", label: "Snow drift", icon: "❄️", price: 500, w: 1, h: 1, height: 70, rare: true, showDir: 2 },
+  { id: "rareplatform", label: "Frost platform", icon: "🔮", price: 500, w: 2, h: 2, height: 6, flat: true, rare: true, showDir: 2 },
+  { id: "rarelamp", label: "Dragon lamp", icon: "🐉", price: 500, w: 1, h: 1, height: 60, states: [0, 1], defaultState: 1, rare: true, showDir: 4 },
 ];
 export const SHOP_KIND_PREFIX = "f_";
 

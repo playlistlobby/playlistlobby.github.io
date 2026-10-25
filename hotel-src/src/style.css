@@ -968,6 +968,16 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 
 /* ---- the Ducky machine ---- */
 .ducky-shop { width: 300px; }
+.raffle-shop { width: 300px; }
+.raffle-prize { display: grid; justify-items: center; gap: 4px; padding: 8px; border-radius: 10px; background: rgba(255, 213, 74, .12); border: 1px solid rgba(255, 213, 74, .45); text-align: center; }
+.raffle-ico { max-width: 96px; max-height: 96px; image-rendering: pixelated; }
+.raffle-pname { font: 700 16px var(--font); color: #ffe9a8; }
+.raffle-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 2px; font-size: 14px; }
+.raffle-count { font: 800 18px var(--font); color: #ffd54a; font-variant-numeric: tabular-nums; }
+.raffle-buy { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 6px; border-radius: 8px; background: rgba(0, 0, 0, .25); }
+.raffle-qty { min-width: 32px; text-align: center; font-size: 18px; }
+.raffle-win { display: grid; gap: 6px; padding: 8px; border-radius: 8px; background: rgba(70, 211, 105, .18); border: 1px solid rgba(70, 211, 105, .6); }
+.raffle-last { text-align: center; }
 .ducky-card { display: grid; gap: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, .12); }
 .ducky-card:last-of-type { border-bottom: 0; }
 .ducky-ico { font-family: var(--font); width: 36px; height: 36px; display: grid; place-items: center; font-size: 22px; border-radius: 8px; background: rgba(255, 255, 255, .1); }

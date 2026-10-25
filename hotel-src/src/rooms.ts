@@ -40,7 +40,7 @@ export interface FurniKind {
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
   /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
   wallArt?: { left: number; back: number };
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "raffle";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -72,6 +72,7 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 }
 
 import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
+import { RAFFLE_PRIZE_ID } from "./shared/raffle";
 import { BAG_SKINS, BED_SKINS } from "./shared/skins";
 export type { ShopPiece } from "./shared/furniture";
 export { SHOP_KIND_PREFIX, SHOP_PIECES };
@@ -129,6 +130,9 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   gunrack: { id: "gunrack", label: "Gun rack", icon: "🔫", w: 1, h: 1, height: 20, color: "#6b5a48", placeable: false, nitro: "furni/f_gunrack.nitro", rotatable: true, small: true },
   // the pay2win machine in the shop room, on the left wall next to the record table: things for real money (a starter package, a name colour, a chat tool, a room advert, a new name)
   ducky: { id: "ducky", label: "pay2win", icon: "💸", w: 1, h: 1, height: 78, color: "#e8a020", placeable: false, nitro: "furni/ducky_machine.nitro", rotatable: true, fixed: true, opens: "ducky" },
+  // the raffle in the shop room: a royal gacha machine on the elven square end table (tap either): tickets for a rare piece, drawn every day at 16:00 (see src/shared/raffle.ts)
+  raffletable: { id: "raffletable", label: "Raffle", icon: "🎟️", w: 1, h: 1, height: 30, color: "#cfcfcf", placeable: false, nitro: "furni/easter_c26_elvensquareendtable.nitro", rotatable: true, fixed: true, surface: 30, opens: "raffle" },
+  gacha: { id: "gacha", label: "Royal gacha", icon: "🎰", w: 1, h: 1, height: 64, color: "#d4a017", placeable: false, nitro: "furni/gacha_c25_royalgachab.nitro", rotatable: true, fixed: true, small: true, opens: "raffle" },
   // the ideas board on the basement's left wall (Habbo's cork board with pictures): click it and the board opens, where everybody posts pictures and ideas
   ideaboard: { id: "ideaboard", label: "Ideas board", icon: "💡", w: 1, h: 1, height: 60, color: "#a8793c", placeable: false, nitro: "furni/f_ideaboard.nitro", rotatable: true, flat: true, wall: true, wallArt: { left: 0, back: 2 }, opens: "ideas" },
   // the alley dumpster next to the Flappy Bird machine: search it (every 10 minutes) for a cigarette or a dead cat
@@ -292,7 +296,7 @@ export const DISPLAY_PREFIX = "shop_disp";
 export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
 
 /** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
-export function shopDef(picks: string[]): RoomDef {
+export function shopDef(picks: string[], raffleKind?: string): RoomDef {
   const furni: PlacedFurni[] = [
     { id: "shop_wardrobe", kind: "wardrobe", x: 5, y: 0, dir: 4 }, { id: "shop_vending", kind: "vending", x: 8, y: 0, dir: 4 },
     // the landlord's counter in the right corner: he stands behind it (see LANDLORD in npc.ts)
@@ -303,7 +307,13 @@ export function shopDef(picks: string[]): RoomDef {
     { id: "shop_table", kind: "vinyltable", x: 0, y: 6, dir: 4 }, { id: "shop_records", kind: "recordplayer", x: 0, y: 6, dir: 4 },
     // the Ducky machine along the same wall, two tiles further down
     { id: "shop_ducky", kind: "ducky", x: 0, y: 8, dir: 2 },
+    // the raffle machine further down the same wall, on a marble block; the rare piece it gives away stands beside it
+    { id: "shop_raffle_table", kind: "raffletable", x: 0, y: 11, dir: 2 }, { id: "shop_raffle", kind: "gacha", x: 0, y: 11, dir: 0 },
   ];
+  if (raffleKind && FURNI_KINDS[raffleKind]) {
+    const dir = SHOP_PIECES.find((p) => SHOP_KIND_PREFIX + p.id === raffleKind)?.showDir ?? 2;
+    furni.push({ id: RAFFLE_PRIZE_ID, kind: raffleKind, x: 0, y: Math.min(13, SHOP_SIZE - footprint(raffleKind, dir).h), dir }); // (two tiles along the wall from the machine; a long piece is pulled back so it fits in the room)
+  }
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;
     const slot = SHOP_SLOTS[i];

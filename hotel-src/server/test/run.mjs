@@ -215,7 +215,7 @@ console.log("--- selling weed");
   for (let i = 0; i < 4; i++) { const r = await act(b2, "sellWeed", { slot: 0, qty: 1 }); ok(`sell mixer item #${i + 1}`, r); tot = r.state.blood; }
   check("mix 5 + mid weed 7 + thc-a 12 + research chemical 9 = 33", tot === 33, String(tot));
   // 6ixty buys nearly anything: furniture at 75%, what cost blood at half, what you grow / mix / find at its own price
-  const b3 = await fresh("t_sell3", { inventory: { 0: { item: "f_sofa", qty: 1 }, 1: { item: "cigarette", qty: 4 }, 2: { item: "pill", qty: 3 }, 3: { item: "lighter", qty: 1 }, 4: { item: "kodimagnyl", qty: 2 }, 5: { item: "hash", qty: 1 }, 6: { item: "joint_hash", qty: 1 }, 7: { item: "dmt", qty: 1 }, 8: { item: "shroom", qty: 3 } } });
+  const b3 = await fresh("t_sell3", { inventory: { 0: { item: "f_bench", qty: 1 }, 1: { item: "cigarette", qty: 4 }, 2: { item: "pill", qty: 3 }, 3: { item: "lighter", qty: 1 }, 4: { item: "kodimagnyl", qty: 2 }, 5: { item: "hash", qty: 1 }, 6: { item: "joint_hash", qty: 1 }, 7: { item: "dmt", qty: 1 }, 8: { item: "shroom", qty: 3 } } });
   await act(b3, "sync");
   const sold = async (label, slotItem, qty, expect) => {
     const st = await state(b3);
@@ -223,7 +223,7 @@ console.log("--- selling weed");
     const r = await act(b3, "sellWeed", { slot, qty });
     check(label, r.ok === true && r.state.blood - st.blood === expect, JSON.stringify([r.ok, r.error, r.state && r.state.blood - st.blood]));
   };
-  await sold("an old sofa (48) sells for 75%: 36", "f_sofa", 1, 36);
+  await sold("a bench (42) sells for 75%: 31", "f_bench", 1, 31);
   await sold("4 cigarettes: 1 drop for 2, so 2", "cigarette", 4, 2);
   await sold("3 pills: 2 sell for 3, the third stays", "pill", 3, 3);
   await sold("a lighter: 1", "lighter", 1, 1);

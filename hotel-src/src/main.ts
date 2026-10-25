@@ -6,6 +6,7 @@ import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
 import { createProfile, loadProfile, Profile, watchEconomy } from "./db";
 import { collectPaidCds } from "./payReturn";
+import { checkRaffleAtLogin } from "./raffle";
 import { startUpdateCheck } from "./updateCheck";
 import { publishPriceBook } from "./priceBook";
 import { avatarsReady } from "./avatarService";
@@ -288,6 +289,7 @@ async function showHotel(user: User): Promise<void> {
   logAction(p, "login", "opened Blodig oktober");
   const stopMessenger = mountMessenger(shell, ctx);
   void collectPaidCds(p); // back from the payment page, or an earlier payment still waiting: the CD is handed over
+  checkRaffleAtLogin(p, () => window.dispatchEvent(new Event("pocket-changed"))); // a raffle draw that was due: asked for, and a win is announced
   const stopTrades = mountTrades(ctx);
   // 10 minutes without touching anything: marked idle (the door's room list says so) and sent home to your own room
   const stopIdle = watchIdle(p, () => {

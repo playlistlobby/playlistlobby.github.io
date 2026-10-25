@@ -18,7 +18,7 @@ export const onFurniShopChanged = (fn: () => void): (() => void) => { listeners.
 
 /** Everything the shop can sell: the pieces that ship with the game, and Studio pieces the admin marked "players can place". */
 export function shopPool(): string[] {
-  return [...SHOP_PIECES.map((p) => SHOP_KIND_PREFIX + p.id), ...listFurni().filter((m) => m.players).map((m) => m.id)].filter((id) => FURNI_KINDS[id]);
+  return [...SHOP_PIECES.filter((p) => !p.rare).map((p) => SHOP_KIND_PREFIX + p.id), ...listFurni().filter((m) => m.players).map((m) => m.id)].filter((id) => FURNI_KINDS[id]);
 }
 
 /** What a piece costs today: the admin's price if set, else the shipped price, else 10-25 by name for Studio pieces. */

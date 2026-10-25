@@ -9358,5 +9358,185 @@
   "en": "Put away",
   "da": "Læg væk",
   "where": "src/ui/sidepanel.ts"
+ },
+ "N1340": {
+  "en": "Raffle",
+  "da": "Lotteri",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1341": {
+  "en": "🎟️ Raffle",
+  "da": "🎟️ Lotteri",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1342": {
+  "en": "Drawing…",
+  "da": "Trækker…",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1343": {
+  "en": "You have 1 ticket now.",
+  "da": "Du har 1 lod nu.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1344": {
+  "en": "You have {r.tickets} tickets now.",
+  "da": "Du har {r.tickets} lodder nu.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1345": {
+  "en": "You took one prize. Make room for the rest.",
+  "da": "Du tog én præmie. Gør plads til resten.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1346": {
+  "en": "You took the {prizeName}!",
+  "da": "Du tog {prizeName}!",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1347": {
+  "en": "Last draw: you won the {prizeName}!",
+  "da": "Sidste lodtrækning: du vandt {prizeName}!",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1348": {
+  "en": "Last draw: {…} won the {prizeName}.",
+  "da": "Sidste lodtrækning: {…} vandt {prizeName}.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1349": {
+  "en": "Last draw: nobody had a ticket, so the {prizeName} stays up.",
+  "da": "Sidste lodtrækning: ingen havde et lod, så {prizeName} står stadig.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1350": {
+  "en": "Tonight's rare piece. One ticket wins it.",
+  "da": "Dagens sjældne ting. Ét lod vinder den.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1351": {
+  "en": "Opening the raffle…",
+  "da": "Åbner lotteriet…",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1352": {
+  "en": "Draw in",
+  "da": "Trækning om",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1353": {
+  "en": "Tickets left",
+  "da": "Lodder tilbage",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1354": {
+  "en": "Yours",
+  "da": "Dine",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1355": {
+  "en": "{have} · {chance}% chance",
+  "da": "{have} · {chance}% chance",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1356": {
+  "en": "Sold out. The draw is at 20:00.",
+  "da": "Udsolgt. Trækningen er kl. 20:00.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1357": {
+  "en": "A ticket costs {RAFFLE_PRICE} blood. The blood is gone for good.",
+  "da": "Et lod koster {RAFFLE_PRICE} blod. Blodet er væk for altid.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1358": {
+  "en": "🎉 You won the {prizeName}! It waits here until there is room in your pockets.",
+  "da": "🎉 Du vandt {prizeName}! Den venter her, til der er plads i dine lommer.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1359": {
+  "en": "Take it",
+  "da": "Tag den",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1360": {
+  "en": "Royal gacha",
+  "da": "Royal gacha",
+  "where": "src/rooms.ts"
+ },
+ "N1361": {
+  "en": "🎉 YOU WON!! The raffle gave you: {name}. It is in your pocket.",
+  "da": "🎉 DU VANDT!! Lotteriet gav dig: {name}. Den ligger i din lomme.",
+  "where": "src/raffle.ts"
+ },
+ "N1362": {
+  "en": "🎉 YOU WON!! {name}: your pockets are full, so it waits for you at the raffle machine in the shop.",
+  "da": "🎉 DU VANDT!! {name}: dine lommer er fulde, så den venter på dig ved lotterimaskinen i shoppen.",
+  "where": "src/raffle.ts"
+ },
+ "N1363": {
+  "en": "The raffle is sold out. Wait for the draw.",
+  "da": "Lotteriet er udsolgt. Vent på trækningen.",
+  "where": "server/src/actions/raffle.ts"
+ },
+ "N1364": {
+  "en": "There is only 1 ticket left.",
+  "da": "Der er kun 1 lod tilbage.",
+  "where": "server/src/actions/raffle.ts"
+ },
+ "N1365": {
+  "en": "There are only {left} tickets left.",
+  "da": "Der er kun {left} lodder tilbage.",
+  "where": "server/src/actions/raffle.ts"
+ },
+ "N1366": {
+  "en": "There is nothing waiting for you.",
+  "da": "Der venter ikke noget på dig.",
+  "where": "server/src/actions/raffle.ts"
+ },
+ "N1367": {
+  "en": "Your pockets are full: make room first.",
+  "da": "Dine lommer er fulde: gør plads først.",
+  "where": "server/src/actions/raffle.ts"
+ },
+ "N1368": {
+  "en": "Draw in {…}",
+  "da": "Trækning om {…}",
+  "where": "src/ui/room.ts"
+ },
+ "N1369": {
+  "en": "{…} tickets left",
+  "da": "{…} lodder tilbage",
+  "where": "src/ui/room.ts"
+ },
+ "N1370": {
+  "en": "none",
+  "da": "ingen",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1371": {
+  "en": "Raffle: win the rare piece",
+  "da": "Lotteri: vind den sjældne ting",
+  "where": "src/ui/room.ts"
+ },
+ "N1372": {
+  "en": "Cotton cloud",
+  "da": "Bomuldsskye",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1373": {
+  "en": "Snow drift",
+  "da": "Snedrive",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1374": {
+  "en": "Frost platform",
+  "da": "Frostplatform",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1375": {
+  "en": "Dragon lamp",
+  "da": "Drage-lampe",
+  "where": "src/shared/furniture.ts"
  }
 }

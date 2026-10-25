@@ -77,6 +77,10 @@ import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
 import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { DuckyShopApi, openDuckyShop } from "./duckyShop";
+import { openRaffleShop, RaffleShopApi } from "./raffleShop";
+import { announceWin, watchRaffle } from "../raffle";
+import { RAFFLE_EFFECTS, RAFFLE_PRIZE_ID } from "../shared/raffle";
+import type { RaffleView } from "../raffle";
 import { CHAT_COLORS, CHAT_EFFECTS, isChatEffect, isHexColor } from "../shared/ducky";
 import type { ChatEffect } from "../shared/ducky";
 import { figureAnimated } from "../designs";
@@ -110,6 +114,9 @@ hangerImg.src = assetUrl("ui/hanger.png");
 /** the little pixel "dkk" that floats over the pay2win machine while you point at it (you pay with real money there) */
 const dkImg = new Image();
 dkImg.src = assetUrl("ui/dk.png");
+/** the golden ticket that floats over the raffle machine while you point at it */
+const ticketImg = new Image();
+ticketImg.src = assetUrl("ui/ticket.png");
 /** the game controller that floats over the arcade machine and the roulette table when you point at them (Habbo's silver controller icon) */
 const controllerImg = new Image();
 controllerImg.src = assetUrl("ui/controller.png");
@@ -387,6 +394,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let stashApi: StashApi | null = null;
   let ideasApi: IdeasBoardApi | null = null;
   let duckyApi: DuckyShopApi | null = null;
+  let raffleApi: RaffleShopApi | null = null;
+  /** the raffle in the shop room (what the machine and its prize show) */
+  let raffleNow: RaffleView = { round: null, tickets: {}, sold: 0, last: null, waiting: [] };
+  function openRaffle(): void { if (!raffleApi) raffleApi = openRaffleShop(stage, ctx, () => { panel.refresh(); ctx.refreshHeader(); }, () => { raffleApi = null; }); }
   function openDucky(): void { if (!duckyApi) duckyApi = openDuckyShop(stage, ctx, () => panel.refresh(), () => { duckyApi = null; }); }
   function openIdeas(): void { if (!ideasApi) ideasApi = openIdeasBoard(stage, ctx, () => { ideasApi = null; }); }
   let landlordApi: LandlordApi | null = null;
@@ -575,6 +586,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
     else if (hoverObj && hoverObj.kind === "ideaboard") text = "Ideas board: post pictures and ideas";
     else if (hoverObj && hoverObj.kind === "ducky") text = "pay2win: things for real money";
+    else if (hoverObj && (hoverObj.kind === "gacha" || hoverObj.kind === "raffletable")) text = "Raffle: win the rare piece";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind ?? ""]?.states?.length ?? 0) > 1) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to use`;
@@ -854,7 +866,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "landlord") startLandlord();
@@ -909,6 +921,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
     if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
     if (obj?.kind === "ducky") opts.push({ label: "Shop", target: "pay2win", action: () => startBag(obj.id) });
+    if (obj?.kind === "gacha" || obj?.kind === "raffletable") opts.push({ label: "Raffle", target: "Royal gacha", action: () => startBag(obj.id) });
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
@@ -1405,6 +1418,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     stashApi?.close();
     ideasApi?.close();
     duckyApi?.close();
+    raffleApi?.close();
     landlordApi?.close();
     sixtyShop?.close();
   }
@@ -1726,6 +1740,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "ideas") openIdeas();
         else if (opens === "ducky") openDucky();
+        else if (opens === "raffle") openRaffle();
         else if (opens === "records") { if (!recordApi) recordApi = openRecordShop(stage, ctx, () => panel.refresh(), () => { recordApi = null; }); }
         else if (opens === "mixer") {
           if (mixerApi) { /* already open */ }
@@ -3378,6 +3393,97 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** The price of a piece for sale: a blood drop and the number, tucked under the bottom right corner of it. */
+  /**
+   * The raffle's rare pieces each have an effect of their own, so everybody can see they are something special:
+   *   shine   gold glow, twinkling stars and a streak of light that sweeps over the piece (the whippet)
+   *   rainbow a glow and stars whose colours cycle through the rainbow (the cotton cloud)
+   *   snow    an icy blue glow and snow drifting down around it (the snow drift)
+   *   ring    light rings that spread over the floor, and a violet glow (the frost platform)
+   *   embers  a flickering fire glow and embers that rise (the dragon lamp)
+   */
+  function drawRareShine(f: { kind: string; x: number; y: number; dir?: number }, box: Box, now: number): void {
+    const effect = RAFFLE_EFFECTS[f.kind] ?? "shine";
+    const pulse = 0.5 + 0.5 * Math.sin(now / 420);
+    const hue = (now / 12) % 360;
+    const flick = 0.55 + 0.45 * Math.sin(now / 70) * Math.sin(now / 130 + 1);
+    const glow = effect === "rainbow" ? `hsla(${hue},100%,62%,0.95)` : effect === "snow" ? "rgba(150,215,255,0.95)" : effect === "ring" ? "rgba(190,140,255,0.95)" : effect === "embers" ? "rgba(255,110,30,0.95)" : "rgba(255,213,74,0.95)";
+    // the glow: the piece again, lit, with a coloured shadow around it
+    g.save();
+    g.globalCompositeOperation = "lighter";
+    g.shadowColor = glow;
+    g.shadowBlur = (effect === "embers" ? 8 + 12 * flick : 10 + 8 * pulse) * scale;
+    drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, effect === "embers" ? 0.12 + 0.18 * flick : 0.22 + 0.2 * pulse, true);
+    g.restore();
+    const P = pxCell(), w = box.x1 - box.x0, hgt = box.y1 - box.y0, cx = (box.x0 + box.x1) / 2;
+    const snap = (v: number): number => Math.round(v / P) * P;
+    const star = (x: number, y: number, arm: number, color: string, alpha: number): void => {
+      g.globalAlpha = Math.max(0, Math.min(1, alpha));
+      g.fillStyle = color;
+      const gx = snap(x), gy = snap(y);
+      g.fillRect(gx, gy, P, P);
+      for (let k = 1; k <= arm; k++) { g.fillRect(gx + k * P, gy, P, P); g.fillRect(gx - k * P, gy, P, P); g.fillRect(gx, gy + k * P, P, P); g.fillRect(gx, gy - k * P, P, P); }
+    };
+    if (effect === "shine") {
+      // a streak of light sweeping over the piece every few seconds: the piece again, in white, only inside a slanted band
+      const t = (now % 3200) / 3200 * 1.7 - 0.35;
+      if (t > -0.2 && t < 1.2) {
+        const bx = box.x0 + w * t, bw = w * 0.22;
+        g.save();
+        g.beginPath();
+        g.moveTo(bx, box.y0 - 4 * scale); g.lineTo(bx + bw, box.y0 - 4 * scale); g.lineTo(bx + bw - hgt * 0.35, box.y1 + 4 * scale); g.lineTo(bx - hgt * 0.35, box.y1 + 4 * scale);
+        g.closePath();
+        g.clip();
+        g.globalCompositeOperation = "lighter";
+        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.85, true);
+        g.restore();
+      }
+    }
+    g.save();
+    if (effect === "snow") {
+      for (let i = 0; i < 16; i++) { // flakes fall from above the piece to its foot, swaying
+        const life = 3200 + (i % 4) * 600, tt = ((now + i * 331) % life) / life;
+        const x = box.x0 - w * 0.15 + w * 1.3 * (((i * 0.61) % 1)) + Math.sin(now / 500 + i * 2) * 4 * scale;
+        const y = box.y0 - hgt * 0.25 + tt * hgt * 1.35;
+        star(x, y, i % 5 === 0 ? 1 : 0, i % 3 === 0 ? "#ffffff" : "#bfe6ff", Math.sin(tt * Math.PI) * 1.4);
+      }
+    } else if (effect === "ring") {
+      const fy = box.y1 - hgt * 0.1; // the floor under the piece
+      g.globalCompositeOperation = "lighter";
+      g.lineWidth = 2 * scale;
+      for (let i = 0; i < 3; i++) {
+        const tt = ((now + i * 900) % 2700) / 2700;
+        g.globalAlpha = (1 - tt) * 0.75;
+        g.strokeStyle = i % 2 ? "#e6d0ff" : "#b080ff";
+        g.beginPath();
+        g.ellipse(cx, fy, (0.25 + tt * 0.95) * w * 0.6, (0.25 + tt * 0.95) * w * 0.3, 0, 0, Math.PI * 2);
+        g.stroke();
+      }
+      g.globalCompositeOperation = "source-over";
+      for (let i = 0; i < 6; i++) { const tt = ((now + i * 470) % 2800) / 2800; star(box.x0 + w * (0.15 + ((i * 0.29) % 0.7)), fy - tt * hgt * 1.1, 1, i % 2 ? "#ffffff" : "#d2b0ff", Math.sin(tt * Math.PI) * 1.3); }
+    } else if (effect === "embers") {
+      for (let i = 0; i < 14; i++) { // embers rise from the flames, wobbling, and burn out
+        const life = 1500 + (i % 4) * 400, tt = ((now + i * 211) % life) / life;
+        const x = cx + (((i * 0.37) % 1) - 0.5) * w * 0.7 + Math.sin(now / 160 + i * 3) * 3 * scale * tt;
+        const y = box.y0 + hgt * 0.35 - tt * hgt * 1.0;
+        const col = tt < 0.35 ? "#fff1a8" : tt < 0.7 ? "#ff9a2e" : "#e03a1e";
+        g.globalAlpha = Math.max(0, 1 - tt * 1.1);
+        g.fillStyle = col;
+        const sz = tt < 0.5 ? P * 1.5 : P;
+        g.fillRect(snap(x), snap(y), sz, sz);
+      }
+    } else { // shine and rainbow: twinkling four-point stars drifting up around the piece
+      for (let i = 0; i < 9; i++) {
+        const life = 2600 + (i % 3) * 500, tt = ((now + i * 417) % life) / life;
+        const sx = box.x0 + w * (0.08 + ((i * 0.37) % 0.84)) + Math.sin(now / 600 + i) * 3 * scale;
+        const sy = box.y1 - hgt * 0.15 - tt * hgt * 1.05;
+        const a = Math.sin(tt * Math.PI);
+        const color = effect === "rainbow" ? `hsl(${(hue + i * 40) % 360},100%,70%)` : i % 3 === 0 ? "#ffffff" : "#ffe27a";
+        star(sx, sy, Math.max(1, Math.round((1 + 2 * a) * (i % 2 ? 1 : 1.4))), color, a * 1.3);
+      }
+    }
+    g.restore();
+  }
+
   function drawPriceTag(price: number, right: number, bottom: number): void {
     const fs = Math.round(11 * Math.max(1, scale));
     g.save();
@@ -3574,9 +3680,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
       const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
-      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky")) {
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
-        const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
+        const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : k.opens === "raffle" ? def.furni.find((x) => x.kind === "raffletable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
         const cx = (b.x0 + b.x1) / 2;
@@ -3595,6 +3701,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.arc(cx, cy, r, 0, Math.PI * 2);
         g.fill();
         g.restore();
+        const onTable = tableUnder(f), liftUp = onTable ? (FURNI_KINDS[onTable.kind].surface ?? 0) * scale : 0; // (a piece on a table top is drawn again up there, not on the floor)
+        if (liftUp) { g.save(); g.translate(0, -liftUp); }
         drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, true); // the bag again, on top of the halo (its shadow is already down)
         if (hot) {
           g.save();
@@ -3602,12 +3710,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.12 + 0.05 * pulse, true);
           g.restore();
         }
+        if (liftUp) g.restore();
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "ducky" ? dkImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
+        const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky" || k.opens === "raffle"; // the mixer glows like the rest, but has no little icon floating over it
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" ? ticketImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -4175,12 +4284,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         draw: () => {
           const box = drawFurni(f, now);
           if (box && isDisplayPiece(f.id) && !furnishOn) drawPriceTag(priceOf(f.kind), box.x1, box.y1);
+          if (box && f.id === RAFFLE_PRIZE_ID) drawRareShine(f, box, now); // the raffle's rare piece: gold glow and sparkles, so everybody can see it is something special
           if (box && furnishOn) pieceBoxes.push({ id: f.id, box, depth: box.depth });
           if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -4492,9 +4602,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- boot --------------------------------------------------------------------------
   async function init(): Promise<void> {
     if (roomId === SHOP_ID) {
-      applyDef(shopDef(picksToday()));
+      applyDef(shopDef(picksToday(), raffleNow.round?.prize));
       start();
-      unsubs.push(onFurniShopChanged(() => { if (!disposed) applyDef(shopDef(picksToday())); })); // the admin swapped a piece
+      unsubs.push(onFurniShopChanged(() => { if (!disposed) applyDef(shopDef(picksToday(), raffleNow.round?.prize)); })); // the admin swapped a piece
+      // the raffle: its prize stands beside the machine (and changes after a draw), a draw you won is announced, and somebody in the shop asks for the 16:00 draw
+      unsubs.push(watchRaffle(me.uid, (v) => {
+        if (disposed) return;
+        const before = raffleNow.round?.prize;
+        raffleNow = v;
+        if (v.round && v.round.prize !== before) applyDef(shopDef(picksToday(), v.round.prize));
+        announceWin(me, v.last, () => { void call(me, "sync").then(() => { panel.refresh(); ctx.refreshHeader(); }, () => undefined); });
+      }));
+      const drawWatch = window.setInterval(() => { if (!disposed && raffleNow.round && serverNow() >= raffleNow.round.drawAt) void call(me, "raffleTick").catch(() => undefined); }, 5000);
+      unsubs.push(() => window.clearInterval(drawWatch));
+      void call(me, "raffleTick").catch(() => undefined); // (no round yet, or a draw that is due)
       return;
     }
     if (isTut) {
@@ -4593,6 +4714,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     posterApi?.close();
     stashApi?.close();
     ideasApi?.close();
+    raffleApi?.close();
     landlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();
