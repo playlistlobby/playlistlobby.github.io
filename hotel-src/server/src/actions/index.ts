@@ -35,7 +35,6 @@ export const ACTIONS: Record<string, Action> = {
   ideaPost, ideaComment, ideaLike, ideaDelete,
   duckyBuy, rollDice,
   raffleBuy, raffleCollect, raffleRemove, raffleTick,
-  raffleBuy, raffleCollect, raffleRemove, raffleTick,
   mine, craft,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };
