@@ -11,6 +11,7 @@ import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, s
 export const buySixty: Action = {
   async run(c, a) {
     const id = text(a.item, /^[a-z0-9_]{1,30}$/, "item");
+    if (id === "dice") fail("He doesn't sell that."); // the dice are sold in the pay2win machine
     if (id === "cd") fail("He doesn't sell that."); // the Freakme CD is sold at the record player in the shop now
     const known = SIXTY_STOCK.includes(id) || (ITEM_IDS.has(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt");
     if (!known) fail("He doesn't sell that.");
