@@ -1,5 +1,5 @@
 // Closing the game for a while: while the worker has a MAINTENANCE text (server/wrangler.toml [vars]), every player but the admin gets this full-screen message, and the
-// server refuses their actions (server/src/index.ts). The page asks the server's /health every 15 seconds; when the text is gone again the page reloads and the game is back.
+// server refuses their actions (server/src/index.ts). The page asks the server's /health every two minutes; when the text is gone again the page reloads and the game is back.
 import { auth, useEmulator } from "./firebase";
 import { isAdminUser } from "./auth";
 import { API_URL } from "./apiConfig";
@@ -45,5 +45,5 @@ async function check(): Promise<void> {
 
 export function startMaintenanceWatch(): void {
   void check();
-  window.setInterval(() => void check(), 15_000);
+  window.setInterval(() => { if (!document.hidden) void check(); }, 120_000); // (every open window asks the server: two minutes keeps it well inside the free request limit)
 }
