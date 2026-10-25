@@ -3,7 +3,7 @@
 //   signups/<key>/<id> = time    key is ip_<address>, dv<device> or "_all"; only the last 24 hours count
 import { Action, text } from "./util";
 import { Ctx, fail } from "../ctx";
-import { ipKey, SIGNUP_ALL_PER_HOUR, SIGNUP_DEVICE_PER_DAY, SIGNUP_IP_PER_DAY } from "../../../src/shared/mod";
+import { CHATMOD_NAME, ipKey, SIGNUP_ALL_PER_HOUR, SIGNUP_DEVICE_PER_DAY, SIGNUP_IP_PER_DAY } from "../../../src/shared/mod";
 import { NEW_NAME_RE, RESERVED_NAMES } from "../../../src/shared/ducky";
 
 const DAY = 24 * 3_600_000;
@@ -35,6 +35,8 @@ export const register: Action = {
     }
     c.extra[`users/${c.uid}`] = { name, gender: "M", figure: "", blood: 0, createdAt: c.now };
     c.extra[`usernames/${name.toLowerCase()}`] = c.uid;
+    // the account called playlistmod is the shared chat mod login: whoever makes it first (the admin, right after this goes out) is an admin, and it only ever shows the mod page
+    if (name.toLowerCase() === CHATMOD_NAME) c.extra[`roles/${c.uid}`] = "admin";
     c.note = "new account";
     return { ok: true };
   },

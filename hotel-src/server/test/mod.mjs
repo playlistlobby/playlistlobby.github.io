@@ -249,6 +249,14 @@ console.log("--- making accounts (the server writes the profile, and limits how 
   check("with its name, 0 blood and a time", u1 && u1.name === `t_su_${R}a` && u1.blood === 0 && Math.abs(u1.createdAt - Date.now()) < 15000, JSON.stringify(u1));
   check("the username is claimed", (await owner("GET", `usernames/t_su_${R}a`)) === a1.uid);
   ok("asking again is fine", await act(a1, "register", { name: `t_su_${R}a` }));
+  {
+    await owner("DELETE", "usernames/playlistmod"); await owner("DELETE", "roles/PMUID");
+    const pm = await mk("playlistmod", `device-${R}-pm`);
+    await owner("DELETE", `roles/${pm.uid}`);
+    ok("the playlistmod account can be made", await act(pm, "register", { name: "playlistmod" }));
+    check("and is an admin at once", (await owner("GET", `roles/${pm.uid}`)) === "admin");
+    await owner("DELETE", `roles/${pm.uid}`); await owner("DELETE", `users/${pm.uid}`); await owner("DELETE", "usernames/playlistmod");
+  }
   ok("the new account then plays (sync)", await act(a1, "sync"));
   // one device: 3 a day
   const d2 = await mk(`t_su_${R}b`, `device-${R}-1`), d3 = await mk(`t_su_${R}c`, `device-${R}-1`), d4 = await mk(`t_su_${R}d`, `device-${R}-1`);
