@@ -92,6 +92,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
   let shakeAt = 0;
   /** the pull whose results have been played (the table's seq): the browsers play each pull once */
   let playedSeq = -1;
+  let deathSeq = -1;
   let busyAsking = false;
   let seating = false;
   let lastLeave = 0, lastTick = 0, lastBar = 0;
@@ -265,42 +266,51 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
   }
 
   // ---- whose turn it is --------------------------------------------------------------------------------------------------
-  /** the little bar at the bottom of the room while a game runs: your turn, or whose it is */
+  /** the little bar at the bottom of the room while a game runs: your turn, or whose it is (built once: only its texts change, so a click is never lost) */
+  let barParts: { t: HTMLElement; btn: HTMLButtonElement; hint: HTMLElement } | null = null;
   function updateBar(now: number): void {
     const st = active();
     const showFor = !!st && st.status === "playing" && rouletteHas(st, me.uid);
-    if (!showFor || !st) { barEl?.remove(); barEl = null; return; }
-    if (now - lastBar < 150) return;
-    lastBar = now;
-    if (!barEl) { barEl = h("div", { class: "rt-bar" }); env.stage.append(barEl); }
+    if (!showFor || !st) { barEl?.remove(); barEl = null; barParts = null; return; }
+    if (!barEl || !barParts) {
+      const btn = h("button", { class: "btn rt-pull", type: "button" }, "Pull the trigger") as HTMLButtonElement;
+      // it fires the moment the button is pressed, not when it is let go again
+      btn.addEventListener("pointerdown", (e) => { e.preventDefault(); void pull(); });
+      btn.addEventListener("click", (e) => { if ((e as MouseEvent).detail === 0) void pull(); }); // (the keyboard)
+      barParts = { t: h("div", { class: "rt-bar-t" }), btn, hint: h("div", { class: "hint" }) };
+      barEl = h("div", { class: "rt-bar" }, barParts.t, btn, barParts.hint);
+      env.stage.append(barEl);
+    }
     const mine = st.turn === me.uid;
-    const busy = now < animEnd - 250; // (the button is there a moment before the gun has quite arrived)
-    const left = Math.max(0, Math.ceil((ROULETTE_TURN_MS - (env.serverNow() - (st.turnAt ?? st.at))) / 1000));
+    const locked = now < animEnd - 250 || pulling || awaiting !== null; // (the button is there a moment before the gun has quite arrived)
     const chambers = 6 - st.shots;
     const info = chambers === 1 ? "Only 1 chamber left" : `${chambers} chambers left`;
     const turnTitle = st.shots === 0 ? "Your turn · the gun is loaded with one bullet" : chambers === 1 ? "Your turn · only 1 chamber left" : `Your turn · ${chambers} chambers left`;
-    if (mine) {
-      const btn = h("button", { class: "btn rt-pull", disabled: busy || pulling, onclick: () => void pull() }, busy ? "…" : "Pull the trigger");
-      barEl.replaceChildren(h("div", { class: "rt-bar-t" }, turnTitle), btn, h("div", { class: "hint" }, !busy && left <= 12 ? `${left} s` : " "));
-    } else {
-      const holderName = nameOf(st, st.turn ?? "");
-      barEl.replaceChildren(h("div", { class: "rt-bar-t" }, `${holderName} has the gun…`), h("div", { class: "hint" }, info));
-    }
+    const holderName = nameOf(st, st.turn ?? "");
+    const set = (el: HTMLElement, text: string): void => { if (el.textContent !== text) el.textContent = text; };
+    set(barParts.t, mine ? turnTitle : `${holderName} has the gun…`);
+    barParts.btn.style.display = mine ? "" : "none";
+    if (barParts.btn.disabled !== locked) barParts.btn.disabled = locked;
+    set(barParts.hint, mine ? "\u00a0" : info);
   }
   let pulling = false;
   /** my own pull is playing (it began when I clicked) and the table hasn't said yet how it went */
   let optimistic = false;
+  /** the table's pull count when I clicked: no second click counts until the table has moved on (the answer takes a moment to come back) */
+  let awaiting: number | null = null;
+  let awaitAt = 0;
   async function pull(): Promise<void> {
     const st = active();
-    if (pulling || !st || st.status !== "playing" || st.turn !== me.uid) return;
-    pulling = true;
-    // the gun goes up to your head the moment you click; the server's answer (a moment later) says what the trigger does
     const now = performance.now();
+    if (pulling || awaiting !== null || !st || st.status !== "playing" || st.turn !== me.uid || now < animEnd - 250) return;
+    pulling = true;
+    awaiting = st.seq; awaitAt = now;
+    // the gun goes up to your head the moment you click; the server's answer (a moment later) says what the trigger does
     optimistic = true;
     startAnim({ kind: "pull", start: now, by: seatOfUid(st, me.uid) }, SAFE_PULL_MS, now);
     playCock(0.4);
     try { await roulettePull(me); env.refreshHeader(); }
-    catch (err) { cancelOptimistic(); env.say((err as Error).message || "That didn't work.", "warn"); }
+    catch (err) { cancelOptimistic(); awaiting = null; env.say((err as Error).message || "That didn't work.", "warn"); }
     finally { pulling = false; }
   }
   function cancelOptimistic(): void {
@@ -315,6 +325,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
     const prev = rt;
     rt = next;
     const now = performance.now();
+    if (awaiting !== null && (!next || next.seq > awaiting || next.status !== "playing")) awaiting = null;
     if (!next) { if (prev && prev.status === "waiting" && prev.a.uid !== me.uid) closeAsks(); return; }
     const first = prev === null && playedSeq < 0;
     // you come back to a game you were in (a refresh, you logged out for a moment): you are put in your chair again, ready to go on
@@ -338,7 +349,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
       playedSeq = next.seq;
       const last = next.last;
       const by = seatOfUid(next, last.by);
-      if (optimistic && last.by === me.uid && anim && anim.dead === undefined && anim.by === by) { resolveMine(next, last.dead, now); return; } // my own pull: it has been playing since I clicked
+      if (optimistic && last.by === me.uid && anim && anim.dead === undefined) { resolveMine(next, last.dead, now); return; } // my own pull: it has been playing since I clicked
       if (last.dead) { startAnim({ kind: "pull", start: now, by, dead: true }, DEADLY_PULL_MS, now); playCock(0.4); scheduleDeath(next, last.by, by, now); }
       else if (next.status === "over") endGame(next, now, 400);
       else {
@@ -397,6 +408,8 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
 
   /** the sounds, the blood and the end of the game for a pull that killed, timed from `t0` (when the gun began to rise) */
   function scheduleDeath(st: RouletteState, by: string, seat: 0 | 1, t0: number): void {
+    if (deathSeq === st.seq) return;
+    deathSeq = st.seq;
     at(t0, TRIGGER_AT, () => { playBang(0.85); shakeAt = performance.now(); });
     at(t0, TRIGGER_AT + 60, () => playSplat(0.4));
     at(t0, TRIGGER_AT + 380, () => playThud(0.5));
@@ -466,7 +479,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
       lastTick = now;
       void rouletteTick(me).catch(() => undefined);
     }
-    if (optimistic && anim && anim.dead === undefined && now - anim.start > 8000) cancelOptimistic(); // (the table never answered: put the gun down)
+    if (awaiting !== null && now - awaitAt > 5000) { awaiting = null; cancelOptimistic(); } // (the table never answered: put the gun down, the button works again)
     syncGhosts();
     updateBar(now);
   }
