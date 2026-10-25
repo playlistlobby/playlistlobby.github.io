@@ -1,5 +1,7 @@
 // The public face of the server: CORS, who is asking, then hand the request to the economy.
 import { applyRole, verifyToken } from "./auth";
+import { Rtdb } from "./rtdb";
+import { ipKey } from "../../src/shared/mod";
 import { handleWebhook, PayError, startCheckout } from "./pay";
 import type { Env } from "./env";
 export { Economy } from "./economy";
@@ -17,6 +19,15 @@ function cors(env: Env, origin: string | null): Record<string, string> {
     "access-control-max-age": "86400",
     vary: "origin",
   };
+}
+
+const bannedIps: { at: number; keys: Set<string> } = { at: 0, keys: new Set() };
+/** is this address banned? (bannedIps/<key>, remembered for 15 seconds) */
+async function ipBanned(env: Env, ip: string): Promise<boolean> {
+  if (Date.now() - bannedIps.at > 15_000) {
+    try { bannedIps.keys = new Set(await new Rtdb(env).keys("bannedIps")); bannedIps.at = Date.now(); } catch { /* keep the old list */ }
+  }
+  return bannedIps.keys.has(ipKey(ip));
 }
 
 export default {
@@ -55,6 +66,8 @@ export default {
     try { caller = await applyRole(await verifyToken(auth.replace(/^Bearer\s+/i, ""), env), env); } catch { return reply({ ok: false, error: "Please log in again." }, 401); }
 
     if (env.MAINTENANCE && !caller.isAdmin) return reply({ ok: false, error: env.MAINTENANCE, maintenance: true }, 503); // (the game is closed: everybody but the admin)
+    const ip = request.headers.get("cf-connecting-ip") ?? "";
+    if (ip && !caller.isAdmin && (await ipBanned(env, ip))) return reply({ ok: false, error: "This connection has been banned." }, 403);
 
     const raw = await request.text();
     if (raw.length > MAX_BODY_IDEA) return reply({ ok: false, error: "Too big." }, 413);
@@ -69,7 +82,7 @@ export default {
     const dev = request.headers.get("x-device") ?? "";
     if (/^[A-Za-z0-9-]{8,64}$/.test(dev)) net.push("dv" + (await hash(dev)));
     const stub = env.ECONOMY.get(env.ECONOMY.idFromName("main"));
-    const r = await stub.fetch("https://economy/act", { method: "POST", body: JSON.stringify({ caller, action: parsed.a, args: parsed.args ?? {}, net }) });
+    const r = await stub.fetch("https://economy/act", { method: "POST", body: JSON.stringify({ caller, action: parsed.a, args: parsed.args ?? {}, net, ip }) });
     return new Response(r.body, { status: r.status, headers: { ...headers, "content-type": "application/json" } });
   },
 } satisfies ExportedHandler<Env>;

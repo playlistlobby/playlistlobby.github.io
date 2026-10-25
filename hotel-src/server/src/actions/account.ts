@@ -5,6 +5,7 @@ import { STARTER_FURNITURE, STARTER_ITEMS, START_BLOOD } from "../../../src/shar
 import { addToInv, mergeStacks } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, ITEM_IDS, SMOKABLE, smokeMsOf } from "../../../src/shared/items";
 
+import { ipKey } from "../../../src/shared/mod";
 const CLOTHING_SLOTS = new Set(["hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", "cp", "ca", "lg", "sh", "wa"]);
 
 /**
@@ -12,6 +13,7 @@ const CLOTHING_SLOTS = new Set(["hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", 
  * Peers can't stab each other (so nobody can run a pile of accounts and stab them one after another for blood); they can still visit each other like anybody else.
  */
 async function notePeers(c: Ctx): Promise<void> {
+  if (c.ip) c.extra[`ips/${c.uid}/${ipKey(c.ip)}`] = { ip: c.ip, at: c.now }; // (for the moderators: where this account plays from; only the admin can see it)
   for (const key of c.net) {
     const known = (await c.db.get<Record<string, true>>(`netUsers/${key}`)) ?? {};
     for (const other of Object.keys(known)) {

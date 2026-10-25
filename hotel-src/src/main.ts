@@ -10,6 +10,7 @@ import { checkRaffleAtLogin } from "./raffle";
 import { startUpdateCheck } from "./updateCheck";
 import { startMaintenanceWatch } from "./maintenance";
 import { loadRole, watchMute } from "./roles";
+import { watchKick, watchNotices } from "./notices";
 import { mountModPage } from "./ui/modPage";
 import { CHATMOD_NAME } from "./shared/mod";
 import { publishPriceBook } from "./priceBook";
@@ -215,6 +216,8 @@ async function showHotel(user: User): Promise<void> {
     return;
   }
   const stopMute = watchMute(p);
+  const stopNotices = watchNotices(p); // a warning or a message from a moderator
+  const stopKick = watchKick(p, () => void doLogout()); // a moderator threw you out
   // one window per account: a second window can't get in while the first is open (two windows could drop the same item twice)
   if (await otherWindowOpen(p.uid)) {
     stopShop(); stopDesigns(); stopFurni();
@@ -321,6 +324,8 @@ async function showHotel(user: User): Promise<void> {
   shellCleanup = () => {
     stopEconomy();
     stopMute();
+    stopNotices();
+    stopKick();
     stopPriceBook();
     stopSixtyLook?.();
     stopIdle();

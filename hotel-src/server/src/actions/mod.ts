@@ -7,7 +7,7 @@
 //   reports/<id>  { from, fromName, target, targetName, reason, at }
 import { Action, int, text } from "./util";
 import { Ctx, fail } from "../ctx";
-import { MOD_BAN_MS, MOD_MUTE_MS, REPORT_LIMIT, REPORT_WINDOW_MS } from "../../../src/shared/mod";
+import { ipKey, MOD_BAN_MS, MOD_MUTE_MS, NOTICE_MAX, REPORT_LIMIT, REPORT_WINDOW_MS } from "../../../src/shared/mod";
 
 const UID_RE = /^[A-Za-z0-9]{10,40}$/;
 const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
@@ -90,6 +90,89 @@ export const modBan: Action = {
       return { ok: true };
     }
     return banOne(c, uid, a);
+  },
+};
+
+/** Admin: ban every address this account has played from (production only: the server notes the address at login). `on: false` lifts those address bans again. */
+export const modIpBan: Action = {
+  async run(c, a) {
+    if (!c.isAdmin) fail("Only the admin can do that.");
+    const uid = text(a.uid, UID_RE, "player");
+    const name = await mayAct(c, uid);
+    const ips = Object.values((await c.db.get<Record<string, { ip?: string }>>(`ips/${uid}`)) ?? {}).map((x) => x.ip).filter((x): x is string => typeof x === "string");
+    if (!ips.length) fail("No address is known for that player (it is noted when they log in on the live game).");
+    for (const ip of ips) c.extra[`bannedIps/${ipKey(ip)}`] = a.on === false ? null : { ip, uid, by: c.uid, at: c.now };
+    await note(c, a.on === false ? "unban address" : "ban address", uid, name, `${ips.length} address${ips.length === 1 ? "" : "es"}`);
+    return { addresses: ips.length };
+  },
+};
+
+/** Admin: the addresses an account has played from (for the police, if it comes to that). */
+export const modIps: Action = {
+  async run(c, a) {
+    if (!c.isAdmin) fail("Only the admin can do that.");
+    const uid = text(a.uid, UID_RE, "player");
+    const rows = Object.values((await c.db.get<Record<string, { ip?: string; at?: number }>>(`ips/${uid}`)) ?? {}).filter((x) => typeof x.ip === "string");
+    const banned = new Set(Object.keys((await c.db.get<Record<string, unknown>>("bannedIps")) ?? {}));
+    return { ips: rows.map((x) => ({ ip: x.ip, at: x.at ?? 0, banned: banned.has(ipKey(x.ip!)) })).sort((p, q) => q.at - p.at) };
+  },
+};
+
+/** Admin: give or take blood (a negative number takes it; it never goes below 0). */
+export const modBlood: Action = {
+  locks: (c, a) => [`user:${String(a?.uid ?? "")}`],
+  async run(c, a) {
+    if (!c.isAdmin) fail("Only the admin can do that.");
+    const uid = text(a.uid, UID_RE, "player");
+    const delta = int(a.delta, -1_000_000, 1_000_000, "amount");
+    if (!delta) fail("Say how much.");
+    const name = String((await c.db.get<string>(`profiles/${uid}/name`)) ?? "?").slice(0, 16);
+    const w = await c.user(uid);
+    const before = w.s.blood;
+    w.s.blood = Math.max(0, before + delta);
+    c.note = `${delta > 0 ? "gave" : "took"} ${Math.abs(delta)} (${c.uid.slice(0, 6)})`;
+    await note(c, delta > 0 ? "give blood" : "take blood", uid, name, `${Math.abs(delta)}`);
+    return { blood: w.s.blood };
+  },
+};
+
+const noticeText = (v: unknown): string => {
+  const t = typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "";
+  if (!t) return fail("Write the message.");
+  return t.slice(0, NOTICE_MAX);
+};
+
+/** Put a message on somebody's screen (`kind` "warn": a warning they have to press OK on; "msg": a message). Mods may message one player; only the admin may write to everybody (`uid: "all"`). */
+export const modNotice: Action = {
+  async run(c, a) {
+    needMod(c);
+    const kind = a.kind === "warn" ? "warn" : "msg";
+    const body = noticeText(a.text);
+    const id = `${c.now.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const row = { kind, text: body, by: c.uid, byName: await callerName(c), at: c.now };
+    if (a.uid === "all") {
+      if (!c.isAdmin) fail("Only the admin can write to everybody.");
+      c.extra[`notices/_all/${id}`] = row;
+      await note(c, "message to everybody", "all", "everybody", body);
+      return { ok: true };
+    }
+    const uid = text(a.uid, UID_RE, "player");
+    const name = await mayAct(c, uid);
+    c.extra[`notices/${uid}/${id}`] = row;
+    await note(c, kind === "warn" ? "warn" : "message", uid, name, body);
+    return { ok: true };
+  },
+};
+
+/** Throw somebody out of the game right now (they can log in again; ban them if that is not what you want). */
+export const modKick: Action = {
+  async run(c, a) {
+    needMod(c);
+    const uid = text(a.uid, UID_RE, "player");
+    const name = await mayAct(c, uid);
+    c.extra[`kicks/${uid}`] = { at: c.now, by: c.uid, ...(reasonOf(a) ? { reason: reasonOf(a) } : {}) };
+    await note(c, "kick", uid, name, reasonOf(a));
+    return { ok: true };
   },
 };
 

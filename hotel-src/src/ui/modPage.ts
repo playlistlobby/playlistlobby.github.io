@@ -25,6 +25,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   let picked: Pick | null = null;
   let alts: Alt[] | null = null;
   let recent: ChatRow[] | null = null;
+  let ips: Array<{ ip: string; at: number; banned: boolean }> | null = null;
   let status: { role: string | null; mute: number; ban: { until?: number } | null } = { role: null, mute: 0, ban: null };
   let reports: Array<{ id: string; from: string; fromName: string; target: string; targetName: string; reason: string; at: number }> = [];
   let ideas: Array<{ id: string; uid: string; name: string; title: string; text?: string; img?: boolean; ts: number }> = [];
@@ -38,7 +39,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   const body = h("div", { class: "mp-body" });
   const side = h("aside", { class: "mp-side" });
   const root = h("div", { class: "mp" },
-    h("div", { class: "mp-head" }, h("strong", {}, "🛡 Chat mod"), h("span", { class: "hint" }, isAdmin ? " · admin" : " · mod: mute 1 hour, ban 30 minutes")), tabs,
+    h("div", { class: "mp-head" }, h("strong", {}, "🛡 Chat mod"), h("span", { class: "hint" }, isAdmin ? " · full access" : " · mod: mute 1 hour, ban 30 minutes")), tabs,
     h("div", { class: "mp-main" }, h("section", { class: "mp-center" }, body), side));
   host.append(root);
 
@@ -58,7 +59,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
     paintSide();
   }
   async function select(uid: string, name: string): Promise<void> {
-    alts = null; recent = null;
+    alts = null; recent = null; ips = null;
     await loadPlayer({ uid, name });
   }
   async function findByName(name: string): Promise<void> {
@@ -73,6 +74,11 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
     if (!picked) return;
     const snap = await get(query(ref(db, "chatLog"), orderByChild("uid"), equalTo(picked.uid), limitToLast(40)));
     recent = Object.values((snap.val() ?? {}) as Record<string, ChatRow>).sort((a, b) => a.ts - b.ts);
+    paintSide();
+  }
+  async function showIps(): Promise<void> {
+    if (!picked) return;
+    try { ips = (await call<{ ips: Array<{ ip: string; at: number; banned: boolean }> }>(me, "modIps", { uid: picked.uid })).ips; } catch (err) { toast((err as Error).message, "err"); return; }
     paintSide();
   }
   async function showAlts(): Promise<void> {
@@ -98,6 +104,8 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   function paintTabs(): void {
     const t = (id: typeof tab, label: string): HTMLElement => h("button", { class: "mp-tab" + (tab === id ? " on" : ""), type: "button", onclick: () => { tab = id; paint(); } }, label);
     tabs.replaceChildren(t("live", "💬 Live chat"), t("reports", `🚩 Reports${reports.length ? ` (${reports.length})` : ""}`), t("uploads", "🖼 Uploads"), t("log", "📜 Log"),
+      ...(isAdmin ? [h("form", { class: "mp-find mp-all", onsubmit: (e: Event) => { e.preventDefault(); const i = (e.currentTarget as HTMLFormElement).querySelector("input")!; const t = i.value; if (t.trim() && confirm("Put this message on EVERYBODY's screen?")) void run("Sent to everybody.", async () => { await call(me, "modNotice", { uid: "all", kind: "msg", text: t }); i.value = ""; }); } },
+        h("input", { class: "mini-input", maxLength: 200, placeholder: "Message to everybody…", "aria-label": "Message to everybody" }), h("button", { class: "btn small", type: "submit" }, "📢 All"))] : []),
       h("form", { class: "mp-find", onsubmit: (e: Event) => { e.preventDefault(); const i = (e.currentTarget as HTMLFormElement).querySelector("input")!; void findByName(i.value); } },
         h("input", { class: "mini-input", placeholder: "Find a player…", "aria-label": "Find a player" }), h("button", { class: "btn small", type: "submit" }, "Find")));
   }
@@ -137,32 +145,47 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   }
 
   function paintSide(): void {
+    side.classList.toggle("open", !!picked);
     if (!picked) { side.replaceChildren(h("div", { class: "hint pad" }, "Tap a name (or find a player) to see them here.")); return; }
     const p = picked;
     const muted = status.mute > Date.now();
     const banned = !!status.ban && (!status.ban.until || status.ban.until > Date.now());
     const mins = (t: number): number => Math.max(1, Math.ceil((t - Date.now()) / 60000));
-    const adminBox = isAdmin ? h("div", { class: "mp-admin" },
-      h("div", { class: "hint" }, "Admin: choose the time"),
-      h("input", { class: "mini-input mp-min", type: "number", min: "1", value: "60", "aria-label": "Minutes" }),
-      h("button", { class: "btn small", type: "button", onclick: (e: Event) => { const m = Number(((e.currentTarget as HTMLElement).parentElement!.querySelector(".mp-min") as HTMLInputElement).value); void run(`Muted for ${m} minutes.`, () => call(me, "modMute", { uid: p.uid, minutes: m })); } }, "Mute (min)"),
-      h("button", { class: "btn small", type: "button", onclick: (e: Event) => { const m = Number(((e.currentTarget as HTMLElement).parentElement!.querySelector(".mp-min") as HTMLInputElement).value); void run(`Banned for ${m} minutes.`, () => call(me, "modBan", { uid: p.uid, minutes: m })); } }, "Ban (min)"),
-      status.role === "mod" ? h("button", { class: "btn small", type: "button", onclick: () => void run("No longer a mod.", () => call(me, "modPromote", { uid: p.uid, role: "none" })) }, "Take away mod")
-        : status.role === "admin" ? h("span", { class: "hint" }, "admin") : h("button", { class: "btn small primary", type: "button", onclick: () => void run(`${p.name} is a mod now.`, () => call(me, "modPromote", { uid: p.uid, role: "mod" })) }, "Make mod")) : null;
+    const field = (cls: string, ph: string, type = "text", value = ""): HTMLInputElement => h("input", { class: `mini-input ${cls}`, type, placeholder: ph, value, "aria-label": ph }) as HTMLInputElement;
+    const reason = field("mp-reason-in", "Reason (optional)");
+    const noteIn = field("mp-note-in", "Message to this player");
+    const minIn = field("mp-min", "Minutes", "number", "60");
+    const bloodIn = field("mp-blood", "Blood", "number", "100");
+    const sec = (title: string, ...kids: Array<HTMLElement | null>): HTMLElement => h("div", { class: "mp-group" }, h("div", { class: "mp-sec" }, title), ...kids.filter((k): k is HTMLElement => !!k));
+    const row = (...kids: HTMLElement[]): HTMLElement => h("div", { class: "mp-q on" }, ...kids);
+    const btn = (label: string, onclick: () => void, cls = ""): HTMLElement => h("button", { class: `btn small ${cls}`, type: "button", onclick }, label);
     side.replaceChildren(
-      h("div", { class: "mp-pname" }, p.name, status.role ? h("span", { class: "mp-role" }, status.role) : h("span", {})),
-      h("div", { class: "hint mp-uid" }, p.uid),
+      h("div", { class: "mp-sidehead" }, h("div", {}, h("div", { class: "mp-pname" }, p.name, status.role ? h("span", { class: "mp-role" }, status.role) : h("span", {})), h("div", { class: "hint mp-uid" }, p.uid)),
+        h("button", { class: "btn small mp-closebtn", type: "button", "aria-label": "Close", onclick: () => { picked = null; paintSide(); } }, "✕")),
       h("div", { class: "mp-status" }, muted ? `🔇 muted ${mins(status.mute)} more min` : "not muted", " · ", banned ? (status.ban!.until ? `⛔ banned ${mins(status.ban!.until)} more min` : "⛔ banned for good") : "not banned"),
-      h("div", { class: "mp-q on" }, ...actionsFor(p)),
-      h("div", { class: "mp-q on" },
-        ...(muted ? [h("button", { class: "btn small", type: "button", onclick: () => void run("Unmuted.", () => call(me, "modMute", { uid: p.uid, on: false })) }, "Unmute")] : []),
-        ...(banned ? [h("button", { class: "btn small", type: "button", onclick: () => void run("Unbanned.", () => call(me, "modBan", { uid: p.uid, on: false })) }, "Unban")] : [])),
-      adminBox ?? h("span", {}),
-      h("div", { class: "mp-q on" },
-        h("button", { class: "btn small", type: "button", onclick: () => void showAlts() }, "🕵 Other accounts"),
-        h("button", { class: "btn small", type: "button", onclick: () => void showRecent() }, "💬 What they said")),
+      sec("Quick", row(...actionsFor(p)),
+        row(...(muted ? [btn("Unmute", () => void run("Unmuted.", () => call(me, "modMute", { uid: p.uid, on: false })))] : []),
+          ...(banned ? [btn("Unban", () => void run("Unbanned.", () => call(me, "modBan", { uid: p.uid, on: false })))] : []))),
+      sec("Tell them", noteIn,
+        row(btn("⚠ Warn", () => void run("Warning sent.", () => call(me, "modNotice", { uid: p.uid, kind: "warn", text: noteIn.value }))),
+          btn("📢 Message", () => void run("Message sent.", () => call(me, "modNotice", { uid: p.uid, kind: "msg", text: noteIn.value }))),
+          btn("👢 Kick", () => void run(`${p.name} was kicked.`, () => call(me, "modKick", { uid: p.uid, reason: noteIn.value }))))),
+      isAdmin ? sec("Admin", minIn, reason,
+        row(btn("Mute (min)", () => void run(`Muted for ${minIn.value} minutes.`, () => call(me, "modMute", { uid: p.uid, minutes: Number(minIn.value) }))),
+          btn("Ban (min)", () => void run(`Banned for ${minIn.value} minutes.`, () => call(me, "modBan", { uid: p.uid, minutes: Number(minIn.value), reason: reason.value })))),
+        row(btn("⛔ Ban for good", () => { if (confirm(`Ban ${p.name} for good?`)) void run(`${p.name} is banned.`, () => call(me, "modBan", { uid: p.uid, reason: reason.value })); }, "danger"),
+          btn("⛔ + address ban", () => { if (confirm(`Ban ${p.name} for good and ban the addresses they play from?`)) void run(`${p.name} is banned, and their addresses.`, async () => { await call(me, "modBan", { uid: p.uid, reason: reason.value }); await call(me, "modIpBan", { uid: p.uid }); }); }, "danger"),
+          btn("Lift address ban", () => void run("Address ban lifted.", () => call(me, "modIpBan", { uid: p.uid, on: false })))),
+        bloodIn,
+        row(btn("🩸 Give", () => void run("Blood given.", () => call(me, "modBlood", { uid: p.uid, delta: Math.abs(Number(bloodIn.value)) }))),
+          btn("🩸 Take", () => void run("Blood taken.", () => call(me, "modBlood", { uid: p.uid, delta: -Math.abs(Number(bloodIn.value)) })))),
+        row(status.role === "mod" ? btn("Take away mod", () => void run("No longer a mod.", () => call(me, "modPromote", { uid: p.uid, role: "none" })))
+          : status.role === "admin" ? h("span", { class: "hint" }, "admin") : btn("Make mod", () => void run(`${p.name} is a mod now.`, () => call(me, "modPromote", { uid: p.uid, role: "mod" })), "primary")),
+        row(btn("🌐 Addresses", () => void showIps()))) : h("span", {}),
+      sec("Look", row(btn("🕵 Other accounts", () => void showAlts()), btn("💬 What they said", () => void showRecent()))),
+      ...(ips ? [h("div", { class: "mp-sec" }, `Addresses (${ips.length})`), ...(ips.length ? ips.map((x) => h("div", { class: "mp-alt" }, `${x.ip}`, h("span", { class: "hint" }, ` ${ago(x.at)}${x.banned ? " · banned" : ""}`))) : [h("div", { class: "hint" }, "None noted yet (it is noted when they log in on the live game).")])] : []),
       ...(alts ? [h("div", { class: "mp-sec" }, `Other accounts (${alts.length})`),
-        ...(alts.length ? [h("button", { class: "btn small danger", type: "button", onclick: () => { const ids = alts!.filter((a) => !a.banned).map((a) => a.uid); if (ids.length && confirm(`Ban ${ids.length} accounts${isAdmin ? " for good" : " for 30 minutes"}?`)) void run(`${ids.length} accounts banned.`, () => call(me, "modBanMany", { uids: ids })); } }, `Ban all ${alts.filter((a) => !a.banned).length}`)] : [h("div", { class: "hint" }, "None found.")]),
+        ...(alts.length ? [btn(`Ban all ${alts.filter((a) => !a.banned).length}`, () => { const ids = alts!.filter((a) => !a.banned).map((a) => a.uid); if (ids.length && confirm(`Ban ${ids.length} accounts${isAdmin ? " for good" : " for 30 minutes"}?`)) void run(`${ids.length} accounts banned.`, () => call(me, "modBanMany", { uids: ids })); }, "danger")] : [h("div", { class: "hint" }, "None found.")]),
         ...alts.map((a) => h("div", { class: "mp-alt" }, name(a.uid, a.name), h("span", { class: "hint" }, ` ${a.why}${a.banned ? " · banned" : ""}`)))] : []),
       ...(recent ? [h("div", { class: "mp-sec" }, "What they said"), ...(recent.length ? recent.map((m) => h("div", { class: "mp-line small" }, h("span", { class: "mp-time" }, ago(m.ts)), h("span", { class: "mp-room" }, roomName(m.room)), h("span", { class: "mp-text" }, m.text))) : [h("div", { class: "hint" }, "Nothing written.")])] : []));
   }
