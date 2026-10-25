@@ -9268,5 +9268,95 @@
   "en": "You're already paying for that. Finish that first.",
   "da": "Du er allerede i gang med at betale for det. Gør den færdig først.",
   "where": "server/src/pay.ts"
+ },
+ "N1322": {
+  "en": "Dice",
+  "da": "Terninger",
+  "where": "src/items.ts"
+ },
+ "N1323": {
+  "en": "A die. Tap it to hold it in your hand, then press Roll: a number from 1 to 6 shows over your head for everybody in the room. Only the server rolls it, so nobody can fake it. Sold in the pay2win machine.",
+  "da": "En terning. Tryk på den for at holde den i hånden, og tryk så Rul: et tal fra 1 til 6 vises over dit hoved for alle i rummet. Kun serveren ruller den, så ingen kan snyde. Sælges i pay2win-automaten.",
+  "where": "src/items.ts"
+ },
+ "N1324": {
+  "en": "The dice are in your pocket. Tap them, then press Roll.",
+  "da": "Terningerne er i din lomme. Tryk på dem, og tryk så Rul.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1325": {
+  "en": "Hold them in your hand and roll a number from 1 to 6 for the whole room to see. Make a casino of your own.",
+  "da": "Hold dem i hånden og rul et tal fra 1 til 6, som hele rummet kan se. Lav dit eget casino.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1326": {
+  "en": "Everything but the dice is paid on a payment page: you come back to the game afterwards.",
+  "da": "Alt undtagen terningerne betales på en betalingsside: bagefter kommer du tilbage til spillet.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1327": {
+  "en": "Roll the dice",
+  "da": "Rul terningerne",
+  "where": "src/ui/room.ts"
+ },
+ "N1328": {
+  "en": "🎲 Dice in your hand",
+  "da": "🎲 Terninger i hånden",
+  "where": "src/ui/room.ts"
+ },
+ "N1329": {
+  "en": "The dice slipped.",
+  "da": "Terningerne gled væk.",
+  "where": "src/ui/room.ts"
+ },
+ "N1330": {
+  "en": "An empty growing kit. Tap a weed seed or shroom spores in your pocket first, then tap the kit to plant it.",
+  "da": "Et tomt growth kit. Tryk først på et weed frø eller shroom spores i din lomme, og tryk så på kittet for at plante det.",
+  "where": "src/ui/room.ts"
+ },
+ "N1331": {
+  "en": "You rolled a {n}.",
+  "da": "Du slog {n}.",
+  "where": "src/ui/room.ts"
+ },
+ "N1332": {
+  "en": "{…} rolled a {n}.",
+  "da": "{…} slog {n}.",
+  "where": "src/ui/room.ts"
+ },
+ "N1333": {
+  "en": "The dice are bought with blood.",
+  "da": "Terningerne købes med blod.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1334": {
+  "en": "You don't have any dice.",
+  "da": "Du har ingen terninger.",
+  "where": "server/src/actions/dice.ts"
+ },
+ "N1335": {
+  "en": "The dice are still rolling.",
+  "da": "Terningerne ruller stadig.",
+  "where": "server/src/actions/dice.ts"
+ },
+ "N1336": {
+  "en": "Dice in your hand: press Roll",
+  "da": "Terninger i hånden: tryk Rul",
+  "where": "src/ui/room.ts"
+ },
+ "N1337": {
+  "en": "The dice are in your hand: press Roll.",
+  "da": "Terningerne er i din hånd: tryk Rul.",
+  "where": "src/ui/sidepanel.ts"
+ },
+ "N1338": {
+  "en": "Hold",
+  "da": "Hold",
+  "where": "src/ui/sidepanel.ts"
+ },
+ "N1339": {
+  "en": "Put away",
+  "da": "Læg væk",
+  "where": "src/ui/sidepanel.ts"
  }
 }

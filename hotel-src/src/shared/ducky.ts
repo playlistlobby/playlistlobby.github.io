@@ -1,29 +1,34 @@
 // The Ducky machine in the shop: things you buy with real money (øre: 100 øre = 1 kr). Pure data: the browser and the server both use it.
 // While the machine is in test mode (the local server) a buy goes straight through without paying; paying through Stripe comes when it is published.
 
-export type DuckyProduct = "starter" | "color" | "fx" | "rename";
+export type DuckyProduct = "starter" | "color" | "fx" | "rename" | "dice";
 
 export interface DuckyDef {
   id: DuckyProduct;
-  /** the price in øre */
+  /** the price in øre (0: not sold for money) */
   ore: number;
+  /** the price in blood, for the things that are bought with blood at the machine (never paid on the payment page) */
+  blood?: number;
   /** can only be bought once (the key in `owned`) */
   once?: string;
 }
 
+/** what the dice cost at the machine (blood) */
+export const DICE_PRICE = 500;
 export const DUCKY_PRODUCTS: DuckyDef[] = [
   { id: "starter", ore: 3000, once: "ducky_starter" },
   { id: "color", ore: 2000, once: "ducky_color" },
   { id: "fx", ore: 2000, once: "ducky_fx" },
   { id: "rename", ore: 1000 },
+  { id: "dice", ore: 0, blood: DICE_PRICE },
 ];
 export const duckyDef = (id: unknown): DuckyDef | undefined => DUCKY_PRODUCTS.find((p) => p.id === id);
 /** what a purchase of one of them is called when it is paid for (Stripe, and the purchase records): "ducky_starter" ... */
 export type DuckyPayProduct = `ducky_${DuckyProduct}`;
 export const duckyPayId = (id: DuckyProduct): DuckyPayProduct => `ducky_${id}`;
-export const duckyOfPayId = (id: unknown): DuckyDef | undefined => (typeof id === "string" && id.startsWith("ducky_") ? duckyDef(id.slice(6)) : undefined);
+export const duckyOfPayId = (id: unknown): DuckyDef | undefined => (typeof id === "string" && id.startsWith("ducky_") ? [duckyDef(id.slice(6))].find((d) => d && d.ore > 0) : undefined); // (the dice are bought with blood: no payment page)
 /** the name on the payment page */
-export const DUCKY_PAY_NAMES: Record<DuckyProduct, string> = { starter: "pay2win: Startpakke", color: "pay2win: Navnefarve", fx: "pay2win: Chat-værktøj", rename: "pay2win: Skift navn" };
+export const DUCKY_PAY_NAMES: Record<DuckyProduct, string> = { starter: "pay2win: Startpakke", color: "pay2win: Navnefarve", fx: "pay2win: Chat-værktøj", rename: "pay2win: Skift navn", dice: "pay2win: Terninger" };
 
 /** the starter package: 3 growing kits, 3 mixers and 50 blood (it takes six free pocket slots) */
 export const DUCKY_STARTER = { items: [{ item: "f_planter", qty: 3 }, { item: "f_mixer", qty: 3 }], blood: 50 };

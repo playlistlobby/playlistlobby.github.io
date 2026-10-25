@@ -27,6 +27,7 @@ import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
 import { BLOOD_ICON, findSlot, furniIcon, growMsOf, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
 import { isLaced, unlaced } from "../shared/items";
+import { DICE_GAP_MS } from "../shared/dice";
 import { showDeathScreen } from "./deathScreen";
 import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
@@ -194,6 +195,8 @@ const itemImg = (id: string): HTMLImageElement => {
 
 const STEP_MS = 480;
 const BUBBLE_MS = 6500;
+/** the dice: how long the die tumbles, and how long the number stays over the head */
+const DICE_TUMBLE_MS = 900, DICE_SHOW_MS = 6500;
 const MAX_CHARS = 100;
 const STAB_MS = 700;
 const DROP_FLIGHT_MS = 750;
@@ -597,6 +600,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** The Turn button on the screen while you hold a piece of furniture from your pocket (outside the furnishing menu): the same as the R key. */
   const carryTurnBtn = h("button", { class: "btn small carry-turn hidden", title: "Turn", onclick: () => { const it = selectedDef(); if (it?.furniture) toolDir = nextDir(it.id, toolDir || defaultDir(it.id)); } }, "⟳ Turn");
   stage.append(carryTurnBtn);
+  /** The dice in your hand (selected in the pocket): the Roll button, looking like the roulette table's trigger. The server throws them and writes the number where only it can write. */
+  const rollBtn = h("button", { class: "btn rt-pull", type: "button", onclick: () => void rollTheDice() }, "Roll the dice") as HTMLButtonElement;
+  const diceBar = h("div", { class: "rt-bar dice-bar hidden" }, h("div", { class: "rt-bar-t" }, "🎲 Dice in your hand"), rollBtn);
+  stage.append(diceBar);
+  let rollLock = false;
+  async function rollTheDice(): Promise<void> {
+    if (rollLock || disposed) return;
+    rollLock = true;
+    rollBtn.disabled = true;
+    try { await call(me, "rollDice", { room: roomId }); } catch (err) { say((err as Error).message || "The dice slipped.", "warn"); }
+    window.setTimeout(() => { rollLock = false; rollBtn.disabled = false; }, DICE_GAP_MS);
+  }
   /** Only for accounts with the decorator power, in somebody else's room: opens the furnishing menu there. */
   const decorateBtn = h("button", { class: "btn small decorate-btn hidden", onclick: () => enterFurnish() }, adminLobbyEdit ? "🛠 Edit room" : "🛠 Decorate");
   stage.append(decorateBtn);
@@ -607,6 +622,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function syncCarryTurn(): void {
     const it = selectedDef();
     carryTurnBtn.classList.toggle("hidden", !(it?.furniture && !furnishOn && mayFurnish && FURNI_KINDS[it.id]?.rotatable));
+    diceBar.classList.toggle("hidden", !(it?.rolls && !furnishOn));
     landlordBtn.classList.toggle("hidden", !(adminOwnEdit && !furnishOn));
     decorateBtn.classList.toggle("hidden", !(((me.decorator && !isOwnRoom && roomId.startsWith("u_")) || adminLobbyEdit) && !furnishOn));
   }
@@ -616,6 +632,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     let text = "";
     if (tool && isOwner()) text = tool === "pickup" ? "Pick up furniture: click it" : `Place ${FURNI_KINDS[tool]?.label ?? tool}: click a tile${FURNI_KINDS[tool]?.rotatable ? " (R turns it)" : ""}`;
     else if (item?.useOnObject) text = hoverObj && (hoverObj.kind === item.useOnObject || (item.useOnObject === "cdplayer" && isCdKind(hoverObj.kind))) ? `Use ${item.name} → ${FURNI_KINDS[hoverObj.kind!].label}` : `Use ${item.name} →`;
+    else if (item?.rolls) text = "Dice in your hand: press Roll";
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
@@ -1512,8 +1529,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (!isOwnRoom) return say("That's not your plant.", "warn");
       if (!f.plant) {
         const isSeed = (n: string | undefined): boolean => n === "weedseed" || n === "shroomspore";
-        const ss = isSeed(held?.item) ? slot! : findSlot(me.inventory, "weedseed") >= 0 ? findSlot(me.inventory, "weedseed") : findSlot(me.inventory, "shroomspore");
-        if (ss < 0 || ss === null) return say("An empty growing kit. Select a weed seed or shroom spores, then click the kit to plant it.", "warn");
+        const ss = isSeed(held?.item) ? slot : null; // (nothing is planted unless you hold a seed: tap the seed first, then the pot)
+        if (ss === null) return say("An empty growing kit. Tap a weed seed or shroom spores in your pocket first, then tap the kit to plant it.", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
         return say(me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");
@@ -2708,6 +2725,25 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const eventsRef = ref(db, `rooms/${roomId}/events`);
   const joinedAt = serverNow();
 
+  // ---- the dice: a throw is written by the server to rooms/<room>/dice/<uid> (nobody else can write there), and shows over that player's head for everybody ----
+  const diceRolls = new Map<string, { n: number; start: number }>();
+  const diceSeen = new Map<string, number>();
+  function onDice(snap: { key: string | null; val(): unknown }): void {
+    const uid = snap.key, v = snap.val() as { n?: unknown; at?: unknown } | null;
+    if (!uid || !v || typeof v.at !== "number" || !Number.isInteger(v.n) || (v.n as number) < 1 || (v.n as number) > 6) return;
+    if (diceSeen.get(uid) === v.at) return;
+    diceSeen.set(uid, v.at);
+    const age = serverNow() - v.at;
+    if (age > DICE_SHOW_MS) return; // (an old throw from before you came in)
+    const n = v.n as number;
+    diceRolls.set(uid, { n, start: performance.now() - Math.max(0, age) });
+    playSfx("select", 0.35);
+    const who = players.get(uid)?.name ?? "Someone";
+    window.setTimeout(() => { if (!disposed) say(uid === me.uid ? `You rolled a ${n}.` : `${who} rolled a ${n}.`); }, Math.max(0, DICE_TUMBLE_MS - age)); // (a line only the game can write: it is not a chat message)
+  }
+  const diceRef = ref(db, `rooms/${roomId}/dice`);
+  unsubs.push(onChildAdded(diceRef, onDice, () => undefined), onChildChanged(diceRef, onDice, () => undefined));
+
   function kicked(msg: string): void {
     if (disposed) return;
     toast(msg, "err");
@@ -3091,7 +3127,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const sitting = !moving && !!p.sit && !em;
     if (sitting) yOff = -sitLift(p);
     const rtArm = sitting && roulette ? roulette.armFor(p.uid, now) : null; // the gun is in this hand (or at this head)
-    const actions = moving ? ["wlk"] : rtArm ? ["sit", rtArm === "raised" ? "drk=9999" : "crr=9999"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsCup(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
+    const actions = moving ? ["wlk"] : rtArm ? ["sit", rtArm === "raised" ? "drk=9999" : "crr=9999"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsCup(p) || holdsDice(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
       ? Math.floor((now - p.stepStart) / (stepOf(p) / 4)) % 4
@@ -3126,11 +3162,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // a knife in the hand: selected in your inventory (your own avatar), or mid-stab (everyone sees the attacker). The avatar's arm is held out for it.
   /** the lean's cup, drawn in the same hand as the knife */
   const holdsCup = (p: Player): boolean => !!p.cup && serverNow() < p.cup;
-  function drawCupInHand(fx: number, fy: number, dir: number): void {
-    const im = itemImg("codeine");
+  /** the dice in your own hand: while they are selected in your pocket (the Roll button is on the screen) */
+  const holdsDice = (p: Player): boolean => p.uid === me.uid && !!selectedDef()?.rolls;
+  function drawCupInHand(fx: number, fy: number, dir: number, id = "codeine", size = 26): void {
+    const im = itemImg(id);
     if (!im.complete || !im.naturalWidth) return;
     const [hdx, hdy] = KNIFE_HAND[dir] ?? KNIFE_HAND[2];
-    const ch = 26 * scale, cw = ch; // (the picture is square: the cup is in the middle of it)
+    const ch = size * scale, cw = ch; // (the picture is square: the cup is in the middle of it)
     g.save();
     g.imageSmoothingEnabled = false;
     g.shadowColor = "rgba(0,0,0,0.75)"; g.shadowBlur = 3 * scale; // a white cup against a white shirt needs an edge
@@ -3745,6 +3783,39 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const xs = [A.x, B.x, C.x, D.x];
     const ys = [A.y, B.y, C.y, D.y, gd(C).y, gd(D).y, gd(B).y];
     return { id: "", x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), depth: f.x + k.w + f.y + k.h - 1 };
+  }
+
+  /** The die over a head: it tumbles through faces a moment, then lands on the number the server threw (the pips and the digit beside it). */
+  function drawDie(cx: number, bottomY: number, n: number, age: number): void {
+    const u = Math.max(1, scale), s = 30 * u;
+    const tumbling = age < DICE_TUMBLE_MS;
+    const face = tumbling ? 1 + (Math.floor(age / 85) * 5 + 2) % 6 : n;
+    const hop = tumbling ? -Math.abs(Math.sin(age / 95)) * 14 * u : -Math.max(0, 1 - (age - DICE_TUMBLE_MS) / 160) * 5 * u;
+    const left = DICE_SHOW_MS - age;
+    const x = cx - s / 2 - (tumbling ? 0 : 7 * u), y = bottomY - s - 6 * u + hop;
+    g.save();
+    g.globalAlpha = left < 800 ? Math.max(0, left / 800) : 1;
+    if (tumbling) { g.translate(x + s / 2, y + s / 2); g.rotate(Math.sin(age / 70) * 0.5); g.translate(-(x + s / 2), -(y + s / 2)); }
+    g.shadowColor = "rgba(0,0,0,0.5)"; g.shadowBlur = 5 * u;
+    g.fillStyle = "#d32f2f"; // (red like the dice in the pocket)
+    g.strokeStyle = tumbling ? "#5a0f0f" : "#ffd54a";
+    g.lineWidth = (tumbling ? 2 : 3) * u / 1.5;
+    g.beginPath(); g.roundRect(x, y, s, s, 6 * u); g.fill(); g.stroke();
+    g.shadowBlur = 0;
+    g.fillStyle = "#fff";
+    const PIPS: number[][][] = [[], [[1, 1]], [[0, 0], [2, 2]], [[0, 0], [1, 1], [2, 2]], [[0, 0], [2, 0], [0, 2], [2, 2]], [[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]], [[0, 0], [2, 0], [0, 1], [2, 1], [0, 2], [2, 2]]];
+    for (const [px, py] of PIPS[face]) { g.beginPath(); g.arc(x + s * (0.25 + px * 0.25), y + s * (0.25 + py * 0.25), s * 0.085, 0, Math.PI * 2); g.fill(); }
+    g.restore();
+    if (!tumbling) { // the number itself, next to the die
+      g.save();
+      g.globalAlpha = left < 800 ? Math.max(0, left / 800) : 1;
+      const pop = 1 + Math.max(0, 1 - (age - DICE_TUMBLE_MS) / 250) * 0.5;
+      g.font = `900 ${Math.round(26 * u * pop)}px Verdana, sans-serif`;
+      g.textAlign = "left"; g.textBaseline = "middle";
+      g.lineWidth = 4 * u / 1.5; g.strokeStyle = "#000"; g.strokeText(String(n), x + s + 5 * u, y + s / 2);
+      g.fillStyle = "#ffd54a"; g.fillText(String(n), x + s + 5 * u, y + s / 2);
+      g.restore();
+    }
   }
 
   /** a chat bubble over a player; `look` is what the Ducky machine sold them: a name colour, and moving or coloured text (the chat tool) */
@@ -4474,9 +4545,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           const knifeOut = !isMoving(p, now) && !p.emote && !smoking && holdsKnife(p, now);
           const knifeBehind = knifeOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
           if (knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
-          const cupOut = !knifeOut && !isMoving(p, now) && !p.emote && !smoking && holdsCup(p);
+          const cupOut = !knifeOut && !isMoving(p, now) && !p.emote && !smoking && (holdsCup(p) || holdsDice(p));
+          const heldId = holdsCup(p) ? "codeine" : "dice", heldSize = holdsCup(p) ? 26 : 18;
           const cupBehind = cupOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
-          if (cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          if (cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, heldId, heldSize);
           // the introduction's guy flashes and glows until he's been stabbed
           const glowing = isTut && p.uid === LEGEND.id && me.tutorial === 1;
           const pulse = 0.5 + 0.5 * Math.sin(now / 170);
@@ -4515,7 +4587,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
           if (smoking && p.smokeKind === "hashjoint") drawHearts(feet.x + lunge.x, feet.y + lunge.y + lift, now); // the hash joint: hearts float up over the head
           if (knifeOut && !knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
-          if (cupOut && !cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          if (cupOut && !cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, heldId, heldSize);
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
@@ -4538,10 +4610,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.textAlign = "start";
         },
       });
+      const dr = diceRolls.get(p.uid);
+      if (dr && now - dr.start > DICE_SHOW_MS) diceRolls.delete(p.uid);
+      const dieOn = !!dr && now - dr.start <= DICE_SHOW_MS;
+      if (dieOn) bubbles.push(() => drawDie(feet.x, feet.y - (FEET_Y + 4) * scale, dr!.n, now - dr!.start));
       if (p.bubble && p.bubble.until > now) {
         const left = p.bubble.until - now;
         const b = p.bubble;
-        bubbles.push(() => drawBubble(b.text, p.name, feet.x, feet.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1, { nc: p.nc, fx: b.fx, fc: b.fc }));
+        const up = dieOn ? 44 * Math.max(1, scale) : 0; // (the chat bubble makes room for the die)
+        bubbles.push(() => drawBubble(b.text, p.name, feet.x, feet.y - (FEET_Y + 4) * scale - up, left < 800 ? left / 800 : 1, { nc: p.nc, fx: b.fx, fc: b.fc }));
       }
     }
     hitboxes = boxes;

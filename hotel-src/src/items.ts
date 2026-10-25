@@ -28,6 +28,8 @@ export interface ItemDef {
   carvable?: boolean;
   /** a piece of furniture: select it, then click a free spot in your own room to put it down */
   furniture?: boolean;
+  /** held in the hand when selected: the Roll button shows on the screen (the dice) */
+  rolls?: boolean;
   /** picture while it's lit (the cigarette: the plain icon is the unlit one) */
   litIcon?: string;
 }
@@ -394,6 +396,13 @@ export const ITEMS: Record<string, ItemDef> = {
     examine: "Made on the crafting bench in the mines. Use it on another player like the knife: every stab draws twice the blood. It stays with you.",
     icon: assetUrl("items/machete.svg"),
     useOnPlayer: "stab",
+  },
+  dice: {
+    id: "dice",
+    name: "Dice",
+    examine: "A die. Tap it to hold it in your hand, then press Roll: a number from 1 to 6 shows over your head for everybody in the room. Only the server rolls it, so nobody can fake it. Sold in the pay2win machine.",
+    icon: assetUrl("items/dice.png"), // the catalog icon of hobbies_c26_d6.nitro
+    rolls: true,
   },
 };
 

@@ -26,6 +26,8 @@ export const ITEM_ID_LIST = [
   "tobacco", "cigar",
   // the mines: iron you mine, wood from 6ixty (or the floor), and the tools made from them
   "iron", "wood", "pickaxe", "machete",
+  // the dice (pay2win machine, for blood): hold it, press Roll, and a number from 1 to 6 shows over your head
+  "dice",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -229,7 +231,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife) and every CD. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "pickaxe", "machete",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "pickaxe", "machete", "dice",
 ]);
 
 /**
