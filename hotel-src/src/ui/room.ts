@@ -238,6 +238,8 @@ interface Player {
   spin?: number;
   /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
   npc?: boolean;
+  /** you walk at a fifth of your speed until then (performance.now(); fentanyl: only ever set on yourself) */
+  slowUntil?: number;
   /** the colour of their name (bought at the Ducky machine; the server checks it, see the rules for players/<uid>/nc) */
   nc?: string;
   /** sitting on a chair or couch (shown to everyone through players/<uid>/sit) */
@@ -254,7 +256,7 @@ interface StabFx { from: string; to: string; start: number; impact: boolean; dro
 interface SyringeFx { uid: string; start: number; burst: boolean }
 interface DropFx { from: string; to: string; start: number }
 interface Particle { x: number; y: number; vx: number; vy: number; born: number; life: number }
-interface Floater { text: string; x: number; y: number; born: number; color: string; icon?: HTMLImageElement; life?: number }
+interface Floater { text: string; x: number; y: number; born: number; color: string; icon?: HTMLImageElement; life?: number; /** how much bigger than usual */ size?: number }
 interface GlyphFx { uid: string; glyph: string; born: number; life: number; ox: number }
 interface Hitbox { id: string; kind?: string; x0: number; y0: number; x1: number; y1: number; depth: number }
 interface NoteFx { born: number; life: number; glyph: string; ox: number; phase: number; color: string }
@@ -1252,7 +1254,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** how long one step takes: half as long while thc-a / research chemical is in you */
-  const stepOf = (p: Player): number => (p.fast && serverNow() < p.fast ? STEP_MS / (p.fastMult ?? 2) : STEP_MS);
+  const stepOf = (p: Player): number => (p.slowUntil && performance.now() < p.slowUntil ? STEP_MS * 5 : p.fast && serverNow() < p.fast ? STEP_MS / (p.fastMult ?? 2) : STEP_MS);
   const isMoving = (p: Player, now: number) => now - p.stepStart < stepOf(p) && (p.from.x !== p.to.x || p.from.y !== p.to.y);
 
   function currentTile(p: Player): Pt {
@@ -2285,6 +2287,47 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let pillCleanup: (() => void) | null = null;
   /** The super pill (4x walking speed for a minute) and the lean (the cup in your hand, an hour of better bins). */
   let dying = false;
+  const FENT_SLOW_MS = 7000;
+  /**
+   * Fentanyl (or something laced with it) has gone in: the screen swims green, you walk at a fifth of your speed for 7 seconds, then you go down and
+   * "DU OD'EDE PÅ FENT" shows for 10 seconds with what it cost you in blood, and you wake up in your own room. (The server took the blood and the item at once.)
+   */
+  function startFentDeath(p: Player, r: { lost?: number; ms?: number; item?: string }): void {
+    dying = true;
+    const app = document.getElementById("app");
+    const t0 = performance.now();
+    const timers: number[] = [];
+    p.slowUntil = t0 + FENT_SLOW_MS;
+    say(r.item ? "You took it. It was laced. Your legs go heavy…" : "You swallow it. Your legs go heavy…", "warn");
+    const swim = window.setInterval(() => {
+      const t = performance.now() - t0;
+      const ramp = Math.min(1, t / FENT_SLOW_MS);
+      if (app) app.style.filter = `blur(${(0.3 + 5 * ramp * ramp + Math.sin(performance.now() / 380) * 1.2 * ramp).toFixed(1)}px) hue-rotate(${(Math.sin(t / 700) * 55 * ramp).toFixed(0)}deg) saturate(${(1 + 1.4 * ramp).toFixed(2)})`;
+    }, 70);
+    const tidy = (): void => { window.clearInterval(swim); timers.forEach((t) => window.clearTimeout(t)); if (app) app.style.filter = ""; pillCleanup = null; };
+    pillCleanup = tidy; // leaving the room ends the dizziness
+    timers.push(window.setTimeout(() => {
+      tidy();
+      if (disposed) return;
+      faintUntil = performance.now() + (r.ms ?? 10_000) + 8000; // (out cold until you are carried home)
+      p.slowUntil = undefined;
+      p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
+      p.faint = true; // down
+      update(myRef, { lay: true, sit: null }).catch(() => undefined);
+      playThud(0.7);
+      ctx.refreshHeader(); // (the blood is gone from the top bar now)
+      if (r.lost) {
+        const t = performance.now(), fp = feetOf(p, t);
+        floaters.push({ text: `-${r.lost}`, x: fp.x, y: fp.y - 70 * scale, born: t, color: "#ff2d2d", icon: bloodImg, life: 4200, size: 2.4 });
+        for (let i = 0; i < 6; i++) floaters.push({ text: "", x: fp.x + (i - 2.5) * 16 * scale, y: fp.y - 30 * scale, born: t + i * 90, color: "#ff2d2d", icon: bloodImg, life: 1800, size: 1.2 });
+      }
+      stage.append(h("div", { class: "fent-flash" }));
+      window.setTimeout(() => stage.querySelector(".fent-flash")?.remove(), 1400);
+      const stop = showDeathScreen(stage, "DU OD'EDE PÅ FENT", Math.round((r.ms ?? 10_000) / 1000), () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true }); }, r.lost ? { lost: `-${r.lost} blod`, icon: BLOOD_ICON } : undefined);
+      unsubs.push(stop);
+    }, FENT_SLOW_MS));
+  }
+
   async function consumeSlot(slot: number): Promise<void> {
     const p = mine();
     if (!p || p.lying || faintUntil || woozy || trippingOn || dying) return;
@@ -2296,13 +2339,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       panel.refresh();
       playSfx("select", 0.5);
       if (r.kind === "fentdeath") {
-        dying = true;
         logAction(me, "room", r.item ? `died of a laced ${r.item}` : "died of fentanyl");
-        ctx.refreshHeader();
-        if (r.lost) { const t = performance.now(), fp = feetOf(p, t); floaters.push({ text: `-${r.lost}`, x: fp.x, y: fp.y - 78 * scale, born: t, color: "#ff5252", icon: bloodImg, life: 2600 }); }
-        playThud(0.6);
-        const stop = showDeathScreen(stage, "DU OD'EDE PÅ FENT", Math.round((r.ms ?? 10_000) / 1000), () => { dying = false; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true }); });
-        unsubs.push(stop);
+        startFentDeath(p, r);
       } else if (r.kind === "dmt") {
         logAction(me, "room", "swallowed DMT");
         say("You swallow the yellow pill. The floor tilts and the colours start to move.");
@@ -3803,7 +3841,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const age = now - f.born;
       const life = f.life ?? 1100;
       g.globalAlpha = Math.max(0, Math.min(1, (life - age) / (life * 0.45)));
-      const fsz = Math.round(16 * Math.max(1, scale));
+      if (age < 0) continue; // (not yet)
+      const fsz = Math.round(16 * Math.max(1, scale) * (f.size ?? 1));
       g.font = `bold ${fsz}px Verdana, 'Apple Color Emoji', sans-serif`;
       g.textAlign = "center";
       g.textBaseline = "middle";

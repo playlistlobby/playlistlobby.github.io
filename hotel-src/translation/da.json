@@ -8983,5 +8983,235 @@
   "en": "Wavy",
   "da": "Bølge",
   "where": "src/ui/room.ts"
+ },
+ "N1265": {
+  "en": "Iron",
+  "da": "Jern",
+  "where": "src/items.ts"
+ },
+ "N1266": {
+  "en": "A chunk of iron dug out of the rock in the mines. Sell it to 6ixty, or make tools from it on the crafting bench.",
+  "da": "Et stykke jern gravet ud af klippen i minerne. Sælg det til 6ixty, eller lav værktøj af det ved værkstedsbordet.",
+  "where": "src/items.ts"
+ },
+ "N1267": {
+  "en": "A piece of wood. 6ixty sells it in the mines, and some lies about down there. You need it for tools.",
+  "da": "Et stykke træ. 6ixty sælger det i minerne, og noget ligger på gulvet dernede. Du skal bruge det til værktøj.",
+  "where": "src/items.ts"
+ },
+ "N1268": {
+  "en": "Pickaxe",
+  "da": "Hakke",
+  "where": "src/items.ts"
+ },
+ "N1269": {
+  "en": "Made on the crafting bench in the mines. You mine iron a lot faster with it than with the knife. It stays with you.",
+  "da": "Lavet ved værkstedsbordet i minerne. Du udvinder jern meget hurtigere med den end med kniven. Den bliver hos dig.",
+  "where": "src/items.ts"
+ },
+ "N1270": {
+  "en": "Machete",
+  "da": "Machete",
+  "where": "src/items.ts"
+ },
+ "N1271": {
+  "en": "Made on the crafting bench in the mines. Use it on another player like the knife: every stab draws twice the blood. It stays with you.",
+  "da": "Lavet ved værkstedsbordet i minerne. Brug den på en anden spiller som kniven: hvert stik giver dobbelt så meget blod. Den bliver hos dig.",
+  "where": "src/items.ts"
+ },
+ "N1272": {
+  "en": "You need a knife (or a pickaxe) to mine.",
+  "da": "Du skal have en kniv (eller en hakke) for at grave.",
+  "where": "src/ui/room.ts"
+ },
+ "N1273": {
+  "en": "You swing the pickaxe at the rock…",
+  "da": "Du svinger hakken mod klippen…",
+  "where": "src/ui/room.ts"
+ },
+ "N1274": {
+  "en": "You scrape at the rock with your knife…",
+  "da": "Du skraber i klippen med din kniv…",
+  "where": "src/ui/room.ts"
+ },
+ "N1275": {
+  "en": "+1 Iron",
+  "da": "+1 Jern",
+  "where": "src/ui/room.ts"
+ },
+ "N1276": {
+  "en": "The rock won't give.",
+  "da": "Klippen giver ikke efter.",
+  "where": "src/ui/room.ts"
+ },
+ "N1277": {
+  "en": "Iron rock: mine it with your knife",
+  "da": "Jernklippe: grav den med din kniv",
+  "where": "src/ui/room.ts"
+ },
+ "N1278": {
+  "en": "Crafting bench: make a pickaxe or a machete",
+  "da": "Værkstedsbord: lav en hakke eller en machete",
+  "where": "src/ui/room.ts"
+ },
+ "N1279": {
+  "en": "6ixty: buy wood, sell iron",
+  "da": "6ixty: køb træ, sælg jern",
+  "where": "src/ui/room.ts"
+ },
+ "N1280": {
+  "en": "Mine",
+  "da": "Grav",
+  "where": "src/ui/room.ts"
+ },
+ "N1281": {
+  "en": "Iron rock",
+  "da": "Jernklippe",
+  "where": "src/ui/room.ts"
+ },
+ "N1282": {
+  "en": "Crafting bench",
+  "da": "Værkstedsbord",
+  "where": "src/ui/room.ts"
+ },
+ "N1283": {
+  "en": "⚒️ Crafting bench",
+  "da": "⚒️ Værkstedsbord",
+  "where": "src/ui/craftBench.ts"
+ },
+ "N1284": {
+  "en": "You made a {name}.",
+  "da": "Du lavede en {name}.",
+  "where": "src/ui/craftBench.ts"
+ },
+ "N1285": {
+  "en": "{iron} iron ({iron})",
+  "da": "{iron} jern ({iron})",
+  "where": "src/ui/craftBench.ts"
+ },
+ "N1286": {
+  "en": "{wood} wood ({wood})",
+  "da": "{wood} træ ({wood})",
+  "where": "src/ui/craftBench.ts"
+ },
+ "N1287": {
+  "en": "You need more iron or wood",
+  "da": "Du skal bruge mere jern eller træ",
+  "where": "src/ui/craftBench.ts"
+ },
+ "N1288": {
+  "en": "Craft",
+  "da": "Lav",
+  "where": "src/ui/craftBench.ts"
+ },
+ "N1289": {
+  "en": "Mine iron with your knife (or a pickaxe) at the rocks. 6ixty sells wood, and some lies on the floor.",
+  "da": "Grav jern med din kniv (eller en hakke) ved klipperne. 6ixty sælger træ, og noget ligger på gulvet.",
+  "where": "src/ui/craftBench.ts"
+ },
+ "N1290": {
+  "en": "Mines iron 2.4 times faster than the knife.",
+  "da": "Graver jern 2,4 gange hurtigere end kniven.",
+  "where": "src/shared/mines.ts"
+ },
+ "N1291": {
+  "en": "Every stab draws twice the blood. Use it on a player like the knife.",
+  "da": "Hvert stik giver dobbelt så meget blod. Brug den på en spiller som kniven.",
+  "where": "src/shared/mines.ts"
+ },
+ "N1292": {
+  "en": "Logs",
+  "da": "Brænde",
+  "where": "src/rooms.ts"
+ },
+ "N1293": {
+  "en": "Iron balls",
+  "da": "Jernkugler",
+  "where": "src/rooms.ts"
+ },
+ "N1294": {
+  "en": "Sacks",
+  "da": "Sække",
+  "where": "src/rooms.ts"
+ },
+ "N1295": {
+  "en": "Mine cart",
+  "da": "Minevogn",
+  "where": "src/rooms.ts"
+ },
+ "N1296": {
+  "en": "Tool cart",
+  "da": "Værktøjsvogn",
+  "where": "src/rooms.ts"
+ },
+ "N1297": {
+  "en": "Dirt and a pickaxe",
+  "da": "Jord og en hakke",
+  "where": "src/rooms.ts"
+ },
+ "N1298": {
+  "en": "Longhorn skull",
+  "da": "Hornskalle",
+  "where": "src/rooms.ts"
+ },
+ "N1299": {
+  "en": "Big rock",
+  "da": "Stor klippe",
+  "where": "src/rooms.ts"
+ },
+ "N1300": {
+  "en": "Rock spire",
+  "da": "Klippespir",
+  "where": "src/rooms.ts"
+ },
+ "N1301": {
+  "en": "Torch",
+  "da": "Fakkel",
+  "where": "src/rooms.ts"
+ },
+ "N1302": {
+  "en": "Mines",
+  "da": "Minerne",
+  "where": "src/rooms.ts"
+ },
+ "N1303": {
+  "en": "That isn't a rock you can mine.",
+  "da": "Den klippe kan du ikke grave i.",
+  "where": "server/src/actions/mines.ts"
+ },
+ "N1304": {
+  "en": "You're too far from the rock.",
+  "da": "Du er for langt fra klippen.",
+  "where": "server/src/actions/mines.ts"
+ },
+ "N1305": {
+  "en": "The bench can't make that.",
+  "da": "Bordet kan ikke lave det.",
+  "where": "server/src/actions/mines.ts"
+ },
+ "N1306": {
+  "en": "Walk up to the crafting bench first.",
+  "da": "Gå hen til værkstedsbordet først.",
+  "where": "server/src/actions/mines.ts"
+ },
+ "N1307": {
+  "en": "You already have a {give}.",
+  "da": "Du har allerede en {give}.",
+  "where": "server/src/actions/mines.ts"
+ },
+ "N1308": {
+  "en": "You need {iron} iron and {wood} wood (you have {iron} and {wood}).",
+  "da": "Du skal bruge {iron} jern og {wood} træ (du har {iron} og {wood}).",
+  "where": "server/src/actions/mines.ts"
+ },
+ "N1309": {
+  "en": "You took it. It was laced. Your legs go heavy…",
+  "da": "Du tog den. Den var laceret. Dine ben bliver tunge…",
+  "where": "src/ui/room.ts"
+ },
+ "N1310": {
+  "en": "You swallow it. Your legs go heavy…",
+  "da": "Du sluger den. Dine ben bliver tunge…",
+  "where": "src/ui/room.ts"
  }
 }

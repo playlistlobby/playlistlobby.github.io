@@ -16,9 +16,9 @@ export interface DuckyDef {
 
 export const DUCKY_PRODUCTS: DuckyDef[] = [
   { id: "starter", ore: 3000, once: "ducky_starter" },
-  { id: "color", ore: 1500, once: "ducky_color" },
+  { id: "color", ore: 2000, once: "ducky_color" },
   { id: "fx", ore: 2000, once: "ducky_fx" },
-  { id: "rename", ore: 500 },
+  { id: "rename", ore: 1000 },
 ];
 export const duckyDef = (id: unknown): DuckyDef | undefined => DUCKY_PRODUCTS.find((p) => p.id === id);
 

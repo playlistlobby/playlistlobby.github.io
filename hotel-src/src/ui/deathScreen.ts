@@ -1,9 +1,10 @@
 // The red "you are dead" screen with a countdown, for deaths outside the roulette table (fentanyl). It covers the picture until the time is up, then `onDone` runs.
 import { h } from "./dom";
 
-export function showDeathScreen(host: HTMLElement, title: string, seconds: number, onDone: () => void): () => void {
+export function showDeathScreen(host: HTMLElement, title: string, seconds: number, onDone: () => void, loss?: { lost: string; icon: string }): () => void {
   const count = h("div", { class: "rt-dead-sub" });
-  const el = h("div", { class: "rt-dead", role: "alert" }, h("div", { class: "rt-dead-t" }, title), count);
+  const lossEl = loss ? h("div", { class: "rt-dead-loss" }, h("img", { src: loss.icon, alt: "", class: "rt-dead-drop" }), loss.lost) : null;
+  const el = h("div", { class: "rt-dead", role: "alert" }, h("div", { class: "rt-dead-t" }, title), lossEl, count);
   host.append(el);
   let left = seconds, done = false;
   const tick = (): void => {
