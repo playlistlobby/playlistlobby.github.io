@@ -32,6 +32,7 @@ interface Row {
 }
 
 const KNOCK_TIMEOUT_MS = 60_000;
+const CHUNK = 30;
 
 /**
  * The door popup (click the door in any room): go to the basement or your own room, or visit someone else's.
@@ -45,7 +46,9 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   let board: Record<string, number> = {};
   let ranks = new Map<string, number>();
   let search = "";
-  let searched: { uid: string; name: string } | { none: true } | null = null;
+  /** how many rows of the list are on screen: more are added as you scroll down (a long list of players never builds in one go) */
+  let shown = CHUNK;
+  let refreshTimer = 0;
   let knocking: { row: Row; state: "waiting" | "declined" | "none" } | null = null;
   let stopKnock: (() => void) | null = null;
   let knockTimer = 0;
@@ -84,14 +87,28 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     };
   }
 
+  /** the list: with nothing typed, the rooms you can go to (friends first, then open rooms by blood); with letters typed, every player whose name or room matches, best match first */
   function rowsToShow(): Row[] {
+    const q = search.trim().toLowerCase();
     const all = Object.entries(rooms)
       .filter(([id, m]) => id.startsWith("u_") && m.owner !== me.uid && id !== currentRoom)
       .map(([id, m]) => rowFor(id, m));
+    const rank = (a: Row, b: Row): number =>
+      Number(b.friend) - Number(a.friend) || Number(b.access === "open") - Number(a.access === "open") || b.blood - a.blood || Number(b.online) - Number(a.online) || Number(a.idle) - Number(b.idle) || b.count - a.count || a.ownerName.localeCompare(b.ownerName);
+    if (q) {
+      const score = (r: Row): number => {
+        const n = r.ownerName.toLowerCase(), rn = r.roomName.toLowerCase();
+        if (n === q) return 0;
+        if (n.startsWith(q)) return 1;
+        const at = n.indexOf(q);
+        if (at >= 0) return 2 + Math.min(at, 20) / 100; // earlier in the name is better
+        if (rn.includes(q)) return 3;
+        return -1;
+      };
+      return all.map((r) => ({ r, s: score(r) })).filter((x) => x.s >= 0).sort((a, b) => a.s - b.s || rank(a.r, b.r)).map((x) => x.r);
+    }
     const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
-    // friends first, then the rooms open to everyone (richest owner first), then the knock rooms (richest first too)
-    return visible.sort((a, b) =>
-      Number(b.friend) - Number(a.friend) || Number(b.access === "open") - Number(a.access === "open") || b.blood - a.blood || Number(b.online) - Number(a.online) || Number(a.idle) - Number(b.idle) || b.count - a.count || a.ownerName.localeCompare(b.ownerName)).slice(0, me.isAdmin ? 300 : 40);
+    return visible.sort(rank);
   }
 
   /** a shroom or DMT is working: every door is open */
@@ -110,48 +127,81 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     return h("span", { class: "door-actions" }, main);
   }
 
+  /** the typed letters picked out inside a name */
+  function lit(text: string): Array<string | HTMLElement> {
+    const q = search.trim().toLowerCase();
+    const at = q ? text.toLowerCase().indexOf(q) : -1;
+    if (at < 0) return [text];
+    return [text.slice(0, at), h("mark", { class: "door-mark" }, text.slice(at, at + q.length)), text.slice(at + q.length)];
+  }
+
   function rowEl(r: Row): HTMLElement {
     const sub = r.friend ? "friend" : r.access === "open" ? "open to everyone" : me.isAdmin ? "admin: always open" : tripping() ? "Opened by a shroom" : r.access === "knock" ? "knock to enter" : "closed";
     return h("div", { class: "door-row" },
       headBoxFor(r.owner),
       h("span", { class: "dot " + (r.online ? (r.idle ? "idle" : "on") : "") }),
       h("div", { class: "door-row-main" },
-        h("div", { class: "door-row-name" }, r.roomName),
-        h("div", { class: "hint" }, `${r.ownerName} · ${sub}${r.idle ? " · idle" : ""}${r.count ? ` · ${r.count} inside` : ""}`)),
+        h("div", { class: "door-row-name" }, ...lit(r.roomName)),
+        h("div", { class: "hint" }, ...lit(r.ownerName), ` · ${sub}${r.idle ? " · idle" : ""}${r.count ? ` · ${r.count} inside` : ""}`)),
       r.access === "open" && r.rank > 0 && r.rank <= 50 ? h("span", { class: "door-rank", title: "Ranked by blood: the richest players are on top" }, `#${r.rank}`) : null,
       // a little profile button (just the icon) next to Visit / Knock: the owner's profile page
       h("button", { class: "btn small door-profile", title: `${r.ownerName}'s profile`, "aria-label": `${r.ownerName}'s profile`, onclick: (e: Event) => { if (chosen(e)) { close(); window.dispatchEvent(new CustomEvent("open-profile", { detail: r.owner })); } } }, "👤"),
       actionFor(r));
   }
 
-  function render(): void {
-    if (closed) return;
-    if (knocking) return renderKnocking();
-    const list = rowsToShow();
-    const found = searched && "uid" in searched ? rooms[ownRoomId(searched.uid)] : undefined;
-    const foundRow = found && searched && "uid" in searched ? rowFor(ownRoomId(searched.uid), found) : null;
+  /** the shell (the two big buttons, the search box and the list) is built once, so typing never loses the cursor or the scroll position */
+  function buildShell(): void {
+    body.classList.add("door-flex");
     body.replaceChildren(
       h("div", { class: "door-main" },
         currentRoom !== LOBBY_ID ? h("button", { class: "btn primary door-big", onclick: (e: Event) => { if (chosen(e)) enter(LOBBY_ID, "the basement"); } }, "🕳 Basement") : null,
         currentRoom !== mineId ? h("button", { class: "btn primary door-big", onclick: (e: Event) => { if (chosen(e)) enter(mineId, "their own room"); } }, "🏠 My room") : null),
       h("div", { class: "fp-label" }, "Visit a player's room"),
-      h("form", { class: "row door-search", onsubmit: async (e: Event) => {
-        e.preventDefault();
-        search = input.value.trim();
-        if (!search) { searched = null; return render(); }
-        const uid = await social.uidOf(search).catch(() => null);
-        searched = uid ? { uid, name: search } : { none: true };
-        render();
-      } }, input, h("button", { class: "btn small", type: "submit" }, "Find")),
-      ...(searched && "none" in searched ? [h("div", { class: "hint pad" }, `Nobody is called "${search}".`)] : []),
-      ...(searched && "uid" in searched
-        ? [foundRow ? rowEl(foundRow) : h("div", { class: "hint pad" }, `${searched.name} hasn't set up a room yet.`)]
-        : []),
-      h("div", { class: "door-list" }, ...(list.length
-        ? list.map(rowEl)
-        : [h("div", { class: "hint pad" }, "No rooms to visit right now. Search for a friend by username above.")])));
+      h("div", { class: "door-search" }, input, clearBtn),
+      status,
+      list);
+    renderList();
   }
-  const input = h("input", { class: "mini-input", type: "text", placeholder: "Username…", maxLength: 16, autocapitalize: "none", spellcheck: false });
+
+  /** (re)draws the list for what is typed; keeps the scroll position */
+  function renderList(): void {
+    if (closed || knocking) return;
+    const all = rowsToShow();
+    const q = search.trim();
+    const top = list.scrollTop;
+    list.replaceChildren(...(all.length
+      ? all.slice(0, shown).map(rowEl)
+      : [h("div", { class: "hint pad" }, q ? `No player or room matches "${q}".` : "No rooms to visit right now. Type a few letters of a player's name to find them.")]));
+    list.scrollTop = top;
+    const n = all.length;
+    status.textContent = q ? (n === 1 ? "1 match" : `${n} matches`) : n === 1 ? "1 room to visit" : `${n} rooms to visit`;
+    clearBtn.style.visibility = input.value ? "visible" : "hidden";
+  }
+
+  /** many updates arrive at once (presence, blood, rooms): draw the list once for all of them */
+  function refreshSoon(): void {
+    if (refreshTimer) return;
+    refreshTimer = window.setTimeout(() => { refreshTimer = 0; renderList(); }, 120);
+  }
+
+  function render(): void {
+    if (closed) return;
+    if (knocking) return renderKnocking();
+    if (!list.isConnected) buildShell(); else renderList();
+  }
+
+  const input = h("input", { class: "mini-input", type: "text", placeholder: "Search by name or room…", maxLength: 24, autocapitalize: "none", autocomplete: "off", spellcheck: false, "aria-label": "Search players" });
+  const clearBtn = h("button", { class: "door-clear", type: "button", title: "Clear", "aria-label": "Clear the search", onclick: () => { input.value = ""; search = ""; shown = CHUNK; list.scrollTop = 0; renderList(); input.focus(); } }, "✕");
+  const status = h("div", { class: "hint door-status" });
+  const list = h("div", { class: "door-list door-scroll" });
+  input.addEventListener("input", () => { search = input.value; shown = CHUNK; list.scrollTop = 0; renderList(); });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); (list.querySelector(".door-row .btn.primary:not([disabled]):not(.door-profile)") as HTMLElement | null)?.click(); } // Enter = the first row's Visit
+    else if (e.key === "Escape") { e.stopPropagation(); if (input.value) { input.value = ""; search = ""; shown = CHUNK; renderList(); } else close(); }
+  });
+  list.addEventListener("scroll", () => { if (list.scrollTop + list.clientHeight > list.scrollHeight - 120 && shown < rowsToShow().length) { shown += CHUNK; renderList(); } });
+  // a phone would pop its keyboard up at once: only a mouse gets the cursor in the box straight away
+  window.setTimeout(() => { if (!closed && window.matchMedia?.("(pointer: fine)").matches) input.focus(); }, 850);
 
   // ---- knocking ---------------------------------------------------------------------------------------
   function renderKnocking(): void {
@@ -206,7 +256,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     window.clearTimeout(knockTimer);
     if (k && k.state === "waiting") void social.cancelKnock(k.row.owner);
     knocking = null;
-    render();
+    buildShell();
   }
 
   function close(): void {
@@ -216,6 +266,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     closed = true;
     stopKnock?.();
     window.clearTimeout(knockTimer);
+    window.clearTimeout(refreshTimer);
     offRooms();
     offBoard();
     offSocial();
@@ -223,13 +274,13 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     onClose();
   }
 
-  const offRooms = watchAllRooms((r) => { rooms = r; render(); });
+  const offRooms = watchAllRooms((r) => { rooms = r; refreshSoon(); });
   const offBoard = onValue(ref(db, "bloodBoard"), (snap) => {
     board = (snap.val() ?? {}) as Record<string, number>;
     ranks = new Map(Object.entries(board).filter(([, b]) => Number(b) > 0).sort((a, b) => Number(b[1]) - Number(a[1])).map(([uid], i) => [uid, i + 1]));
-    if (!knocking && document.activeElement !== input) render();
+    refreshSoon();
   }, () => undefined);
-  const offSocial = social.subscribe(() => { if (!knocking && document.activeElement !== input) render(); });
+  const offSocial = social.subscribe(() => refreshSoon());
   render();
   return { close };
 }

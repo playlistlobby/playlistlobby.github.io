@@ -8223,5 +8223,50 @@
   "en": "No scores yet. Be the first!",
   "da": "Ingen scorer endnu. Vær den første!",
   "where": "src/arcade/flappy.ts"
+ },
+ "N1113": {
+  "en": "Search by name or room…",
+  "da": "Søg på navn eller værelse…",
+  "where": "src/ui/door.ts"
+ },
+ "N1114": {
+  "en": "Search players",
+  "da": "Søg efter spillere",
+  "where": "src/ui/door.ts"
+ },
+ "N1115": {
+  "en": "Clear the search",
+  "da": "Ryd søgningen",
+  "where": "src/ui/door.ts"
+ },
+ "N1116": {
+  "en": "1 match",
+  "da": "1 resultat",
+  "where": "src/ui/door.ts"
+ },
+ "N1117": {
+  "en": "{n} matches",
+  "da": "{n} resultater",
+  "where": "src/ui/door.ts"
+ },
+ "N1118": {
+  "en": "1 room to visit",
+  "da": "1 værelse at besøge",
+  "where": "src/ui/door.ts"
+ },
+ "N1119": {
+  "en": "{n} rooms to visit",
+  "da": "{n} værelser at besøge",
+  "where": "src/ui/door.ts"
+ },
+ "N1120": {
+  "en": "No player or room matches \"{q}\".",
+  "da": "Ingen spiller eller noget værelse matcher \"{q}\".",
+  "where": "src/ui/door.ts"
+ },
+ "N1121": {
+  "en": "No rooms to visit right now. Type a few letters of a player's name to find them.",
+  "da": "Ingen værelser at besøge lige nu. Skriv et par bogstaver af en spillers navn for at finde dem.",
+  "where": "src/ui/door.ts"
  }
 }

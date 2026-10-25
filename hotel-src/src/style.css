@@ -531,7 +531,7 @@ html.kb .side-host { display: none; }
 @media (max-width: 760px) { .onb-rooms { grid-template-columns: 1fr; } .onb-avatar { width: 160px; height: 275px; } }
 
 /* ---- the door popup ---- */
-.door-popup { position: absolute; z-index: 8; bottom: 10px; left: 50%; transform: translateX(-50%); width: min(460px, calc(100% - 16px)); max-height: calc(100% - 60px); display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid #6f7886; border-radius: 12px; box-shadow: 0 8px 26px rgba(0, 0, 0, .55); }
+.door-popup { position: absolute; z-index: 8; bottom: 10px; left: 50%; transform: translateX(-50%); width: min(460px, calc(100% - 16px)); height: min(600px, calc(100% - 60px)); max-height: calc(100% - 60px); display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid #6f7886; border-radius: 12px; box-shadow: 0 8px 26px rgba(0, 0, 0, .55); }
 /* ignore clicks for a moment after it opens, so the click that opened it (or a quick second one) can't press a button */
 .door-popup.arming { pointer-events: none; }
 .door-head { display: flex; justify-content: space-between; align-items: center; flex: none; height: 42px; padding: 0 10px; color: #fff; font: 700 17px var(--font); text-shadow: 0 -1px 0 rgba(0, 0, 0, .45); background: linear-gradient(#bccadf, #a3b5d2 49%, #8aa2c6 51%, #6f8bb3); border-bottom: 1px solid #3b4f72; }
@@ -539,8 +539,16 @@ html.kb .side-host { display: none; }
 .door-body > * { min-width: 0; }
 .door-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .door-big { min-height: 48px; font-size: 16px; }
-.door-search { flex-wrap: nowrap; }
+.door-search { position: relative; display: flex; flex: none; }
+.door-search .mini-input { flex: 1; min-width: 0; padding-right: 30px; }
+.door-clear { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border: 0; border-radius: 12px; background: #c9ced8; color: #fff; font: 700 12px/24px var(--font); cursor: pointer; visibility: hidden; }
+.door-status { flex: none; margin-top: -4px; }
 .door-list { display: grid; border: 1px solid #d6d9de; border-radius: 10px; overflow: hidden; }
+/* the popup keeps one height whatever the list holds; the players scroll inside it, the buttons and the search box stay put */
+.door-body.door-flex { display: flex; flex-direction: column; gap: 8px; overflow: hidden; flex: 1; min-height: 0; }
+.door-body.door-flex > .door-main, .door-body.door-flex > .fp-label { flex: none; }
+.door-scroll { flex: 1; min-height: 110px; overflow-y: auto; align-content: start; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.door-mark { background: #ffe27a; color: inherit; border-radius: 2px; padding: 0 1px; }
 .door-list:empty { display: none; }
 .door-row { display: flex; align-items: center; gap: 8px; min-height: 54px; padding: 8px 10px; border-top: 1px solid #e1e4e9; }
 .door-row:first-child { border-top: 0; }
