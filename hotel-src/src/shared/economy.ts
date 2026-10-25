@@ -52,10 +52,6 @@ export const JOB_REWARD = 5;
 export const JOB_DELAY_MS = 10 * 60_000;
 /** Flappy Bird: at least this long between two drops of blood */
 export const FLAPPY_GAP_MS = 12_000;
-/** Coin flips (the machine next to the dumpsters): the most blood on one flip, how many open flips one player may have, and how long a finished flip stays on the board */
-export const FLIP_MAX = 500;
-export const FLIP_MAX_OPEN = 3;
-export const FLIP_KEEP_MS = 24 * 60 * 60_000;
 /** things on the floor of a public room vanish after 5 minutes, or 1 minute once the same player has 5+ of theirs there */
 export const DROP_LIFE_MS = 5 * 60_000;
 export const DROP_LIFE_BULK_MS = 60_000;

@@ -35,6 +35,7 @@ import {
   defFromMeta,
   FURNI_KINDS,
   INTERACTIVE_KINDS,
+  ROULETTE_KINDS,
   BED,
   BED_ID,
   bedHead,
@@ -71,8 +72,6 @@ import { openVending, VendingApi } from "./vendingShop";
 import { openRecordShop, RecordShopApi } from "./recordShop";
 import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
-import { openCoinFlip, CoinFlipApi } from "./coinflip";
-import { watchFlips } from "../coinflip";
 import { figureAnimated } from "../designs";
 import { lighterStage, markLighterStep } from "../lighterHint";
 import { flappyRunStart, flappySubmit, watchFlappyBoard } from "../db";
@@ -91,6 +90,7 @@ import { closeMenu, showMenu } from "./contextMenu";
 import { mountSidePanel } from "./sidepanel";
 import { mountRoomPanel } from "./roomPanel";
 import { DoorApi, openDoor } from "./door";
+import { mountRoulette, RouletteApi } from "./rouletteTable";
 import { assetUrl } from "../assetUrl";
 import { playSfx } from "../sfx";
 import { setAmbience, setShopMusic } from "../ambience";
@@ -99,6 +99,9 @@ import type { Ctx } from "../main";
 /** The hanger that floats above the bag of clothes in your own room (it's Habbo's own wardrobe icon). */
 const hangerImg = new Image();
 hangerImg.src = assetUrl("ui/hanger.png");
+/** the game controller that floats over the arcade machine and the roulette table when you point at them (Habbo's silver controller icon) */
+const controllerImg = new Image();
+controllerImg.src = assetUrl("ui/controller.png");
 /** the picture that floats over the toolbox: the little wooden house icon from xmas_c20_woodenhouse.nitro */
 const toolIconImg = new Image();
 void loadNitro("furni/xmas_c20_woodenhouse.nitro").then((n) => {
@@ -313,18 +316,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const me = ctx.profile;
   const players = new Map<string, Player>();
   const unsubs: Unsubscribe[] = [];
-  // the coin flip machine: it spins whenever a flip is settled (for everyone in the basement), and the one who posted the flip is told how it went
-  if (roomId === LOBBY_ID) {
-    unsubs.push(watchFlips(me, (flip) => {
-      slotSpinUntil = performance.now() + 3400;
-      if (flip.by !== me.uid) return;
-      const coin = flip.result === "heads" ? "Heads" : "Tails";
-      const winnings = flip.stake * 2;
-      const lost = flip.stake;
-      say(flip.winner === me.uid ? `${flip.takerName} took your coin flip: ${coin}. You won ${winnings} blood.` : `${flip.takerName} took your coin flip: ${coin}. You lost ${lost} blood.`);
-      ctx.refreshHeader();
-    }));
-  }
   let disposed = false;
   let started = false;
   let active = true;
@@ -366,7 +357,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let recordApi: RecordShopApi | null = null;
   let posterApi: PosterShopApi | null = null;
   let stashApi: StashApi | null = null;
-  let coinApi: CoinFlipApi | null = null;
   let landlordApi: LandlordApi | null = null;
   let landlordBubble: Bubble | null = null;
   let landlordLast: HTMLCanvasElement | undefined;
@@ -381,6 +371,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let fzDrag: { id: string; kind: string; grab: Pt; moved: boolean; spot: Spot } | null = null;
   let furniBoxes: Array<{ id: string; box: Box; depth: number }> = [];
   let doorApi: DoorApi | null = null;
+  /** the roulette table in the basement (null in every other room) */
+  let roulette: RouletteApi | null = null;
+  /** what to do when the seat you walked to has been sat on */
+  let sitAfter: (() => void) | undefined;
 
   // OSRS-style "use item on ..." state
   let selectedSlot: number | null = null;
@@ -523,9 +517,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "landlord") text = "Landlord: bigger rooms, room colours";
     else if (hoverObj && hoverObj.kind === "drop") { const dd = drops.get(hoverObj.id.slice(5)); text = dd ? `${itemDef(dd.item)?.name ?? dd.item}${dd.qty > 1 ? ` x${dd.qty}` : ""}${dd.ass ? " (ass)" : ""} · ${dd.by === "world" ? "lying on the floor" : `dropped by ${dd.byName}`} (click to pick up)` : "On the floor"; }
     else if (hoverObj && isDisplayPiece(hoverObj.id)) text = `${FURNI_KINDS[hoverObj.kind!].label} · ${priceOf(hoverObj.kind!)} drops (click to buy)`;
+    else if (hoverObj && ROULETTE_KINDS.has(hoverObj.kind ?? "")) text = roulette ? roulette.hoverText() : FURNI_KINDS[hoverObj.kind!].label;
     else if (hoverObj && hoverObj.kind === "wardrobe") text = "Wardrobe: the clothing shop";
     else if (hoverObj && hoverObj.kind === "vending") text = "Vending machine";
-    else if (hoverObj && hoverObj.kind === "slot") text = "Coin flip machine: put blood on heads or tails";
     else if (hoverObj && (hoverObj.kind === "recordplayer" || hoverObj.kind === "vinyltable")) text = "Record player: CDs";
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
@@ -809,6 +803,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (obj.kind === "landlord") startLandlord();
       else if (obj.kind === "bed") bedAction();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
+      else if (roulette && ROULETTE_KINDS.has(obj.kind!)) roulette.click(obj.id);
       else if (FURNI_KINDS[obj.kind!]?.seat) sitAt(obj.id, t);
       else startArcade(obj.id);
       return;
@@ -836,7 +831,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const obj = pickObj(mx, my);
     if (obj?.kind === "arcade") opts.push({ label: "Play", target: "Arcade machine", action: () => startArcade(obj.id) });
     if (obj?.kind === "flappy") opts.push({ label: "Play", target: "Flappy Bird", action: () => startArcade(obj.id) });
-    if (obj?.kind === "slot") opts.push({ label: "Play", target: "Coin flip machine", action: () => startArcade(obj.id) });
+    if (obj && roulette && ROULETTE_KINDS.has(obj.kind!)) opts.push({ label: "Play", target: "Russian roulette", action: () => roulette!.click(obj.id) });
     if (obj?.kind === "npc") {
       opts.push({ label: "Talk", target: SIXTY.name, action: () => startSixty() });
       if (me.isAdmin) opts.push({ label: "Change look", target: SIXTY.name, action: () => ctx.navigate("npc") });
@@ -847,7 +842,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "drop") { const dd = drops.get(obj.id.slice(5)); opts.push({ label: "Pick up", target: dd ? (itemDef(dd.item)?.name ?? dd.item) : "item", action: () => startPickup(obj.id.slice(5)) }); }
     if (obj && isDisplayPiece(obj.id)) opts.push({ label: "Buy", target: FURNI_KINDS[obj.kind!].label, action: () => openBuy(obj.kind!) });
     if (obj?.kind === "wardrobe") opts.push({ label: "Open the shop", target: "Wardrobe", action: () => startBag(obj.id) });
-    if (obj && FURNI_KINDS[obj.kind!]?.seat && !isDisplayPiece(obj.id)) opts.push({ label: "Sit", target: FURNI_KINDS[obj.kind!].label, action: () => sitAt(obj.id, tile) });
+    if (obj && FURNI_KINDS[obj.kind!]?.seat && !isDisplayPiece(obj.id) && !ROULETTE_KINDS.has(obj.kind!)) opts.push({ label: "Sit", target: FURNI_KINDS[obj.kind!].label, action: () => sitAt(obj.id, tile) });
     if (obj?.kind === "vending") opts.push({ label: "Shop", target: "Vending machine", action: () => startBag(obj.id) });
     if (obj?.kind === "recordplayer" || obj?.kind === "vinyltable") opts.push({ label: "CDs", target: "Record player", action: () => startBag(obj.id) });
     if (obj?.kind === "shopposter") opts.push({ label: "Buy", target: "Poster", action: () => startBag(obj.id) });
@@ -1237,7 +1232,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!p || frozen || faintUntil) return; // 6ixty doesn't walk, and nobody walks while out cold
     if (p.lying && !(introUntil && performance.now() < introUntil)) getUp(); // out of bed first
     if (p.sit && !seatTiles.has(`${dest.x},${dest.y}`)) { p.sit = false; update(ref(db, `rooms/${roomId}/players/${me.uid}`), { sit: null }).catch(() => undefined); } // you get up when you walk
-    if (!seatTiles.has(`${dest.x},${dest.y}`)) p.sitTo = undefined;
+    if (!seatTiles.has(`${dest.x},${dest.y}`)) { p.sitTo = undefined; sitAfter = undefined; }
     setDestination(p, dest);
     if (p.path.length === 0) return;
     update(ref(db, `rooms/${roomId}/players/${me.uid}`), { x: dest.x, y: dest.y, dir: dirOf(currentTile(p), p.path[0]) }).catch(console.warn);
@@ -1298,12 +1293,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** Sit on a chair or couch: walk onto the tile you clicked (or the nearest tile of the piece), then take the seat. */
-  function sitAt(fid: string, at: Pt | null): void {
+  function sitAt(fid: string, at: Pt | null, after?: () => void): boolean {
     const p = mine();
     const f = def.furni.find((x) => x.id === fid);
-    if (!p || !f || frozen) return;
+    if (!p || !f || frozen) return false;
     const k = FURNI_KINDS[f.kind];
-    if (!k?.seat) return;
+    if (!k?.seat) return false;
     clearSelection();
     const fp = footprint(f.kind, f.dir);
     const tiles: Pt[] = [];
@@ -1311,16 +1306,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const taken = new Set<string>();
     for (const o of players.values()) { if (o === p) continue; taken.add(`${currentTile(o).x},${currentTile(o).y}`); taken.add(`${o.dest.x},${o.dest.y}`); }
     const free = tiles.filter((t) => !taken.has(`${t.x},${t.y}`));
-    if (!free.length) return say("Somebody is sitting there.", "warn");
+    if (!free.length) { say("Somebody is sitting there.", "warn"); return false; }
     const want = at ?? currentTile(p);
     free.sort((a, b) => Math.hypot(a.x - want.x, a.y - want.y) - Math.hypot(b.x - want.x, b.y - want.y));
     const seat = free[0];
     pending = null;
-    if (p.sit && currentTile(p).x === seat.x && currentTile(p).y === seat.y) return;
+    if (p.sit && currentTile(p).x === seat.x && currentTile(p).y === seat.y) { after?.(); return true; }
     p.sitTo = { x: seat.x, y: seat.y, dir: (f.dir ?? 0) };
-    if (currentTile(p).x === seat.x && currentTile(p).y === seat.y) return; // already on it: finishSit runs next frame
+    sitAfter = after;
+    if (currentTile(p).x === seat.x && currentTile(p).y === seat.y) return true; // already on it: finishSit runs next frame
     walkTo(seat);
-    if (!p.path.length) { p.sitTo = undefined; say("You can't get to that seat.", "warn"); }
+    if (!p.path.length) { p.sitTo = undefined; sitAfter = undefined; say("You can't get to that seat.", "warn"); return false; }
+    return true;
   }
 
   /** When you've walked onto the seat you clicked, sit down (everyone else sees it through players/<uid>/sit). */
@@ -1333,6 +1330,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     p.sit = true;
     p.dir = s.dir;
     update(ref(db, `rooms/${roomId}/players/${me.uid}`), { sit: true, dir: s.dir }).catch(() => undefined);
+    const cb = sitAfter;
+    sitAfter = undefined;
+    cb?.();
   }
 
   /** Walk over to a piece you're using something on (or just tending); `slot` is the pocket item you had selected. */
@@ -1343,7 +1343,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recordApi?.close();
     posterApi?.close();
     stashApi?.close();
-    coinApi?.close();
     landlordApi?.close();
     sixtyShop?.close();
   }
@@ -1680,7 +1679,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       else if (job.type === "dumpster") void searchTheDumpster(job.fid);
       else if (job.type === "use") void interactWith(f, job.slot ?? null);
-      else if (f.kind === "slot") { if (!coinApi) coinApi = openCoinFlip(stage, ctx, () => { panel.refresh(); ctx.refreshHeader(); }, () => { coinApi = null; }); }
       else openArcade(f.kind === "flappy" ? "flappy" : undefined, {
         myUid: me.uid,
         ...(roomId === LOBBY_ID ? {
@@ -2881,7 +2879,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // (holding a knife: the arm is out in the "carry" pose, and the knife itself is drawn in that hand)
     const sitting = !moving && !!p.sit && !em;
     if (sitting) yOff = -sitLift(p);
-    const actions = moving ? ["wlk"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsCup(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
+    const rtArm = sitting && roulette ? roulette.armFor(p.uid, now) : null; // the gun is in this hand (or at this head)
+    const actions = moving ? ["wlk"] : rtArm ? ["sit", rtArm === "raised" ? "drk=9999" : "crr=9999"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsCup(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
       ? Math.floor((now - p.stepStart) / (stepOf(p) / 4)) % 4
@@ -2889,7 +2888,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       : em?.def.actions?.includes("wav") ? Math.floor(now / 250) % 2
       : figureAnimated(p.figure) ? Math.floor(now / 110) % 24 // a garment with an animation of its own (sparklers...) keeps playing while you stand still
       : 0;
-    return { opts: { figure: p.figure, dir, headDir: dir, actions, gesture, frame }, yOff };
+    return { opts: { figure: roulette ? roulette.figureFor(p.uid, p.figure, sitting) : p.figure, dir, headDir: dir, actions, gesture, frame }, yOff };
   }
 
   /** The knife (Habbo's survival knife, one picture per way it can point) in a player's hand: while it's selected, and during a stab. */
@@ -3299,14 +3298,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** when each multi-state piece went into the state it is in (so its animation starts from the beginning when it is tapped) */
   const animClock = new Map<string, { st: number; at: number }>();
-  let slotSpinUntil = 0;
   /** the animation a piece is in right now: its state and how long it has been in it (undefined for pieces that never move) */
   function pieceAnim(f: { id?: string; kind: string; st?: number }, now: number): AnimState | undefined {
     const k = FURNI_KINDS[f.kind];
     if (!k?.nitro) return undefined;
     const n = nitroIfReady(k.nitro);
     if (!n || !isAnimated(n)) return undefined;
-    const st = f.kind === "slot" ? (now < slotSpinUntil ? 1 : 0) : f.st ?? k.defaultState ?? 0; // the coin flip machine spins while a flip is being settled
+    const st = f.st ?? k.defaultState ?? 0;
     const id = f.id ?? f.kind;
     let c = animClock.get(id);
     if (!c || c.st !== st) { c = { st, at: now }; animClock.set(id, c); }
@@ -3333,11 +3331,49 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     } catch (err) { say((err as Error).message || "Nothing happens.", "warn"); }
   }
 
+  /** the arcade machine and the roulette table: a soft glow (red for the table, gold for the arcade), brighter when you point at it, and a game controller floating over it */
+  function drawGameFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number }, now: number): Hitbox | null {
+    const isTable = f.kind === "rtable";
+    const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now));
+    if (!b) return null;
+    if (greenScreen || furnishOn) return { id: "", ...b, depth: f.x + f.y };
+    const hot = (!!f.id && hoverObj?.id === f.id) || (isTable && !!hoverObj && ROULETTE_KINDS.has(hoverObj.kind ?? "")); // pointing at the rack or a chair counts for the table
+    const look = isTable && roulette ? roulette.look(now) : { stake: 0, glow: 0 };
+    const pulse = 0.5 + 0.5 * Math.sin(now / 450);
+    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+    const r = (isTable ? 72 : 46) * scale * (hot ? 1.2 : 1);
+    const a = 0.11 + 0.05 * pulse + (hot ? 0.14 : 0) + look.glow * 0.35;
+    const rgb = isTable ? "255,60,50" : "255,214,70", rgb2 = isTable ? "255,50,40" : "255,200,40";
+    g.save();
+    const halo = g.createRadialGradient(cx, cy, 2 * scale, cx, cy, r);
+    halo.addColorStop(0, `rgba(${rgb},${a.toFixed(2)})`);
+    halo.addColorStop(0.55, `rgba(${rgb2},${(a * 0.6).toFixed(2)})`);
+    halo.addColorStop(1, `rgba(${rgb2},0)`);
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+    g.restore();
+    drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, true, pieceAnim(f, now)); // the piece again on top of the halo (its shadow is already down)
+    if (hot) { g.save(); g.globalCompositeOperation = "lighter"; drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.12 + 0.05 * pulse, true, pieceAnim(f, now)); g.restore(); }
+    if (hot && controllerImg.complete && controllerImg.naturalWidth) {
+      const hs = (scale * 34) / controllerImg.naturalWidth, hw = controllerImg.naturalWidth * hs, hh = controllerImg.naturalHeight * hs;
+      const bob = Math.sin(now / 380) * 3 * scale;
+      g.save();
+      g.imageSmoothingEnabled = false;
+      g.shadowColor = isTable ? "rgba(255,90,80,0.7)" : "rgba(255,226,140,0.7)";
+      g.shadowBlur = 6 * scale;
+      g.drawImage(controllerImg, cx - hw / 2, b.y0 - hh - (isTable ? 34 : 2) * scale + bob, hw, hh);
+      g.restore();
+    }
+    if (isTable && look.stake > 0) drawPriceTag(look.stake, b.x1, b.y1); // what is on the table
+    return { id: "", ...b, y0: hot ? b.y0 - 40 * scale : b.y0, depth: f.x + f.y };
+  }
+
   function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     if (k.opens === "mixer" && f.mix) return drawMixing(f, now);
     if (k.plant) return drawPlanter(f, now);
     if (k.poster) return drawPoster(f, now);
+    if (k.nitro && (f.kind === "rtable" || f.kind === "flappy")) return drawGameFurni(f, now);
     if (k.nitro) {
       const tbl = tableUnder(f);
       const lift = tbl ? FURNI_KINDS[tbl.kind].surface ?? 0 : 0; // a small piece on a table top stands on it
@@ -3800,6 +3836,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     const dpr = window.devicePixelRatio || 1;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (roulette) { const sh = roulette.shake(now); if (sh.x || sh.y) g.translate(sh.x, sh.y); } // the shot shakes the picture a moment
     g.imageSmoothingEnabled = scale < 1;
     g.clearRect(0, 0, canvas.width, canvas.height);
     if (greenScreen) { g.fillStyle = "#00ff00"; g.fillRect(0, 0, canvas.width, canvas.height); } // chroma green instead of the floor and the walls
@@ -3828,6 +3865,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     for (const p of players.values()) advance(p, now);
     { const mp = mine(); if (mp) finishSit(mp, now); }
     processPending(now);
+    roulette?.update(now);
     tickCd();
     updateEffects(now);
 
@@ -4040,6 +4078,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
 
     furniBoxes = pieceBoxes;
+    if (roulette && !furnishOn) {
+      list.push({ depth: -0.5, draw: () => roulette!.drawFloor(g, now) }); // the blood on the floor is under everything
+      list.push({ depth: 1000, draw: () => roulette!.drawGun(g, now) }); // the gun is over the table and the players
+    }
     for (const p of players.values()) {
       if (furnishOn) break; // the furnishing menu shows the room, not the people in it
       if (p.lying || p.faint) {
@@ -4087,6 +4129,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const { opts, yOff } = frameFor(p, now);
       let img = getCached(opts);
       if (!img) { renderAvatar(opts); img = p.last; } else p.last = img;
+      if (img && roulette) img = roulette.imageFor(p.uid, img, opts, now); // (the dead player at the roulette table has no head)
       const feet = feetOf(p, now);
 
       // stab animation: attacker lunges toward the victim, victim flashes red
@@ -4159,6 +4202,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
               }
             }
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
+            if (roulette) roulette.drawBody(g, p.uid, { x: feet.x + lunge.x, y: feet.y + lunge.y + lift }, now);
           }
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
           if (smoking && p.smokeKind === "hashjoint") drawHearts(feet.x + lunge.x, feet.y + lunge.y + lift, now); // the hash joint: hearts float up over the head
@@ -4215,6 +4259,24 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       applyDef(lobbyDef());
       start();
       unsubs.push(watchLobbyFurni((extras) => { if (!disposed) applyDef(lobbyDef(extras)); })); // pieces the admin added
+      roulette = mountRoulette({
+        me, stage,
+        def: () => def,
+        scale: () => scale,
+        tileFeet: (tx, ty) => { const w = iso(tx, ty); return toScreen({ x: w.x, y: w.y + TILE_H / 2 }); },
+        tileOf: (uid) => { const p = players.get(uid); return p ? currentTile(p) : undefined; },
+        player: (uid) => players.get(uid),
+        everyone: () => [...players.keys()].filter((u) => !players.get(u)?.sleeper),
+        sitAt: (fid, after) => sitAt(fid, null, after),
+        standUp: () => { const p = mine(); if (!p) return; p.sit = false; p.sitTo = undefined; sitAfter = undefined; update(myRef, { sit: null }).catch(() => undefined); },
+        amSeated: () => !!mine()?.sit,
+        goHome: () => ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true }),
+        say,
+        floater: (text, at, life) => { floaters.push({ text, x: at.x, y: at.y, born: performance.now(), color: "#ff5252", icon: bloodImg, life }); },
+        refreshHeader: () => ctx.refreshHeader(),
+        serverNow,
+        alive: () => !disposed,
+      });
       return;
     }
     try {
@@ -4266,10 +4328,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recordApi?.close();
     posterApi?.close();
     stashApi?.close();
-    coinApi?.close();
     landlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();
+    roulette?.dispose();
     pillCleanup?.();
     furnishUi?.dispose();
     closeCdPopup();

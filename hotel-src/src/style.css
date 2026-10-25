@@ -885,3 +885,24 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .cf-res-sub{margin:4px 0 0;min-height:20px;font:400 15px/20px Georgia,serif;color:rgba(255,255,255,.88)}
 @keyframes popin { from { transform: scale(.6); opacity: 0; } }
 .cf-overlay [hidden] { display: none !important; }
+
+/* ---- Russian roulette at the basement's table: the stake window, the "play?" question, the turn bar and the death screen ---- */
+.rt-win { width: min(340px, 92%); }
+.rt-stake { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.rt-stake .btn { width: 38px; height: 34px; font-size: 20px; padding: 0; }
+.rt-num { display: inline-flex; align-items: center; gap: 6px; min-width: 96px; justify-content: center; font-size: 26px; color: #b01818; }
+.rt-drop { width: 22px; height: 22px; vertical-align: -5px; image-rendering: pixelated; }
+.rt-ask { font-size: 16px; line-height: 1.5; }
+.rt-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.rt-chip { min-width: 48px; height: 30px; padding: 0 10px; border: 1px solid #b3bbcb; border-radius: 15px; background: linear-gradient(#fff, #dfe4ee); color: #1b2233; font: 700 14px var(--font); cursor: pointer; }
+.rt-chip.on { background: linear-gradient(#ff7b7b, #c62828); border-color: #8e1b1b; color: #fff; }
+.rt-bar { position: absolute; z-index: 12; left: 50%; bottom: 74px; transform: translateX(-50%); display: grid; justify-items: center; gap: 6px; padding: 10px 16px 8px; border-radius: 14px; background: rgba(18, 8, 8, .84); border: 1px solid rgba(255, 90, 90, .7); color: #ffe9e9; box-shadow: 0 6px 22px rgba(0, 0, 0, .6); text-align: center; }
+.rt-bar-t { font: 700 15px var(--font); }
+.rt-bar .hint { color: #e0a8a8; min-height: 14px; }
+.btn.rt-pull { min-width: 200px; min-height: 46px; font-size: 18px; font-weight: 700; color: #fff; border-color: #6e0e0e; background: linear-gradient(#ff6b6b, #c62828 50%, #a11212); text-shadow: 0 -1px 0 rgba(0, 0, 0, .5); animation: rt-pulse 1.1s ease-in-out infinite; }
+.btn.rt-pull:disabled { animation: none; opacity: .6; }
+@keyframes rt-pulse { 50% { box-shadow: 0 0 16px 2px rgba(255, 70, 70, .75); } }
+.rt-dead { position: absolute; inset: 0; z-index: 40; display: grid; align-content: center; justify-items: center; gap: 14px; background: radial-gradient(ellipse at center, rgba(70, 0, 0, .55), rgba(0, 0, 0, .9)); color: #e11; text-align: center; animation: rt-dead-in .9s ease-out; pointer-events: auto; }
+.rt-dead-t { font: 900 clamp(34px, 9vw, 84px) var(--font); letter-spacing: 3px; text-shadow: 0 0 22px rgba(255, 0, 0, .65), 0 4px 0 #300; }
+.rt-dead-sub { font: 700 clamp(15px, 3vw, 22px) var(--font); color: #e8c4c4; }
+@keyframes rt-dead-in { from { opacity: 0; } to { opacity: 1; } }

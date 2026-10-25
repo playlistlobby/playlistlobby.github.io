@@ -8,13 +8,13 @@ import { drop, pickup } from "./floor";
 import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, storeItem, takeItem } from "./toolbox";
 import { tradeFinish } from "./trade";
 import { debug } from "./debug";
-import { flipCancel, flipPost, flipTake } from "./coinflip";
 import { flappyScore, flappyStart } from "./flappyboard";
 import { backupNow, banPlayer } from "./admin";
 import { giftAnswer, giftCollect, giftSend } from "./gift";
 import { posterAdmin } from "./posters";
 import { cdControl, cdInsert, cdReturn } from "./cd";
 import { mix, mixCollect } from "./mixer";
+import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick } from "./roulette";
 
 /** Every thing the browser may ask for. Anything not listed here cannot be done: the browser can't write economy data itself. */
 export const ACTIONS: Record<string, Action> = {
@@ -24,7 +24,8 @@ export const ACTIONS: Record<string, Action> = {
   consume, stab, syringe, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
   drop, pickup,
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,
-  tradeFinish, flipPost, flipTake, flipCancel, flappyStart, flappyScore,
+  tradeFinish, flappyStart, flappyScore,
   cdInsert, cdReturn, cdControl, mix, mixCollect,
+  rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

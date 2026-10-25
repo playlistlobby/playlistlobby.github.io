@@ -8268,5 +8268,265 @@
   "en": "No rooms to visit right now. Type a few letters of a player's name to find them.",
   "da": "Ingen værelser at besøge lige nu. Skriv et par bogstaver af en spillers navn for at finde dem.",
   "where": "src/ui/door.ts"
+ },
+ "N1122": {
+  "en": "Both chairs are taken.",
+  "da": "Begge stole er optaget.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1123": {
+  "en": "Gun rack",
+  "da": "Pistolstativ",
+  "where": "src/rooms.ts"
+ },
+ "N1124": {
+  "en": "It isn't your turn.",
+  "da": "Det er ikke din tur.",
+  "where": "server/src/actions/roulette.ts"
+ },
+ "N1125": {
+  "en": "Keep your eyes on the gun.",
+  "da": "Hold øje med pistolen.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1126": {
+  "en": "Less",
+  "da": "Mindre",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1127": {
+  "en": "Max",
+  "da": "Maks",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1128": {
+  "en": "More",
+  "da": "Mere",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1129": {
+  "en": "Play for {stake} blood? You put the same amount down. One bullet, six chambers, you take turns pulling the trigger. Lose and you are dead. Win and you take both stakes.",
+  "da": "Spil om {stake} blod? Du lægger det samme beløb. Én kugle, seks kamre, I skiftes til at trykke på aftrækkeren. Taber du, er du død. Vinder du, tager du begge indsatser.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1130": {
+  "en": "Pull the trigger",
+  "da": "Tryk på aftrækkeren",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1131": {
+  "en": "Put blood on the table. Somebody sits down opposite you and puts the same amount down. You take turns pulling the trigger: one bullet, six chambers. Whoever it finds is dead. The other takes both stakes.",
+  "da": "Læg blod på bordet. Nogen sætter sig over for dig og lægger det samme beløb. I skiftes til at trykke på aftrækkeren: én kugle, seks kamre. Den, kuglen finder, er død. Den anden tager begge indsatser.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1132": {
+  "en": "Put it on the table",
+  "da": "Læg det på bordet",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1133": {
+  "en": "Roulette chair",
+  "da": "Roulettestol",
+  "where": "src/rooms.ts"
+ },
+ "N1134": {
+  "en": "Roulette table",
+  "da": "Roulettebord",
+  "where": "src/rooms.ts"
+ },
+ "N1135": {
+  "en": "Russian roulette",
+  "da": "Russisk roulette",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1136": {
+  "en": "Russian roulette: sit down and put blood on the table",
+  "da": "Russisk roulette: sæt dig og læg blod på bordet",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1137": {
+  "en": "Russian roulette: you have {stake} blood on the table",
+  "da": "Russisk roulette: du har {stake} blod på bordet",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1138": {
+  "en": "Russian roulette: {name} and {other} are playing for {pot} blood",
+  "da": "Russisk roulette: {name} og {other} spiller om {pot} blod",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1139": {
+  "en": "Russian roulette: {name} has {stake} blood on the table. Sit down opposite to play",
+  "da": "Russisk roulette: {name} har {stake} blod på bordet. Sæt dig overfor for at spille",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1140": {
+  "en": "Sit down at the table first.",
+  "da": "Sæt dig ved bordet først.",
+  "where": "server/src/actions/roulette.ts"
+ },
+ "N1141": {
+  "en": "Somebody is sitting down at the table. Wait a moment.",
+  "da": "Nogen sætter sig ved bordet. Vent et øjeblik.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1142": {
+  "en": "Stand up",
+  "da": "Rejs dig",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1143": {
+  "en": "That's your own stake.",
+  "da": "Det er din egen indsats.",
+  "where": "server/src/actions/roulette.ts"
+ },
+ "N1144": {
+  "en": "The game begins. {firstName} gets the gun first.",
+  "da": "Spillet begynder. {firstName} får pistolen først.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1145": {
+  "en": "The table is being cleaned up. Wait a moment.",
+  "da": "Bordet bliver ryddet op. Vent et øjeblik.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1146": {
+  "en": "The table is in use.",
+  "da": "Bordet er i brug.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1147": {
+  "en": "There's no game going.",
+  "da": "Der er ikke noget spil i gang.",
+  "where": "server/src/actions/roulette.ts"
+ },
+ "N1148": {
+  "en": "There's no game to join.",
+  "da": "Der er intet spil at deltage i.",
+  "where": "server/src/actions/roulette.ts"
+ },
+ "N1149": {
+  "en": "YOU ARE DEAD",
+  "da": "DU ER DØD",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1150": {
+  "en": "Yes, deal me in",
+  "da": "Ja, deal mig ind",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1151": {
+  "en": "You already have blood on the table.",
+  "da": "Du har allerede blod på bordet.",
+  "where": "server/src/actions/roulette.ts"
+ },
+ "N1152": {
+  "en": "You can only put {left} more blood into trades and games for now (the limit is {TRADE_BLOOD_CAP} per 24 hours).",
+  "da": "Du kan kun lægge {left} mere blod i bytter og spil lige nu (grænsen er {TRADE_BLOOD_CAP} pr. 24 timer).",
+  "where": "server/src/actions/roulette.ts"
+ },
+ "N1153": {
+  "en": "You don't have that much blood.",
+  "da": "Du har ikke så meget blod.",
+  "where": "server/src/actions/roulette.ts"
+ },
+ "N1154": {
+  "en": "You got up and lost {stake} blood.",
+  "da": "Du rejste dig og mistede {stake} blod.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1155": {
+  "en": "You got up from the table in the middle of the game: you lose.",
+  "da": "Du rejste dig fra bordet midt i spillet: du taber.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1156": {
+  "en": "You have no blood to put on the table.",
+  "da": "Du har intet blod at lægge på bordet.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1157": {
+  "en": "You have {have} blood. The most you can put down is {ROULETTE_MAX}.",
+  "da": "Du har {have} blod. Det meste, du kan lægge, er {ROULETTE_MAX}.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1158": {
+  "en": "You have {stake} blood on the table. Waiting for somebody to sit down opposite you. Stand up to take it back.",
+  "da": "Du har {stake} blod på bordet. Venter på at nogen sætter sig over for dig. Rejs dig for at tage det tilbage.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1159": {
+  "en": "You put {stake} blood on the table. Waiting for somebody to sit down opposite you.",
+  "da": "Du lagde {stake} blod på bordet. Venter på at nogen sætter sig over for dig.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1160": {
+  "en": "You stood up and took your blood back.",
+  "da": "Du rejste dig og tog dit blod tilbage.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1161": {
+  "en": "You wake up in your room in {left}…",
+  "da": "Du vågner op i dit værelse om {left}…",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1162": {
+  "en": "You win {winnings} blood.",
+  "da": "Du vinder {winnings} blod.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1163": {
+  "en": "Your turn · the gun is loaded with one bullet",
+  "da": "Din tur · pistolen er ladt med én kugle",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1164": {
+  "en": "Your turn · only 1 chamber left",
+  "da": "Din tur · kun 1 kammer tilbage",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1165": {
+  "en": "Your turn · {chambers} chambers left",
+  "da": "Din tur · {chambers} kamre tilbage",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1166": {
+  "en": "has put",
+  "da": "har lagt",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1167": {
+  "en": "on the table.",
+  "da": "på bordet.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1168": {
+  "en": "Only 1 chamber left",
+  "da": "Kun 1 kammer tilbage",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1169": {
+  "en": "{chambers} chambers left",
+  "da": "{chambers} kamre tilbage",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1170": {
+  "en": "{holderName} has the gun…",
+  "da": "{holderName} har pistolen…",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1171": {
+  "en": "{name} and {other} are playing. Wait until it is over.",
+  "da": "{name} og {other} spiller. Vent til det er slut.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1172": {
+  "en": "{name} got up from the table.",
+  "da": "{name} rejste sig fra bordet.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1173": {
+  "en": "{quitter} got up. You win {winnings} blood.",
+  "da": "{quitter} rejste sig. Du vinder {winnings} blod.",
+  "where": "src/ui/rouletteTable.ts"
  }
 }

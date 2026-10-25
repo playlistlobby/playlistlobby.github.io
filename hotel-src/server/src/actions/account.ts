@@ -43,6 +43,14 @@ export const sync: Action = {
     s.inventory = mergeStacks(s.inventory); // things that stack now (butts) but were lying about one to a slot
     if (raw.blood === undefined) s.blood = START_BLOOD;
     if (raw.createdAt === undefined) c.extra[`users/${c.uid}/createdAt`] = c.now;
+    // the coin flip machine is gone: blood a player still had on an open flip comes back to them (and the flip is wiped), the first time they load the game
+    const flips = await c.db.get<Record<string, { by?: string; stake?: number }>>("coinflips/open");
+    for (const [id, f] of Object.entries(flips ?? {})) {
+      if (f?.by !== c.uid || !Number.isInteger(f.stake) || (f.stake ?? 0) < 1) continue;
+      s.blood += f.stake!;
+      c.extra[`coinflips/open/${id}`] = null;
+      c.note = "coin flip refund";
+    }
     await notePeers(c);
     return {};
   },

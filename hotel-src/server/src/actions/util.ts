@@ -21,7 +21,7 @@ export const isPublicRoom = (id: string): boolean => id === "lobby" || id === "s
 
 /** How big a room is (the shared rooms are fixed; a player room is 8x8 until the landlord makes it bigger: the server writes its size). */
 export async function roomSize(c: Ctx, roomId: string): Promise<{ w: number; h: number }> {
-  if (roomId === "lobby" || roomId === `tut_${c.uid}`) return { w: 12, h: 16 };
+  if (roomId === "lobby" || roomId === `tut_${c.uid}`) return { w: 12, h: 20 };
   if (roomId === "shop") return { w: 15, h: 15 };
   if (/^u_[A-Za-z0-9]{1,40}$/.test(roomId)) {
     const m = await c.db.get<{ w?: number; h?: number }>(`roomsMeta/${roomId}`);

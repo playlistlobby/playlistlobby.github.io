@@ -44,9 +44,6 @@
     "bloodBoard": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()"
     },
-    "coinflips": {
-      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()"
-    },
     "flappyBoard": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists()"
     },
@@ -440,7 +437,7 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 12"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 20"
           },
           "dir": {
             ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6"
