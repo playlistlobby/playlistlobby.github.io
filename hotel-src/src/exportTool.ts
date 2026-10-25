@@ -50,11 +50,10 @@ function trimmed(c: HTMLCanvasElement, pad = 4): HTMLCanvasElement {
 
 interface Layer { n: NitroFurni; dir: number; nudge?: { x: number; y: number }; /** show only the bottom part (a plant that is still growing) */ grow?: number }
 /** Draws furniture layers (no floor shadow) around their common anchor, at art scale k. */
-function composite(layers: Layer[], k: number, trim = true, anchorOut?: { x: number; y: number }): HTMLCanvasElement {
+function composite(layers: Layer[], k: number, trim = true): HTMLCanvasElement {
   const items = layers.flatMap((l) => spritesFor(l.n, l.dir).filter((s) => !s.isShadow && s.sw > 2 && s.sh > 2).map((s) => ({ l, s, x: s.dx + (l.nudge?.x ?? 0), y: s.dy + (l.nudge?.y ?? 0) })));
   const x0 = Math.min(...items.map((i) => i.x)), y0 = Math.min(...items.map((i) => i.y));
   const x1 = Math.max(...items.map((i) => i.x + i.s.sw)), y1 = Math.max(...items.map((i) => i.y + i.s.sh));
-  if (anchorOut) { anchorOut.x = -x0 * k; anchorOut.y = -y0 * k; } // where the furniture's own anchor (its tile) sits in the picture
   const c = document.createElement("canvas");
   c.width = Math.ceil((x1 - x0) * k); c.height = Math.ceil((y1 - y0) * k);
   const g = c.getContext("2d")!;
@@ -326,7 +325,7 @@ function compositeBox(layers: Layer[], k: number): { canvas: HTMLCanvasElement; 
 }
 
 /** the game's floating "+1" over a head: a blood drop and the number, with a little pop as it appears, rising and fading (src/ui/room.ts, "floating +1") */
-function bloodPop(g: CanvasRenderingContext2D, icon: HTMLImageElement, text: string, x: number, y: number, ageMs: number, S: number, life = 1100, color = "#ff5252"): void {
+function bloodPop(g: CanvasRenderingContext2D, icon: HTMLImageElement, text: string, x: number, y: number, ageMs: number, S: number, life = 1100): void {
   if (ageMs < 0 || ageMs > life) return;
   g.save();
   g.globalAlpha = Math.max(0, Math.min(1, (life - ageMs) / (life * 0.45)));
@@ -343,7 +342,7 @@ function bloodPop(g: CanvasRenderingContext2D, icon: HTMLImageElement, text: str
   g.imageSmoothingEnabled = false;
   g.drawImage(icon, left + sz / 2 - (sz * pop) / 2, fy - (sz * pop) / 2, sz * pop, sz * pop);
   g.strokeText(text, fx, fy);
-  g.fillStyle = color; g.fillText(text, fx, fy);
+  g.fillStyle = "#ff5252"; g.fillText(text, fx, fy);
   g.restore();
 }
 
@@ -790,7 +789,7 @@ async function roomUpgradeAnim(): Promise<void> {
 async function newFurnitureSheet(): Promise<void> {
   const { SHOP_PIECES, SHOP_KIND_PREFIX } = await import("./shared/furniture");
   const { drawNitroFurni } = await import("./roomRender");
-  const first = SHOP_PIECES.findIndex((p) => p.id === "cratechairlight");
+  const first = SHOP_PIECES.findIndex((p) => p.id === "cheerbear");
   const list = SHOP_PIECES.slice(first);
   for (const p of list) await loadNitro(`furni/${SHOP_KIND_PREFIX}${p.id}.nitro`);
   const cols = 8, cellW = 230, cellH = 230;
@@ -1190,119 +1189,6 @@ async function emil6Dumpster(): Promise<void> {
   say(`emil6 dumpster done: ${total} frames at ${FPS} fps`);
 }
 
-/** emil picks the shrooms from a growing kit; the game's yellow "+1 Shroom" (with the shroom's icon) pops up over his head (giftPop in src/ui/room.ts) */
-async function shroomHarvest(): Promise<void> {
-  const { pot, shrooms, place } = await potKit();
-  const icon = await loadImage("/items/shroom.png");
-  const emil = (await renderAvatar({ figure: FIGURES.emil, dir: 2, headDir: 2, actions: ["std"], gesture: "std", frame: 0 }))!;
-  const S = 6, W = 1000, H = 1000, FPS = 30, OUT = "animation-emil-picks-shrooms";
-  const EMPTY = 0.5, GROW = 1.3, HOLD = 0.6, REACH = 0.7, POP = 2.2; // seconds
-  const PICK = EMPTY + GROW + HOLD + REACH, total = Math.round((PICK + POP + 0.1) * FPS);
-  const anchor = { x: 0, y: 0 };
-  composite([pot, { n: shrooms, dir: 2, nudge: place(shrooms, 0.95), grow: 1 }], S, false, anchor);
-  const potFeet = { x: W / 2 + 32 * S, y: H - 170 };
-  const a = iso(1, 0), b = iso(0, 0);
-  const emilFeet = { x: potFeet.x - (a.x - b.x) * S, y: potFeet.y - (a.y - b.y) * S }; // he stands on the tile next to the kit and faces it
-  for (let i = 0; i < total; i++) {
-    const t = i / FPS;
-    const grown = t < EMPTY ? 0 : t >= PICK ? 0 : Math.min(1, (t - EMPTY) / GROW);
-    const shown = t >= EMPTY && t < PICK ? 0.34 + 0.66 * grown : 0; // the game's own curve: a seedling shows at once
-    const c = document.createElement("canvas");
-    c.width = W; c.height = H;
-    const g = c.getContext("2d")!;
-    g.imageSmoothingEnabled = false;
-    const layers: Layer[] = [pot, { n: shrooms, dir: 2, nudge: place(shrooms, 0.95), grow: Math.max(0.0001, shown) }];
-    g.fillStyle = "rgba(0,0,0,0.18)"; g.beginPath(); g.ellipse(emilFeet.x, emilFeet.y, 16 * S, 7 * S, 0, 0, Math.PI * 2); g.fill();
-    // reaching for the shrooms: two quick dips towards the kit, the second one picks them
-    const r = t - (PICK - REACH);
-    const dip = r > 0 && r < REACH ? Math.abs(Math.sin((r / REACH) * Math.PI * 2)) : 0;
-    g.drawImage(emil, emilFeet.x + dip * 3 * S - (32 + padOf(emil).x) * S, emilFeet.y + dip * 1.5 * S - (FEET_Y + padOf(emil).y) * S, emil.width * S, emil.height * S);
-    const kit = composite(layers, S, false);
-    g.drawImage(kit, potFeet.x - anchor.x, potFeet.y - anchor.y);
-    bloodPop(g, icon, "+1 Shroom", emilFeet.x, emilFeet.y - 78 * S, (t - PICK) * 1000, S, POP * 1000, "#ffe27a");
-    await save(`${OUT}/frames/frame-${String(i).padStart(3, "0")}.png`, c);
-  }
-  say(`emil picks shrooms done: ${total} frames at ${FPS} fps`);
-}
-
-
-/** a test scene for the roulette table: two players on the chairs, the gun going back and forth, the shot and the blood (frames go to roulette-test/, to look at) */
-async function rouletteFxFrames(): Promise<void> {
-  const fx = await import("./ui/rouletteFx");
-  const W = 1000, H = 860, S = 5, FPS = 30, OUT = "roulette-test";
-  const def = lobbyDef([]);
-  await ensureBasementArt();
-  await ensureFurniSprites(def);
-  const shell = renderRoomShell(def);
-  const cam = { x: iso(0.6, 17.4).x - 10, y: iso(0.6, 17.4).y - 30 };
-  const toScreen = (p: { x: number; y: number }): { x: number; y: number } => ({ x: W / 2 + (p.x - cam.x) * S, y: H / 2 + (p.y - cam.y) * S });
-  const tileFeet = (tx: number, ty: number): { x: number; y: number } => { const w = iso(tx, ty); return toScreen({ x: w.x, y: w.y + TILE_H / 2 }); };
-  const figA = FIGURES.emil.replace(/\.ca-[0-9-]+/, ""), figB = FIGURES.bootyshaker.replace(/\.ca-[0-9-]+/, "");
-  const kindsDir: Record<string, number> = {};
-  const pose = (fig: string, dir: number, arm: "rest" | "raised" | null): Promise<HTMLCanvasElement | null> =>
-    renderAvatar({ figure: fig, dir, headDir: dir, actions: arm === "raised" ? ["sit", "drk=9999"] : arm === "rest" ? ["sit", "crr=9999"] : ["sit"], gesture: "std", frame: 0 });
-  const head = (fig: string, dir: number, arm: "rest" | "raised" | null): Promise<HTMLCanvasElement | null> =>
-    renderAvatar({ figure: fig, dir, headDir: dir, actions: arm === "raised" ? ["sit", "drk=9999"] : arm === "rest" ? ["sit", "crr=9999"] : ["sit"], gesture: "std", frame: 0, headOnly: true });
-  const seatsT = [{ tx: 0, ty: 16, dir: 4, fig: figA }, { tx: 0, ty: 19, dir: 0, fig: figB }];
-  const imgs: Record<string, HTMLCanvasElement> = {}, heads: Record<string, HTMLCanvasElement> = {};
-  for (const [i, st] of seatsT.entries()) for (const arm of ["rest", "raised", null] as const) {
-    imgs[`${i}${arm}`] = (await pose(st.fig, st.dir, arm))!;
-    heads[`${i}${arm}`] = (await head(st.fig, st.dir, arm))!;
-  }
-  const seatFeet = seatsT.map((st) => { const f = tileFeet(st.tx, st.ty); return { x: f.x, y: f.y - 14 * S }; });
-  const seats: [{ feet: { x: number; y: number }; dir: number }, { feet: { x: number; y: number }; dir: number }] = [{ feet: seatFeet[0], dir: 4 }, { feet: seatFeet[1], dir: 0 }];
-  const tableMid = (() => { const a = tileFeet(0, 17), b = tileFeet(0, 18); return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 - 36 * S }; })();
-  const tableFloor = { x: tableMid.x, y: tableMid.y + 36 * S };
-  const gore = { start: 0, seed: 777 };
-  const draw = (anim: { kind: "deal" | "pull"; start: number; by: 0 | 1; dead?: boolean } | null, holder: 0 | 1 | null, now: number, deadSeat: 0 | 1 | null, deadAt: number): HTMLCanvasElement => {
-    const c = document.createElement("canvas"); c.width = W; c.height = H;
-    const g = c.getContext("2d")!;
-    g.fillStyle = "#101214"; g.fillRect(0, 0, W, H);
-    g.imageSmoothingEnabled = true;
-    const o = toScreen({ x: -shell.origin.x, y: -shell.origin.y });
-    g.drawImage(shell.canvas, o.x, o.y, shell.canvas.width * S, shell.canvas.height * S);
-    g.imageSmoothingEnabled = false;
-    const place = (kind: string, tx: number, ty: number, dir: number, lift = 0, part?: "back" | "front"): void => { g.save(); if (lift) g.translate(0, -lift * S); drawNitroFurni(g, kind, tx, ty, dir, toScreen, S, 1, part === "front", undefined, part); g.restore(); };
-    if (deadSeat !== null && deadAt >= 0) fx.drawGoreOnFloor(g, { start: deadAt, seed: gore.seed }, now, { x: seatFeet[deadSeat].x - 4 * S, y: seatFeet[deadSeat].y + 14 * S + 2 * S }, S);
-    const person = (i: 0 | 1): void => {
-      const arm = fx.armPoseAt(anim, now, i) ?? (holder === i && !anim ? "rest" : null);
-      let img = imgs[`${i}${arm}`];
-      const isDead = deadSeat === i && deadAt >= 0 && now >= deadAt;
-      if (isDead) img = fx.withoutHead(imgs[`${i}${arm}`], heads[`${i}${arm}`]);
-      g.drawImage(img, seats[i].feet.x - 32 * S, seats[i].feet.y - 94 * S, img.width * S, img.height * S);
-      if (isDead) fx.drawGoreOnBody(g, { start: deadAt, seed: 777 }, now, fx.spriteAt(seats[i].feet, i === 0 ? 28 : 36, 56, S), S, seats[i].feet.y + 20 * S);
-    };
-    const gun = fx.gunNow(anim, holder, seats, tableMid, now, S);
-    place("rchair", 0, 16, 4, 0, "back"); person(0); place("rchair", 0, 16, 4, 0, "front");
-    if (gun && !gun.behind) { /* drawn later */ }
-    place("rtable", 0, 17, 2); place("gunrack", 0, 17, 2, 36);
-    place("rchair", 0, 19, 0, 0, "back"); person(1); place("rchair", 0, 19, 0, 0, "front");
-    if (gun) {
-      const r = fx.drawGun(g, gun.at.x, gun.at.y, gun.ang, S * fx.GUN_K);
-      fx.drawMuzzleFlash(g, r.muzzle, gun.flash, S * 0.5);
-    }
-    if (deadSeat !== null) { g.fillStyle = "#fff"; g.font = "14px sans-serif"; }
-    g.fillStyle = "#fff"; g.font = "14px sans-serif"; g.fillText(`t=${Math.round(now)}ms`, 10, 20);
-    return c;
-  };
-  let n = 0;
-  const out = async (c: HTMLCanvasElement): Promise<void> => { await save(`${OUT}/frames/frame-${String(n++).padStart(3, "0")}.png`, c); };
-  // 1) the gun is taken from the rack to the first player, then a safe pull by the first, passed to the second, who dies
-  const total1 = fx.DEAL_MS + 400 + fx.SAFE_PULL_MS + 400 + fx.DEADLY_PULL_MS + 3000;
-  const t1 = (t: number) => t;
-  for (let t = 0; t < total1; t += 1000 / FPS * 2) {
-    let anim = null as null | { kind: "deal" | "pull"; start: number; by: 0 | 1; dead?: boolean };
-    let holder: 0 | 1 | null = null;
-    let deadAt = -1;
-    const a0 = 0, a1 = fx.DEAL_MS + 400, a2 = a1 + fx.SAFE_PULL_MS + 400;
-    if (t < a1) { anim = t < fx.DEAL_MS ? { kind: "deal", start: a0, by: 0 } : null; holder = t >= fx.DEAL_MS ? 0 : null; }
-    else if (t < a2) { anim = t - a1 < fx.SAFE_PULL_MS ? { kind: "pull", start: a1, by: 0, dead: false } : null; holder = t - a1 >= fx.SAFE_PULL_MS ? 1 : null; }
-    else { anim = { kind: "pull", start: a2, by: 1, dead: true }; holder = null; deadAt = a2 + fx.TRIGGER_AT + 40; }
-    await out(draw(anim && t - anim.start > fx.SAFE_PULL_MS + fx.DEADLY_PULL_MS + 5000 ? null : anim, holder, t, deadAt >= 0 ? 1 : null, deadAt));
-  }
-  say(`roulette fx frames done: ${n}`);
-}
-
 async function spinAll(): Promise<void> {
   const accounts: Array<[string, string]> = [
     ["Emil", FIGURES.emil], ["bootyshaker", FIGURES.bootyshaker],
@@ -1356,8 +1242,6 @@ async function spinAll(): Promise<void> {
     else if (only === "chat") { loadEmojiFont(); await document.fonts.ready; await chatRoom(); }
     else if (only === "upgrade") await roomUpgradeAnim();
     else if (only === "weed") await weedGrowth();
-    else if (only === "roulettefx") await rouletteFxFrames();
-    else if (only === "shroompick") { loadEmojiFont(); await document.fonts.ready; await shroomHarvest(); }
     else if (only === "anim") await stabAnimation();
     else { await furniture(); await icons(); await avatars(); await stabAnimation(); }
     say("ALL DONE");
