@@ -16,9 +16,9 @@ export function watchRoulette(cb: (s: RouletteState | null) => void): () => void
 }
 
 /** Sit down first, then name the stake: the blood goes on the table. */
-export const rouletteOpen = (p: Profile, stake: number): Promise<unknown> => call(p, "rouletteOpen", { stake });
+export const rouletteOpen = (p: Profile, stake: number, seat: 0 | 1): Promise<unknown> => call(p, "rouletteOpen", { stake, seat });
 /** Match the stake on the table: the game begins. `gone`: the one who named it had got up (their blood went back). */
-export const rouletteJoin = (p: Profile): Promise<{ gone?: boolean; first?: string }> => call(p, "rouletteJoin");
+export const rouletteJoin = (p: Profile, seat: 0 | 1): Promise<{ gone?: boolean; first?: string }> => call(p, "rouletteJoin", { seat });
 /** Stand up from the table (a stake nobody matched comes back; a game in progress is lost). */
 export const rouletteLeave = (p: Profile): Promise<unknown> => call(p, "rouletteLeave");
 /** Your turn: pull the trigger. */

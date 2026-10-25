@@ -9,10 +9,17 @@ export const ROULETTE_CHAMBERS = 6;
 export const ROULETTE_TURN_MS = 25_000;
 /** how long a finished game stays on the table: the "you are dead" screen (10 s) and a little more, so everyone sees the end */
 export const ROULETTE_OVER_MS = 14_000;
-/** how long somebody may be gone from the basement (dead connection, closed tab) before their game is lost for them */
-export const ROULETTE_GONE_MS = 15_000;
+/** a player who is gone from the basement (a refresh, a log out, a dead connection) has this long to come back to the table before the game is lost for them */
+export const ROULETTE_GONE_MS = 12_000;
 
-export interface RouletteSeat { uid: string; name: string }
+export interface RouletteSeat {
+  uid: string;
+  name: string;
+  /** how they look (so a player who is gone can still be shown in the chair) */
+  figure?: string;
+  /** which of the two chairs they sit on: 0 = the first, 1 = the second */
+  seat?: 0 | 1;
+}
 export interface RouletteState {
   status: "waiting" | "playing" | "over";
   /** what each player has put on the table */
@@ -41,7 +48,9 @@ export interface RouletteState {
 }
 
 const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-const seatOf = (v: any): RouletteSeat | null => (v && typeof v.uid === "string" ? { uid: v.uid, name: String(v.name ?? "?").slice(0, 30) } : null);
+const seatOf = (v: any): RouletteSeat | null => (v && typeof v.uid === "string"
+  ? { uid: v.uid, name: String(v.name ?? "?").slice(0, 30), ...(typeof v.figure === "string" ? { figure: v.figure.slice(0, 200) } : {}), ...(v.seat === 0 || v.seat === 1 ? { seat: v.seat as 0 | 1 } : {}) }
+  : null);
 
 /** What the database holds as the table's state, made safe to use (null: nobody is playing). */
 export function parseRoulette(v: any): RouletteState | null {

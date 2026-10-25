@@ -373,7 +373,7 @@ export function ensureFurniSprites(def: RoomDef): Promise<void> {
 }
 
 /** Draws sprite art standing on the floor footprint (w x h tiles) at (tx, ty). The art's anchor is the centre of the base tile (tx, ty). */
-export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: number, h: number, tx: number, ty: number, dir: number, nudge: { x: number; y: number } | undefined, toScreen: (p: Pt) => Pt, scale: number, alpha = 1, skipShadow = false, anim?: AnimState): Box | null {
+export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: number, h: number, tx: number, ty: number, dir: number, nudge: { x: number; y: number } | undefined, toScreen: (p: Pt) => Pt, scale: number, alpha = 1, skipShadow = false, anim?: AnimState, part?: "back" | "front"): Box | null {
   const o = toScreen(iso(tx + 0.5, ty + 0.5)); // the art is anchored to the middle of the piece's base tile (its lowest x,y)
   void w; void h;
   const ox = o.x + (nudge?.x ?? 0) * scale;
@@ -390,6 +390,9 @@ export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: 
     if (!s.isShadow && s.sw > 2 && s.sh > 2) {
       box = box ? { x0: Math.min(box.x0, left), y0: Math.min(box.y0, top), x1: Math.max(box.x1, left + sw), y1: Math.max(box.y1, top + sh) } : { x0: left, y0: top, x1: left + sw, y1: top + sh };
     }
+    // a piece with a layer in front of the people who use it (the backrest of a chair somebody sits on with their back to us): the room draws the back and the front layers at different moments
+    if (part === "back" && s.z > 0 && !s.isShadow) continue;
+    if (part === "front" && (s.z <= 0 || s.isShadow)) continue;
     g.save();
     g.globalAlpha = alpha * (s.isShadow ? 0.22 : 1) * (s.alpha ?? 1); // the shadow art is solid black; the game draws it faint
     if (s.ink === "ADD") g.globalCompositeOperation = "lighter"; // glows add their light to what is behind them
@@ -407,14 +410,14 @@ export function drawNitroSprites(g: CanvasRenderingContext2D, n: NitroFurni, w: 
 }
 
 /** Draws a placed .nitro piece of a registered furniture kind. Returns false until its art has loaded. */
-export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: number, ty: number, dir: number, toScreen: (p: Pt) => Pt, scale: number, alpha = 1, skipShadow = false, anim?: AnimState): Box | null {
+export function drawNitroFurni(g: CanvasRenderingContext2D, kindId: string, tx: number, ty: number, dir: number, toScreen: (p: Pt) => Pt, scale: number, alpha = 1, skipShadow = false, anim?: AnimState, part?: "back" | "front"): Box | null {
   const k = FURNI_KINDS[kindId];
   const n = k?.nitro ? nitroIfReady(k.nitro) : undefined;
   if (!n) return null;
   const fp = footprint(kindId, dir);
   // a wall item hangs on the wall plane, not on the floor tile: the back wall is the line y = 0, the left wall x = 0
   if (k.wall) { if (dir === 2) tx -= 0.5; else ty -= 0.5; }
-  return drawNitroSprites(g, n, fp.w, fp.h, tx, ty, dir, k.nudge, toScreen, scale, alpha, skipShadow, anim);
+  return drawNitroSprites(g, n, fp.w, fp.h, tx, ty, dir, k.nudge, toScreen, scale, alpha, skipShadow, anim, part);
 }
 
 // ---- the door -------------------------------------------------------------------------------------------

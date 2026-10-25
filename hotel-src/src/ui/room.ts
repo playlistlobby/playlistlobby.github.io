@@ -91,6 +91,7 @@ import { mountSidePanel } from "./sidepanel";
 import { mountRoomPanel } from "./roomPanel";
 import { DoorApi, openDoor } from "./door";
 import { mountRoulette, RouletteApi } from "./rouletteTable";
+import { dimmed } from "./rouletteFx";
 import { assetUrl } from "../assetUrl";
 import { playSfx } from "../sfx";
 import { setAmbience, setShopMusic } from "../ambience";
@@ -230,6 +231,8 @@ interface Player {
   npc?: boolean;
   /** sitting on a chair or couch (shown to everyone through players/<uid>/sit) */
   sit?: boolean;
+  /** a player of a roulette game who dropped out (a refresh, a log out): kept in their chair, a little darker, until they are back or their 12 seconds are up */
+  ghost?: boolean;
   /** passed out on the floor (a pill from 6ixty; shown to everyone through players/<uid>/lay) */
   faint?: boolean;
   /** you clicked a seat: where to sit once you've walked there, and which way to face */
@@ -2508,7 +2511,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function renderOnline(): void {
-    const here = [...players.values()].filter((p) => !p.sleeper);
+    const here = [...players.values()].filter((p) => !p.sleeper && !p.ghost);
     online.replaceChildren(
       h("strong", {}, `In room (${here.length})`),
       ...here.map((p) => h("div", { class: p.uid === me.uid ? "me" : "" }, p.name)));
@@ -3214,6 +3217,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return box;
   }
 
+  /** the "Disconnected · 9" counter over a player who dropped out of the roulette game */
+  function drawGhostTag(text: string, cx: number, bottom: number): void {
+    const fs = Math.round(11 * Math.max(1, scale));
+    g.save();
+    g.font = `bold ${fs}px Verdana, 'Apple Color Emoji', sans-serif`;
+    const w = g.measureText(text).width + 16, hgt = fs + 9;
+    g.fillStyle = "rgba(20,8,8,0.82)";
+    g.beginPath(); g.roundRect(cx - w / 2, bottom - hgt, w, hgt, hgt / 2); g.fill();
+    g.strokeStyle = "rgba(255,120,90,0.85)"; g.lineWidth = 1.5; g.stroke();
+    g.fillStyle = "#ffd9cf"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(text, cx, bottom - hgt / 2 + 1);
+    g.restore();
+  }
+
   /** The price of a piece for sale: a blood drop and the number, tucked under the bottom right corner of it. */
   function drawPriceTag(price: number, right: number, bottom: number): void {
     const fs = Math.round(11 * Math.max(1, scale));
@@ -3391,7 +3408,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.globalCompositeOperation = "lighter";
         drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.5 * pulse, true, pieceAnim(f, now));
         g.restore();
-      } else b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now));
+      } else b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now), f.kind === "rchair" ? "back" : undefined); // (a roulette chair's backrest is drawn after the player in it: see below)
       if (lift) { g.restore(); if (b) { b.y0 -= lift * scale; b.y1 -= lift * scale; } }
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
@@ -3953,6 +3970,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       });
     }
 
+    if (!furnishOn) {
+      for (const f of def.furni) {
+        if (f.kind !== "rchair") continue;
+        list.push({ depth: (furniDepth.get(f.id) ?? pieceDepth(f)) + 1.8, draw: () => { drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, true, undefined, "front"); } });
+      }
+    }
+
     // things lying on the floor: their inventory picture, with a little shadow (players stand in front of them)
     if (!furnishOn) {
       for (const d of drops.values()) {
@@ -4130,6 +4154,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       let img = getCached(opts);
       if (!img) { renderAvatar(opts); img = p.last; } else p.last = img;
       if (img && roulette) img = roulette.imageFor(p.uid, img, opts, now); // (the dead player at the roulette table has no head)
+      if (img && p.ghost) img = dimmed(img); // (a player who dropped out of a roulette game: a little darker)
       const feet = feetOf(p, now);
 
       // stab animation: attacker lunges toward the victim, victim flashes red
@@ -4221,6 +4246,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.textBaseline = "top";
           g.textAlign = "center";
           g.fillText(shownLabel, feet.x, feet.y + 9 * scale);
+          if (p.ghost && roulette) { const gl = roulette.ghostLabel(p.uid); if (gl) drawGhostTag(gl, feet.x, feet.y + lift - (FEET_Y + 4) * scale); }
           if (glowing) { // a little arrow bobbing over his head
             g.fillStyle = "#ffd54a";
             g.font = `${Math.round(16 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
@@ -4267,6 +4293,23 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         tileOf: (uid) => { const p = players.get(uid); return p ? currentTile(p) : undefined; },
         player: (uid) => players.get(uid),
         everyone: () => [...players.keys()].filter((u) => !players.get(u)?.sleeper),
+        ensureGhost: (uid, name, figure, tile, dir) => {
+          if (players.has(uid)) return;
+          const gp = makePlayer(uid, { name, figure: figure || me.figure, x: tile.x, y: tile.y, dir, sit: true });
+          gp.ghost = true;
+          players.set(uid, gp);
+          renderAvatar({ figure: gp.figure, dir, headDir: dir, actions: ["sit"], gesture: "std", frame: 0 });
+          renderOnline();
+        },
+        isGhost: (uid) => !!players.get(uid)?.ghost,
+        removePlayer: (uid) => { players.delete(uid); if (hoverPlayer?.uid === uid) hoverPlayer = null; renderOnline(); },
+        seatMe: (tile, dir) => {
+          const mp = mine();
+          if (!mp) return;
+          mp.from = mp.to = mp.dest = { ...tile };
+          mp.path = []; mp.dir = dir; mp.sit = true; mp.sitTo = undefined; mp.lying = false;
+          update(myRef, { x: tile.x, y: tile.y, dir, sit: true }).catch(() => undefined);
+        },
         sitAt: (fid, after) => sitAt(fid, null, after),
         standUp: () => { const p = mine(); if (!p) return; p.sit = false; p.sitTo = undefined; sitAfter = undefined; update(myRef, { sit: null }).catch(() => undefined); },
         amSeated: () => !!mine()?.sit,

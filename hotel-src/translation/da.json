@@ -8306,7 +8306,7 @@
  },
  "N1129": {
   "en": "Play for {stake} blood? You put the same amount down. One bullet, six chambers, you take turns pulling the trigger. Lose and you are dead. Win and you take both stakes.",
-  "da": "Spil om {stake} blod? Du lægger det samme beløb. Én kugle, seks kamre, I skiftes til at trykke på aftrækkeren. Taber du, er du død. Vinder du, tager du begge indsatser.",
+  "da": "Spil om {stake} blod? Du lægger det samme beløb. Én kugle, seks chambers, I skiftes til at trykke på aftrækkeren. Taber du, er du død. Vinder du, tager du begge indsatser.",
   "where": "src/ui/rouletteTable.ts"
  },
  "N1130": {
@@ -8316,7 +8316,7 @@
  },
  "N1131": {
   "en": "Put blood on the table. Somebody sits down opposite you and puts the same amount down. You take turns pulling the trigger: one bullet, six chambers. Whoever it finds is dead. The other takes both stakes.",
-  "da": "Læg blod på bordet. Nogen sætter sig over for dig og lægger det samme beløb. I skiftes til at trykke på aftrækkeren: én kugle, seks kamre. Den, kuglen finder, er død. Den anden tager begge indsatser.",
+  "da": "Læg blod på bordet. Nogen sætter sig over for dig og lægger det samme beløb. I skiftes til at trykke på aftrækkeren: én kugle, seks chambers. Den, kuglen finder, er død. Den anden tager begge indsatser.",
   "where": "src/ui/rouletteTable.ts"
  },
  "N1132": {
@@ -8481,12 +8481,12 @@
  },
  "N1164": {
   "en": "Your turn · only 1 chamber left",
-  "da": "Din tur · kun 1 kammer tilbage",
+  "da": "Din tur · kun 1 chamber tilbage",
   "where": "src/ui/rouletteTable.ts"
  },
  "N1165": {
   "en": "Your turn · {chambers} chambers left",
-  "da": "Din tur · {chambers} kamre tilbage",
+  "da": "Din tur · {chambers} chambers tilbage",
   "where": "src/ui/rouletteTable.ts"
  },
  "N1166": {
@@ -8501,12 +8501,12 @@
  },
  "N1168": {
   "en": "Only 1 chamber left",
-  "da": "Kun 1 kammer tilbage",
+  "da": "Kun 1 chamber tilbage",
   "where": "src/ui/rouletteTable.ts"
  },
  "N1169": {
   "en": "{chambers} chambers left",
-  "da": "{chambers} kamre tilbage",
+  "da": "{chambers} chambers tilbage",
   "where": "src/ui/rouletteTable.ts"
  },
  "N1170": {
@@ -8538,5 +8538,20 @@
   "en": "Put {stake} blood at stake for a 50% chance to double it?",
   "da": "Sæt {stake} blod på spil i en 50% chance for at fordoble dem?",
   "where": "src/ui/rouletteTable.ts"
+ },
+ "N1176": {
+  "en": "Disconnected · {secs}",
+  "da": "Afbrudt · {secs}",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1177": {
+  "en": "You are back at the table.",
+  "da": "Du er tilbage ved bordet.",
+  "where": "src/ui/rouletteTable.ts"
+ },
+ "N1178": {
+  "en": "That chair is taken.",
+  "da": "Den stol er optaget.",
+  "where": "server/src/actions/roulette.ts"
  }
 }

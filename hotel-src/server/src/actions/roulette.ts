@@ -33,6 +33,9 @@ async function table(c: Ctx): Promise<RouletteState | null> {
   return st;
 }
 
+/** what a player looks like, for the chair they leave behind if they are disconnected */
+const figureOf = (w: { raw: any }): string => String(w.raw?.figure ?? "").slice(0, 200);
+
 /** in the basement and sitting down? */
 async function seated(c: Ctx, uid: string): Promise<boolean> {
   const node = await c.db.get<{ sit?: boolean }>(`rooms/lobby/players/${uid}`);
@@ -82,13 +85,14 @@ export const rouletteOpen: Action = {
     await requireInRoom(c, "lobby");
     if (!(await seated(c, c.uid))) fail("Sit down at the table first.");
     const stake = int(a.stake, 1, ROULETTE_MAX, "amount");
+    const seat = int(a.seat ?? 0, 0, 1, "seat") as 0 | 1;
     const st = await table(c);
     if (st) fail(rouletteHas(st, c.uid) && st.status === "waiting" ? "You already have blood on the table." : "The table is in use.");
     const w = await c.user();
     if (w.s.blood < stake) fail("You don't have that much blood.");
     useLimit(c, w, stake);
     w.s.blood -= stake;
-    c.extra[PATH] = { status: "waiting", stake, a: { uid: c.uid, name: String(w.raw?.name ?? "?").slice(0, 30) }, at: c.now, shots: 0, seq: 0 };
+    c.extra[PATH] = { status: "waiting", stake, a: { uid: c.uid, name: String(w.raw?.name ?? "?").slice(0, 30), figure: figureOf(w), seat }, at: c.now, shots: 0, seq: 0 };
     return { stake };
   },
 };
@@ -96,19 +100,21 @@ export const rouletteOpen: Action = {
 /** Sit down second and say yes: the same amount goes on the table and the game begins (the server picks who holds the gun first). */
 export const rouletteJoin: Action = {
   locks: tableLocks,
-  async run(c) {
+  async run(c, a) {
     await requireInRoom(c, "lobby");
     if (!(await seated(c, c.uid))) fail("Sit down at the table first.");
     const st = await table(c);
     if (!st || st.status !== "waiting") fail("There's no game to join.");
     const open = st!;
     if (open.a.uid === c.uid) fail("That's your own stake.");
+    const seat = int(a.seat ?? (open.a.seat === 0 ? 1 : 0), 0, 1, "seat") as 0 | 1;
+    if (open.a.seat === seat) fail("That chair is taken.");
     if (!(await seated(c, open.a.uid))) { await walkAway(c, open, open.a.uid); return { gone: true }; } // the one who named the stake got up: their blood goes back
     const w = await c.user();
     if (w.s.blood < open.stake) fail("You don't have that much blood.");
     useLimit(c, w, open.stake);
     w.s.blood -= open.stake;
-    const b = { uid: c.uid, name: String(w.raw?.name ?? "?").slice(0, 30) };
+    const b = { uid: c.uid, name: String(w.raw?.name ?? "?").slice(0, 30), figure: figureOf(w), seat };
     const first = roll(2) === 0 ? open.a.uid : c.uid;
     c.extra[PATH] = { ...open, status: "playing", b, at: c.now, shots: 0, turn: first, turnAt: c.now, seq: open.seq + 1, gone: undefined };
     return { first };
@@ -141,7 +147,7 @@ export const roulettePull: Action = {
 
 /**
  * Anybody in the basement can call this now and then: it keeps the table honest. A stake whose owner is gone is given back, a game with somebody gone
- * for 15 seconds is lost by them, and somebody who sits with the gun for 25 seconds has the trigger pulled for them.
+ * for 12 seconds (a refresh, a log out: they can come back and are put in their chair again) is lost by them, and somebody who sits with the gun for 25 seconds has the trigger pulled for them.
  */
 export const rouletteTick: Action = {
   locks: tableLocks,
@@ -151,17 +157,22 @@ export const rouletteTick: Action = {
     if (!st || st.status === "over") return {};
     const gone: Record<string, number> = { ...(st.gone ?? {}) };
     let changed = false;
+    let turnAt = st.turnAt ?? st.at;
     for (const uid of [st.a.uid, st.b?.uid]) {
       if (!uid) continue;
       const here = await seated(c, uid);
       if (!here && gone[uid] === undefined) { gone[uid] = c.now; changed = true; }
-      else if (here && gone[uid] !== undefined) { delete gone[uid]; changed = true; }
+      else if (here && gone[uid] !== undefined) {
+        delete gone[uid]; changed = true;
+        if (st.turn === uid) turnAt = c.now; // somebody who came back to the gun gets its clock afresh
+      }
     }
     for (const [uid, since] of Object.entries(gone)) {
       if (c.now - since >= ROULETTE_GONE_MS) { await walkAway(c, st, uid); return { cleared: true }; }
     }
-    if (st.status === "playing" && st.turn && c.now - (st.turnAt ?? st.at) >= ROULETTE_TURN_MS) return { auto: true, ...(await pull(c, st, st.turn)) };
-    if (changed) c.extra[PATH] = { ...st, gone: Object.keys(gone).length ? gone : undefined };
+    // nobody pulls the trigger for somebody who is away: they have their 12 seconds to come back first
+    if (st.status === "playing" && st.turn && gone[st.turn] === undefined && c.now - turnAt >= ROULETTE_TURN_MS) return { auto: true, ...(await pull(c, st, st.turn)) };
+    if (changed) c.extra[PATH] = { ...st, turnAt: st.status === "playing" ? turnAt : st.turnAt, gone: Object.keys(gone).length ? gone : undefined };
     return {};
   },
 };

@@ -5,7 +5,7 @@ import { h } from "./dom";
 import { BLOOD_ICON } from "../items";
 import { playBang, playClick, playSfx, playSpin, playSplat, playThud } from "../sfx";
 import { roulettePull, rouletteJoin, rouletteLeave, rouletteOpen, rouletteTick, watchRoulette } from "../roulette";
-import { rouletteHas, ROULETTE_MAX, ROULETTE_TURN_MS, rouletteExpired } from "../shared/roulette";
+import { rouletteHas, ROULETTE_GONE_MS, ROULETTE_MAX, ROULETTE_TURN_MS, rouletteExpired } from "../shared/roulette";
 import type { RouletteState } from "../shared/roulette";
 import { getCached, renderAvatar } from "../avatarService";
 import type { RenderOpts } from "../avatarService";
@@ -30,6 +30,12 @@ export interface RouletteEnv {
   player: (uid: string) => { uid: string; name: string; sit?: boolean } | undefined;
   /** everybody who is in the room */
   everyone: () => string[];
+  /** a player who is disconnected stays in their chair, a little darker: put (or keep) them there */
+  ensureGhost: (uid: string, name: string, figure: string, tile: P, dir: number) => void;
+  isGhost: (uid: string) => boolean;
+  removePlayer: (uid: string) => void;
+  /** you are back after a disconnect: you are put in your chair again (no walking) */
+  seatMe: (tile: P, dir: number) => void;
   /** you sit down on the chair `furniId` (walking there first); `after` runs once you sit. false: you can't */
   sitAt: (furniId: string, after: () => void) => boolean;
   standUp: () => void;
@@ -67,7 +73,8 @@ export interface RouletteApi {
   /** a short shake of the whole picture at the shot */
   shake: (now: number) => P;
   hoverText: () => string;
-  /** the one on the left chair of the pair has this uid (for the room's own use) */
+  /** the "disconnected" counter over a player who dropped out of a game (null: not one) */
+  ghostLabel: (uid: string) => string | null;
   dispose: () => void;
 }
 
@@ -175,7 +182,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
         const yes = await askJoin(st.a.name, st.stake);
         if (!yes) { env.standUp(); return; }
         try {
-          const r = await rouletteJoin(me);
+          const r = await rouletteJoin(me, seatIndexOf(me.uid) ?? 1);
           env.refreshHeader();
           if (r.gone) { env.say(`${st.a.name} got up from the table.`, "warn"); env.standUp(); }
         } catch (err) { env.say((err as Error).message || "That didn't work.", "warn"); env.standUp(); }
@@ -185,7 +192,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
       const stake = await askStake(Math.max(0, me.blood));
       if (!stake) { env.standUp(); return; }
       try {
-        await rouletteOpen(me, stake);
+        await rouletteOpen(me, stake, seatIndexOf(me.uid) ?? 0);
         playSfx("give", 0.6);
         env.refreshHeader();
         env.say(`You put ${stake} blood on the table. Waiting for somebody to sit down opposite you.`);
@@ -267,7 +274,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
     lastBar = now;
     if (!barEl) { barEl = h("div", { class: "rt-bar" }); env.stage.append(barEl); }
     const mine = st.turn === me.uid;
-    const busy = now < animEnd;
+    const busy = now < animEnd - 250; // (the button is there a moment before the gun has quite arrived)
     const left = Math.max(0, Math.ceil((ROULETTE_TURN_MS - (env.serverNow() - (st.turnAt ?? st.at))) / 1000));
     const chambers = 6 - st.shots;
     const info = chambers === 1 ? "Only 1 chamber left" : `${chambers} chambers left`;
@@ -281,12 +288,24 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
     }
   }
   let pulling = false;
+  /** my own pull is playing (it began when I clicked) and the table hasn't said yet how it went */
+  let optimistic = false;
   async function pull(): Promise<void> {
-    if (pulling) return;
+    const st = active();
+    if (pulling || !st || st.status !== "playing" || st.turn !== me.uid) return;
     pulling = true;
+    // the gun goes up to your head the moment you click; the server's answer (a moment later) says what the trigger does
+    const now = performance.now();
+    optimistic = true;
+    startAnim({ kind: "pull", start: now, by: seatOfUid(st, me.uid) }, SAFE_PULL_MS, now);
+    playSpin(0.35);
     try { await roulettePull(me); env.refreshHeader(); }
-    catch (err) { env.say((err as Error).message || "That didn't work.", "warn"); }
+    catch (err) { cancelOptimistic(); env.say((err as Error).message || "That didn't work.", "warn"); }
     finally { pulling = false; }
+  }
+  function cancelOptimistic(): void {
+    if (optimistic && anim && anim.dead === undefined) { anim = null; animEnd = 0; }
+    optimistic = false;
   }
 
   // ---- what happened: the table changed ------------------------------------------------------------------------------
@@ -298,6 +317,8 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
     const now = performance.now();
     if (!next) { if (prev && prev.status === "waiting" && prev.a.uid !== me.uid) closeAsks(); return; }
     const first = prev === null && playedSeq < 0;
+    // you come back to a game you were in (a refresh, you logged out for a moment): you are put in your chair again, ready to go on
+    if (first && rouletteHas(next, me.uid) && next.status !== "over" && !env.amSeated()) returnToTable(next);
     // a table seen for the first time (you just came in): show it as it is, play nothing
     if (first && next.status !== "waiting") {
       playedSeq = next.seq;
@@ -317,11 +338,13 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
       playedSeq = next.seq;
       const last = next.last;
       const by = seatOfUid(next, last.by);
-      if (last.dead || next.status === "over") playPull(next, last.by, by, last.dead, now);
+      if (optimistic && last.by === me.uid && anim && anim.dead === undefined && anim.by === by) { resolveMine(next, last.dead, now); return; } // my own pull: it has been playing since I clicked
+      if (last.dead) { startAnim({ kind: "pull", start: now, by, dead: true }, DEADLY_PULL_MS, now); playSpin(0.35); scheduleDeath(next, last.by, by, now); }
+      else if (next.status === "over") endGame(next, now, 400);
       else {
         startAnim({ kind: "pull", start: now, by, dead: false }, SAFE_PULL_MS, now);
         playSpin(0.35);
-        later(TRIGGER_AT, () => playClick(0.55));
+        at(now, TRIGGER_AT, () => playClick(0.55));
       }
       return;
     }
@@ -333,18 +356,64 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
 
   function closeAsks(): void { disposers.slice().forEach((d) => d()); }
 
-  /** the pull that killed (or, for `dead` false, the end of a game some other way) */
-  function playPull(st: RouletteState, by: string, seat: 0 | 1, dead: boolean, now: number): void {
-    if (!dead) { endGame(st, now, 400); return; }
-    startAnim({ kind: "pull", start: now, by: seat, dead: true }, DEADLY_PULL_MS, now);
-    playSpin(0.35);
-    later(TRIGGER_AT, () => { playBang(0.85); shakeAt = performance.now(); });
-    later(TRIGGER_AT + 60, () => { playSplat(0.4); });
-    later(TRIGGER_AT + 380, () => playThud(0.5));
-    later(TRIGGER_AT + 900, () => playSplat(0.3));
-    gore = { start: now + TRIGGER_AT, seed: (st.at + st.seq * 7919) % 1_000_000, uid: by, seat };
-    headGoneAt = now + HEAD_GONE_AT;
-    endGame(st, now, TRIGGER_AT + 1000);
+  /** back at the table after a disconnect: in your own chair at once, and the table is told you are here (the 12 second counter stops) */
+  function returnToTable(st: RouletteState): void {
+    const mineSeat = st.a.uid === me.uid ? st.a : st.b;
+    const c = chairs()[mineSeat?.seat ?? (st.a.uid === me.uid ? 0 : 1)];
+    if (!c) return;
+    returned = true;
+    env.seatMe({ x: c.x, y: c.y }, c.dir ?? 0);
+    env.say("You are back at the table.");
+    later(500, () => { void rouletteTick(me).catch(() => undefined); });
+  }
+  let returned = false;
+
+  /** the players who dropped out stay in their chairs, a little darker, until their 12 seconds are up */
+  function syncGhosts(): void {
+    const st = active();
+    const cs = chairs();
+    const alive = !!st && st.status !== "over";
+    const here = new Set(env.everyone());
+    if (st && alive) {
+      for (const seat of [st.a, st.b]) {
+        if (!seat || seat.uid === me.uid || here.has(seat.uid)) continue;
+        const c = cs[seat.seat ?? (seat.uid === st.a.uid ? 0 : 1)];
+        if (c) env.ensureGhost(seat.uid, seat.name, seat.figure ?? "", { x: c.x, y: c.y }, c.dir ?? 0);
+      }
+    }
+    for (const uid of here) if (env.isGhost(uid) && !(st && alive && rouletteHas(st, uid))) env.removePlayer(uid);
+  }
+
+  function ghostLabel(uid: string): string | null {
+    const st = active();
+    if (!st || st.status === "over" || !rouletteHas(st, uid) || !env.isGhost(uid)) return null;
+    const since = st.gone?.[uid];
+    const secs = since === undefined ? Math.round(ROULETTE_GONE_MS / 1000) : Math.max(0, Math.ceil((ROULETTE_GONE_MS - (env.serverNow() - since)) / 1000));
+    return `Disconnected · ${secs}`;
+  }
+
+  /** run `fn` at `offset` ms after `t0` (if that time has passed already: now) */
+  function at(t0: number, offset: number, fn: () => void): void { later(Math.max(0, t0 + offset - performance.now()), fn); }
+
+  /** the sounds, the blood and the end of the game for a pull that killed, timed from `t0` (when the gun began to rise) */
+  function scheduleDeath(st: RouletteState, by: string, seat: 0 | 1, t0: number): void {
+    at(t0, TRIGGER_AT, () => { playBang(0.85); shakeAt = performance.now(); });
+    at(t0, TRIGGER_AT + 60, () => playSplat(0.4));
+    at(t0, TRIGGER_AT + 380, () => playThud(0.5));
+    at(t0, TRIGGER_AT + 900, () => playSplat(0.3));
+    gore = { start: t0 + TRIGGER_AT, seed: (st.at + st.seq * 7919) % 1_000_000, uid: by, seat };
+    headGoneAt = t0 + HEAD_GONE_AT;
+    endGame(st, performance.now(), Math.max(0, t0 + TRIGGER_AT + 1000 - performance.now()));
+  }
+
+  /** my own pull has been playing since the click; now the table says how it went */
+  function resolveMine(st: RouletteState, dead: boolean, now: number): void {
+    const a = anim!;
+    optimistic = false;
+    if (now - a.start > TRIGGER_AT) a.start = now - TRIGGER_AT; // the answer was slow: the trigger is pulled now
+    a.dead = dead;
+    if (dead) { animEnd = a.start + DEADLY_PULL_MS; scheduleDeath(st, me.uid, a.by, a.start); }
+    else { animEnd = a.start + SAFE_PULL_MS; at(a.start, TRIGGER_AT, () => playClick(0.55)); }
   }
 
   /** the blood changes hands: the winner's "+50", the loser's "-25" over their heads, and the dead player's ten seconds */
@@ -387,16 +456,18 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
   function update(now: number): void {
     const st = active();
     // got up from the table while you had blood on it (or a game going): give the stake back / lose the game
-    if (st && rouletteHas(st, me.uid) && (st.status === "waiting" || st.status === "playing") && !seating && !env.amSeated() && now - mountedAt > 1200 && now - lastLeave > 3000) {
+    if (st && rouletteHas(st, me.uid) && (st.status === "waiting" || st.status === "playing") && !seating && !returned && !env.amSeated() && now - mountedAt > 4000 && now - lastLeave > 3000) {
       lastLeave = now;
       void rouletteLeave(me).then(() => { env.refreshHeader(); }, () => undefined);
       env.say(st.status === "waiting" ? "You stood up and took your blood back." : "You got up from the table in the middle of the game: you lose.", st.status === "waiting" ? "game" : "warn");
     }
     // anybody in the basement keeps the table honest every few seconds (somebody gone, somebody taking too long)
-    if (st && (st.status === "waiting" || st.status === "playing") && now - lastTick > 4500 + (me.uid.charCodeAt(0) % 5) * 300) {
+    if (st && (st.status === "waiting" || st.status === "playing") && now - lastTick > 2000 + (me.uid.charCodeAt(0) % 5) * 150) {
       lastTick = now;
       void rouletteTick(me).catch(() => undefined);
     }
+    if (optimistic && anim && anim.dead === undefined && now - anim.start > 8000) cancelOptimistic(); // (the table never answered: put the gun down)
+    syncGhosts();
     updateBar(now);
   }
 
@@ -494,12 +565,10 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
   // ---- start and stop ------------------------------------------------------------------------------------------------------
   const disposers: Array<() => void> = [];
   const unwatch = watchRoulette(onState);
-  // you come into the basement with blood on the table (you closed the page): the server gives it back (or counts the game lost) once you are known to be away; stand up now
-  later(1500, () => { const st = active(); if (st && rouletteHas(st, me.uid) && (st.status === "waiting" || st.status === "playing") && !env.amSeated()) void rouletteLeave(me).then(() => env.refreshHeader(), () => undefined); });
 
   return {
     click: () => click(),
-    update, figureFor, armFor, imageFor, drawFloor, drawBody, drawGun: drawGunNow, look, shake, hoverText,
+    update, figureFor, armFor, imageFor, drawFloor, drawBody, drawGun: drawGunNow, look, shake, hoverText, ghostLabel,
     dispose: () => {
       unwatch();
       timers.forEach((t) => { window.clearTimeout(t); window.clearInterval(t); });

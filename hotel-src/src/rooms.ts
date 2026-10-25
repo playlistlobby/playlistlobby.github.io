@@ -246,8 +246,8 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby1", kind: "flappy", x: 0, y: 8, dir: 0 }, { id: "lobby2", kind: "dumpster", x: 0, y: 10, dir: 2 }, { id: "lobby3", kind: "dumpster", x: 0, y: 6, dir: 2 },
   { id: "lobby5", kind: "dumpster", x: 11, y: 14, dir: 2 },
   // Russian roulette against the left wall at the far end: chair, two-tile table, chair along the wall (the way it stands in emil's room), and the gun rack on the table
-  { id: "lobby6", kind: "rtable", x: 0, y: 17, dir: 2 }, { id: "lobby7", kind: "rchair", x: 0, y: 16, dir: 4 }, { id: "lobby8", kind: "rchair", x: 0, y: 19, dir: 0 },
-  { id: "lobby9", kind: "gunrack", x: 0, y: 17, dir: 2 },
+  { id: "lobby6", kind: "rtable", x: 0, y: 16, dir: 2 }, { id: "lobby7", kind: "rchair", x: 0, y: 15, dir: 4 }, { id: "lobby8", kind: "rchair", x: 0, y: 18, dir: 0 },
+  { id: "lobby9", kind: "gunrack", x: 0, y: 16, dir: 2 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);

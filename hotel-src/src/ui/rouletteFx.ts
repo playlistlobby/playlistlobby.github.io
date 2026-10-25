@@ -71,7 +71,7 @@ export const GUN_K = 0.8;
 
 // ---- the pull: a timeline ----------------------------------------------------------------------------------------------------------------------
 /** how long each part of a pull takes (ms): the gun comes up to the head, the long wait, the trigger, the gun comes down (or falls), and goes across the table */
-export const PULL = { raise: 650, wait: 700, click: 200, lower: 350, pass: 850, fall: 500 };
+export const PULL = { raise: 380, wait: 320, click: 200, lower: 350, pass: 850, fall: 500 };
 export const DEAL_MS = 900;
 /** the moment of truth, from the start of a pull */
 export const TRIGGER_AT = PULL.raise + PULL.wait;
@@ -87,7 +87,7 @@ export interface RtAnim {
   start: number;
   /** who holds the gun (0 = the first seat, 1 = the second) */
   by: 0 | 1;
-  /** the pull was the bullet */
+  /** the pull was the bullet (undefined: the player has clicked and the table hasn't said yet) */
   dead?: boolean;
 }
 
@@ -104,6 +104,7 @@ export function armPoseAt(a: RtAnim | null, now: number, i: 0 | 1): ArmPose | nu
   const t = now - a.start;
   if (a.kind === "deal") return t >= DEAL_MS * 0.7 ? "rest" : null;
   if (t < PULL.raise * 0.35) return "rest";
+  if (a.dead === undefined && t >= TRIGGER_AT) return "raised"; // the answer from the server isn't in yet: the gun stays at the head
   if (t < TRIGGER_AT + (a.dead ? PULL.fall : PULL.click + PULL.lower * 0.4)) return "raised";
   return "rest";
 }
@@ -154,6 +155,9 @@ export function gunNow(a: RtAnim | null, holder: 0 | 1 | null, seats: [Seat, Sea
     const tr = (t - PULL.raise) / PULL.wait;
     const shake = Math.sin(t / 38) * 0.55 * scale * (0.4 + tr);
     return { at: { x: aim.at.x + shake, y: aim.at.y + Math.cos(t / 51) * 0.4 * scale }, ang: aim.ang, behind: false, flash: 0, shake: 0 };
+  }
+  if (a.dead === undefined) { // pulled, but the table hasn't said yet what the trigger did: the barrel stays pressed to the head
+    return { at: { x: aim.at.x + Math.sin(t / 38) * 0.9 * scale, y: aim.at.y + Math.cos(t / 51) * 0.5 * scale }, ang: aim.ang, behind: false, flash: 0, shake: 0 };
   }
   if (a.dead) { // the shot: the gun kicks back and falls
     const u = t - TRIGGER_AT;
@@ -211,6 +215,22 @@ export function withoutHead(full: HTMLCanvasElement, headOnly: HTMLCanvasElement
   g.drawImage(headOnly, 0, 0);
   g.globalCompositeOperation = "source-over";
   headless.set(full, c);
+  return c;
+}
+
+const dimmedCache = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>();
+/** the same picture a little darker (for a player who is disconnected) */
+export function dimmed(img: HTMLCanvasElement): HTMLCanvasElement {
+  const hit = dimmedCache.get(img);
+  if (hit) return hit;
+  const c = document.createElement("canvas");
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext("2d")!;
+  g.drawImage(img, 0, 0);
+  g.globalCompositeOperation = "source-atop";
+  g.fillStyle = "rgba(8,10,22,0.5)";
+  g.fillRect(0, 0, c.width, c.height);
+  dimmedCache.set(img, c);
   return c;
 }
 

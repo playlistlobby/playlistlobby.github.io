@@ -63,7 +63,7 @@ console.log("--- roulette: sitting down and the stake");
   ok("open with 25", await act(a, "rouletteOpen", { stake: 25 }));
   check("the 25 is on the table, not in the pocket", (await bloodOf(a)) === 975);
   const st = await owner("GET", TABLE);
-  check("waiting, stake 25, host a", st.status === "waiting" && st.stake === 25 && st.a.uid === a.uid, JSON.stringify(st));
+  check("waiting, stake 25, host a, in chair 0, with a look", st.status === "waiting" && st.stake === 25 && st.a.uid === a.uid && st.a.seat === 0 && typeof st.a.figure === "string", JSON.stringify(st));
   bad("a second stake while one waits", await act(a, "rouletteOpen", { stake: 5 }));
   bad("nobody else can name a stake", await act(b, "rouletteOpen", { stake: 5 }));
   bad("you cannot join your own stake", await act(a, "rouletteJoin"));
@@ -81,8 +81,11 @@ console.log("--- roulette: a whole game");
   await clear();
   const a = await player("t_rl_g1", 1000), b = await player("t_rl_g2", 1000), spec = await player("t_rl_g3", 1000);
   ok("a opens with 40", await act(a, "rouletteOpen", { stake: 40 }));
-  ok("b matches it", await act(b, "rouletteJoin"));
+  bad("b cannot take a's chair", await act(b, "rouletteJoin", { seat: 0 }));
+  bad("a made-up chair", await act(b, "rouletteJoin", { seat: 5 }));
+  ok("b matches it", await act(b, "rouletteJoin", { seat: 1 }));
   let st = await owner("GET", TABLE);
+  check("b is in chair 1", st.b?.seat === 1, JSON.stringify(st.b));
   check("playing, both seated, somebody has the gun", st.status === "playing" && st.b.uid === b.uid && (st.turn === a.uid || st.turn === b.uid), JSON.stringify(st));
   check("both stakes are on the table", (await bloodOf(a)) === 960 && (await bloodOf(b)) === 960);
   bad("a third player cannot join", await act(spec, "rouletteJoin"));
@@ -216,6 +219,27 @@ console.log("--- coin flip machine removed: an open flip is paid back on the nex
   const rb = await act(b, "sync");
   check("b got the 12 back", rb.state.blood === 112 && (await owner("GET", "coinflips/open")) === null, String(rb.state.blood));
   bad("the old flip actions are gone", await act(a, "flipPost", { stake: 5, side: "heads" }));
+}
+console.log("--- roulette: somebody who is away keeps their 12 seconds");
+{
+  await clear();
+  const a = await player("t_rl_w1", 500), b = await player("t_rl_w2", 500);
+  await act(a, "rouletteOpen", { stake: 10, seat: 0 }); await act(b, "rouletteJoin", { seat: 1 });
+  const st0 = await owner("GET", TABLE);
+  const holder = st0.turn === a.uid ? a : b, other = holder === a ? b : a;
+  await owner("DELETE", `rooms/lobby/players/${holder.uid}`); // the holder refreshes the page
+  await owner("PUT", `${TABLE}/turnAt`, Date.now() - 60_000); // (and the gun's clock had nearly run out)
+  ok("a tick notes that the holder is away", await act(other, "rouletteTick"));
+  const st1 = await owner("GET", TABLE);
+  check("the holder is marked gone, nothing was pulled for them", st1.status === "playing" && st1.shots === 0 && typeof st1.gone?.[holder.uid] === "number", JSON.stringify(st1));
+  ok("another tick: still nothing pulled while they are away", await act(other, "rouletteTick"));
+  check("still not pulled", (await owner("GET", TABLE)).shots === 0);
+  await sit(holder); // back in the chair
+  ok("they are back", await act(other, "rouletteTick"));
+  const st2 = await owner("GET", TABLE);
+  check("the gone mark is wiped and the gun's clock started again", !st2.gone && st2.shots === 0 && st2.turnAt > Date.now() - 20_000, JSON.stringify(st2));
+  ok("the game goes on: they can pull", await act(holder, "roulettePull"));
+  await clear();
 }
 console.log(`\n${fails ? `${fails} FAILED, ${passes} passed` : `all ${passes} passed`}`);
 process.exit(fails ? 1 : 0);
