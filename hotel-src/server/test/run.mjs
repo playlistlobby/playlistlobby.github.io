@@ -230,7 +230,7 @@ console.log("--- selling weed");
   await sold("2 kodimagnyl: 2 each", "kodimagnyl", 2, 4);
   await sold("hash: 12", "hash", 1, 12);
   await sold("a hash joint: 13", "joint_hash", 1, 13);
-  await sold("DMT: 34", "dmt", 1, 34);
+  await sold("DMT: 28", "dmt", 1, 28);
   await sold("3 shrooms: 14 each", "shroom", 3, 42);
   const never = await fresh("t_sell4", { inventory: { 0: { item: "f_mixer", qty: 1 }, 1: { item: "f_planter", qty: 1 }, 2: { item: "jointpaper", qty: 1 }, 3: { item: "bluntwrap", qty: 1 }, 4: { item: "wateringcan", qty: 1 }, 5: { item: "wateringcan_full", qty: 1 }, 6: { item: "knife", qty: 1 }, 7: { item: "cd_yellow", qty: 1 } } });
   await act(never, "sync");

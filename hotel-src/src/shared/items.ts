@@ -265,15 +265,15 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "chudmix": return 12; // shroom 14 + weed 6 -> 2
     case "codeine": return 8; // kodimagnyl 4 and water
     case "superpill": return 11; // fentanyl: pill 3 + kodimagnyl 4
-    case "dmt": return 34; // shroom 14 + kodimagnyl 4 (+10 bonus)
-    case "lsd": return 32; // shroom 14 + pill 3 (+10 bonus)
+    case "dmt": return 28; // shroom 14 + kodimagnyl 4 (a bonus on top)
+    case "lsd": return 30; // shroom 14 + pill 3 (a bonus on top)
     case "trollmix": return 11; // hash 12 + weed 6 -> 2
     case "joint_troll": return 16;
     case "blunt_troll": return 18;
     case "joint_chudname": return 4; // ass weed 4 + a cigarette
     // rolled (paper 1, blunt wrap 2)
     case "joint": return 9;
-    case "blunt": return 11;
+    case "blunt": return 9;
     case "joint_mid": return 10;
     case "blunt_mid": return 12;
     case "joint_thca": return 15;
