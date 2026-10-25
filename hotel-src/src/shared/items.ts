@@ -224,10 +224,10 @@ export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
 /** Things 6ixty only buys in bundles: the price of one of these is for the whole bundle (2 cigarette butts = 1 drop, 2 pills = 3 drops). */
 export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, pill: 2 };
 
-/** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife) and every CD. */
+/** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife), every CD, the dice and the starter sofa everybody is given. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "dice",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "dice", "f_sofa",
 ]);
 
 /**

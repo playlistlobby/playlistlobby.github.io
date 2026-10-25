@@ -105,5 +105,15 @@ const lent = await fresh("t_dice_lent", { blood: 0, inventory: { 0: { item: "dic
 await lobby(lent);
 bad("dice that are loaned out can't be rolled", await act(lent, "rollDice", { room: "lobby" }));
 
+console.log("--- 6ixty does not buy the starter sofa or the dice");
+const sv = await fresh("t_sofa", { blood: 0, starterFurni: true, inventory: { 0: { item: "f_sofa", qty: 1 } } }); // (the starter sofa, taken out of storage into the pocket)
+await act(sv, "sync");
+const sst = await state(sv);
+const sofaSlot = sst.inventory.findIndex((x) => x && x.item === "f_sofa");
+check("the sofa is in the pocket", sofaSlot >= 0);
+bad("he won't buy the sofa", await act(sv, "sellWeed", { slot: sofaSlot, qty: 1 }));
+check("(it is still there, no blood paid)", total((await state(sv)).inventory, "f_sofa") === 1 && (await state(sv)).blood === 0);
+bad("or the dice", await act(a, "sellWeed", { slot: (await state(a)).inventory.findIndex((x) => x && x.item === "dice"), qty: 1 }));
+
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);
