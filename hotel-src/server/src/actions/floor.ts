@@ -39,6 +39,37 @@ export const drop: Action = {
   },
 };
 
+/** What you lost to fentanyl lands on the floor where you go down (the browser asks 7 seconds after you took it, when you lie down): a pile of blood anybody can pick up. */
+export const fentDrop: Action = {
+  locks: (c, a) => [`room:${a?.room}`],
+  async run(c, a) {
+    const room = text(a.room, ROOM_RE, "room");
+    const stand = await requireInRoom(c, room);
+    const owed = await c.db.get<{ lost?: number; at?: number }>(`fentOwed/${c.uid}`);
+    if (!owed || !(Number(owed.lost) > 0) || !owed.at) return { dropped: 0 };
+    if (c.now - owed.at < 5000) fail("Not yet."); // (it falls when you go down, not before)
+    c.extra[`fentOwed/${c.uid}`] = null;
+    if (c.now - owed.at > 120_000) return { dropped: 0 }; // (too late: it is just gone)
+    const size = await roomSize(c, room);
+    const drops = (await c.db.get<Record<string, DropRow>>(`rooms/${room}/drops`)) ?? {};
+    const live = (d: DropRow) => !d.exp || d.exp > c.now;
+    // where you lie, or the nearest tile with nothing on it
+    let best: { x: number; y: number } | null = null, bd = Infinity;
+    const from = stand ?? { x: Math.floor(size.w / 2), y: Math.floor(size.h / 2) };
+    for (let y = 0; y < size.h; y++) for (let x = 0; x < size.w; x++) {
+      const d0 = drops[`${x}_${y}`];
+      if (d0 && live(d0)) continue;
+      const dist = Math.hypot(x - from.x, y - from.y);
+      if (dist < bd) { bd = dist; best = { x, y }; }
+    }
+    if (!best) return { dropped: 0 };
+    const w = await c.user();
+    const pub = isPublicRoom(room);
+    c.extra[`rooms/${room}/drops/${best.x}_${best.y}`] = { item: "blood", qty: Math.floor(Number(owed.lost)), x: best.x, y: best.y, by: c.uid, byName: String(w.raw.name ?? "someone").slice(0, 16), at: c.now, ...(pub ? { exp: c.now + DROP_LIFE_MS } : {}) };
+    return { dropped: Math.floor(Number(owed.lost)) };
+  },
+};
+
 export const pickup: Action = {
   locks: (c, a) => [`room:${a?.room}`],
   async run(c, a) {
@@ -51,6 +82,13 @@ export const pickup: Action = {
     if (d.exp && d.exp <= c.now) { await c.db.patch({ [path]: null }); return fail("It's gone."); }
     if (stand && cheb(stand, { x: d.x, y: d.y }) > 3) fail("It's too far away.");
     const w = await c.user();
+    if (d.item === "blood") { // a pile of blood (somebody died of fentanyl): it goes straight to your blood
+      const n = Math.max(1, Math.floor(Number(d.qty) || 1));
+      w.s.blood += n;
+      c.note = "blood on the floor";
+      c.extra[path] = null;
+      return { item: "blood", qty: n };
+    }
     const next = addToInv(w.s.inventory, { item: d.item, qty: Math.max(1, Number(d.qty) || 1), ...(d.ass ? { ass: true } : {}) });
     if (!next) fail("Your inventory is full.");
     w.s.inventory = next!;

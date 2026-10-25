@@ -9213,5 +9213,15 @@
   "en": "You swallow it. Your legs go heavy…",
   "da": "Du sluger den. Dine ben bliver tunge…",
   "where": "src/ui/room.ts"
+ },
+ "N1311": {
+  "en": "You pick up {qty} blood.",
+  "da": "Du samler {qty} blod op.",
+  "where": "src/ui/room.ts"
+ },
+ "N1312": {
+  "en": "Not yet.",
+  "da": "Ikke endnu.",
+  "where": "server/src/actions/floor.ts"
  }
 }

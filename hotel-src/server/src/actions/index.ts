@@ -4,7 +4,7 @@ import { buyStashbox, buyFurni, buyPoster, buyRecord, buyRoomUpgrade, roomColors
 import { claimPurchases } from "./pay";
 import { eat, sixty, usePill } from "./quest";
 import { combineItems, consume, dumpster, fillCan, finishSmoke, flappy, harvest, light, plant, stab, syringe, water } from "./rewards";
-import { drop, pickup } from "./floor";
+import { drop, fentDrop, pickup } from "./floor";
 import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, storeItem, takeItem } from "./toolbox";
 import { tradeFinish } from "./trade";
 import { debug } from "./debug";
@@ -24,7 +24,7 @@ export const ACTIONS: Record<string, Action> = {
   buySixty, buyVending, buyRecord, buyPoster, claimPurchases, buyFurni, buyRoomUpgrade, roomColors, roomSkins, sellWeed,
   sixty, usePill, eat,
   consume, stab, syringe, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
-  drop, pickup,
+  drop, pickup, fentDrop,
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,
   tradeFinish, flappyStart, flappyScore,
   cdInsert, cdReturn, cdControl, mix, mixCollect,

@@ -113,6 +113,7 @@ function fentDeath(c: import("../ctx").Ctx, s: { blood: number }, laced?: string
   const lost = fentanylDeathCost(s.blood, laced);
   s.blood -= lost;
   c.note = laced ? `laced ${unlaced(laced)}` : "fentanyl"; // (the blood ledger says what killed you)
+  if (lost > 0) c.extra[`fentOwed/${c.uid}`] = { lost, at: c.now }; // (the blood falls on the floor where you go down: see fentDrop in floor.ts)
   return { kind: "fentdeath", lost, ms: FENT_DEATH_MS, ...(laced ? { item: unlaced(laced) } : {}) };
 }
 

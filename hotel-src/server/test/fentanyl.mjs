@@ -124,6 +124,33 @@ console.log("--- using something laced");
   check("not enough blood for 21: a quarter of 20 = 5", rp.data.lost === 5 && (await bloodOf(poor)) === 15, JSON.stringify(rp).slice(0, 200));
 }
 
+console.log("--- the blood falls on the floor where you die");
+{
+  const a = await fresh("t_fe_drop", { blood: 100, inventory: inv({ item: "superpill", qty: 1 }) });
+  const b = await fresh("t_fe_pick", { blood: 5 });
+  await act(a, "sync"); await act(b, "sync");
+  await owner("DELETE", "rooms/lobby/drops");
+  await stand(a, "lobby", 4, 4); await stand(b, "lobby", 4, 5);
+  const r = await act(a, "consume", { slot: 0 });
+  check("you die and lose 17", r.data?.lost === 17 && (await bloodOf(a)) === 83);
+  bad("it does not fall at once", await act(a, "fentDrop", { room: "lobby" }));
+  await owner("PUT", `fentOwed/${a.uid}/at`, Date.now() - 7000);
+  const d = await act(a, "fentDrop", { room: "lobby" });
+  check("after 7 seconds it lands on the floor", d.ok === true && d.data.dropped === 17, JSON.stringify(d).slice(0, 200));
+  const pile = await owner("GET", "rooms/lobby/drops/4_4");
+  check("on the tile where you lay: a pile of 17 blood", pile && pile.item === "blood" && pile.qty === 17 && !!pile.exp, JSON.stringify(pile));
+  const again = await act(a, "fentDrop", { room: "lobby" });
+  check("it only falls once", again.ok === true && again.data.dropped === 0 && (await owner("GET", "rooms/lobby/drops/4_4")).qty === 17);
+  const got = await act(b, "pickup", { room: "lobby", key: "4_4" });
+  check("somebody else picks it up as blood", got.ok === true && got.data.item === "blood" && (await bloodOf(b)) === 22, JSON.stringify(got).slice(0, 200));
+  check("and it is gone from the floor", (await owner("GET", "rooms/lobby/drops/4_4")) === null);
+  bad("nobody gets it twice", await act(b, "pickup", { room: "lobby", key: "4_4" }));
+  const poor = await fresh("t_fe_nodrop", { blood: 0, inventory: inv({ item: "superpill", qty: 1 }) });
+  await act(poor, "sync"); await stand(poor, "lobby", 6, 6);
+  await act(poor, "consume", { slot: 0 });
+  check("nothing to drop when you had nothing to lose", (await owner("GET", `fentOwed/${poor.uid}`)) === null);
+}
+
 console.log("--- laced things travel like anything else");
 {
   const a = await fresh("t_fe_give", { blood: 5, inventory: inv({ item: "laced_weed", qty: 2 }, { item: "weed", qty: 2 }) });

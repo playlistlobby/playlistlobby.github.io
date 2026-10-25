@@ -1953,7 +1953,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- things on the floor --------------------------------------------------------------------------------
   const iconImgs = new Map<string, HTMLImageElement>();
   const iconFor = (id: string): HTMLImageElement => {
-    const src = itemDef(id)?.icon ?? "";
+    const src = id === "blood" ? BLOOD_ICON : itemDef(id)?.icon ?? ""; // (a pile of blood on the floor: somebody died of fentanyl)
     let im = iconImgs.get(src);
     if (!im) { im = loadImg(src); iconImgs.set(src, im); }
     return im;
@@ -2003,6 +2003,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const got = await pickUpDrop(me, roomId, d);
       panel.refresh();
       playSfx("give", 0.4);
+      if (got.item === "blood") { ctx.refreshHeader(); logAction(me, "drop", `picked up ${got.qty} blood`); say(`You pick up ${got.qty} blood.`); return; }
       const name = itemDef(got.item)?.name ?? got.item;
       logAction(me, "drop", `picked up ${got.qty} ${name}`);
       say(`You pick up ${got.qty > 1 ? `${got.qty} ` : "the "}${name.toLowerCase()}.`);
@@ -2316,6 +2317,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       update(myRef, { lay: true, sit: null }).catch(() => undefined);
       playThud(0.7);
       ctx.refreshHeader(); // (the blood is gone from the top bar now)
+      void call(me, "fentDrop", { room: roomId }).catch(() => undefined); // (and it lies on the floor where you went down)
       if (r.lost) {
         const t = performance.now(), fp = feetOf(p, t);
         floaters.push({ text: `-${r.lost}`, x: fp.x, y: fp.y - 70 * scale, born: t, color: "#ff2d2d", icon: bloodImg, life: 4200, size: 2.4 });
