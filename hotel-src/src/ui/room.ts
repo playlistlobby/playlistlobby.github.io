@@ -2037,6 +2037,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** Anyone may clear a CD that has finished; this also keeps a stuck CD from blocking the player. */
   let albumAdvancing = false;
+  let cdGuestGone: number | null = null;
+  let cdEjecting = false;
   function tickCd(): void {
     // the full album: when a song has finished somebody's browser moves it on (the first one wins, the others see the new song and do nothing)
     const cs = cdState;
@@ -2044,6 +2046,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       albumAdvancing = true;
       void albumStep(me, roomId, "advance", cs.index ?? 0).catch(() => undefined).finally(() => setTimeout(() => { albumAdvancing = false; }, 2500));
     }
+    // a guest put a CD in the owner's player and walked out: the music stops (the owner's browser ejects it, so the CD goes back to the guest)
+    if (cs && !cdEnded(cs) && isOwnRoom && cs.by !== me.uid && !players.has(cs.by) && social.roomOf(cs.by) !== roomId) {
+      cdGuestGone ??= performance.now();
+      if (performance.now() - cdGuestGone > 6000 && !cdEjecting) {
+        cdEjecting = true;
+        void controlCd(me, roomId, "eject").catch(() => undefined).finally(() => { cdGuestGone = null; setTimeout(() => { cdEjecting = false; }, 3000); });
+      }
+    } else cdGuestGone = null;
     if (cdState && cdEnded(cdState) && !cdClearing) {
       cdClearing = true;
       clearCdPlayer(roomId).catch(() => undefined).finally(() => setTimeout(() => { cdClearing = false; }, 3000));
@@ -2458,7 +2468,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       stage.append(h("div", { class: "fent-flash" }));
       window.setTimeout(() => stage.querySelector(".fent-flash")?.remove(), 1400);
-      const stop = showDeathScreen(stage, "DU OD'EDE PÅ FENT", Math.round((r.ms ?? 10_000) / 1000), () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true }); }, r.lost ? { lost: `-${r.lost} blod`, icon: BLOOD_ICON } : undefined);
+      const stop = showDeathScreen(stage, "DU OD'EDE PÅ FENT", Math.round((r.ms ?? 10_000) / 1000), () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }); }, r.lost ? { lost: `-${r.lost} blod`, icon: BLOOD_ICON } : undefined);
       unsubs.push(stop);
     }, FENT_SLOW_MS));
   }
@@ -4804,7 +4814,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         sitAt: (fid, after) => sitAt(fid, null, after),
         standUp: () => { const p = mine(); if (!p) return; p.sit = false; p.sitTo = undefined; sitAfter = undefined; update(myRef, { sit: null }).catch(() => undefined); },
         amSeated: () => !!mine()?.sit,
-        goHome: () => ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true }),
+        goHome: () => ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }),
         say,
         floater: (text, at, life) => { floaters.push({ text, x: at.x, y: at.y, born: performance.now(), color: "#ff5252", icon: bloodImg, life }); },
         refreshHeader: () => ctx.refreshHeader(),

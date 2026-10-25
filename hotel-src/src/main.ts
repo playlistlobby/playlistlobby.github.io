@@ -55,6 +55,8 @@ export interface NavOpts {
   intro?: boolean;
   /** the room you came from: you appear in front of the door that leads back to it */
   from?: string;
+  /** build the room again even if it is the one you are in (after a death in your own room: you wake up in bed, not on the floor) */
+  force?: boolean;
 }
 
 export interface Ctx {
@@ -362,7 +364,7 @@ async function showHotel(user: User): Promise<void> {
       pageHost.replaceChildren();
       pageHost.hidden = true;
       roomHost.hidden = false;
-      if (roomApi && roomMounted === target) {
+      if (roomApi && roomMounted === target && !opts.force) {
         roomApi.show();
       } else {
         // a different room: leave the old one, walk into the new one
