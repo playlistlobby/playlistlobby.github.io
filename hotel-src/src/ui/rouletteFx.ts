@@ -71,7 +71,7 @@ export const GUN_K = 0.8;
 
 // ---- the pull: a timeline ----------------------------------------------------------------------------------------------------------------------
 /** how long each part of a pull takes (ms): the gun comes up to the head, the long wait, the trigger, the gun comes down (or falls), and goes across the table */
-export const PULL = { raise: 380, wait: 320, click: 200, lower: 350, pass: 850, fall: 500 };
+export const PULL = { raise: 170, wait: 60, click: 180, lower: 300, pass: 700, fall: 500 };
 export const DEAL_MS = 900;
 /** the moment of truth, from the start of a pull */
 export const TRIGGER_AT = PULL.raise + PULL.wait;

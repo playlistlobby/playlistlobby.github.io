@@ -107,6 +107,12 @@ export function playClick(volume = 0.5): void {
   tick(a, t, volume, 2600);
   tick(a, t + 0.07, volume * 0.6, 1700);
 }
+/** the hammer being cocked as the gun goes up: one short tick, so the shot follows right behind it */
+export function playCock(volume = 0.4): void {
+  if (muted) return;
+  const a = audioCtx(); if (!a) return;
+  tick(a, a.currentTime + 0.005, volume, 1500);
+}
 /** the cylinder being spun / the hammer cocked: a few ticks, getting closer together */
 export function playSpin(volume = 0.35): void {
   if (muted) return;

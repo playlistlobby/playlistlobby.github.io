@@ -3,7 +3,7 @@
 // everything here only follows what the server wrote to rooms/lobby/roulette, so everybody in the room sees and hears the same thing at the same time.
 import { h } from "./dom";
 import { BLOOD_ICON } from "../items";
-import { playBang, playClick, playSfx, playSpin, playSplat, playThud } from "../sfx";
+import { playBang, playClick, playCock, playSfx, playSpin, playSplat, playThud } from "../sfx";
 import { roulettePull, rouletteJoin, rouletteLeave, rouletteOpen, rouletteTick, watchRoulette } from "../roulette";
 import { rouletteHas, ROULETTE_GONE_MS, ROULETTE_MAX, ROULETTE_TURN_MS, rouletteExpired } from "../shared/roulette";
 import type { RouletteState } from "../shared/roulette";
@@ -298,7 +298,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
     const now = performance.now();
     optimistic = true;
     startAnim({ kind: "pull", start: now, by: seatOfUid(st, me.uid) }, SAFE_PULL_MS, now);
-    playSpin(0.35);
+    playCock(0.4);
     try { await roulettePull(me); env.refreshHeader(); }
     catch (err) { cancelOptimistic(); env.say((err as Error).message || "That didn't work.", "warn"); }
     finally { pulling = false; }
@@ -339,11 +339,11 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
       const last = next.last;
       const by = seatOfUid(next, last.by);
       if (optimistic && last.by === me.uid && anim && anim.dead === undefined && anim.by === by) { resolveMine(next, last.dead, now); return; } // my own pull: it has been playing since I clicked
-      if (last.dead) { startAnim({ kind: "pull", start: now, by, dead: true }, DEADLY_PULL_MS, now); playSpin(0.35); scheduleDeath(next, last.by, by, now); }
+      if (last.dead) { startAnim({ kind: "pull", start: now, by, dead: true }, DEADLY_PULL_MS, now); playCock(0.4); scheduleDeath(next, last.by, by, now); }
       else if (next.status === "over") endGame(next, now, 400);
       else {
         startAnim({ kind: "pull", start: now, by, dead: false }, SAFE_PULL_MS, now);
-        playSpin(0.35);
+        playCock(0.4);
         at(now, TRIGGER_AT, () => playClick(0.55));
       }
       return;
