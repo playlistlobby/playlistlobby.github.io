@@ -1,6 +1,6 @@
 // Pure item data and rules shared by the browser and the server (src/items.ts adds the pictures and texts on top).
 // Nothing here may import the browser, Firebase or anything with a picture in it.
-import { furniPrice } from "./furniture";
+import { furniPrice, SHOP_KIND_PREFIX, SHOP_PIECES } from "./furniture";
 import { WOOD_PRICE } from "./mines";
 
 /** every ordinary item (furniture pieces are items too, with ids "f_..." / "x_...") */
@@ -241,7 +241,7 @@ export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
  */
 export function sellPrice(item: string, ass?: boolean, furniPrices: Record<string, number> = {}): number | null {
   if (isLaced(item)) return sellPrice(unlaced(item), ass, furniPrices); // (it looks like the real thing, so he pays the same)
-  if (NEVER_BOUGHT.has(item)) return null;
+  if (NEVER_BOUGHT.has(item) || SHOP_PIECES.some((p) => p.rare && SHOP_KIND_PREFIX + p.id === item)) return null; // (the raffle's rare pieces are not for sale: not even to him)
   if (/^[fx]_/.test(item)) return Math.max(1, Math.floor(furniPrice(item, furniPrices) * 0.75)); // furniture: 75% of the shop price
   switch (item) {
     // bought for blood: half of it (the cigarette 1 and the pill 3 only come out whole in twos)

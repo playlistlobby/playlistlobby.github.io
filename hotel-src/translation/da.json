@@ -9440,8 +9440,8 @@
   "where": "src/ui/raffleShop.ts"
  },
  "N1356": {
-  "en": "Sold out. The draw is at 16:00.",
-  "da": "Udsolgt. Trækningen er kl. 16:00.",
+  "en": "Sold out. The draw is at 20:00.",
+  "da": "Udsolgt. Trækningen er kl. 20:00.",
   "where": "src/ui/raffleShop.ts"
  },
  "N1357": {
@@ -9518,5 +9518,25 @@
   "en": "Raffle: win the rare piece",
   "da": "Lotteri: vind den sjældne ting",
   "where": "src/ui/room.ts"
+ },
+ "N1372": {
+  "en": "Cotton cloud",
+  "da": "Bomuldsskye",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1373": {
+  "en": "Snow drift",
+  "da": "Snedrive",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1374": {
+  "en": "Frost platform",
+  "da": "Frostplatform",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1375": {
+  "en": "Dragon lamp",
+  "da": "Drage-lampe",
+  "where": "src/shared/furniture.ts"
  }
 }

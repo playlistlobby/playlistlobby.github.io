@@ -1,5 +1,5 @@
-// The raffle machine in the shop room (see src/shared/raffle.ts): buy tickets for blood, and every day at 16:00 Danish time one ticket wins a rare piece of furniture.
-// There is no timer on the server: the first request after 16:00 (anybody standing in the shop asks every little while, and so does everybody who logs in) runs the draw.
+// The raffle machine in the shop room (see src/shared/raffle.ts): buy tickets for blood, and every day at 20:00 Danish time one ticket wins a rare piece of furniture.
+// There is no timer on the server: the first request after 20:00 (anybody standing in the shop asks every little while, and so does everybody who logs in) runs the draw.
 import { Action, int, requireInRoom } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv } from "../../../src/shared/economy";

@@ -332,7 +332,7 @@ export function shopDef(picks: string[], raffleKind?: string): RoomDef {
     // the Ducky machine along the same wall, two tiles further down
     { id: "shop_ducky", kind: "ducky", x: 0, y: 8, dir: 2 },
     // the raffle machine further down the same wall, on a marble block; the rare piece it gives away stands beside it
-    { id: "shop_raffle_table", kind: "raffletable", x: 0, y: 11, dir: 2 }, { id: "shop_raffle", kind: "gacha", x: 0, y: 11, dir: 2 },
+    { id: "shop_raffle_table", kind: "raffletable", x: 0, y: 11, dir: 2 }, { id: "shop_raffle", kind: "gacha", x: 0, y: 11, dir: 0 },
   ];
   if (raffleKind && FURNI_KINDS[raffleKind]) {
     const dir = SHOP_PIECES.find((p) => SHOP_KIND_PREFIX + p.id === raffleKind)?.showDir ?? 2;

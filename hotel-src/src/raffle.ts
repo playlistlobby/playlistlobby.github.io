@@ -56,7 +56,7 @@ export function announceWin(p: Profile, last: RaffleLast | null, onWin?: () => v
   return true;
 }
 
-/** At login: asks for a draw that is due (nobody may have been in the shop at 16:00), then tells you if you won. */
+/** At login: asks for a draw that is due (nobody may have been in the shop at 20:00), then tells you if you won. */
 export function checkRaffleAtLogin(p: Profile, refresh: () => void): void {
   void raffleTick(p).catch(() => undefined)
     .then(() => get(ref(db, "raffle/last")))

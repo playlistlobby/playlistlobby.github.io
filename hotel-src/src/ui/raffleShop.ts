@@ -1,4 +1,4 @@
-// The raffle machine in the shop room: the rare piece up for grabs, the countdown to the 16:00 draw, the tickets left, how many you hold (and your chance), and buying more.
+// The raffle machine in the shop room: the rare piece up for grabs, the countdown to the 20:00 draw, the tickets left, how many you hold (and your chance), and buying more.
 import { h, toast } from "./dom";
 import { BLOOD_ICON, furniIcon, onFurniIcon } from "../items";
 import { logAction } from "../logger";
@@ -32,7 +32,7 @@ export function openRaffleShop(host: HTMLElement, ctx: Ctx, onChange: () => void
   const mine = (): number => view.tickets[me.uid] ?? 0;
   const left = (): number => Math.max(0, RAFFLE_TICKETS - view.sold);
 
-  /** every second: the countdown moves; at 16:00 the draw is asked for (the server runs it for the first one who asks) */
+  /** every second: the countdown moves; at 20:00 the draw is asked for (the server runs it for the first one who asks) */
   function tick(): void {
     if (closed) return;
     const r = view.round;
@@ -99,7 +99,7 @@ export function openRaffleShop(host: HTMLElement, ctx: Ctx, onChange: () => void
       h("div", { class: "raffle-row" }, h("span", {}, "Draw in"), h("b", { class: "raffle-count" }, r ? (serverNow() >= r.drawAt ? "Drawing…" : countdownText(r.drawAt - serverNow())) : "…")),
       h("div", { class: "raffle-row" }, h("span", {}, "Tickets left"), h("b", {}, `${left()} / ${RAFFLE_TICKETS}`)),
       h("div", { class: "raffle-row" }, h("span", {}, "Yours"), h("b", {}, have ? `${have} · ${chance}% chance` : "none")),
-      soldOut ? h("div", { class: "hint" }, "Sold out. The draw is at 16:00.") : h("div", { class: "raffle-buy" },
+      soldOut ? h("div", { class: "hint" }, "Sold out. The draw is at 20:00.") : h("div", { class: "raffle-buy" },
         h("button", { class: "btn small", type: "button", disabled: busy || qty <= 1, onclick: () => { qty = Math.max(1, qty - 1); render(); } }, "−"),
         h("b", { class: "raffle-qty" }, String(qty)),
         h("button", { class: "btn small", type: "button", disabled: busy || qty >= max, onclick: () => { qty = Math.min(max, qty + 1); render(); } }, "+"),

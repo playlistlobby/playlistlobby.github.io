@@ -1,26 +1,31 @@
-// The raffle machine in the shop room: 50 tickets for 100 blood each, one rare piece of furniture, a draw every day at 16:00 Danish time.
+// The raffle machine in the shop room: 50 tickets for 100 blood each, one rare piece of furniture, a draw every day at 20:00 Danish time.
 // Pure data and rules: the browser and the server both use it (the server does the buying and the drawing: server/src/actions/raffle.ts).
 //   raffle/round            { drawAt, prize, sold }   the round that is open now (written only by the server)
 //   raffle/tickets/<uid>    how many tickets that player holds in this round
 //   raffle/last             what the last draw did: { drawAt, prize, sold, winner?, winnerName?, delivered?, tickets?, none? }
 //   raffle/prizes/<uid>/<drawAt>  a prize that is waiting at the machine because the winner's pockets were full
-import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./furniture";
 
 export const RAFFLE_TICKETS = 50;
 /** blood per ticket (50 tickets = 5000 blood in all) */
 export const RAFFLE_PRICE = 100;
 /** the hour (Danish time) of the draw */
-export const RAFFLE_HOUR = 16;
+export const RAFFLE_HOUR = 20;
 /** where the prize piece stands in the shop room (next to the machine), and the machine's own spot */
 export const RAFFLE_PRIZE_ID = "shop_raffle_prize";
 
 export interface RaffleRound { drawAt: number; prize: string; sold: number }
 export interface RaffleLast { drawAt: number; prize: string; sold: number; winner?: string; winnerName?: string; delivered?: boolean; tickets?: number; none?: boolean }
 
-/** The pieces the raffle can give away. For now the regular shop furniture, those small enough for the spot beside the machine (3x3 tiles). */
-export const RAFFLE_POOL: string[] = SHOP_PIECES
-  .filter((p) => { const sw = p.showDir === 2 || p.showDir === 6; const w = sw ? p.h : p.w, h = sw ? p.w : p.h; return w <= 3 && h <= 3; })
-  .map((p) => SHOP_KIND_PREFIX + p.id);
+/** The pieces the raffle gives away, and the special effect each one has in the shop (drawn around it: see drawRareShine in src/ui/room.ts). All fit the spot beside the machine (3x3 tiles). */
+export type RareEffect = "shine" | "rainbow" | "snow" | "ring" | "embers";
+export const RAFFLE_EFFECTS: Record<string, RareEffect> = {
+  f_whippet: "shine", // a pearly shimmer: a gold glow, twinkling stars and a streak of light that sweeps over it
+  f_rarecloud: "rainbow", // colours that cycle through the rainbow
+  f_raresnow: "snow", // an icy blue glow and snow that drifts down around it
+  f_rareplatform: "ring", // light rings that spread over the floor around it
+  f_rarelamp: "embers", // a fire glow and embers that rise
+};
+export const RAFFLE_POOL: string[] = Object.keys(RAFFLE_EFFECTS);
 
 const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Copenhagen", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 /** Danish time minus UTC at that moment, in milliseconds */

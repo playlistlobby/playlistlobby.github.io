@@ -85,7 +85,7 @@ export const buyFurni: Action = {
     const meta = await c.furniMeta();
     const cfg = await c.furniCfg();
     // the same pool as the shop window (shopPool in src/furniShop.ts): the shop's own pieces plus Studio pieces. (It used to be every shipped f_ piece, so the mixer was in the server's pool only and the two picked different four.)
-    const pool = [...SHOP_PIECES.map((p) => SHOP_KIND_PREFIX + p.id), ...Object.entries(meta).filter(([, m]) => m.players).map(([id]) => id)];
+    const pool = [...SHOP_PIECES.filter((p) => !p.rare).map((p) => SHOP_KIND_PREFIX + p.id), ...Object.entries(meta).filter(([, m]) => m.players).map(([id]) => id)];
     const picks = furniPicksToday(furniPeriodStart(c.now), cfg, pool, (id) => !!SHIPPED_DIMS[id] || !!meta[id]);
     if (!picks.includes(kind)) fail("That isn't in the shop today.");
     const price = furniPrice(kind, cfg.prices);

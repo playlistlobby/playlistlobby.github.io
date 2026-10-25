@@ -1,4 +1,4 @@
-// Raffle tests: buying tickets, the 16:00 draw (weighted by tickets), nobody bought, a full pocket, nobody can write the raffle
+// Raffle tests: buying tickets, the 20:00 draw (weighted by tickets), nobody bought, a full pocket, nobody can write the raffle
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: npm test (server/)
 import { createHmac } from "node:crypto";
 const DB = "http://127.0.0.1:9000";
@@ -57,10 +57,10 @@ bad("not from across the map", await act(a, "raffleBuy", { n: 1 })); // (not sta
 await inShop(a); await inShop(b); await inShop(c);
 ok("buy 1 ticket", await act(a, "raffleBuy", { n: 1 }));
 let round = await owner("GET", "raffle/round");
-check("a round was opened: tomorrow or today at 16:00 Danish time, a prize from the pool", round && round.drawAt > Date.now() && round.drawAt - Date.now() <= 24 * 3_600_000 + 1000 && /^f_/.test(round.prize) && round.sold === 1, JSON.stringify(round));
+check("a round was opened: tomorrow or today at 20:00 Danish time, a prize from the pool", round && round.drawAt > Date.now() && round.drawAt - Date.now() <= 24 * 3_600_000 + 1000 && /^f_/.test(round.prize) && round.sold === 1, JSON.stringify(round));
 const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Copenhagen", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(round.drawAt)).slice(0, 2));
 const minute = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Copenhagen", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(round.drawAt)).slice(3, 5));
-check("the draw is at exactly 16:00 Danish time", hour === 16 && minute === 0, `${hour}:${minute}`);
+check("the draw is at exactly 20:00 Danish time", hour === 20 && minute === 0, `${hour}:${minute}`);
 check("100 blood paid (2900 left)", (await state(a)).blood === 2900);
 check("the ticket is on record", (await owner("GET", `raffle/tickets/${a.uid}`)) === 1);
 bad("0 tickets", await act(a, "raffleBuy", { n: 0 }));
@@ -96,7 +96,7 @@ await reset();
   ok("not yet time: the tick does nothing", await act(w1, "raffleTick"));
   check("(still the same round)", (await owner("GET", "raffle/last")) === null);
   await dueNow();
-  ok("the tick after 16:00 draws", await act(w1, "raffleTick"));
+  ok("the tick after 20:00 draws", await act(w1, "raffleTick"));
   const last = await owner("GET", "raffle/last");
   check("the only ticket wins for sure", last && last.winner === w1.uid && last.winnerName === "t_raf_w1" && last.prize === prize && last.sold === 1 && last.delivered === true, JSON.stringify(last));
   check("the piece is in the pocket", total((await state(w1)).inventory, prize) === 1);

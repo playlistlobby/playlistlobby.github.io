@@ -81,7 +81,7 @@ import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { DuckyShopApi, openDuckyShop } from "./duckyShop";
 import { openRaffleShop, RaffleShopApi } from "./raffleShop";
 import { announceWin, watchRaffle } from "../raffle";
-import { RAFFLE_PRIZE_ID } from "../shared/raffle";
+import { RAFFLE_EFFECTS, RAFFLE_PRIZE_ID } from "../shared/raffle";
 import type { RaffleView } from "../raffle";
 import { CraftBenchApi, openCraftBench } from "./craftBench";
 import { MINE_KNIFE_MS, MINE_PICK_MS, MINES_SIXTY } from "../shared/mines";
@@ -3493,29 +3493,93 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** The price of a piece for sale: a blood drop and the number, tucked under the bottom right corner of it. */
-  /** The raffle's rare piece: a pulsing gold glow around it (the piece again, lit, with a gold shadow) and little four-point stars that twinkle and drift up around it. */
+  /**
+   * The raffle's rare pieces each have an effect of their own, so everybody can see they are something special:
+   *   shine   gold glow, twinkling stars and a streak of light that sweeps over the piece (the whippet)
+   *   rainbow a glow and stars whose colours cycle through the rainbow (the cotton cloud)
+   *   snow    an icy blue glow and snow drifting down around it (the snow drift)
+   *   ring    light rings that spread over the floor, and a violet glow (the frost platform)
+   *   embers  a flickering fire glow and embers that rise (the dragon lamp)
+   */
   function drawRareShine(f: { kind: string; x: number; y: number; dir?: number }, box: Box, now: number): void {
+    const effect = RAFFLE_EFFECTS[f.kind] ?? "shine";
     const pulse = 0.5 + 0.5 * Math.sin(now / 420);
+    const hue = (now / 12) % 360;
+    const flick = 0.55 + 0.45 * Math.sin(now / 70) * Math.sin(now / 130 + 1);
+    const glow = effect === "rainbow" ? `hsla(${hue},100%,62%,0.95)` : effect === "snow" ? "rgba(150,215,255,0.95)" : effect === "ring" ? "rgba(190,140,255,0.95)" : effect === "embers" ? "rgba(255,110,30,0.95)" : "rgba(255,213,74,0.95)";
+    // the glow: the piece again, lit, with a coloured shadow around it
     g.save();
     g.globalCompositeOperation = "lighter";
-    g.shadowColor = "rgba(255,213,74,0.95)";
-    g.shadowBlur = (10 + 8 * pulse) * scale;
-    drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.22 + 0.2 * pulse, true);
+    g.shadowColor = glow;
+    g.shadowBlur = (effect === "embers" ? 8 + 12 * flick : 10 + 8 * pulse) * scale;
+    drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, effect === "embers" ? 0.12 + 0.18 * flick : 0.22 + 0.2 * pulse, true);
     g.restore();
-    const P = pxCell(), w = box.x1 - box.x0, hgt = box.y1 - box.y0;
-    g.save();
-    for (let i = 0; i < 9; i++) {
-      const life = 2600 + (i % 3) * 500;
-      const t = ((now + i * 417) % life) / life; // 0..1 along this star's life
-      const sx = box.x0 + w * (0.08 + ((i * 0.37) % 0.84)) + Math.sin(now / 600 + i) * 3 * scale;
-      const sy = box.y1 - hgt * 0.15 - t * hgt * 1.05;
-      const a = Math.sin(t * Math.PI); // fades in and out
-      const arm = Math.max(1, Math.round((1 + 2 * a) * (i % 2 ? 1 : 1.4)));
-      const gx = Math.round(sx / P) * P, gy = Math.round(sy / P) * P;
-      g.globalAlpha = Math.min(1, a * 1.3);
-      g.fillStyle = i % 3 === 0 ? "#ffffff" : "#ffe27a";
+    const P = pxCell(), w = box.x1 - box.x0, hgt = box.y1 - box.y0, cx = (box.x0 + box.x1) / 2;
+    const snap = (v: number): number => Math.round(v / P) * P;
+    const star = (x: number, y: number, arm: number, color: string, alpha: number): void => {
+      g.globalAlpha = Math.max(0, Math.min(1, alpha));
+      g.fillStyle = color;
+      const gx = snap(x), gy = snap(y);
       g.fillRect(gx, gy, P, P);
       for (let k = 1; k <= arm; k++) { g.fillRect(gx + k * P, gy, P, P); g.fillRect(gx - k * P, gy, P, P); g.fillRect(gx, gy + k * P, P, P); g.fillRect(gx, gy - k * P, P, P); }
+    };
+    if (effect === "shine") {
+      // a streak of light sweeping over the piece every few seconds: the piece again, in white, only inside a slanted band
+      const t = (now % 3200) / 3200 * 1.7 - 0.35;
+      if (t > -0.2 && t < 1.2) {
+        const bx = box.x0 + w * t, bw = w * 0.22;
+        g.save();
+        g.beginPath();
+        g.moveTo(bx, box.y0 - 4 * scale); g.lineTo(bx + bw, box.y0 - 4 * scale); g.lineTo(bx + bw - hgt * 0.35, box.y1 + 4 * scale); g.lineTo(bx - hgt * 0.35, box.y1 + 4 * scale);
+        g.closePath();
+        g.clip();
+        g.globalCompositeOperation = "lighter";
+        drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.85, true);
+        g.restore();
+      }
+    }
+    g.save();
+    if (effect === "snow") {
+      for (let i = 0; i < 16; i++) { // flakes fall from above the piece to its foot, swaying
+        const life = 3200 + (i % 4) * 600, tt = ((now + i * 331) % life) / life;
+        const x = box.x0 - w * 0.15 + w * 1.3 * (((i * 0.61) % 1)) + Math.sin(now / 500 + i * 2) * 4 * scale;
+        const y = box.y0 - hgt * 0.25 + tt * hgt * 1.35;
+        star(x, y, i % 5 === 0 ? 1 : 0, i % 3 === 0 ? "#ffffff" : "#bfe6ff", Math.sin(tt * Math.PI) * 1.4);
+      }
+    } else if (effect === "ring") {
+      const fy = box.y1 - hgt * 0.1; // the floor under the piece
+      g.globalCompositeOperation = "lighter";
+      g.lineWidth = 2 * scale;
+      for (let i = 0; i < 3; i++) {
+        const tt = ((now + i * 900) % 2700) / 2700;
+        g.globalAlpha = (1 - tt) * 0.75;
+        g.strokeStyle = i % 2 ? "#e6d0ff" : "#b080ff";
+        g.beginPath();
+        g.ellipse(cx, fy, (0.25 + tt * 0.95) * w * 0.6, (0.25 + tt * 0.95) * w * 0.3, 0, 0, Math.PI * 2);
+        g.stroke();
+      }
+      g.globalCompositeOperation = "source-over";
+      for (let i = 0; i < 6; i++) { const tt = ((now + i * 470) % 2800) / 2800; star(box.x0 + w * (0.15 + ((i * 0.29) % 0.7)), fy - tt * hgt * 1.1, 1, i % 2 ? "#ffffff" : "#d2b0ff", Math.sin(tt * Math.PI) * 1.3); }
+    } else if (effect === "embers") {
+      for (let i = 0; i < 14; i++) { // embers rise from the flames, wobbling, and burn out
+        const life = 1500 + (i % 4) * 400, tt = ((now + i * 211) % life) / life;
+        const x = cx + (((i * 0.37) % 1) - 0.5) * w * 0.7 + Math.sin(now / 160 + i * 3) * 3 * scale * tt;
+        const y = box.y0 + hgt * 0.35 - tt * hgt * 1.0;
+        const col = tt < 0.35 ? "#fff1a8" : tt < 0.7 ? "#ff9a2e" : "#e03a1e";
+        g.globalAlpha = Math.max(0, 1 - tt * 1.1);
+        g.fillStyle = col;
+        const sz = tt < 0.5 ? P * 1.5 : P;
+        g.fillRect(snap(x), snap(y), sz, sz);
+      }
+    } else { // shine and rainbow: twinkling four-point stars drifting up around the piece
+      for (let i = 0; i < 9; i++) {
+        const life = 2600 + (i % 3) * 500, tt = ((now + i * 417) % life) / life;
+        const sx = box.x0 + w * (0.08 + ((i * 0.37) % 0.84)) + Math.sin(now / 600 + i) * 3 * scale;
+        const sy = box.y1 - hgt * 0.15 - tt * hgt * 1.05;
+        const a = Math.sin(tt * Math.PI);
+        const color = effect === "rainbow" ? `hsl(${(hue + i * 40) % 360},100%,70%)` : i % 3 === 0 ? "#ffffff" : "#ffe27a";
+        star(sx, sy, Math.max(1, Math.round((1 + 2 * a) * (i % 2 ? 1 : 1.4))), color, a * 1.3);
+      }
     }
     g.restore();
   }
