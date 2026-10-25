@@ -277,8 +277,8 @@ export async function buyPosterItem(p: Profile): Promise<void> {
 }
 
 /** The Freakme CD from the record player in the shop, for blood (once per player). */
-export async function buyRecordCd(p: Profile): Promise<void> {
-  await call(p, "buyRecord", {});
+export async function buyRecordCd(p: Profile, item = "cd"): Promise<void> {
+  await call(p, "buyRecord", { item });
 }
 
 /** Hands over the CDs that have been paid for (the payment may take a few seconds to arrive). Resolves with the item ids that landed in the pocket. */

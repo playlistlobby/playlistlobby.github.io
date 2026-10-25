@@ -9698,5 +9698,25 @@
   "en": "This connection has been banned.",
   "da": "Denne forbindelse er blevet bandlyst.",
   "where": "server/src/index.ts"
+ },
+ "N1408": {
+  "en": "You already bought that CD.",
+  "da": "Du har allerede købt den CD.",
+  "where": "server/src/actions/shop.ts"
+ },
+ "N1409": {
+  "en": "That CD isn't sold for blood.",
+  "da": "Den CD sælges ikke for blod.",
+  "where": "server/src/actions/shop.ts"
+ },
+ "N1410": {
+  "en": "kravle-blodig oktober",
+  "da": "kravle-blodig oktober",
+  "where": "src/items.ts"
+ },
+ "N1411": {
+  "en": "A CD with kravle-blodig oktober on it, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
+  "da": "En CD med kravle-blodig oktober på, fra pladeboksen i shoppen. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
+  "where": "src/items.ts"
  }
 }

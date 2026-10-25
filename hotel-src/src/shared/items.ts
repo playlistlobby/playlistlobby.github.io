@@ -15,7 +15,7 @@ export const ITEM_ID_LIST = [
   // shrooms (grown from spores found in the bins) let you into any room; a shroom pressed into a pill is DMT
   "shroomspore", "shroom", "weakshroom", "dmt",
   // the mystery CDs (yellow, green, blue) and the full album (red), bought with real money from the record player in the shop
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig",
   // hash (ass weed + kodimagnyl), hash mix (hash + cigarette) and the hash joint (hash mix + joint paper)
   "hash", "hashmix", "joint_hash",
   // chud mix (shroom + weed, rolled like weed): the chud joint and chud blunt
@@ -83,6 +83,7 @@ export const DEFAULT_ITEM_PRICE = 5;
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cigarette: { on: true, price: 2 },
   pill: { on: true, price: 3 },
+  cd_blodig: { on: true, price: 5 }, // the Blodig oktober CD, sold at the record player in the shop: one per player (see buyRecord)
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
   wood: { on: true, price: WOOD_PRICE }, // sold by 6ixty in the mines (see buySixty)
   kodimagnyl: { on: true, price: 4 }, // sold by 6ixty (the growing kit moved to the vending machine)
@@ -231,7 +232,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife), every CD, the dice and the starter sofa everybody is given. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "pickaxe", "machete", "dice", "f_sofa",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "pickaxe", "machete", "dice", "f_sofa",
 ]);
 
 /**
