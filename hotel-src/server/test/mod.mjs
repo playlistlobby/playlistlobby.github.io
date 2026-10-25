@@ -94,6 +94,20 @@ const am = await act(adm, "modMute", { uid: p1.uid, minutes: 5 });
 check("the admin chooses the time (5 minutes)", am.ok === true && Math.abs((await owner("GET", `mutes/${p1.uid}`)).until - Date.now() - 300_000) < 15_000);
 await owner("DELETE", `mutes/${p1.uid}`);
 
+console.log("--- muting for good (admins, and mods with the perk)");
+{
+  bad("a plain mod can't mute forever", await act(mod, "modMute", { uid: p1.uid, forever: true }));
+  await owner("PUT", `perks/${mod.uid}/muteForever`, true);
+  ok("a mod with the perk can", await act(mod, "modMute", { uid: p1.uid, forever: true }));
+  const fm = await owner("GET", `mutes/${p1.uid}`);
+  check("for ten years", fm && fm.until - Date.now() > 9 * 365 * 24 * 3_600_000, JSON.stringify(fm));
+  check("and the chat is refused", refused(await say(p1, "lobby", "x")));
+  ok("the mod can lift it", await act(mod, "modMute", { uid: p1.uid, on: false }));
+  ok("the admin can mute forever too", await act(adm, "modMute", { uid: p1.uid, forever: true }));
+  await owner("DELETE", `mutes/${p1.uid}`); await owner("DELETE", `perks/${mod.uid}`);
+  check("a mod reads his own perks only", (await clientRead(mod2, `perks/${mod2.uid}`)).status === 200 && refused(await clientRead(mod2, `perks/${mod.uid}`)) === false);
+}
+
 console.log("--- new accounts keep quiet in the public rooms");
 {
   const nu = await fresh("t_mod_new", { blood: 0 }); // (made just now)

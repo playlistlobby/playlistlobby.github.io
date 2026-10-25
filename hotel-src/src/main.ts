@@ -208,7 +208,7 @@ async function showHotel(user: User): Promise<void> {
   await loadRole(p);
   if (p.isMod && p.name.toLowerCase() === CHATMOD_NAME) { // the chat mod login: no game, only the live chat and the moderation tools
     clear();
-    const shell = h("div", { class: "shell modonly" }, h("header", { class: "navbar" }, h("div", { class: "nav-left" }, h("div", { class: "nav-logo" }, "🛡 Chat mod")), h("span", {}), h("div", { class: "nav-right" }, h("button", { class: "btn small", onclick: () => void doLogout() }, "Log out"))));
+    const shell = h("div", { class: "shell modonly" }, h("header", { class: "navbar" }, h("div", { class: "nav-left" }, h("div", { class: "nav-logo" }, "🛡 Chat mod")), h("span", {}), h("div", { class: "nav-right" }, h("button", { class: "btn small", onclick: () => void logout() }, "Log out")))); // (logout from auth.ts: doLogout is made further down, after this early return)
     const host = h("main", { class: "page" });
     shell.append(host);
     app.append(shell);
