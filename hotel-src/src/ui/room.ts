@@ -81,8 +81,8 @@ import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { DuckyShopApi, openDuckyShop } from "./duckyShop";
 import { openRaffleShop, RaffleShopApi } from "./raffleShop";
 import { announceWin, watchRaffle } from "../raffle";
+import { RAFFLE_PRIZE_ID } from "../shared/raffle";
 import type { RaffleView } from "../raffle";
-import { countdownText, RAFFLE_PRIZE_ID, RAFFLE_TICKETS } from "../shared/raffle";
 import { CraftBenchApi, openCraftBench } from "./craftBench";
 import { MINE_KNIFE_MS, MINE_PICK_MS, MINES_SIXTY } from "../shared/mines";
 import { CHAT_COLORS, CHAT_EFFECTS, isChatEffect, isHexColor } from "../shared/ducky";
@@ -118,6 +118,9 @@ hangerImg.src = assetUrl("ui/hanger.png");
 /** the little pixel "dkk" that floats over the pay2win machine while you point at it (you pay with real money there) */
 const dkImg = new Image();
 dkImg.src = assetUrl("ui/dk.png");
+/** the golden ticket that floats over the raffle machine while you point at it */
+const ticketImg = new Image();
+ticketImg.src = assetUrl("ui/ticket.png");
 /** the game controller that floats over the arcade machine and the roulette table when you point at them (Habbo's silver controller icon) */
 const controllerImg = new Image();
 controllerImg.src = assetUrl("ui/controller.png");
@@ -3490,18 +3493,30 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** The price of a piece for sale: a blood drop and the number, tucked under the bottom right corner of it. */
-  /** a little plate over the raffle machine (the countdown) and over its prize (the tickets left): centred on `cx`, resting on `bottom` */
-  function drawRaffleTag(label: string, cx: number, bottom: number): void {
-    const fs = Math.round(11 * Math.max(1, scale));
+  /** The raffle's rare piece: a pulsing gold glow around it (the piece again, lit, with a gold shadow) and little four-point stars that twinkle and drift up around it. */
+  function drawRareShine(f: { kind: string; x: number; y: number; dir?: number }, box: Box, now: number): void {
+    const pulse = 0.5 + 0.5 * Math.sin(now / 420);
     g.save();
-    g.font = `bold ${fs}px Verdana, 'Apple Color Emoji', sans-serif`;
-    const w = g.measureText(label).width + 16, hgt = fs + 8;
-    const x = cx - w / 2, y = bottom - hgt - 4 * scale;
-    g.fillStyle = "rgba(30,22,4,0.82)";
-    g.beginPath(); g.roundRect(x, y, w, hgt, hgt / 2); g.fill();
-    g.strokeStyle = "rgba(255,213,74,0.9)"; g.lineWidth = 1.5; g.stroke();
-    g.fillStyle = "#ffe9a8"; g.textAlign = "center"; g.textBaseline = "middle";
-    g.fillText(label, cx, y + hgt / 2 + 1);
+    g.globalCompositeOperation = "lighter";
+    g.shadowColor = "rgba(255,213,74,0.95)";
+    g.shadowBlur = (10 + 8 * pulse) * scale;
+    drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.22 + 0.2 * pulse, true);
+    g.restore();
+    const P = pxCell(), w = box.x1 - box.x0, hgt = box.y1 - box.y0;
+    g.save();
+    for (let i = 0; i < 9; i++) {
+      const life = 2600 + (i % 3) * 500;
+      const t = ((now + i * 417) % life) / life; // 0..1 along this star's life
+      const sx = box.x0 + w * (0.08 + ((i * 0.37) % 0.84)) + Math.sin(now / 600 + i) * 3 * scale;
+      const sy = box.y1 - hgt * 0.15 - t * hgt * 1.05;
+      const a = Math.sin(t * Math.PI); // fades in and out
+      const arm = Math.max(1, Math.round((1 + 2 * a) * (i % 2 ? 1 : 1.4)));
+      const gx = Math.round(sx / P) * P, gy = Math.round(sy / P) * P;
+      g.globalAlpha = Math.min(1, a * 1.3);
+      g.fillStyle = i % 3 === 0 ? "#ffffff" : "#ffe27a";
+      g.fillRect(gx, gy, P, P);
+      for (let k = 1; k <= arm; k++) { g.fillRect(gx + k * P, gy, P, P); g.fillRect(gx - k * P, gy, P, P); g.fillRect(gx, gy + k * P, P, P); g.fillRect(gx, gy - k * P, P, P); }
+    }
     g.restore();
   }
 
@@ -3701,9 +3716,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
       const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
-      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle")) {
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
-        const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
+        const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : k.opens === "raffle" ? def.furni.find((x) => x.kind === "raffletable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
         const cx = (b.x0 + b.x1) / 2;
@@ -3725,19 +3740,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const onTable = tableUnder(f), liftUp = onTable ? (FURNI_KINDS[onTable.kind].surface ?? 0) * scale : 0; // (a piece on a table top is drawn again up there, not on the floor)
         if (liftUp) { g.save(); g.translate(0, -liftUp); }
         drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, true); // the bag again, on top of the halo (its shadow is already down)
-        if (liftUp) g.restore();
         if (hot) {
           g.save();
           g.globalCompositeOperation = "lighter";
           drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 0.12 + 0.05 * pulse, true);
           g.restore();
         }
+        if (liftUp) g.restore();
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky" || k.opens === "raffle"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "ducky" ? dkImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" ? ticketImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -4306,8 +4321,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         draw: () => {
           const box = drawFurni(f, now);
           if (box && isDisplayPiece(f.id) && !furnishOn) drawPriceTag(priceOf(f.kind), box.x1, box.y1);
-          if (box && !furnishOn && f.id === RAFFLE_PRIZE_ID) drawRaffleTag(`${Math.max(0, RAFFLE_TICKETS - raffleNow.sold)} tickets left`, (box.x0 + box.x1) / 2, box.y1 + 22 * scale); // (under the prize, so it stays clear of the machine's countdown)
-          if (box && !furnishOn && f.kind === "gacha" && raffleNow.round) drawRaffleTag(serverNow() >= raffleNow.round.drawAt ? "Drawing…" : `Draw in ${countdownText(raffleNow.round.drawAt - serverNow())}`, (box.x0 + box.x1) / 2, box.y0);
+          if (box && f.id === RAFFLE_PRIZE_ID) drawRareShine(f, box, now); // the raffle's rare piece: gold glow and sparkles, so everybody can see it is something special
           if (box && furnishOn) pieceBoxes.push({ id: f.id, box, depth: box.depth });
           if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change

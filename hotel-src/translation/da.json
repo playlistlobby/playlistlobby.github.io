@@ -9513,5 +9513,10 @@
   "en": "none",
   "da": "ingen",
   "where": "src/ui/raffleShop.ts"
+ },
+ "N1371": {
+  "en": "Raffle: win the rare piece",
+  "da": "Lotteri: vind den sjældne ting",
+  "where": "src/ui/room.ts"
  }
 }
