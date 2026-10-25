@@ -95,7 +95,7 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
         }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${blodigPrice}`);
     body.replaceChildren(
       row(freak.icon, "Freakme", "One song, for blood. One per player.", freakBtn),
-      row(blodig.icon, "Blodig oktober", "One song, for blood. One per player.", blodigBtn),
+      row(blodig.icon, "kravle-blodig oktober", "One song, for blood. One per player.", blodigBtn),
       row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "en af tre sange fra blodig oktober leaked, du for aldrig den samme cd igen", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
       h("div", { class: "hint" }, "Real money is paid on a payment page, and you come back to the game afterwards."));
   }

@@ -58,7 +58,7 @@ console.log("--- CDs: the record player in the shop, paying, the album");
   bad("6ixty doesn't sell it any more", await act(f1, "buySixty", { item: "cd" }));
   // the Blodig oktober CD: 5 blood at the record player, once, a second CD apart from Freakme
   const bo = await act(f1, "buyRecord", { item: "cd_blodig" });
-  ok("buy the Blodig oktober CD", bo);
+  ok("buy the kravle-blodig oktober CD", bo);
   check("it costs 5 blood (7 - 5 = 2) and is a CD", bo.state.blood === 2 && total(bo.state.inventory, "cd_blodig") === 1, String(bo.state.blood));
   bad("only one of those per player", await act(f1, "buyRecord", { item: "cd_blodig" }));
   bad("not a CD that isn't sold for blood", await act(f1, "buyRecord", { item: "cd_album" }));

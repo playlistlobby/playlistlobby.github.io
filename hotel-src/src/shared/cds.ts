@@ -28,7 +28,7 @@ export const CD_ITEMS: Record<string, CdDef> = {
   cd_blue: { track: "blod-ud-af-naesen", title: "Blod ud af næsen" },
   cd_album: { track: "album", title: "Full album" },
   // the record box in the shop sells these two for blood, one of each per player (see buyRecord)
-  cd_blodig: { track: "blodig-oktober-cd", title: "Blodig oktober" },
+  cd_blodig: { track: "blodig-oktober-cd", title: "kravle-blodig oktober" },
 };
 /** the CDs the record box sells for blood (the id is the item) */
 export const BLOOD_CDS: string[] = ["cd", "cd_blodig"];

@@ -9710,13 +9710,13 @@
   "where": "server/src/actions/shop.ts"
  },
  "N1410": {
-  "en": "Blodig oktober (CD)",
-  "da": "Blodig oktober (CD)",
+  "en": "kravle-blodig oktober",
+  "da": "kravle-blodig oktober",
   "where": "src/items.ts"
  },
  "N1411": {
-  "en": "A CD with Blodig oktober on it, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
-  "da": "En CD med Blodig oktober på, fra pladeboksen i shoppen. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
+  "en": "A CD with kravle-blodig oktober on it, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
+  "da": "En CD med kravle-blodig oktober på, fra pladeboksen i shoppen. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
   "where": "src/items.ts"
  }
 }
