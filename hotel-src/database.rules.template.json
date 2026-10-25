@@ -4,7 +4,6 @@
       ".read": "@ADMIN@",
       "$uid": {
         ".read": "@PW@ && auth.uid === $uid",
-        ".write": "@PW@ && auth.uid === $uid && !data.exists() && newData.hasChildren(['name', 'gender', 'figure', 'blood']) && newData.child('blood').val() === 0",
         "name": {
           ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 16 && newData.val().matches(/^[A-Za-z0-9_.-]+$/)"
         },
@@ -143,7 +142,7 @@
         "uid"
       ],
       "$id": {
-        ".write": "@PW@ && !data.exists() && newData.exists() && newData.child('uid').val() === auth.uid && @UNMUTED@ && ((newData.child('room').val() !== 'lobby' && newData.child('room').val() !== 'shop') || @AGED@)",
+        ".write": "@PW@ && !data.exists() && newData.exists() && newData.child('uid').val() === auth.uid && @KNOWN@ && @UNMUTED@ && ((newData.child('room').val() !== 'lobby' && newData.child('room').val() !== 'shop') || @AGED@)",
         ".validate": "newData.hasChildren(['uid', 'name', 'text', 'room', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('room').isString() && newData.child('room').val().length <= 40 && newData.child('ts').val() === now"
       }
     },
@@ -780,7 +779,7 @@
         ".read": "@PW@ && @IN@",
         "players": {
           "$uid": {
-            ".write": "@PW@ && auth.uid === $uid && @IN@",
+            ".write": "@PW@ && auth.uid === $uid && @KNOWN@ && @IN@",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
             "smoke": {
               ".validate": "newData.isNumber()"
@@ -839,7 +838,7 @@
             "ts"
           ],
           "$msg": {
-            ".write": "@PW@ && @IN@ && ((!data.exists() && newData.child('uid').val() === auth.uid && @UNMUTED@ && (($room !== 'lobby' && $room !== 'shop') || @AGED@)) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
+            ".write": "@PW@ && @IN@ && ((!data.exists() && newData.child('uid').val() === auth.uid && @KNOWN@ && @UNMUTED@ && (($room !== 'lobby' && $room !== 'shop') || @AGED@)) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
             ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0",
             "fx": {
               ".validate": "newData.isString() && (newData.val() === 'shake' || newData.val() === 'wave' || newData.val() === 'rainbow' || newData.val() === 'pulse' || newData.val() === 'big') && root.child('users').child(auth.uid).child('owned').child('ducky_fx').exists()"

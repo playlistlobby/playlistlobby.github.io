@@ -229,6 +229,53 @@ console.log("--- blood, warnings, messages, kicks, addresses (full privileges)")
   await owner("DELETE", "bannedIps"); await owner("DELETE", `ips`); await owner("DELETE", "notices"); await owner("DELETE", "kicks");
 }
 
+console.log("--- making accounts (the server writes the profile, and limits how many)");
+{
+  await owner("DELETE", "signups");
+  const R = Math.random().toString(36).slice(2, 6);
+  const mk = async (nm, device) => { const u = await account(nm); if (device) u.device = device; await owner("DELETE", `users/${u.uid}`); await owner("DELETE", `usernames/${nm.toLowerCase()}`); return u; };
+  const withIp = (u, a, args, ip) => fetch(`${API}/act`, { method: "POST", headers: { authorization: `Bearer ${u.token}`, "content-type": "application/json", "cf-connecting-ip": ip, ...(u.device ? { "x-device": u.device } : {}) }, body: JSON.stringify({ a, args }) }).then(async (r) => ({ status: r.status, ...(await r.json()) }));
+  const a1 = await mk(`t_su_${R}a`, `device-${R}-1`);
+  check("a sign-in without a profile can't make one itself", refused(await clientWrite(a1, `users/${a1.uid}`, { name: `t_su_${R}a`, gender: "M", figure: "", blood: 0, createdAt: Date.now() })));
+  check("or just a bit of one", refused(await clientWrite(a1, `users/${a1.uid}/name`, `t_su_${R}a`)));
+  await owner("PUT", `rooms/u_${a1.uid}/players/${a1.uid}`, null);
+  await owner("PUT", `roomsMeta/u_${a1.uid}`, { owner: a1.uid, ownerName: "x", name: "r", access: "open", w: 8, h: 8 });
+  check("and can't chat or stand in a room", refused(await say(a1, "lobby", "free lemonade")) && refused(await clientWrite(a1, `rooms/lobby/players/${a1.uid}`, { name: "x", figure: "x", x: 1, y: 1, dir: 2 })));
+  bad("the name has to be the one it signed in with", await act(a1, "register", { name: `t_su_${R}zzz` }));
+  bad("not a bot name", await act(await mk(`blodigoktober${R.slice(0, 3)}`, undefined), "register", { name: `blodigoktober${R.slice(0, 3)}` }));
+  bad("not a reserved name", await act(await mk("admin", undefined), "register", { name: "admin" }));
+  ok("the real name makes the profile", await act(a1, "register", { name: `t_su_${R}a` }));
+  const u1 = await owner("GET", `users/${a1.uid}`);
+  check("with its name, 0 blood and a time", u1 && u1.name === `t_su_${R}a` && u1.blood === 0 && Math.abs(u1.createdAt - Date.now()) < 15000, JSON.stringify(u1));
+  check("the username is claimed", (await owner("GET", `usernames/t_su_${R}a`)) === a1.uid);
+  ok("asking again is fine", await act(a1, "register", { name: `t_su_${R}a` }));
+  ok("the new account then plays (sync)", await act(a1, "sync"));
+  // one device: 3 a day
+  const d2 = await mk(`t_su_${R}b`, `device-${R}-1`), d3 = await mk(`t_su_${R}c`, `device-${R}-1`), d4 = await mk(`t_su_${R}d`, `device-${R}-1`);
+  ok("the second account from the device", await act(d2, "register", { name: `t_su_${R}b` }));
+  ok("the third", await act(d3, "register", { name: `t_su_${R}c` }));
+  const r4 = await act(d4, "register", { name: `t_su_${R}d` });
+  check("the fourth is turned away", r4.ok === false && /this device/.test(r4.error ?? ""), JSON.stringify(r4));
+  check("and has no profile", (await owner("GET", `users/${d4.uid}`)) === null);
+  // one address: 5 a day
+  for (let i = 0; i < 5; i++) { const u = await mk(`t_su_${R}i${i}`, `device-${R}-i${i}`); ok(`address account ${i + 1}`, await withIp(u, "register", { name: `t_su_${R}i${i}` }, "192.0.2.55")); }
+  const u6 = await mk(`t_su_${R}i9`, `device-${R}-i9`);
+  const r6 = await withIp(u6, "register", { name: `t_su_${R}i9` }, "192.0.2.55");
+  check("the sixth from one address is turned away", r6.ok === false && /connection/.test(r6.error ?? ""), JSON.stringify(r6));
+  ok("another address is fine", await withIp(u6, "register", { name: `t_su_${R}i9` }, "192.0.2.56"));
+  // the admin renames somebody
+  const rn = await fresh(`t_rn_${R}`, { blood: 0, ...OLD }); await act(rn, "sync");
+  await owner("PUT", `usernames/t_rn_${R}`, rn.uid); await owner("PUT", `profiles/${rn.uid}`, { name: `t_rn_${R}`, figure: "x" });
+  bad("a mod can't rename", await act(mod, "modRename", { uid: rn.uid, name: `t_rnn_${R}` }));
+  ok("the admin renames", await act(adm, "modRename", { uid: rn.uid, name: `t_RN2_${R}` }));
+  check("the name is changed everywhere", (await owner("GET", `users/${rn.uid}/name`)) === `t_RN2_${R}` && (await owner("GET", `profiles/${rn.uid}/name`)) === `t_RN2_${R}` && (await owner("GET", `usernames/t_rn2_${R}`)) === rn.uid && (await owner("GET", `usernames/t_rn_${R}`)) === null);
+  const login = await fetch(`${AUTH}:signInWithPassword?key=x`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: `t_rn2_${R}@users.bobba.invalid`, password: "secret1", returnSecureToken: true }) }).then((r) => r.json());
+  check("and the player logs in with the new name", !!login.idToken && login.localId === rn.uid, JSON.stringify(login).slice(0, 100));
+  bad("not to a taken name", await act(adm, "modRename", { uid: rn.uid, name: "t_mod_p1" }));
+  bad("not to a reserved name", await act(adm, "modRename", { uid: rn.uid, name: "admin" }));
+  await owner("DELETE", "signups");
+}
+
 console.log("--- the log");
 const log = Object.values((await owner("GET", "modLog")) ?? {});
 check("what the mods did is written down", log.some((x) => x.what === "mute" && x.byName === "t_mod_m") && log.some((x) => x.what === "ban") && log.some((x) => x.what === "promote"), JSON.stringify(log).slice(0, 200));

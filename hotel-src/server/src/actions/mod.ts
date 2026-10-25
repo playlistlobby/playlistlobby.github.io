@@ -7,6 +7,8 @@
 //   reports/<id>  { from, fromName, target, targetName, reason, at }
 import { Action, int, text } from "./util";
 import { Ctx, fail } from "../ctx";
+import { setSignInEmail } from "../authAdmin";
+import { NEW_NAME_RE, RESERVED_NAMES } from "../../../src/shared/ducky";
 import { ipKey, MOD_BAN_MS, MOD_MUTE_MS, NOTICE_MAX, REPORT_LIMIT, REPORT_WINDOW_MS } from "../../../src/shared/mod";
 
 const UID_RE = /^[A-Za-z0-9]{10,40}$/;
@@ -92,6 +94,38 @@ export const modBan: Action = {
     return banOne(c, uid, a);
   },
 };
+
+/** Admin: give a player another name (the sign-in address follows, so they log in with the new name; the room and the scoreboard follow too). */
+export const modRename: Action = {
+  locks: (c, a) => ["names", `user:${String(a?.uid ?? "")}`],
+  async run(c, a) {
+    if (!c.isAdmin) fail("Only the admin can do that.");
+    const uid = text(a.uid, UID_RE, "player");
+    const old = await mayAct(c, uid);
+    const name = text(typeof a.name === "string" ? a.name.trim() : "", NEW_NAME_RE, "name");
+    if (RESERVED_NAMES.has(name.toLowerCase())) fail("That name is reserved.");
+    if (name === old) fail("That is already their name.");
+    if (!sameAddress(old, name)) {
+      const holder = await c.db.get<string>(`usernames/${name.toLowerCase()}`);
+      if (holder !== null && holder !== uid) fail("That name is taken.");
+      if (!(await setSignInEmail(c.env, uid, `${name.toLowerCase()}@users.bobba.invalid`))) fail("That name is taken.");
+      c.extra[`usernames/${old.toLowerCase()}`] = null;
+      c.extra[`usernames/${name.toLowerCase()}`] = uid;
+    }
+    c.extra[`users/${uid}/name`] = name;
+    c.extra[`profiles/${uid}/name`] = name;
+    const room = `u_${uid}`;
+    const meta = await c.db.get<{ name?: string }>(`roomsMeta/${room}`);
+    if (meta) {
+      c.extra[`roomsMeta/${room}/ownerName`] = name;
+      if (typeof meta.name === "string" && meta.name === `${old}'s room`.slice(0, 28)) c.extra[`roomsMeta/${room}/name`] = `${name}'s room`.slice(0, 28);
+    }
+    if ((await c.db.get(`flappyBoard/${uid}`)) !== null) c.extra[`flappyBoard/${uid}/name`] = name;
+    await note(c, "rename", uid, name, `was ${old}`);
+    return { ok: true, name };
+  },
+};
+const sameAddress = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
 
 /** Admin: ban every address this account has played from (production only: the server notes the address at login). `on: false` lifts those address bans again. */
 export const modIpBan: Action = {
