@@ -26,6 +26,8 @@ import { LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSix
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
 import { BLOOD_ICON, findSlot, furniIcon, growMsOf, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
+import { isLaced, unlaced } from "../shared/items";
+import { showDeathScreen } from "./deathScreen";
 import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
 import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
@@ -93,7 +95,7 @@ import { DoorApi, openDoor } from "./door";
 import { mountRoulette, RouletteApi } from "./rouletteTable";
 import { dimmed } from "./rouletteFx";
 import { assetUrl } from "../assetUrl";
-import { playSfx } from "../sfx";
+import { playSfx, playThud } from "../sfx";
 import { setAmbience, setShopMusic } from "../ambience";
 import type { Ctx } from "../main";
 
@@ -471,7 +473,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     onEmote: (id) => performEmote(id),
     onUseSelf: (what, slot) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
-    onCombine: (a, b) => { void combineSlots(me, a, b).then((note) => { panel.refresh(); say(note); }, (err) => say((err as Error).message, "warn")); },
+    onCombine: (a, b) => { void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
       icon: assetUrl("osrs/tab_room.png"),
       title: "Room",
@@ -2216,6 +2218,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!p || p.lying) return;
     const it = me.inventory[slot];
     if (!it || !SMOKABLE[it.item] || it.lit) return;
+    if (isLaced(it.item)) return void consumeSlot(slot); // (it kills you)
     if (isSmoking(p)) return say("You're already smoking one.", "warn");
     if (findSlot(me.inventory, "lighter") < 0) return say("You need a lighter for that. The vending machine in the shop sells them.", "warn");
     try {
@@ -2241,9 +2244,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let woozy = false;
   let pillCleanup: (() => void) | null = null;
   /** The super pill (4x walking speed for a minute) and the lean (the cup in your hand, an hour of better bins). */
+  let dying = false;
   async function consumeSlot(slot: number): Promise<void> {
     const p = mine();
-    if (!p || p.lying || faintUntil || woozy || trippingOn) return;
+    if (!p || p.lying || faintUntil || woozy || trippingOn || dying) return;
     const it = me.inventory[slot];
     if (!it) return;
     try {
@@ -2251,11 +2255,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       clearSelection();
       panel.refresh();
       playSfx("select", 0.5);
-      if (r.kind === "superpill") {
-        p.fast = me.speedUntil; p.fastMult = me.speedMult;
-        void update(myRef, { fast: p.fast, fastMult: p.fastMult }).catch(() => undefined);
-        logAction(me, "room", "swallowed fentanyl");
-        say("You swallow the fentanyl. The world slows down. You're running 4 times faster for a minute.");
+      if (r.kind === "fentdeath") {
+        dying = true;
+        logAction(me, "room", r.item ? `died of a laced ${r.item}` : "died of fentanyl");
+        ctx.refreshHeader();
+        if (r.lost) { const t = performance.now(), fp = feetOf(p, t); floaters.push({ text: `-${r.lost}`, x: fp.x, y: fp.y - 78 * scale, born: t, color: "#ff5252", icon: bloodImg, life: 2600 }); }
+        playThud(0.6);
+        const stop = showDeathScreen(stage, "DU OD'EDE PÅ FENT", Math.round((r.ms ?? 10_000) / 1000), () => { dying = false; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true }); });
+        unsubs.push(stop);
       } else if (r.kind === "dmt") {
         logAction(me, "room", "swallowed DMT");
         say("You swallow the yellow pill. The floor tilts and the colours start to move.");

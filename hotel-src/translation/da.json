@@ -8553,5 +8553,30 @@
   "en": "That chair is taken.",
   "da": "Den stol er optaget.",
   "where": "server/src/actions/roulette.ts"
+ },
+ "N1179": {
+  "en": "A pill pressed together with kodimagnyl. Swallowing it kills you. Use it on another drug to lace it.",
+  "da": "En pille presset sammen med kodimagnyl. Sluger du den, dør du. Brug den på et andet stof for at lacere det.",
+  "where": "src/items.ts"
+ },
+ "N1180": {
+  "en": "Now tap the drug you want to lace with it.",
+  "da": "Tryk nu på det stof du vil lacere med den.",
+  "where": "src/ui/sidepanel.ts"
+ },
+ "N1181": {
+  "en": "You lace it with fentanyl.",
+  "da": "Du laceder den med fentanyl.",
+  "where": "src/shared/items.ts"
+ },
+ "N1182": {
+  "en": "Du har lacede \"{…}\" med fentanyl. Monster.",
+  "da": "Du har lacede \"{…}\" med fentanyl. Monster.",
+  "where": "src/ui/room.ts"
+ },
+ "N1183": {
+  "en": "DU OD'EDE PÅ FENT",
+  "da": "DU OD'EDE PÅ FENT",
+  "where": "src/ui/room.ts"
  }
 }

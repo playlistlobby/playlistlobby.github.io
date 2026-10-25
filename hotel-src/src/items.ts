@@ -1,7 +1,7 @@
 import { assetUrl } from "./assetUrl";
 import { FURNI_KINDS } from "./rooms";
 import { loadNitro } from "./nitro";
-import { DISABLED_ITEMS, ITEM_ID_LIST, parseInventoryWith } from "./shared/items";
+import { DISABLED_ITEMS, isLaced, ITEM_ID_LIST, parseInventoryWith, unlaced } from "./shared/items";
 export {
   combine, DEFAULT_ITEM_PRICE, DISABLED_ITEMS, emptyInventory, findSlot, findSlotAny, GROW_MS, growMsOf, INV_COLS, INV_SIZE, isFurniItem, ITEM_DEFAULTS,
   MUSIC_ACCESS_KEY, MUSIC_ACCESS_PRICE, SIXTY_STOCK, SMOKABLE, SMOKE_MS, smokeMsOf, STACKABLE, START_BLOOD, VENDING_STOCK, WATER_MS,
@@ -154,7 +154,7 @@ export const ITEMS: Record<string, ItemDef> = {
   superpill: {
     id: "superpill",
     name: "Fentanyl",
-    examine: "A pill pressed together with kodimagnyl. Swallow it and you run 4 times faster for a minute.",
+    examine: "A pill pressed together with kodimagnyl. Swallowing it kills you. Use it on another drug to lace it.",
     icon: assetUrl("items/superpill.svg"),
     useSelf: "consume",
   },
@@ -402,6 +402,7 @@ export function furniIcon(kind: string): string {
 /** The definition of any inventory item: the fixed ones above, or a piece of furniture. */
 export function itemDef(id: string): ItemDef | undefined {
   if (ITEMS[id]) return ITEMS[id];
+  if (isLaced(id)) return itemDef(unlaced(id)); // laced with fentanyl: it looks exactly like the real thing
   const k = FURNI_KINDS[id];
   if (!k || !isFurniItem(id)) return undefined;
   if (id === "f_poster") return { id, name: k.label, examine: "A poster for your wall. When you hang it you choose the picture, and the picture stays on it. Only on a wall.", icon: assetUrl("items/poster.svg"), furniture: true };

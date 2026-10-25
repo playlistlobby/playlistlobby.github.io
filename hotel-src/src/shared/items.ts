@@ -149,18 +149,42 @@ export const ROLLABLE: ReadonlySet<string> = new Set(["weed", "mix", "midweed", 
 /** What a rolled joint / blunt is called, by what went into it. (Good weed and weed mix both make the plain one.) */
 const ROLL_SUFFIX: Record<string, string> = { weed: "", mix: "", midweed: "_mid", thca: "_thca", researchchem: "_chem", hashmix: "_hash", chudmix: "_chud", trollmix: "_troll" };
 
+/**
+ * Fentanyl used on another drug laces it. A laced thing is its own item (its id is "laced_" + the plain id), so it never stacks with the clean one;
+ * it looks exactly the same (same name, same picture) and using it kills you. Everything you can use or roll can be laced.
+ */
+export const LACED_PREFIX = "laced_";
+export const isLaced = (id: string): boolean => id.startsWith(LACED_PREFIX);
+export const unlaced = (id: string): string => (isLaced(id) ? id.slice(LACED_PREFIX.length) : id);
+export const LACEABLE: ReadonlySet<string> = new Set([
+  ...ROLLABLE, ...Object.keys(SMOKABLE).filter((k) => k !== "cigarette" && k !== "cigar"), "pill", "codeine", "shroom", "weakshroom", "lsd", "dmt",
+]);
+for (const id of LACEABLE) {
+  (ITEM_IDS as Set<string>).add(LACED_PREFIX + id);
+  if (STACKABLE.has(id)) (STACKABLE as Set<string>).add(LACED_PREFIX + id);
+  if (SMOKABLE[id]) SMOKABLE[LACED_PREFIX + id] = SMOKABLE[id];
+}
+
 /** Rolling, in the pocket: weed (or mix, mid weed, thc-a, research chemical) + joint paper or a blunt wrap. The order you clicked them in doesn't matter. Null if they don't go together. */
 export function combine(a: InvItem, b: InvItem): { give: InvItem; note: string; back?: InvItem } | null {
   // tobacco rolls in joint paper to a cigarette, and in blunt paper to a cigar
   const tob = [a, b].find((x) => x.item === "tobacco"), paper = [a, b].find((x) => x.item === "jointpaper" || x.item === "bluntwrap");
   if (tob && paper && tob !== paper) return paper.item === "jointpaper" ? { give: { item: "cigarette", qty: 1 }, note: "You roll a cigarette." } : { give: { item: "cigar", qty: 1 }, note: "You roll a cigar." };
-  const w = [a, b].find((x) => ROLLABLE.has(x.item));
+  // fentanyl on another drug: that one becomes laced (the plain fentanyl is used up)
+  const fent = [a, b].find((x) => x.item === "superpill" && !x.lit && !x.inPlayer), target = fent === a ? b : fent === b ? a : undefined;
+  if (fent && target && fent !== target) {
+    if (!LACEABLE.has(target.item) || target.lit || target.inPlayer) return null;
+    return { give: { item: LACED_PREFIX + target.item, qty: 1 }, note: "You lace it with fentanyl." };
+  }
+  const w = [a, b].find((x) => ROLLABLE.has(unlaced(x.item)));
   const o = w === a ? b : w === b ? a : undefined;
   if (!w || !o || w === o) return null;
-  const ass = w.ass && w.item === "weed" ? { ass: true as const } : {};
-  const suffix = ROLL_SUFFIX[w.item] ?? "";
-  if (o.item === "jointpaper") return { give: { item: `joint${suffix}`, qty: 1, ...ass }, note: "You roll a joint." };
-  if (o.item === "bluntwrap" && w.item !== "hashmix") return { give: { item: `blunt${suffix}`, qty: 1, ...ass }, note: "You roll a blunt." };
+  const lace = isLaced(w.item) ? LACED_PREFIX : ""; // what is rolled from a laced thing is laced too
+  const base = unlaced(w.item);
+  const ass = w.ass && base === "weed" ? { ass: true as const } : {};
+  const suffix = ROLL_SUFFIX[base] ?? "";
+  if (o.item === "jointpaper") return { give: { item: `${lace}joint${suffix}`, qty: 1, ...ass }, note: "You roll a joint." };
+  if (o.item === "bluntwrap" && base !== "hashmix") return { give: { item: `${lace}blunt${suffix}`, qty: 1, ...ass }, note: "You roll a blunt." };
   return null;
 }
 
@@ -210,6 +234,7 @@ export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
  * Things in SELL_BUNDLE are paid per bundle. `furniPrices` = the admin's furniture prices (shared/furniture.ts furniPrice).
  */
 export function sellPrice(item: string, ass?: boolean, furniPrices: Record<string, number> = {}): number | null {
+  if (isLaced(item)) return sellPrice(unlaced(item), ass, furniPrices); // (it looks like the real thing, so he pays the same)
   if (NEVER_BOUGHT.has(item)) return null;
   if (/^[fx]_/.test(item)) return Math.max(1, Math.floor(furniPrice(item, furniPrices) * 0.75)); // furniture: 75% of the shop price
   switch (item) {
@@ -258,4 +283,10 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "syringe": return 1;
     default: return null;
   }
+}
+
+/** Dying from fentanyl: 1.5 x what the fentanyl is worth (plus the laced thing, if that is what killed you) in blood, or a quarter of what you have if that is less than the price. */
+export function fentanylDeathCost(blood: number, laced?: string): number {
+  const price = Math.ceil(((sellPrice("superpill") ?? 0) + (laced ? sellPrice(laced) ?? 0 : 0)) * 1.5);
+  return blood >= price ? price : Math.floor(Math.max(0, blood) * 0.25);
 }

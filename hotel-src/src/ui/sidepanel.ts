@@ -4,7 +4,7 @@ import { BLOOD_ICON, combine, findSlot, INV_SIZE, itemDef, ITEMS, MUSIC_ACCESS_K
 import { playSfx } from "../sfx";
 import { EMOTES, hasEmote } from "../emotes";
 import { assetUrl } from "../assetUrl";
-import { NO_DROP } from "../shared/items";
+import { isLaced, NO_DROP } from "../shared/items";
 import { fmtTime, player, TRACKS } from "../music";
 import type { Ctx } from "../main";
 
@@ -97,6 +97,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     const it = selected !== null ? profile.inventory[selected] : null;
     if (!it) return "Knife: click it, then a player. CD: click it, then the CD player. Syringe: just click it.";
     const d = itemDef(it.item);
+    if (it.item === "superpill") return "Now tap the drug you want to lace with it.";
     return d?.furniture ? "Now click a free spot in your room to put it down (R turns it)." : d?.useOnObject ? "Now click the CD player in the basement." : "Now click a player to use it on them.";
   }
 
@@ -106,12 +107,15 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     const def = slot ? itemDef(slot.item) : undefined;
     if (!slot || !def || slot.inPlayer) return [];
     const out: MenuOption[] = [];
+    const laced = isLaced(slot.item); // looks like the real thing, but using it kills you (the hotel handles it as a swallow)
     if (def.useSelf && !slot.lit) {
-      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : def.useSelf === "consume" ? (slot.item === "codeine" ? "Drink" : "Swallow") : "Draw blood", target: def.name, action: () => opts.onUseSelf(def.useSelf!, i) });
+      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : def.useSelf === "consume" ? (slot.item === "codeine" ? "Drink" : "Swallow") : "Draw blood", target: def.name, action: () => opts.onUseSelf(laced ? "consume" : def.useSelf!, i) });
     }
     const combinable = profile.inventory.some((o, j) => j !== i && !!o && (combine(slot, o) || combine(o, slot)));
-    if (def.furniture || def.useOnObject || def.useOnPlayer || combinable) {
-      out.push({ label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) });
+    if (def.furniture || def.useOnObject || def.useOnPlayer || combinable || slot.item === "superpill") {
+      const use = { label: selected === i ? "Cancel" : def.furniture ? "Place" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) };
+      if (slot.item === "superpill") out.unshift(use); // a tap on fentanyl is "Use" first: swallowing it is the second choice
+      else out.push(use);
     }
     return out;
   }

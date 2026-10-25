@@ -3,9 +3,9 @@ import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from ".
 import { fail } from "../ctx";
 import { skipTime } from "../skipTime";
 import {
-  addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, SUPERPILL_MS, SUPERPILL_MULT, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
-import { combine, findSlot, growMsOf, SMOKABLE, smokeMsOf } from "../../../src/shared/items";
+import { combine, fentanylDeathCost, findSlot, growMsOf, isLaced, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
 const mins = (ms: number): string => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
@@ -106,7 +106,17 @@ export const dumpster: Action = {
   },
 };
 
-/** Swallowing the super pill (4x speed for a minute) or drinking the lean (the cup in your hand for 2 minutes, an hour of better bins). */
+/** How long you are dead for after fentanyl (the browser shows the screen and then puts you back in your room). */
+export const FENT_DEATH_MS = 10_000;
+/** You died of fentanyl: the price in blood comes off (see fentanylDeathCost); `laced` is what killed you if it wasn't the plain fentanyl. */
+function fentDeath(c: import("../ctx").Ctx, s: { blood: number }, laced?: string): { kind: "fentdeath"; lost: number; ms: number; item?: string } {
+  const lost = fentanylDeathCost(s.blood, laced);
+  s.blood -= lost;
+  c.note = laced ? `laced ${unlaced(laced)}` : "fentanyl"; // (the blood ledger says what killed you)
+  return { kind: "fentdeath", lost, ms: FENT_DEATH_MS, ...(laced ? { item: unlaced(laced) } : {}) };
+}
+
+/** Swallowing fentanyl (it kills you), or anything laced with it, or drinking the lean (the cup in your hand for 2 minutes, an hour of better bins). */
 export const consume: Action = {
   async run(c, a) {
     const w = await c.user();
@@ -114,11 +124,9 @@ export const consume: Action = {
     const slot = int(a.slot, 0, 27, "slot");
     const it = s.inventory[slot];
     if (!it || it.inPlayer || it.lit) fail("You aren't carrying that.");
-    if (it!.item === "superpill") {
+    if (it!.item === "superpill" || isLaced(it!.item)) { // fentanyl on its own kills, and so does anything that was laced with it
       s.inventory = takeOneFrom(s.inventory, slot);
-      s.speedUntil = c.now + SUPERPILL_MS;
-      s.speedMult = SUPERPILL_MULT;
-      return { kind: "superpill", speedMs: SUPERPILL_MS, speedMult: SUPERPILL_MULT };
+      return fentDeath(c, s, isLaced(it!.item) ? it!.item : undefined);
     }
     if (it!.item === "shroom" || it!.item === "weakshroom") { // a weak shroom works the same, it just can't be mixed
       s.inventory = takeOneFrom(s.inventory, slot);
@@ -157,6 +165,7 @@ export const light: Action = {
     const slot = int(a.slot, 0, 27, "slot");
     const it = s.inventory[slot];
     if (!it || !SMOKABLE[it.item] || it.lit) fail("That can't be lit.");
+    if (isLaced(it!.item)) { s.inventory = takeOneFrom(s.inventory, slot); return fentDeath(c, s, it!.item); }
     if (findSlot(s.inventory, "lighter") < 0) fail("You need a lighter for that. The vending machine in the shop sells them.");
     if (s.inventory.some((x) => x && SMOKABLE[x.item] && x.lit && c.now - x.lit < smokeMsOf(x.item))) fail("You're already smoking one.");
     let next: Inventory;
@@ -213,7 +222,7 @@ export const combineItems: Action = {
     if (added && res!.back) added = addToInv(added, res!.back); // the watering can comes back empty
     if (!added) fail("Your inventory is full");
     w.s.inventory = added!;
-    return { note: res!.note };
+    return { note: res!.note, gave: res!.give.item };
   },
 };
 

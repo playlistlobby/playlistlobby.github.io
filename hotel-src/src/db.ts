@@ -318,10 +318,11 @@ export async function searchDumpster(p: Profile, canId: string, roomId: string):
 export const useFurniState = (p: Profile, room: string, id: string): Promise<{ st?: number }> => call(p, "furniState", { room, id });
 
 /** Swallows the super pill or drinks the lean (codeine) in a slot. */
-export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number; ms?: number; tripMs?: number }> => call(p, "consume", { slot });
+export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number; ms?: number; tripMs?: number; lost?: number; item?: string }> => call(p, "consume", { slot });
 /** Uses two pocket items on each other (weed + paper, ...). Resolves with the message. */
-export async function combineSlots(p: Profile, a: number, b: number): Promise<string> {
-  return String((await call<{ note?: string }>(p, "combine", { a, b })).note ?? "");
+export async function combineSlots(p: Profile, a: number, b: number): Promise<{ note: string; gave: string }> {
+  const r = await call<{ note?: string; gave?: string }>(p, "combine", { a, b });
+  return { note: String(r.note ?? ""), gave: String(r.gave ?? "") };
 }
 export const fillCan = (p: Profile, slot: number): Promise<unknown> => call(p, "fillCan", { slot });
 /** Lights a cigarette, joint or blunt (needs a lighter). Resolves with when it was lit (server time). */
