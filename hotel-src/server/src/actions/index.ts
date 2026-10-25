@@ -16,6 +16,7 @@ import { cdControl, cdInsert, cdReturn } from "./cd";
 import { mix, mixCollect } from "./mixer";
 import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick } from "./roulette";
 import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
+import { duckyBuy } from "./ducky";
 
 /** Every thing the browser may ask for. Anything not listed here cannot be done: the browser can't write economy data itself. */
 export const ACTIONS: Record<string, Action> = {
@@ -29,5 +30,6 @@ export const ACTIONS: Record<string, Action> = {
   cdInsert, cdReturn, cdControl, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   ideaPost, ideaComment, ideaLike, ideaDelete,
+  duckyBuy,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

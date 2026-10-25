@@ -8728,5 +8728,260 @@
   "en": "That isn't yours.",
   "da": "Det er ikke dit.",
   "where": "server/src/actions/ideas.ts"
+ },
+ "N1214": {
+  "en": "Advertised",
+  "da": "Reklame",
+  "where": "src/ui/door.ts"
+ },
+ "N1215": {
+  "en": "📣 Ad",
+  "da": "📣 Reklame",
+  "where": "src/ui/door.ts"
+ },
+ "N1216": {
+  "en": "Chat tool",
+  "da": "Chat-værktøj",
+  "where": "src/ui/room.ts"
+ },
+ "N1217": {
+  "en": "Ducky machine: things for real money",
+  "da": "Ducky-automat: ting for rigtige penge",
+  "where": "src/ui/room.ts"
+ },
+ "N1218": {
+  "en": "Ducky machine",
+  "da": "Ducky-automat",
+  "where": "src/ui/room.ts"
+ },
+ "N1219": {
+  "en": "Shake",
+  "da": "Ryst",
+  "where": "src/ui/room.ts"
+ },
+ "N1220": {
+  "en": "Rainbow",
+  "da": "Regnbue",
+  "where": "src/ui/room.ts"
+ },
+ "N1221": {
+  "en": "Pulse",
+  "da": "Puls",
+  "where": "src/ui/room.ts"
+ },
+ "N1222": {
+  "en": "Big",
+  "da": "Stor",
+  "where": "src/ui/room.ts"
+ },
+ "N1223": {
+  "en": "🦆 Ducky machine",
+  "da": "🦆 Ducky-automat",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1224": {
+  "en": "The starter package is in your pockets, and 50 blood.",
+  "da": "Startpakken er i dine lommer, og 50 blod.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1225": {
+  "en": "Your name colour changed.",
+  "da": "Din navnefarve er ændret.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1226": {
+  "en": "Your name has a colour now.",
+  "da": "Dit navn har en farve nu.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1227": {
+  "en": "The chat tool is yours: tap the ✨ next to the chat bar.",
+  "da": "Chat-værktøjet er dit: tryk på ✨ ved siden af chatten.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1228": {
+  "en": "Your room is first in the door list for {hours} hours.",
+  "da": "Dit værelse står øverst på dørlisten i {hours} timer.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1229": {
+  "en": "You are {name} now. The page reloads.",
+  "da": "Du hedder {name} nu. Siden genindlæses.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1230": {
+  "en": "The machine is stuck.",
+  "da": "Automaten sidder fast.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1231": {
+  "en": "Own colour",
+  "da": "Egen farve",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1232": {
+  "en": "Change colour (free)",
+  "da": "Skift farve (gratis)",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1233": {
+  "en": "Buy · {price}",
+  "da": "Køb · {price}",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1234": {
+  "en": "That colour is too dark to read.",
+  "da": "Den farve er for mørk til at kunne læses.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1235": {
+  "en": "New name",
+  "da": "Nyt navn",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1236": {
+  "en": "3-16 letters, numbers, . _ -  Your password stays the same.",
+  "da": "3-16 bogstaver, tal, . _ -  Din adgangskode er den samme.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1237": {
+  "en": "TEST VERSION: nothing is charged yet.",
+  "da": "TESTVERSION: der bliver ikke trukket penge endnu.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1238": {
+  "en": "Starter package",
+  "da": "Startpakke",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1239": {
+  "en": "3 growing kits, 3 mixers and 50 blood. Only once.",
+  "da": "3 dyrkningssæt, 3 mixere og 50 blod. Kun én gang.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1240": {
+  "en": "Name colour",
+  "da": "Navnefarve",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1241": {
+  "en": "Your name has its own colour. Change it whenever you like.",
+  "da": "Dit navn har sin egen farve. Skift den når du vil.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1242": {
+  "en": "Your name in a colour of your own, over your head and in the chat.",
+  "da": "Dit navn i din egen farve, over hovedet og i chatten.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1243": {
+  "en": "Change",
+  "da": "Skift",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1244": {
+  "en": "A ✨ next to the chat bar: shaky, wavy and rainbow text, and coloured text.",
+  "da": "En ✨ ved siden af chatten: rystende, bølgende og regnbuetekst, og farvet tekst.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1245": {
+  "en": "Advertise your room",
+  "da": "Reklamér for dit værelse",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1246": {
+  "en": "Your room is first in the door list for {hours} hours. Buy again to add more time.",
+  "da": "Dit værelse står øverst på dørlisten i {hours} timer. Køb igen for at lægge tid til.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1247": {
+  "en": "Change your name",
+  "da": "Skift dit navn",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1248": {
+  "en": "Pick a new username. Your things, friends and room come with you.",
+  "da": "Vælg et nyt brugernavn. Dine ting, venner og dit værelse følger med.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1249": {
+  "en": "When the machine opens for real you pay on a payment page, and come back to the game afterwards.",
+  "da": "Når automaten åbner for alvor, betaler du på en betalingsside og kommer tilbage til spillet bagefter.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1250": {
+  "en": "You pay on a payment page, and come back to the game afterwards.",
+  "da": "Du betaler på en betalingsside og kommer tilbage til spillet bagefter.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N1251": {
+  "en": "The Ducky machine isn't open yet.",
+  "da": "Ducky-automaten er ikke åben endnu.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1252": {
+  "en": "The machine doesn't sell that.",
+  "da": "Automaten sælger ikke det.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1253": {
+  "en": "You already bought the starter package. It can only be bought once.",
+  "da": "Du har allerede købt startpakken. Den kan kun købes én gang.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1254": {
+  "en": "Your pockets are full: make room for {…} things (you have {INV_SIZE} slots).",
+  "da": "Dine lommer er fulde: gør plads til {…} ting (du har {INV_SIZE} pladser).",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1255": {
+  "en": "Pick a colour.",
+  "da": "Vælg en farve.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1256": {
+  "en": "That colour is too dark to read. Pick a lighter one.",
+  "da": "Den farve er for mørk til at kunne læses. Vælg en lysere.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1257": {
+  "en": "You already have the chat tool.",
+  "da": "Du har allerede chat-værktøjet.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1258": {
+  "en": "You haven't got a room to advertise.",
+  "da": "Du har intet værelse at reklamere for.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1259": {
+  "en": "A name is 3-16 characters: letters, numbers, . _ -",
+  "da": "Et navn er 3-16 tegn: bogstaver, tal, . _ -",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1260": {
+  "en": "That name is reserved.",
+  "da": "Det navn er reserveret.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1261": {
+  "en": "This account keeps its name.",
+  "da": "Den her konto beholder sit navn.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1262": {
+  "en": "That is already your name.",
+  "da": "Det er allerede dit navn.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1263": {
+  "en": "That name is taken.",
+  "da": "Det navn er optaget.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N1264": {
+  "en": "Wavy",
+  "da": "Bølge",
+  "where": "src/ui/room.ts"
  }
 }

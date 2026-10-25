@@ -779,6 +779,9 @@
             },
             "spin": {
               ".validate": "newData.isNumber()"
+            },
+            "nc": {
+              ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('nameColor').val()"
             }
           }
         },
@@ -788,7 +791,13 @@
           ],
           "$msg": {
             ".write": "@PW@ && @IN@ && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
-            ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0"
+            ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0",
+            "fx": {
+              ".validate": "newData.isString() && (newData.val() === 'shake' || newData.val() === 'wave' || newData.val() === 'rainbow' || newData.val() === 'pulse' || newData.val() === 'big') && root.child('users').child(auth.uid).child('owned').child('ducky_fx').exists()"
+            },
+            "fc": {
+              ".validate": "newData.isString() && newData.val().matches(/^#[0-9a-fA-F]{6}$/) && root.child('users').child(auth.uid).child('owned').child('ducky_fx').exists()"
+            }
           }
         },
         "drops": {

@@ -5,6 +5,8 @@ export interface Env {
   FIREBASE_PROJECT_ID: string;
   /** the Realtime Database URL, no trailing slash */
   DB_URL: string;
+  /** emulator only: where the Auth emulator listens (default http://127.0.0.1:9099) */
+  AUTH_EMU_URL?: string;
   /** emulator only: the database namespace */
   DB_NS?: string;
   /** comma separated list of origins that may call the API */

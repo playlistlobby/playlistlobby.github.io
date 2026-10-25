@@ -965,3 +965,43 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .ib-prev { display: block; max-width: 60%; max-height: 220px; margin: 10px 0; border: 4px solid #fff; border-bottom-width: 12px; box-shadow: 0 2px 6px rgba(60, 30, 0, .3); transform: rotate(-1deg); }
 .ib-prev[hidden] { display: none; }
 @media (max-width: 520px) { .ib-overlay { padding: 0; } .ib-card { border-radius: 0; } }
+
+/* ---- the Ducky machine ---- */
+.ducky-shop { width: 300px; }
+.ducky-test { padding: 4px 8px; border-radius: 6px; text-align: center; font-weight: 800; font-size: 11px; letter-spacing: .5px; color: #3a2a00; background: #ffd54a; }
+.ducky-card { display: grid; gap: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, .12); }
+.ducky-card:last-of-type { border-bottom: 0; }
+.ducky-ico { width: 36px; height: 36px; display: grid; place-items: center; font-size: 22px; border-radius: 8px; background: rgba(255, 255, 255, .1); }
+.ducky-input { display: grid; gap: 6px; padding: 6px; border-radius: 8px; background: rgba(0, 0, 0, .25); }
+.ducky-swatches { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.ducky-sw { width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .5); cursor: pointer; }
+.ducky-sw.on { border-color: #fff; box-shadow: 0 0 0 2px #1a2b66, 0 0 0 4px #fff; }
+.ducky-pick { width: 30px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; }
+.ducky-prev { text-align: center; font: 700 15px var(--font); text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+.ducky-name { width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 6px; border: 1px solid #c8d0e0; font: 14px var(--font); }
+
+/* ---- the chat tool (Ducky machine): the sparkle by the chat bar, its panel, and the moving text ---- */
+.chat-fx { flex: none; width: 34px; height: 34px; padding: 0; border-radius: 8px; border: 1px solid #4b5a78; background: linear-gradient(#e8eef9, #aab6cc); font-size: 17px; cursor: pointer; }
+.chat-fx[hidden] { display: none; }
+.chat-fx.on { background: linear-gradient(#ffe9a0, #f2b73c); border-color: #b3801b; }
+.chat-input.fx-big { font-size: 18px; }
+.fx-panel { position: absolute; left: 10px; bottom: 10px; z-index: 12; display: grid; gap: 6px; padding: 8px; max-width: calc(100% - 20px); box-sizing: border-box; border-radius: 10px; background: rgba(15, 22, 48, .92); border: 1px solid #c8d0e0; box-shadow: 0 6px 18px rgba(0, 0, 0, .5); }
+.fx-panel[hidden] { display: none; }
+.fx-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.fx-opt { padding: 4px 9px; border-radius: 6px; border: 1px solid #8794ae; background: #26335f; color: #fff; font: 700 12px var(--font); cursor: pointer; }
+.fx-opt.on { background: #f2b73c; color: #2a1c00; border-color: #fff; }
+.fx-sw { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .55); cursor: pointer; }
+.fx-sw.on { border-color: #fff; box-shadow: 0 0 0 2px #0f1630, 0 0 0 4px #fff; }
+.fx-prev { font: 700 14px var(--font); color: #fff; }
+.fxt { display: inline; }
+.fxt.fx-big { font-size: 1.4em; font-weight: 700; }
+.fxt.fx-pulse { animation: fxpulse 1s ease-in-out infinite; }
+.fxt .fxc { display: inline-block; }
+.fxt.fx-wave .fxc { animation: fxwave 1.1s ease-in-out infinite; }
+.fxt.fx-shake .fxc { animation: fxshake .22s linear infinite; }
+.fxt.fx-rainbow .fxc { animation: fxrainbow 2.2s linear infinite; }
+@keyframes fxpulse { 50% { opacity: .45; } }
+@keyframes fxwave { 50% { transform: translateY(-4px); } }
+@keyframes fxshake { 0% { transform: translate(0, 0); } 25% { transform: translate(1px, -1px); } 50% { transform: translate(-1px, 1px); } 75% { transform: translate(1px, 1px); } 100% { transform: translate(0, 0); } }
+@keyframes fxrainbow { 0% { color: #ff4d4d; } 17% { color: #ffa94d; } 33% { color: #ffe94d; } 50% { color: #4dde7a; } 67% { color: #4db8ff; } 83% { color: #b46bff; } 100% { color: #ff4d4d; } }
+.door-ad { display: inline-block; margin-right: 6px; padding: 0 5px; border-radius: 4px; font: 800 10px/16px var(--font); color: #3a2a00; background: #ffd54a; vertical-align: middle; }

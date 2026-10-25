@@ -29,6 +29,8 @@ interface Row {
   blood: number;
   /** 1 = the richest player */
   rank: number;
+  /** the room is advertised (the Ducky machine): first in the list */
+  ad: boolean;
 }
 
 const KNOCK_TIMEOUT_MS = 60_000;
@@ -82,7 +84,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   function rowFor(id: string, meta: RoomMeta): Row {
     return {
       owner: meta.owner, roomId: id, roomName: meta.name, ownerName: meta.ownerName, access: normAccess(meta.access),
-      blood: board[meta.owner] ?? 0, rank: ranks.get(meta.owner) ?? 0,
+      blood: board[meta.owner] ?? 0, rank: ranks.get(meta.owner) ?? 0, ad: typeof meta.adUntil === "number" && meta.adUntil > serverNow(),
       friend: social.friends.has(meta.owner), online: social.isOnline(meta.owner), idle: social.isIdle(meta.owner), count: social.roomCounts().get(id) ?? 0,
     };
   }
@@ -94,7 +96,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
       .filter(([id, m]) => id.startsWith("u_") && m.owner !== me.uid && id !== currentRoom)
       .map(([id, m]) => rowFor(id, m));
     const rank = (a: Row, b: Row): number =>
-      Number(b.friend) - Number(a.friend) || Number(b.access === "open") - Number(a.access === "open") || b.blood - a.blood || Number(b.online) - Number(a.online) || Number(a.idle) - Number(b.idle) || b.count - a.count || a.ownerName.localeCompare(b.ownerName);
+      Number(b.ad) - Number(a.ad) || Number(b.friend) - Number(a.friend) || Number(b.access === "open") - Number(a.access === "open") || b.blood - a.blood || Number(b.online) - Number(a.online) || Number(a.idle) - Number(b.idle) || b.count - a.count || a.ownerName.localeCompare(b.ownerName);
     if (q) {
       const score = (r: Row): number => {
         const n = r.ownerName.toLowerCase(), rn = r.roomName.toLowerCase();
@@ -107,7 +109,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
       };
       return all.map((r) => ({ r, s: score(r) })).filter((x) => x.s >= 0).sort((a, b) => a.s - b.s || rank(a.r, b.r)).map((x) => x.r);
     }
-    const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
+    const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && (r.online || r.ad))); // on a shroom every room is on the list, online or not
     return visible.sort(rank);
   }
 
@@ -141,7 +143,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
       headBoxFor(r.owner),
       h("span", { class: "dot " + (r.online ? (r.idle ? "idle" : "on") : "") }),
       h("div", { class: "door-row-main" },
-        h("div", { class: "door-row-name" }, ...lit(r.roomName)),
+        h("div", { class: "door-row-name" }, ...(r.ad ? [h("span", { class: "door-ad", title: "Advertised" }, "📣 Ad")] : []), ...lit(r.roomName)),
         h("div", { class: "hint" }, ...lit(r.ownerName), ` · ${sub}${r.idle ? " · idle" : ""}${r.count ? ` · ${r.count} inside` : ""}`)),
       r.access === "open" && r.rank > 0 && r.rank <= 50 ? h("span", { class: "door-rank", title: "Ranked by blood: the richest players are on top" }, `#${r.rank}`) : null,
       // a little profile button (just the icon) next to Visit / Knock: the owner's profile page

@@ -11,7 +11,7 @@ const b64url = (b: ArrayBuffer | string): string => {
 
 let token: { value: string; exp: number } | null = null;
 
-async function accessToken(env: Env): Promise<string> {
+export async function accessToken(env: Env): Promise<string> {
   if (token && token.exp - Date.now() > 120_000) return token.value;
   if (!env.FIREBASE_SA_JSON) throw new Error("the server has no service-account key (FIREBASE_SA_JSON)");
   const sa = JSON.parse(env.FIREBASE_SA_JSON) as { client_email: string; private_key: string; token_uri?: string };
@@ -19,7 +19,7 @@ async function accessToken(env: Env): Promise<string> {
   const head = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const body = b64url(JSON.stringify({
     iss: sa.client_email,
-    scope: "https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email",
+    scope: "https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/identitytoolkit",
     aud: sa.token_uri ?? "https://oauth2.googleapis.com/token",
     iat: now,
     exp: now + 3600,

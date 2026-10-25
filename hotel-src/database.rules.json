@@ -779,6 +779,9 @@
             },
             "spin": {
               ".validate": "newData.isNumber()"
+            },
+            "nc": {
+              ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('nameColor').val()"
             }
           }
         },
@@ -788,7 +791,13 @@
           ],
           "$msg": {
             ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && ((auth != null && auth.token.firebase.sign_in_provider === 'password' && !root.child('bans').child(auth.uid).exists() && auth.token.email === 'adminsidia@users.bobba.invalid') || $room === 'lobby' || $room === 'shop' || $room === 'tut_' + auth.uid || root.child('roomsMeta').child($room).child('owner').val() === auth.uid || root.child('roomsMeta').child($room).child('access').val() === 'open' || root.child('roomInvites').child($room).child(auth.uid).exists() || (root.child('friends').child(root.child('roomsMeta').child($room).child('owner').val()).child(auth.uid).exists() && root.child('roomsMeta').child($room).child('access').val() !== 'none') || (root.child('users').child(auth.uid).child('shroomUntil').exists() && root.child('users').child(auth.uid).child('shroomUntil').val() > now)) && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('ts').val() < now - 900000))",
-            ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0"
+            ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('text').isString() && newData.child('text').val().length <= 100 && newData.child('text').val().length > 0",
+            "fx": {
+              ".validate": "newData.isString() && (newData.val() === 'shake' || newData.val() === 'wave' || newData.val() === 'rainbow' || newData.val() === 'pulse' || newData.val() === 'big') && root.child('users').child(auth.uid).child('owned').child('ducky_fx').exists()"
+            },
+            "fc": {
+              ".validate": "newData.isString() && newData.val().matches(/^#[0-9a-fA-F]{6}$/) && root.child('users').child(auth.uid).child('owned').child('ducky_fx').exists()"
+            }
           }
         },
         "drops": {

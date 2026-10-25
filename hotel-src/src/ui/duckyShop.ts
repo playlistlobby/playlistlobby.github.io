@@ -1,0 +1,109 @@
+// The Ducky machine in the shop room: a starter package, a name colour, the chat tool, a room advert and a new name, all for real money.
+// TEST VERSION: nothing is charged yet (the buy goes straight through on the local server); paying through Stripe comes when it is published.
+import { h, toast } from "./dom";
+import { call } from "../db";
+import { CHAT_COLORS, DUCKY_AD_MS, DUCKY_TEST_MODE, duckyDef, isHexColor, kr, NEW_NAME_RE, readableOnDark } from "../shared/ducky";
+import type { DuckyProduct } from "../shared/ducky";
+import { logAction } from "../logger";
+import { playSfx } from "../sfx";
+import type { Ctx } from "../main";
+
+export interface DuckyShopApi { close(): void }
+
+const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", ad: "📣", rename: "🏷️" };
+const hours = Math.round(DUCKY_AD_MS / 3_600_000);
+
+export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): DuckyShopApi {
+  const me = ctx.profile;
+  const body = h("div", { class: "sixty-body" });
+  const el = h("div", { class: "cd-popup sixty-shop ducky-shop", role: "dialog", "aria-label": "Ducky machine" },
+    h("div", { class: "cd-head" }, h("strong", {}, "🦆 Ducky machine"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
+    body);
+  host.append(el);
+  let closed = false;
+  let busy = false;
+  let open: DuckyProduct | null = null; // the card with its extra input open (colour, new name)
+  let pickedColor = me.nameColor ?? CHAT_COLORS[3];
+  let newName = "";
+
+  async function buy(product: DuckyProduct, extra: Record<string, unknown> = {}): Promise<void> {
+    if (busy) return;
+    busy = true;
+    render();
+    try {
+      const r = await call<{ color?: string; name?: string; free?: boolean; until?: number }>(me, "duckyBuy", { product, ...extra });
+      ctx.refreshHeader();
+      playSfx("coins", 0.5);
+      logAction(me, "buy", `bought "${product}" from the Ducky machine (test)`);
+      onChange();
+      open = null;
+      if (product === "starter") toast("The starter package is in your pockets, and 50 blood.");
+      else if (product === "color" && r.color) { me.nameColor = r.color; window.dispatchEvent(new CustomEvent("name-color", { detail: r.color })); toast(r.free ? "Your name colour changed." : "Your name has a colour now."); }
+      else if (product === "fx") { toast("The chat tool is yours: tap the ✨ next to the chat bar."); window.dispatchEvent(new Event("pocket-changed")); }
+      else if (product === "ad") toast(`Your room is first in the door list for ${hours} hours.`);
+      else if (product === "rename" && r.name) {
+        toast(`You are ${r.name} now. The page reloads.`);
+        window.setTimeout(() => window.location.reload(), 1600); // (everything shows the new name from the start)
+      }
+    } catch (err) { toast((err as Error).message || "The machine is stuck.", "err"); }
+    finally { busy = false; render(); }
+  }
+
+  function card(product: DuckyProduct, name: string, hint: string, action: HTMLElement | null, input?: HTMLElement): HTMLElement {
+    const def = duckyDef(product)!;
+    const owned = def.once ? !!me.owned[def.once] : false;
+    return h("div", { class: "ducky-card" + (owned ? " owned" : "") },
+      h("div", { class: "sixty-row" },
+        h("div", { class: "ducky-ico" }, ICONS[product]),
+        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, name), h("div", { class: "hint" }, hint)),
+        action ?? h("span", {})),
+      input ?? null);
+  }
+  const price = (p: DuckyProduct): string => kr(duckyDef(p)!.ore);
+  const buyBtn = (p: DuckyProduct, onclick: () => void, label?: string): HTMLElement =>
+    h("button", { class: "btn small primary", disabled: busy, onclick }, busy ? "…" : label ?? price(p));
+  const ownedBtn = (label = "Owned"): HTMLElement => h("button", { class: "btn small", disabled: true }, label);
+
+  function render(): void {
+    if (closed) return;
+    const starterHave = !!me.owned.ducky_starter, colorHave = !!me.owned.ducky_color, fxHave = !!me.owned.ducky_fx;
+    const swatches = h("div", { class: "ducky-swatches" },
+      ...CHAT_COLORS.filter(readableOnDark).map((c) => h("button", { class: "ducky-sw" + (pickedColor === c ? " on" : ""), type: "button", style: { background: c }, "aria-label": c, onclick: () => { pickedColor = c; render(); } })),
+      h("input", { type: "color", class: "ducky-pick", value: isHexColor(pickedColor) ? pickedColor : "#46d369", "aria-label": "Own colour", oninput: (e: Event) => { pickedColor = (e.target as HTMLInputElement).value; } , onchange: () => render() }));
+    const colorOk = isHexColor(pickedColor) && readableOnDark(pickedColor);
+    const colorInput = h("div", { class: "ducky-input" },
+      swatches,
+      h("div", { class: "ducky-prev", style: { color: colorOk ? pickedColor : "#888" } }, me.name),
+      colorOk ? h("button", { class: "btn small primary", disabled: busy, onclick: () => void buy("color", { color: pickedColor }) }, colorHave ? "Change colour (free)" : `Buy · ${price("color")}`) : h("div", { class: "hint" }, "That colour is too dark to read."));
+    const nameOk = NEW_NAME_RE.test(newName);
+    const nameInput = h("div", { class: "ducky-input" },
+      h("input", { type: "text", class: "ducky-name", maxLength: 16, placeholder: "New name", value: newName, autocomplete: "off", oninput: (e: Event) => { newName = (e.target as HTMLInputElement).value.trim(); (document.querySelector(".ducky-go") as HTMLButtonElement | null)?.toggleAttribute("disabled", !NEW_NAME_RE.test(newName) || busy); } }),
+      h("button", { class: "btn small primary ducky-go", disabled: busy || !nameOk, onclick: () => void buy("rename", { name: newName }) }, `Buy · ${price("rename")}`),
+      h("div", { class: "hint" }, "3-16 letters, numbers, . _ -  Your password stays the same."));
+
+    body.replaceChildren(
+      ...(DUCKY_TEST_MODE ? [h("div", { class: "ducky-test" }, "TEST VERSION: nothing is charged yet.")] : []),
+      card("starter", "Starter package", "3 growing kits, 3 mixers and 50 blood. Only once.",
+        starterHave ? ownedBtn() : buyBtn("starter", () => void buy("starter"))),
+      card("color", "Name colour", colorHave ? "Your name has its own colour. Change it whenever you like." : "Your name in a colour of your own, over your head and in the chat.",
+        open === "color" ? h("button", { class: "btn small", onclick: () => { open = null; render(); } }, "Close") : h("button", { class: "btn small primary", disabled: busy, onclick: () => { open = "color"; render(); } }, colorHave ? "Change" : price("color")),
+        open === "color" ? colorInput : undefined),
+      card("fx", "Chat tool", "A ✨ next to the chat bar: shaky, wavy and rainbow text, and coloured text.",
+        fxHave ? ownedBtn() : buyBtn("fx", () => void buy("fx"))),
+      card("ad", "Advertise your room", `Your room is first in the door list for ${hours} hours. Buy again to add more time.`,
+        buyBtn("ad", () => void buy("ad"))),
+      card("rename", "Change your name", "Pick a new username. Your things, friends and room come with you.",
+        open === "rename" ? h("button", { class: "btn small", onclick: () => { open = null; render(); } }, "Close") : h("button", { class: "btn small primary", disabled: busy, onclick: () => { open = "rename"; render(); } }, price("rename")),
+        open === "rename" ? nameInput : undefined),
+      h("div", { class: "hint" }, DUCKY_TEST_MODE ? "When the machine opens for real you pay on a payment page, and come back to the game afterwards." : "You pay on a payment page, and come back to the game afterwards."));
+  }
+  render();
+
+  function close(): void {
+    if (closed) return;
+    closed = true;
+    el.remove();
+    onClose();
+  }
+  return { close };
+}

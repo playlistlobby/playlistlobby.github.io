@@ -75,6 +75,9 @@ import { openRecordShop, RecordShopApi } from "./recordShop";
 import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
 import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
+import { DuckyShopApi, openDuckyShop } from "./duckyShop";
+import { CHAT_COLORS, CHAT_EFFECTS, isChatEffect, isHexColor } from "../shared/ducky";
+import type { ChatEffect } from "../shared/ducky";
 import { figureAnimated } from "../designs";
 import { lighterStage, markLighterStep } from "../lighterHint";
 import { flappyRunStart, flappySubmit, watchFlappyBoard } from "../db";
@@ -103,6 +106,9 @@ import type { Ctx } from "../main";
 /** The hanger that floats above the bag of clothes in your own room (it's Habbo's own wardrobe icon). */
 const hangerImg = new Image();
 hangerImg.src = assetUrl("ui/hanger.png");
+/** the little pixel "dk" that floats over the Ducky machine (it is the Dankort mark: you pay with real money there) */
+const dkImg = new Image();
+dkImg.src = assetUrl("ui/dk.png");
 /** the game controller that floats over the arcade machine and the roulette table when you point at them (Habbo's silver controller icon) */
 const controllerImg = new Image();
 controllerImg.src = assetUrl("ui/controller.png");
@@ -193,7 +199,7 @@ const DIRS: Array<[number, number, number]> = [
   [0, -1, 0], [1, -1, 1], [1, 0, 2], [1, 1, 3], [0, 1, 4], [-1, 1, 5], [-1, 0, 6], [-1, -1, 7],
 ];
 
-interface Bubble { text: string; until: number }
+interface Bubble { text: string; until: number; /** the chat tool: how the text moves and its colour */ fx?: string; fc?: string }
 interface ActiveEmote { def: EmoteDef; start: number; lastFx: number }
 
 interface Player {
@@ -232,6 +238,8 @@ interface Player {
   spin?: number;
   /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
   npc?: boolean;
+  /** the colour of their name (bought at the Ducky machine; the server checks it, see the rules for players/<uid>/nc) */
+  nc?: string;
   /** sitting on a chair or couch (shown to everyone through players/<uid>/sit) */
   sit?: boolean;
   /** a player of a roulette game who dropped out (a refresh, a log out): kept in their chair, a little darker, until they are back or their 12 seconds are up */
@@ -265,6 +273,15 @@ function dirOf(from: Pt, to: Pt): number {
   const dx = Math.sign(to.x - from.x);
   const dy = Math.sign(to.y - from.y);
   return DIRS.find((d) => d[0] === dx && d[1] === dy)?.[2] ?? 2;
+}
+
+/** chat text made with the Ducky chat tool: letters that shake, wave or run through the rainbow, in a colour of the sender's choice */
+function fxText(text: string, fx?: string, fc?: string): HTMLElement {
+  const el = h("span", { class: "fxt" + (fx ? ` fx-${fx}` : ""), ...(fc ? { style: { color: fc } } : {}) });
+  if (fx === "wave" || fx === "shake" || fx === "rainbow") {
+    [...text].forEach((ch, i) => el.append(h("span", { class: "fxc", style: { animationDelay: `${(i * 90) % 1200}ms` } }, ch === " " ? "\u00a0" : ch)));
+  } else el.textContent = text;
+  return el;
 }
 
 function loadImg(src: string): HTMLImageElement {
@@ -364,6 +381,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let posterApi: PosterShopApi | null = null;
   let stashApi: StashApi | null = null;
   let ideasApi: IdeasBoardApi | null = null;
+  let duckyApi: DuckyShopApi | null = null;
+  function openDucky(): void { if (!duckyApi) duckyApi = openDuckyShop(stage, ctx, () => panel.refresh(), () => { duckyApi = null; }); }
   function openIdeas(): void { if (!ideasApi) ideasApi = openIdeasBoard(stage, ctx, () => { ideasApi = null; }); }
   let landlordApi: LandlordApi | null = null;
   let landlordBubble: Bubble | null = null;
@@ -413,12 +432,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const actionHint = h("div", { class: "action-hint hidden" });
   const input = h("input", { class: "chat-input", type: "text", maxLength: MAX_CHARS, placeholder: "Say something, or try /dance. Tap the floor to walk.", autocomplete: "off" });
   const sendBtn = h("button", { class: "btn primary", type: "submit" }, "Send");
-  const stage = h("div", { class: "stage" }, canvas, online, log, actionHint, roomTitle);
+  // the chat tool (Ducky machine): a sparkle next to the chat bar opens how the next lines look (moving text, a colour)
+  let chatFx: { fx?: ChatEffect; fc?: string } = {};
+  const fxBtn = h("button", { class: "chat-fx", type: "button", title: "Chat tool", "aria-label": "Chat tool", hidden: !me.owned.ducky_fx }, "✨") as HTMLButtonElement;
+  const fxPanel = h("div", { class: "fx-panel", hidden: true });
+  const stage = h("div", { class: "stage" }, canvas, online, log, actionHint, roomTitle, fxPanel);
   let greenScreen = false; // /greenscreen (Emil and the admin): a flat chroma-green room for filming
   const sideHost = h("div", { class: "side-host" });
   root.append(h("div", { class: "room" },
     h("div", { class: "room-main" }, stage, sideHost),
-    h("form", { class: "chat-bar", onsubmit: (e: Event) => { e.preventDefault(); send(); } }, input, sendBtn)));
+    h("form", { class: "chat-bar", onsubmit: (e: Event) => { e.preventDefault(); send(); } }, fxBtn, input, sendBtn)));
   // the chat on the picture shows 3 lines, and more while you're typing (the keyboard is open)
   input.addEventListener("focus", () => log.classList.add("open"));
   input.addEventListener("blur", () => log.classList.remove("open"));
@@ -532,6 +555,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
     else if (hoverObj && hoverObj.kind === "ideaboard") text = "Ideas board: post pictures and ideas";
+    else if (hoverObj && hoverObj.kind === "ducky") text = "Ducky machine: things for real money";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind ?? ""]?.states?.length ?? 0) > 1) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to use`;
@@ -811,7 +835,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "landlord") startLandlord();
@@ -865,6 +889,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
     if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
+    if (obj?.kind === "ducky") opts.push({ label: "Shop", target: "Ducky machine", action: () => startBag(obj.id) });
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
@@ -1218,6 +1243,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       chem: typeof v.chem === "number" ? v.chem : undefined,
       chud: typeof v.chud === "number" ? v.chud : undefined,
       spin: typeof v.spin === "number" ? v.spin : undefined,
+      nc: typeof v.nc === "string" && /^#[0-9a-fA-F]{6}$/.test(v.nc) ? v.nc : undefined,
       npc: v.sixty === true,
       sit: v.sit === true,
       faint: v.lay === true,
@@ -1359,6 +1385,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     posterApi?.close();
     stashApi?.close();
     ideasApi?.close();
+    duckyApi?.close();
     landlordApi?.close();
     sixtyShop?.close();
   }
@@ -1679,6 +1706,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "stash") { if (!stashApi) stashApi = openStashBox(stage, ctx, () => panel.refresh(), () => { stashApi = null; }); }
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "ideas") openIdeas();
+        else if (opens === "ducky") openDucky();
         else if (opens === "records") { if (!recordApi) recordApi = openRecordShop(stage, ctx, () => panel.refresh(), () => { recordApi = null; }); }
         else if (opens === "mixer") {
           if (mixerApi) { /* already open */ }
@@ -2514,10 +2542,27 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const playersRef = ref(db, `rooms/${roomId}/players`);
   const myRef = ref(db, `rooms/${roomId}/players/${me.uid}`);
   const chatRef = ref(db, `rooms/${roomId}/chat`);
+  function paintFx(): void {
+    fxBtn.classList.toggle("on", !!(chatFx.fx || chatFx.fc));
+    input.style.color = chatFx.fc ?? "";
+    input.classList.toggle("fx-big", chatFx.fx === "big");
+    const word = (v: string, on: boolean, label: string, click: () => void) => h("button", { class: "fx-opt" + (on ? " on" : ""), type: "button", onclick: click }, label);
+    fxPanel.replaceChildren(
+      h("div", { class: "fx-row" }, ...CHAT_EFFECTS.map((e) => word(e, chatFx.fx === e, { shake: "Shake", wave: "Wavy", rainbow: "Rainbow", pulse: "Pulse", big: "Big" }[e], () => { chatFx = { ...chatFx, fx: chatFx.fx === e ? undefined : e }; paintFx(); }))),
+      h("div", { class: "fx-row" }, ...CHAT_COLORS.map((c) => h("button", { class: "fx-sw" + (chatFx.fc === c ? " on" : ""), type: "button", style: { background: c }, "aria-label": c, onclick: () => { chatFx = { ...chatFx, fc: chatFx.fc === c ? undefined : c }; paintFx(); } }))),
+      h("div", { class: "fx-row" }, h("span", { class: "fx-prev" }, fxText("Sådan ser det ud", chatFx.fx, chatFx.fc)), h("button", { class: "fx-opt", type: "button", onclick: () => { chatFx = {}; paintFx(); } }, "Clear")));
+  }
+  fxBtn.addEventListener("click", () => { fxPanel.hidden = !fxPanel.hidden; if (!fxPanel.hidden) paintFx(); });
+  const syncFxBtn = (): void => { fxBtn.hidden = !me.owned.ducky_fx; if (fxBtn.hidden) { chatFx = {}; fxPanel.hidden = true; } };
+  window.addEventListener("pocket-changed", syncFxBtn);
+  /** the colour of your name changed (Ducky machine): everyone sees it through your presence */
+  const onNameColor = (e: Event): void => { const c = (e as CustomEvent<string>).detail; const mp = mine(); if (mp) mp.nc = c; void update(myRef, { nc: c }).catch(() => undefined); };
+  window.addEventListener("name-color", onNameColor);
+  unsubs.push(() => { window.removeEventListener("pocket-changed", syncFxBtn); window.removeEventListener("name-color", onNameColor); });
   /** a chat line goes to the room (where it fades after 15 minutes) and, in the same write, to chatLog: the admin's permanent archive (nobody can change or delete an entry) */
   function sendChat(text: string): void {
     const id = push(chatRef).key!;
-    const msg = { uid: me.uid, name: shownName, text, ts: serverTimestamp() };
+    const msg = { uid: me.uid, name: shownName, text, ts: serverTimestamp(), ...(me.owned.ducky_fx && chatFx.fx ? { fx: chatFx.fx } : {}), ...(me.owned.ducky_fx && chatFx.fc ? { fc: chatFx.fc } : {}) };
     update(ref(db), { [`rooms/${roomId}/chat/${id}`]: msg, [`chatLog/${id}`]: { ...msg, room: roomId } }).catch(console.warn);
   }
   const eventsRef = ref(db, `rooms/${roomId}/events`);
@@ -2568,7 +2613,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     started = true;
     const spawn = frozen ? (asLandlord ? { x: LANDLORD.x, y: LANDLORD.y } : { x: SIXTY.x, y: SIXTY.y }) : spawnTile(); // as 6ixty (or the landlord) you stand exactly where he stands
     const startDir = frozen ? (asLandlord ? LANDLORD.dir : SIXTY.dir) : 2;
-    const mineP = makePlayer(me.uid, { name: shownName, figure: shownFigure(), x: spawn.x, y: spawn.y, dir: startDir, sixty: asSixty });
+    const mineP = makePlayer(me.uid, { name: shownName, figure: shownFigure(), ...(me.nameColor ? { nc: me.nameColor } : {}), x: spawn.x, y: spawn.y, dir: startDir, sixty: asSixty });
     players.set(me.uid, mineP);
     if (opts.intro && isOwnRoom) {
       // first wake-up: start under the covers (drawn lying on the bed), get up when the eyes have opened
@@ -2605,7 +2650,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (me.chemUntil > serverNow()) mineP.chem = me.chemUntil;
     if (burning) { mineP.smoke = burning; mineP.smokeKind = SMOKABLE[burningItem!.item].kind; }
     void onDisconnect(myRef).remove();
-    set(myRef, { name: shownName, figure: shownFigure(), x: sleepingIn ? headTile().x : spawn.x, y: sleepingIn ? headTile().y : spawn.y, dir: startDir, ts: serverTimestamp(), ...(sleepingIn ? { bed: true } : {}), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.spin ? { spin: mineP.spin } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
+    set(myRef, { name: shownName, figure: shownFigure(), ...(me.nameColor ? { nc: me.nameColor } : {}), x: sleepingIn ? headTile().x : spawn.x, y: sleepingIn ? headTile().y : spawn.y, dir: startDir, ts: serverTimestamp(), ...(sleepingIn ? { bed: true } : {}), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.spin ? { spin: mineP.spin } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
@@ -2710,6 +2755,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.chem = typeof v.chem === "number" ? v.chem : undefined;
         p.chud = typeof v.chud === "number" ? v.chud : undefined;
         p.spin = typeof v.spin === "number" ? v.spin : undefined;
+        p.nc = typeof v.nc === "string" && /^#[0-9a-fA-F]{6}$/.test(v.nc) ? v.nc : undefined;
         p.npc = v.sixty === true;
         p.sit = v.sit === true;
         p.faint = v.lay === true;
@@ -2734,7 +2780,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (!disposed && mineNow) {
             const t = currentTile(mineNow);
             void onDisconnect(myRef).remove();
-            set(myRef, { name: shownName, figure: shownFigure(), x: t.x, y: t.y, dir: mineNow.dir, ts: serverTimestamp(), ...(asSixty ? { sixty: true } : {}) }).catch(() => undefined);
+            set(myRef, { name: shownName, figure: shownFigure(), ...(me.nameColor ? { nc: me.nameColor } : {}), x: t.x, y: t.y, dir: mineNow.dir, ts: serverTimestamp(), ...(asSixty ? { sixty: true } : {}) }).catch(() => undefined);
           }
           return;
         }
@@ -2749,10 +2795,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (!m) return;
         const age = typeof m.ts === "number" ? serverNow() - m.ts : 0;
         if (age >= CHAT_LIFE_MS) { void remove(snap.ref).catch(() => undefined); return; } // already expired: not shown, cleaned up
-        addLine(h("div", { class: "line" }, h("b", { class: m.uid === me.uid ? "me" : "" }, m.name + ": "), m.text), CHAT_LIFE_MS - age, snap.ref);
-        const p = players.get(m.uid);
+        const sp = players.get(m.uid);
+        const fx = isChatEffect(m.fx) ? m.fx : undefined, fc = isHexColor(m.fc) ? m.fc : undefined;
+        const nameEl = h("b", { class: m.uid === me.uid ? "me" : "", ...(sp?.nc ? { style: { color: sp.nc } } : {}) }, m.name + ": ");
+        addLine(h("div", { class: "line" }, nameEl, fx || fc ? fxText(m.text, fx, fc) : m.text), CHAT_LIFE_MS - age, snap.ref);
+        const p = sp;
         const recent = typeof m.ts === "number" ? m.ts > joinedAt - 15000 : true;
-        if (p && recent) p.bubble = { text: m.text, until: performance.now() + BUBBLE_MS };
+        if (p && recent) p.bubble = { text: m.text, until: performance.now() + BUBBLE_MS, fx, fc };
       }, () => undefined),
       onChildAdded(query(eventsRef, orderByChild("ts"), limitToLast(10)), (snap) => {
         const ev = snap.val();
@@ -3447,7 +3496,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
       const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
-      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records")) {
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
@@ -3476,11 +3525,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const noHint = k.opens === "mixer" || k.opens === "stash"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
+        const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky"; // the mixer glows like the rest, but has no little icon floating over it
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" ? true : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "ducky" ? dkImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox floats a little house, the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -3558,8 +3607,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { id: "", x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), depth: f.x + k.w + f.y + k.h - 1 };
   }
 
-  function drawBubble(text: string, name: string, cx: number, bottomY: number, alpha: number): void {
-    const font = `${Math.round(12 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
+  /** a chat bubble over a player; `look` is what the Ducky machine sold them: a name colour, and moving or coloured text (the chat tool) */
+  function drawBubble(text: string, name: string, cx: number, bottomY: number, alpha: number, look?: { nc?: string; fx?: string; fc?: string }): void {
+    const fxName = look?.fx, fc = look?.fc, now = performance.now();
+    const px = Math.round(12 * Math.max(1, scale) * (fxName === "big" ? 1.35 : 1));
+    const font = `${px}px Verdana, 'Apple Color Emoji', sans-serif`;
     g.font = font;
     const maxW = 190 * Math.max(1, scale);
     const words = text.split(" ");
@@ -3570,13 +3622,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (g.measureText(trial).width > maxW && cur) { lines.push(cur); cur = w; } else cur = trial;
     }
     if (cur) lines.push(cur);
-    g.font = `bold ${font}`;
+    const nameFont = `bold ${Math.round(12 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
+    g.font = nameFont;
     const nameW = g.measureText(name + ": ").width;
     g.font = font;
-    const lh = 15 * Math.max(1, scale);
+    const lh = px * 1.25;
+    const nlh = 15 * Math.max(1, scale);
     const w = Math.max(...lines.map((l) => g.measureText(l).width)) + 18;
     const boxW = Math.max(w, nameW + 18);
-    const boxH = lines.length * lh + lh + 8;
+    const boxH = lines.length * lh + nlh + 8;
     const x = cx - boxW / 2;
     const y = bottomY - boxH - 8;
     g.save();
@@ -3593,12 +3647,28 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.lineTo(cx, y + boxH + 7);
     g.lineTo(cx + 5, y + boxH);
     g.fill();
-    g.fillStyle = "#111";
     g.textBaseline = "top";
-    g.font = `bold ${font}`;
+    g.font = nameFont;
+    if (look?.nc) { g.strokeStyle = "rgba(0,0,0,0.55)"; g.lineWidth = 2.5; g.lineJoin = "round"; g.strokeText(name, x + 9, y + 5); g.fillStyle = look.nc; } else g.fillStyle = "#111";
     g.fillText(name, x + 9, y + 5);
     g.font = font;
-    lines.forEach((l, i) => g.fillText(l, x + 9, y + 5 + lh * (i + 1)));
+    g.fillStyle = fc ?? "#111";
+    if (fc) { g.strokeStyle = "rgba(0,0,0,0.5)"; g.lineWidth = 2; g.lineJoin = "round"; }
+    lines.forEach((l, li) => {
+      const ty = y + 5 + nlh + lh * li;
+      if (!fxName && !fc) { g.fillText(l, x + 9, ty); return; }
+      if (fxName === "pulse") g.globalAlpha = alpha * (0.55 + 0.45 * Math.abs(Math.sin(now / 260)));
+      let tx = x + 9;
+      [...l].forEach((ch, i) => {
+        let dx = 0, dy = 0;
+        if (fxName === "shake") { dx = Math.sin(now / 37 + i * 7.1 + li) * 1.3 * Math.max(1, scale); dy = Math.cos(now / 41 + i * 5.3) * 1.3 * Math.max(1, scale); }
+        else if (fxName === "wave") dy = Math.sin(now / 170 + i * 0.7) * 3 * Math.max(1, scale);
+        if (fxName === "rainbow") g.fillStyle = `hsl(${(now / 7 + i * 28) % 360},90%,48%)`;
+        if (fc) g.strokeText(ch, tx + dx, ty + dy);
+        g.fillText(ch, tx + dx, ty + dy);
+        tx += g.measureText(ch).width;
+      });
+    });
     g.restore();
   }
 
@@ -3998,7 +4068,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -4275,7 +4345,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.beginPath();
           g.roundRect(feet.x - tw / 2, feet.y + 7 * scale, tw, 14 * Math.max(1, scale), 5);
           g.fill();
-          g.fillStyle = p.npc ? "#ff3b3b" : p.uid === me.uid ? "#ffe27a" : "#fff";
+          g.fillStyle = p.npc ? "#ff3b3b" : p.nc ? p.nc : p.uid === me.uid ? "#ffe27a" : "#fff";
           g.textBaseline = "top";
           g.textAlign = "center";
           g.fillText(shownLabel, feet.x, feet.y + 9 * scale);
@@ -4291,7 +4361,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (p.bubble && p.bubble.until > now) {
         const left = p.bubble.until - now;
         const b = p.bubble;
-        bubbles.push(() => drawBubble(b.text, p.name, feet.x, feet.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1));
+        bubbles.push(() => drawBubble(b.text, p.name, feet.x, feet.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1, { nc: p.nc, fx: b.fx, fc: b.fc }));
       }
     }
     hitboxes = boxes;

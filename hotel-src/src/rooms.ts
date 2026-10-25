@@ -38,7 +38,7 @@ export interface FurniKind {
   /** drawn from a Habbo .nitro file in public/ instead of as a box */
   nitro?: string;
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas";
+  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -125,6 +125,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   rtable: { id: "rtable", label: "Roulette table", icon: "🔫", w: 2, h: 1, height: 36, color: "#6b5a48", placeable: false, nitro: "furni/f_makeshifttable.nitro", rotatable: true, surface: 36 },
   rchair: { id: "rchair", label: "Roulette chair", icon: "🪑", w: 1, h: 1, height: 38, color: "#6b5a48", placeable: false, nitro: "furni/f_cratechairlight.nitro", rotatable: true, seat: true, seatHeight: 14 },
   gunrack: { id: "gunrack", label: "Gun rack", icon: "🔫", w: 1, h: 1, height: 20, color: "#6b5a48", placeable: false, nitro: "furni/f_gunrack.nitro", rotatable: true, small: true },
+  // the Ducky machine in the shop room, on the left wall next to the record table: things for real money (a starter package, a name colour, a chat tool, a room advert, a new name)
+  ducky: { id: "ducky", label: "Ducky machine", icon: "🦆", w: 1, h: 1, height: 78, color: "#e8a020", placeable: false, nitro: "furni/ducky_machine.nitro", rotatable: true, fixed: true, opens: "ducky" },
   // the ideas board on the basement's left wall (Habbo's cork board with pictures): click it and the board opens, where everybody posts pictures and ideas
   ideaboard: { id: "ideaboard", label: "Ideas board", icon: "💡", w: 1, h: 1, height: 60, color: "#a8793c", placeable: false, nitro: "furni/f_ideaboard.nitro", rotatable: true, flat: true, wall: true, opens: "ideas" },
   // the alley dumpster next to the Flappy Bird machine: search it (every 10 minutes) for a cigarette or a dead cat
@@ -297,6 +299,8 @@ export function shopDef(picks: string[]): RoomDef {
     { id: "shop_poster", kind: "shopposter", x: 10, y: 0, dir: 4 },
     // the record table on the left (a grey turntable table): mystery CDs, the album and the Freakme CD
     { id: "shop_table", kind: "vinyltable", x: 0, y: 6, dir: 4 }, { id: "shop_records", kind: "recordplayer", x: 0, y: 6, dir: 4 },
+    // the Ducky machine along the same wall, two tiles further down
+    { id: "shop_ducky", kind: "ducky", x: 0, y: 8, dir: 2 },
   ];
   picks.slice(0, 4).forEach((kind, i) => {
     if (!FURNI_KINDS[kind]) return;
@@ -348,6 +352,8 @@ export interface RoomMeta {
   owner: string;
   ownerName: string;
   name: string;
+  /** until when the room is advertised (bought at the Ducky machine; written only by the server): it is first in the door list */
+  adUntil?: number;
   access: Access | "friends" | "invite";
   w: number;
   h: number;

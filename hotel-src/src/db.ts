@@ -30,6 +30,8 @@ export interface Profile {
   /** drops of blood: the hotel's currency */
   blood: number;
   owned: Record<string, true>;
+  /** the name colour bought at the Ducky machine (users/<uid>/nameColor; "" until it is read) */
+  nameColor?: string;
   /** the account's start (ms) and what was bought today from the vending machine's limited stock */
   joinAt: number;
   vend: Record<string, { day: number; n: number }>;
@@ -207,6 +209,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     syringeDay: v.syringeDay ?? 0,
     isAdmin,
     seenDoor: !!v.seenDoor,
+    nameColor: typeof v.nameColor === "string" && /^#[0-9a-f]{6}$/i.test(v.nameColor) ? v.nameColor : undefined,
     decorator: v.decorator === true,
     commands: v.commands === true,
     sixty: { knifeAt: 0, syringeGiven: false },
