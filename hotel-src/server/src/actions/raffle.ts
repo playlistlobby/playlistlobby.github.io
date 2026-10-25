@@ -1,9 +1,9 @@
 // The raffle machine in the shop room (see src/shared/raffle.ts): buy tickets for blood, and every day at 20:00 Danish time one ticket wins a rare piece of furniture.
 // There is no timer on the server: the first request after 20:00 (anybody standing in the shop asks every little while, and so does everybody who logs in) runs the draw.
-import { Action, int, requireInRoom } from "./util";
+import { Action, int, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv } from "../../../src/shared/economy";
-import { nextDrawAt, parseRound, parseTickets, RAFFLE_POOL, RAFFLE_PRICE, RAFFLE_TICKETS, RaffleRound, ticketsSold } from "../../../src/shared/raffle";
+import { nextDrawAt, parseRound, parseTickets, RAFFLE_MAX_PER_PLAYER, RAFFLE_POOL, RAFFLE_PRICE, RAFFLE_TICKETS, RaffleRound, ticketsSold } from "../../../src/shared/raffle";
 
 const ROUND = "raffle/round", TICKETS = "raffle/tickets", LAST = "raffle/last";
 
@@ -82,6 +82,8 @@ export const raffleBuy: Action = {
     const left = RAFFLE_TICKETS - ticketsSold(tickets);
     if (left <= 0) fail("The raffle is sold out. Wait for the draw.");
     if (n > left) fail(left === 1 ? "There is only 1 ticket left." : `There are only ${left} tickets left.`);
+    const have = tickets[c.uid] ?? 0;
+    if (have + n > RAFFLE_MAX_PER_PLAYER) fail(have >= RAFFLE_MAX_PER_PLAYER ? `You already have the most tickets one player can hold (${RAFFLE_MAX_PER_PLAYER}).` : `One player can hold ${RAFFLE_MAX_PER_PLAYER} tickets at most: you can buy ${RAFFLE_MAX_PER_PLAYER - have} more.`);
     const w = await c.user();
     const cost = n * RAFFLE_PRICE;
     if (w.s.blood < cost) fail(`You need ${cost - w.s.blood} more drops`);
@@ -92,6 +94,27 @@ export const raffleBuy: Action = {
     else c.extra[`${TICKETS}/${c.uid}`] = mine;
     c.extra[ROUND] = { ...round, sold: ticketsSold(tickets) + n };
     return { tickets: mine, left: left - n, cost };
+  },
+};
+
+/** Admin: takes a player out of the raffle (all their tickets). With `refund` the blood comes back (100 per ticket); without it the blood stays gone. */
+export const raffleRemove: Action = {
+  locks: async (c, a) => ["raffle", `user:${String(a?.uid ?? "")}`],
+  async run(c, a) {
+    if (!c.isAdmin) fail("Only the admin can do that.");
+    const uid = text(a.uid, /^[A-Za-z0-9]{10,40}$/, "player");
+    const tickets = await holders(c);
+    const n = tickets[uid];
+    if (!n) fail("That player has no tickets.");
+    const round = parseRound(await c.db.get(ROUND));
+    c.extra[`${TICKETS}/${uid}`] = null;
+    if (round) c.extra[ROUND] = { ...round, sold: Math.max(0, ticketsSold(tickets) - n) };
+    if (a.refund) {
+      const w = await c.user(uid);
+      w.s.blood += n * RAFFLE_PRICE;
+      c.note = `raffle refund ${n}`;
+    }
+    return { removed: n, refunded: !!a.refund };
   },
 };
 

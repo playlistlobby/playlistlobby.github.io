@@ -169,6 +169,32 @@ console.log("--- the odds: 5 tickets against 25 (5/30 and 25/30)");
   check(`the 5 ticket player won about 5/30 (${few} of ${ROUNDS})`, few >= 1 && few <= 22, String(few));
   check(`the 25 ticket player won about 25/30 (${many} of ${ROUNDS})`, many >= 38 && many <= 59, String(many));
 }
+console.log("--- one account holds 30 tickets at most");
+await reset();
+{
+  const big = await fresh("t_raf_big", { blood: 9000 });
+  await inShop(big);
+  bad("31 at once", await act(big, "raffleBuy", { n: 31 }));
+  ok("30 is fine", await act(big, "raffleBuy", { n: 30 }));
+  bad("one more is not", await act(big, "raffleBuy", { n: 1 }));
+  check("(30 tickets, 6000 blood left)", (await owner("GET", `raffle/tickets/${big.uid}`)) === 30 && (await state(big)).blood === 6000);
+}
+
+console.log("--- the admin takes people out of the pool");
+await reset();
+{
+  const p1 = await fresh("t_raf_p1", { blood: 1000 }), p2 = await fresh("t_raf_p2", { blood: 1000 });
+  await inShop(p1); await inShop(p2);
+  await act(p1, "raffleBuy", { n: 3 }); await act(p2, "raffleBuy", { n: 2 });
+  const adm = await fresh("adminsidia", { blood: 0 }); await act(adm, "sync");
+  bad("a player can't remove anybody", await act(p1, "raffleRemove", { uid: p2.uid, refund: true }));
+  bad("not a player without tickets", await act(adm, "raffleRemove", { uid: adm.uid, refund: true }));
+  ok("the admin removes p1 with a refund", await act(adm, "raffleRemove", { uid: p1.uid, refund: true }));
+  check("p1's 3 tickets are gone and the 300 blood is back", (await owner("GET", `raffle/tickets/${p1.uid}`)) === null && (await state(p1)).blood === 1000, String((await state(p1)).blood));
+  check("the round counts 2 sold", (await owner("GET", "raffle/round")).sold === 2);
+  ok("removing p2 without a refund", await act(adm, "raffleRemove", { uid: p2.uid, refund: false }));
+  check("p2 lost the blood for good (800)", (await state(p2)).blood === 800 && (await owner("GET", "raffle/tickets")) === null);
+}
 await reset();
 
 console.log(`\n${passes} passed, ${fails} failed`);

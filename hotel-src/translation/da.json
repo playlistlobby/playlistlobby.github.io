@@ -9538,5 +9538,35 @@
   "en": "Dragon lamp",
   "da": "Drage-lampe",
   "where": "src/shared/furniture.ts"
+ },
+ "N1376": {
+  "en": "You hold the most tickets one player can have (30).",
+  "da": "Du har det højeste antal lodder en spiller kan have (30).",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1377": {
+  "en": "A ticket costs {RAFFLE_PRICE} blood, and one player can hold {RAFFLE_MAX_PER_PLAYER}. The blood is gone for good.",
+  "da": "Et lod koster {RAFFLE_PRICE} blod, og en spiller kan have {RAFFLE_MAX_PER_PLAYER}. Blodet er væk for altid.",
+  "where": "src/ui/raffleShop.ts"
+ },
+ "N1378": {
+  "en": "Only the admin can do that.",
+  "da": "Kun admin kan gøre det.",
+  "where": "server/src/actions/raffle.ts"
+ },
+ "N1379": {
+  "en": "That player has no tickets.",
+  "da": "Den spiller har ingen lodder.",
+  "where": "server/src/actions/raffle.ts"
+ },
+ "N1380": {
+  "en": "You already have the most tickets one player can hold ({RAFFLE_MAX_PER_PLAYER}).",
+  "da": "Du har allerede det højeste antal lodder en spiller kan have ({RAFFLE_MAX_PER_PLAYER}).",
+  "where": "server/src/actions/raffle.ts"
+ },
+ "N1381": {
+  "en": "One player can hold {RAFFLE_MAX_PER_PLAYER} tickets at most: you can buy {…} more.",
+  "da": "En spiller kan højst have {RAFFLE_MAX_PER_PLAYER} lodder: du kan købe {…} mere.",
+  "where": "server/src/actions/raffle.ts"
  }
 }

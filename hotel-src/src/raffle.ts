@@ -35,6 +35,7 @@ export function watchRaffle(uid: string, cb: (v: RaffleView) => void): () => voi
 export const raffleBuy = (p: Profile, n: number): Promise<{ tickets: number; left: number; cost: number }> => call(p, "raffleBuy", { n });
 /** Runs the draw if its time has come (anybody may ask). */
 export const raffleTick = (p: Profile): Promise<unknown> => call(p, "raffleTick");
+export const raffleRemove = (p: Profile, uid: string, refund: boolean): Promise<{ removed: number; refunded: boolean }> => call(p, "raffleRemove", { uid, refund });
 export const raffleCollect = (p: Profile): Promise<{ items: string[]; more: boolean }> => call(p, "raffleCollect");
 
 export const prizeName = (kind: string): string => FURNI_KINDS[kind]?.label ?? itemDef(kind)?.name ?? kind;

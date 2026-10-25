@@ -19,7 +19,7 @@ import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
 import { duckyBuy } from "./ducky";
 import { craft, mine } from "./mines";
 import { rollDice } from "./dice";
-import { raffleBuy, raffleCollect, raffleTick } from "./raffle";
+import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
 
 /** Every thing the browser may ask for. Anything not listed here cannot be done: the browser can't write economy data itself. */
 export const ACTIONS: Record<string, Action> = {
@@ -34,7 +34,7 @@ export const ACTIONS: Record<string, Action> = {
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   ideaPost, ideaComment, ideaLike, ideaDelete,
   duckyBuy, rollDice,
-  raffleBuy, raffleCollect, raffleTick,
+  raffleBuy, raffleCollect, raffleRemove, raffleTick,
   mine, craft,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

@@ -6,6 +6,8 @@
 //   raffle/prizes/<uid>/<drawAt>  a prize that is waiting at the machine because the winner's pockets were full
 
 export const RAFFLE_TICKETS = 50;
+/** the most tickets one account can hold in a round */
+export const RAFFLE_MAX_PER_PLAYER = 30;
 /** blood per ticket (50 tickets = 5000 blood in all) */
 export const RAFFLE_PRICE = 100;
 /** the hour (Danish time) of the draw */

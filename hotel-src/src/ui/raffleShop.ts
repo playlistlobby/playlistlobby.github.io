@@ -3,9 +3,11 @@ import { h, toast } from "./dom";
 import { BLOOD_ICON, furniIcon, onFurniIcon } from "../items";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
-import { prizeName, raffleBuy, raffleCollect, raffleTick, watchRaffle } from "../raffle";
+import { prizeName, raffleBuy, raffleCollect, raffleRemove, raffleTick, watchRaffle } from "../raffle";
+import { get, ref } from "firebase/database";
+import { db } from "../firebase";
 import type { RaffleView } from "../raffle";
-import { countdownText, RAFFLE_PRICE, RAFFLE_TICKETS } from "../shared/raffle";
+import { countdownText, RAFFLE_MAX_PER_PLAYER, RAFFLE_PRICE, RAFFLE_TICKETS } from "../shared/raffle";
 import { serverNow } from "../db";
 import type { Ctx } from "../main";
 
@@ -28,6 +30,31 @@ export function openRaffleShop(host: HTMLElement, ctx: Ctx, onChange: () => void
   const stopIcons = onFurniIcon(() => render());
   const clock = window.setInterval(() => tick(), 1000);
   void raffleTick(me).catch(() => undefined); // (a draw that is due, or no round yet)
+
+  // admin: who holds the tickets (names are looked up once per player)
+  const names = new Map<string, string>();
+  async function remove(uid: string, refund: boolean): Promise<void> {
+    if (busy) return;
+    busy = true;
+    render();
+    try {
+      const r = await raffleRemove(me, uid, refund);
+      toast(`Removed ${r.removed} ticket${r.removed === 1 ? "" : "s"}${r.refunded ? " and gave the blood back" : ""}.`);
+      onChange();
+    } catch (err) { toast((err as Error).message || "That didn't work.", "err"); }
+    busy = false;
+    render();
+  }
+  function adminList(): HTMLElement {
+    const rows = Object.entries(view.tickets).sort((a, b) => b[1] - a[1]);
+    for (const [uid] of rows) if (!names.has(uid)) { names.set(uid, uid.slice(0, 6)); void get(ref(db, `profiles/${uid}/name`)).then((s) => { if (typeof s.val() === "string") { names.set(uid, s.val() as string); render(); } }, () => undefined); }
+    return h("div", { class: "raffle-admin" },
+      h("div", { class: "raffle-admin-t" }, `Admin: the pool (${view.sold} tickets, ${rows.length} players)`),
+      ...(rows.length ? rows.map(([uid, n]) => h("div", { class: "raffle-admin-row" },
+        h("span", { class: "raffle-admin-name" }, `${names.get(uid) ?? uid} · ${n}`),
+        h("button", { class: "btn small", type: "button", disabled: busy, title: "Remove and give the blood back", onclick: () => void remove(uid, true) }, "Remove + refund"),
+        h("button", { class: "btn small", type: "button", disabled: busy, title: "Remove, the blood stays gone", onclick: () => void remove(uid, false) }, "Remove"))) : [h("div", { class: "hint" }, "Nobody has a ticket.")]));
+  }
 
   const mine = (): number => view.tickets[me.uid] ?? 0;
   const left = (): number => Math.max(0, RAFFLE_TICKETS - view.sold);
@@ -81,7 +108,8 @@ export function openRaffleShop(host: HTMLElement, ctx: Ctx, onChange: () => void
     if (closed) return;
     const r = view.round;
     const have = mine();
-    const max = Math.max(1, Math.min(left(), Math.floor(me.blood / RAFFLE_PRICE) || 1));
+    const room = RAFFLE_MAX_PER_PLAYER - have; // (one account holds 30 at most)
+    const max = Math.max(1, Math.min(left(), room, Math.floor(me.blood / RAFFLE_PRICE) || 1));
     if (qty > max) qty = max;
     if (qty < 1) qty = 1;
     const chance = view.sold > 0 ? Math.round((have / view.sold) * 100) : 0;
@@ -99,17 +127,18 @@ export function openRaffleShop(host: HTMLElement, ctx: Ctx, onChange: () => void
       h("div", { class: "raffle-row" }, h("span", {}, "Draw in"), h("b", { class: "raffle-count" }, r ? (serverNow() >= r.drawAt ? "Drawing…" : countdownText(r.drawAt - serverNow())) : "…")),
       h("div", { class: "raffle-row" }, h("span", {}, "Tickets left"), h("b", {}, `${left()} / ${RAFFLE_TICKETS}`)),
       h("div", { class: "raffle-row" }, h("span", {}, "Yours"), h("b", {}, have ? `${have} · ${chance}% chance` : "none")),
-      soldOut ? h("div", { class: "hint" }, "Sold out. The draw is at 20:00.") : h("div", { class: "raffle-buy" },
+      soldOut ? h("div", { class: "hint" }, "Sold out. The draw is at 20:00.") : room <= 0 ? h("div", { class: "hint" }, "You hold the most tickets one player can have (30).") : h("div", { class: "raffle-buy" },
         h("button", { class: "btn small", type: "button", disabled: busy || qty <= 1, onclick: () => { qty = Math.max(1, qty - 1); render(); } }, "−"),
         h("b", { class: "raffle-qty" }, String(qty)),
         h("button", { class: "btn small", type: "button", disabled: busy || qty >= max, onclick: () => { qty = Math.min(max, qty + 1); render(); } }, "+"),
         h("button", { class: "btn small", type: "button", disabled: busy || qty >= max, onclick: () => { qty = max; render(); } }, "Max"),
         h("button", { class: "btn small primary", type: "button", disabled: busy || me.blood < RAFFLE_PRICE, onclick: () => void buy() }, ...(busy ? ["…"] : ["Buy ", ...blood(cost)]))),
-      h("div", { class: "hint" }, `A ticket costs ${RAFFLE_PRICE} blood. The blood is gone for good.`),
+      h("div", { class: "hint" }, `A ticket costs ${RAFFLE_PRICE} blood, and one player can hold ${RAFFLE_MAX_PER_PLAYER}. The blood is gone for good.`),
       view.waiting.length ? h("div", { class: "raffle-win" },
         h("div", {}, `🎉 You won the ${prizeName(view.waiting[0])}! It waits here until there is room in your pockets.`),
         h("button", { class: "btn small primary", type: "button", disabled: busy, onclick: () => void collect() }, "Take it")) : h("span", {}),
-      lastLine ? h("div", { class: "hint raffle-last" }, lastLine) : h("span", {}));
+      lastLine ? h("div", { class: "hint raffle-last" }, lastLine) : h("span", {}),
+      me.isAdmin ? adminList() : h("span", {}));
   }
   render();
 
