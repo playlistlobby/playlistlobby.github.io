@@ -199,8 +199,8 @@ console.log("--- roulette: the 24 hour limit counts the stakes");
 {
   await clear();
   const a = await player("t_rl_m1", 5000);
-  for (let i = 0; i < 2; i++) { ok(`500 on the table, round ${i + 1}`, await act(a, "rouletteOpen", { stake: 500 })); await act(a, "rouletteLeave"); }
-  bad("the third 500 goes over 1000 in 24 hours", await act(a, "rouletteOpen", { stake: 500 }));
+  for (let i = 0; i < 4; i++) { ok(`500 on the table, round ${i + 1}`, await act(a, "rouletteOpen", { stake: 500 })); await act(a, "rouletteLeave"); }
+  bad("the fifth 500 goes over 2000 in 24 hours", await act(a, "rouletteOpen", { stake: 500 }));
   await owner("PUT", `users/${a.uid}/noTradeLimit`, true);
   ok("an account without the limit can", await act(a, "rouletteOpen", { stake: 500 }));
   await act(a, "rouletteLeave");
