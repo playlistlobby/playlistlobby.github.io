@@ -72,6 +72,8 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 }
 
 import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
+import { MINES_H, MINES_ID, MINES_PIECES, MINES_W } from "./shared/mines";
+export { MINES_ID };
 import { BAG_SKINS, BED_SKINS } from "./shared/skins";
 export type { ShopPiece } from "./shared/furniture";
 export { SHOP_KIND_PREFIX, SHOP_PIECES };
@@ -129,6 +131,19 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   gunrack: { id: "gunrack", label: "Gun rack", icon: "🔫", w: 1, h: 1, height: 20, color: "#6b5a48", placeable: false, nitro: "furni/f_gunrack.nitro", rotatable: true, small: true },
   // the pay2win machine in the shop room, on the left wall next to the record table: things for real money (a starter package, a name colour, a chat tool, a room advert, a new name)
   ducky: { id: "ducky", label: "pay2win", icon: "💸", w: 1, h: 1, height: 78, color: "#e8a020", placeable: false, nitro: "furni/ducky_machine.nitro", rotatable: true, fixed: true, opens: "ducky" },
+  // ---- the mines (a door in the basement): ore rocks to mine, an anvil to craft on, and things to look at (all fixed pieces, only drawn here) ----
+  mrock: { id: "mrock", label: "Iron rock", icon: "🪨", w: 1, h: 1, height: 40, color: "#5b4a40", placeable: false, nitro: "furni/mine_rock.nitro", rotatable: true, fixed: true, opens: "mine" },
+  mbench: { id: "mbench", label: "Crafting bench", icon: "⚒️", w: 1, h: 1, height: 36, color: "#4a4f57", placeable: false, nitro: "furni/mine_anvil.nitro", rotatable: true, fixed: true, opens: "craft" },
+  mlogs: { id: "mlogs", label: "Logs", icon: "🪵", w: 1, h: 2, height: 40, color: "#7a4e2a", placeable: false, nitro: "furni/mine_logs.nitro", rotatable: true, fixed: true },
+  mballs: { id: "mballs", label: "Iron balls", icon: "⚫", w: 1, h: 1, height: 24, color: "#333", placeable: false, nitro: "furni/mine_balls.nitro", rotatable: true, fixed: true },
+  msacks: { id: "msacks", label: "Sacks", icon: "🎒", w: 1, h: 1, height: 30, color: "#a89878", placeable: false, nitro: "furni/mine_sacks.nitro", rotatable: true, fixed: true },
+  mcart: { id: "mcart", label: "Mine cart", icon: "🛒", w: 1, h: 1, height: 34, color: "#555", placeable: false, nitro: "furni/mine_cart.nitro", rotatable: true, fixed: true },
+  mtools: { id: "mtools", label: "Tool cart", icon: "🧰", w: 1, h: 1, height: 36, color: "#555", placeable: false, nitro: "furni/mine_tools.nitro", rotatable: true, fixed: true },
+  mpick: { id: "mpick", label: "Dirt and a pickaxe", icon: "⛏️", w: 1, h: 1, height: 24, color: "#6b4a2a", placeable: false, nitro: "furni/mine_pick.nitro", rotatable: true, fixed: true },
+  mskull: { id: "mskull", label: "Longhorn skull", icon: "💀", w: 1, h: 1, height: 22, color: "#ddd", placeable: false, nitro: "furni/mine_skull.nitro", rotatable: true, fixed: true },
+  mbigrock: { id: "mbigrock", label: "Big rock", icon: "🪨", w: 2, h: 3, height: 70, color: "#6a7a66", placeable: false, nitro: "furni/mine_bigrock.nitro", rotatable: true, fixed: true },
+  mspire: { id: "mspire", label: "Rock spire", icon: "🪨", w: 1, h: 1, height: 70, color: "#5b3f33", placeable: false, nitro: "furni/mine_spire.nitro", rotatable: true, fixed: true },
+  mtorch: { id: "mtorch", label: "Torch", icon: "🔥", w: 1, h: 1, height: 60, color: "#c85", placeable: false, nitro: "furni/mine_torch.nitro", rotatable: true, fixed: true, flat: true, wall: true, wallArt: { left: 0, back: 2 } },
   // the ideas board on the basement's left wall (Habbo's cork board with pictures): click it and the board opens, where everybody posts pictures and ideas
   ideaboard: { id: "ideaboard", label: "Ideas board", icon: "💡", w: 1, h: 1, height: 60, color: "#a8793c", placeable: false, nitro: "furni/f_ideaboard.nitro", rotatable: true, flat: true, wall: true, wallArt: { left: 0, back: 2 }, opens: "ideas" },
   // the alley dumpster next to the Flappy Bird machine: search it (every 10 minutes) for a cigarette or a dead cat
@@ -140,7 +155,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 };
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench"]);
 /** the CD player in the basement or a boombox: both play the CD you use on them */
 export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox";
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
@@ -190,7 +205,7 @@ export interface RoomDef {
   extraDoors?: ExtraDoor[];
 }
 
-export interface ExtraDoor { x: number; to: string; label: string; yellow?: boolean }
+export interface ExtraDoor { x: number; to: string; label: string; yellow?: boolean; /** a rusty brown door (the mines) */ brown?: boolean }
 
 /** Every room has its door on the back-right wall at this tile column. */
 export const DOOR_X = 1;
@@ -235,7 +250,7 @@ export const MAX_FURNI = 40;
 export const LOBBY_ID = "lobby";
 export const SHOP_ID = "shop";
 /** rooms with no owner that everyone shares (the basement and the shop) */
-export const isPublicRoom = (id: string) => id === LOBBY_ID || id === SHOP_ID || isTutRoom(id);
+export const isPublicRoom = (id: string) => id === LOBBY_ID || id === SHOP_ID || id === MINES_ID || isTutRoom(id);
 /** The private copy of the basement a brand-new player walks through the introduction in (nobody else can come in, the body bag is not there). */
 export const tutRoomId = (uid: string) => `tut_${uid}`;
 export const isTutRoom = (id: string) => id.startsWith("tut_");
@@ -275,7 +290,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     furni: [...builtin, ...extras.filter((f) => FURNI_KINDS[f.kind] && !LOBBY_BUILTIN.some((b) => b.id === f.id))],
     doorX: DOOR_X,
     // the yellow door on the other side of 6ixty leads to the shop
-    extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }],
+    extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }, { x: 7, to: MINES_ID, label: "Mines", brown: true }],
   };
 }
 
@@ -290,6 +305,15 @@ export const SHOP_SLOTS: Pt2[] = [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 3, y: 9 }
 export const SHOP_SIZE = 15;
 export const DISPLAY_PREFIX = "shop_disp";
 export const isDisplayPiece = (id: string) => id.startsWith(DISPLAY_PREFIX);
+
+/** The mines: a dark cave room behind the brown door in the basement. Ore rocks to mine, an anvil to craft on, 6ixty with his wood and his iron balls (see src/shared/mines.ts). */
+export const MINES_THEME: RoomTheme = { ...GRIME_THEME, floorA: "#4d4036", floorB: "#574a3f", wall: "#3f3731" };
+export function minesDef(): RoomDef {
+  return {
+    id: MINES_ID, name: "Mines", ownerUid: null, ownerName: null, access: "open", w: MINES_W, h: MINES_H,
+    theme: { ...MINES_THEME }, rug: null, furni: MINES_PIECES.map((p) => ({ id: p.id, kind: p.kind, x: p.x, y: p.y, dir: p.dir })), doorX: DOOR_X, doorTo: LOBBY_ID,
+  };
+}
 
 /** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
 export function shopDef(picks: string[]): RoomDef {

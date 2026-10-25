@@ -13,7 +13,8 @@ export interface SixtyShopApi {
 }
 
 /** The small shop window that opens when you talk to 6ixty (after the first meeting). */
-export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): SixtyShopApi {
+/** `mines`: the 6ixty down in the mines: his shelf is the wood (the other 6ixty doesn't have any), and he buys what you dig up. */
+export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void, opts: { mines?: boolean } = {}): SixtyShopApi {
   const me = ctx.profile;
   const body = h("div", { class: "sixty-body" });
   const el = h("div", { class: "cd-popup sixty-shop", role: "dialog", "aria-label": "6ixty's shop" },
@@ -27,7 +28,7 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
   function render(): void {
     if (closed) return;
     // his shelf: whatever the admin has switched on (Admin > Shop > 6ixty stock); the cigarette is on by default
-    const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => itemDef(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "cd" && itemEntry(id).on);
+    const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => itemDef(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "cd" && itemEntry(id).on && (opts.mines ? id === "wood" : id !== "wood"));
     // selling: he buys weed, seeds and what the mixer makes (prices: sellPrice)
     const sellPrice = (item: string, ass?: boolean): number | null => sellPriceOf(item, ass, furniPricesNow());
     // the same thing lying in several slots is one row ("Fentanyl x3"); Sell asks how many

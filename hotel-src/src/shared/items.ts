@@ -1,6 +1,7 @@
 // Pure item data and rules shared by the browser and the server (src/items.ts adds the pictures and texts on top).
 // Nothing here may import the browser, Firebase or anything with a picture in it.
 import { furniPrice } from "./furniture";
+import { WOOD_PRICE } from "./mines";
 
 /** every ordinary item (furniture pieces are items too, with ids "f_..." / "x_...") */
 export const ITEM_ID_LIST = [
@@ -23,6 +24,8 @@ export const ITEM_ID_LIST = [
   "trollmix", "joint_troll", "blunt_troll", "lsd", "joint_chudname",
   // tobacco (2 cigarette butts) and the cigar (tobacco rolled in blunt paper)
   "tobacco", "cigar",
+  // the mines: iron you mine, wood from 6ixty (or the floor), and the tools made from them
+  "iron", "wood", "pickaxe", "machete",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -64,7 +67,7 @@ export function parseInventoryWith(raw: unknown, valid: (id: string) => boolean)
 }
 
 /** Things that can never be put on the floor, given or traded (the knife stays with you). */
-export const NO_DROP: ReadonlySet<string> = new Set(["knife", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
+export const NO_DROP: ReadonlySet<string> = new Set(["knife", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
 
 /** First slot holding `item`. Items that are loaned out (inPlayer) don't count as available. */
 export const findSlot = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item && !s.inPlayer);
@@ -79,6 +82,7 @@ export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cigarette: { on: true, price: 2 },
   pill: { on: true, price: 3 },
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
+  wood: { on: true, price: WOOD_PRICE }, // sold by 6ixty in the mines (see buySixty)
   kodimagnyl: { on: true, price: 4 }, // sold by 6ixty (the growing kit moved to the vending machine)
   // sold in the shop room's vending machine (not by 6ixty): the admin can still change these prices
   lighter: { on: false, price: 2 },
@@ -127,7 +131,7 @@ export const SMOKABLE: Record<string, SmokeDef> = {
   blunt_chem: { mult: 2, boostMs: 90_000, kind: "blunt", speedMs: 90_000, chemMs: 90_000, smokeMs: 5_000 },
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco", "iron", "wood"]);
 /** Weed grows for 10 minutes, shrooms for 25. The water bar runs dry after 5: water it once, any time while it grows (even before the bar is empty), or the harvest turns out poor. */
 export const GROW_MS = 10 * 60_000;
 export const GROW_MS_SHROOM = 25 * 60_000;
@@ -225,7 +229,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife) and every CD. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "pickaxe", "machete",
 ]);
 
 /**
@@ -281,6 +285,9 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "joint_chud": return 18;
     case "blunt_chud": return 20;
     case "syringe": return 1;
+    // the mines: iron is dug out of the rock (it takes a while), wood costs 5 from 6ixty so he buys it back for 2
+    case "iron": return 3;
+    case "wood": return 2;
     default: return null;
   }
 }

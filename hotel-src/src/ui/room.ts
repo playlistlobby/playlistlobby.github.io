@@ -61,6 +61,8 @@ import {
   isBodyBag,
   isPublicRoom,
   SHOP_ID,
+  MINES_ID,
+  minesDef,
   shopDef,
   tutDef,
   tutRoomId,
@@ -76,6 +78,8 @@ import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
 import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { DuckyShopApi, openDuckyShop } from "./duckyShop";
+import { CraftBenchApi, openCraftBench } from "./craftBench";
+import { MINE_KNIFE_MS, MINE_PICK_MS, MINES_SIXTY } from "../shared/mines";
 import { CHAT_COLORS, CHAT_EFFECTS, isChatEffect, isHexColor } from "../shared/ducky";
 import type { ChatEffect } from "../shared/ducky";
 import { figureAnimated } from "../designs";
@@ -266,8 +270,9 @@ type Pending =
   | { type: "door"; since: number; lastTry: number; to?: ExtraDoor }
   | { type: "sixty"; since: number; lastTry: number; auto?: boolean }
   | { type: "landlord"; since: number; lastTry: number }
+  | { type: "minessixty"; since: number; lastTry: number }
   | { type: "pickup"; key: string; since: number; lastTry: number }
-  | { type: "arcade" | "cd" | "bag" | "dumpster" | "use" | "bed"; fid: string; since: number; lastTry: number; slot?: number | null };
+  | { type: "arcade" | "cd" | "bag" | "dumpster" | "use" | "bed" | "mine" | "craft"; fid: string; since: number; lastTry: number; slot?: number | null };
 
 const cheb = (a: Pt, b: Pt) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
@@ -384,12 +389,81 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let stashApi: StashApi | null = null;
   let ideasApi: IdeasBoardApi | null = null;
   let duckyApi: DuckyShopApi | null = null;
+  let craftApi: CraftBenchApi | null = null;
+  function openCraft(): void { if (!craftApi) craftApi = openCraftBench(stage, ctx, () => panel.refresh(), () => { craftApi = null; }); }
+  // ---- the mines: swinging at an ore rock (the knife, or a pickaxe: faster) until the iron comes out, over and over until you walk away ----
+  let mining: { fid: string; start: number; ms: number; busy?: boolean } | null = null;
+  const miningMs = (): number => (findSlot(me.inventory, "pickaxe") >= 0 ? MINE_PICK_MS : MINE_KNIFE_MS);
+  function startMine(fid: string): void {
+    closeToolWindows();
+    clearSelection();
+    if (findSlot(me.inventory, "pickaxe") < 0 && findSlot(me.inventory, "knife") < 0) { say("You need a knife (or a pickaxe) to mine.", "warn"); return; }
+    pending = { type: "mine", fid, since: performance.now(), lastTry: 0 };
+  }
+  function startCraft(fid: string): void {
+    closeToolWindows();
+    clearSelection();
+    pending = { type: "craft", fid, since: performance.now(), lastTry: 0 };
+  }
+  function startMinesSixty(): void {
+    closeToolWindows();
+    clearSelection();
+    pending = { type: "minessixty", since: performance.now(), lastTry: 0 };
+  }
+  /** at the rock: face it and start swinging */
+  function beginMining(f: PlacedFurni): void {
+    const p = mine();
+    if (!p) return;
+    p.dir = dirOf(currentTile(p), { x: f.x, y: f.y });
+    update(myRef, { dir: p.dir }).catch(() => undefined);
+    mining = { fid: f.id, start: performance.now(), ms: miningMs() };
+    say(findSlot(me.inventory, "pickaxe") >= 0 ? "You swing the pickaxe at the rock…" : "You scrape at the rock with your knife…");
+  }
+  async function mineNow(): Promise<void> {
+    const m = mining;
+    if (!m || m.busy) return;
+    m.busy = true;
+    try {
+      const r = await call<{ iron?: number; wait?: number }>(me, "mine", { rock: m.fid });
+      if (!r.iron) { m.start = performance.now() - m.ms + Math.max(300, r.wait ?? 1000); m.busy = false; return; } // (a hair early: a moment more)
+      panel.refresh();
+      giftPop("+1 Iron", itemImg("iron"));
+      playSfx("select", 0.5);
+      logAction(me, "room", "mined iron");
+      if (mining === m) mining = { fid: m.fid, start: performance.now(), ms: miningMs() }; // (and again, until you walk off)
+    } catch (err) {
+      say((err as Error).message || "The rock won't give.", "warn");
+      if (mining === m) mining = null;
+    }
+  }
+  function tickMining(now: number): void {
+    if (!mining) return;
+    const p = mine();
+    if (!p || p.lying || p.sit || faintUntil || woozy || trippingOn || isMoving(p, now) || pending) { mining = null; return; }
+    if (!mining.busy && now - mining.start >= mining.ms) void mineNow();
+  }
+  /** the little bar over your head while you swing */
+  function drawMiningBar(now: number): void {
+    if (!mining) return;
+    const p = mine();
+    if (!p) return;
+    const fp = feetOf(p, now);
+    const k = Math.max(0, Math.min(1, (now - mining.start) / mining.ms));
+    const w = 46 * scale, hh = 6 * Math.max(1, scale), x = fp.x - w / 2, y = fp.y - (FEET_Y + 14) * scale;
+    g.save();
+    g.fillStyle = "rgba(0,0,0,0.65)";
+    g.beginPath(); g.roundRect(x - 2, y - 2, w + 4, hh + 4, 4); g.fill();
+    g.fillStyle = "#e0903c";
+    g.beginPath(); g.roundRect(x, y, w * k, hh, 3); g.fill();
+    g.restore();
+  }
   function openDucky(): void { if (!duckyApi) duckyApi = openDuckyShop(stage, ctx, () => panel.refresh(), () => { duckyApi = null; }); }
   function openIdeas(): void { if (!ideasApi) ideasApi = openIdeasBoard(stage, ctx, () => { ideasApi = null; }); }
   let landlordApi: LandlordApi | null = null;
   let landlordBubble: Bubble | null = null;
   let landlordLast: HTMLCanvasElement | undefined;
   const isShop = roomId === SHOP_ID;
+  const isMines = roomId === MINES_ID;
   let mixerApi: MixerApi | null = null;
   // the furnishing menu (toolbox): your room without you in it, pieces to drag around, storage
   let furnishOn = false;
@@ -558,6 +632,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
     else if (hoverObj && hoverObj.kind === "ideaboard") text = "Ideas board: post pictures and ideas";
     else if (hoverObj && hoverObj.kind === "ducky") text = "pay2win: things for real money";
+    else if (hoverObj && hoverObj.kind === "mrock") text = "Iron rock: mine it with your knife";
+    else if (hoverObj && hoverObj.kind === "mbench") text = "Crafting bench: make a pickaxe or a machete";
+    else if (hoverObj && hoverObj.kind === "minesixty") text = "6ixty: buy wood, sell iron";
     else if (hoverObj && hoverObj.kind === "sink") text = "Sink: fill your watering can";
     else if (hoverObj && hoverObj.kind === "f_mixer") text = "Mixer: mix two things";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind ?? ""]?.states?.length ?? 0) > 1) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to use`;
@@ -578,6 +655,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     for (const d of def.extraDoors ?? []) blocked.add(`${d.x},0`);
     seatTiles.clear();
     if (isBasement) blocked.add(`${SIXTY.x},${SIXTY.y}`); // 6ixty stands in the basement
+    if (isMines) blocked.add(`${MINES_SIXTY.x},${MINES_SIXTY.y}`); // and in the mines
     if (isShop) for (let x = LANDLORD.x; x < def.w; x++) blocked.add(`${x},0`); // the landlord and the space behind his counter
     for (const f of def.furni) {
       const k = FURNI_KINDS[f.kind];
@@ -813,6 +891,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (t && selectedSlot !== null) void putDown(t, { kind: item.id, source: "inv", slot: selectedSlot }, toolDir || defaultDir(item.id));
       return;
     }
+    if (item?.useOnPlayer === "stab" && obj && !target && obj.kind === "mrock") { startMine(obj.id); return; } // the knife on a rock: mine it
     if (item?.useOnPlayer === "stab") {
       if (target && target.uid !== me.uid) startStab(target.uid);
       else if (target) say("You can't stab yourself.", "warn");
@@ -840,6 +919,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
+      else if (obj.kind === "minesixty") startMinesSixty();
+      else if (obj.kind === "mrock") startMine(obj.id);
+      else if (obj.kind === "mbench") startCraft(obj.id);
       else if (obj.kind === "landlord") startLandlord();
       else if (obj.kind === "bed") bedAction();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
@@ -892,6 +974,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
     if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
     if (obj?.kind === "ducky") opts.push({ label: "Shop", target: "pay2win", action: () => startBag(obj.id) });
+    if (obj?.kind === "mrock") opts.push({ label: "Mine", target: "Iron rock", action: () => startMine(obj.id) });
+    if (obj?.kind === "mbench") opts.push({ label: "Craft", target: "Crafting bench", action: () => startCraft(obj.id) });
+    if (obj?.kind === "minesixty") opts.push({ label: "Talk", target: SIXTY.name, action: () => startMinesSixty() });
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
@@ -1324,7 +1409,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const target = players.get(uid);
     if (!target || uid === me.uid) return;
     if (target.npc) return isShop ? startLandlord() : startSixty(); // you don't stab 6ixty, you talk to him
-    if (findSlot(me.inventory, "knife") < 0) return say("You need a knife for that.", "warn");
+    if (findSlot(me.inventory, "knife") < 0 && findSlot(me.inventory, "machete") < 0) return say("You need a knife for that.", "warn");
     if (uid === LEGEND.id && me.tutorial >= 2) return say("He isn't getting up.", "warn");
     if (!canStab(me, uid)) {
       const mins = Math.max(1, Math.ceil(msUntilTomorrow() / 60000));
@@ -1388,6 +1473,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     stashApi?.close();
     ideasApi?.close();
     duckyApi?.close();
+    craftApi?.close();
     landlordApi?.close();
     sixtyShop?.close();
   }
@@ -1666,6 +1752,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       return;
     }
+    if (pending.type === "minessixty") {
+      const goal = { x: MINES_SIXTY.x, y: MINES_SIXTY.y };
+      const r = approach(p, goal, now, pending);
+      if (r === "unreachable") { pending = null; return say("You can't get to him.", "warn"); }
+      if (r === "arrived") {
+        pending = null;
+        p.dir = dirOf(currentTile(p), goal);
+        update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
+        if (!sixtyShop) sixtyShop = openSixtyShop(stage, ctx, () => panel.refresh(), () => { sixtyShop = null; }, { mines: true });
+      }
+      return;
+    }
     if (pending.type === "pickup") {
       const d = drops.get(pending.key);
       if (!d || isExpired(d)) { pending = null; return say("It's gone.", "warn"); }
@@ -1699,7 +1797,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const face = covered.reduce((a, b) => (Math.hypot(b.x - me0.x, b.y - me0.y) < Math.hypot(a.x - me0.x, a.y - me0.y) ? b : a)); // face the nearest part of it
       p.dir = dirOf(me0, face);
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
-      if (job.type === "bed") layDown();
+      if (job.type === "mine") beginMining(f);
+      else if (job.type === "craft") openCraft();
+      else if (job.type === "bed") layDown();
       else if (job.type === "cd") void executeInsert();
       else if (job.type === "bag") {
         const opens = FURNI_KINDS[f.kind].opens;
@@ -2312,7 +2412,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (disposed) return;
       faintUntil = performance.now() + (r.ms ?? 10_000) + 8000; // (out cold until you are carried home)
       p.slowUntil = undefined;
-      p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
+      p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null; mining = null;
       p.faint = true; // down
       update(myRef, { lay: true, sit: null }).catch(() => undefined);
       playThud(0.7);
@@ -3038,7 +3138,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.restore();
   }
   const holdsKnife = (p: Player, now: number): boolean =>
-    (p.uid === me.uid && selectedDef()?.useOnPlayer === "stab") || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
+    (p.uid === me.uid && (selectedDef()?.useOnPlayer === "stab" || !!mining)) || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
 
   /** Little hearts that drift up over a player's head (a hash joint). (fx, fy) = the player's feet. */
   /** Particles are drawn as chunky pixels on the same grid as the game's art: a round blob made of square cells, snapped to the grid. */
@@ -4017,7 +4117,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const flash = doorHint && d.to === SHOP_ID;
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 240);
       if (flash) { g.save(); g.shadowColor = `rgba(255,214,40,${(0.8 + 0.2 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 26 * pulse) * scale; }
-      const box = drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : flash ? 2.2 * pulse : 0, d.yellow ? "yellow" : def.theme.style === "grime");
+      const box = drawRoomDoor(g, d.x, toScreen, scale, hoverExtra === i ? 1 : flash ? 2.2 * pulse : 0, d.yellow ? "yellow" : d.brown ? "brown" : def.theme.style === "grime");
       if (flash) g.restore();
       return { door: d, box };
     });
@@ -4027,6 +4127,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     { const mp = mine(); if (mp) finishSit(mp, now); }
     processPending(now);
     roulette?.update(now);
+    tickMining(now);
     tickCd();
     updateEffects(now);
 
@@ -4192,6 +4293,44 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const sb = sixtyBubble;
         bubbles.push(() => drawBubble(sb.text, SIXTY.name, sf.x, sf.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1));
       }
+    }
+
+    if (isMines) {
+      // 6ixty down here too: not a player, only drawn; he sells the wood and buys your iron
+      const look = sixtyLook();
+      const sopts = { figure: look.figure, dir: MINES_SIXTY.dir, headDir: MINES_SIXTY.dir, actions: ["std"], gesture: "std", frame: 0 };
+      let simg = getCached(sopts);
+      if (!simg) { renderAvatar(sopts); simg = sixtyLast; } else sixtyLast = simg;
+      const sw = iso(MINES_SIXTY.x, MINES_SIXTY.y);
+      const sf = toScreen({ x: sw.x, y: sw.y + TILE_H / 2 });
+      objs.push({ id: "minessixty", kind: "minesixty", x0: sf.x - 22 * scale, x1: sf.x + 22 * scale, y0: sf.y - FEET_Y * scale, y1: sf.y + 8 * scale, depth: MINES_SIXTY.x + MINES_SIXTY.y });
+      const sHot = hoverObj?.kind === "minesixty" || pending?.type === "minessixty";
+      const pulse = 0.5 + 0.5 * Math.sin(now / 450);
+      list.push({
+        depth: MINES_SIXTY.x + MINES_SIXTY.y + 0.5,
+        draw: () => {
+          const cx = sf.x, cy = sf.y - 48 * scale, r = 54 * scale * (sHot ? 1.2 : 1);
+          g.save();
+          const halo = g.createRadialGradient(cx, cy, 3 * scale, cx, cy, r);
+          const a = 0.1 + 0.05 * pulse + (sHot ? 0.14 : 0);
+          halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
+          halo.addColorStop(1, "rgba(255,200,40,0)");
+          g.fillStyle = halo;
+          g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+          g.restore();
+          g.fillStyle = "rgba(0,0,0,0.18)";
+          g.beginPath(); g.ellipse(sf.x, sf.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); g.fill();
+          if (simg) g.drawImage(simg, sf.x - (32 + padOf(simg).x) * scale, sf.y - (FEET_Y + padOf(simg).y) * scale, simg.width * scale, simg.height * scale);
+          g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
+          const tw = g.measureText(SIXTY.name).width + 10;
+          g.fillStyle = sHot ? "rgba(120,80,10,0.9)" : "rgba(0,0,0,0.55)";
+          g.beginPath(); g.roundRect(sf.x - tw / 2, sf.y + 7 * scale, tw, 14 * Math.max(1, scale), 5); g.fill();
+          g.fillStyle = "#ff3b3b";
+          g.textBaseline = "top"; g.textAlign = "center";
+          g.fillText(SIXTY.name, sf.x, sf.y + 9 * scale);
+          g.textAlign = "start";
+        },
+      });
     }
 
     const landlordHere = isShop && [...players.values()].some((q) => q.npc); // the admin is standing there as the landlord: no second one
@@ -4410,6 +4549,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     objBoxes = objs;
     drawEffects(now);
     bubbles.forEach((b) => b());
+    drawMiningBar(now);
   }
 
   // ---- boot --------------------------------------------------------------------------
@@ -4418,6 +4558,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       applyDef(shopDef(picksToday()));
       start();
       unsubs.push(onFurniShopChanged(() => { if (!disposed) applyDef(shopDef(picksToday())); })); // the admin swapped a piece
+      return;
+    }
+    if (isMines) {
+      applyDef(minesDef());
+      start();
       return;
     }
     if (isTut) {
@@ -4516,6 +4661,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     posterApi?.close();
     stashApi?.close();
     ideasApi?.close();
+    duckyApi?.close();
+    craftApi?.close();
     landlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();

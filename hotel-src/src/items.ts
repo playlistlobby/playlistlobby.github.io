@@ -370,6 +370,31 @@ export const ITEMS: Record<string, ItemDef> = {
     icon: assetUrl("items/knife.png"), // Habbo's survival knife (catalog icon of survival_c26_knife.nitro), as crisp pixels
     useOnPlayer: "stab",
   },
+  iron: {
+    id: "iron",
+    name: "Iron",
+    examine: "A chunk of iron dug out of the rock in the mines. Sell it to 6ixty, or make tools from it on the crafting bench.",
+    icon: assetUrl("items/iron.svg"),
+  },
+  wood: {
+    id: "wood",
+    name: "Wood",
+    examine: "A piece of wood. 6ixty sells it in the mines, and some lies about down there. You need it for tools.",
+    icon: assetUrl("items/wood.svg"),
+  },
+  pickaxe: {
+    id: "pickaxe",
+    name: "Pickaxe",
+    examine: "Made on the crafting bench in the mines. You mine iron a lot faster with it than with the knife. It stays with you.",
+    icon: assetUrl("items/pickaxe.svg"),
+  },
+  machete: {
+    id: "machete",
+    name: "Machete",
+    examine: "Made on the crafting bench in the mines. Use it on another player like the knife: every stab draws twice the blood. It stays with you.",
+    icon: assetUrl("items/machete.svg"),
+    useOnPlayer: "stab",
+  },
 };
 
 const furniIcons = new Map<string, string>();

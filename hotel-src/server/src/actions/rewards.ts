@@ -26,12 +26,12 @@ export const stab: Action = {
     c.note = target; // (the blood ledger says who was stabbed)
     const w = await c.user();
     const s = w.s;
-    if (findSlot(s.inventory, "knife") < 0) fail("You need a knife for that.");
+    if (findSlot(s.inventory, "knife") < 0 && findSlot(s.inventory, "machete") < 0) fail("You need a knife for that.");
     const today = todayStartAt(c.now);
     if ((s.stabs[target] ?? 0) >= today) fail("You've already stabbed them today.");
     // somebody asleep (an offline owner in their bed, or lying in bed) is always worth exactly 1 drop: no boost counts, so sleepers can't be farmed
     const sleeping = !theirs || theirs.bed === true;
-    const gain = sleeping ? 1 : stabGainAt(s, c.now);
+    const gain = sleeping ? 1 : stabGainAt(s, c.now) * (findSlot(s.inventory, "machete") >= 0 ? 2 : 1); // (the machete: twice the blood)
     s.blood += gain;
     s.stabs[target] = today;
     return { gain };

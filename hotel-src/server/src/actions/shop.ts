@@ -12,6 +12,7 @@ export const buySixty: Action = {
   async run(c, a) {
     const id = text(a.item, /^[a-z0-9_]{1,30}$/, "item");
     if (id === "cd") fail("He doesn't sell that."); // the Freakme CD is sold at the record player in the shop now
+    if (id === "wood") await requireInRoom(c, "mines"); // (he only has wood down in the mines)
     const known = SIXTY_STOCK.includes(id) || (ITEM_IDS.has(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt");
     if (!known) fail("He doesn't sell that.");
     const entry = await c.itemEntry(id);

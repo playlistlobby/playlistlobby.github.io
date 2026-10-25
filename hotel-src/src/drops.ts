@@ -22,7 +22,7 @@ export interface Drop {
   exp?: number;
 }
 
-export const isPublicDropRoom = (roomId: string): boolean => roomId === "lobby" || roomId === "shop" || roomId.startsWith("tut_");
+export const isPublicDropRoom = (roomId: string): boolean => roomId === "lobby" || roomId === "shop" || roomId === "mines" || roomId.startsWith("tut_");
 export const dropKey = (x: number, y: number): string => `${x}_${y}`;
 
 function parse(key: string, v: any): Drop | null {

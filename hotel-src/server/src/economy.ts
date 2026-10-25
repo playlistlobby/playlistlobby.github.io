@@ -8,6 +8,7 @@ import { Rtdb } from "./rtdb";
 import { createBackup, rollbackTo } from "./backup";
 import { BACKUP_EVERY_MS } from "../../src/shared/backup";
 import { FLOOR_SPAWN_CHANCE, FLOOR_SPAWN_ITEMS, FLOOR_SPAWN_MAX, FLOOR_SPAWN_MS } from "../../src/shared/economy";
+import { MINES_H, MINES_PIECES, MINES_SIXTY, MINES_W, WOOD_SPAWN_CHANCE, WOOD_SPAWN_MAX } from "../../src/shared/mines";
 
 interface Bucket { tokens: number; at: number }
 const RATE_PER_SEC = 8;
@@ -32,6 +33,39 @@ export class Economy {
   async alarm(): Promise<void> {
     await this.state.storage.setAlarm(Date.now() + FLOOR_SPAWN_MS);
     await this.maybeBackup();
+    await this.spawnLobby();
+    await this.spawnMines();
+  }
+
+  /** The mines: wood turns up on the floor twice as often as the seeds in the basement (a 50% chance every 10 minutes, up to 4 lying at once). */
+  private async spawnMines(): Promise<void> {
+    if (Math.random() >= WOOD_SPAWN_CHANCE) return;
+    const release = await this.lock("room:mines"); // the same lock drop / pickup use for this room
+    try {
+      const db = new Rtdb(this.env);
+      const now = Date.now();
+      const drops = (await db.get<Record<string, { by?: string; exp?: number }>>("rooms/mines/drops")) ?? {};
+      const lying = Object.values(drops).filter((d) => d.by === "world" && (!d.exp || d.exp > now)).length;
+      if (lying >= WOOD_SPAWN_MAX) return;
+      // anywhere on the floor that isn't covered by a rock, the bench, 6ixty or the other things standing there
+      const blocked = new Set<string>([`${MINES_SIXTY.x}_${MINES_SIXTY.y}`]);
+      const size = (kind: string): { w: number; h: number } => (kind === "mbigrock" ? { w: 2, h: 3 } : kind === "mlogs" ? { w: 1, h: 2 } : { w: 1, h: 1 });
+      for (const f of MINES_PIECES) { const z = size(f.kind); for (let dx = 0; dx < z.w; dx++) for (let dy = 0; dy < z.h; dy++) blocked.add(`${f.x + dx}_${f.y + dy}`); }
+      const tiles: string[] = [];
+      for (let x = 1; x < MINES_W; x++) for (let y = 1; y < MINES_H; y++) if (!drops[`${x}_${y}`] && !blocked.has(`${x}_${y}`)) tiles.push(`${x}_${y}`);
+      if (tiles.length === 0) return;
+      const key = tiles[Math.floor(Math.random() * tiles.length)];
+      const [x, y] = key.split("_").map(Number);
+      await db.patch({ [`rooms/mines/drops/${key}`]: { item: "wood", qty: 1, x, y, by: "world", byName: "the floor", at: now } });
+    } catch (e) {
+      console.error("wood spawn failed", e);
+    } finally {
+      release();
+    }
+  }
+
+  /** Every 10 minutes: a 25% chance that a weed seed or a cigarette turns up on the floor of the public room (2 at most lying there). */
+  private async spawnLobby(): Promise<void> {
     if (Math.random() >= FLOOR_SPAWN_CHANCE) return;
     const release = await this.lock("room:lobby"); // the same lock drop / pickup use for this room
     try {

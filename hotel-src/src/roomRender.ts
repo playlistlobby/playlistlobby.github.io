@@ -431,6 +431,7 @@ const DOOR_DIR = 4;
 let doorColour: NitroFurni | null = null;
 let doorGrey: NitroFurni | null = null;
 let doorYellow: NitroFurni | null = null;
+let doorBrown: NitroFurni | null = null;
 
 /** Loads the door art (once) and prepares its two looks. Draw again when it resolves; until then the old painted door is used. */
 export function ensureDoorArt(): Promise<void> {
@@ -482,6 +483,17 @@ export function ensureDoorArt(): Promise<void> {
       g.putImageData(img, 0, 0);
     });
     // the shop's door: the same door, painted a warm yellow
+    // the mines' door: rusty brown
+    doorBrown = derive(clean, (g, w, h) => {
+      const img = g.getImageData(0, 0, w, h);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const l = Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
+        const k = 0.35 + 0.7 * (l / 255);
+        d[i] = Math.min(255, Math.round(150 * k)); d[i + 1] = Math.min(255, Math.round(92 * k)); d[i + 2] = Math.min(255, Math.round(48 * k));
+      }
+      g.putImageData(img, 0, 0);
+    });
     doorYellow = derive(clean, (g, w, h) => {
       const img = g.getImageData(0, 0, w, h);
       const d = img.data;
@@ -496,8 +508,8 @@ export function ensureDoorArt(): Promise<void> {
 }
 
 /** Draws the room's door on the back-right wall and returns its click box. Nothing is drawn until the door art has loaded (main.ts waits for it before the first room). */
-export function drawRoomDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, glow: number, look: boolean | "yellow"): Box {
-  const art = look === "yellow" ? doorYellow : look ? doorGrey : doorColour;
+export function drawRoomDoor(g: CanvasRenderingContext2D, doorX: number, toScreen: (p: Pt) => Pt, scale: number, glow: number, look: boolean | "yellow" | "brown"): Box {
+  const art = look === "yellow" ? doorYellow : look === "brown" ? doorBrown : look ? doorGrey : doorColour;
   const none: Box = { x0: 0, y0: 0, x1: 0, y1: 0 };
   if (!art) return none;
   const box = drawNitroSprites(g, art, 1, 1, doorX, 0, DOOR_DIR, undefined, toScreen, scale);
