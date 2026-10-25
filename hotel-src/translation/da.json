@@ -9223,5 +9223,15 @@
   "en": "Not yet.",
   "da": "Ikke endnu.",
   "where": "server/src/actions/floor.ts"
+ },
+ "N1313": {
+  "en": "A pile of white powder. Swallowing it kills you. Use it on another drug to lace it.",
+  "da": "En bunke hvidt pulver. Sluger du det, dør du. Brug det på et andet stof for at lacere det.",
+  "where": "src/items.ts"
+ },
+ "N1314": {
+  "en": "A pill and kodimagnyl, ground into a white powder: 1 fentanyl.",
+  "da": "En pille og kodimagnyl, malet til hvidt pulver: 1 fentanyl.",
+  "where": "src/shared/items.ts"
  }
 }

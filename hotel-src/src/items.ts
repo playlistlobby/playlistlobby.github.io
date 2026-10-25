@@ -154,7 +154,7 @@ export const ITEMS: Record<string, ItemDef> = {
   superpill: {
     id: "superpill",
     name: "Fentanyl",
-    examine: "A pill pressed together with kodimagnyl. Swallowing it kills you. Use it on another drug to lace it.",
+    examine: "A pile of white powder. Swallowing it kills you. Use it on another drug to lace it.",
     icon: assetUrl("items/superpill.svg"),
     useSelf: "consume",
   },
