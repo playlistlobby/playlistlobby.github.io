@@ -8528,5 +8528,10 @@
   "en": "{quitter} got up. You win {winnings} blood.",
   "da": "{quitter} rejste sig. Du vinder {winnings} blod.",
   "where": "src/ui/rouletteTable.ts"
+ },
+ "N1174": {
+  "en": "How much blood do you want to put at stake?",
+  "da": "Hvor meget blood vil du sætte på spil?",
+  "where": "src/ui/rouletteTable.ts"
  }
 }

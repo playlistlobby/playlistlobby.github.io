@@ -219,7 +219,7 @@ export function mountRoulette(env: RouletteEnv): RouletteApi {
       };
       const win = h("div", { class: "drop-win rt-win", role: "dialog", "aria-label": "Russian roulette" },
         h("div", { class: "drop-title" }, "Russian roulette"),
-        h("div", { class: "hint" }, "Put blood on the table. Somebody sits down opposite you and puts the same amount down. You take turns pulling the trigger: one bullet, six chambers. Whoever it finds is dead. The other takes both stakes."),
+        h("div", { class: "rt-ask" }, "How much blood do you want to put at stake?"),
         max < 1 ? h("div", { class: "form-error" }, "You have no blood to put on the table.") : h("div", { class: "rt-stake" }, less, num, more),
         max < 1 ? h("span") : chips,
         h("div", { class: "hint" }, `You have ${have} blood. The most you can put down is ${ROULETTE_MAX}.`),
