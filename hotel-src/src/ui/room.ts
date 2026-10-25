@@ -80,7 +80,7 @@ import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { DuckyShopApi, openDuckyShop } from "./duckyShop";
 import { openRaffleShop, RaffleShopApi } from "./raffleShop";
 import { announceWin, watchRaffle } from "../raffle";
-import { RAFFLE_EFFECTS, RAFFLE_PRIZE_ID } from "../shared/raffle";
+import { RAFFLE_EFFECTS } from "../shared/raffle";
 import type { RaffleView } from "../raffle";
 import { CHAT_COLORS, CHAT_EFFECTS, isChatEffect, isHexColor } from "../shared/ducky";
 import type { ChatEffect } from "../shared/ducky";
@@ -4288,7 +4288,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         draw: () => {
           const box = drawFurni(f, now);
           if (box && isDisplayPiece(f.id) && !furnishOn) drawPriceTag(priceOf(f.kind), box.x1, box.y1);
-          if (box && f.id === RAFFLE_PRIZE_ID) drawRareShine(f, box, now); // the raffle's rare piece: gold glow and sparkles, so everybody can see it is something special
+          if (box && !furnishOn && RAFFLE_EFFECTS[f.kind]) drawRareShine(f, box, now); // the rare pieces (the raffle's prizes) shine wherever they stand: in the shop and in your own room
           if (box && furnishOn) pieceBoxes.push({ id: f.id, box, depth: box.depth });
           if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
