@@ -143,6 +143,16 @@ ok("the admin can", await act(adm, "modBan", { uid: p3.uid, on: false }));
 check("(gone)", (await owner("GET", `bans/${p3.uid}`)) === null);
 await act(mod, "modBan", { uid: p4.uid });
 ok("a mod lifts a short ban", await act(mod, "modBan", { uid: p4.uid, on: false }));
+// the banForever perk: a mod who was given it bans for good (and lifts such a ban), still not an admin or another mod
+await owner("PUT", `perks/${mod2.uid}/banForever`, true);
+await owner("PUT", `roles/${mod2.uid}`, "mod");
+await act(mod2, "sync");
+ok("a mod with the perk bans for good", await act(mod2, "modBan", { uid: p4.uid, reason: "perk" }));
+check("it has no end time", (await owner("GET", `bans/${p4.uid}`)) && (await owner("GET", `bans/${p4.uid}/until`)) === null);
+ok("and lifts a ban for good", await act(mod2, "modBan", { uid: p4.uid, on: false }));
+bad("still not on an admin", await act(mod2, "modBan", { uid: adm.uid }));
+bad("still not on the mod without the perk", await act(mod2, "modBan", { uid: mod.uid }));
+await owner("DELETE", `perks/${mod2.uid}`);
 
 console.log("--- the accounts a player made");
 {

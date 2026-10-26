@@ -69,10 +69,13 @@ export const modMute: Action = {
   },
 };
 
-/** one ban (a mod: 30 minutes; the admin: for good unless `minutes`), used by modBan and modBanMany */
+/** may the caller ban for good? (the admin, and a mod who was given perks/<uid>/banForever) */
+const mayBanForever = async (c: Ctx): Promise<boolean> => c.isAdmin || (await c.db.get(`perks/${c.uid}/banForever`)) === true;
+
+/** one ban (a mod: 30 minutes; the admin, or a mod with the banForever perk: for good unless `minutes`), used by modBan and modBanMany */
 async function banOne(c: Ctx, uid: string, a: { minutes?: unknown; reason?: unknown }): Promise<{ until?: number }> {
   const name = await mayAct(c, uid);
-  const minutes = c.isAdmin ? (a.minutes === undefined || a.minutes === null || a.minutes === 0 ? 0 : int(a.minutes, 1, 525600, "minutes")) : MOD_BAN_MS / 60000;
+  const minutes = (await mayBanForever(c)) ? (a.minutes === undefined || a.minutes === null || a.minutes === 0 ? 0 : int(a.minutes, 1, 525600, "minutes")) : MOD_BAN_MS / 60000;
   const until = minutes ? c.now + minutes * 60000 : undefined;
   c.extra[`bans/${uid}`] = { at: c.now, by: c.uid, ...(until ? { until } : {}), ...(reasonOf(a) ? { reason: reasonOf(a) } : {}) };
   await note(c, "ban", uid, name, `${minutes ? minutes + " min" : "for good"}${reasonOf(a) ? ": " + reasonOf(a) : ""}`);
@@ -88,7 +91,7 @@ export const modBan: Action = {
       const name = await mayAct(c, uid);
       const ban = await c.db.get<{ until?: number }>(`bans/${uid}`);
       if (!ban) return { ok: true };
-      if (!c.isAdmin && !ban.until) fail("Only the admin can lift a ban for good.");
+      if (!(await mayBanForever(c)) && !ban.until) fail("Only the admin can lift a ban for good.");
       c.extra[`bans/${uid}`] = null;
       await note(c, "unban", uid, name);
       return { ok: true };

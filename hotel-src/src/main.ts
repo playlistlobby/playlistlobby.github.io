@@ -13,7 +13,6 @@ import { loadRole, watchMute } from "./roles";
 import { watchBroadcast, watchKick, watchNotices } from "./notices";
 import { startPetLook } from "./pets";
 import { startUnusual } from "./unusual";
-import { showWatched } from "./watched";
 import { mountModPage } from "./ui/modPage";
 import { CHATMOD_NAME } from "./shared/mod";
 import { publishPriceBook } from "./priceBook";
@@ -221,7 +220,7 @@ async function showHotel(user: User): Promise<void> {
     return;
   }
   const stopMute = watchMute(p);
-  void showWatched(p.uid); // after the game was closed: a camera pans across the screen and tells everybody to behave
+  // (the "you are being watched" camera intro, src/watched.ts, is not shown to anybody any more)
   const stopNotices = watchNotices(p); // a warning or a message from a moderator
   const stopKick = watchKick(p, () => void doLogout()); // a moderator threw you out
   const stopBroadcast = watchBroadcast(); // somebody used the loudspeaker
