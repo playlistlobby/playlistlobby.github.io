@@ -1,10 +1,10 @@
 // The pay2win machine in the shop room: a starter package, a name colour, the chat tool and a new name, all for real money.
-// Everything here is paid on the payment page (Stripe) and handed over when you are back (src/payReturn.ts); only changing the colour you already bought is free, and the dice cost blood.
+// Everything here is paid on the payment page (Stripe) and handed over when you are back (src/payReturn.ts); only changing the colour you already bought is free.
 import { h, toast } from "./dom";
 import { call } from "../db";
 import { startPayment } from "../api";
 import { BLOOD_ICON } from "../items";
-import { CHAT_COLORS, DICE_PRICE, duckyDef, duckyPayId, isHexColor, kr, NEW_NAME_RE, readableOnDark } from "../shared/ducky";
+import { CHAT_COLORS, duckyDef, duckyPayId, isHexColor, kr, NEW_NAME_RE, readableOnDark } from "../shared/ducky";
 import type { DuckyProduct } from "../shared/ducky";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
@@ -12,7 +12,7 @@ import type { Ctx } from "../main";
 
 export interface DuckyShopApi { close(): void }
 
-const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", rename: "🏷️", dice: "🎲", keys: "🔑" };
+const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", rename: "🏷️", keys: "🔑" };
 
 export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): DuckyShopApi {
   const me = ctx.profile;
@@ -33,14 +33,7 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
     busy = true;
     render();
     try {
-      if (product === "dice") { // the dice are bought with blood, right here
-        await call(me, "duckyBuy", { product });
-        playSfx("give", 0.6);
-        logAction(me, "buy", "bought the dice at pay2win");
-        ctx.refreshHeader();
-        onChange();
-        toast("The dice are in your pocket. Tap them, then press Roll.");
-      } else if (product === "color" && me.owned.ducky_color) {
+      if (product === "color" && me.owned.ducky_color) {
         const r = await call<{ color?: string }>(me, "duckyBuy", { product, ...extra });
         playSfx("select", 0.5);
         logAction(me, "buy", "changed the name colour at pay2win");
@@ -98,14 +91,12 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
         open === "color" ? colorInput : undefined),
       card("fx", "Chat tool", "Du kan lave effects med din chat i guess",
         fxHave ? ownedBtn() : buyBtn("fx", () => void buy("fx"))),
-      card("dice", "Dice", "Hold them in your hand and roll a number from 1 to 6 for the whole room to see. Make a casino of your own.",
-        h("button", { class: "btn small primary", disabled: busy || me.blood < DICE_PRICE, onclick: () => void buy("dice") }, ...(busy ? ["…"] : [h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${DICE_PRICE}`]))),
       card("keys", "2 box keys", "Two keys for mystery boxes (boxes turn up in the bins). One key opens one box. Buy as many as you like.",
         buyBtn("keys", () => void buy("keys"))),
       card("rename", "Change your name", "Pick a new username. Your things, friends and room come with you.",
         open === "rename" ? h("button", { class: "btn small", onclick: () => { open = null; render(); } }, "Close") : h("button", { class: "btn small primary", disabled: busy, onclick: () => { open = "rename"; render(); } }, price("rename")),
         open === "rename" ? nameInput : undefined),
-      h("div", { class: "hint" }, "Everything but the dice is paid on a payment page: you come back to the game afterwards."));
+      h("div", { class: "hint" }, "Everything here is paid on a payment page: you come back to the game afterwards."));
   }
   render();
 

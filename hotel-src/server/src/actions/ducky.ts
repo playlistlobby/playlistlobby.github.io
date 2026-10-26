@@ -9,7 +9,7 @@ import { Ctx, fail } from "../ctx";
 import { addToInv } from "../../../src/shared/economy";
 import { INV_SIZE } from "../../../src/shared/items";
 import { KEYS_PACK } from "../../../src/shared/cases";
-import { DICE_PRICE, DUCKY_STARTER, DuckyProduct, isHexColor, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../../src/shared/ducky";
+import { DUCKY_STARTER, DuckyProduct, isHexColor, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../../src/shared/ducky";
 import { setSignInEmail } from "../authAdmin";
 
 const toEmail = (name: string): string => `${name.toLowerCase()}@users.bobba.invalid`;
@@ -19,7 +19,6 @@ export async function grantDucky(c: Ctx, product: DuckyProduct, a: { color?: unk
   const w = await c.user();
   const s = w.s;
   c.note = `pay2win ${product}`;
-  if (product === "dice") fail("The dice are bought with blood."); // (not through the payment page: see duckyBuy)
 
   if (product === "starter") {
     if (s.owned.ducky_starter) fail("You already bought the starter package. It can only be bought once.");
@@ -87,20 +86,10 @@ export async function grantDucky(c: Ctx, product: DuckyProduct, a: { color?: unk
   return { ok: true, name };
 }
 
-/** What the machine does without the payment page: change the colour of your name once you have bought it, and sell the dice for blood. (Everything else is paid on the payment page.) */
+/** What the machine does without the payment page: change the colour of your name once you have bought it. (Everything else is paid on the payment page.) */
 export const duckyBuy: Action = {
   async run(c, a) {
     await requireInRoom(c, "shop");
-    if (a.product === "dice") {
-      const w = await c.user();
-      if (w.s.blood < DICE_PRICE) fail(`You need ${DICE_PRICE - w.s.blood} more drops`);
-      const next = addToInv(w.s.inventory, { item: "dice", qty: 1 });
-      if (!next) return fail("Your inventory is full");
-      w.s.inventory = next;
-      w.s.blood -= DICE_PRICE;
-      c.note = "pay2win dice";
-      return { ok: true, price: DICE_PRICE };
-    }
     if (a.product !== "color") fail("That one is paid on the payment page.");
     const w = await c.user();
     if (!w.s.owned.ducky_color) fail("Buy the name colour first.");

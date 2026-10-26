@@ -32,7 +32,7 @@ import { openPetShop } from "./petShop";
 import { openCaseWindow } from "./caseOpen";
 import { onMyUnusual, unusualNow, wearUnusual } from "../unusual";
 import { unusualOf } from "../shared/cases";
-import { drawPet, onMyPetLook, petLookNow, petSheet } from "../pets";
+import { drawPet, onMyPetLook, petLookNow, petPreview, petSheet } from "../pets";
 import { pickUpPet, releasePet } from "../petActions";
 import { parsePetLook } from "../shared/petItems";
 import { hideoutBoxStore, hideoutBoxTake } from "../hideout";
@@ -527,6 +527,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let hlandlordLast: HTMLCanvasElement | undefined;
   let pmBubble: Bubble | null = null;
   let pmLast: HTMLCanvasElement | undefined;
+  let pmIcon: HTMLCanvasElement | undefined;
   /** the love booths: what look each was in last, and when it changed (a new look = a new test for the couple sitting on it) */
   const loveSeen = new Map<string, { st: number; at: number }>();
   let bagmanBubble: Bubble | null = null;
@@ -5200,6 +5201,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
               g.drawImage(pimg, pf.x - (32 + padOf(pimg).x) * scale, pf.y - (FEET_Y + padOf(pimg).y) * scale, pimg.width * scale, pimg.height * scale);
               g.restore();
             }
+          }
+          // the white bunny floats over her head while you point at her or walk to her (the way the CD floats over the record player)
+          const bunny = petSheet("bunnyeaster", 0);
+          if (pHot && bunny) {
+            pmIcon ??= petPreview(bunny, 48);
+            const hw = 48 * scale, hh = (pmIcon.height / pmIcon.width) * hw, bob = Math.sin(now / 380) * 3 * scale;
+            g.save();
+            g.imageSmoothingEnabled = false;
+            g.shadowColor = "rgba(255,226,140,0.7)"; g.shadowBlur = 6 * scale;
+            g.drawImage(pmIcon, pf.x - hw / 2, pf.y - (FEET_Y + 4) * scale - hh + bob, hw, hh);
+            g.restore();
           }
         },
       });

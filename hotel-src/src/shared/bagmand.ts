@@ -17,6 +17,7 @@ export const BAGMAND_BUY: Record<string, { price: number; stock: number | null; 
   poppyseed: { price: 50, stock: 5, label: "Poppy seed" },
   natryger: { price: 25, stock: null, label: "Bagmands natryger" },
   syringe: { price: 20, stock: null, label: "Syringe" },
+  dice: { price: 500, stock: null, label: "Dice" }, // (they were sold at the pay2win machine before)
 };
 /**
  * What he pays (blood each), for only the things from him: opium from the poppies and what is mixed from it. The prices are about 1.6x what went into it
