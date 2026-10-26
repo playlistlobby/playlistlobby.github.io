@@ -87,7 +87,7 @@ function png(w, h, rgba) {
 // (which animation is standing, walking, sitting and lying differs from pet to pet: each one says so in its <postures>)
 const POSES = ["std", "mv", "sit", "lay"];
 /** pets that bake into something that isn't a pet you would want walking behind you (grey boxes, boulders, a pot, a flying scrap) */
-const LEFT_OUT = new Set(["fools", "monster", "monsterplant", "pterosaur"]);
+const LEFT_OUT = new Set(["fools", "monster", "monsterplant", "pterosaur", "spider", "terrierbaby", "bearbaby"]);
 const summary = {};
 for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
   const pet = file.replace(/\.swf$/, "");
@@ -213,7 +213,7 @@ export const PET_COLORS: Record<string, number> = ${JSON.stringify(summary, null
 export const PET_TYPES: string[] = Object.keys(PET_COLORS);
 /** some pets are half price, some cost twice as much (the rest are as they come: 1000 to 2000) */
 export const PET_PRICE_MULT: Record<string, number> = {
-  chicken: 0.5, pigeongood: 0.5, pigeonevil: 0.5, frog: 0.5, turtle: 0.5, spider: 0.5, bunnydepressed: 0.5, kittenbaby: 0.5,
+  chicken: 0.5, pigeongood: 0.5, pigeonevil: 0.5, frog: 0.5, turtle: 0.5, bunnydepressed: 0.5, kittenbaby: 0.5,
   dragon: 2, curseddragon: 2, lion: 2, velociraptor: 2, demonmonkey: 2, dragondog: 2, rhino: 2,
 };
 export const petPrice = (type: string): number => {

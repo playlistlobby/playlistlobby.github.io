@@ -2,7 +2,6 @@
 // A pet's price is between 1000 and 2000 blood, from its name (half or double for some: see PET_PRICE_MULT).
 export const PET_COLORS: Record<string, number> = {
   "bear": 4,
-  "bearbaby": 20,
   "bunnydepressed": 0,
   "bunnyeaster": 5,
   "bunnyevil": 0,
@@ -26,16 +25,14 @@ export const PET_COLORS: Record<string, number> = {
   "pigletbaby": 21,
   "puppybaby": 21,
   "rhino": 8,
-  "spider": 18,
   "terrier": 7,
-  "terrierbaby": 20,
   "turtle": 12,
   "velociraptor": 20
 };
 export const PET_TYPES: string[] = Object.keys(PET_COLORS);
 /** some pets are half price, some cost twice as much (the rest are as they come: 1000 to 2000) */
 export const PET_PRICE_MULT: Record<string, number> = {
-  chicken: 0.5, pigeongood: 0.5, pigeonevil: 0.5, frog: 0.5, turtle: 0.5, spider: 0.5, bunnydepressed: 0.5, kittenbaby: 0.5,
+  chicken: 0.5, pigeongood: 0.5, pigeonevil: 0.5, frog: 0.5, turtle: 0.5, bunnydepressed: 0.5, kittenbaby: 0.5,
   dragon: 2, curseddragon: 2, lion: 2, velociraptor: 2, demonmonkey: 2, dragondog: 2, rhino: 2,
 };
 export const petPrice = (type: string): number => {
