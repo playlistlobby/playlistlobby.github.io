@@ -2,6 +2,8 @@
 // buy wood (or find it lying about) and sell iron to 6ixty. Pure data: the browser and the server both use it.
 
 export const MINES_ID = "mines";
+/** the mines are not open to players yet: the door is left out of the basement and mining/crafting is refused (the local test server has them anyway) */
+export const MINES_OPEN = false;
 export const MINES_W = 14;
 export const MINES_H = 14;
 

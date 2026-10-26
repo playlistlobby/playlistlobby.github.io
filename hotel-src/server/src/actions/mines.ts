@@ -2,10 +2,11 @@
 //   mine   one swing of the knife (or the pickaxe) at a rock: an iron if enough time has passed since the last one
 //   craft  a pickaxe or a machete from iron and wood
 import { Action, cheb, requireInRoom, text } from "./util";
-import { fail } from "../ctx";
+import { Ctx, fail } from "../ctx";
+import { isEmulator } from "../env";
 import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
 import { findSlot } from "../../../src/shared/items";
-import { CRAFT_REACH, craftRecipe, MINE_KNIFE_MS, MINE_PICK_MS, MINE_REACH, MINE_ROCKS, MINE_SLACK, MINES_BENCH, MINES_ID } from "../../../src/shared/mines";
+import { CRAFT_REACH, craftRecipe, MINE_KNIFE_MS, MINE_PICK_MS, MINE_REACH, MINE_ROCKS, MINE_SLACK, MINES_BENCH, MINES_ID, MINES_OPEN } from "../../../src/shared/mines";
 
 const total = (inv: Array<{ item: string; qty: number } | null>, item: string): number => inv.reduce((n, s) => n + (s && s.item === item ? s.qty : 0), 0);
 
@@ -22,8 +23,14 @@ function take(inv: Array<{ item: string; qty: number; lit?: number; inPlayer?: b
   return out;
 }
 
+/** the mines are not open yet (see MINES_OPEN): only the local test server has them */
+function minesOpen(c: Ctx): void {
+  if (!MINES_OPEN && !isEmulator(c.env)) fail("Unknown action.");
+}
+
 export const mine: Action = {
   async run(c, a) {
+    minesOpen(c);
     const stand = await requireInRoom(c, MINES_ID);
     const id = text(a.rock, /^[a-z0-9]{3,20}$/, "rock");
     const rock = MINE_ROCKS.find((r) => r.id === id);
@@ -46,6 +53,7 @@ export const mine: Action = {
 
 export const craft: Action = {
   async run(c, a) {
+    minesOpen(c);
     const stand = await requireInRoom(c, MINES_ID);
     const r = craftRecipe(a.recipe);
     if (!r) fail("The bench can't make that.");

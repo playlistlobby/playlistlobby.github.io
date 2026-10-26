@@ -73,7 +73,7 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 
 import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
 import { RAFFLE_PRIZE_ID } from "./shared/raffle";
-import { MINES_H, MINES_ID, MINES_PIECES, MINES_W } from "./shared/mines";
+import { MINES_H, MINES_ID, MINES_OPEN, MINES_PIECES, MINES_W } from "./shared/mines";
 import { HIDEOUT_MAX_FURNI, hideoutRoomId, isHideoutId, levelOfSize } from "./shared/hideout";
 export { hideoutRoomId, isHideoutId };
 export { MINES_ID };
@@ -327,7 +327,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
     furni: [...builtin, ...extras.filter((f) => FURNI_KINDS[f.kind] && !LOBBY_BUILTIN.some((b) => b.id === f.id))],
     doorX: DOOR_X,
     // the yellow door on the other side of 6ixty leads to the shop
-    extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }, { x: 7, to: MINES_ID, label: "Mines", brown: true }],
+    extraDoors: [{ x: 9, to: SHOP_ID, label: "Shop", yellow: true }, ...(MINES_OPEN || import.meta.env.MODE === "emulator" ? [{ x: 7, to: MINES_ID, label: "Mines", brown: true }] : [])],
   };
 }
 
