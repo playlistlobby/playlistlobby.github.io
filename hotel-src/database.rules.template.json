@@ -91,6 +91,17 @@
         }
       }
     },
+    "poker": {
+      "$table": { ".read": "@PW@" }
+    },
+    "pokerHole": {
+      "$table": {
+        "$uid": { ".read": "@PW@ && auth.uid === $uid" }
+      }
+    },
+    "pokerSeat": {
+      "$uid": { ".read": "@PW@ && auth.uid === $uid" }
+    },
     "hideoutChests": {
       "$owner": {
         ".read": "@PW@ && (auth.uid === $owner || root.child('roomsMeta').child('h_' + $owner).child('members').child(auth.uid).exists())"

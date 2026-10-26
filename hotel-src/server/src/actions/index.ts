@@ -14,6 +14,7 @@ import { giftAnswer, giftCollect, giftSend } from "./gift";
 import { posterAdmin } from "./posters";
 import { cdControl, cdInsert, cdReturn } from "./cd";
 import { mix, mixCollect } from "./mixer";
+import { pokerAct, pokerLeave, pokerSit, pokerTick } from "./poker";
 import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick } from "./roulette";
 import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
 import { duckyBuy } from "./ducky";
@@ -39,6 +40,7 @@ export const ACTIONS: Record<string, Action> = {
   tradeFinish, flappyStart, flappyScore,
   cdInsert, cdReturn, cdControl, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
+  pokerSit, pokerAct, pokerLeave, pokerTick,
   ideaPost, ideaComment, ideaLike, ideaDelete,
   duckyBuy, rollDice, register,
   modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick, modRename,
