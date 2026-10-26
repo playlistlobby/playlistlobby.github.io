@@ -315,7 +315,7 @@ export const ITEMS: Record<string, ItemDef> = {
   syringe: {
     id: "syringe",
     name: "Syringe",
-    examine: "A clean syringe. Click it to draw blood from yourself, or click a body bag with it: 1 drop from each, once every 20 minutes.",
+    examine: "A clean syringe. Click it to draw blood from yourself, or click a body bag with it: 50 drops from each, once every 20 minutes.",
     icon: assetUrl("items/syringe.svg"),
     useSelf: "syringe",
   },
@@ -385,7 +385,7 @@ export const ITEMS: Record<string, ItemDef> = {
   knife: {
     id: "knife",
     name: "Knife",
-    examine: "A small, sharp knife. Use it on another player: you can stab each person once every 12 hours, and every stab draws a drop of blood.",
+    examine: "A small, sharp knife. Use it on another player: you can stab each person once every 3 hours, and every stab draws a drop of blood.",
     icon: assetUrl("items/knife.png"), // Habbo's survival knife (catalog icon of survival_c26_knife.nitro), as crisp pixels
     useOnPlayer: "stab",
   },
@@ -467,8 +467,8 @@ const bagmandItems: Array<[string, string, string, Partial<ItemDef>]> = [
   ["ketamine", "Ketamine", "Opium stirred into the lean. Swallow it: a horse's head grows on you for a minute, and you run twice as fast. Bagmand pays 140.", { useSelf: "consume" }],
   ["percs", "Percs", "Opium pressed into a pill. Swallow it: a purple haze, double speed and triple blood for a stab, for 3 minutes. Bagmand pays 130.", { useSelf: "consume" }],
   ["twocb", "2cb", "Opium and a shroom, ground together. Swallow it: the colours shift, every door is open and you run twice as fast, for 3 minutes. Mix it into weed for pink weed. Bagmand pays 150.", { useSelf: "consume" }],
-  ["fentcn", "芬太尼", "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 200.", { useSelf: "consume" }],
-  ["caliweed", "Cali weed", "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 150.", {}],
+  ["fentcn", "芬太尼", "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 300.", { useSelf: "consume" }],
+  ["caliweed", "Cali weed", "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 225.", {}],
   ["pinkweed", "Pink weed", "2cb crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 125.", {}],
   ["brownweed", "Brown weed", "Heroin crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 110.", {}],
   ["natryger", "Bagmands natryger", "Bagmand's own blue weed. You have to roll it in joint paper or a blunt wrap to use it. Smoked, it lifts you off the ground in a blue glow and you run twice as fast for 4 minutes. Mix it with cali weed for a loudpack.", {}],

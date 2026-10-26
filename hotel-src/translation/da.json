@@ -1155,8 +1155,8 @@
   "where": "src/items.ts:191"
  },
  "T0232": {
-  "en": "A clean syringe. Click it to draw blood from yourself, or click a body bag with it: 1 drop from each, once every 20 minutes.",
-  "da": "En ren sprøjte. Klik for at tappe blod fra dig selv, eller klik på en body bag med den: 1 dråbe fra hver, en gang hvert 20. minut.",
+  "en": "A clean syringe. Click it to draw blood from yourself, or click a body bag with it: 50 drops from each, once every 20 minutes.",
+  "da": "En ren sprøjte. Klik for at tappe blod fra dig selv, eller klik på en body bag med den: 50 dråber fra hver, en gang hvert 20. minut.",
   "where": "src/items.ts:192"
  },
  "T0233": {
@@ -10000,8 +10000,8 @@
   "where": "src/items.ts"
  },
  "N1469": {
-  "en": "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 200.",
-  "da": "Opium skåret med fentanyl. Indtag den: 10 sekunder i 10 gange din fart, mens du spinner, og derefter alle stoffer på én gang. Bagmanden betaler 200.",
+  "en": "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 300.",
+  "da": "Opium skåret med fentanyl. Indtag den: 10 sekunder i 10 gange din fart, mens du spinner, og derefter alle stoffer på én gang. Bagmanden betaler 300.",
   "where": "src/items.ts"
  },
  "N1470": {
@@ -10010,8 +10010,8 @@
   "where": "src/items.ts"
  },
  "N1471": {
-  "en": "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 150.",
-  "da": "Weed trukket i opium: den skinner gyldent. Rul den i jointpapir eller en blunt-wrap. Bland den med natryger til en loudpack. Bagmanden betaler 150.",
+  "en": "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 225.",
+  "da": "Weed trukket i opium: den skinner gyldent. Rul den i jointpapir eller en blunt-wrap. Bland den med natryger til en loudpack. Bagmanden betaler 225.",
   "where": "src/items.ts"
  },
  "N1472": {
@@ -11730,13 +11730,13 @@
   "where": "src/ui/room.ts"
  },
  "N1815": {
-  "en": "A small, sharp knife. Use it on another player: you can stab each person once every 12 hours, and every stab draws a drop of blood.",
-  "da": "En lille, skarp kniv. Brug den på en anden spiller: du kan stikke hver person en gang hver 12. time, og hvert stik trækker en dråbe blod.",
+  "en": "A small, sharp knife. Use it on another player: you can stab each person once every 3 hours, and every stab draws a drop of blood.",
+  "da": "En lille, skarp kniv. Brug den på en anden spiller: du kan stikke hver person en gang hver 3. time, og hvert stik trækker en dråbe blod.",
   "where": "src/items.ts"
  },
  "N1816": {
-  "en": "You've already stabbed them: you can stab each person every 12 hours.",
-  "da": "Du har allerede stukket dem: du kan stikke hver person hver 12. time.",
+  "en": "You've already stabbed them: you can stab each person every 3 hours.",
+  "da": "Du har allerede stukket dem: du kan stikke hver person hver 3. time.",
   "where": "server/src/actions/rewards.ts"
  }
 }

@@ -43,7 +43,7 @@ export const FLOOR_SPAWN_MS = 10 * 60_000;
 export const FLOOR_SPAWN_CHANCE = 0.25;
 export const FLOOR_SPAWN_MAX = 2;
 export const FLOOR_SPAWN_ITEMS = ["weedseed", "cigarette", "shroomspore"];
-export const SYRINGE_BLOOD = 1;
+export const SYRINGE_BLOOD = 50;
 /** the syringe draws 1 drop from yourself and 1 from a body bag, each once every 20 minutes */
 export const SYRINGE_CD_MS = 20 * 60_000;
 /** the first stab pays 5 drops; the lighter job pays the price of a lighter, then 5 more with the syringe */
@@ -139,9 +139,10 @@ export interface Snapshot {
 export const tradeBloodLeft = (_s?: { tradeCap?: { at: number; n: number }; noTradeLimit?: boolean }, _now?: number): number => Infinity;
 
 export const todayStartAt = (now: number): number => now - (now % DAY_MS);
-/** you can stab each person once every 12 hours (it was once a day): the periods are half days, and the last stab is kept as the start of its period */
-export const STAB_PERIOD_MS = DAY_MS / 2;
-export const stabPeriodStartAt = (now: number): number => now - (now % STAB_PERIOD_MS);
+/** you can stab each person again 3 hours after the last stab (it was once a day); the time of the last stab is kept for each person */
+export const STAB_COOLDOWN_MS = 3 * 3_600_000;
+/** how long until the next stab on a person is allowed (0: now), given when the last one was */
+export const stabWaitAt = (last: number | undefined, now: number): number => Math.max(0, (last ?? 0) + STAB_COOLDOWN_MS - now);
 
 /**
  * The vending machine's daily stock of the mixer and the growing kit: 5 a day on your first day, one fewer every day, never fewer than 1.

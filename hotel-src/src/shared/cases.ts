@@ -18,7 +18,7 @@ export type Tier = "junk" | "common" | "rare" | "unusual";
 export interface CasePrize { id: string; chance: number; tier: Tier; label: string }
 /**
  * What a box gives, in percent (they add up to 100). Half of them are junk or small: ass weed, a cigarette, tobacco, hash, a chud joint, seeds, an ordinary piece of furniture; a good quarter is the heavy stuff
- * (cali weed and the 芬太尼, which bagmand pays 150 and 200 for), and 12% is something special: a poppy seed, the loudspeaker, a rare piece of furniture or an unusual.
+ * (cali weed and the 芬太尼, which bagmand pays 225 and 300 for), and 12% is something special: a poppy seed, the loudspeaker, a rare piece of furniture or an unusual.
  * The prizes are worth about 107 blood on average to the one who opens it, against the 200 the key costs: the boxes never pay.
  */
 export const CASE_TABLE: CasePrize[] = [
@@ -39,7 +39,7 @@ export const CASE_JUNK: { item: string; ass?: true }[] = [
 ];
 
 /** roughly what each prize is worth in blood (the furniture's shop prices average about 39 sold back; an unusual is far more), to check the boxes don't pay */
-export const CASE_VALUE: Record<string, number> = { junk: 5, furni: 39, caliweed: 150, fentcn: 200, poppyseed: 50, loudspeaker: 100, unusual: 600, rarefurni: 500, unusualpet: 450, knifeskin: 800 };
+export const CASE_VALUE: Record<string, number> = { junk: 5, furni: 39, caliweed: 225, fentcn: 300, poppyseed: 50, loudspeaker: 100, unusual: 600, rarefurni: 500, unusualpet: 450, knifeskin: 800 };
 export const caseExpectedValue = (): number => CASE_TABLE.reduce((n, p) => n + (p.chance / 100) * (CASE_VALUE[p.id] ?? 0), 0);
 
 /** the ordinary furniture a box can give (what the daily shop sells) and the rare pieces (the raffle's) */

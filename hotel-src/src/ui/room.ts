@@ -1552,7 +1552,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (findSlot(me.inventory, "knife") < 0 && findSlot(me.inventory, "machete") < 0) return say("You need a knife for that.", "warn");
     if (uid === LEGEND.id && me.tutorial >= 2) return say("He isn't getting up.", "warn");
     if (!deadlyReady() && !canStab(me, uid)) {
-      const mins = Math.max(1, Math.ceil(msUntilNextStab() / 60000));
+      const mins = Math.max(1, Math.ceil(msUntilNextStab(me, uid) / 60000));
       return say(`You've already stabbed ${target.name} lately. You can stab them again in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`, "warn");
     }
     pending = { type: "stab", uid, since: performance.now(), lastTry: 0 };
