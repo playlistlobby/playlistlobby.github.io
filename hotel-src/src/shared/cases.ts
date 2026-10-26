@@ -17,22 +17,29 @@ export const CASE_BIN_CHANCE = 5;
 export type Tier = "junk" | "common" | "rare" | "unusual";
 export interface CasePrize { id: string; chance: number; tier: Tier; label: string }
 /**
- * What a box gives, in percent (they add up to 100). Half of them are junk or small: ass weed, a cigarette, tobacco, hash, a chud joint, seeds, an ordinary piece of furniture; a good quarter is the heavy stuff
- * (cali weed and the 芬太尼, which bagmand pays 225 and 300 for), and 12% is something special: a poppy seed, the loudspeaker, a rare piece of furniture or an unusual.
- * The prizes are worth about 107 blood on average to the one who opens it, against the 200 the key costs: the boxes never pay.
+ * What a box gives, in percent (they add up to 100; the loudspeaker is 0.05, so the roll is out of 10000: see rollCase). Two thirds of them are junk or an ordinary piece of furniture;
+ * cali weed and the 芬太尼 (which bagmand pays 225 and 300 for) are 9.5 and 6.5; the rare things (an unusual hat, rare furniture, an unusual pet, the knife skin) are 2.5, 1, 1 and 0.5.
+ * The prizes are worth about 90 blood on average to the one who opens it, against the 200 the key costs: the boxes never pay.
  */
 export const CASE_TABLE: CasePrize[] = [
-  { id: "junk", chance: 22, tier: "junk", label: "Junk" },
-  { id: "furni", chance: 21, tier: "common", label: "Furniture" },
-  { id: "caliweed", chance: 19, tier: "rare", label: "Cali weed" },
-  { id: "fentcn", chance: 13, tier: "rare", label: "芬太尼" },
+  { id: "junk", chance: 35, tier: "junk", label: "Junk" },
+  { id: "furni", chance: 33.95, tier: "common", label: "Furniture" },
+  { id: "caliweed", chance: 9.5, tier: "rare", label: "Cali weed" },
+  { id: "fentcn", chance: 6.5, tier: "rare", label: "芬太尼" },
   { id: "poppyseed", chance: 10, tier: "rare", label: "Poppy seed" },
-  { id: "loudspeaker", chance: 5, tier: "rare", label: "Loudspeaker" },
-  { id: "unusual", chance: 5, tier: "unusual", label: "Unusual" },
-  { id: "rarefurni", chance: 2, tier: "unusual", label: "Rare furniture" },
-  { id: "unusualpet", chance: 2, tier: "unusual", label: "Unusual pet" },
-  { id: "knifeskin", chance: 1, tier: "unusual", label: "Karambit | Tiger Tooth" },
+  { id: "loudspeaker", chance: 0.05, tier: "rare", label: "Loudspeaker" },
+  { id: "unusual", chance: 2.5, tier: "unusual", label: "Unusual" },
+  { id: "rarefurni", chance: 1, tier: "unusual", label: "Rare furniture" },
+  { id: "unusualpet", chance: 1, tier: "unusual", label: "Unusual pet" },
+  { id: "knifeskin", chance: 0.5, tier: "unusual", label: "Karambit | Tiger Tooth" },
 ];
+/** which prize a roll of 0..9999 is (every prize has its chance in hundredths of a percent) */
+export function rollCase(r: number): CasePrize {
+  let left = r;
+  for (const p of CASE_TABLE) { const w = Math.round(p.chance * 100); if (left < w) return p; left -= w; }
+  return CASE_TABLE[0];
+}
+export const CASE_ROLL_MAX = 10000;
 /** what the junk slot gives: one of these, as likely as each other (the weed is the weak kind, "ass weed") */
 export const CASE_JUNK: { item: string; ass?: true }[] = [
   { item: "weed", ass: true }, { item: "cigarette" }, { item: "tobacco" }, { item: "hash" }, { item: "joint_chudname" }, { item: "weedseed" }, { item: "shroomspore" },

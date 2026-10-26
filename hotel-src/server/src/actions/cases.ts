@@ -4,7 +4,7 @@ import { Action } from "./util";
 import { fail } from "../ctx";
 import { addToInv, takeOneFrom } from "../../../src/shared/economy";
 import { findSlot } from "../../../src/shared/items";
-import { randomUnusualPet, CASE_FURNI, CASE_ITEM, CASE_JUNK, CASE_RARE_FURNI, CASE_TABLE, KEY_ITEM, UNUSUAL_IDS, unusualOf } from "../../../src/shared/cases";
+import { randomUnusualPet, rollCase, CASE_ROLL_MAX, CASE_FURNI, CASE_ITEM, CASE_JUNK, CASE_RARE_FURNI, CASE_TABLE, KEY_ITEM, UNUSUAL_IDS, unusualOf } from "../../../src/shared/cases";
 import { int } from "./util";
 
 /** a fair whole number from 0 to n-1 */
@@ -25,8 +25,7 @@ export const caseOpen: Action = {
     if (boxAt < 0) fail("You haven't got a mystery box.");
     if (keyAt < 0) fail("You need a key to open it. 6ixty sells them.");
     // the roll: 100 numbers, each prize gets as many as its percentage
-    let r = fairInt(100), row = CASE_TABLE[0];
-    for (const p of CASE_TABLE) { if (r < p.chance) { row = p; break; } r -= p.chance; }
+    const row = rollCase(fairInt(CASE_ROLL_MAX));
     const give =
       row.id === "junk" ? (() => { const j = pick(CASE_JUNK); return j.ass ? { item: j.item, qty: 1, ass: true as const } : { item: j.item, qty: 1 }; })()
       : row.id === "furni" ? { item: pick(CASE_FURNI), qty: 1 }
