@@ -28,9 +28,9 @@ export const LANDLORD = {
 export const BAGMAN = {
   id: "bagman",
   name: "bagmand",
-  x: 0,
-  y: 21,
-  dir: 0,
+  x: 5,
+  y: 25,
+  dir: 1,
   figure: "hd-190-1.hr-97012-42.ch-98188-1408.lg-98120-9004.sh-98136-1408.wa-98147-1408", // what the player Emil wears now
   line: "psst. fresh seeds. blue for the road.",
 };
