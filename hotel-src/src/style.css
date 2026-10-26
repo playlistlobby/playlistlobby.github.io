@@ -1200,4 +1200,6 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .un-ico { width: 36px; height: 36px; image-rendering: pixelated; }
 .un-main { flex: 1; min-width: 0; }
 .un-name { font-weight: 700; }
-
+.pet-tag { font: 700 10px var(--font); text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 8px; color: #fff; }
+.pet-tag.sale { background: #2f9e44; }
+.pet-tag.rare { background: #c2410c; }

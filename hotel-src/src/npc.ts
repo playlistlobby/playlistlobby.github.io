@@ -46,6 +46,17 @@ export const HIDEOUT_LANDLORD = {
   line: "need a place for you and your boys? a hideout is 1000 blood.",
 };
 
+/** The pet merchant: "pets bih", who stands in the shop room where the basket was. He looks like the player Emil. Sells pets. */
+export const PET_MERCHANT = {
+  id: "petmerchant",
+  name: "pets bih",
+  x: 13,
+  y: 6,
+  dir: 6,
+  figure: "hd-190-10.hr-97012-42.ha-98080-64.fa-97044.ch-3688-73.ca-97022-1408.lg-98120-1408.sh-98142-1408.wa-98147-1408", // what the player Emil wears
+  line: "pets. 1000 to 2000 blood. some are on sale, some are not. dont ask.",
+};
+
 export interface NpcLook {
   figure: string;
   gender: Gender;

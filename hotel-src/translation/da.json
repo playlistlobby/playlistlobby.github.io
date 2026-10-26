@@ -11528,5 +11528,30 @@
   "en": "You haven't got a pet out.",
   "da": "Du har ikke et kæledyr ude.",
   "where": "server/src/actions/pets.ts:51"
+ },
+ "N1775": {
+  "en": "50% off",
+  "da": "50% rabat",
+  "where": "src/ui/petShop.ts"
+ },
+ "N1776": {
+  "en": "2x price",
+  "da": "dobbelt pris",
+  "where": "src/ui/petShop.ts"
+ },
+ "N1777": {
+  "en": "pets bih: buy a pet",
+  "da": "pets bih: køb et kæledyr",
+  "where": "src/ui/room.ts"
+ },
+ "N1778": {
+  "en": "pets. 1000 to 2000 blood. some are on sale, some are not. dont ask.",
+  "da": "pets. 1000 til 2000 blod. nogle er på tilbud, nogle er ikke. spørg ikke.",
+  "where": "src/npc.ts"
+ },
+ "N1779": {
+  "en": "🐾 pets bih",
+  "da": "🐾 pets bih",
+  "where": "src/ui/petShop.ts"
  }
 }

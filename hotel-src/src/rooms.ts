@@ -366,7 +366,6 @@ export function shopDef(picks: string[], raffleKind?: string): RoomDef {
     { id: "shop_ducky", kind: "ducky", x: 0, y: 8, dir: 2 },
     // the raffle machine further down the same wall, on a marble block; the rare piece it gives away stands beside it
     // the pet merchant: a basket on the right-hand wall
-    { id: "shop_pets", kind: "petbasket", x: 13, y: 6, dir: 2 },
     { id: "shop_raffle_table", kind: "raffletable", x: 0, y: 11, dir: 2 }, { id: "shop_raffle", kind: "gacha", x: 0, y: 11, dir: 0 },
   ];
   if (raffleKind && FURNI_KINDS[raffleKind]) {

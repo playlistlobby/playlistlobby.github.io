@@ -23,7 +23,7 @@ import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fill
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
-import { BAGMAN, HIDEOUT_LANDLORD, LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
+import { BAGMAN, HIDEOUT_LANDLORD, LANDLORD, PET_MERCHANT, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
 import { openBagmandShop, BagmandShopApi } from "./bagmandShop";
 import { openHideoutComputer, ComputerApi } from "./hideoutComputer";
 import { openHideoutLandlord } from "./hideoutLandlord";
@@ -316,6 +316,7 @@ type Pending =
   | { type: "landlord"; since: number; lastTry: number }
   | { type: "bagman"; since: number; lastTry: number }
   | { type: "hlandlord"; since: number; lastTry: number }
+  | { type: "pmerchant"; since: number; lastTry: number }
   | { type: "minessixty"; since: number; lastTry: number }
   | { type: "pickup"; key: string; since: number; lastTry: number }
   | { type: "arcade" | "cd" | "bag" | "dumpster" | "use" | "bed" | "mine" | "craft"; fid: string; since: number; lastTry: number; slot?: number | null };
@@ -524,6 +525,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let hlandlordApi: { close(): void } | null = null;
   let hlandlordBubble: Bubble | null = null;
   let hlandlordLast: HTMLCanvasElement | undefined;
+  let pmBubble: Bubble | null = null;
+  let pmLast: HTMLCanvasElement | undefined;
   /** the love booths: what look each was in last, and when it changed (a new look = a new test for the couple sitting on it) */
   const loveSeen = new Map<string, { st: number; at: number }>();
   let bagmanBubble: Bubble | null = null;
@@ -705,7 +708,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
-    else if (hoverObj && hoverObj.kind === "petbasket") text = "Pet merchant: buy a pet";
+    else if (hoverObj && hoverObj.kind === "pmerchant") text = "pets bih: buy a pet";
     else if (hoverObj && hoverObj.kind === "mypet") text = "Your pet: tap to pick it up";
     else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
@@ -751,6 +754,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (roomId === LOBBY_ID) blocked.add(`${HIDEOUT_LANDLORD.x},${HIDEOUT_LANDLORD.y}`); // the hideout landlord, beside the hideout door
     if (roomId === LOBBY_ID) blocked.add(`${BAGMAN.x},${BAGMAN.y}`); // and bagmand next to the roulette table, in his hours (the tile stays blocked when he is away)
     if (isMines) blocked.add(`${MINES_SIXTY.x},${MINES_SIXTY.y}`); // and in the mines
+    if (isShop) blocked.add(`${PET_MERCHANT.x},${PET_MERCHANT.y}`); // pets bih
     if (isShop) for (let x = LANDLORD.x; x < def.w; x++) blocked.add(`${x},0`); // the landlord and the space behind his counter
     for (const f of def.furni) {
       const k = FURNI_KINDS[f.kind];
@@ -1011,8 +1015,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hdoor" || obj.kind === "petbasket") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hdoor") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
+      else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
@@ -1080,7 +1085,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
     if (obj?.kind === "mypet") opts.push({ label: "Pick up", target: "Your pet", action: () => pickUpMyPet() });
-    if (obj?.kind === "petbasket") opts.push({ label: "Browse pets", target: "Pet merchant", action: () => startBag(obj.id) });
+    if (obj?.kind === "pmerchant") opts.push({ label: "Browse pets", target: PET_MERCHANT.name, action: () => startPetMerchant() });
     if (obj?.kind === "hcomputer") opts.push({ label: "Use", target: "Computer", action: () => startBag(obj.id) });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
     if (obj?.kind === "hlandlord") opts.push({ label: "Talk", target: HIDEOUT_LANDLORD.name, action: () => startHideoutLandlord() });
@@ -1906,6 +1911,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       return;
     }
+    if (pending.type === "pmerchant") {
+      const goal = { x: PET_MERCHANT.x, y: PET_MERCHANT.y };
+      const r = approach(p, goal, now, pending);
+      if (r === "unreachable") { pending = null; return say("You can't get to him.", "warn"); }
+      if (r === "arrived") {
+        pending = null;
+        p.dir = dirOf(currentTile(p), goal);
+        update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
+        pmBubble = { text: PET_MERCHANT.line, until: performance.now() + 4200 };
+        if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; });
+      }
+      return;
+    }
     if (pending.type === "bagman") {
       if (bagVisit === null) { pending = null; return say("Bagmand has left.", "warn"); }
       const goal = { x: BAGMAN.x, y: BAGMAN.y };
@@ -2395,6 +2413,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     closeToolWindows();
     clearSelection();
     pending = { type: "hlandlord", since: performance.now(), lastTry: 0 };
+  }
+
+  function startPetMerchant(): void {
+    closeToolWindows();
+    clearSelection();
+    pending = { type: "pmerchant", since: performance.now(), lastTry: 0 };
   }
 
   function startBagman(): void {
@@ -5140,6 +5164,49 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const left = hlandlordBubble.until - now;
         const hb = hlandlordBubble;
         bubbles.push(() => drawBubble(hb.text, HIDEOUT_LANDLORD.name, hf.x, hf.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1));
+      }
+    }
+
+    if (isShop) {
+      // pets bih: not a player, only drawn here, in the shop room where the pet basket was. A yellow glow like the landlords
+      const talking = !!pmBubble && pmBubble.until > now;
+      const popts = { figure: PET_MERCHANT.figure, dir: PET_MERCHANT.dir, headDir: PET_MERCHANT.dir, actions: ["std"], gesture: talking ? "spk" : "std", frame: talking ? Math.floor(now / 140) % 2 : 0 };
+      let pimg = getCached(popts);
+      if (!pimg) { renderAvatar(popts); pimg = pmLast; } else pmLast = pimg;
+      const pw = iso(PET_MERCHANT.x, PET_MERCHANT.y);
+      const pf = toScreen({ x: pw.x, y: pw.y + TILE_H / 2 });
+      objs.push({ id: PET_MERCHANT.id, kind: "pmerchant", x0: pf.x - 22 * scale, x1: pf.x + 22 * scale, y0: pf.y - FEET_Y * scale, y1: pf.y + 8 * scale, depth: PET_MERCHANT.x + PET_MERCHANT.y });
+      const pHot = hoverObj?.kind === "pmerchant" || pending?.type === "pmerchant";
+      const ppulse = 0.5 + 0.5 * Math.sin(now / 450);
+      list.push({
+        depth: PET_MERCHANT.x + PET_MERCHANT.y + 0.5,
+        draw: () => {
+          const cx = pf.x, cy = pf.y - 48 * scale, r = 54 * scale * (pHot ? 1.2 : 1);
+          g.save();
+          const halo = g.createRadialGradient(cx, cy, 3 * scale, cx, cy, r);
+          const a = 0.12 + 0.05 * ppulse + (pHot ? 0.14 : 0);
+          halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
+          halo.addColorStop(0.55, `rgba(255,200,40,${(a * 0.6).toFixed(2)})`);
+          halo.addColorStop(1, "rgba(255,200,40,0)");
+          g.fillStyle = halo;
+          g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+          g.fillStyle = "rgba(0,0,0,0.18)";
+          g.beginPath(); g.ellipse(pf.x, pf.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); g.fill();
+          g.restore();
+          if (pimg) {
+            g.drawImage(pimg, pf.x - (32 + padOf(pimg).x) * scale, pf.y - (FEET_Y + padOf(pimg).y) * scale, pimg.width * scale, pimg.height * scale);
+            if (pHot) {
+              g.save(); g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.14 + 0.05 * ppulse;
+              g.drawImage(pimg, pf.x - (32 + padOf(pimg).x) * scale, pf.y - (FEET_Y + padOf(pimg).y) * scale, pimg.width * scale, pimg.height * scale);
+              g.restore();
+            }
+          }
+        },
+      });
+      if (pmBubble && pmBubble.until > now) {
+        const left = pmBubble.until - now;
+        const pb = pmBubble;
+        bubbles.push(() => drawBubble(pb.text, PET_MERCHANT.name, pf.x, pf.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1));
       }
     }
 

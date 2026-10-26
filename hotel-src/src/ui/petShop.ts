@@ -2,20 +2,20 @@ import { h, toast } from "./dom";
 import { BLOOD_ICON } from "../items";
 import { onPetSheet, petPreview, petSheet } from "../pets";
 import { buyPet } from "../petActions";
-import { PET_TYPES, petPrice } from "../shared/pets";
+import { PET_PRICE_MULT, PET_TYPES, petPrice } from "../shared/pets";
 import { petLabel } from "../shared/petItems";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 
-/** The pet merchant's window: buy a pet (1000-2000 drops, the colour is a surprise). It goes into your pocket: tap it there to let it out. */
+/** pets bih's window: buy a pet (1000-2000 drops, the colour is a surprise). It goes into your pocket: tap it there to let it out. */
 export function openPetShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): { close(): void } {
   const me = ctx.profile;
   let closed = false;
   let busy = false;
   const body = h("div", { class: "pet-body" });
-  const el = h("div", { class: "cd-popup pet-shop", role: "dialog", "aria-label": "Pet merchant" },
-    h("div", { class: "cd-head" }, h("strong", {}, "🐾 Pet merchant"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
+  const el = h("div", { class: "cd-popup pet-shop", role: "dialog", "aria-label": "pets bih" },
+    h("div", { class: "cd-head" }, h("strong", {}, "🐾 pets bih"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
     body);
   host.append(el);
 
@@ -40,6 +40,7 @@ export function openPetShop(host: HTMLElement, ctx: Ctx, onChange: () => void, o
         return h("div", { class: "pet-card" },
           h("div", { class: "pet-pic" }, previewOf(type)),
           h("div", { class: "pet-name" }, petLabel(type)),
+          ...((PET_PRICE_MULT[type] ?? 1) !== 1 ? [h("div", { class: "pet-tag " + ((PET_PRICE_MULT[type] ?? 1) < 1 ? "sale" : "rare") }, (PET_PRICE_MULT[type] ?? 1) < 1 ? "50% off" : "2x price")] : []),
           h("button", { class: "btn small primary", disabled: me.blood < price || busy, title: me.blood < price ? `You need ${price - me.blood} more drops` : "", onclick: () => void act(async () => { const r = await buyPet(me, type); logAction(me, "buy", `bought a ${type} for ${r.price}`); return `${petLabel(type)} is yours. It is in your pocket.`; }) },
             h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${price}`));
       })));
