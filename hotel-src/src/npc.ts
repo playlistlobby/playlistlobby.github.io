@@ -31,7 +31,7 @@ export const BAGMAN = {
   x: 0,
   y: 19,
   dir: 2,
-  figure: "hd-190-10.hr-97012-42.ha-98080-64.fa-97044.ch-3688-73.ca-97022-1408.lg-98120-1408.sh-98142-1408.wa-98147-1408", // what the player Emil wears now
+  figure: "hd-600-1.hr-98104-9002.he-98089-74.fa-97041.ch-98028-74.lg-98120-9002.sh-98142-1408.wa-98147-82", // what the player Emil wears now
   line: "psst. fresh seeds. blue for the road.",
 };
 
@@ -53,7 +53,7 @@ export const PET_MERCHANT = {
   x: 13,
   y: 6,
   dir: 6,
-  figure: "hd-190-10.hr-97012-42.ha-98080-64.fa-97044.ch-3688-73.ca-97022-1408.lg-98120-1408.sh-98142-1408.wa-98147-1408", // what the player Emil wears
+  figure: "hd-600-1.hr-98104-9002.he-98089-74.fa-97041.ch-98028-74.lg-98120-9002.sh-98142-1408.wa-98147-82", // what the player Emil wears
   line: "pets. 1000 to 2000 blood. some are on sale, some are not. dont ask.",
 };
 
