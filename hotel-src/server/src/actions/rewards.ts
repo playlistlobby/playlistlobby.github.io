@@ -5,7 +5,8 @@ import { skipTime } from "../skipTime";
 import {
   addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
-import { combine, fentanylDeathCost, findSlot, growMsOf, isLaced, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
+import { combine, DRUG_USE, fentanylDeathCost, findSlot, growMsOf, isLaced, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
+import type { UseDef } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
 const mins = (ms: number): string => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
@@ -117,6 +118,17 @@ function fentDeath(c: import("../ctx").Ctx, s: { blood: number }, laced?: string
   return { kind: "fentdeath", lost, ms: FENT_DEATH_MS, ...(laced ? { item: unlaced(laced) } : {}) };
 }
 
+/** What a drug or a special weed does to you (shared/items.ts DRUG_USE and SMOKABLE): the timers it sets on the player. */
+function applyEffects(s: import("../../../src/shared/economy").Snapshot, now: number, d: UseDef & { deadly?: { n: number; ms: number } }): void {
+  if (d.boostMs) { s.boostUntil = now + d.boostMs; s.boostMult = d.mult ?? 2; }
+  if (d.speedMs) { s.speedUntil = now + d.speedMs; s.speedMult = d.speedMult ?? 2; }
+  if (d.chemMs) s.chemUntil = now + d.chemMs;
+  if (d.shroomMs) s.shroomUntil = Math.max(s.shroomUntil, now + d.shroomMs);
+  if (d.lean) { s.leanUntil = now + LEAN_MS; s.cupUntil = now + LEAN_CUP_MS; }
+  if (d.look) { s.lookKind = d.look.kind; s.lookUntil = now + d.look.ms; }
+  if (d.deadly) { s.deadlyLeft = d.deadly.n; s.deadlyUntil = now + d.deadly.ms; }
+}
+
 /** Swallowing fentanyl (it kills you), or anything laced with it, or drinking the lean (the cup in your hand for 2 minutes, an hour of better bins). */
 export const consume: Action = {
   async run(c, a) {
@@ -153,6 +165,12 @@ export const consume: Action = {
       s.leanUntil = c.now + LEAN_MS;
       s.cupUntil = c.now + LEAN_CUP_MS;
       return { kind: "codeine", leanMs: LEAN_MS, cupMs: LEAN_CUP_MS };
+    }
+    const use = DRUG_USE[it!.item];
+    if (use) { // bagmand's drugs: heroin, percs, 2cb, ketamine and the 芬太尼
+      s.inventory = takeOneFrom(s.inventory, slot);
+      applyEffects(s, c.now, use);
+      return { kind: "drug", drug: it!.item, nodMs: use.nodMs ?? 0, rushMs: use.rushMs ?? 0, lookKind: use.look?.kind ?? "", lookMs: use.look?.ms ?? 0 };
     }
     return fail("You can't swallow that.");
   },
@@ -201,10 +219,8 @@ export const finishSmoke: Action = {
     if (sm!.chudNameMs) return { mult: 0, boostMs: 0, speedMs: 0, chemMs: 0, shroomMs: 0, chudMs: sm!.chudNameMs }; // only the name changes (the browser shows it)
     s.boostUntil = c.now + sm!.boostMs;
     s.boostMult = sm!.mult;
-    if (sm!.speedMs) { s.speedUntil = c.now + sm!.speedMs; s.speedMult = 2; }
-    if (sm!.chemMs) s.chemUntil = c.now + sm!.chemMs;
-    if (sm!.shroomMs) s.shroomUntil = Math.max(s.shroomUntil, c.now + sm!.shroomMs); // chud: the shroom's open doors too
-    return { mult: sm!.mult, boostMs: sm!.boostMs, speedMs: sm!.speedMs ?? 0, chemMs: sm!.chemMs ?? 0, shroomMs: sm!.shroomMs ?? 0 };
+    applyEffects(s, c.now, { speedMs: sm!.speedMs, speedMult: sm!.speedMult, chemMs: sm!.chemMs, shroomMs: sm!.shroomMs, look: sm!.look, deadly: sm!.deadly }); // (chud: the shroom's open doors too)
+    return { mult: sm!.mult, boostMs: sm!.boostMs, speedMs: sm!.speedMs ?? 0, chemMs: sm!.chemMs ?? 0, shroomMs: sm!.shroomMs ?? 0, lookKind: sm!.look?.kind ?? "", lookMs: sm!.look?.ms ?? 0, deadly: sm!.deadly?.n ?? 0 };
   },
 };
 
@@ -255,9 +271,9 @@ export const plant: Action = {
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     const seed = w.s.inventory[slot]?.item;
-    if (seed !== "weedseed" && seed !== "shroomspore") fail("That isn't a seed.");
+    if (seed !== "weedseed" && seed !== "shroomspore" && seed !== "poppyseed") fail("That isn't a seed.");
     w.s.inventory = takeOneFrom(w.s.inventory, slot);
-    c.extra[`${path}/crop`] = seed === "shroomspore" ? "shroom" : null; // what grows: weed (nothing stored) or shrooms
+    c.extra[`${path}/crop`] = seed === "shroomspore" ? "shroom" : seed === "poppyseed" ? "poppy" : null; // what grows: weed (nothing stored), shrooms or poppies (bagmand's: 4 hours, opium)
     c.extra[`${path}/plantedAt`] = c.now;
     c.extra[`${path}/wateredAt`] = null; // it hasn't been watered yet
     c.extra[`${path}/neglect`] = null;
@@ -287,6 +303,16 @@ export const harvest: Action = {
     if (c.now - row.plantedAt! < growMsOf(row.crop)) fail("It isn't ready yet.");
     const ass = !(typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!); // never got its one watering
     const w = await c.user();
+    if (row.crop === "poppy") { // opium: one per poppy (weak, worth half and no good for mixing, if it never got its water), no seed falls out
+      const got = addToInv(w.s.inventory, { item: "opium", qty: 1, ...(ass ? { ass: true } : {}) });
+      if (!got) fail("Your inventory is full");
+      w.s.inventory = got!;
+      c.extra[`${path}/crop`] = null;
+      c.extra[`${path}/plantedAt`] = null;
+      c.extra[`${path}/wateredAt`] = null;
+      c.extra[`${path}/neglect`] = null;
+      return { ass, crop: "poppy", qty: 1 };
+    }
     const shrooms = row.crop === "shroom";
     const qty = Math.random() < DOUBLE_HARVEST_CHANCE ? 2 : 1; // one per harvest, and now and then two
     const give = shrooms ? { item: ass ? "weakshroom" : "shroom", qty: ass ? 1 : qty } : { item: "weed", qty, ...(ass ? { ass: true } : {}) }; // (shrooms that never got their water give only one)

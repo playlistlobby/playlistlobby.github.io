@@ -73,6 +73,11 @@ export interface Profile {
   speedUntil: number;
   /** flashing and smoking until this time (research chemical) */
   chemUntil: number;
+  /** how you look to everybody until lookUntil (see LOOK_KINDS in shared/bagmand.ts), and the deadly stabs a loudpack gave you (until deadlyUntil) */
+  lookKind: string;
+  lookUntil: number;
+  deadlyLeft: number;
+  deadlyUntil: number;
   /** how many times faster you walk while speedUntil lasts (2, or 4 with the super pill) */
   speedMult: number;
   /** the lean (codeine) works until this time; you hold the cup until cupUntil (server time, ms) */
@@ -153,6 +158,10 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.boostMult = s.boostMult;
   p.speedUntil = s.speedUntil;
   p.chemUntil = s.chemUntil;
+  p.lookKind = s.lookKind;
+  p.lookUntil = s.lookUntil;
+  p.deadlyLeft = s.deadlyLeft;
+  p.deadlyUntil = s.deadlyUntil;
   p.speedMult = s.speedMult;
   p.leanUntil = s.leanUntil;
   p.cupUntil = s.cupUntil;
@@ -233,6 +242,10 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     boostMult: 2,
     speedUntil: 0,
     chemUntil: 0,
+    lookKind: "",
+    lookUntil: 0,
+    deadlyLeft: 0,
+    deadlyUntil: 0,
     speedMult: 2,
     leanUntil: 0,
     cupUntil: 0,
@@ -336,7 +349,7 @@ export async function searchDumpster(p: Profile, canId: string, roomId: string):
 export const useFurniState = (p: Profile, room: string, id: string): Promise<{ st?: number }> => call(p, "furniState", { room, id });
 
 /** Swallows the super pill or drinks the lean (codeine) in a slot. */
-export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number; ms?: number; tripMs?: number; lost?: number; item?: string }> => call(p, "consume", { slot });
+export const consumeItem = (p: Profile, slot: number): Promise<{ kind?: string; drug?: string; nodMs?: number; rushMs?: number; lookKind?: string; lookMs?: number; speedMs?: number; speedMult?: number; leanMs?: number; cupMs?: number; ms?: number; tripMs?: number; lost?: number; item?: string }> => call(p, "consume", { slot });
 /** Uses two pocket items on each other (weed + paper, ...). Resolves with the message. */
 export async function combineSlots(p: Profile, a: number, b: number): Promise<{ note: string; gave: string }> {
   const r = await call<{ note?: string; gave?: string }>(p, "combine", { a, b });
@@ -348,7 +361,7 @@ export async function lightItem(p: Profile, slot: number): Promise<number> {
   return Number((await call<{ litAt?: number }>(p, "light", { slot })).litAt) || serverNow();
 }
 /** A smoke that has burned for a minute: it becomes a butt and gives its bonus (or knocks you out, for ass weed). */
-export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; mult?: number; boostMs?: number; speedMs?: number; chemMs?: number; shroomMs?: number; chudMs?: number }> => call(p, "finishSmoke", { slot });
+export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; lookKind?: string; lookMs?: number; deadly?: number; mult?: number; boostMs?: number; speedMs?: number; chemMs?: number; shroomMs?: number; chudMs?: number }> => call(p, "finishSmoke", { slot });
 
 // ---- growing weed in a growing kit ---------------------------------------------------------------------------
 export const plantSeed = (p: Profile, _roomId: string, fid: string, seedSlot: number): Promise<unknown> => call(p, "plant", { fid, slot: seedSlot });
@@ -445,6 +458,15 @@ export async function deleteOutfit(p: Profile, slot: number): Promise<void> {
 }
 
 export { DEFAULT_FIGURE };
+
+/** Bagmand: buy poppy seeds or natryger (what it cost comes off your blood). */
+export const bagmandBuy = (p: Profile, item: string, qty: number): Promise<{ cost?: number; left?: number | null }> => call(p, "bagmandBuy", { item, qty });
+/** Bagmand: sell what he buys back from a pocket slot. Resolves with what he paid. */
+export async function bagmandSell(p: Profile, slot: number, qty: number): Promise<number> {
+  return Number((await call<{ gain?: number }>(p, "bagmandSell", { slot, qty })).gain) || 0;
+}
+/** A deadly stab (the loudpack): kills somebody in the room, who drops blood and is sent home. */
+export const deadlyStab = (p: Profile, target: string, room: string): Promise<{ dropped?: number; left?: number }> => call(p, "deadlyStab", { target, room });
 
 /** Sells weed from a pocket slot to 6ixty (6 drops each, 3 for ass weed). Resolves with what it paid. */
 export async function sellWeed(p: Profile, slot: number, qty: number): Promise<number> {

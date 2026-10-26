@@ -22,6 +22,8 @@ import { modAlts, modBan, modBanMany, modBlood, modDismissReport, modIpBan, modI
 import { rollDice } from "./dice";
 import { register } from "./signup";
 import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
+import { bagmandBuy, bagmandSell, deadlyStab } from "./bagmand";
+import { loudspeaker } from "./loudspeaker";
 
 /** Every thing the browser may ask for. Anything not listed here cannot be done: the browser can't write economy data itself. */
 export const ACTIONS: Record<string, Action> = {
@@ -38,6 +40,7 @@ export const ACTIONS: Record<string, Action> = {
   duckyBuy, rollDice, register,
   modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick, modRename,
   raffleBuy, raffleCollect, raffleRemove, raffleTick,
+  bagmandBuy, bagmandSell, deadlyStab, loudspeaker,
   mine, craft,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

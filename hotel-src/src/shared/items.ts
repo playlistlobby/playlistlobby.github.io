@@ -28,6 +28,11 @@ export const ITEM_ID_LIST = [
   "iron", "wood", "pickaxe", "machete",
   // the dice (pay2win machine, for blood): hold it, press Roll, and a number from 1 to 6 shows over your head
   "dice",
+  // bagmand (a visiting vendor, see shared/bagmand.ts): poppy seeds grow into opium, which is mixed into the heavy stuff; his own blue weed and the special weeds you roll from them
+  "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",
+  "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",
+  // the loudspeaker: a message on every screen for 10 seconds, once every 6 hours (see shared/loudspeaker.ts)
+  "loudspeaker",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -69,7 +74,7 @@ export function parseInventoryWith(raw: unknown, valid: (id: string) => boolean)
 }
 
 /** Things that can never be put on the floor, given or traded (the knife stays with you). */
-export const NO_DROP: ReadonlySet<string> = new Set(["knife", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
+export const NO_DROP: ReadonlySet<string> = new Set(["loudspeaker", "knife", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
 
 /** First slot holding `item`. Items that are loaned out (inPlayer) don't count as available. */
 export const findSlot = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item && !s.inPlayer);
@@ -107,7 +112,7 @@ export const VENDING_STOCK: Array<{ id: string; item: string; qty: number; label
  * `kind` is how it looks in the mouth (cigarette / joint / blunt); `speedMs` = you walk twice as fast for that long; `chemMs` = you flash and smoke
  * pours off you for that long.
  */
-export interface SmokeDef { mult: number; boostMs: number; kind: "cigarette" | "joint" | "blunt" | "hashjoint" | "chudjoint" | "chudblunt"; /** a shroom's trip too: every door open for this long (chud) */ shroomMs?: number; /** your name shows as "chud" for this long (and nothing else happens) */ chudNameMs?: number; speedMs?: number; chemMs?: number; /** how long it burns before the effect starts (default SMOKE_MS) */ smokeMs?: number }
+export interface SmokeDef { mult: number; boostMs: number; kind: "cigarette" | "joint" | "blunt" | "hashjoint" | "chudjoint" | "chudblunt"; /** a shroom's trip too: every door open for this long (chud) */ shroomMs?: number; /** your name shows as "chud" for this long (and nothing else happens) */ chudNameMs?: number; speedMs?: number; chemMs?: number; /** how many times faster (default 2) */ speedMult?: number; /** how you look to everybody for this long (see LOOKS in shared/bagmand.ts) */ look?: { kind: string; ms: number }; /** deadly stabs: `n` of them, which can be used for `ms` (see deadlyStab) */ deadly?: { n: number; ms: number };  /** how long it burns before the effect starts (default SMOKE_MS) */ smokeMs?: number }
 export const SMOKABLE: Record<string, SmokeDef> = {
   cigarette: { mult: 2, boostMs: 120_000, kind: "cigarette" },
   cigar: { mult: 2, boostMs: 120_000, kind: "blunt" }, // a cigar smokes like a cigarette (and looks like a little blunt)
@@ -132,14 +137,42 @@ export const SMOKABLE: Record<string, SmokeDef> = {
   joint_chud: { mult: 3, boostMs: 120_000, kind: "chudjoint", shroomMs: 3 * 60_000 },
   blunt_chud: { mult: 4, boostMs: 180_000, kind: "chudblunt", shroomMs: 3 * 60_000 },
   blunt_chem: { mult: 2, boostMs: 90_000, kind: "blunt", speedMs: 90_000, chemMs: 90_000, smokeMs: 5_000 },
+  // bagmand's weeds. natryger (blue weed): you hover over the ground in a blue glow and walk twice as fast for 4 minutes
+  joint_nat: { mult: 2, boostMs: 240_000, kind: "joint", speedMs: 240_000, look: { kind: "blue", ms: 240_000 } },
+  blunt_nat: { mult: 2, boostMs: 240_000, kind: "blunt", speedMs: 240_000, look: { kind: "blue", ms: 240_000 } },
+  // cali weed: a stronger smoke that shines gold
+  joint_cali: { mult: 4, boostMs: 150_000, kind: "joint", look: { kind: "gold", ms: 150_000 } },
+  blunt_cali: { mult: 5, boostMs: 210_000, kind: "blunt", look: { kind: "gold", ms: 210_000 } },
+  // pink weed (2cb + weed): a strong smoke, hearts and a pink glow, and you walk twice as fast
+  joint_pink: { mult: 3, boostMs: 150_000, kind: "joint", speedMs: 150_000, look: { kind: "pink", ms: 150_000 } },
+  blunt_pink: { mult: 4, boostMs: 210_000, kind: "blunt", speedMs: 210_000, look: { kind: "pink", ms: 210_000 } },
+  // brown weed (heroin + weed): the heaviest plain stab bonus, in a brown haze
+  joint_brown: { mult: 4, boostMs: 180_000, kind: "joint", look: { kind: "brown", ms: 180_000 } },
+  blunt_brown: { mult: 5, boostMs: 240_000, kind: "blunt", look: { kind: "brown", ms: 240_000 } },
+  // the loudpack (natryger + cali weed): sparkles, twice as fast for a minute and 2 deadly stabs (they can be used for 3 minutes)
+  joint_loud: { mult: 3, boostMs: 60_000, kind: "joint", speedMs: 60_000, look: { kind: "sparkle", ms: 60_000 }, deadly: { n: 2, ms: 180_000 } },
+  blunt_loud: { mult: 3, boostMs: 60_000, kind: "blunt", speedMs: 60_000, look: { kind: "sparkle", ms: 60_000 }, deadly: { n: 2, ms: 180_000 } },
+};
+/**
+ * Things you swallow that aren't fentanyl, LSD, DMT, shrooms or the lean (those have their own code in `consume`): bagmand's drugs.
+ * `nodMs` = the screen goes dark for that long (heroin), `rushMs` = 10x run speed with the LSD spin at 3x for that long, before everything else (the 芬太尼).
+ */
+export interface UseDef { mult?: number; boostMs?: number; speedMs?: number; speedMult?: number; shroomMs?: number; chemMs?: number; lean?: boolean; look?: { kind: string; ms: number }; nodMs?: number; rushMs?: number }
+export const DRUG_USE: Record<string, UseDef> = {
+  heroin: { mult: 4, boostMs: 180_000, look: { kind: "brown", ms: 180_000 }, nodMs: 10_000 }, // you nod off for 10 seconds, then stab for 4x
+  percs: { mult: 3, boostMs: 180_000, speedMs: 180_000, look: { kind: "purple", ms: 180_000 } },
+  twocb: { mult: 2, boostMs: 180_000, speedMs: 180_000, shroomMs: 180_000, look: { kind: "rainbow", ms: 180_000 } }, // doors open and the colours shift
+  ketamine: { speedMs: 60_000, look: { kind: "horse", ms: 60_000 } }, // a horse's head for a minute
+  fentcn: { mult: 4, boostMs: 180_000, speedMs: 180_000, shroomMs: 180_000, chemMs: 180_000, lean: true, look: { kind: "horse", ms: 60_000 }, rushMs: 10_000 }, // 10 s at 10x, then all of it
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco", "iron", "wood"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco", "iron", "wood", "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn"]);
 /** Weed grows for 10 minutes, shrooms for 25. The water bar runs dry after 5: water it once, any time while it grows (even before the bar is empty), or the harvest turns out poor. */
 export const GROW_MS = 10 * 60_000;
 export const GROW_MS_SHROOM = 25 * 60_000;
 /** how long what is planted takes to grow */
-export const growMsOf = (crop?: string): number => (crop === "shroom" ? GROW_MS_SHROOM : GROW_MS);
+export const GROW_MS_POPPY = 4 * 3_600_000;
+export const growMsOf = (crop?: string): number => (crop === "shroom" ? GROW_MS_SHROOM : crop === "poppy" ? GROW_MS_POPPY : GROW_MS);
 export const WATER_MS = 5 * 60_000;
 export const SMOKE_MS = 60_000;
 /** How long this smokable burns before it's finished. */
@@ -151,10 +184,10 @@ export const MUSIC_ACCESS_KEY = "access_music";
 export const MUSIC_ACCESS_PRICE = 4;
 
 /** Everything you can roll: good weed, and what the mixer makes from it. */
-export const ROLLABLE: ReadonlySet<string> = new Set(["weed", "mix", "midweed", "thca", "researchchem", "hashmix", "chudmix", "trollmix"]);
+export const ROLLABLE: ReadonlySet<string> = new Set(["weed", "mix", "midweed", "thca", "researchchem", "hashmix", "chudmix", "trollmix", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack"]);
 
 /** What a rolled joint / blunt is called, by what went into it. (Good weed and weed mix both make the plain one.) */
-const ROLL_SUFFIX: Record<string, string> = { weed: "", mix: "", midweed: "_mid", thca: "_thca", researchchem: "_chem", hashmix: "_hash", chudmix: "_chud", trollmix: "_troll" };
+const ROLL_SUFFIX: Record<string, string> = { weed: "", mix: "", midweed: "_mid", thca: "_thca", researchchem: "_chem", hashmix: "_hash", chudmix: "_chud", trollmix: "_troll", caliweed: "_cali", pinkweed: "_pink", brownweed: "_brown", natryger: "_nat", loudpack: "_loud" };
 
 /**
  * Fentanyl used on another drug laces it. A laced thing is its own item (its id is "laced_" + the plain id), so it never stacks with the clean one;
@@ -164,7 +197,7 @@ export const LACED_PREFIX = "laced_";
 export const isLaced = (id: string): boolean => id.startsWith(LACED_PREFIX);
 export const unlaced = (id: string): string => (isLaced(id) ? id.slice(LACED_PREFIX.length) : id);
 export const LACEABLE: ReadonlySet<string> = new Set([
-  ...ROLLABLE, ...Object.keys(SMOKABLE).filter((k) => k !== "cigarette" && k !== "cigar"), "pill", "codeine", "shroom", "weakshroom", "lsd", "dmt",
+  ...ROLLABLE, ...Object.keys(SMOKABLE).filter((k) => k !== "cigarette" && k !== "cigar"), "pill", "codeine", "shroom", "weakshroom", "lsd", "dmt", ...Object.keys(DRUG_USE), "opium",
 ]);
 for (const id of LACEABLE) {
   (ITEM_IDS as Set<string>).add(LACED_PREFIX + id);
@@ -212,6 +245,16 @@ export const MIX_RECIPES: MixRecipe[] = [
   { a: { item: "weed", ass: true }, b: { item: "cigarette" }, give: { item: "joint_chudname", qty: 1 }, note: "Ass weed and a cigarette, rolled together: 1 chud joint." },
   // the lean also works in the mixer: kodimagnyl + a full watering can (the can comes straight back, empty)
   { a: { item: "kodimagnyl" }, b: { item: "wateringcan_full" }, give: { item: "codeine", qty: 1 }, back: { item: "wateringcan", qty: 1 }, note: "You crush the kodimagnyl into the water. It turns purple: codeine. The can is empty again." },
+  // bagmand's: opium (from poppies) mixed into the heavy stuff. These take hours (set per recipe), and what they make sells for about 3x what went in
+  { a: { item: "opium" }, b: { item: "wateringcan_full" }, give: { item: "heroin", qty: 1 }, back: { item: "wateringcan", qty: 1 }, ms: 2 * 3_600_000, note: "The opium dissolves in the water and is boiled down: 1 heroin. The can is empty again." },
+  { a: { item: "opium" }, b: { item: "codeine" }, give: { item: "ketamine", qty: 1 }, ms: 2 * 3_600_000, note: "Opium stirred into the lean: 1 ketamine." },
+  { a: { item: "opium" }, b: { item: "pill" }, give: { item: "percs", qty: 1 }, ms: 2.5 * 3_600_000, note: "The opium is pressed into the pill: 1 percs." },
+  { a: { item: "opium" }, b: { item: "shroom" }, give: { item: "twocb", qty: 1 }, ms: 3 * 3_600_000, note: "Opium and a shroom, ground together: 1 2cb." },
+  { a: { item: "opium" }, b: { item: "weed" }, give: { item: "caliweed", qty: 1 }, ms: 3 * 3_600_000, note: "The weed is soaked in opium and comes out gold: 1 cali weed." },
+  { a: { item: "opium" }, b: { item: "superpill" }, give: { item: "fentcn", qty: 1 }, ms: 4 * 3_600_000, note: "Opium and fentanyl, cut together: 1 芬太尼." },
+  { a: { item: "twocb" }, b: { item: "weed" }, give: { item: "pinkweed", qty: 2 }, ms: 2 * 3_600_000, note: "2cb crumbled into weed turns it pink: 2 pink weed." },
+  { a: { item: "heroin" }, b: { item: "weed" }, give: { item: "brownweed", qty: 2 }, ms: 2 * 3_600_000, note: "Heroin crumbled into weed turns it brown: 2 brown weed." },
+  { a: { item: "natryger" }, b: { item: "caliweed" }, give: { item: "loudpack", qty: 1 }, ms: 3 * 3_600_000, note: "Blue weed and cali weed, packed together into one big bud: 1 loudpack." },
 ];
 // tobacco and the cigar mix exactly like a cigarette
 for (const r of [...MIX_RECIPES]) if (r.b.item === "cigarette") for (const smoke of ["tobacco", "cigar"]) MIX_RECIPES.push({ ...r, b: { item: smoke } });
@@ -221,7 +264,7 @@ MIX_RECIPES.push({ a: { item: "cigbutt" }, b: { item: "cigbutt" }, give: { item:
 export const MIX_MINUTES: Record<string, number> = { tobacco: 10, mix: 10, midweed: 12, researchchem: 12, thca: 14, hash: 16, superpill: 18, hashmix: 22, chudmix: 20, trollmix: 24, lsd: 24, joint_chudname: 12, dmt: 26, codeine: 22.5 };
 /** what you can grow: a mix with none of these in it (pills, kodimagnyl, water, cigarettes, butts) takes twice as long */
 const GROWN = new Set(["weed", "shroom", "hash"]); // (hash is made from ass weed, so it counts)
-for (const r of MIX_RECIPES) r.ms = (MIX_MINUTES[r.give.item] ?? 10) * 60_000 * (GROWN.has(r.a.item) || GROWN.has(r.b.item) ? 1 : 2);
+for (const r of MIX_RECIPES) if (r.ms === undefined) r.ms = (MIX_MINUTES[r.give.item] ?? 10) * 60_000 * (GROWN.has(r.a.item) || GROWN.has(r.b.item) ? 1 : 2);
 const matches = (it: InvItem, m: { item: string; ass?: boolean }): boolean => it.item === m.item && !it.lit && !it.inPlayer && !!it.ass === !!m.ass;
 export function mixRecipe(x: InvItem, y: InvItem): MixRecipe | null {
   return MIX_RECIPES.find((r) => (matches(x, r.a) && matches(y, r.b)) || (matches(y, r.a) && matches(x, r.b))) ?? null;
@@ -233,6 +276,10 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
   "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "pickaxe", "machete", "dice", "f_sofa",
+  "loudspeaker",
+  // bagmand only buys his own things back (see shared/bagmand.ts)
+  "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",
+  "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",
 ]);
 
 /**

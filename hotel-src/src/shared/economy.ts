@@ -114,6 +114,12 @@ export interface Snapshot {
   shroomUntil: number;
   /** flashing and smoking until this time (research chemical) */
   chemUntil: number;
+  /** how you look to everybody until lookUntil (see LOOK_KINDS in shared/bagmand.ts): "" = normal */
+  lookKind: string;
+  lookUntil: number;
+  /** deadly stabs left (a loudpack gives 2) and until when they can be used */
+  deadlyLeft: number;
+  deadlyUntil: number;
   catsCarved: number;
   /** how many room upgrades are bought (0..3) */
   roomLevel: number;
@@ -179,11 +185,15 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     boostUntil: Number(v.boostUntil) || 0,
     boostMult: Math.min(4, Math.max(2, Number(v.boostMult) || 2)),
     speedUntil: Number(v.speedUntil) || 0,
-    speedMult: Math.min(4, Math.max(2, Number(v.speedMult) || 2)),
+    speedMult: Math.min(10, Math.max(2, Number(v.speedMult) || 2)),
     leanUntil: Number(v.leanUntil) || 0,
     cupUntil: Number(v.cupUntil) || 0,
     shroomUntil: Number(v.shroomUntil) || 0,
     chemUntil: Number(v.chemUntil) || 0,
+    lookKind: typeof v.lookKind === "string" ? v.lookKind : "",
+    lookUntil: Number(v.lookUntil) || 0,
+    deadlyLeft: Math.max(0, Math.floor(Number(v.deadlyLeft) || 0)),
+    deadlyUntil: Number(v.deadlyUntil) || 0,
     catsCarved: Number(v.catsCarved) || 0,
     roomLevel: Math.min(ROOM_UPGRADES.length, Math.max(0, Math.floor(Number(v.roomLevel) || 0))),
     syringeSelfAt: Number(v.syringeSelfAt) || 0,
@@ -202,7 +212,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
   const patch: Record<string, unknown> = {};
   const base = `users/${uid}/`;
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "speedMult", "leanUntil", "cupUntil", "shroomUntil", "chemUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
+  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "speedMult", "leanUntil", "cupUntil", "shroomUntil", "chemUntil", "lookKind", "lookUntil", "deadlyLeft", "deadlyUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
     if (before[k] !== after[k]) patch[base + k] = after[k];
   }
   if (before.tradeCap.at !== after.tradeCap.at || before.tradeCap.n !== after.tradeCap.n) patch[`${base}tradeCap`] = after.tradeCap;

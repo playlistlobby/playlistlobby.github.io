@@ -50,25 +50,29 @@ export const fentDrop: Action = {
     if (c.now - owed.at < 5000) fail("Not yet."); // (it falls when you go down, not before)
     c.extra[`fentOwed/${c.uid}`] = null;
     if (c.now - owed.at > 120_000) return { dropped: 0 }; // (too late: it is just gone)
-    const size = await roomSize(c, room);
-    const drops = (await c.db.get<Record<string, DropRow>>(`rooms/${room}/drops`)) ?? {};
-    const live = (d: DropRow) => !d.exp || d.exp > c.now;
-    // where you lie, or the nearest tile with nothing on it
-    let best: { x: number; y: number } | null = null, bd = Infinity;
-    const from = stand ?? { x: Math.floor(size.w / 2), y: Math.floor(size.h / 2) };
-    for (let y = 0; y < size.h; y++) for (let x = 0; x < size.w; x++) {
-      const d0 = drops[`${x}_${y}`];
-      if (d0 && live(d0)) continue;
-      const dist = Math.hypot(x - from.x, y - from.y);
-      if (dist < bd) { bd = dist; best = { x, y }; }
-    }
-    if (!best) return { dropped: 0 };
     const w = await c.user();
-    const pub = isPublicRoom(room);
-    c.extra[`rooms/${room}/drops/${best.x}_${best.y}`] = { item: "blood", qty: Math.floor(Number(owed.lost)), x: best.x, y: best.y, by: c.uid, byName: String(w.raw.name ?? "someone").slice(0, 16), at: c.now, ...(pub ? { exp: c.now + DROP_LIFE_MS } : {}) };
-    return { dropped: Math.floor(Number(owed.lost)) };
+    const qty = Math.floor(Number(owed.lost));
+    return { dropped: (await bloodPile(c, room, stand, qty, c.uid, String(w.raw.name ?? "someone"))) ? qty : 0 };
   },
 };
+
+/** A pile of blood on the floor where somebody went down (or the nearest tile with nothing on it): anybody can pick it up. False if the room has no free tile. */
+export async function bloodPile(c: import("../ctx").Ctx, room: string, at: { x: number; y: number } | null, qty: number, byUid: string, byName: string): Promise<boolean> {
+  const size = await roomSize(c, room);
+  const drops = (await c.db.get<Record<string, DropRow>>(`rooms/${room}/drops`)) ?? {};
+  const live = (d: DropRow) => !d.exp || d.exp > c.now;
+  let best: { x: number; y: number } | null = null, bd = Infinity;
+  const from = at ?? { x: Math.floor(size.w / 2), y: Math.floor(size.h / 2) };
+  for (let y = 0; y < size.h; y++) for (let x = 0; x < size.w; x++) {
+    const d0 = drops[`${x}_${y}`];
+    if (d0 && live(d0)) continue;
+    const dist = Math.hypot(x - from.x, y - from.y);
+    if (dist < bd) { bd = dist; best = { x, y }; }
+  }
+  if (!best) return false;
+  c.extra[`rooms/${room}/drops/${best.x}_${best.y}`] = { item: "blood", qty, x: best.x, y: best.y, by: byUid, byName: byName.slice(0, 16), at: c.now, ...(isPublicRoom(room) ? { exp: c.now + DROP_LIFE_MS } : {}) };
+  return true;
+}
 
 export const pickup: Action = {
   locks: (c, a) => [`room:${a?.room}`],

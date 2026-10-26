@@ -10,7 +10,7 @@ import { checkRaffleAtLogin } from "./raffle";
 import { startUpdateCheck } from "./updateCheck";
 import { startMaintenanceWatch } from "./maintenance";
 import { loadRole, watchMute } from "./roles";
-import { watchKick, watchNotices } from "./notices";
+import { watchBroadcast, watchKick, watchNotices } from "./notices";
 import { showWatched } from "./watched";
 import { mountModPage } from "./ui/modPage";
 import { CHATMOD_NAME } from "./shared/mod";
@@ -222,6 +222,7 @@ async function showHotel(user: User): Promise<void> {
   void showWatched(p.uid); // after the game was closed: a camera pans across the screen and tells everybody to behave
   const stopNotices = watchNotices(p); // a warning or a message from a moderator
   const stopKick = watchKick(p, () => void doLogout()); // a moderator threw you out
+  const stopBroadcast = watchBroadcast(); // somebody used the loudspeaker
   // one window per account: a second window can't get in while the first is open (two windows could drop the same item twice)
   if (await otherWindowOpen(p.uid)) {
     stopShop(); stopDesigns(); stopFurni();
@@ -330,6 +331,7 @@ async function showHotel(user: User): Promise<void> {
     stopMute();
     stopNotices();
     stopKick();
+    stopBroadcast();
     stopPriceBook();
     stopSixtyLook?.();
     stopIdle();

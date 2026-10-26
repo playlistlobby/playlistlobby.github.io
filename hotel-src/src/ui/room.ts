@@ -3,6 +3,7 @@ import {
   onChildChanged,
   onChildRemoved,
   onDisconnect,
+  onValue,
   push,
   query,
   limitToLast,
@@ -22,7 +23,12 @@ import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fill
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
-import { LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
+import { BAGMAN, LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
+import { openBagmandShop, BagmandShopApi } from "./bagmandShop";
+import { openLoudspeaker } from "./loudspeaker";
+import { awayMessage, visitNow, watchBagmand } from "../bagmand";
+import { HORSE_HAT } from "../shared/bagmand";
+import { deadlyStab as deadlyStabCall } from "../db";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
 import { BLOOD_ICON, findSlot, furniIcon, growMsOf, itemDef, ITEMS, SMOKABLE, SMOKE_MS, smokeMsOf } from "../items";
@@ -169,6 +175,9 @@ void loadNitro("furni/mafia_c26_planter_white.nitro").then((n) => {
     }
   });
 }).catch(() => undefined);
+/** what grows in the kit when the seed was a poppy seed (bagmand's): a man-eating plant in its own pot */
+let mnstrArt: NitroFurni | null = null;
+void loadNitro("furni/mnstr.nitro").then((n) => { mnstrArt = n; }).catch(() => undefined);
 /** what grows in the kit when the seed was shroom spores */
 let shroomArt: NitroFurni | null = null;
 void loadNitro("furni/shrooms.nitro").then((n) => { shroomArt = n; }).catch(() => undefined);
@@ -251,6 +260,9 @@ interface Player {
   chud?: number;
   /** spinning round and round until then (LSD; server time, ms) */
   spin?: number;
+  /** how they look until lookUntil (bagmand's weeds and drugs: see LOOK_KINDS in shared/bagmand.ts; the rules check it against what the server wrote) */
+  look?: string;
+  lookUntil?: number;
   /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
   npc?: boolean;
   /** you walk at a fifth of your speed until then (performance.now(); fentanyl: only ever set on yourself) */
@@ -281,6 +293,7 @@ type Pending =
   | { type: "door"; since: number; lastTry: number; to?: ExtraDoor }
   | { type: "sixty"; since: number; lastTry: number; auto?: boolean }
   | { type: "landlord"; since: number; lastTry: number }
+  | { type: "bagman"; since: number; lastTry: number }
   | { type: "minessixty"; since: number; lastTry: number }
   | { type: "pickup"; key: string; since: number; lastTry: number }
   | { type: "arcade" | "cd" | "bag" | "dumpster" | "use" | "bed" | "mine" | "craft"; fid: string; since: number; lastTry: number; slot?: number | null };
@@ -475,6 +488,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function openDucky(): void { if (!duckyApi) duckyApi = openDuckyShop(stage, ctx, () => panel.refresh(), () => { duckyApi = null; }); }
   function openIdeas(): void { if (!ideasApi) ideasApi = openIdeasBoard(stage, ctx, () => { ideasApi = null; }); }
   let landlordApi: LandlordApi | null = null;
+  let bagmandApi: BagmandShopApi | null = null;
+  let bagmanBubble: Bubble | null = null;
+  let bagmanLast: HTMLCanvasElement | undefined;
+  /** the visit that is on now (bagmand's hour in the basement), looked at once a second: working it out takes a moment */
+  let bagVisit: number | null = null;
   let landlordBubble: Bubble | null = null;
   let landlordLast: HTMLCanvasElement | undefined;
   const isShop = roomId === SHOP_ID;
@@ -588,7 +606,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return false;
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what, slot) => { if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onUseSelf: (what, slot) => { if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
     onCombine: (a, b) => { void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
@@ -648,6 +666,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
+    else if (hoverObj && hoverObj.kind === "bagman") text = "bagmand: poppy seeds, blue weed. He buys opium and what is mixed from it";
     else if (hoverObj && hoverObj.kind === "bed") text = mine()?.lying ? "Your bed: get up" : "Your bed: lie down";
     else if (hoverObj && (hoverObj.kind === "boombox" || hoverObj.kind === "f_boombox")) text = "Boombox: use a CD on it";
     else if (hoverObj && hoverObj.kind === "landlord") text = "Landlord: bigger rooms, room colours";
@@ -685,6 +704,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     for (const d of def.extraDoors ?? []) blocked.add(`${d.x},0`);
     seatTiles.clear();
     if (isBasement) blocked.add(`${SIXTY.x},${SIXTY.y}`); // 6ixty stands in the basement
+    if (roomId === LOBBY_ID) blocked.add(`${BAGMAN.x},${BAGMAN.y}`); // and bagmand next to the roulette table, in his hours (the tile stays blocked when he is away)
     if (isMines) blocked.add(`${MINES_SIXTY.x},${MINES_SIXTY.y}`); // and in the mines
     if (isShop) for (let x = LANDLORD.x; x < def.w; x++) blocked.add(`${x},0`); // the landlord and the space behind his counter
     for (const f of def.furni) {
@@ -949,6 +969,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable") startBag(obj.id);
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
+      else if (obj.kind === "bagman") startBagman();
       else if (obj.kind === "minesixty") startMinesSixty();
       else if (obj.kind === "mrock") startMine(obj.id);
       else if (obj.kind === "mbench") startCraft(obj.id);
@@ -989,6 +1010,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (me.isAdmin) opts.push({ label: "Change look", target: SIXTY.name, action: () => ctx.navigate("npc") });
     }
     if (obj?.kind === "landlord") opts.push({ label: "Talk", target: LANDLORD.name, action: () => startLandlord() });
+    if (obj?.kind === "bagman") opts.push({ label: "Trade", target: BAGMAN.name, action: () => startBagman() });
     if (obj?.kind === "bed") opts.push({ label: mine()?.lying ? "Get up" : "Lie down", target: "Bed", action: () => bedAction() });
     if (obj?.kind === "dumpster") opts.push({ label: "Search", target: "Dumpster", action: () => startDumpster(obj.id) });
     if (obj?.kind === "drop") { const dd = drops.get(obj.id.slice(5)); opts.push({ label: "Pick up", target: dd ? (itemDef(dd.item)?.name ?? dd.item) : "item", action: () => startPickup(obj.id.slice(5)) }); }
@@ -1361,6 +1383,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       chem: typeof v.chem === "number" ? v.chem : undefined,
       chud: typeof v.chud === "number" ? v.chud : undefined,
       spin: typeof v.spin === "number" ? v.spin : undefined,
+      look: typeof v.look === "string" ? v.look : undefined,
+      lookUntil: typeof v.lookUntil === "number" ? v.lookUntil : undefined,
       nc: typeof v.nc === "string" && /^#[0-9a-fA-F]{6}$/.test(v.nc) ? v.nc : undefined,
       npc: v.sixty === true,
       sit: v.sit === true,
@@ -1436,13 +1460,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   // ---- the knife -------------------------------------------------------------------
+  /** a loudpack gave you deadly stabs and they have not run out: the knife kills (and is not held back by the once-a-day rule) */
+  const deadlyReady = (): boolean => me.deadlyLeft > 0 && serverNow() < me.deadlyUntil;
   function startStab(uid: string): void {
     const target = players.get(uid);
     if (!target || uid === me.uid) return;
     if (target.npc) return isShop ? startLandlord() : startSixty(); // you don't stab 6ixty, you talk to him
     if (findSlot(me.inventory, "knife") < 0 && findSlot(me.inventory, "machete") < 0) return say("You need a knife for that.", "warn");
     if (uid === LEGEND.id && me.tutorial >= 2) return say("He isn't getting up.", "warn");
-    if (!canStab(me, uid)) {
+    if (!deadlyReady() && !canStab(me, uid)) {
       const mins = Math.max(1, Math.ceil(msUntilTomorrow() / 60000));
       return say(`You've already stabbed ${target.name} today. You can stab them again in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`, "warn");
     }
@@ -1507,6 +1533,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     raffleApi?.close();
     craftApi?.close();
     landlordApi?.close();
+    bagmandApi?.close();
     sixtyShop?.close();
   }
 
@@ -1521,7 +1548,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const left = Math.max(0, growMsOf(pl.crop) * (1 - prog));
     const mins = Math.max(1, Math.ceil(left / 60000));
     const water = plantWatered(pl) ? "watered" : plantThirsty(pl) ? "THIRSTY: water it now!" : `water bar ${Math.round(plantWater(pl) * 100)}%`;
-    return prog >= 1 ? `It's ready to pick!${plantWatered(pl) ? "" : " It looks a bit sad."}` : `Growing: ${Math.round(prog * 100)}% (about ${mins}m to go). ${water[0].toUpperCase()}${water.slice(1)}.`;
+    const left2 = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+    return prog >= 1 ? `It's ready to pick!${plantWatered(pl) ? "" : " It looks a bit sad."}` : `Growing: ${Math.round(prog * 100)}% (about ${left2} to go). ${water[0].toUpperCase()}${water.slice(1)}.`;
   };
 
   /** Next to the sink or a growing kit: the sink fills a can; a kit gets a seed, water, or gets picked. */
@@ -1543,12 +1571,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (!k?.plant) return;
       if (!isOwnRoom) return say("That's not your plant.", "warn");
       if (!f.plant) {
-        const isSeed = (n: string | undefined): boolean => n === "weedseed" || n === "shroomspore";
+        const isSeed = (n: string | undefined): boolean => n === "weedseed" || n === "shroomspore" || n === "poppyseed";
         const ss = isSeed(held?.item) ? slot : null; // (nothing is planted unless you hold a seed: tap the seed first, then the pot)
-        if (ss === null) return say("An empty growing kit. Tap a weed seed or shroom spores in your pocket first, then tap the kit to plant it.", "warn");
+        if (ss === null) return say("An empty growing kit. Tap a weed seed, shroom spores or a poppy seed in your pocket first, then tap the kit to plant it.", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
-        return say(me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");
+        return say(held?.item === "poppyseed" ? "You press the little black seed into the soil. A poppy takes 4 hours, and it needs one watering: water it any time." : me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");
       }
       const prog = plantProgress(f.plant);
       const canSlot = held?.item === "wateringcan_full" ? slot! : findSlot(me.inventory, "wateringcan_full");
@@ -1565,6 +1593,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         panel.refresh();
         playSfx("give", 0.6);
         if (r.seed) window.setTimeout(() => { if (!disposed && r.seed) giftPop(`+1 ${itemDef(r.seed)?.name ?? r.seed}`, itemImg(r.seed)); }, 700);
+        if (r.crop === "poppy") {
+          giftPop(`+1 ${r.ass ? "Weak opium" : "Opium"}`, itemImg("opium"));
+          logAction(me, "room", `picked ${r.ass ? "weak " : ""}opium`);
+          return say(r.ass ? "You cut the pod. Weak opium: it never got its water." : "You cut the pod and scrape off the milk. Opium. Bagmand will want this.");
+        }
         if (r.crop === "shroom") {
           giftPop(`+${r.qty ?? 1} ${r.ass ? "Weak shroom" : "Shroom"}`, itemImg(r.ass ? "weakshroom" : "shroom"));
           logAction(me, "room", "picked shrooms");
@@ -1781,6 +1814,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
         landlordBubble = { text: LANDLORD.line, until: performance.now() + 4200 };
         if (!landlordApi) landlordApi = openLandlord(stage, ctx, () => panel.refresh(), () => { landlordApi = null; });
+      }
+      return;
+    }
+    if (pending.type === "bagman") {
+      if (bagVisit === null) { pending = null; return say("Bagmand has left.", "warn"); }
+      const goal = { x: BAGMAN.x, y: BAGMAN.y };
+      const r = approach(p, goal, now, pending);
+      if (r === "unreachable") { pending = null; return say("You can't get to him.", "warn"); }
+      if (r === "arrived") {
+        pending = null;
+        p.dir = dirOf(currentTile(p), goal);
+        update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
+        bagmanBubble = { text: BAGMAN.line, until: performance.now() + 4200 };
+        if (!bagmandApi) bagmandApi = openBagmandShop(stage, ctx, () => panel.refresh(), () => { bagmandApi = null; });
       }
       return;
     }
@@ -2068,7 +2115,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (isTut && uid === LEGEND.id) return tutorialStab();
     stabbing = true;
     try {
-      if (!canStab(me, uid)) return say(`You've already stabbed ${target.name} today.`, "warn");
+      if (!deadlyReady() && !canStab(me, uid)) return say(`You've already stabbed ${target.name} today.`, "warn");
       p.dir = dirOf(currentTile(p), currentTile(target));
       p.emote = undefined;
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(console.warn);
@@ -2079,6 +2126,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         return say("Your stab missed. They may have just left.", "warn");
       }
       try {
+        if (deadlyReady()) {
+          try {
+            const dr = await deadlyStabCall(me, uid, roomId);
+            ctx.refreshHeader();
+            panel.refresh();
+            logAction(me, "stab", `deadly stab on ${target.name}`);
+            say(`DEADLY STAB. ${target.name} goes down${dr.dropped ? ` and drops ${dr.dropped} blood on the floor` : ""}. ${dr.left ? `${dr.left} left.` : "That was the last one."}`);
+          } catch (err) { say((err as Error).message || "Your knife won't go in.", "warn"); }
+          return;
+        }
         const gain = await rewardStab(me, uid, roomId);
         lastStabGain = gain;
         ctx.refreshHeader();
@@ -2234,6 +2291,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     closeToolWindows();
     clearSelection();
     pending = { type: "landlord", since: performance.now(), lastTry: 0 };
+  }
+
+  let loudspeakerApi: { close(): void } | null = null;
+  function openLoudspeakerWindow(): void {
+    if (loudspeakerApi) return;
+    loudspeakerApi = openLoudspeaker(stage, ctx, () => { loudspeakerApi = null; });
+  }
+
+  function startBagman(): void {
+    if (bagVisit === null) return say("Bagmand isn't here right now.", "warn");
+    closeToolWindows();
+    clearSelection();
+    pending = { type: "bagman", since: performance.now(), lastTry: 0 };
   }
 
   function startSixty(auto = false): void {
@@ -2436,6 +2506,30 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
    * Fentanyl (or something laced with it) has gone in: the screen swims green, you walk at a fifth of your speed for 7 seconds, then you go down and
    * "DU OD'EDE PÅ FENT" shows for 10 seconds with what it cost you in blood, and you wake up in your own room. (The server took the blood and the item at once.)
    */
+  let lastKilledAt = 0;
+  function startKilled(k: { byName?: string; lost?: number }): void {
+    const p = mine();
+    if (!p || dying) return;
+    dying = true;
+    pillCleanup?.();
+    faintUntil = performance.now() + 18_000;
+    p.slowUntil = undefined;
+    p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null; mining = null;
+    p.faint = true;
+    update(myRef, { lay: true, sit: null }).catch(() => undefined);
+    playThud(0.7);
+    ctx.refreshHeader();
+    if (k.lost) {
+      const t = performance.now(), fp = feetOf(p, t);
+      floaters.push({ text: `-${k.lost}`, x: fp.x, y: fp.y - 70 * scale, born: t, color: "#ff2d2d", icon: bloodImg, life: 4200, size: 2.4 });
+    }
+    stage.append(h("div", { class: "fent-flash" }));
+    window.setTimeout(() => stage.querySelector(".fent-flash")?.remove(), 1400);
+    say(`${k.byName ?? "Somebody"} killed you with a deadly stab.`, "warn");
+    const stop = showDeathScreen(stage, "DU BLEV DRÆBT", 10, () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }); }, k.lost ? { lost: `-${k.lost} blod`, icon: BLOOD_ICON } : undefined);
+    unsubs.push(stop);
+  }
+
   function startFentDeath(p: Player, r: { lost?: number; ms?: number; item?: string }): void {
     dying = true;
     const app = document.getElementById("app");
@@ -2471,6 +2565,74 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const stop = showDeathScreen(stage, "DU OD'EDE PÅ FENT", Math.round((r.ms ?? 10_000) / 1000), () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }); }, r.lost ? { lost: `-${r.lost} blod`, icon: BLOOD_ICON } : undefined);
       unsubs.push(stop);
     }, FENT_SLOW_MS));
+  }
+
+  /** Shows your look in the room (and to yourself): what the server has set on you (me.lookKind / me.lookUntil). */
+  function setMyLook(p: Player): void {
+    const live = me.lookUntil > serverNow() && !!me.lookKind;
+    p.look = live ? me.lookKind : undefined;
+    p.lookUntil = live ? me.lookUntil : undefined;
+    void update(myRef, { look: p.look ?? null, lookUntil: p.lookUntil ?? null }).catch(() => undefined);
+  }
+
+  /** Heroin: the screen goes dark and you lie where you stood for 10 seconds. */
+  function startNod(ms: number, then: () => void): void {
+    const p = mine();
+    if (!p || disposed || faintUntil || trippingOn) return;
+    trippingOn = true;
+    faintUntil = performance.now() + ms;
+    p.path = []; p.emote = undefined; p.sit = false; p.sitTo = undefined; pending = null;
+    p.faint = true;
+    update(myRef, { lay: true, sit: null }).catch(() => undefined);
+    const ov = h("div", { class: "nod-overlay" });
+    document.body.append(ov);
+    window.requestAnimationFrame(() => ov.classList.add("on"));
+    const t1 = window.setTimeout(() => ov.classList.remove("on"), Math.max(0, ms - 1200));
+    const end = (): void => {
+      window.clearTimeout(t1); window.clearTimeout(t2);
+      ov.remove();
+      pillCleanup = null;
+      trippingOn = false;
+      faintUntil = 0; p.faint = false;
+      if (!disposed) { update(myRef, { lay: null }).catch(() => undefined); then(); }
+    };
+    const t2 = window.setTimeout(end, ms);
+    pillCleanup = end; // leaving the room ends it
+  }
+
+  /** The 芬太尼: 10 seconds at 10 times your speed and the LSD spin at three times its speed, then it is the 2x speed with everything else. */
+  function startRush(p: Player, ms: number): void {
+    const until = serverNow() + ms;
+    p.fastMult = 10; p.fast = Math.max(me.speedUntil, until); p.spin = until;
+    void update(myRef, { fast: p.fast, fastMult: 10, spin: until }).catch(() => undefined);
+    window.setTimeout(() => {
+      if (disposed) return;
+      p.fastMult = me.speedMult; p.spin = undefined;
+      void update(myRef, { fastMult: me.speedMult, spin: null }).catch(() => undefined);
+      say("The rush is over. Everything else is still on you.");
+    }, ms + 200);
+  }
+
+  /** bagmand's drugs (heroin, percs, 2cb, ketamine, 芬太尼): what the server set on you shows on you and in the room, and heroin / the rush play out here. */
+  function applyDrug(p: Player, r: { drug?: string; nodMs?: number; rushMs?: number }): void {
+    const sn = serverNow();
+    p.fast = me.speedUntil > sn ? me.speedUntil : undefined;
+    p.fastMult = me.speedMult;
+    p.chem = me.chemUntil > sn ? me.chemUntil : undefined;
+    if (me.cupUntil > sn) p.cup = me.cupUntil;
+    void update(myRef, { fast: p.fast ?? null, fastMult: p.fast ? me.speedMult : null, chem: p.chem ?? null, ...(me.cupUntil > sn ? { cup: me.cupUntil } : {}) }).catch(() => undefined);
+    setMyLook(p);
+    const msg: Record<string, string> = {
+      heroin: "You push it in. Everything goes warm and heavy… and dark.",
+      percs: "You swallow the percs. A purple haze settles over you. You run twice as fast and stabs give triple blood, for 3 minutes.",
+      twocb: "You swallow the 2cb. The colours start to move. Every door is open to you and you run twice as fast, for 3 minutes.",
+      ketamine: "You swallow the ketamine. Your head feels long. A horse's head grows over yours, for a minute.",
+      fentcn: "You swallow the 芬太尼. THE WORLD EXPLODES. Run.",
+    };
+    say(msg[r.drug ?? ""] ?? "You swallow it.");
+    if (r.nodMs) startNod(r.nodMs, () => say("You come to. Stabs give 4x blood for 3 minutes."));
+    else if (me.shroomUntil > sn) startDmt(10_000, { lie: false });
+    if (r.rushMs) startRush(p, r.rushMs);
   }
 
   async function consumeSlot(slot: number): Promise<void> {
@@ -2514,6 +2676,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         void update(myRef, { cup: p.cup }).catch(() => undefined);
         logAction(me, "room", "drank codeine");
         say("You drink the lean. Slow and heavy. For an hour the bins give twice as much, twice as often.");
+      } else if (r.kind === "drug") {
+        logAction(me, "room", `took ${r.drug}`);
+        applyDrug(p, r);
       }
     } catch (err) { say((err as Error).message || "Couldn't do that.", "warn"); }
   }
@@ -2684,6 +2849,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           const extra: string[] = [];
           if (r.speedMs) extra.push("you're walking twice as fast");
           if (r.chemMs) extra.push("you're flashing and smoke pours off you");
+          if (r.lookKind === "blue") extra.push("you float over the ground");
+          if (r.deadly) extra.push(`you have ${r.deadly} deadly stabs: use your knife on somebody`);
+          if (p && r.lookKind) setMyLook(p);
           if (p && (r.speedMs || r.chemMs)) {
             p.fast = me.speedUntil || undefined;
             p.fastMult = me.speedMult;
@@ -2856,9 +3024,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (burning) { mineP.smoke = burning; mineP.smokeKind = SMOKABLE[burningItem!.item].kind; }
     void onDisconnect(myRef).remove();
     set(myRef, { name: shownName, figure: shownFigure(), ...(me.nameColor ? { nc: me.nameColor } : {}), x: sleepingIn ? headTile().x : spawn.x, y: sleepingIn ? headTile().y : spawn.y, dir: startDir, ts: serverTimestamp(), ...(sleepingIn ? { bed: true } : {}), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.spin ? { spin: mineP.spin } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
+    if (me.lookUntil > serverNow() && me.lookKind) { mineP.look = me.lookKind; mineP.lookUntil = me.lookUntil; void update(myRef, { look: me.lookKind, lookUntil: me.lookUntil }).catch(() => undefined); }
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
+    // a deadly stab on you (the server writes sendHome/<you>): you go down, your blood is on the floor, and you wake up in your room
+    const homeFrom = serverNow();
+    unsubs.push(onValue(ref(db, `sendHome/${me.uid}`), (s) => {
+      const k = s.val() as { at?: number; byName?: string; lost?: number } | null;
+      if (!k || typeof k.at !== "number" || k.at < homeFrom - 5000 || k.at === lastKilledAt || disposed) return;
+      lastKilledAt = k.at;
+      startKilled(k);
+    }, () => undefined));
     const awayTimer = window.setInterval(() => {
       const p = mine();
       if (!p || (!landlordApi && !vendingApi && !recordApi && !posterApi)) return;
@@ -2910,6 +3087,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }, 14_000);
       unsubs.push(() => window.clearInterval(psst));
     }
+    if (roomId === LOBBY_ID) {
+      // bagmand's visits: follow the clock (and his stock), and 6ixty says when he is back, once for each coming visit while he is away
+      bagVisit = visitNow();
+      unsubs.push(watchBagmand(() => { bagVisit = visitNow(); }));
+      const bagTimer = window.setInterval(() => { bagVisit = visitNow(); if (bagVisit === null && bagmandApi) bagmandApi.close(); }, 1000);
+      unsubs.push(() => window.clearInterval(bagTimer));
+      if (!asSixty) sixtyAfter(3400, () => {
+        if (sixtyBusy || sixtyShop || (sixtyBubble && sixtyBubble.until > performance.now())) return;
+        const m = awayMessage(me.uid);
+        if (m) sixtySay(m, 7000);
+      });
+    }
     setPresenceRoom(me, isTut ? ownRoomId(me.uid) : roomId); // the private copy isn't a place friends can follow you to
     unsubs.push(social.subscribe(syncSleeper));
     tutorialGuide();
@@ -2960,6 +3149,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.chem = typeof v.chem === "number" ? v.chem : undefined;
         p.chud = typeof v.chud === "number" ? v.chud : undefined;
         p.spin = typeof v.spin === "number" ? v.spin : undefined;
+        p.look = typeof v.look === "string" ? v.look : undefined;
+        p.lookUntil = typeof v.lookUntil === "number" ? v.lookUntil : undefined;
         p.nc = typeof v.nc === "string" && /^#[0-9a-fA-F]{6}$/.test(v.nc) ? v.nc : undefined;
         p.npc = v.sixty === true;
         p.sit = v.sit === true;
@@ -3135,6 +3326,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return piece ? FURNI_KINDS[piece.kind].seatHeight ?? 14 : 0;
   }
 
+  /** how this player looks right now (bagmand's weeds and drugs), or null */
+  const lookOf = (p: Player): string | null => (p.look && p.lookUntil && serverNow() < p.lookUntil ? p.look : null);
+  /** the figure with the horse's head on while the horse look lasts (the hat is a design that ships with the game but is not for sale) */
+  const withLook = (figure: string, p: Player): string => (lookOf(p) === "horse" ? [...figure.split(".").filter((x) => !x.startsWith("ha-")), HORSE_HAT].join(".") : figure);
+
   function frameFor(p: Player, now: number): { opts: Parameters<typeof getCached>[0]; yOff: number } {
     const moving = isMoving(p, now);
     const talking = !!p.bubble && p.bubble.until > now;
@@ -3146,7 +3342,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     let dir = p.dir;
     let yOff = 0;
     if (em?.def.motion === "spin") dir = SPIN_DIRS[Math.floor(t / 140) % 8];
-    if (p.spin && serverNow() < p.spin && !p.lying && !p.faint) dir = SPIN_DIRS[Math.floor(now / 140) % 8]; // LSD: round and round, walking or not
+    if (p.spin && serverNow() < p.spin && !p.lying && !p.faint) dir = SPIN_DIRS[Math.floor(now / ((p.fastMult ?? 2) >= 10 ? 47 : 140)) % 8]; // LSD: round and round, walking or not (the 芬太尼's rush: three times as fast)
     if (em?.def.motion === "dance") { dir = SPIN_DIRS[Math.floor(t / 420) % 8]; yOff = -Math.abs(Math.sin(t / 120)) * 6; }
     if (em?.def.motion === "bounce") yOff = -Math.abs(Math.sin(t / 110)) * 7;
     if (em?.def.motion === "hop") yOff = -Math.abs(Math.sin((t / em.def.ms) * Math.PI * 2)) * 16;
@@ -3155,6 +3351,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // (holding a knife: the arm is out in the "carry" pose, and the knife itself is drawn in that hand)
     const sitting = !moving && !!p.sit && !em;
     if (sitting) yOff = -sitLift(p);
+    if (lookOf(p) === "blue" && !p.lying && !p.faint) yOff -= 14 + Math.sin(now / 260) * 3; // natryger: hovering over the ground
     const rtArm = sitting && roulette ? roulette.armFor(p.uid, now) : null; // the gun is in this hand (or at this head)
     const actions = moving ? ["wlk"] : rtArm ? ["sit", rtArm === "raised" ? "drk=9999" : "crr=9999"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsCup(p) || holdsDice(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
@@ -3164,7 +3361,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       : em?.def.actions?.includes("wav") ? Math.floor(now / 250) % 2
       : figureAnimated(p.figure) ? Math.floor(now / 110) % 24 // a garment with an animation of its own (sparklers...) keeps playing while you stand still
       : 0;
-    return { opts: { figure: roulette ? roulette.figureFor(p.uid, p.figure, sitting) : p.figure, dir, headDir: dir, actions, gesture, frame }, yOff };
+    return { opts: { figure: withLook(roulette ? roulette.figureFor(p.uid, p.figure, sitting) : p.figure, p), dir, headDir: dir, actions, gesture, frame }, yOff };
   }
 
   /** The knife (Habbo's survival knife, one picture per way it can point) in a player's hand: while it's selected, and during a stab. */
@@ -3251,11 +3448,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
    * (fast + fastMult, cup), so it needs no new database fields: the super pill (4x) is gold, LSD (3x) is a rainbow, the 2x speed drugs
    * (thc-a, troll, DMT) are teal, and holding the lean's cup is purple. The research chemical has its own show and is left alone.
    */
-  type Aura = { kind: "pill" | "lsd" | "speed" | "lean"; glow: string; blur: number };
+  type Aura = { kind: "pill" | "lsd" | "speed" | "lean" | "look"; glow: string; blur: number; look?: string };
   function auraOf(p: Player, now: number): Aura | null {
     const sn = serverNow();
     if (p.chem && sn < p.chem) return null;
     const beat = 0.5 + 0.5 * Math.sin(now / 160);
+    const lk = lookOf(p);
+    if (lk && lk !== "horse") { // bagmand's weeds and drugs: each has its own colour (the horse has no glow, only the head)
+      const col: Record<string, string> = { blue: "70,150,255", gold: "255,205,60", pink: "255,110,190", brown: "150,95,45", purple: "165,80,235", sparkle: "255,255,255" };
+      const glow = lk === "rainbow" ? `hsla(${Math.floor(now / 3) % 360},100%,62%,0.9)` : `rgba(${col[lk] ?? "255,255,255"},${(0.65 + 0.3 * beat).toFixed(2)})`;
+      return { kind: "look", look: lk, glow, blur: (11 + 9 * beat) * scale };
+    }
     if (p.fast && sn < p.fast) {
       const m = p.fastMult ?? 2;
       if (m >= 4) return { kind: "pill", glow: `rgba(255,214,58,${(0.7 + 0.3 * beat).toFixed(2)})`, blur: (10 + 12 * beat) * scale };
@@ -3311,6 +3514,36 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.globalAlpha = 0.85 * (1 - t);
         pxBlob(fx + Math.sin(t * 6 + i * 2.2) * 13 * s, fy - (4 + t * 74) * s, 0.9 * s, "#8ff3f7");
       }
+    } else if (a.kind === "look") { // bagmand's: rising motes and twinkles in the colour of the look
+      const k = a.look ?? "";
+      const mote = (n: number, rise: number, speed: number, color: string, size: number): void => {
+        for (let i = 0; i < n; i++) {
+          const t = (now / speed + i / n) % 1;
+          g.globalAlpha = 0.85 * (1 - t);
+          pxBlob(fx + Math.sin(t * 6 + i * 2.2) * 13 * s, fy - (4 + t * rise) * s, size * s, color);
+        }
+      };
+      const stars = (n: number, color: (i: number) => string, radius: number): void => {
+        for (let i = 0; i < n; i++) {
+          const kk = Math.floor(now / 170) + i * 13;
+          const ang = (kk * 2.399) % (Math.PI * 2), rad = (radius * 0.6 + ((kk * 7) % radius)) * s;
+          g.globalAlpha = 0.45 + 0.55 * Math.sin(now / 80 + i * 1.3);
+          pxStar(fx + Math.cos(ang) * rad, fy - 44 * s + Math.sin(ang) * rad * 1.7, i % 3 === 0 ? 2 : 1, color(i));
+        }
+      };
+      if (k === "blue") {
+        for (let i = 0; i < 2; i++) { // blue rings under the feet, and motes rising
+          const t = (now / 900 + i / 2) % 1;
+          g.globalAlpha = 0.7 * (1 - t); g.strokeStyle = "#6fb6ff"; g.lineWidth = Math.max(1.5, 1.6 * s);
+          g.beginPath(); g.ellipse(fx, fy, (8 + t * 20) * s, (4 + t * 10) * s, 0, 0, Math.PI * 2); g.stroke();
+        }
+        mote(9, 80, 1500, "#9fd0ff", 0.9);
+      } else if (k === "gold") { stars(9, (i) => (i % 2 ? "#ffe680" : "#fff6c9"), 24); mote(4, 70, 1700, "#ffd23a", 0.7); }
+      else if (k === "pink") { drawHearts(fx, fy, now); stars(6, () => "#ff9ad0", 22); }
+      else if (k === "brown") { mote(8, 74, 2100, "rgba(120,80,40,0.8)", 2.6); mote(5, 70, 2600, "rgba(200,170,130,0.6)", 1.6); }
+      else if (k === "purple") { mote(9, 78, 2300, "#9a5ae6", 2); stars(5, () => "#d9b8ff", 22); }
+      else if (k === "rainbow") { stars(12, (i) => `hsl(${(Math.floor(now / 5) + i * 30) % 360},100%,68%)`, 26); }
+      else { stars(14, (i) => (i % 3 === 0 ? "#ffd23a" : i % 3 === 1 ? "#8fd0ff" : "#ffffff"), 28); } // sparkle: the loudpack
     } else { // lean: slow purple bubbles and a few twinkles
       for (let i = 0; i < 9; i++) {
         const t = (now / 2300 + i / 9) % 1;
@@ -3419,14 +3652,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const potN = k.nitro ? nitroIfReady(k.nitro) : undefined;
     if (!potN) return null;
     const dir = f.dir ?? 0;
-    const pot = drawNitroSprites(g, potN, 1, 1, f.x, f.y, dir, k.nudge, toScreen, scale);
     const pl = f.plant;
+    const poppyArt = pl?.crop === "poppy" ? mnstrArt : null; // (the poppy comes in a pot of its own: the plain pot is not drawn)
+    const pot = poppyArt ? null : drawNitroSprites(g, potN, 1, 1, f.x, f.y, dir, k.nudge, toScreen, scale);
     let box = pot;
-    if (pl && pot && isOwnRoom) {
+    const base = pot ?? (poppyArt ? drawNitroSpritesBox(poppyArt, f, dir, { x: 0, y: 0 }) : null);
+    if (pl && base && isOwnRoom) {
       // a planted pot glows green like the mixers glow gold, and brighter when you point at it
       const hot = !!f.id && hoverObj?.id === f.id;
       const pulse = 0.5 + 0.5 * Math.sin(now / 450);
-      const cx = (pot.x0 + pot.x1) / 2, cy = pot.y0 - 10 * scale;
+      const cx = (base.x0 + base.x1) / 2, cy = base.y0 - 10 * scale;
       const r = 46 * scale * (hot ? 1.2 : 1);
       const al = 0.12 + 0.05 * pulse + (hot ? 0.14 : 0);
       g.save();
@@ -3438,12 +3673,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
       g.restore();
     }
-    const art = pl?.crop === "shroom" ? shroomArt : foliageArt;
+    const art = poppyArt ?? (pl?.crop === "shroom" ? shroomArt : foliageArt);
     if (pl && art) {
       const full = art;
       // the leaves are drawn so that their base sits on the new pot's rim (about 22px above the anchor, in the middle)
       const s0 = spritesFor(full, dir).find((q) => !q.isShadow && q.sw > 2);
-      const leaf = s0 ? { x: -(s0.dx + s0.sw / 2), y: -22 - (s0.dy + Math.round(s0.sh * (pl.crop === "shroom" ? 0.95 : 0.64)) - 1) } : { x: 0, y: 0 };
+      const leaf = poppyArt ? { x: -(k.nudge?.x ?? 0), y: -(k.nudge?.y ?? 0) } : s0 ? { x: -(s0.dx + s0.sw / 2), y: -22 - (s0.dy + Math.round(s0.sh * (pl.crop === "shroom" ? 0.95 : 0.64)) - 1) } : { x: 0, y: 0 };
       const leafNudge = { x: (k.nudge?.x ?? 0) + leaf.x, y: (k.nudge?.y ?? 0) + leaf.y };
       const prog = plantProgress(pl);
       const water = plantWater(pl);
@@ -4579,6 +4814,57 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
     }
 
+    if (roomId === LOBBY_ID && bagVisit !== null) {
+      // bagmand: not a player, only drawn here, next to the roulette table, and only in his hour. He glows green like the other things you can use
+      const talking = !!bagmanBubble && bagmanBubble.until > now;
+      const bopts = { figure: BAGMAN.figure, dir: BAGMAN.dir, headDir: BAGMAN.dir, actions: ["std"], gesture: talking ? "spk" : "std", frame: talking ? Math.floor(now / 140) % 2 : 0 };
+      let bimg = getCached(bopts);
+      if (!bimg) { renderAvatar(bopts); bimg = bagmanLast; } else bagmanLast = bimg;
+      const bw = iso(BAGMAN.x, BAGMAN.y);
+      const bf = toScreen({ x: bw.x, y: bw.y + TILE_H / 2 });
+      objs.push({ id: BAGMAN.id, kind: "bagman", x0: bf.x - 22 * scale, x1: bf.x + 22 * scale, y0: bf.y - FEET_Y * scale, y1: bf.y + 8 * scale, depth: BAGMAN.x + BAGMAN.y });
+      const bHot = hoverObj?.kind === "bagman" || pending?.type === "bagman";
+      const bpulse = 0.5 + 0.5 * Math.sin(now / 450);
+      list.push({
+        depth: BAGMAN.x + BAGMAN.y + 0.5,
+        draw: () => {
+          const cx = bf.x, cy = bf.y - 48 * scale, r = 54 * scale * (bHot ? 1.2 : 1);
+          g.save();
+          const halo = g.createRadialGradient(cx, cy, 3 * scale, cx, cy, r);
+          const a = 0.12 + 0.05 * bpulse + (bHot ? 0.14 : 0);
+          halo.addColorStop(0, `rgba(90,220,120,${a.toFixed(2)})`);
+          halo.addColorStop(0.55, `rgba(60,200,90,${(a * 0.6).toFixed(2)})`);
+          halo.addColorStop(1, "rgba(60,200,90,0)");
+          g.fillStyle = halo;
+          g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+          g.fillStyle = "rgba(0,0,0,0.18)";
+          g.beginPath(); g.ellipse(bf.x, bf.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); g.fill();
+          g.restore();
+          if (bimg) {
+            g.drawImage(bimg, bf.x - (32 + padOf(bimg).x) * scale, bf.y - (FEET_Y + padOf(bimg).y) * scale, bimg.width * scale, bimg.height * scale);
+            if (bHot) {
+              g.save(); g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.14 + 0.05 * bpulse;
+              g.drawImage(bimg, bf.x - (32 + padOf(bimg).x) * scale, bf.y - (FEET_Y + padOf(bimg).y) * scale, bimg.width * scale, bimg.height * scale);
+              g.restore();
+            }
+          }
+          g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
+          const tw = g.measureText(BAGMAN.name).width + 10;
+          g.fillStyle = bHot ? "rgba(20,100,40,0.9)" : "rgba(0,0,0,0.55)";
+          g.beginPath(); g.roundRect(bf.x - tw / 2, bf.y + 7 * scale, tw, 14 * Math.max(1, scale), 5); g.fill();
+          g.fillStyle = "#7dff9b";
+          g.textBaseline = "top"; g.textAlign = "center";
+          g.fillText(BAGMAN.name, bf.x, bf.y + 9 * scale);
+          g.textAlign = "start";
+        },
+      });
+      if (bagmanBubble && bagmanBubble.until > now) {
+        const left = bagmanBubble.until - now;
+        const bb = bagmanBubble;
+        bubbles.push(() => drawBubble(bb.text, BAGMAN.name, bf.x, bf.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1));
+      }
+    }
+
     furniBoxes = pieceBoxes;
     if (roulette && !furnishOn) {
       list.push({ depth: -0.5, draw: () => roulette!.drawFloor(g, now) }); // the blood on the floor is under everything
@@ -4877,6 +5163,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     raffleApi?.close();
     craftApi?.close();
     landlordApi?.close();
+    bagmandApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();
     roulette?.dispose();

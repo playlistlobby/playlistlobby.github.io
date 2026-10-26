@@ -65,6 +65,22 @@
         }
       }
     },
+    "bagmand": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
+    },
+    "broadcast": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
+    },
+    "loudspeaker": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $uid"
+      }
+    },
+    "sendHome": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $uid"
+      }
+    },
     "ideasImg": {
       "$id": {
         ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
@@ -756,7 +772,7 @@
               ".validate": "newData.isBoolean()"
             },
             "crop": {
-              ".validate": "newData.isString() && newData.val() === 'shroom'"
+              ".validate": "newData.isString() && (newData.val() === 'shroom' || newData.val() === 'poppy')"
             },
             "by": {
               ".validate": "newData.isString() && newData.val().length < 60"
@@ -830,7 +846,7 @@
               ".validate": "newData.isBoolean()"
             },
             "fastMult": {
-              ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 4"
+              ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 10"
             },
             "cup": {
               ".validate": "newData.isNumber()"
@@ -842,6 +858,12 @@
               ".validate": "newData.isNumber()"
             },
             "spin": {
+              ".validate": "newData.isNumber()"
+            },
+            "look": {
+              ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('lookKind').val()"
+            },
+            "lookUntil": {
               ".validate": "newData.isNumber()"
             },
             "nc": {

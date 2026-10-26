@@ -20,7 +20,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume";
+  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak";
   /** select it, then click a piece of furniture of this kind (the sink, the growing kit) */
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
@@ -302,6 +302,13 @@ export const ITEMS: Record<string, ItemDef> = {
     icon: assetUrl("items/pill.svg"),
     useSelf: "pill",
   },
+  loudspeaker: {
+    id: "loudspeaker",
+    name: "Loudspeaker",
+    examine: "Click it, type a message, and everybody on the site sees it for 10 seconds. It needs 6 hours to charge again.",
+    icon: assetUrl("items/loudspeaker.svg"),
+    useSelf: "speak",
+  },
   syringe: {
     id: "syringe",
     name: "Syringe",
@@ -439,6 +446,37 @@ export function furniIcon(kind: string): string {
   }
   return furniIcons.get(kind)!;
 }
+
+// bagmand's things (see src/shared/bagmand.ts): the poppy and what it becomes, his blue weed and the special weeds rolled from them
+const bagmandItems: Array<[string, string, string, Partial<ItemDef>]> = [
+  ["poppyseed", "Poppy seed", "A pinch of tiny black seeds from bagmand. Select it, then click your growing kit to plant it. A poppy takes 4 hours to grow and needs one watering (any time). It gives opium.", { useOnObject: "f_planter" }],
+  ["opium", "Opium", "The milk of a poppy. Only bagmand buys it (100 drops). Mix it with water for heroin, with lean for ketamine, with a pill for percs, with a shroom for 2cb, with weed for cali weed or with fentanyl for 芬太尼. Opium from a poppy that never got its water is weak: half the price, and no good for mixing.", {}],
+  ["heroin", "Heroin", "Opium boiled down in water. Swallow it: you nod off for 10 seconds, then stabs give 4x blood for 3 minutes. Mix it into weed for brown weed. Bagmand pays 300.", { useSelf: "consume" }],
+  ["ketamine", "Ketamine", "Opium stirred into the lean. Swallow it: a horse's head grows on you for a minute, and you run twice as fast. Bagmand pays 300.", { useSelf: "consume" }],
+  ["percs", "Percs", "Opium pressed into a pill. Swallow it: a purple haze, double speed and triple blood for a stab, for 3 minutes. Bagmand pays 320.", { useSelf: "consume" }],
+  ["twocb", "2cb", "Opium and a shroom, ground together. Swallow it: the colours shift, every door is open and you run twice as fast, for 3 minutes. Mix it into weed for pink weed. Bagmand pays 360.", { useSelf: "consume" }],
+  ["fentcn", "芬太尼", "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 420.", { useSelf: "consume" }],
+  ["caliweed", "Cali weed", "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 330.", {}],
+  ["pinkweed", "Pink weed", "2cb crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 250.", {}],
+  ["brownweed", "Brown weed", "Heroin crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 260.", {}],
+  ["natryger", "Bagmands natryger", "Bagmand's own blue weed. You have to roll it in joint paper or a blunt wrap to use it. Smoked, it lifts you off the ground in a blue glow and you run twice as fast for 4 minutes. Mix it with cali weed for a loudpack.", {}],
+  ["loudpack", "Loudpack", "Natryger and cali weed packed into one big bud that shines and sparkles. Roll it in joint paper or a blunt wrap. Smoked: you run twice as fast for a minute and get 2 deadly stabs. Bagmand pays 480.", {}],
+];
+for (const [id, name, examine, extra] of bagmandItems) ITEMS[id] = { id, name, examine, icon: assetUrl(`items/${id}.svg`), ...extra };
+// (each one written out in full so every text can be translated)
+const bagmandSmokes: Array<[string, string, string]> = [
+  ["joint_nat", "Natryger joint", "A joint of natryger. Click it to light up (you need a lighter). A blue glow lifts you off the ground and you run twice as fast for 4 minutes (stabs give double blood too)."],
+  ["blunt_nat", "Natryger blunt", "A blunt of natryger. Click it to light up (you need a lighter). A blue glow lifts you off the ground and you run twice as fast for 4 minutes (stabs give double blood too)."],
+  ["joint_cali", "Cali joint", "A joint of cali weed. Click it to light up (you need a lighter). You shine gold, and stabs give 4x blood for 2 and a half minutes."],
+  ["blunt_cali", "Cali blunt", "A blunt of cali weed. Click it to light up (you need a lighter). You shine gold, and stabs give 5x blood for 3 and a half minutes."],
+  ["joint_pink", "Pink joint", "A joint of pink weed. Click it to light up (you need a lighter). A pink glow with hearts, you run twice as fast and stabs give triple blood, for 2 and a half minutes."],
+  ["blunt_pink", "Pink blunt", "A blunt of pink weed. Click it to light up (you need a lighter). A pink glow with hearts, you run twice as fast and stabs give 4x blood, for 3 and a half minutes."],
+  ["joint_brown", "Brown joint", "A joint of brown weed. Click it to light up (you need a lighter). A brown haze, and stabs give 4x blood for 3 minutes."],
+  ["blunt_brown", "Brown blunt", "A blunt of brown weed. Click it to light up (you need a lighter). A brown haze, and stabs give 5x blood for 4 minutes."],
+  ["joint_loud", "Loudpack joint", "A joint of loudpack. Click it to light up (you need a lighter). Sparkles, double speed for a minute, and 2 deadly stabs: someone you stab dies, drops 10 blood and is sent home."],
+  ["blunt_loud", "Loudpack blunt", "A blunt of loudpack. Click it to light up (you need a lighter). Sparkles, double speed for a minute, and 2 deadly stabs: someone you stab dies, drops 10 blood and is sent home."],
+];
+for (const [id, name, examine] of bagmandSmokes) ITEMS[id] = { id, name, examine, icon: assetUrl(`items/${id}.svg`), useSelf: "smoke" };
 
 /** The definition of any inventory item: the fixed ones above, or a piece of furniture. */
 export function itemDef(id: string): ItemDef | undefined {

@@ -31,7 +31,7 @@ export const RAFFLE_POOL: string[] = Object.keys(RAFFLE_EFFECTS);
 
 const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Copenhagen", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 /** Danish time minus UTC at that moment, in milliseconds */
-function copenhagenOffset(ts: number): number {
+export function copenhagenOffset(ts: number): number {
   const ps = parts.formatToParts(new Date(ts));
   const g = (t: string): number => Number(ps.find((p) => p.type === t)!.value);
   return Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"), g("second")) - Math.floor(ts / 1000) * 1000;

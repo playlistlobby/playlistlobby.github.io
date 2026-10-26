@@ -24,6 +24,17 @@ export const LANDLORD = {
   line: "looking for more space? or a fresh coat of paint?",
 };
 
+/** Bagmand: a vendor who only visits the basement for an hour at 01:00, 10:00 and 15:00 (see shared/bagmand.ts). He stands at the left wall beside the roulette table and looks like the player emil. */
+export const BAGMAN = {
+  id: "bagman",
+  name: "bagmand",
+  x: 0,
+  y: 19,
+  dir: 2,
+  figure: "hd-190-10.hr-97012-42.ha-98080-64.fa-97041.ch-98046-64.cc-98016-9004.ca-97020-1408.lg-98120-64.sh-98142-1408.wa-98147-1408",
+  line: "psst. fresh seeds. blue for the road.",
+};
+
 export interface NpcLook {
   figure: string;
   gender: Gender;

@@ -8,6 +8,7 @@ import { extractImage } from "./avatar/Atlas";
 import { applyClothingConfig, setCustomItems } from "./catalog";
 import { shopConfig } from "./shopConfig";
 import { assetUrl } from "./assetUrl";
+import { HORSE_HAT_ID } from "./shared/bagmand";
 
 export const DESIGN_ID_START = 90001;
 
@@ -306,7 +307,7 @@ async function loadStaticDesigns(dir: "starter" | "shop"): Promise<void> {
 
 /** Puts every registered design into the shop/character catalogue (and applies the admin's prices to them). */
 function syncCatalog(): void {
-  setCustomItems([...registered.values()].filter((m) => !bundledIds.has(m.id) || adminView).map((m) => ({
+  setCustomItems([...registered.values()].filter((m) => (!bundledIds.has(m.id) || adminView) && m.id !== HORSE_HAT_ID).map((m) => ({
     slot: m.slot, id: m.id, gender: m.gender, colors: Math.max(0, ...m.parts.map((p) => p.colorindex)), price: m.price ?? 0,
   })));
   applyClothingConfig(shopConfig.clothing);

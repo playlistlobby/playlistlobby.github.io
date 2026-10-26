@@ -4,6 +4,7 @@ import { onChildAdded, onValue, ref } from "firebase/database";
 import { db } from "./firebase";
 import type { Profile } from "./db";
 import { serverNow } from "./db";
+import { LOUDSPEAKER_SHOW_MS } from "./shared/loudspeaker";
 
 interface Notice { kind?: string; text?: string; byName?: string; at?: number }
 
@@ -46,6 +47,31 @@ export function watchNotices(p: Profile): () => void {
     onChildAdded(ref(db, "notices/_all"), (s) => show("all-" + s.key!, s.val() as Notice), () => undefined),
   ];
   return () => stops.forEach((s) => s());
+}
+
+/** The loudspeaker (broadcast/): the newest message is shown to everybody for 10 seconds (not if it was sent before you came, or is over already). */
+export function watchBroadcast(): () => void {
+  let shown = 0;
+  let el: HTMLElement | null = null;
+  let timer = 0;
+  const stop = onValue(ref(db, "broadcast"), (s) => {
+    const b = s.val() as { at?: number; text?: string; byName?: string } | null;
+    if (!b || typeof b.at !== "number" || typeof b.text !== "string" || b.at === shown) return;
+    const left = LOUDSPEAKER_SHOW_MS - (serverNow() - b.at);
+    if (left <= 500) return;
+    shown = b.at;
+    el?.remove(); window.clearTimeout(timer);
+    el = document.createElement("div");
+    el.className = "loudspeaker-banner";
+    el.setAttribute("role", "alert");
+    const who = document.createElement("b"); who.textContent = `📢 ${b.byName ?? "?"}`;
+    const msg = document.createElement("span"); msg.textContent = b.text;
+    el.append(who, msg);
+    document.body.append(el);
+    const mine = el;
+    timer = window.setTimeout(() => { mine.remove(); if (el === mine) el = null; }, left);
+  }, () => undefined);
+  return () => { stop(); el?.remove(); window.clearTimeout(timer); };
 }
 
 /** A kick (kicks/<uid>) that comes while you play: a message over everything, and then you are logged out. */

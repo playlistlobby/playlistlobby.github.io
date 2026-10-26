@@ -9718,5 +9718,525 @@
   "en": "A CD with kravle-blodig oktober on it, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
   "da": "En CD med kravle-blodig oktober på, fra pladeboksen i shoppen. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
   "where": "src/items.ts"
+ },
+ "N1412": {
+  "en": "bagmand's shop",
+  "da": "bagmands butik",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1413": {
+  "en": "Bagmand has left.",
+  "da": "Bagmanden er gået.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1414": {
+  "en": "As many as you like.",
+  "da": "Så mange du vil.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1415": {
+  "en": "Sold out. He has more next visit.",
+  "da": "Udsolgt. Han har flere næste gang.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1416": {
+  "en": "{left} left this visit, for everybody.",
+  "da": "{left} tilbage i dette besøg, til alle sammen.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1417": {
+  "en": "(weak)",
+  "da": "(svag)",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1418": {
+  "en": "Bagmand pays you {gain} drops.",
+  "da": "Bagmanden betaler dig {gain} dråber.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1419": {
+  "en": "All {qty}",
+  "da": "Alle {qty}",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1420": {
+  "en": "He buys back what comes from his poppies and his weed (and nothing else, nobody else buys it):",
+  "da": "Han køber det tilbage, der kommer fra hans valmuer og hans weed (ingen andre køber det):",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1421": {
+  "en": "He only buys what comes from his poppies and his weed: opium and everything mixed from it. Nothing to sell right now.",
+  "da": "Han køber kun det, der kommer fra hans valmuer og hans weed: opium og alt, der er blandet af det. Du har intet at sælge lige nu.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1422": {
+  "en": "He leaves in {countdownText}.",
+  "da": "Han går om {countdownText}.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1423": {
+  "en": "bagmand: poppy seeds, blue weed. He buys opium and what is mixed from it",
+  "da": "bagmand: valmuefrø, blå weed. Han køber opium og det, der er blandet af det",
+  "where": "src/ui/room.ts"
+ },
+ "N1424": {
+  "en": "Growing: {…}% (about {left2} to go). {…}{…}.",
+  "da": "Gror: {…}% (cirka {left2} tilbage). {…}{…}.",
+  "where": "src/ui/room.ts"
+ },
+ "N1425": {
+  "en": "An empty growing kit. Tap a weed seed, shroom spores or a poppy seed in your pocket first, then tap the kit to plant it.",
+  "da": "Et tomt dyrkningssæt. Tryk først på et weedfrø, svampesporer eller et valmuefrø i din lomme, og tryk så på sættet for at plante det.",
+  "where": "src/ui/room.ts"
+ },
+ "N1426": {
+  "en": "You press the little black seed into the soil. A poppy takes 4 hours, and it needs one watering: water it any time.",
+  "da": "Du trykker det lille sorte frø ned i jorden. En valmue tager 4 timer, og den skal vandes én gang: vand den når som helst.",
+  "where": "src/ui/room.ts"
+ },
+ "N1427": {
+  "en": "Weak opium",
+  "da": "Svag opium",
+  "where": "src/ui/room.ts"
+ },
+ "N1428": {
+  "en": "Opium",
+  "da": "Opium",
+  "where": "src/ui/room.ts"
+ },
+ "N1429": {
+  "en": "You cut the pod. Weak opium: it never got its water.",
+  "da": "Du skærer kapslen op. Svag opium: den fik aldrig sit vand.",
+  "where": "src/ui/room.ts"
+ },
+ "N1430": {
+  "en": "You cut the pod and scrape off the milk. Opium. Bagmand will want this.",
+  "da": "Du skærer kapslen op og skraber mælken af. Opium. Bagmanden vil have den her.",
+  "where": "src/ui/room.ts"
+ },
+ "N1431": {
+  "en": "DEADLY STAB. {name} goes down{…}. {…}",
+  "da": "DØDELIGT STIK. {name} går ned{…}. {…}",
+  "where": "src/ui/room.ts"
+ },
+ "N1432": {
+  "en": "and drops {dropped} blood on the floor",
+  "da": "og taber {dropped} blod på gulvet",
+  "where": "src/ui/room.ts"
+ },
+ "N1433": {
+  "en": "{left} left.",
+  "da": "{left} tilbage.",
+  "where": "src/ui/room.ts"
+ },
+ "N1434": {
+  "en": "That was the last one.",
+  "da": "Det var det sidste.",
+  "where": "src/ui/room.ts"
+ },
+ "N1435": {
+  "en": "Your knife won't go in.",
+  "da": "Din kniv vil ikke ind.",
+  "where": "src/ui/room.ts"
+ },
+ "N1436": {
+  "en": "Bagmand isn't here right now.",
+  "da": "Bagmanden er her ikke lige nu.",
+  "where": "src/ui/room.ts"
+ },
+ "N1437": {
+  "en": "{…} killed you with a deadly stab.",
+  "da": "{…} dræbte dig med et dødeligt stik.",
+  "where": "src/ui/room.ts"
+ },
+ "N1438": {
+  "en": "Somebody",
+  "da": "Nogen",
+  "where": "src/ui/room.ts"
+ },
+ "N1439": {
+  "en": "The rush is over. Everything else is still on you.",
+  "da": "Rusen er slut. Alt det andet virker stadig.",
+  "where": "src/ui/room.ts"
+ },
+ "N1440": {
+  "en": "You push it in. Everything goes warm and heavy… and dark.",
+  "da": "Du presser den ind. Alt bliver varmt og tungt… og mørkt.",
+  "where": "src/ui/room.ts"
+ },
+ "N1441": {
+  "en": "You swallow the percs. A purple haze settles over you. You run twice as fast and stabs give triple blood, for 3 minutes.",
+  "da": "Du sluger percsene. En lilla dis lægger sig over dig. Du løber dobbelt så hurtigt, og stik giver tredobbelt blod, i 3 minutter.",
+  "where": "src/ui/room.ts"
+ },
+ "N1442": {
+  "en": "You swallow the 2cb. The colours start to move. Every door is open to you and you run twice as fast, for 3 minutes.",
+  "da": "Du sluger 2cb'en. Farverne begynder at bevæge sig. Alle døre er åbne for dig, og du løber dobbelt så hurtigt, i 3 minutter.",
+  "where": "src/ui/room.ts"
+ },
+ "N1443": {
+  "en": "You swallow the ketamine. Your head feels long. A horse's head grows over yours, for a minute.",
+  "da": "Du sluger ketaminen. Dit hoved føles langt. Et hestehoved vokser ud over dit, i et minut.",
+  "where": "src/ui/room.ts"
+ },
+ "N1444": {
+  "en": "You swallow the 芬太尼. THE WORLD EXPLODES. Run.",
+  "da": "Du sluger 芬太尼'en. VERDEN EKSPLODERER. Løb.",
+  "where": "src/ui/room.ts"
+ },
+ "N1445": {
+  "en": "You swallow it.",
+  "da": "Du sluger den.",
+  "where": "src/ui/room.ts"
+ },
+ "N1446": {
+  "en": "You come to. Stabs give 4x blood for 3 minutes.",
+  "da": "Du kommer til dig selv. Stik giver 4x blod i 3 minutter.",
+  "where": "src/ui/room.ts"
+ },
+ "N1447": {
+  "en": "The opium dissolves in the water and is boiled down: 1 heroin. The can is empty again.",
+  "da": "Opiumen opløses i vandet og koges ind: 1 heroin. Kanden er tom igen.",
+  "where": "src/shared/items.ts"
+ },
+ "N1448": {
+  "en": "Opium stirred into the lean: 1 ketamine.",
+  "da": "Opium rørt ud i leanen: 1 ketamin.",
+  "where": "src/shared/items.ts"
+ },
+ "N1449": {
+  "en": "The opium is pressed into the pill: 1 percs.",
+  "da": "Opiumen presses ind i pillen: 1 percs.",
+  "where": "src/shared/items.ts"
+ },
+ "N1450": {
+  "en": "Opium and a shroom, ground together: 1 2cb.",
+  "da": "Opium og en svamp, malet sammen: 1 2cb.",
+  "where": "src/shared/items.ts"
+ },
+ "N1451": {
+  "en": "The weed is soaked in opium and comes out gold: 1 cali weed.",
+  "da": "Weeden trækkes i opium og kommer ud gylden: 1 cali weed.",
+  "where": "src/shared/items.ts"
+ },
+ "N1452": {
+  "en": "Opium and fentanyl, cut together: 1 芬太尼.",
+  "da": "Opium og fentanyl, skåret sammen: 1 芬太尼.",
+  "where": "src/shared/items.ts"
+ },
+ "N1453": {
+  "en": "2cb crumbled into weed turns it pink: 2 pink weed.",
+  "da": "2cb smuldret i weed gør den pink: 2 pink weed.",
+  "where": "src/shared/items.ts"
+ },
+ "N1454": {
+  "en": "Heroin crumbled into weed turns it brown: 2 brown weed.",
+  "da": "Heroin smuldret i weed gør den brun: 2 brun weed.",
+  "where": "src/shared/items.ts"
+ },
+ "N1455": {
+  "en": "Blue weed and cali weed, packed together into one big bud: 1 loudpack.",
+  "da": "Blå weed og cali weed, pakket sammen til én stor top: 1 loudpack.",
+  "where": "src/shared/items.ts"
+ },
+ "N1456": {
+  "en": "Poppy seed",
+  "da": "Valmuefrø",
+  "where": "src/shared/bagmand.ts"
+ },
+ "N1457": {
+  "en": "Bagmands natryger",
+  "da": "Bagmands natryger",
+  "where": "src/shared/bagmand.ts"
+ },
+ "N1458": {
+  "en": "bagmanden besøger igen kl {clockText}",
+  "da": "bagmanden besøger igen kl {clockText}",
+  "where": "src/shared/bagmand.ts"
+ },
+ "N1459": {
+  "en": "psst. fresh seeds. blue for the road.",
+  "da": "psst. friske frø. blåt til vejen.",
+  "where": "src/npc.ts"
+ },
+ "N1460": {
+  "en": "A pinch of tiny black seeds from bagmand. Select it, then click your growing kit to plant it. A poppy takes 4 hours to grow and needs one watering (any time). It gives opium.",
+  "da": "En knivspids bittesmå sorte frø fra bagmanden. Vælg det, og klik på dit dyrkningssæt for at plante det. En valmue tager 4 timer at vokse og skal vandes én gang (når som helst). Den giver opium.",
+  "where": "src/items.ts"
+ },
+ "N1461": {
+  "en": "The milk of a poppy. Only bagmand buys it (100 drops). Mix it with water for heroin, with lean for ketamine, with a pill for percs, with a shroom for 2cb, with weed for cali weed or with fentanyl for 芬太尼. Opium from a poppy that never got its water is weak: half the price, and no good for mixing.",
+  "da": "Mælken fra en valmue. Kun bagmanden køber den (100 dråber). Bland den med vand til heroin, med lean til ketamin, med en pille til percs, med en svamp til 2cb, med weed til cali weed eller med fentanyl til 芬太尼. Opium fra en valmue, der aldrig fik vand, er svag: halv pris, og ikke god at blande.",
+  "where": "src/items.ts"
+ },
+ "N1462": {
+  "en": "Heroin",
+  "da": "Heroin",
+  "where": "src/items.ts"
+ },
+ "N1463": {
+  "en": "Opium boiled down in water. Swallow it: you nod off for 10 seconds, then stabs give 4x blood for 3 minutes. Mix it into weed for brown weed. Bagmand pays 300.",
+  "da": "Opium kogt ind i vand. Indtag den: du nikker ud i 10 sekunder, bagefter giver stik 4x blod i 3 minutter. Bland den i weed til brun weed. Bagmanden betaler 300.",
+  "where": "src/items.ts"
+ },
+ "N1464": {
+  "en": "Ketamine",
+  "da": "Ketamin",
+  "where": "src/items.ts"
+ },
+ "N1465": {
+  "en": "Opium stirred into the lean. Swallow it: a horse's head grows on you for a minute, and you run twice as fast. Bagmand pays 300.",
+  "da": "Opium rørt ud i leanen. Indtag den: et hestehoved vokser ud på dig i et minut, og du løber dobbelt så hurtigt. Bagmanden betaler 300.",
+  "where": "src/items.ts"
+ },
+ "N1466": {
+  "en": "Percs",
+  "da": "Percs",
+  "where": "src/items.ts"
+ },
+ "N1467": {
+  "en": "Opium pressed into a pill. Swallow it: a purple haze, double speed and triple blood for a stab, for 3 minutes. Bagmand pays 320.",
+  "da": "Opium presset ind i en pille. Indtag den: en lilla dis, dobbelt fart og tredobbelt blod for et stik, i 3 minutter. Bagmanden betaler 320.",
+  "where": "src/items.ts"
+ },
+ "N1468": {
+  "en": "Opium and a shroom, ground together. Swallow it: the colours shift, every door is open and you run twice as fast, for 3 minutes. Mix it into weed for pink weed. Bagmand pays 360.",
+  "da": "Opium og en svamp, malet sammen. Indtag den: farverne skifter, alle døre er åbne, og du løber dobbelt så hurtigt, i 3 minutter. Bland den i weed til pink weed. Bagmanden betaler 360.",
+  "where": "src/items.ts"
+ },
+ "N1469": {
+  "en": "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 420.",
+  "da": "Opium skåret med fentanyl. Indtag den: 10 sekunder i 10 gange din fart, mens du spinner, og derefter alle stoffer på én gang. Bagmanden betaler 420.",
+  "where": "src/items.ts"
+ },
+ "N1470": {
+  "en": "Cali weed",
+  "da": "Cali weed",
+  "where": "src/items.ts"
+ },
+ "N1471": {
+  "en": "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 330.",
+  "da": "Weed trukket i opium: den skinner gyldent. Rul den i jointpapir eller en blunt-wrap. Bland den med natryger til en loudpack. Bagmanden betaler 330.",
+  "where": "src/items.ts"
+ },
+ "N1472": {
+  "en": "Pink weed",
+  "da": "Pink weed",
+  "where": "src/items.ts"
+ },
+ "N1473": {
+  "en": "2cb crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 250.",
+  "da": "2cb smuldret i weed. Rul den i jointpapir eller en blunt-wrap. Bagmanden betaler 250.",
+  "where": "src/items.ts"
+ },
+ "N1474": {
+  "en": "Brown weed",
+  "da": "Brun weed",
+  "where": "src/items.ts"
+ },
+ "N1475": {
+  "en": "Heroin crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 260.",
+  "da": "Heroin smuldret i weed. Rul den i jointpapir eller en blunt-wrap. Bagmanden betaler 260.",
+  "where": "src/items.ts"
+ },
+ "N1476": {
+  "en": "Bagmand's own blue weed. You have to roll it in joint paper or a blunt wrap to use it. Smoked, it lifts you off the ground in a blue glow and you run twice as fast for 4 minutes. Mix it with cali weed for a loudpack.",
+  "da": "Bagmandens egen blå weed. Du skal rulle den i jointpapir eller en blunt-wrap for at bruge den. Røget løfter den dig op fra jorden i et blåt skær, og du løber dobbelt så hurtigt i 4 minutter. Bland den med cali weed til en loudpack.",
+  "where": "src/items.ts"
+ },
+ "N1477": {
+  "en": "Loudpack",
+  "da": "Loudpack",
+  "where": "src/items.ts"
+ },
+ "N1478": {
+  "en": "Natryger and cali weed packed into one big bud that shines and sparkles. Roll it in joint paper or a blunt wrap. Smoked: you run twice as fast for a minute and get 2 deadly stabs. Bagmand pays 480.",
+  "da": "Natryger og cali weed pakket sammen til én stor top, der skinner og funkler. Rul den i jointpapir eller en blunt-wrap. Røget: du løber dobbelt så hurtigt i et minut og får 2 dødelige stik. Bagmanden betaler 480.",
+  "where": "src/items.ts"
+ },
+ "N1479": {
+  "en": "Natryger joint",
+  "da": "Natryger-joint",
+  "where": "src/items.ts"
+ },
+ "N1480": {
+  "en": "A joint of natryger. Click it to light up (you need a lighter). A blue glow lifts you off the ground and you run twice as fast for 4 minutes (stabs give double blood too).",
+  "da": "En joint af natryger. Klik på den for at tænde den (du skal bruge en lighter). Et blåt skær løfter dig fra jorden, og du løber dobbelt så hurtigt i 4 minutter (stik giver også dobbelt blod).",
+  "where": "src/items.ts"
+ },
+ "N1481": {
+  "en": "Natryger blunt",
+  "da": "Natryger-blunt",
+  "where": "src/items.ts"
+ },
+ "N1482": {
+  "en": "A blunt of natryger. Click it to light up (you need a lighter). A blue glow lifts you off the ground and you run twice as fast for 4 minutes (stabs give double blood too).",
+  "da": "En blunt af natryger. Klik på den for at tænde den (du skal bruge en lighter). Et blåt skær løfter dig fra jorden, og du løber dobbelt så hurtigt i 4 minutter (stik giver også dobbelt blod).",
+  "where": "src/items.ts"
+ },
+ "N1483": {
+  "en": "Cali joint",
+  "da": "Cali-joint",
+  "where": "src/items.ts"
+ },
+ "N1484": {
+  "en": "A joint of cali weed. Click it to light up (you need a lighter). You shine gold, and stabs give 4x blood for 2 and a half minutes.",
+  "da": "En joint af cali weed. Klik på den for at tænde den (du skal bruge en lighter). Du skinner gyldent, og stik giver 4x blod i 2 et halvt minut.",
+  "where": "src/items.ts"
+ },
+ "N1485": {
+  "en": "Cali blunt",
+  "da": "Cali-blunt",
+  "where": "src/items.ts"
+ },
+ "N1486": {
+  "en": "A blunt of cali weed. Click it to light up (you need a lighter). You shine gold, and stabs give 5x blood for 3 and a half minutes.",
+  "da": "En blunt af cali weed. Klik på den for at tænde den (du skal bruge en lighter). Du skinner gyldent, og stik giver 5x blod i 3 et halvt minut.",
+  "where": "src/items.ts"
+ },
+ "N1487": {
+  "en": "Pink joint",
+  "da": "Pink joint",
+  "where": "src/items.ts"
+ },
+ "N1488": {
+  "en": "A joint of pink weed. Click it to light up (you need a lighter). A pink glow with hearts, you run twice as fast and stabs give triple blood, for 2 and a half minutes.",
+  "da": "En joint af pink weed. Klik på den for at tænde den (du skal bruge en lighter). Et pink skær med hjerter, du løber dobbelt så hurtigt, og stik giver tredobbelt blod, i 2 et halvt minut.",
+  "where": "src/items.ts"
+ },
+ "N1489": {
+  "en": "Pink blunt",
+  "da": "Pink blunt",
+  "where": "src/items.ts"
+ },
+ "N1490": {
+  "en": "A blunt of pink weed. Click it to light up (you need a lighter). A pink glow with hearts, you run twice as fast and stabs give 4x blood, for 3 and a half minutes.",
+  "da": "En blunt af pink weed. Klik på den for at tænde den (du skal bruge en lighter). Et pink skær med hjerter, du løber dobbelt så hurtigt, og stik giver 4x blod, i 3 et halvt minut.",
+  "where": "src/items.ts"
+ },
+ "N1491": {
+  "en": "Brown joint",
+  "da": "Brun joint",
+  "where": "src/items.ts"
+ },
+ "N1492": {
+  "en": "A joint of brown weed. Click it to light up (you need a lighter). A brown haze, and stabs give 4x blood for 3 minutes.",
+  "da": "En joint af brun weed. Klik på den for at tænde den (du skal bruge en lighter). En brun dis, og stik giver 4x blod i 3 minutter.",
+  "where": "src/items.ts"
+ },
+ "N1493": {
+  "en": "Brown blunt",
+  "da": "Brun blunt",
+  "where": "src/items.ts"
+ },
+ "N1494": {
+  "en": "A blunt of brown weed. Click it to light up (you need a lighter). A brown haze, and stabs give 5x blood for 4 minutes.",
+  "da": "En blunt af brun weed. Klik på den for at tænde den (du skal bruge en lighter). En brun dis, og stik giver 5x blod i 4 minutter.",
+  "where": "src/items.ts"
+ },
+ "N1495": {
+  "en": "Loudpack joint",
+  "da": "Loudpack-joint",
+  "where": "src/items.ts"
+ },
+ "N1496": {
+  "en": "A joint of loudpack. Click it to light up (you need a lighter). Sparkles, double speed for a minute, and 2 deadly stabs: someone you stab dies, drops 10 blood and is sent home.",
+  "da": "En joint af loudpack. Klik på den for at tænde den (du skal bruge en lighter). Gnister, dobbelt fart i et minut og 2 dødelige stik: den du stikker dør, taber 10 blod og bliver sendt hjem.",
+  "where": "src/items.ts"
+ },
+ "N1497": {
+  "en": "Loudpack blunt",
+  "da": "Loudpack-blunt",
+  "where": "src/items.ts"
+ },
+ "N1498": {
+  "en": "A blunt of loudpack. Click it to light up (you need a lighter). Sparkles, double speed for a minute, and 2 deadly stabs: someone you stab dies, drops 10 blood and is sent home.",
+  "da": "En blunt af loudpack. Klik på den for at tænde den (du skal bruge en lighter). Gnister, dobbelt fart i et minut og 2 dødelige stik: den du stikker dør, taber 10 blod og bliver sendt hjem.",
+  "where": "src/items.ts"
+ },
+ "N1499": {
+  "en": "Bagmand isn't here. He comes at 01:00, 10:00 and 15:00 for an hour.",
+  "da": "Bagmanden er her ikke. Han kommer kl. 01:00, 10:00 og 15:00 i en time.",
+  "where": "server/src/actions/bagmand.ts"
+ },
+ "N1500": {
+  "en": "He's sold out of those for today's visit.",
+  "da": "Han er udsolgt af dem i dette besøg.",
+  "where": "server/src/actions/bagmand.ts"
+ },
+ "N1501": {
+  "en": "There is only 1 left.",
+  "da": "Der er kun 1 tilbage.",
+  "where": "server/src/actions/bagmand.ts"
+ },
+ "N1502": {
+  "en": "There are only {left} left.",
+  "da": "Der er kun {left} tilbage.",
+  "where": "server/src/actions/bagmand.ts"
+ },
+ "N1503": {
+  "en": "Your knife won't go in. That one is protected.",
+  "da": "Din kniv vil ikke ind. Den der er beskyttet.",
+  "where": "server/src/actions/bagmand.ts"
+ },
+ "N1504": {
+  "en": "You have no deadly stab.",
+  "da": "Du har intet dødeligt stik.",
+  "where": "server/src/actions/bagmand.ts"
+ },
+ "N1505": {
+  "en": "Your message to everybody",
+  "da": "Din besked til alle",
+  "where": "src/ui/loudspeaker.ts"
+ },
+ "N1506": {
+  "en": "Loudspeaker",
+  "da": "Højttaler",
+  "where": "src/ui/loudspeaker.ts"
+ },
+ "N1507": {
+  "en": "📢 Loudspeaker",
+  "da": "📢 Højttaler",
+  "where": "src/ui/loudspeaker.ts"
+ },
+ "N1508": {
+  "en": "Everybody sees it for 10 seconds. You can only use it once every 6 hours, so make it count.",
+  "da": "Alle ser den i 10 sekunder. Du kan kun bruge den én gang hver 6. time, så få det til at tælle.",
+  "where": "src/ui/loudspeaker.ts"
+ },
+ "N1509": {
+  "en": "Write something first.",
+  "da": "Skriv noget først.",
+  "where": "src/ui/loudspeaker.ts"
+ },
+ "N1510": {
+  "en": "Sent to everybody.",
+  "da": "Sendt til alle.",
+  "where": "src/ui/loudspeaker.ts"
+ },
+ "N1511": {
+  "en": "Broadcast",
+  "da": "Send ud",
+  "where": "src/ui/loudspeaker.ts"
+ },
+ "N1512": {
+  "en": "Click it, type a message, and everybody on the site sees it for 10 seconds. It needs 6 hours to charge again.",
+  "da": "Klik på den, skriv en besked, og alle på siden ser den i 10 sekunder. Den skal bruge 6 timer på at lade op igen.",
+  "where": "src/items.ts"
+ },
+ "N1513": {
+  "en": "You don't have a loudspeaker.",
+  "da": "Du har ingen højttaler.",
+  "where": "server/src/actions/loudspeaker.ts"
+ },
+ "N1514": {
+  "en": "You are muted.",
+  "da": "Du er gjort tavs.",
+  "where": "server/src/actions/loudspeaker.ts"
+ },
+ "N1515": {
+  "en": "The loudspeaker is still charging: {…} left.",
+  "da": "Højttaleren lader stadig op: {…} tilbage.",
+  "where": "server/src/actions/loudspeaker.ts"
  }
 }

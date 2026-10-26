@@ -65,6 +65,22 @@
         }
       }
     },
+    "bagmand": {
+      ".read": "@PW@"
+    },
+    "broadcast": {
+      ".read": "@PW@"
+    },
+    "loudspeaker": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "sendHome": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
     "ideasImg": {
       "$id": {
         ".read": "@PW@"
@@ -756,7 +772,7 @@
               ".validate": "newData.isBoolean()"
             },
             "crop": {
-              ".validate": "newData.isString() && newData.val() === 'shroom'"
+              ".validate": "newData.isString() && (newData.val() === 'shroom' || newData.val() === 'poppy')"
             },
             "by": {
               ".validate": "newData.isString() && newData.val().length < 60"
@@ -830,7 +846,7 @@
               ".validate": "newData.isBoolean()"
             },
             "fastMult": {
-              ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 4"
+              ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 10"
             },
             "cup": {
               ".validate": "newData.isNumber()"
@@ -842,6 +858,12 @@
               ".validate": "newData.isNumber()"
             },
             "spin": {
+              ".validate": "newData.isNumber()"
+            },
+            "look": {
+              ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('lookKind').val()"
+            },
+            "lookUntil": {
               ".validate": "newData.isNumber()"
             },
             "nc": {

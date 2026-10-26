@@ -16,7 +16,7 @@ const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
 
 type Role = "admin" | "mod" | null;
 
-async function roleOf(c: Ctx, uid: string): Promise<Role> {
+export async function roleOf(c: Ctx, uid: string): Promise<Role> {
   const r = await c.db.get<string>(`roles/${uid}`);
   if (r === "admin" || r === "mod") return r;
   // the first admin account is the one the server knows by its sign-in address (adminsidia)
