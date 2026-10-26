@@ -61,7 +61,7 @@ export function openCaseWindow(host: HTMLElement, ctx: Ctx, roomId: string, onCh
     const boxes = countOf(ctx, CASE_ITEM), keys = countOf(ctx, KEY_ITEM);
     info.replaceChildren(
       h("div", { class: "case-counts" }, h("span", {}, `📦 ${boxes} box${boxes === 1 ? "" : "es"}`), h("span", {}, `🔑 ${keys} key${keys === 1 ? "" : "s"}`)),
-      h("div", { class: "hint" }, boxes < 1 ? "You have no box. Boxes turn up in the bins." : keys < 1 ? "You need a key: 6ixty sells them (250 blood), and so does the pay2win machine in the shop (2 for 25 kr)." : "One key opens one box."));
+      h("div", { class: "hint" }, boxes < 1 ? "You have no box. Boxes turn up in the bins." : keys < 1 ? "You need a key: 6ixty sells them (200 blood), and so does the pay2win machine in the shop (2 for 25 kr)." : "One key opens one box."));
     actions.replaceChildren(
       h("button", { class: "btn primary case-open", disabled: busy || boxes < 1 || keys < 1, onclick: () => void open() }, busy ? "Opening…" : won ? "Open another" : "Open (uses 1 key)"));
   }

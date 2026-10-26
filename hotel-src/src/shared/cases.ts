@@ -1,4 +1,4 @@
-// Mystery boxes and keys (like cases and case keys in CS:GO): a box you find in the bins, a key you buy from 6ixty (250 blood) or in the Ducky machine
+// Mystery boxes and keys (like cases and case keys in CS:GO): a box you find in the bins, a key you buy from 6ixty (200 blood) or in the Ducky machine
 // (2 for 25 kr). A key opens one box. Pure data and rules: the browser (the opening window) and the server (the roll: server/src/actions/cases.ts) use it.
 import { SHOP_PIECES } from "./furniture";
 import { UNUSUAL_FX, type UnusualEffect } from "./unusualFx";
@@ -9,7 +9,7 @@ import { RAFFLE_POOL } from "./raffle";
 export const CASE_ITEM = "mysterycase";
 export const KEY_ITEM = "casekey";
 /** what a key costs from 6ixty (blood), and what the Ducky machine sells (2 keys for 25 kr) */
-export const CASE_KEY_PRICE = 250;
+export const CASE_KEY_PRICE = 200;
 export const KEYS_PACK = { qty: 2, ore: 2500 };
 /** the chance (in percent) that a search of a bin finds a box */
 export const CASE_BIN_CHANCE = 10;
@@ -19,7 +19,7 @@ export interface CasePrize { id: string; chance: number; tier: Tier; label: stri
 /**
  * What a box gives, in percent (they add up to 100). Half of them are junk or small: ass weed, a cigarette, tobacco, hash, a chud joint, seeds, an ordinary piece of furniture; a good quarter is the heavy stuff
  * (cali weed and the 芬太尼, which bagmand pays 150 and 200 for), and 12% is something special: a poppy seed, the loudspeaker, a rare piece of furniture or an unusual.
- * The prizes are worth about 107 blood on average to the one who opens it, against the 250 the key costs: the boxes never pay.
+ * The prizes are worth about 107 blood on average to the one who opens it, against the 200 the key costs: the boxes never pay.
  */
 export const CASE_TABLE: CasePrize[] = [
   { id: "junk", chance: 22, tier: "junk", label: "Junk" },

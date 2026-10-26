@@ -10900,8 +10900,8 @@
   "where": "src/ui/caseOpen.ts:63"
  },
  "N1649": {
-  "en": "You need a key: 6ixty sells them (250 blood), and so does the pay2win machine in the shop (2 for 25 kr).",
-  "da": "Du skal bruge en nøgle: 6ixty sælger dem (250 blod), og det gør pay2win-maskinen i shoppen også (2 for 25 kr).",
+  "en": "You need a key: 6ixty sells them (200 blood), and so does the pay2win machine in the shop (2 for 25 kr).",
+  "da": "Du skal bruge en nøgle: 6ixty sælger dem (200 blod), og det gør pay2win-maskinen i shoppen også (2 for 25 kr).",
   "where": "src/ui/caseOpen.ts:63"
  },
  "N1650": {
