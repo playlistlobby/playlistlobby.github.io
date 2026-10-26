@@ -1,12 +1,13 @@
 // Hideouts (see src/shared/hideout.ts): buying one, the owner's tools (size, colours, name, locking builds, members), invites, the shared box, and the
 // computer's orders. Everything about a hideout is written here (the browsers only read roomsMeta/h_<owner>); the furnishing itself is in toolbox.ts.
-import { Action, ID_RE, int, requireHideoutMember, requireInRoom, text } from "./util";
+import { Action, ID_RE, int, requireHideoutMember, requireInRoom, requireWorkRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, lighterHex, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
+import { isFurniItem, NO_DROP } from "../../../src/shared/items";
 import { SHIPPED_DIMS } from "../../../src/shared/furniture";
 import {
   HIDEOUT_BOOST_MS, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HideoutListing, HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
-  HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize,
+  HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize, hideoutPriceOf, HIDEOUT_CHEST_MAX_QTY, HIDEOUT_CHEST_SLOTS,
 } from "../../../src/shared/hideout";
 
 const UID_RE = /^[A-Za-z0-9]{10,40}$/;
@@ -54,7 +55,7 @@ export const hideoutBuy: Action = {
     const name = await nameOf(c, c.uid);
     c.extra[`roomsMeta/${room}`] = {
       owner: c.uid, ownerName: name, name: `${name}'s hideout`.slice(0, HIDEOUT_NAME_MAX), access: "none", w: HIDEOUT_SIZES[0], h: HIDEOUT_SIZES[0], level: 0, lock: false,
-      theme: { ...HIDEOUT_THEME }, toolbox: HIDEOUT_FIXED_POS.toolbox, sink: HIDEOUT_FIXED_POS.sink, boombox: HIDEOUT_FIXED_POS.boombox, computer: HIDEOUT_FIXED_POS.computer,
+      theme: { ...HIDEOUT_THEME }, toolbox: HIDEOUT_FIXED_POS.toolbox, sink: HIDEOUT_FIXED_POS.sink, boombox: HIDEOUT_FIXED_POS.boombox, computer: HIDEOUT_FIXED_POS.computer, chest: HIDEOUT_FIXED_POS.chest,
     };
     c.extra[`hideouts/${c.uid}/${c.uid}`] = { name: `${name}'s hideout`.slice(0, HIDEOUT_NAME_MAX), role: "owner" };
     publishListing(c, c.uid, { name: `${name}'s hideout`, ownerName: name }, {});
@@ -320,18 +321,19 @@ export const hideoutOrder: Action = {
     const item = HIDEOUT_SHOP.find((i) => i.kind === a.kind);
     if (!item) fail("That isn't for sale.");
     const orders = (await c.db.get<Record<string, { by?: string }>>(`roomsMeta/${room}/orders`)) ?? {};
-    if (Object.values(orders).filter((o) => o?.by === c.uid).length >= 5) fail("You already have 5 orders on the way.");
+    if (Object.values(orders).filter((o) => o?.by === c.uid).length >= 50) fail("You already have 50 orders on the way.");
+    const bought = Number(await c.db.get<number>(`roomsMeta/${room}/bought/${item!.kind}`)) || 0; // (how many of these this hideout has ordered: the price can go up after the first few)
+    const price = hideoutPriceOf(item!, bought);
     const w = await c.user();
-    if (w.s.blood < item!.price) fail(`You need ${item!.price - w.s.blood} more drops`);
-    w.s.blood -= item!.price;
+    if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
+    w.s.blood -= price;
     const id = `o${c.now.toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-    c.extra[`roomsMeta/${room}/orders/${id}`] = { kind: item!.kind, by: c.uid, doneAt: c.now + HIDEOUT_ORDER_MS };
+    c.extra[`roomsMeta/${room}/orders/${id}`] = { kind: item!.kind, by: c.uid, doneAt: c.now + item!.etaMs };
+    c.extra[`roomsMeta/${room}/bought/${item!.kind}`] = bought + 1;
     c.note = item!.kind;
-    return { id, doneAt: c.now + HIDEOUT_ORDER_MS };
+    return { id, doneAt: c.now + item!.etaMs, price };
   },
 };
-
-/** An order that has arrived goes into your pocket (only the one who ordered it can collect it). */
 export const hideoutCollect: Action = {
   locks: (c, a) => roomLock(c, a),
   async run(c, a) {
@@ -351,3 +353,82 @@ export const hideoutCollect: Action = {
   },
 };
 
+// ---- the shared stash: a chest in every hideout. Every member puts things in and takes things out (a gang's chest: it is on trust). hideoutChests/<owner>/<key> = { item, qty, ass? }
+const chestKey = (item: string, ass?: boolean): string => `${item}${ass ? "_ass" : ""}`;
+export const hideoutChestPut: Action = {
+  locks: (c, a) => roomLock(c, a),
+  async run(c, a) {
+    const room = hideoutRoom(a);
+    await requireHideoutMember(c, room);
+    await requireInRoom(c, room);
+    const owner = room.slice(2);
+    const w = await c.user();
+    const slot = int(a.slot, 0, 27, "slot");
+    const it = w.s.inventory[slot];
+    if (!it || it.lit || it.inPlayer) fail("You can't put that in the stash.");
+    if (isFurniItem(it!.item)) fail("Furniture goes in the box (the toolbox), not the stash.");
+    if (NO_DROP.has(it!.item)) fail("That one stays with you.");
+    const qty = Math.max(1, Math.min(int(a.qty ?? 1, 1, 999, "amount"), it!.qty));
+    const key = chestKey(it!.item, it!.ass);
+    const path = `hideoutChests/${owner}/${key}`;
+    const cur = await c.db.get<{ qty?: number }>(path);
+    if (!cur) {
+      const all = (await c.db.get<Record<string, unknown>>(`hideoutChests/${owner}`)) ?? {};
+      if (Object.keys(all).length >= HIDEOUT_CHEST_SLOTS) fail("The stash is full: take something out first.");
+    }
+    const have = Number(cur?.qty) || 0;
+    if (have + qty > HIDEOUT_CHEST_MAX_QTY) fail("There is too much of that in there already.");
+    w.s.inventory = takeQtyFrom(w.s.inventory, slot, qty);
+    c.extra[path] = { item: it!.item, qty: have + qty, ...(it!.ass ? { ass: true } : {}) };
+    c.note = `${qty} ${it!.item}`;
+    return {};
+  },
+};
+export const hideoutChestTake: Action = {
+  locks: (c, a) => roomLock(c, a),
+  async run(c, a) {
+    const room = hideoutRoom(a);
+    await requireHideoutMember(c, room);
+    await requireInRoom(c, room);
+    const owner = room.slice(2);
+    const key = text(a.key, /^[a-z0-9_]{1,60}$/, "thing");
+    const path = `hideoutChests/${owner}/${key}`;
+    const cur = await c.db.get<{ item?: string; qty?: number; ass?: boolean }>(path);
+    if (!cur?.item || !(Number(cur.qty) > 0)) fail("There's none of that in the stash.");
+    const qty = Math.max(1, Math.min(int(a.qty ?? 1, 1, 999, "amount"), Number(cur!.qty)));
+    const w = await c.user();
+    const next = addToInv(w.s.inventory, { item: cur!.item!, qty, ...(cur!.ass ? { ass: true } : {}) });
+    if (!next) fail("Your pockets are full.");
+    w.s.inventory = next!;
+    const left = Number(cur!.qty) - qty;
+    c.extra[path] = left > 0 ? { item: cur!.item, qty: left, ...(cur!.ass ? { ass: true } : {}) } : null;
+    c.note = `${qty} ${cur!.item}`;
+    return { item: cur!.item, qty };
+  },
+};
+
+/** Puts an automatic waterer on a growing kit, or an upgrade chip in a mixer (your own room or a hideout you are in). The item is used up. */
+export const attachUpgrade: Action = {
+  locks: (c, a) => [`room:${typeof a?.room === "string" ? a.room : `u_${c.uid}`}`],
+  async run(c, a) {
+    const room = await requireWorkRoom(c, a.room);
+    const id = text(a.fid, ID_RE, "piece");
+    const path = `roomsMeta/${room}/furni/${id}`;
+    const row = await c.db.get<{ kind?: string; auto?: boolean; up?: boolean }>(path);
+    const w = await c.user();
+    const slot = int(a.slot, 0, 27, "slot");
+    const item = w.s.inventory[slot]?.item;
+    if (item === "waterer") {
+      if (row?.kind !== "f_planter") fail("An automatic waterer goes on a growing kit.");
+      if (row!.auto) fail("There's a waterer on it already.");
+      c.extra[`${path}/auto`] = true;
+    } else if (item === "mixerchip") {
+      if (row?.kind !== "f_mixer") fail("The chip goes in a mixer.");
+      if (row!.up) fail("That mixer has a chip already.");
+      c.extra[`${path}/up`] = true;
+    } else fail("That doesn't go on anything.");
+    w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1);
+    c.note = String(item);
+    return {};
+  },
+};

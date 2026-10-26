@@ -40,7 +40,7 @@ export interface FurniKind {
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
   /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
   wallArt?: { left: number; back: number };
-  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle";
+  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "hits";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -83,7 +83,7 @@ export { SHOP_KIND_PREFIX, SHOP_PIECES };
 
 const shopKinds = (): Record<string, FurniKind> => Object.fromEntries(SHOP_PIECES.map((p) => [SHOP_KIND_PREFIX + p.id, {
   id: SHOP_KIND_PREFIX + p.id, label: p.label, icon: p.icon, w: p.w, h: p.h, height: p.height, color: "#6b5a48", placeable: false,
-  nitro: `furni/${SHOP_KIND_PREFIX}${p.id}.nitro`, rotatable: true, ...(p.flat ? { flat: true } : {}), ...(p.seat ? { seat: true, seatHeight: p.seatHeight ?? 14 } : {}), ...(p.surface ? { surface: p.surface } : {}), ...(p.small ? { small: true } : {}), ...(p.states ? { states: p.states } : {}), ...(p.defaultState ? { defaultState: p.defaultState } : {}),
+  nitro: p.nitro ?? `furni/${SHOP_KIND_PREFIX}${p.id}.nitro`, rotatable: true, ...(p.flat ? { flat: true } : {}), ...(p.seat ? { seat: true, seatHeight: p.seatHeight ?? 14 } : {}), ...(p.surface ? { surface: p.surface } : {}), ...(p.small ? { small: true } : {}), ...(p.states ? { states: p.states } : {}), ...(p.defaultState ? { defaultState: p.defaultState } : {}),
 } as FurniKind]));
 
 /** The looks the landlord sells for the bed (bed_<id>) and the bag of clothes (bag_<id>): fixed pieces, never placed from a toolbox. */
@@ -100,6 +100,11 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the growing kit (sold in the shop room's vending machine): an empty pot until you plant a seed in it
   f_planter: { id: "f_planter", label: "Growing kit", icon: "🪴", w: 1, h: 1, height: 36, color: "#d8d8d8", placeable: false, nitro: "furni/f_flowerpot.nitro", rotatable: true, plant: true },
   // the mixer (sold by the vending machine): put it down in your room, tap it, and mix two things into something new
+  // the automatic plant waterer: it sits on a growing kit (drawn over the pot, never placed on its own)
+  sprinkler: { id: "sprinkler", label: "Automatic waterer", icon: "💦", w: 1, h: 1, height: 36, color: "#9fd4ff", placeable: false, nitro: "furni/sprinkler.nitro", rotatable: true, flat: true },
+  // the hideout's shared stash: a chest every member can put things in and take things out of
+  hchest: { id: "hchest", label: "Shared stash", icon: "🧰", w: 1, h: 1, height: 36, color: "#8a6a3a", placeable: false, nitro: "furni/stashbox.nitro", rotatable: true, fixed: true, opens: "chest" },
+  f_mixer_up: { id: "f_mixer_up", label: "Mixer (upgraded)", icon: "🧪", w: 1, h: 1, height: 46, color: "#4f8a5a", placeable: false, nitro: "derived:mixer_up", rotatable: true, opens: "mixer" },
   f_mixer: { id: "f_mixer", label: "Mixer", icon: "🧪", w: 1, h: 1, height: 46, color: "#6b6b7a", placeable: false, nitro: "furni/f_mixer.nitro", rotatable: true, opens: "mixer" },
   // the vending machine in the shop room
   vending: { id: "vending", label: "Vending machine", icon: "🥤", w: 1, h: 1, height: 80, color: "#6b5a48", placeable: false, nitro: "furni/olympics_r16_vendingmchn.nitro", rotatable: true, fixed: true, opens: "vending" },
@@ -186,7 +191,9 @@ export interface PlacedFurni {
   /** a poster's picture: a small PNG as a data address (empty = the "?" poster) */
   img?: string;
   /** a growing kit with a seed in it (server times, ms): planted, last watered, and whether it ever ran dry */
-  plant?: { at: number; water: number; neglect: boolean; /** what grows in it: weed (nothing) or shrooms */ crop?: string };
+  plant?: { at: number; water: number; neglect: boolean; /** what grows in it: weed (nothing) or shrooms */ crop?: string; /** an automatic waterer sits on the pot: it never needs water */ auto?: boolean };
+  /** the pot has an automatic waterer, the mixer an upgrade chip (set by the server) */
+  auto?: boolean; up?: boolean;
   /** which look or animation a multi-state piece is in (its animation number); empty = the piece's default */
   st?: number;
   /** a mixer with a batch in it (server times, ms): when it is done and how long it takes */
@@ -230,6 +237,8 @@ export interface HideoutInfo {
   /** the shared box: piece owner -> kind -> how many */
   box: Record<string, Record<string, number>>;
   orders: Record<string, { kind: string; by: string; doneAt: number }>;
+  /** how many of each thing on the computer this hideout has ordered (the price can change after the first few) */
+  bought: Record<string, number>;
   /** how many pieces fit */
   cap: number;
   /** the line about it on the public list, whether it is on the list, and until when it is shown first */
@@ -310,6 +319,8 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby11", kind: "seccam", x: 4, y: 0, dir: 2 },
   // the door to the hideouts, in the left wall at the far end of the basement, past the roulette table and bagmand (the hideout landlord stands two tiles up from it, see src/npc.ts)
   { id: "lobby12", kind: "hdoor", x: 0, y: 24, dir: 2 },
+  // the sink for everybody (the player rooms have none any more): fills the watering can. The admin moves it where he wants it
+  { id: "lobby13", kind: "sink", x: 0, y: 4, dir: 2 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
@@ -408,6 +419,7 @@ export const BAG = { x: 7, y: 0, dir: 2 };
 /** The toolbox starts between the bed and the bag. */
 export const STASH_ID = "stashbox";
 export const COMPUTER_ID = "computer";
+export const CHEST_ID = "chest";
 export const TOOLBOX_ID = "toolbox";
 export const TOOLBOX = { x: 6, y: 0, dir: 4 };
 /** The sink starts in the far left corner of the room, facing the camera. */
@@ -438,9 +450,10 @@ export interface RoomMeta {
   members?: Record<string, { name?: string; build?: boolean }>;
   box?: Record<string, Record<string, number>>;
   orders?: Record<string, { kind?: string; by?: string; doneAt?: number }>;
+  bought?: Record<string, number>;
   computer?: { x: number; y: number; dir?: number };
   theme?: Partial<RoomTheme>;
-  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string; img?: string; mixJob?: { doneAt?: number; ms?: number; item?: string }; st?: number }>;
+  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string; auto?: boolean; up?: boolean; img?: string; mixJob?: { doneAt?: number; ms?: number; item?: string }; st?: number }>;
   /** where the owner moved the fixed pieces to (the bed can't be turned, so only its x/y count) */
   bed?: { x: number; y: number; dir?: number };
   bag?: { x: number; y: number; dir?: number };
@@ -448,6 +461,7 @@ export interface RoomMeta {
   /** only there once the landlord has sold you one (the server writes where it first stands) */
   stashbox?: { x: number; y: number; dir?: number };
   sink?: { x: number; y: number; dir?: number };
+  chest?: { x: number; y: number; dir?: number };
   boombox?: { x: number; y: number; dir?: number; /** taken out of the room (it is in somebody's pocket as f_boombox) */ gone?: boolean };
   /** the looks bought from the landlord (the server writes these): ids from shared/skins.ts */
   skins?: { bed?: string; bag?: string };
@@ -462,13 +476,16 @@ const skinKind = (part: "bed" | "bag", skin: string | undefined): string => (ski
 
 /** a hideout: like a player room but bigger, with a computer instead of a bed and a wardrobe; its door leads back to the basement */
 function hideoutDef(id: string, meta: RoomMeta): RoomDef {
-  const theme: RoomTheme = { ...DEFAULT_THEME, rug: false, ...(meta.theme ?? {}) };
+  // a hideout looks like the basement (the old plain grey hideouts, which nobody has recoloured, get the basement's look too)
+  const stored = (meta.theme ?? {}) as Partial<RoomTheme>;
+  const oldDefault = stored.floorA === "#6f6a63" && stored.wall === "#8b9096" && !stored.floorTex && !stored.wallTex;
+  const theme: RoomTheme = { ...GRIME_THEME, ...(oldDefault ? {} : stored) };
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
-    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof (f as any).by === "string" ? { by: (f as any).by as string } : {}), ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}) } } : {}) }));
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof (f as any).by === "string" ? { by: (f as any).by as string } : {}), ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}), ...(f.auto ? { auto: true } : {}) } } : {}), ...(f.auto ? { auto: true } : {}), ...(f.up ? { up: true } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
-  const toolbox = at(meta.toolbox, { x: 6, y: 0, dir: 2 }), sink = at(meta.sink, { x: 0, y: 7, dir: 2 }), boombox = at(meta.boombox, { x: 0, y: 3, dir: 2 }), computer = at(meta.computer, { x: 4, y: 0, dir: 2 });
-  furni.unshift({ id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: COMPUTER_ID, kind: "hcomputer", x: computer.x, y: computer.y, dir: computer.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]));
+  const toolbox = at(meta.toolbox, { x: 6, y: 0, dir: 2 }), sink = at(meta.sink, { x: 0, y: 7, dir: 2 }), boombox = at(meta.boombox, { x: 0, y: 3, dir: 2 }), computer = at(meta.computer, { x: 4, y: 0, dir: 2 }), chest = at(meta.chest, { x: 8, y: 0, dir: 2 });
+  furni.unshift({ id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: COMPUTER_ID, kind: "hcomputer", x: computer.x, y: computer.y, dir: computer.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, { id: CHEST_ID, kind: "hchest", x: chest.x, y: chest.y, dir: chest.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]));
   const side = (n: unknown) => (typeof n === "number" && n >= 8 && n <= 24 ? Math.floor(n) : 14);
   const w = side(meta.w), h = side(meta.h);
   const level = typeof meta.level === "number" ? meta.level : levelOfSize(w);
@@ -477,7 +494,7 @@ function hideoutDef(id: string, meta: RoomMeta): RoomDef {
   for (const [uid, m] of Object.entries(meta.members ?? {})) members[uid] = { name: String(m?.name ?? "?"), build: m?.build !== false };
   const orders: HideoutInfo["orders"] = {};
   for (const [oid, o] of Object.entries(meta.orders ?? {})) if (o && typeof o.kind === "string" && typeof o.by === "string") orders[oid] = { kind: o.kind, by: o.by, doneAt: Number(o.doneAt) || 0 };
-  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: "none", w, h, theme, rug, furni, doorX: DOOR_X, doorTo: LOBBY_ID, hideout: { level, lock: meta.lock === true, desc: String(meta.desc ?? ""), listed: meta.listed !== false, boostUntil: Number(meta.boostUntil) || 0, open: meta.access === "open", members, box: meta.box ?? {}, orders, cap: HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] } };
+  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: "none", w, h, theme, rug, furni, doorX: DOOR_X, doorTo: LOBBY_ID, hideout: { bought: Object.fromEntries(Object.entries(meta.bought ?? {}).filter(([, n]) => Number.isFinite(Number(n))).map(([k, n]) => [k, Number(n)])), level, lock: meta.lock === true, desc: String(meta.desc ?? ""), listed: meta.listed !== false, boostUntil: Number(meta.boostUntil) || 0, open: meta.access === "open", members, box: meta.box ?? {}, orders, cap: HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] } };
 }
 
 export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
@@ -486,10 +503,10 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   // furniture of kinds that no longer exist (the old test cubes) is ignored; the bed is always there
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
-    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}) } } : {}) }));
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}), ...(f.auto ? { auto: true } : {}) } } : {}), ...(f.auto ? { auto: true } : {}), ...(f.up ? { up: true } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
   const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), boombox = at(meta.boombox, BOOMBOX);
-  furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]), ...(meta.stashbox && Number.isFinite(meta.stashbox.x) && Number.isFinite(meta.stashbox.y) ? [{ id: STASH_ID, kind: "stashbox", x: meta.stashbox.x, y: meta.stashbox.y, dir: meta.stashbox.dir ?? 2 }] : []));
+  furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]), ...(meta.stashbox && Number.isFinite(meta.stashbox.x) && Number.isFinite(meta.stashbox.y) ? [{ id: STASH_ID, kind: "stashbox", x: meta.stashbox.x, y: meta.stashbox.y, dir: meta.stashbox.dir ?? 2 }] : []));
   // the landlord makes rooms bigger (the server writes w and h)
   const side = (n: unknown) => (typeof n === "number" && n >= ROOM_W && n <= 14 ? Math.floor(n) : ROOM_W);
   const w = side(meta.w), h = side(meta.h);

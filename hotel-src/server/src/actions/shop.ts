@@ -193,7 +193,7 @@ export const roomSkins: Action = {
         const bedPos = { ...DEFAULT_PIECE_POS.bed, ...(meta.bed ?? {}) };
         const bedFp = skinFootprint("bed", meta.skins?.bed, 2);
         cover(bedPos.x, bedPos.y, bedFp.w, bedFp.h);
-        for (const k of ["toolbox", "sink", "boombox"] as const) { if (k === "boombox" && meta.boombox?.gone) continue; const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
+        for (const k of ["toolbox", "boombox"] as const) { if (k === "boombox" && meta.boombox?.gone) continue; const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
         if (meta.stashbox) cover(Number(meta.stashbox.x) || 0, Number(meta.stashbox.y) || 0, 1, 1);
         const dimsOf = await c.furniMeta();
         for (const f of Object.values<any>(meta.furni ?? {})) {
@@ -239,7 +239,7 @@ export const buyStashbox: Action = {
     const bagPos = { ...DEFAULT_PIECE_POS.bag, ...(meta.bag ?? {}) };
     const bagFp = skinFootprint("bag", meta.skins?.bag, bagPos.dir ?? 2);
     cover(bagPos.x, bagPos.y, bagFp.w, bagFp.h);
-    for (const k of ["toolbox", "sink", "boombox"] as const) { if (k === "boombox" && meta.boombox?.gone) continue; const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
+    for (const k of ["toolbox", "boombox"] as const) { if (k === "boombox" && meta.boombox?.gone) continue; const p = { ...DEFAULT_FIXED_POS[k], ...(meta[k] ?? {}) }; cover(p.x, p.y, 1, 1); }
     const dimsOf = await c.furniMeta();
     for (const f of Object.values<any>(meta.furni ?? {})) {
       const d = SHIPPED_DIMS[f?.kind] ?? dimsOf[f?.kind] ?? { w: 1, h: 1 };

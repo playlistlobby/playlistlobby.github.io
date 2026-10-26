@@ -91,6 +91,11 @@
         }
       }
     },
+    "hideoutChests": {
+      "$owner": {
+        ".read": "@PW@ && (auth.uid === $owner || root.child('roomsMeta').child('h_' + $owner).child('members').child(auth.uid).exists())"
+      }
+    },
     "hideoutList": {
       ".read": "@PW@"
     },
@@ -726,6 +731,21 @@
           }
         },
         "computer": {
+          ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
+          },
+          "dir": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "chest": {
           ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"

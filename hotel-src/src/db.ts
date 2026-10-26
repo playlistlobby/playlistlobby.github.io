@@ -363,7 +363,9 @@ export async function combineSlots(p: Profile, a: number, b: number): Promise<{ 
   const r = await call<{ note?: string; gave?: string }>(p, "combine", { a, b });
   return { note: String(r.note ?? ""), gave: String(r.gave ?? "") };
 }
-export const fillCan = (p: Profile, slot: number, room?: string): Promise<unknown> => call(p, "fillCan", { slot, ...(room?.startsWith("h_") ? { room } : {}) });
+export const fillCan = (p: Profile, slot: number, room?: string): Promise<unknown> => call(p, "fillCan", { slot, ...(room === "lobby" || room?.startsWith("h_") ? { room } : {}) });
+/** an automatic waterer onto a growing kit, or an upgrade chip into a mixer */
+export const attachUpgrade = (p: Profile, roomId: string, fid: string, slot: number): Promise<unknown> => call(p, "attachUpgrade", { fid, slot, ...(roomId.startsWith("h_") ? { room: roomId } : {}) });
 /** Lights a cigarette, joint or blunt (needs a lighter). Resolves with when it was lit (server time). */
 export async function lightItem(p: Profile, slot: number): Promise<number> {
   return Number((await call<{ litAt?: number }>(p, "light", { slot })).litAt) || serverNow();

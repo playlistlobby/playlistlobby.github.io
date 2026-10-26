@@ -45,3 +45,14 @@ export function watchHideoutList(cb: (list: Array<{ owner: string; listing: Hide
     cb(Object.entries(v).map(([owner, l]) => ({ owner, listing: { name: String(l?.name ?? "Hideout"), desc: String(l?.desc ?? ""), ownerName: String(l?.ownerName ?? "?"), members: Number(l?.members) || 1, boostUntil: Number(l?.boostUntil) || 0, open: l?.open === true } })));
   }, () => cb([]));
 }
+
+// ---- the shared stash (the chest): hideoutChests/<owner>/<key> = { item, qty, ass? }, readable by the members
+export interface ChestRow { key: string; item: string; qty: number; ass?: boolean }
+export const hideoutChestPut = (p: Profile, room: string, slot: number, qty = 1): Promise<unknown> => call(p, "hideoutChestPut", { room, slot, qty });
+export const hideoutChestTake = (p: Profile, room: string, key: string, qty = 1): Promise<unknown> => call(p, "hideoutChestTake", { room, key, qty });
+export function watchHideoutChest(owner: string, cb: (rows: ChestRow[]) => void): () => void {
+  return onValue(ref(db, `hideoutChests/${owner}`), (s) => {
+    const v = (s.val() ?? {}) as Record<string, { item?: string; qty?: number; ass?: boolean }>;
+    cb(Object.entries(v).filter(([, r]) => typeof r?.item === "string" && Number(r.qty) > 0).map(([key, r]) => ({ key, item: r.item!, qty: Number(r.qty), ...(r.ass ? { ass: true } : {}) })).sort((a, b) => a.item.localeCompare(b.item)));
+  }, () => cb([]));
+}

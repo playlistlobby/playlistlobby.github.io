@@ -20,7 +20,7 @@ import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
 import { plantThirsty, plantWatered } from "../db";
 import { giveCommand } from "../db";
-import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilNextStab, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
+import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, attachUpgrade, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilNextStab, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
@@ -36,6 +36,7 @@ import { unusualOf } from "../shared/cases";
 import { drawPet, onMyPetLook, petLookNow, petPreview, petSheet } from "../pets";
 import { pickUpPet, releasePet } from "../petActions";
 import { LOUDSPEAKER_ON } from "../shared/loudspeaker";
+import { openHideoutChest } from "./hideoutChest";
 import { parsePetLook } from "../shared/petItems";
 import { hideoutBoxStore, hideoutBoxTake } from "../hideout";
 import { openLoudspeaker } from "./loudspeaker";
@@ -521,6 +522,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let bagmandApi: BagmandShopApi | null = null;
   let computerApi: ComputerApi | null = null;
   let petShopApi: { close(): void } | null = null;
+  let chestApi: { close(): void; refresh(): void } | null = null;
   let caseApi: { close(): void } | null = null;
   /** the pets walking about: where each one is (tiles), which way it faces, and since when it has been standing still */
   const petStates = new Map<string, { look: string; x: number; y: number; dir: number; moving: boolean; t: number; still: number }>();
@@ -720,6 +722,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
+    else if (hoverObj && hoverObj.kind === "hchest") text = "Shared stash: the whole hideout puts things in and takes them out";
     else if (hoverObj && hoverObj.kind === "bagman") text = "bagmand: poppy seeds, blue weed. He buys opium and what is mixed from it";
     else if (hoverObj && hoverObj.kind === "bed") text = mine()?.lying ? "Your bed: get up" : "Your bed: lie down";
     else if (hoverObj && (hoverObj.kind === "boombox" || hoverObj.kind === "f_boombox")) text = "Boombox: use a CD on it";
@@ -1022,7 +1025,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hdoor") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
@@ -1094,6 +1097,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "mypet") opts.push({ label: "Pick up", target: "Your pet", action: () => pickUpMyPet() });
     if (obj?.kind === "pmerchant") opts.push({ label: "Browse pets", target: PET_MERCHANT.name, action: () => startPetMerchant() });
     if (obj?.kind === "hcomputer") opts.push({ label: "Use", target: "Computer", action: () => startBag(obj.id) });
+    if (obj?.kind === "hchest") opts.push({ label: "Open", target: "Shared stash", action: () => startBag(obj.id) });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
     if (obj?.kind === "hlandlord") opts.push({ label: "Talk", target: HIDEOUT_LANDLORD.name, action: () => startHideoutLandlord() });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
@@ -1622,6 +1626,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
+    chestApi?.close();
     hlandlordApi?.close();
     sixtyShop?.close();
   }
@@ -1657,8 +1662,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         playSfx("select", 0.4);
         return say("You fill the watering can.");
       }
+      if (f.kind === "f_mixer" && held?.item === "mixerchip") {
+        if (!isHome) return say("That's not your mixer.", "warn");
+        await attachUpgrade(me, roomId, f.id, slot!);
+        panel.refresh(); playSfx("select", 0.4);
+        return say("The chip clicks in. This mixer mixes 25% faster now, and has turned green.");
+      }
       if (!k?.plant) return;
       if (!isHome) return say("That's not your plant.", "warn");
+      if (held?.item === "waterer") {
+        if (f.auto) return say("There's a waterer on that pot already.", "warn");
+        await attachUpgrade(me, roomId, f.id, slot!);
+        panel.refresh(); playSfx("select", 0.4);
+        return say("The sprinkler clicks onto the pot. This plant never needs water again.");
+      }
       if (!f.plant) {
         const isSeed = (n: string | undefined): boolean => n === "weedseed" || n === "shroomspore" || n === "poppyseed";
         const ss = isSeed(held?.item) ? slot : null; // (nothing is planted unless you hold a seed: tap the seed first, then the pot)
@@ -2010,6 +2027,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "ideas") openIdeas();
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
         else if (opens === "computer") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the computer.", "warn"); else if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
+        else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
         else if (opens === "hideouts") { if (!hideoutDoorApi) hideoutDoorApi = openHideoutDoor(stage, ctx, () => { hideoutDoorApi = null; }); }
         else if (opens === "ducky") openDucky();
         else if (opens === "raffle") openRaffle();
@@ -2514,7 +2532,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function sinkFills(): number { try { return Number(localStorage.getItem(`6ixplanet.sinkHint.${me.uid}`)) || 0; } catch { return 0; } }
   /** After the introduction, until you have searched a dumpster once, they flash yellow in the basement. */
   function lootHintOn(): boolean { return roomId === LOBBY_ID && !isTut && !me.isAdmin && me.tutorial >= 4 && Object.keys(me.dumpsters).length === 0; }
-  function sinkHintOn(): boolean { return isOwnRoom && sinkFills() < 3 && findSlot(me.inventory, "wateringcan") >= 0 && findSlot(me.inventory, "wateringcan_full") < 0; } // (nothing flashes while you already carry a full can)
+  function sinkHintOn(): boolean { return (isHideoutRoom || roomId === LOBBY_ID) && sinkFills() < 3 && findSlot(me.inventory, "wateringcan") >= 0 && findSlot(me.inventory, "wateringcan_full") < 0; } // (nothing flashes while you already carry a full can)
   /** The growing kit 6ixty pays for the lighter job: in your own room it flashes in your pocket until you have put one down (kept per player in this browser). */
   function potHintOn(): boolean {
     if (!isOwnRoom || isTut || me.tutorial < 6) return false;
@@ -3947,13 +3965,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** A growing kit: an empty pot; once planted the plant is revealed from the bottom up as it grows, with a growth bar and a water bar over it. */
   /** A mixer with a batch in it: it shakes a little while it works and shows a progress bar like the growing kit, then "ready!" until you collect. */
-  function drawMixing(f: { id?: string; kind: string; x: number; y: number; dir?: number; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
+  function drawMixing(f: { id?: string; kind: string; x: number; y: number; dir?: number; up?: boolean; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
     const mix = f.mix!;
     const left = mix.doneAt - serverNow();
     const done = left <= 0;
-    const shake = done ? 0 : Math.sin(now / 40) * 0.7 * scale;
+    const speed = f.up ? 1.6 : 1; // (a mixer with a chip works faster: it shakes faster too)
+    const shake = done ? 0 : Math.sin((now * speed) / 40) * 0.7 * scale;
     g.save();
-    g.translate(shake, done ? 0 : Math.sin(now / 53) * 0.3 * scale);
+    g.translate(shake, done ? 0 : Math.sin((now * speed) / 53) * 0.3 * scale);
     const b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale);
     g.restore();
     if (!b) return null;
@@ -4311,10 +4330,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { id: "", ...b, y0: hot ? b.y0 - 40 * scale : b.y0, depth: f.x + f.y };
   }
 
-  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
+  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number; auto?: boolean; up?: boolean; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
+    if (f.up && f.kind === "f_mixer") f = { ...f, kind: "f_mixer_up" }; // (a mixer with a chip is drawn green)
     const k = FURNI_KINDS[f.kind];
     if (k.opens === "mixer" && f.mix) return drawMixing(f, now);
-    if (k.plant) return drawPlanter(f, now);
+    if (k.plant) {
+      const hb = drawPlanter(f, now);
+      if (f.auto) drawNitroFurni(g, "sprinkler", f.x, f.y, f.dir ?? 0, toScreen, scale, 1, true, { state: 1, t: now }); // the automatic waterer on the pot, spraying
+      return hb;
+    }
     if (k.poster) return drawPoster(f, now);
     if (k.nitro && (f.kind === "rtable" || f.kind === "flappy")) return drawGameFurni(f, now);
     if (k.nitro) {
@@ -4354,7 +4378,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
       const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
-      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle")) {
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "sink" || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : k.opens === "raffle" ? def.furni.find((x) => x.kind === "raffletable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
@@ -4965,7 +4989,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -5657,6 +5681,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
+    chestApi?.close();
     hlandlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();

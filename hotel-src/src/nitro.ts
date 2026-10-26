@@ -114,6 +114,27 @@ export function loadNitro(path: string): Promise<NitroFurni | null> {
         }
         g.putImageData(img, 0, 0);
       }) : Promise.reject(new Error("no laptop art"))))
+      : path === "derived:mixer_up" // a mixer with an upgrade chip: greenish
+      ? loadNitro("furni/f_mixer.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          d[i] = Math.round(d[i] * 0.62); d[i + 1] = Math.min(255, Math.round(d[i + 1] * 1.12 + 26)); d[i + 2] = Math.round(d[i + 2] * 0.7);
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no mixer art"))))
+      : path === "derived:poker_hi" // the high stakes table: gold instead of the felt
+      ? loadNitro("furni/f_pokertable.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          const k = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+          d[i] = Math.min(255, Math.round(48 + 215 * k)); d[i + 1] = Math.min(255, Math.round(30 + 170 * k)); d[i + 2] = Math.round(4 + 60 * k * k);
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no table art"))))
       : path.startsWith("db:")
       ? fetchFromDb(path.slice(3))
       : fetch(assetUrl(path)).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${path}: ${r.status}`)))).then(parseNitro);

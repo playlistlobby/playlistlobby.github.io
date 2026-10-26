@@ -34,8 +34,8 @@ export interface HideoutListing { name: string; desc: string; ownerName: string;
 export const sortListings = <T extends { listing: HideoutListing }>(rows: T[], now: number): T[] =>
   [...rows].sort((a, b) => (Number(b.listing.boostUntil > now) - Number(a.listing.boostUntil > now)) || (b.listing.boostUntil > now ? b.listing.boostUntil - a.listing.boostUntil : 0) || b.listing.members - a.listing.members || a.listing.name.localeCompare(b.listing.name));
 
-/** how a new hideout looks until the owner pays for other colours */
-export const HIDEOUT_THEME = { floorA: "#6f6a63", floorB: "#78736b", wall: "#8b9096", rug: false, rugColor: "#7a2f2f" };
+/** how a new hideout looks until the owner pays for other colours: the same cold concrete as the basement */
+export const HIDEOUT_THEME = { floorA: "#5f6262", floorB: "#686b6b", wall: "#575c5d", rug: false, rugColor: "#000000", style: "grime" };
 
 /** where the fixed pieces stand in a new hideout (the owner can move them) */
 export const HIDEOUT_FIXED_POS = {
@@ -43,18 +43,33 @@ export const HIDEOUT_FIXED_POS = {
   computer: { x: 4, y: 0, dir: 2 },
   sink: { x: 0, y: 7, dir: 2 },
   boombox: { x: 0, y: 3, dir: 2 },
+  chest: { x: 8, y: 0, dir: 2 },
 };
+/** the shared stash (the chest): how many different things fit in it, and the most of one thing */
+export const HIDEOUT_CHEST_SLOTS = 28;
+export const HIDEOUT_CHEST_MAX_QTY = 999;
 
 /** the computer: a red laptop that is in every hideout (its kind is a fixed piece, drawn from furni/hcomputer.nitro) */
 export const COMPUTER_KIND = "hcomputer";
 
-/** Furniture that only exists for hideouts: it is ordered on the computer (an hour to arrive) and can only be put down in a hideout you belong to. */
+/**
+ * What the computer sells (ordered, paid at once, and it arrives later: `etaMs`). The automatic waterer and the mixer chip are plain items you put on a pot or a mixer; the poker tables
+ * are furniture. The price can change after the first few that the hideout has bought (`tier`).
+ */
 export const HIDEOUT_ORDER_MS = 3_600_000;
-export interface HideoutShopItem { kind: string; label: string; price: number; blurb: string }
+export const HIDEOUT_FAST_MS = 20 * 60_000;
+export interface HideoutShopItem { kind: string; label: string; price: number; blurb: string; etaMs: number; /** the price after this many have been bought in this hideout */ tier?: { first: number; then: number }; /** only a hideout you belong to may put it down */ hideoutOnly?: boolean }
 export const HIDEOUT_SHOP: HideoutShopItem[] = [
-  { kind: "f_randomizer", label: "Love booth", price: 150, blurb: "A booth for two. Sit down together and tap it: it tells you how well you match." },
+  { kind: "waterer", label: "Automatic plant waterer", price: 100, tier: { first: 5, then: 200 }, etaMs: HIDEOUT_FAST_MS, blurb: "Put it on a growing kit and that plant never needs water again. 100 each for the first 5, then 200." },
+  { kind: "mixerchip", label: "Mixer upgrade chip", price: 200, tier: { first: 1, then: 300 }, etaMs: HIDEOUT_FAST_MS, blurb: "Put it in a mixer: it mixes 25% faster, and turns green. 200 for the first, 300 for every one after." },
+  { kind: "f_pokertable", label: "Poker table", price: 1000, etaMs: HIDEOUT_ORDER_MS, blurb: "Texas hold 'em for five. Buy in up to 500, blinds 5/10. Anybody can sit down at it." },
+  { kind: "f_pokertablehi", label: "High stakes poker table", price: 4000, etaMs: 2 * HIDEOUT_ORDER_MS, blurb: "Texas hold 'em for five, gold. Buy in up to 2000, blinds 25/50. Anybody can sit down at it." },
 ];
-export const HIDEOUT_ONLY: ReadonlySet<string> = new Set(HIDEOUT_SHOP.map((i) => i.kind));
+/** what one of them costs when the hideout has already bought `bought` of that kind */
+export const hideoutPriceOf = (item: HideoutShopItem, bought: number): number => (item.tier && bought >= item.tier.first ? item.tier.then : item.price);
+export const HIDEOUT_ONLY: ReadonlySet<string> = new Set(HIDEOUT_SHOP.filter((i) => i.hideoutOnly).map((i) => i.kind));
+/** a mixer with an upgrade chip mixes in this share of the time (25% faster) */
+export const MIXER_UP_FACTOR = 0.75;
 
 export interface HideoutMember { name: string; build: boolean; at: number }
 export interface HideoutOrder { kind: string; by: string; doneAt: number }

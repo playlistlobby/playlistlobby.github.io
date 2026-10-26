@@ -244,7 +244,9 @@ export const combineItems: Action = {
 
 export const fillCan: Action = {
   async run(c, a) {
-    await requireWorkRoom(c, a.room); // the sink is in your own room (or a hideout you are in)
+    if (a.room === "lobby") await requireInRoom(c, "lobby"); // the sink in the basement (the player rooms have none any more)
+    else if (typeof a.room === "string" && a.room.startsWith("h_")) await requireWorkRoom(c, a.room); // or the one in a hideout you are in
+    else fail("There is no sink in your room any more: use the one in the basement, or in a hideout.");
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "wateringcan") fail("That can isn't empty.");
@@ -258,7 +260,7 @@ async function planter(c: import("../ctx").Ctx, fid: unknown, want?: unknown) {
   const room = await requireWorkRoom(c, want); // (your own room, or a hideout you are in: every member may plant, water and harvest)
   const id = text(fid, ID_RE, "kit");
   const path = `roomsMeta/${room}/furni/${id}`;
-  const row = await c.db.get<{ kind?: string; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string }>(path);
+  const row = await c.db.get<{ kind?: string; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string; auto?: boolean }>(path);
   if (!row || row.kind !== "f_planter") return fail("That isn't a growing kit.");
   return { path, row };
 }
@@ -288,6 +290,7 @@ export const water: Action = {
     const { path, row } = await planter(c, a.fid, a.room);
     if (typeof row.plantedAt !== "number") fail("There's nothing planted there.");
     if (row.crop === "poppy") fail("A poppy doesn't need water.");
+    if (row.auto) fail("An automatic waterer does that for you.");
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "wateringcan_full") fail("That can is empty.");
@@ -305,7 +308,7 @@ export const harvest: Action = {
     const { path, row } = await planter(c, a.fid, a.room);
     if (typeof row.plantedAt !== "number") fail("There's nothing planted there.");
     if (c.now - row.plantedAt! < growMsOf(row.crop)) fail("It isn't ready yet.");
-    const ass = !(typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!); // never got its one watering
+    const ass = !(row.auto || (typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!)); // never got its one watering (an automatic waterer always does it)
     const w = await c.user();
     if (row.crop === "poppy") { // opium: one per poppy, no seed falls out (a poppy needs no water)
       const got = addToInv(w.s.inventory, { item: "opium", qty: 1 });

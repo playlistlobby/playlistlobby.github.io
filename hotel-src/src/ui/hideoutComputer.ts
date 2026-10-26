@@ -2,10 +2,10 @@ import { h, toast } from "./dom";
 import { hideoutBoost, hideoutCollect, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings } from "../hideout";
 import { hideoutLandlordPanel } from "./hideoutLandlord";
 import type { HideoutLandlordPanel } from "./hideoutLandlord";
-import { BLOOD_ICON, furniIcon, onFurniIcon } from "../items";
+import { BLOOD_ICON, furniIcon, itemDef, onFurniIcon } from "../items";
 import { FURNI_KINDS, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
-import { HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
+import { hideoutPriceOf, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
 import { countdownText } from "../shared/raffle";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
@@ -54,16 +54,24 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     busy = false; render();
   };
 
+  /** the picture of a thing on the computer: a piece of furniture, or a plain item (the waterer, the chip) */
+  const picOf = (kind: string): string => (kind.startsWith("f_") ? furniIcon(kind) : itemDef(kind)?.icon ?? "");
+  const etaOf = (kind: string): number => HIDEOUT_SHOP.find((i) => i.kind === kind)?.etaMs ?? HIDEOUT_ORDER_MS;
+  const minText = (ms: number): string => (ms >= 3_600_000 ? `${Math.round(ms / 3_600_000)} hour${ms >= 7_200_000 ? "s" : ""}` : `${Math.round(ms / 60000)} minutes`);
+
   function shopPage(): HTMLElement[] {
     const mineWaiting = Object.values(getDef().hideout?.orders ?? {}).filter((o) => o.by === me.uid).length;
+    const bought = getDef().hideout?.bought ?? {};
     return [
-      h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Hideout furniture"), h("div", { class: "hc-sub" }, `Only for hideouts. Ordered pieces arrive in ${Math.round(HIDEOUT_ORDER_MS / 60000)} minutes — collect them under Orders.`)),
-      ...HIDEOUT_SHOP.map((it) => h("div", { class: "hc-card-row" },
-        h("img", { class: "hc-ico", src: furniIcon(it.kind), alt: it.label }),
-        h("div", { class: "hc-main" }, h("div", { class: "hc-name" }, it.label), h("div", { class: "hc-blurb" }, it.blurb), h("div", { class: "hc-meta" }, `Arrives in ${Math.round(HIDEOUT_ORDER_MS / 60000)} min · ${FURNI_KINDS[it.kind] ? `${FURNI_KINDS[it.kind].w} × ${FURNI_KINDS[it.kind].h} tiles` : ""}`)),
-        h("button", { class: "btn small primary", disabled: me.blood < it.price || busy || mineWaiting >= 5, onclick: () => void act(async () => { await hideoutOrder(me, roomId, it.kind); return `${it.label} ordered. It arrives in an hour.`; }) },
-          h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${it.price}`))),
-      h("div", { class: "hc-foot" }, "More pieces are coming soon."),
+      h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Hideout shop"), h("div", { class: "hc-sub" }, "What you order arrives later: collect it under Orders.")),
+      ...HIDEOUT_SHOP.map((it) => {
+        const price = hideoutPriceOf(it, bought[it.kind] ?? 0);
+        return h("div", { class: "hc-card-row" },
+          h("img", { class: "hc-ico", src: picOf(it.kind), alt: it.label }),
+          h("div", { class: "hc-main" }, h("div", { class: "hc-name" }, it.label), h("div", { class: "hc-blurb" }, it.blurb), h("div", { class: "hc-meta" }, `Arrives in ${minText(it.etaMs)}${FURNI_KINDS[it.kind] ? ` · ${FURNI_KINDS[it.kind].w} × ${FURNI_KINDS[it.kind].h} tiles` : ""}`)),
+          h("button", { class: "btn small primary", disabled: me.blood < price || busy || mineWaiting >= 50, onclick: () => void act(async () => { await hideoutOrder(me, roomId, it.kind); return `${it.label} ordered. It arrives in ${minText(it.etaMs)}.`; }) },
+            h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${price}`));
+      }),
     ];
   }
 
@@ -72,13 +80,13 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const mine = orders.filter(([, o]) => o.by === me.uid);
     const label = (kind: string): string => HIDEOUT_SHOP.find((i) => i.kind === kind)?.label ?? FURNI_KINDS[kind]?.label ?? kind;
     return [
-      h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Your orders"), h("div", { class: "hc-sub" }, "Only the one who ordered a piece can collect it.")),
+      h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Your orders"), h("div", { class: "hc-sub" }, "Only the one who ordered something can collect it.")),
       ...(mine.length ? mine.map(([id, o]) => {
         const left = o.doneAt - serverNow();
         return h("div", { class: "hc-card-row" },
-          h("img", { class: "hc-ico", src: furniIcon(o.kind), alt: "" }),
+          h("img", { class: "hc-ico", src: picOf(o.kind), alt: "" }),
           h("div", { class: "hc-main" }, h("div", { class: "hc-name" }, label(o.kind)), h("div", { class: "hc-meta" }, left > 0 ? `Arrives in ${countdownText(left)}` : "Arrived!"),
-            ...(left > 0 ? [h("div", { class: "hc-bar" }, h("div", { class: "hc-fill", style: { width: `${Math.max(0, Math.min(100, (1 - left / HIDEOUT_ORDER_MS) * 100))}%` } }))] : [])),
+            ...(left > 0 ? [h("div", { class: "hc-bar" }, h("div", { class: "hc-fill", style: { width: `${Math.max(0, Math.min(100, (1 - left / etaOf(o.kind)) * 100))}%` } }))] : [])),
           h("button", { class: "btn small primary", disabled: left > 0 || busy, onclick: () => void act(async () => { await hideoutCollect(me, roomId, id); return `${label(o.kind)} is in your pocket.`; }) }, "Collect"));
       }) : [h("div", { class: "hc-empty" }, "No orders. Order something in the Shop.")]),
       ...(orders.length > mine.length ? [h("div", { class: "hc-foot" }, `${orders.length - mine.length} more on the way for other members.`)] : []),
