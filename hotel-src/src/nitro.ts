@@ -124,6 +124,16 @@ export function loadNitro(path: string): Promise<NitroFurni | null> {
         }
         g.putImageData(img, 0, 0);
       }) : Promise.reject(new Error("no mixer art"))))
+      : path === "derived:blackjack" // the blackjack table: the poker table with a blue cloth (green and blue swap places where the felt is)
+      ? loadNitro("furni/f_pokertable.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          if (d[i + 1] > d[i] * 1.12 && d[i + 1] > d[i + 2] * 1.05) { const gr = d[i + 1]; d[i + 1] = Math.round(d[i + 2] * 0.85 + gr * 0.15); d[i + 2] = Math.min(255, Math.round(gr * 1.15)); d[i] = Math.round(d[i] * 0.8); }
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no table art"))))
       : path === "derived:poker_hi" // the high stakes table: gold instead of the felt
       ? loadNitro("furni/f_pokertable.nitro").then((n) => (n ? derive(n, (g, w, h) => {
         const img = g.getImageData(0, 0, w, h);

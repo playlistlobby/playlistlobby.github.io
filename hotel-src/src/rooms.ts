@@ -40,7 +40,7 @@ export interface FurniKind {
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
   /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
   wallArt?: { left: number; back: number };
-  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "hits";
+  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -174,6 +174,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
 };
 // the poker tables (they come from the hideout computer like any shop piece): tap one to sit down and play
 for (const id of ["f_pokertable", "f_pokertablehi"]) if (FURNI_KINDS[id]) FURNI_KINDS[id].opens = "poker";
+if (FURNI_KINDS.f_blackjacktable) FURNI_KINDS.f_blackjacktable.opens = "blackjack";
 
 /** Furniture you can click on and do something with (not just walk around). */
 export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench"]);

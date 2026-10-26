@@ -99,6 +99,15 @@
         "$uid": { ".read": "@PW@ && auth.uid === $uid" }
       }
     },
+    "blackjack": {
+      "$table": { ".read": "@PW@" }
+    },
+    "bjHole": {
+      "$table": { ".read": "@PW@ && auth.uid === root.child('blackjack').child($table).child('dealer').child('uid').val()" }
+    },
+    "bjSeat": {
+      "$uid": { ".read": "@PW@ && auth.uid === $uid" }
+    },
     "pokerSeat": {
       "$uid": { ".read": "@PW@ && auth.uid === $uid" }
     },
