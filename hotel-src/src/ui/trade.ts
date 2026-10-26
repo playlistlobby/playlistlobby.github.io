@@ -52,7 +52,7 @@ export function mountTrades(ctx: Ctx): () => void {
 function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
   const me = ctx.profile;
   let t: Trade | null = null;
-  let amount: 1 | 5 | "all" = 1;
+  let amount: 1 | 5 | 25 | "all" = 1;
   let closed = false;
   let note = "";
   const acted = new Set<string>();
@@ -127,7 +127,7 @@ function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
       h("div", { class: "trade-sec" }, h("div", { class: "trade-label" }, "Your offer ", h("span", { class: "ok" }, status(myReady, myConfirm))), give(mine, true)),
       h("div", { class: "trade-sec" },
         h("div", { class: "trade-label" }, "Your pocket ",
-          h("span", { class: "trade-step" }, ...([1, 5, "all"] as const).map((a) => h("button", { class: "chip" + (amount === a ? " on" : ""), onclick: () => { amount = a; render(); } }, a === "all" ? "All" : `×${a}`)))),
+          h("span", { class: "trade-step" }, ...([1, 5, 25, "all"] as const).map((a) => h("button", { class: "chip" + (amount === a ? " on" : ""), onclick: () => { amount = a; render(); } }, a === "all" ? "All" : `×${a}`)))),
         h("div", { class: "trade-grid" },
           bloodChip(spare, editable && spare > 0 ? () => void save(offerBlood(me, mine, step(spare))) : undefined),
           ...pocket)),
