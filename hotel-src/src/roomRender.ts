@@ -369,6 +369,10 @@ export function drawFurniBase(g: CanvasRenderingContext2D, kindId: string, tx: n
 /** Starts loading the .nitro art of every sprite piece in a room. The pieces appear on their own once loaded. */
 export function ensureFurniSprites(def: RoomDef): Promise<void> {
   const paths = new Set(def.furni.map((f) => FURNI_KINDS[f.kind]?.nitro).filter((p): p is string => !!p));
+  for (const f of def.furni) { // (the art of upgrades: the green mixer, the sprinkler on a pot)
+    if (f.up && f.kind === "f_mixer") paths.add(FURNI_KINDS.f_mixer_up.nitro!);
+    if (f.auto) paths.add(FURNI_KINDS.sprinkler.nitro!);
+  }
   return Promise.all([...paths].map((p) => loadNitro(p))).then(() => undefined);
 }
 
