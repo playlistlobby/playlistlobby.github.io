@@ -500,7 +500,7 @@ export function itemDef(id: string): ItemDef | undefined {
     const kind = pet.fx ? `Unusual ${petLabel(pet.type)}` : petLabel(pet.type);
     return {
       id, name: pet.fx ? `${kind} (${pet.fx})` : kind,
-      examine: pet.fx ? "An unusual pet: it has a particle effect of its own. Tap it to let it out: it walks behind you and everybody sees it. Tap it in the room to pick it up again." : "A pet. Tap it to let it out: it walks behind you and everybody sees it. Tap it in the room to pick it up again.",
+      examine: "Click it to pick it up.",
       icon: petIconUrl(pet.type, pet.palette), useSelf: "pet",
     };
   }

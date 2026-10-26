@@ -11553,5 +11553,10 @@
   "en": "🐾 pets bih",
   "da": "🐾 pets bih",
   "where": "src/ui/petShop.ts"
+ },
+ "N1780": {
+  "en": "Click it to pick it up.",
+  "da": "klik på den for samle den op",
+  "where": "src/items.ts"
  }
 }
