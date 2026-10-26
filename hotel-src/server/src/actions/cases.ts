@@ -18,7 +18,7 @@ const pick = <T,>(list: T[]): T => list[fairInt(list.length)];
 
 /** Opens a box with a key. The prize goes into the pocket; if there's no room for it nothing is used up. */
 export const caseOpen: Action = {
-  async run(c) {
+  async run(c, a) {
     const w = await c.user();
     const s = w.s;
     const boxAt = findSlot(s.inventory, CASE_ITEM), keyAt = findSlot(s.inventory, KEY_ITEM);
@@ -43,6 +43,9 @@ export const caseOpen: Action = {
     if (!next) fail("Your pockets are full: make room for the prize first.");
     s.inventory = next!;
     c.note = `${row.id} ${give.item}`;
+    // everybody in the room sees what came out (after the spin: the browsers wait for it): rooms/<room>/caseWin/<uid> is a node only the server writes
+    const room = typeof a.room === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(a.room) ? a.room : null;
+    if (room && (await c.db.get(`rooms/${room}/players/${c.uid}`))) c.extra[`rooms/${room}/caseWin/${c.uid}`] = { item: give.item, qty: give.qty, ass: "ass" in give ? true : null, tier: row.tier, at: c.now, name: String(w.raw?.name ?? "?").slice(0, 30) };
     return { prize: { id: row.id, tier: row.tier, item: give.item, qty: give.qty, ...("ass" in give ? { ass: true } : {}) } };
   },
 };

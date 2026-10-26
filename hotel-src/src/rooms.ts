@@ -302,8 +302,8 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby10", kind: "ideaboard", x: 0, y: 15, dir: 2 },
   // the security camera beside 6ixty, who stands at the back wall
   { id: "lobby11", kind: "seccam", x: 4, y: 0, dir: 2 },
-  // the door to the hideouts, in the corner of the back wall (the hideout landlord stands beside it, see src/npc.ts)
-  { id: "lobby12", kind: "hdoor", x: 11, y: 0, dir: 4 },
+  // the door to the hideouts, in the left wall at the far end of the basement, past the roulette table and bagmand (the hideout landlord stands two tiles up from it, see src/npc.ts)
+  { id: "lobby12", kind: "hdoor", x: 0, y: 24, dir: 2 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);

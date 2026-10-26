@@ -76,6 +76,18 @@ console.log("   twenty opens:", JSON.stringify(counts));
 const stEnd = await state(u);
 check("boxes and keys used up", total(stEnd.inventory, "mysterycase") === 0 && total(stEnd.inventory, "casekey") === 0);
 
+// the room hears what came out
+await setInv(u, inv({ item: "mysterycase", qty: 2 }, { item: "casekey", qty: 2 }));
+await stand(u, "lobby", 3, 3);
+const rw = await act(u, "caseOpen", { room: "lobby" });
+ok("open with a room", rw);
+const win = await owner("GET", `rooms/lobby/caseWin/${u.uid}`);
+check("the server wrote what came out to the room", win && win.item === rw.data.prize.item && typeof win.at === "number" && win.name === "t_case_a", JSON.stringify(win));
+check("the room's players can't fake it", refused(await clientWrite(u, `rooms/lobby/caseWin/${u.uid}`, { item: "unusual_flame", qty: 1, at: Date.now() })));
+const rw2 = await act(u, "caseOpen", { room: "u_nobodyhere" });
+ok("a room you aren't in just means no announcement", rw2);
+await setInv(u, inv());
+
 // the unusual: wear, swap, remove, rules
 await setInv(u, inv({ item: "unusual_flame", qty: 1 }, { item: "unusual_star", qty: 1 }));
 bad("not a normal item", await act(u, "unusualWear", { slot: 5 }));

@@ -227,6 +227,8 @@ const STEP_MS = 480;
 const BUBBLE_MS = 6500;
 /** the dice: how long the die tumbles, and how long the number stays over the head */
 const DICE_TUMBLE_MS = 900, DICE_SHOW_MS = 6500;
+/** how long a mystery box strip rolls before it stops on the prize (see ui/caseOpen.ts): everybody else sees the result then */
+const CASE_SPIN_MS = 5800;
 const MAX_CHARS = 100;
 const STAB_MS = 700;
 const DROP_FLIGHT_MS = 750;
@@ -641,7 +643,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return false;
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
     onCombine: (a, b) => { void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
@@ -2398,8 +2400,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** a little "+1 Knife" with its icon pops up over your head when 6ixty hands you something */
-  function giftPop(text: string, icon: HTMLImageElement): void {
-    const p = mine();
+  function giftPop(text: string, icon: HTMLImageElement, uid: string = me.uid): void {
+    const p = uid === me.uid ? mine() : players.get(uid);
     if (!p) return;
     const t = performance.now();
     const fp = feetOf(p, t);
@@ -2966,7 +2968,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 11, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
+    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -3026,6 +3028,27 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
   const diceRef = ref(db, `rooms/${roomId}/dice`);
   unsubs.push(onChildAdded(diceRef, onDice, () => undefined), onChildChanged(diceRef, onDice, () => undefined));
+
+  // ---- mystery boxes: what somebody got is written by the server to rooms/<room>/caseWin/<uid>; it shows over their head and in the chat once their strip has stopped ----
+  const caseSeen = new Map<string, number>();
+  function onCaseWin(snap: { key: string | null; val(): unknown }): void {
+    const uid = snap.key, v = snap.val() as { item?: unknown; qty?: unknown; ass?: unknown; at?: unknown; name?: unknown } | null;
+    if (!uid || !v || typeof v.at !== "number" || typeof v.item !== "string") return;
+    if (caseSeen.get(uid) === v.at) return;
+    caseSeen.set(uid, v.at);
+    const age = serverNow() - v.at;
+    if (age > CASE_SPIN_MS + 4000) return; // (an old one from before you came in)
+    const item = v.item, qty = Number.isInteger(v.qty) && (v.qty as number) > 0 ? (v.qty as number) : 1;
+    const label = `${itemDef(item)?.name ?? item}${v.ass ? " (ass)" : ""}`;
+    const who = players.get(uid)?.name ?? (typeof v.name === "string" ? v.name : "Someone");
+    window.setTimeout(() => {
+      if (disposed) return;
+      giftPop(`+${qty} ${label}`, itemImg(item), uid);
+      say(uid === me.uid ? `You opened a case and got ${label}.` : `${who} opened a case and got ${label}.`);
+    }, Math.max(0, CASE_SPIN_MS - age));
+  }
+  const caseRef = ref(db, `rooms/${roomId}/caseWin`);
+  unsubs.push(onChildAdded(caseRef, onCaseWin, () => undefined), onChildChanged(caseRef, onCaseWin, () => undefined));
 
   function kicked(msg: string): void {
     if (disposed) return;

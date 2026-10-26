@@ -29,7 +29,7 @@ function randomTile(): Prize {
  * The mystery box window (iOS 6 look, the way the cases open in CS:GO): press Open and a strip of prizes rolls past the gold marker and slows down on yours.
  * The prize is rolled by the server first; the strip only plays it.
  */
-export function openCaseWindow(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): { close(): void } {
+export function openCaseWindow(host: HTMLElement, ctx: Ctx, roomId: string, onChange: () => void, onClose: () => void): { close(): void } {
   const me = ctx.profile;
   let closed = false;
   let busy = false;
@@ -70,7 +70,7 @@ export function openCaseWindow(host: HTMLElement, ctx: Ctx, onChange: () => void
     if (busy || findSlot(me.inventory, CASE_ITEM) < 0 || findSlot(me.inventory, KEY_ITEM) < 0) return;
     busy = true; won = null; result.replaceChildren(); render();
     let prize: Prize;
-    try { prize = (await call<{ prize: Prize }>(me, "caseOpen")).prize; } catch (err) { toast((err as Error).message || "It won't open.", "err"); busy = false; render(); return; }
+    try { prize = (await call<{ prize: Prize }>(me, "caseOpen", { room: roomId })).prize; } catch (err) { toast((err as Error).message || "It won't open.", "err"); busy = false; render(); return; }
     ctx.refreshHeader(); onChange();
     // the strip: 46 random tiles, the prize at tile 38; it rolls until that tile is under the marker
     const WIN = 38, tiles = Array.from({ length: 46 }, (_, i) => (i === WIN ? prize : randomTile()));
