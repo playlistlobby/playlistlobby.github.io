@@ -138,12 +138,14 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
   let minX = 0, minY = 0, maxX = 0, maxY = 0;
   const postureAnim = {};
   for (const po of find(find(vis, "postures")[0] ?? { kids: [] }, "posture")) postureAnim[po.attrs.id] = po.attrs.animationId;
+  // 1) the pictures every pose has, as the library gives them
+  const built = [];
   for (const pose of POSES) {
     const an = anims[postureAnim[pose] ?? (pose === "std" ? "0" : "none")];
     if (!an && pose !== "std") continue;
     const layers = an ?? {};
     const steps = pose === "mv" ? Math.min(6, Math.max(1, ...Object.values(layers).map((s) => s.length))) : 1; // (standing, sitting and lying are one still picture; walking is up to 6 frames)
-    rowOf[pose] = [];
+    const poseCells = [];
     for (let step = 0; step < steps; step++) {
       const cells = [];
       for (let d = 0; d < 8; d++) {
@@ -161,14 +163,37 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
         parts.sort((p, q) => p.z - q.z);
         cells.push(parts);
       }
-      // a direction a pet has no pictures for is its mirror image (1 and 7, 2 and 6, 3 and 5 are each other's)
-      for (let d = 0; d < 8; d++) {
-        const m = (8 - d) % 8;
-        if (!cells[d].length && cells[m].length) cells[d] = cells[m].map((q) => ({ ...q, flip: !q.flip, left: -(q.left + q.bmp.w) }));
+      poseCells.push(cells);
+    }
+    if (poseCells.every((cells) => cells.every((c) => !c.length))) continue; // (a pose with no pictures at all is left out: the pet just stands)
+    built.push({ pose, steps: poseCells });
+  }
+  // 2) a frame with nothing in it would make the pet vanish for that moment, so it gets a picture: the mirror image of the opposite direction (1 and 7, 2 and 6, 3 and 5),
+  //    then the same direction (or its mirror) from another step or pose, and last the direction next to it
+  const raw = built.map((b) => b.steps.map((cells) => cells.map((c) => c)));
+  const mirror = (parts) => parts.map((q) => ({ ...q, flip: !q.flip, left: -(q.left + q.bmp.w) }));
+  built.forEach((b, bi) => b.steps.forEach((cells, si) => {
+    for (let d = 0; d < 8; d++) {
+      if (raw[bi][si][d].length) continue;
+      const m = (8 - d) % 8;
+      let pick = raw[bi][si][m].length && m !== d ? mirror(raw[bi][si][m]) : null;
+      for (let k = 0; !pick && k < built.length; k++) { // (this pose first, then the others)
+        const bj = (bi + k) % built.length;
+        for (let sj = 0; !pick && sj < raw[bj].length; sj++) {
+          if (raw[bj][sj][d].length) pick = raw[bj][sj][d];
+          else if (raw[bj][sj][m].length && m !== d) pick = mirror(raw[bj][sj][m]);
+        }
       }
-      for (const d of [0, 4]) if (!cells[d].length) cells[d] = cells[(d + 1) % 8].length ? cells[(d + 1) % 8] : cells[(d + 7) % 8]; // (straight up or down with nothing to mirror: the picture next to it)
+      for (let k = 1; !pick && k <= 4; k++) for (const e of [(d + k) % 8, (d + 8 - k) % 8]) if (!pick && raw[bi][si][e].length) pick = raw[bi][si][e];
+      if (pick) cells[d] = pick;
+    }
+  }));
+  // 3) the sheet: a row for every step
+  for (const b of built) {
+    rowOf[b.pose] = [];
+    for (const cells of b.steps) {
       for (const parts of cells) for (const q of parts) { minX = Math.min(minX, q.left); minY = Math.min(minY, q.top); maxX = Math.max(maxX, q.left + q.bmp.w); maxY = Math.max(maxY, q.top + q.bmp.h); }
-      rowOf[pose].push(rows.length);
+      rowOf[b.pose].push(rows.length);
       rows.push(cells);
     }
   }
