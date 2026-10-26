@@ -5597,15 +5597,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (!meta) return kicked("That room doesn't exist.");
       const trespassNow = me.shroomUntil > serverNow();
       if (isHideoutRoom) {
-        if (!me.isAdmin && !hideoutRole({ owner: meta.owner, members: meta.members }, me.uid).member) {
+        if (!me.enterAnywhere && !hideoutRole({ owner: meta.owner, members: meta.members }, me.uid).member) {
           hideoutGuest = meta.access === "open" || (await get(ref(db, `roomInvites/${roomId}/${me.uid}`)).catch(() => null))?.exists() === true; // (open to all, or the owner let me in)
           if (!hideoutGuest) return kicked("You aren't in that hideout.");
         }
       }
-      else if (!me.isAdmin && !(await canEnter(meta, me.uid, social.friendUids(), trespassNow))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
+      else if (!me.enterAnywhere && !(await canEnter(meta, me.uid, social.friendUids(), trespassNow))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
       if (disposed) return;
       // in on a shroom or DMT rather than by the door rules: when it wears off the door closes behind you (the database stops letting you in at that moment too)
-      if (trespassNow && !me.isAdmin && !(await canEnter(meta, me.uid, social.friendUids(), false))) {
+      if (trespassNow && !me.enterAnywhere && !(await canEnter(meta, me.uid, social.friendUids(), false))) {
         const watch = window.setInterval(() => {
           if (disposed || me.shroomUntil > serverNow()) return;
           window.clearInterval(watch);
@@ -5619,7 +5619,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       unsubs.push(watchMeta(roomId, (m) => {
         if (!m) return kicked("This room was deleted.");
         applyDef(defFromMeta(roomId, m));
-        if (isHideoutRoom && !me.isAdmin && !hideoutGuest && !hideoutRole({ owner: m.owner, members: m.members }, me.uid).member) { toast("You are not in that hideout any more.", "err"); ctx.navigate("room", { roomId: LOBBY_ID, from: roomId }); } // (kicked, or left)
+        if (isHideoutRoom && !me.enterAnywhere && !hideoutGuest && !hideoutRole({ owner: m.owner, members: m.members }, me.uid).member) { toast("You are not in that hideout any more.", "err"); ctx.navigate("room", { roomId: LOBBY_ID, from: roomId }); } // (kicked, or left)
       }, () => kicked("You can't be in that room any more.")));
     } catch {
       kicked("Couldn't open that room.");

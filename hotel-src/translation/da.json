@@ -11743,5 +11743,15 @@
   "en": "The loudspeaker is switched off for now.",
   "da": "Højttaleren er slukket for nu.",
   "where": "src/ui/room.ts"
+ },
+ "N1818": {
+  "en": "always open for you",
+  "da": "altid åben for dig",
+  "where": "src/ui/door.ts"
+ },
+ "N1819": {
+  "en": "Every hideout",
+  "da": "Alle skjulesteder",
+  "where": "src/ui/hideoutDoor.ts"
  }
 }

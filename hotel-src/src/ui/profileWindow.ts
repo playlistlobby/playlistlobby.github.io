@@ -67,7 +67,7 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
       }, () => undefined);
       const meta = await fetchMeta(ownRoomId(target)).catch(() => null);
       if (meta) {
-        const allowed = me.isAdmin || (await canEnter(meta, me.uid, social.friendUids()).catch(() => false));
+        const allowed = me.isAdmin || me.enterAnywhere || (await canEnter(meta, me.uid, social.friendUids()).catch(() => false));
         v = allowed ? "go" : meta.access === "closed" || meta.access === "none" ? "closed" : "knock";
       }
     }

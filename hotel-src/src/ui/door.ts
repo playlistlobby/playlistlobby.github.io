@@ -112,7 +112,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   }
 
   /** a shroom or DMT is working: every door is open */
-  const tripping = (): boolean => me.isAdmin || me.shroomUntil > serverNow(); // (the admin can walk into anybody's room, always)
+  const tripping = (): boolean => me.isAdmin || me.enterAnywhere || me.shroomUntil > serverNow(); // (the admin can walk into anybody's room, always)
 
   function actionFor(r: Row): HTMLElement {
     if (tripping() && !(r.friend || r.access === "open")) return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Walk in");
@@ -136,7 +136,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   }
 
   function rowEl(r: Row): HTMLElement {
-    const sub = r.friend ? "friend" : r.access === "open" ? "open to everyone" : me.isAdmin ? "admin: always open" : tripping() ? "Opened by a shroom" : r.access === "knock" ? "knock to enter" : "closed";
+    const sub = r.friend ? "friend" : r.access === "open" ? "open to everyone" : me.isAdmin || me.enterAnywhere ? "always open for you" : tripping() ? "Opened by a shroom" : r.access === "knock" ? "knock to enter" : "closed";
     return h("div", { class: "door-row" },
       headBoxFor(r.owner),
       h("span", { class: "dot " + (r.online ? (r.idle ? "idle" : "on") : "") }),

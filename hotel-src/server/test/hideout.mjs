@@ -304,6 +304,15 @@ console.log("--- the list at the door");
   bad("but is still no member (the box)", await act(st3, "hideoutBoxStore", { room: `h_${lo.uid}`, kind: "f_rareblock", qty: 1 }));
   ok("the owner closes it again", await act(lo, "hideoutSettings", { open: false }));
   check("and the list and the door say so", (await owner("GET", `hideoutList/${lo.uid}/open`)) === false && (await owner("GET", `roomsMeta/h_${lo.uid}/access`)) === "none");
+  // the enterAnywhere perk: some accounts may enter any hideout and any room
+  const vip = await fresh("t_hd_list_vip", { blood: 0 });
+  const presV = { name: vip.name, figure: "x", x: 5, y: 5, dir: 2 };
+  check("without the perk nobody walks into a closed hideout", refused(await clientWrite(vip, `rooms/h_${lo.uid}/players/${vip.uid}`, presV)));
+  await owner("PUT", `perks/${vip.uid}/enterAnywhere`, true);
+  check("with the perk they do", !refused(await clientWrite(vip, `rooms/h_${lo.uid}/players/${vip.uid}`, presV)));
+  await owner("PUT", `roomsMeta/u_${lo.uid}`, { owner: lo.uid, ownerName: lo.name, name: "closed room", access: "closed", w: 8, h: 8 });
+  check("and into a closed player room", !refused(await clientWrite(vip, `rooms/u_${lo.uid}/players/${vip.uid}`, presV)));
+  await owner("DELETE", `roomsMeta/u_${lo.uid}`); await owner("DELETE", `perks/${vip.uid}`);
 }
 
 console.log(`
