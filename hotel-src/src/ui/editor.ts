@@ -20,6 +20,7 @@ import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import { saveSixtyLook, SIXTY, sixtyLook } from "../npc";
 import type { Ctx } from "../main";
+import { unusualPanel } from "../unusual";
 
 /** customize = your own look (owned items), shop = try and buy, npc = the admin dressing 6ixty (every item, nothing owned or bought) */
 export type EditorMode = "customize" | "shop" | "npc";
@@ -60,6 +61,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   const footerEl = h("div", { class: "editor-footer" });
   const genderEl = h("div", { class: "gender" });
 
+  const unusualBox = unusualPanel(profile);
   const rotate = (d: number) => { dir = (dir + d + 8) % 8; drawPreview(); };
 
   // one centred column for both pages: character, turn arrows, (Shop: the buy box), gender, category tabs, colours, items
@@ -70,6 +72,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
         h("div", { class: "row center" },
           h("button", { class: "btn small", title: "Turn left", onclick: () => rotate(-1) }, "⟲"),
           h("button", { class: "btn small", title: "Turn right", onclick: () => rotate(1) }, "⟳")),
+        ...(mode === "customize" ? [unusualBox.el] : []),
         ...(mode === "shop" ? [footerEl] : []),
         genderEl, tabsEl, colorsEl, gridEl, pagerEl,
         ...(mode === "shop" ? [] : [footerEl]))));
@@ -286,6 +289,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   return () => {
     disposed = true;
     window.clearInterval(waveTimer);
+    unusualBox.dispose();
   };
 }
 

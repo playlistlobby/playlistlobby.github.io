@@ -239,6 +239,8 @@ class SocialStore {
   giftReturns: Gift[] = [];
   relations = new Map<string, RelationKind>();
   relationRequests = new Map<string, RelationRequest>();
+  /** hideout invites waiting for my answer: the owner's uid -> the invite */
+  hideoutInvites = new Map<string, { owner: string; fromName: string; roomName: string; at: number }>();
   dms = new Map<string, DmMsg[]>();
   unread = new Map<string, number>();
   /** friend whose chat window is open (their messages don't count as unread) */
@@ -249,10 +251,12 @@ class SocialStore {
   private tradeInviteListeners = new Set<(i: TradeInvite) => void>();
   private tradeStartListeners = new Set<(id: string) => void>();
   private inviteListeners = new Set<(i: Invite) => void>();
+  private hideoutInviteListeners = new Set<(i: { owner: string; fromName: string; roomName: string; at: number }) => void>();
   private dmListeners = new Set<(friend: string, m: DmMsg) => void>();
   private unsubs: Unsubscribe[] = [];
   private dmUnsubs = new Map<string, Unsubscribe>();
   private sessionStart = 0;
+  private hideoutInvitesLoaded = false;
 
   subscribe(fn: Listener): () => void {
     this.listeners.add(fn);
@@ -261,6 +265,10 @@ class SocialStore {
   onInvite(fn: (i: Invite) => void): () => void {
     this.inviteListeners.add(fn);
     return () => this.inviteListeners.delete(fn);
+  }
+  onHideoutInvite(fn: (i: { owner: string; fromName: string; roomName: string; at: number }) => void): () => void {
+    this.hideoutInviteListeners.add(fn);
+    return () => this.hideoutInviteListeners.delete(fn);
   }
   onTradeInvite(fn: (i: TradeInvite) => void): () => void {
     this.tradeInviteListeners.add(fn);
@@ -290,7 +298,7 @@ class SocialStore {
   }
   /** what the Friends button's red badge counts: unread messages, friend requests and people knocking */
   get badgeCount(): number {
-    return this.totalUnread + this.requests.size + this.knocks.size + this.tradeInvites.size + this.gifts.length + this.giftReturns.length + this.relationRequests.size;
+    return this.totalUnread + this.requests.size + this.knocks.size + this.tradeInvites.size + this.gifts.length + this.giftReturns.length + this.relationRequests.size + this.hideoutInvites.size;
   }
   /** the presence list has arrived (until then nobody can be called gone) */
   presenceLoaded = false;
@@ -396,7 +404,18 @@ class SocialStore {
         this.emit();
         // only pop up for invites that arrived while we were here
         if (typeof inv.ts === "number" && inv.ts >= this.sessionStart - 2000) this.inviteListeners.forEach((l) => l(inv));
-      }));
+      }),
+      // an invite to join somebody's hideout (it waits until it is answered)
+      onValue(ref(db, `hideoutInvites/${me.uid}`), (snap) => {
+        const v = (snap.val() ?? {}) as Record<string, { fromName?: string; roomName?: string; at?: number }>;
+        const next = new Map<string, { owner: string; fromName: string; roomName: string; at: number }>();
+        for (const [owner, i] of Object.entries(v)) next.set(owner, { owner, fromName: String(i?.fromName ?? "?"), roomName: String(i?.roomName ?? "hideout"), at: Number(i?.at) || 0 });
+        const fresh = [...next.values()].filter((i) => !this.hideoutInvites.has(i.owner) && i.at >= this.sessionStart - 60_000 && this.hideoutInvitesLoaded);
+        this.hideoutInvites = next;
+        this.hideoutInvitesLoaded = true;
+        this.emit();
+        fresh.forEach((i) => this.hideoutInviteListeners.forEach((l) => l(i)));
+      }, () => undefined));
   }
 
   stop(): void {

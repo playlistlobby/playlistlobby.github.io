@@ -5,6 +5,8 @@ import { headBox } from "./head";
 import { renderAvatar } from "../avatarService";
 import { call, giftSend } from "../db";
 import { REPORT_LIMIT } from "../shared/mod";
+import { hideoutInvite } from "../hideout";
+import { get as dbGet } from "firebase/database";
 import { itemDef } from "../items";
 import { canEnter, fetchMeta, ownRoomId } from "../rooms";
 import { fetchProfile, FullProfile, fetchFullProfile, PROFILE_BGS, RelationKind, social } from "../social";
@@ -39,6 +41,8 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
   let prof: FullProfile | null = null;
   let loading = true;
   let visit: Visit = "none";
+  /** you own a hideout (so you can invite this player to it) and this player is not in it yet */
+  let canInviteToHideout = false;
   let view: "main" | "gift" | "edit" | "report" = "main";
   let busy = false;
   let confirmRemove = false;
@@ -52,10 +56,15 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
 
   async function load(target: string): Promise<void> {
     const mine = ++token;
-    uid = target; loading = true; view = "main"; confirmRemove = false; render();
+    uid = target; loading = true; view = "main"; confirmRemove = false; canInviteToHideout = false; render();
     const p = await fetchFullProfile(target).catch(() => null);
     let v: Visit = "none";
     if (p && target !== me.uid) {
+      void dbGet(ref(db, `hideouts/${me.uid}/${me.uid}`)).then(async (own) => {
+        if (!own.exists() || target === me.uid) return;
+        const inIt = await dbGet(ref(db, `roomsMeta/h_${me.uid}/members/${target}`)).catch(() => null);
+        if (token === mine && !closed && !inIt?.exists()) { canInviteToHideout = true; render(); }
+      }, () => undefined);
       const meta = await fetchMeta(ownRoomId(target)).catch(() => null);
       if (meta) {
         const allowed = me.isAdmin || (await canEnter(meta, me.uid, social.friendUids()).catch(() => false));
@@ -114,6 +123,7 @@ export function openProfileWindow(host: HTMLElement, ctx: Ctx, firstUid: string,
       btn("💬", "Message", () => { window.dispatchEvent(new CustomEvent("open-chat", { detail: uid })); close(); }, { disabled: !friend(), title: friend() ? "Send a message" : "Only friends can message each other", tone: "blue" }),
       btn("🔁", "Trade", () => void act(async () => { await social.inviteToTrade(uid); return `You ask ${name} to trade. They have to accept.`; }), { disabled: !online(), title: online() ? "Invite to trade" : "They have to be online", tone: "teal" }),
       btn("🎁", "Send gift", () => { view = "gift"; render(); }, { disabled: !friend(), title: friend() ? "Send an item as a gift" : "Gifts go to friends", tone: "purple" }),
+      ...(canInviteToHideout ? [btn("🏚", "Invite to hideout", () => void act(async () => { const r = await hideoutInvite(me, { uid }); canInviteToHideout = false; return `You invited ${r.name} to your hideout.`; }), { title: "Ask them to join your hideout", tone: "teal" })] : []),
       btn("🚩", "Report", () => { view = "report"; render(); }, { title: "Tell the moderators about this player", tone: "red" })));
     return out;
   }

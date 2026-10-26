@@ -71,6 +71,16 @@
     "broadcast": {
       ".read": "@PW@"
     },
+    "hideouts": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "hideoutInvites": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
     "loudspeaker": {
       "$uid": {
         ".read": "@PW@ && auth.uid === $uid"
@@ -615,10 +625,10 @@
           ".validate": "newData.val() === 'open' || newData.val() === 'knock' || newData.val() === 'closed' || newData.val() === 'none' || newData.val() === 'friends' || newData.val() === 'invite'"
         },
         "w": {
-          ".validate": "newData.isNumber() && newData.val() >= 6 && newData.val() <= 16"
+          ".validate": "newData.isNumber() && newData.val() >= 6 && newData.val() <= 24"
         },
         "h": {
-          ".validate": "newData.isNumber() && newData.val() >= 6 && newData.val() <= 16"
+          ".validate": "newData.isNumber() && newData.val() >= 6 && newData.val() <= 24"
         },
         "skins": {
           "bed": {
@@ -660,10 +670,10 @@
         "bed": {
           ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -675,10 +685,10 @@
         "bag": {
           ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -690,10 +700,25 @@
         "toolbox": {
           ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
+          },
+          "dir": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "computer": {
+          ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -705,10 +730,10 @@
         "stashbox": {
           ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -720,10 +745,10 @@
         "boombox": {
           ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -735,10 +760,10 @@
         "sink": {
           ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -754,10 +779,10 @@
               ".validate": "newData.val() === 'crate' || newData.val() === 'table' || newData.val() === 'sofa' || newData.val() === 'plant' || newData.val() === 'lamp' || newData.val() === 'shelf' || newData.val().matches(/^f_[a-z0-9_]{1,30}$/) || root.child('furni').child('meta').child(newData.val()).child('players').val() === true"
             },
             "x": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
             },
             "y": {
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16"
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
             },
             "dir": {
               ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6"
@@ -791,10 +816,10 @@
         "intercom": {
           ".write": "@PW@ && data.parent().child('owner').val() === auth.uid",
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "y": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24"
           },
           "dir": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 6"
@@ -865,6 +890,12 @@
             },
             "lookUntil": {
               ".validate": "newData.isNumber()"
+            },
+            "un": {
+              ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('unusual').val()"
+            },
+            "pet": {
+              ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('petLook').val()"
             },
             "nc": {
               ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('nameColor').val()"

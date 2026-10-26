@@ -7,10 +7,10 @@ import { call } from "./db";
 import type { Profile } from "./db";
 import { itemDef, STACKABLE } from "./items";
 import { directionsOf, nitroIfReady } from "./nitro";
-import { BAG_ID, BED_ID, BOOMBOX_ID, SINK_ID, STASH_ID, FURNI_KINDS, footprint, isDoorTile, MAX_FURNI, PlacedFurni, RoomDef, TOOLBOX_ID } from "./rooms";
+import { BAG_ID, BED_ID, BOOMBOX_ID, COMPUTER_ID, SINK_ID, STASH_ID, FURNI_KINDS, footprint, isDoorTile, MAX_FURNI, PlacedFurni, RoomDef, TOOLBOX_ID } from "./rooms";
 
 /** The pieces that are always in your room: movable, never removable. */
-export const FIXED_IDS = new Set([BED_ID, BAG_ID, TOOLBOX_ID, SINK_ID, BOOMBOX_ID, STASH_ID]);
+export const FIXED_IDS = new Set([BED_ID, BAG_ID, TOOLBOX_ID, SINK_ID, BOOMBOX_ID, STASH_ID, COMPUTER_ID]);
 export const isFixedPiece = (id: string): boolean => FIXED_IDS.has(id);
 
 /** Which way a piece can be turned: the bed only faces one way; everything else turns by a quarter. */
@@ -140,7 +140,7 @@ export async function placeFromCatalog(p: Profile, roomId: string, kind: string,
 /** Moves or turns a piece that is already in the room. The bed, bag, toolbox and sink live under their own names (looks only); every other piece goes through the server. */
 export async function movePiece(roomId: string, f: PlacedFurni, spot: Spot, p?: Profile): Promise<void> {
   if (isFixedPiece(f.id)) {
-    const path = f.id === BED_ID ? `${roomRef(roomId)}/bed` : f.id === BAG_ID ? `${roomRef(roomId)}/bag` : f.id === TOOLBOX_ID ? `${roomRef(roomId)}/toolbox` : f.id === BOOMBOX_ID ? `${roomRef(roomId)}/boombox` : f.id === STASH_ID ? `${roomRef(roomId)}/stashbox` : `${roomRef(roomId)}/sink`;
+    const path = f.id === BED_ID ? `${roomRef(roomId)}/bed` : f.id === BAG_ID ? `${roomRef(roomId)}/bag` : f.id === TOOLBOX_ID ? `${roomRef(roomId)}/toolbox` : f.id === BOOMBOX_ID ? `${roomRef(roomId)}/boombox` : f.id === STASH_ID ? `${roomRef(roomId)}/stashbox` : f.id === COMPUTER_ID ? `${roomRef(roomId)}/computer` : `${roomRef(roomId)}/sink`;
     await update(ref(db, path), { x: spot.x, y: spot.y, dir: f.id === BED_ID ? 2 : spot.dir });
     return;
   }

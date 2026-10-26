@@ -102,7 +102,19 @@ async function fetchFromDb(kind: string): Promise<NitroFurni> {
 export function loadNitro(path: string): Promise<NitroFurni | null> {
   let p = cache.get(path);
   if (!p) {
-    const job = path.startsWith("db:")
+    const job = path === "derived:hcomputer" // the hideout's computer: the laptop, painted red
+      ? loadNitro("furni/f_rareblock.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          const l = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+          const k = l / 255;
+          d[i] = Math.min(255, Math.round(70 + 215 * k)); d[i + 1] = Math.round(8 + 170 * k * k); d[i + 2] = Math.round(8 + 150 * k * k);
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no laptop art"))))
+      : path.startsWith("db:")
       ? fetchFromDb(path.slice(3))
       : fetch(assetUrl(path)).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${path}: ${r.status}`)))).then(parseNitro);
     p = job

@@ -1,11 +1,12 @@
 // The toolbox in your own room: storing things, and putting furniture down / moving it / taking it back. A piece exists in exactly one place
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
-import { Action, ID_RE, int, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
+import { Action, hideoutAccess, ID_RE, int, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, MAX_FURNI, STASH_PIECES, STASHBOX_OWNED_KEY, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { isFurniItem, STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
 import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
+import { HIDEOUT_MAX_FURNI, HIDEOUT_ONLY, isHideoutId, levelOfSize } from "../../../src/shared/hideout";
 
 const isPiece = async (c: Ctx, key: string): Promise<boolean> => !!SHIPPED_DIMS[key] || !!(await c.furniMeta())[key];
 const KEY_RE = /^[a-z0-9_]{1,30}$/;
@@ -20,16 +21,29 @@ async function boomboxFree(c: Ctx, room: string): Promise<void> {
  * Which room a furnishing action is for: your own, or (for an account with the decorator power, see users/<uid>/decorator) another player's room that you
  * are standing in. In someone else's room you only place new pieces, and only move or take back the ones you put there yourself (they carry `by`).
  */
-async function roomFor(c: Ctx, a: Record<string, unknown>): Promise<{ room: string; foreign: boolean }> {
+async function roomFor(c: Ctx, a: Record<string, unknown>, needBuild = true): Promise<{ room: string; foreign: boolean; hideout: boolean; level: number; owner: boolean }> {
   const own = `u_${c.uid}`;
-  const want = a.room === undefined ? own : text(a.room, /^u_[A-Za-z0-9]{1,40}$/, "room");
-  if (want === own) return { room: await requireOwnRoom(c), foreign: false }; // your own room: you have to be standing in it
+  const want = a.room === undefined ? own : text(a.room, /^[uh]_[A-Za-z0-9]{1,40}$/, "room");
+  if (isHideoutId(want)) { // a hideout: members build there when they may (the owner always), and have to be standing in it
+    const h = await hideoutAccess(c, want);
+    if (!h.member) fail("You aren't in that hideout.");
+    if (needBuild && !h.canBuild) fail(h.meta.lock ? "Building is locked in this hideout." : "You aren't allowed to build in this hideout.");
+    await requireInRoom(c, want);
+    return { room: want, foreign: false, hideout: true, level: levelOfSize(Number(h.meta.w) || 14), owner: h.owner };
+  }
+  if (want === own) return { room: await requireOwnRoom(c), foreign: false, hideout: false, level: 0, owner: true }; // your own room: you have to be standing in it
   const w = await c.user();
   if (!(c.isAdmin || w.raw.decorator === true)) fail("That isn't your room.");
   if (!(await c.db.get(`roomsMeta/${want}/owner`))) fail("That room doesn't exist.");
   await requireInRoom(c, want);
-  return { room: want, foreign: true };
+  return { room: want, foreign: true, hideout: false, level: 0, owner: false };
 }
+
+/** the room a furnishing action works on is locked while it runs (several members can build at the same time) */
+const roomLock = (c: Ctx, a: Record<string, unknown>): string[] => [`room:${typeof a?.room === "string" ? a.room : `u_${c.uid}`}`];
+
+/** how many pieces fit in the room */
+const furniCap = (hideout: boolean, level: number): number => (hideout ? HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] : MAX_FURNI);
 
 /** What you carry goes into the toolbox: a piece of furniture, or `qty` of an item. Ass weed is kept apart as "ass_<item>". */
 export const storeItem: Action = {
@@ -141,14 +155,16 @@ const newRowId = (now: number): string => `f${now.toString(36)}${Math.random().t
 
 /** Puts a piece down in your room, from your pocket or from storage. */
 export const furniPlace: Action = {
+  locks: (c, a) => roomLock(c, a),
   async run(c, a) {
-    const { room, foreign } = await roomFor(c, a);
+    const { room, foreign, hideout, level } = await roomFor(c, a);
+    let boxOwner: string | null = null; // (a piece taken from a hideout's box stays its owner's)
     const w = await c.user();
     const dir = int(a.dir ?? 0, 0, 6, "facing");
     if (!DIRS.includes(dir)) fail("Bad facing.");
     const size = await roomSize(c, room);
     const rows = (await c.db.get<Record<string, unknown>>(`roomsMeta/${room}/furni`)) ?? {};
-    if (Object.keys(rows).length >= MAX_FURNI) fail("The room is full of furniture.");
+    if (Object.keys(rows).length >= furniCap(hideout, level)) fail("The room is full of furniture.");
     let kind: string;
     if (a.source === "inv") {
       const slot = int(a.slot, 0, 27, "slot");
@@ -157,20 +173,30 @@ export const furniPlace: Action = {
       kind = it!.item;
       const dims = await c.placeableDims(kind);
       if (!dims) fail("That can't be put down.");
-      if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir, size)) fail("That doesn't fit in the room.");
+      if (!fits(dims!, int(a.x, 0, 24, "spot"), int(a.y, 0, 24, "spot"), dir, size)) fail("That doesn't fit in the room.");
       w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1);
     } else if (a.source === "catalog") { // the admin has every piece there is: nothing is taken from storage
       if (!c.isAdmin) fail("Only the admin can do that.");
       kind = text(a.kind, KEY_RE, "piece");
       const dims = await c.placeableDims(kind);
       if (!dims) fail("That can't be put down.");
-      if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir, size)) fail("That doesn't fit in the room.");
+      if (!fits(dims!, int(a.x, 0, 24, "spot"), int(a.y, 0, 24, "spot"), dir, size)) fail("That doesn't fit in the room.");
+    } else if (a.source === "box") { // from the hideout's shared box: anybody who may build can use anybody's piece
+      if (!hideout) fail("There's no box here.");
+      kind = text(a.kind, KEY_RE, "piece");
+      boxOwner = text(a.owner, /^[A-Za-z0-9]{10,40}$/, "owner");
+      const have = (await c.db.get<number>(`roomsMeta/${room}/box/${boxOwner}/${kind}`)) ?? 0;
+      if (have < 1) fail("There's none of that in the box.");
+      const dims = await c.placeableDims(kind);
+      if (!dims) fail("That can't be put down.");
+      if (!fits(dims!, int(a.x, 0, 24, "spot"), int(a.y, 0, 24, "spot"), dir, size)) fail("That doesn't fit in the room.");
+      c.extra[`roomsMeta/${room}/box/${boxOwner}/${kind}`] = have > 1 ? have - 1 : null;
     } else {
       kind = text(a.kind, KEY_RE, "piece");
       if ((w.s.storage[kind] ?? 0) < 1) fail("There's none of that in storage.");
       const dims = await c.placeableDims(kind);
       if (!dims) fail("That can't be put down.");
-      if (!fits(dims!, int(a.x, 0, 15, "spot"), int(a.y, 0, 15, "spot"), dir, size)) fail("That doesn't fit in the room.");
+      if (!fits(dims!, int(a.x, 0, 24, "spot"), int(a.y, 0, 24, "spot"), dir, size)) fail("That doesn't fit in the room.");
       if (w.s.storage[kind] > 1) w.s.storage[kind] -= 1; else delete w.s.storage[kind];
     }
     // a poster only hangs on a wall, and carries the picture chosen when it is hung (it stays on it; a poster taken down goes back blank)
@@ -183,7 +209,8 @@ export const furniPlace: Action = {
         img = a.img as string;
       }
     } else if (a.img !== undefined) fail("Only a poster carries a picture.");
-    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : {}) };
+    if (HIDEOUT_ONLY.has(kind) && !hideout) fail("That piece only fits in a hideout.");
+    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : hideout ? { by: boxOwner ?? c.uid } : {}) };
     return {};
   },
 };
@@ -191,8 +218,9 @@ export const furniPlace: Action = {
 /** Tapping a piece with several looks or animations (a TV, a fridge, candles ...): anyone standing in the room sends it on to the next one. */
 export const furniState: Action = {
   async run(c, a) {
-    const room = text(a.room, /^u_[A-Za-z0-9]{1,40}$/, "room");
+    const room = text(a.room, /^[uh]_[A-Za-z0-9]{1,40}$/, "room");
     await requireInRoom(c, room);
+    if (isHideoutId(room) && !(await hideoutAccess(c, room)).member) fail("You aren't in that hideout.");
     const id = text(a.id, ID_RE, "piece");
     const row = await c.db.get<{ kind?: string; st?: number }>(`roomsMeta/${room}/furni/${id}`);
     if (!row?.kind) return fail("That piece isn't here.");
@@ -205,6 +233,7 @@ export const furniState: Action = {
 
 /** Moves or turns a piece that is already in your room. (The bed, bag, toolbox and sink have their own positions the browser sets.) */
 export const furniMove: Action = {
+  locks: (c, a) => roomLock(c, a),
   async run(c, a) {
     const { room, foreign } = await roomFor(c, a);
     const id = text(a.id, ID_RE, "piece");
@@ -215,7 +244,7 @@ export const furniMove: Action = {
     if (!dims) fail("That piece doesn't exist any more.");
     const dir = int(a.dir ?? 0, 0, 6, "facing");
     if (!DIRS.includes(dir)) fail("Bad facing.");
-    const x = int(a.x, 0, 15, "spot"), y = int(a.y, 0, 15, "spot");
+    const x = int(a.x, 0, 24, "spot"), y = int(a.y, 0, 24, "spot");
     if (!fits(dims!, x, y, dir, await roomSize(c, room))) fail("That doesn't fit in the room.");
     if (row.kind === POSTER_KIND && !wallPlaceOk(x, y, dir)) fail("A poster hangs on a wall: the back wall or the left wall.");
     c.extra[`roomsMeta/${room}/furni/${id}/x`] = x;
@@ -227,10 +256,12 @@ export const furniMove: Action = {
 
 /** Takes a piece out of your room into storage. */
 export const furniStore: Action = {
+  locks: (c, a) => roomLock(c, a),
   async run(c, a) {
-    const { room, foreign } = await roomFor(c, a);
+    const { room, foreign, hideout, owner } = await roomFor(c, a);
     const id = text(a.id, ID_RE, "piece");
-    if (id === BOOMBOX_ID) { // the room's own boombox goes into storage too (and can only come back out as a piece in the room, never into your pocket)
+    if (id === BOOMBOX_ID) {
+      if (hideout && !owner) fail("Only the owner can take the boombox."); // the room's own boombox goes into storage too (and can only come back out as a piece in the room, never into your pocket)
       if (foreign) fail("That isn't yours to take.");
       const gone = await c.db.get<boolean>(`roomsMeta/${room}/boombox/gone`);
       if (gone) fail("That piece isn't in your room.");
@@ -247,6 +278,14 @@ export const furniStore: Action = {
     if (typeof row.plantedAt === "number") fail("Harvest the plant first.");
     if (row.mixJob) fail("Collect what's in the mixer first.");
     if (row.kind === "f_boombox") await boomboxFree(c, room);
+    if (hideout) { // a hideout's piece goes back into the shared box, still its owner's
+      const by = typeof row.by === "string" ? row.by : c.uid;
+      const inBox = (await c.db.get<number>(`roomsMeta/${room}/box/${by}/${row.kind}`)) ?? 0;
+      if (inBox >= STORAGE_MAX_PIECES) fail("The box is full of those.");
+      c.extra[`roomsMeta/${room}/box/${by}/${row.kind}`] = inBox + 1;
+      c.extra[`roomsMeta/${room}/furni/${id}`] = null;
+      return {};
+    }
     const w = await c.user();
     const have = w.s.storage[row.kind] ?? 0;
     if (have >= STORAGE_MAX_PIECES) fail("Storage is full of those.");

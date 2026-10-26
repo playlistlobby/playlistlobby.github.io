@@ -77,6 +77,17 @@ export function mountRoomPanel(container: HTMLElement, ctx: Ctx, hooks: RoomHook
         furnitureSection(def, hooks.getTool(), true));
       return;
     }
+    if (def.hideout) { // a hideout: its owner, its members, and where the controls are
+      wrap.replaceChildren(
+        h("div", { class: "osrs-title" }, "Hideout"),
+        h("div", { class: "inv-foot" },
+          h("div", {}, def.name),
+          h("div", { class: "hint" }, `Owned by ${def.ownerName ?? "?"}`),
+          h("div", { class: "hint" }, `${Object.keys(def.hideout.members).length + 1} members: ${[def.ownerName ?? "?", ...Object.values(def.hideout.members).map((m) => m.name)].join(", ")}`),
+          h("div", { class: "hint" }, def.hideout.lock ? "Building is locked." : "Members who may build can place and move furniture."),
+          h("div", { class: "hint" }, "The red computer: order furniture, members, settings. The toolbox: the shared box.")));
+      return;
+    }
     if (!hooks.isOwner()) {
       wrap.replaceChildren(
         h("div", { class: "osrs-title" }, "Room"),

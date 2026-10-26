@@ -195,15 +195,11 @@ console.log("--- roulette: getting up, leaving, timeouts");
   await clear();
 }
 
-console.log("--- roulette: the 24 hour limit counts the stakes");
+console.log("--- roulette: there is no 24 hour limit on the stakes any more");
 {
   await clear();
   const a = await player("t_rl_m1", 9000);
-  for (let i = 0; i < 8; i++) { ok(`500 on the table, round ${i + 1}`, await act(a, "rouletteOpen", { stake: 500 })); await act(a, "rouletteLeave"); }
-  bad("the ninth 500 goes over 4000 in 24 hours", await act(a, "rouletteOpen", { stake: 500 }));
-  await owner("PUT", `users/${a.uid}/noTradeLimit`, true);
-  ok("an account without the limit can", await act(a, "rouletteOpen", { stake: 500 }));
-  await act(a, "rouletteLeave");
+  for (let i = 0; i < 9; i++) { ok(`500 on the table, round ${i + 1}`, await act(a, "rouletteOpen", { stake: 500 })); await act(a, "rouletteLeave"); }
   await clear();
 }
 console.log("--- coin flip machine removed: an open flip is paid back on the next load");

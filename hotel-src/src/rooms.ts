@@ -40,7 +40,7 @@ export interface FurniKind {
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
   /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
   wallArt?: { left: number; back: number };
-  opens?: "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle";
+  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -74,6 +74,8 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
 import { RAFFLE_PRIZE_ID } from "./shared/raffle";
 import { MINES_H, MINES_ID, MINES_PIECES, MINES_W } from "./shared/mines";
+import { HIDEOUT_MAX_FURNI, hideoutRoomId, isHideoutId, levelOfSize } from "./shared/hideout";
+export { hideoutRoomId, isHideoutId };
 export { MINES_ID };
 import { BAG_SKINS, BED_SKINS } from "./shared/skins";
 export type { ShopPiece } from "./shared/furniture";
@@ -110,6 +112,12 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the stash box the landlord sells (20 drops): a gift box that keeps what you don't want in your pockets
   stashbox: { id: "stashbox", label: "Stash box", icon: "🎁", w: 1, h: 1, height: 36, color: "#8a5fd0", placeable: false, fixed: true, opens: "stash", nitro: "furni/stashbox.nitro", rotatable: true },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
+  // the hideout's computer: a red laptop (the shop's laptop, painted); tap it for the hideout's website
+  hcomputer: { id: "hcomputer", label: "Computer", icon: "💻", w: 1, h: 1, height: 32, color: "#b02a2a", placeable: false, fixed: true, small: true, opens: "computer", nitro: "derived:hcomputer", rotatable: true },
+  // the door in the basement's left wall, past the roulette table: it leads to your hideouts
+  // the pet merchant in the shop room: a basket (for now: tap it to buy a pet)
+  petbasket: { id: "petbasket", label: "Pet merchant", icon: "🐾", w: 1, h: 1, height: 40, color: "#c8a060", placeable: false, nitro: "furni/market_c19_basket.nitro", rotatable: true, fixed: true, opens: "pets" },
+  hdoor: { id: "hdoor", label: "Hideouts", icon: "🚪", w: 1, h: 1, height: 70, color: "#3d5a73", placeable: false, nitro: "furni/teleport_door.nitro", rotatable: true, fixed: true, flat: true, wall: true, wallArt: { left: 2, back: 4 }, opens: "hideouts" },
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
   // posters: a frame on the wall; the picture inside is the player's own (chosen when it is hung). The one in the shop room is for sale.
   f_poster: { id: "f_poster", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: true, nitro: "furni/poster.nitro", rotatable: true, flat: true, wall: true, poster: true, nudge: { x: 0, y: -52 } },
@@ -183,6 +191,8 @@ export interface PlacedFurni {
   st?: number;
   /** a mixer with a batch in it (server times, ms): when it is done and how long it takes */
   mix?: { doneAt: number; ms: number; item?: string };
+  /** in a hideout: whose piece it is (the one who put it in: only they can take it out of the box again) */
+  by?: string;
 }
 
 export interface RugRect {
@@ -209,6 +219,19 @@ export interface RoomDef {
   doorTo?: string;
   /** more doors on the back-right wall, each leading to a room of its own */
   extraDoors?: ExtraDoor[];
+  /** a hideout (a shared room): its level, who is in it, what is in the shared box, the orders on the way */
+  hideout?: HideoutInfo;
+}
+
+export interface HideoutInfo {
+  level: number;
+  lock: boolean;
+  members: Record<string, { name: string; build: boolean }>;
+  /** the shared box: piece owner -> kind -> how many */
+  box: Record<string, Record<string, number>>;
+  orders: Record<string, { kind: string; by: string; doneAt: number }>;
+  /** how many pieces fit */
+  cap: number;
 }
 
 export interface ExtraDoor { x: number; to: string; label: string; yellow?: boolean; /** a rusty brown door (the mines) */ brown?: boolean }
@@ -279,6 +302,8 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby10", kind: "ideaboard", x: 0, y: 15, dir: 2 },
   // the security camera beside 6ixty, who stands at the back wall
   { id: "lobby11", kind: "seccam", x: 4, y: 0, dir: 2 },
+  // the door to the hideouts, in the corner of the back wall (the hideout landlord stands beside it, see src/npc.ts)
+  { id: "lobby12", kind: "hdoor", x: 11, y: 0, dir: 4 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
@@ -305,7 +330,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
 /** The private copy of the basement: the same room without the pieces the admin put in it, and its door leads back to your own room. */
 export function tutDef(uid: string): RoomDef {
   const lobby = lobbyDef([]);
-  return { ...lobby, id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [], furni: lobby.furni.filter((f) => !ROULETTE_KINDS.has(f.kind) && f.kind !== "ideaboard") }; // (no roulette and no ideas board during the introduction)
+  return { ...lobby, id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [], furni: lobby.furni.filter((f) => !ROULETTE_KINDS.has(f.kind) && f.kind !== "ideaboard" && f.kind !== "hdoor") }; // (no roulette and no ideas board during the introduction)
 }
 
 /** Where the four daily pieces stand in the shop room (every piece is placed facing the same way, each in its own 3x3 corner). */
@@ -336,6 +361,8 @@ export function shopDef(picks: string[], raffleKind?: string): RoomDef {
     // the Ducky machine along the same wall, two tiles further down
     { id: "shop_ducky", kind: "ducky", x: 0, y: 8, dir: 2 },
     // the raffle machine further down the same wall, on a marble block; the rare piece it gives away stands beside it
+    // the pet merchant: a basket on the right-hand wall
+    { id: "shop_pets", kind: "petbasket", x: 13, y: 6, dir: 2 },
     { id: "shop_raffle_table", kind: "raffletable", x: 0, y: 11, dir: 2 }, { id: "shop_raffle", kind: "gacha", x: 0, y: 11, dir: 0 },
   ];
   if (raffleKind && FURNI_KINDS[raffleKind]) {
@@ -375,6 +402,7 @@ export const BAG_ID = "bag";
 export const BAG = { x: 7, y: 0, dir: 2 };
 /** The toolbox starts between the bed and the bag. */
 export const STASH_ID = "stashbox";
+export const COMPUTER_ID = "computer";
 export const TOOLBOX_ID = "toolbox";
 export const TOOLBOX = { x: 6, y: 0, dir: 4 };
 /** The sink starts in the far left corner of the room, facing the camera. */
@@ -396,6 +424,13 @@ export interface RoomMeta {
   access: Access | "friends" | "invite";
   w: number;
   h: number;
+  /** a hideout: its size level, whether building is locked for the members, who is in, the shared box, the orders on the way, the computer */
+  level?: number;
+  lock?: boolean;
+  members?: Record<string, { name?: string; build?: boolean }>;
+  box?: Record<string, Record<string, number>>;
+  orders?: Record<string, { kind?: string; by?: string; doneAt?: number }>;
+  computer?: { x: number; y: number; dir?: number };
   theme?: Partial<RoomTheme>;
   furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string; img?: string; mixJob?: { doneAt?: number; ms?: number; item?: string }; st?: number }>;
   /** where the owner moved the fixed pieces to (the bed can't be turned, so only its x/y count) */
@@ -417,7 +452,28 @@ export const bedSide = (bed: { x: number; y: number }) => ({ x: bed.x + 1, y: be
 /** the kind a fixed piece is drawn as: the plain one, or the look the player bought */
 const skinKind = (part: "bed" | "bag", skin: string | undefined): string => (skin && FURNI_KINDS[part + "_" + skin] ? part + "_" + skin : part);
 
+/** a hideout: like a player room but bigger, with a computer instead of a bed and a wardrobe; its door leads back to the basement */
+function hideoutDef(id: string, meta: RoomMeta): RoomDef {
+  const theme: RoomTheme = { ...DEFAULT_THEME, rug: false, ...(meta.theme ?? {}) };
+  const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
+    .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof (f as any).by === "string" ? { by: (f as any).by as string } : {}), ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}) } } : {}) }));
+  const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
+  const toolbox = at(meta.toolbox, { x: 6, y: 0, dir: 2 }), sink = at(meta.sink, { x: 0, y: 7, dir: 2 }), boombox = at(meta.boombox, { x: 0, y: 3, dir: 2 }), computer = at(meta.computer, { x: 4, y: 0, dir: 2 });
+  furni.unshift({ id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: COMPUTER_ID, kind: "hcomputer", x: computer.x, y: computer.y, dir: computer.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]));
+  const side = (n: unknown) => (typeof n === "number" && n >= 8 && n <= 24 ? Math.floor(n) : 14);
+  const w = side(meta.w), h = side(meta.h);
+  const level = typeof meta.level === "number" ? meta.level : levelOfSize(w);
+  const rug: RugRect | null = theme.rug ? { x0: Math.floor((w - 6) / 2), y0: Math.floor((h - 6) / 2), w: 6, h: 6 } : null;
+  const members: HideoutInfo["members"] = {};
+  for (const [uid, m] of Object.entries(meta.members ?? {})) members[uid] = { name: String(m?.name ?? "?"), build: m?.build !== false };
+  const orders: HideoutInfo["orders"] = {};
+  for (const [oid, o] of Object.entries(meta.orders ?? {})) if (o && typeof o.kind === "string" && typeof o.by === "string") orders[oid] = { kind: o.kind, by: o.by, doneAt: Number(o.doneAt) || 0 };
+  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: "none", w, h, theme, rug, furni, doorX: DOOR_X, doorTo: LOBBY_ID, hideout: { level, lock: meta.lock === true, members, box: meta.box ?? {}, orders, cap: HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] } };
+}
+
 export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
+  if (isHideoutId(id)) return hideoutDef(id, meta);
   const theme: RoomTheme = { ...DEFAULT_THEME, ...(meta.theme ?? {}) };
   // furniture of kinds that no longer exist (the old test cubes) is ignored; the bed is always there
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})

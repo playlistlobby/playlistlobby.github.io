@@ -19,21 +19,21 @@ export const BAGMAND_BUY: Record<string, { price: number; stock: number | null; 
   syringe: { price: 20, stock: null, label: "Syringe" },
 };
 /**
- * What he pays (blood each), for only the things from him: opium from the poppies and what is mixed from it. The prices are about 3x what went into it
- * (a poppy seed 50 -> opium 100, then 300 and up once it is mixed), so what you make from a seed pays more the more work you put in, and there is no
+ * What he pays (blood each), for only the things from him: opium from the poppies and what is mixed from it. The prices are about 1.6x what went into it
+ * (a poppy seed 50 -> opium 80, then 110-265 once it is mixed: about 1.6x per step), so what you make from a seed pays more the more work you put in, and there is no
  * way to sell his things to anybody else. Weak opium (a poppy that was never watered) is worth half.
  */
 export const BAGMAND_SELL: Record<string, number> = {
-  opium: 100,
-  heroin: 300,
-  ketamine: 300,
-  percs: 320,
-  twocb: 360,
-  caliweed: 330,
-  fentcn: 420,
-  pinkweed: 250,
-  brownweed: 260,
-  loudpack: 480,
+  opium: 80,
+  heroin: 130,
+  ketamine: 140,
+  percs: 130,
+  twocb: 150,
+  caliweed: 140,
+  fentcn: 145,
+  pinkweed: 125,
+  brownweed: 110,
+  loudpack: 265,
 };
 /** what he pays for this item (null = he doesn't buy it) */
 export const bagmandPays = (it: Pick<InvItem, "item" | "ass">): number | null => {

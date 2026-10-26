@@ -2,6 +2,7 @@ import { h, toast } from "./dom";
 import { headBox } from "./head";
 import { social, PublicProfile, RelationRequest, Gift } from "../social";
 import { giftAnswer, giftCollect } from "../db";
+import { hideoutAnswer } from "../hideout";
 import { itemDef } from "../items";
 import { openProfileWindow, ProfileWindowApi } from "./profileWindow";
 import { LOBBY_ID } from "../rooms";
@@ -88,6 +89,10 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
         h("button", { class: "btn small primary", title: "Accept", onclick: () => social.answerRelation(r.uid, true).then(() => { playSfx("friend"); toast(r.kind === "partner" ? `You and ${r.name} are now partners.` : `You and ${r.name} are now best friends.`); }, () => toast("Couldn't accept that.", "err")) }, "✓"),
         h("button", { class: "btn small", title: "Decline", onclick: () => void social.answerRelation(r.uid, false) }, "✕")));
 
+    const hideoutRows = [...social.hideoutInvites.values()].map((i) =>
+      h("div", { class: "frow" }, h("span", { class: "fname" }, `🏚 ${i.fromName} invites you to the hideout "${i.roomName}"`),
+        h("button", { class: "btn small primary", title: "Join", onclick: () => void hideoutAnswer(me, i.owner, true).then(() => { playSfx("friend"); toast(`You joined "${i.roomName}". The hideout door is at the far end of the basement.`); }, (err) => toast((err as Error).message, "err")) }, "Join"),
+        h("button", { class: "btn small", title: "No thanks", onclick: () => void hideoutAnswer(me, i.owner, false).catch(() => undefined) }, "✕")));
     const inviteRows = social.invites.map((i) =>
       h("div", { class: "frow" }, h("span", { class: "fname" }, `${i.fromName} invited you to "${i.roomName}"`),
         h("button", { class: "btn small primary", onclick: () => { void social.dismissInvite(i.id); ctx.navigate("room", { roomId: i.room }); } }, "Join"),
@@ -103,6 +108,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     dyn.replaceChildren(
       ...(knockRows.length ? [h("div", { class: "fp-sec fp-knocks" }, h("div", { class: "fp-label" }, `Room requests (${knockRows.length})`), ...knockRows)] : []),
       ...(inviteRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, "Room invites"), ...inviteRows)] : []),
+      ...(hideoutRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, "Hideout invites"), ...hideoutRows)] : []),
       ...(reqRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, `Friend requests (${reqRows.length})`), ...reqRows)] : []),
       ...(relRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, "Partner and best friend requests"), ...relRows)] : []),
       ...(giftRows.length || returnedRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, `Gifts (${giftRows.length + returnedRows.length})`), ...giftRows, ...returnedRows)] : []),
@@ -226,6 +232,18 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     setTimeout(() => pop.remove(), 5000);
   });
 
+  const offHideoutInvite = social.onHideoutInvite((i) => {
+    playSfx("knock", 0.4);
+    const card = h("div", { class: "invite-card" },
+      h("div", {}, "🏚 ", h("strong", {}, i.fromName), " invites you to the hideout ", h("strong", {}, `"${i.roomName}"`)),
+      h("div", { class: "row" },
+        h("button", { class: "btn small primary", onclick: () => { card.remove(); void hideoutAnswer(me, i.owner, true).then(() => toast(`You joined "${i.roomName}". The hideout door is at the far end of the basement.`), (err) => toast((err as Error).message, "err")); } }, "Join"),
+        h("button", { class: "btn small", onclick: () => { card.remove(); void hideoutAnswer(me, i.owner, false).catch(() => undefined); } }, "No"),
+        h("button", { class: "btn small", onclick: () => card.remove() }, "Later")));
+    popups.append(card);
+    setTimeout(() => card.remove(), 25000);
+  });
+
   const offInvite = social.onInvite((i) => {
     playSfx("knock", 0.4);
     const card = h("div", { class: "invite-card" },
@@ -255,6 +273,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     offStore();
     offDm();
     offInvite();
+    offHideoutInvite();
     offKnock();
     document.title = baseTitle;
     document.body.classList.remove("friends-open");

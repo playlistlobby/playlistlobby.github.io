@@ -14,7 +14,7 @@ export const USER_BACKUP_KEYS = [
   "sixty", "tradeCap", "bloodBy",
 ] as const;
 /** The parts of a player room a backup holds: the furniture in it and everything the server changes about it. */
-export const ROOM_BACKUP_KEYS = ["furni", "skins", "bed", "bag", "toolbox", "sink", "boombox", "stashbox", "theme", "w", "h"] as const;
+export const ROOM_BACKUP_KEYS = ["furni", "skins", "bed", "bag", "toolbox", "sink", "boombox", "stashbox", "theme", "w", "h", "members", "level", "lock", "box", "orders", "computer"] as const;
 
 export interface BackupIndexEntry {
   at: number;

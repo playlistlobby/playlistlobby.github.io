@@ -33,6 +33,8 @@ export const ITEM_ID_LIST = [
   "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",
   // the loudspeaker: a message on every screen for 10 seconds, once every 6 hours (see shared/loudspeaker.ts)
   "loudspeaker",
+  // mystery boxes and keys (see shared/cases.ts), and the unusuals the boxes give: a hat with particle effects, worn from the pocket
+  "mysterycase", "casekey", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -88,6 +90,7 @@ export const DEFAULT_ITEM_PRICE = 5;
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cigarette: { on: true, price: 2 },
   pill: { on: true, price: 3 },
+  casekey: { on: true, price: 250 }, // a key for a mystery box (6ixty sells them; the Ducky machine sells 2 for 25 kr)
   cd_blodig: { on: true, price: 5 }, // the Blodig oktober CD, sold at the record player in the shop: one per player (see buyRecord)
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
   wood: { on: true, price: WOOD_PRICE }, // sold by 6ixty in the mines (see buySixty)
@@ -166,7 +169,7 @@ export const DRUG_USE: Record<string, UseDef> = {
   fentcn: { mult: 4, boostMs: 180_000, speedMs: 180_000, shroomMs: 180_000, chemMs: 180_000, lean: true, look: { kind: "horse", ms: 60_000 }, rushMs: 10_000 }, // 10 s at 10x, then all of it
 };
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco", "iron", "wood", "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco", "iron", "wood", "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn", "mysterycase", "casekey"]);
 /** Weed grows for 10 minutes, shrooms for 25. The water bar runs dry after 5: water it once, any time while it grows (even before the bar is empty), or the harvest turns out poor. */
 export const GROW_MS = 10 * 60_000;
 export const GROW_MS_SHROOM = 25 * 60_000;
@@ -276,7 +279,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
   "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "pickaxe", "machete", "dice", "f_sofa",
-  "loudspeaker",
+  "loudspeaker", "mysterycase", "casekey", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember",
   // bagmand only buys his own things back (see shared/bagmand.ts)
   "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",
   "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",

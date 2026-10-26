@@ -11,6 +11,8 @@ import { startUpdateCheck } from "./updateCheck";
 import { startMaintenanceWatch } from "./maintenance";
 import { loadRole, watchMute } from "./roles";
 import { watchBroadcast, watchKick, watchNotices } from "./notices";
+import { startPetLook } from "./pets";
+import { startUnusual } from "./unusual";
 import { showWatched } from "./watched";
 import { mountModPage } from "./ui/modPage";
 import { CHATMOD_NAME } from "./shared/mod";
@@ -223,6 +225,8 @@ async function showHotel(user: User): Promise<void> {
   const stopNotices = watchNotices(p); // a warning or a message from a moderator
   const stopKick = watchKick(p, () => void doLogout()); // a moderator threw you out
   const stopBroadcast = watchBroadcast(); // somebody used the loudspeaker
+  const stopPetLook = startPetLook(p.uid); // the pet that walks with you (rooms tell everybody)
+  const stopUnusual = startUnusual(p.uid); // the unusual you wear
   // one window per account: a second window can't get in while the first is open (two windows could drop the same item twice)
   if (await otherWindowOpen(p.uid)) {
     stopShop(); stopDesigns(); stopFurni();
@@ -332,6 +336,8 @@ async function showHotel(user: User): Promise<void> {
     stopNotices();
     stopKick();
     stopBroadcast();
+    stopPetLook();
+    stopUnusual();
     stopPriceBook();
     stopSixtyLook?.();
     stopIdle();

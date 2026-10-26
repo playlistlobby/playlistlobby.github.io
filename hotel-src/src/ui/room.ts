@@ -23,11 +23,21 @@ import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fill
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
-import { BAGMAN, LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
+import { BAGMAN, HIDEOUT_LANDLORD, LANDLORD, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
 import { openBagmandShop, BagmandShopApi } from "./bagmandShop";
+import { openHideoutComputer, ComputerApi } from "./hideoutComputer";
+import { openHideoutLandlord } from "./hideoutLandlord";
+import { openHideoutDoor } from "./hideoutDoor";
+import { openPetShop } from "./petShop";
+import { openCaseWindow } from "./caseOpen";
+import { onMyUnusual, unusualNow, wearUnusual } from "../unusual";
+import { unusualOf } from "../shared/cases";
+import { drawPet, onMyPetLook, petLookNow, petSheet } from "../pets";
+import { hideoutBoxStore, hideoutBoxTake } from "../hideout";
 import { openLoudspeaker } from "./loudspeaker";
 import { awayMessage, visitNow, watchBagmand } from "../bagmand";
 import { HORSE_HAT } from "../shared/bagmand";
+import { hideoutRole, lovePercent } from "../shared/hideout";
 import { deadlyStab as deadlyStabCall } from "../db";
 import { openSixtyShop, SixtyShopApi } from "./sixtyShop";
 import { logAction } from "../logger";
@@ -68,6 +78,9 @@ import {
   isCdKind,
   isBodyBag,
   isPublicRoom,
+  isHideoutId,
+  COMPUTER_ID,
+  hideoutRoomId,
   SHOP_ID,
   MINES_ID,
   minesDef,
@@ -263,6 +276,10 @@ interface Player {
   /** how they look until lookUntil (bagmand's weeds and drugs: see LOOK_KINDS in shared/bagmand.ts; the rules check it against what the server wrote) */
   look?: string;
   lookUntil?: number;
+  /** the pet that walks with them, "<type>:<palette>" (the rules check it against what the server wrote) */
+  pet?: string;
+  /** the unusual they wear (the rules check it against what the server wrote) */
+  un?: string;
   /** the admin playing 6ixty: clicking them talks to 6ixty instead of offering the knife */
   npc?: boolean;
   /** you walk at a fifth of your speed until then (performance.now(); fentanyl: only ever set on yourself) */
@@ -294,6 +311,7 @@ type Pending =
   | { type: "sixty"; since: number; lastTry: number; auto?: boolean }
   | { type: "landlord"; since: number; lastTry: number }
   | { type: "bagman"; since: number; lastTry: number }
+  | { type: "hlandlord"; since: number; lastTry: number }
   | { type: "minessixty"; since: number; lastTry: number }
   | { type: "pickup"; key: string; since: number; lastTry: number }
   | { type: "arcade" | "cd" | "bag" | "dumpster" | "use" | "bed" | "mine" | "craft"; fid: string; since: number; lastTry: number; slot?: number | null };
@@ -379,10 +397,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let drops = new Map<string, Drop>();
   let dropConfirmApi: DropConfirmApi | null = null;
   const isOwnRoom = roomId === ownRoomId(me.uid);
+  /** a hideout (a shared room: its members use its pots, mixers, sink, box and computer, and build in it when they may) */
+  const isHideoutRoom = isHideoutId(roomId);
+  /** a place that is yours to use: your own room, or a hideout you are in */
+  const isHome = isOwnRoom || isHideoutRoom;
   /** your own room, or (an account with the decorator power) any player's room: furniture and posters can be put down here */
   const adminLobbyEdit = me.isAdmin && roomId === LOBBY_ID; // the admin furnishes the basement from the same menu, with every piece there is
   const adminOwnEdit = me.isAdmin && isOwnRoom; // the admin has every piece there is in his own room too (and the landlord's window)
-  const mayFurnish = isOwnRoom || (me.decorator && roomId.startsWith("u_")) || adminLobbyEdit;
+  const mayFurnish = isHome || (me.decorator && roomId.startsWith("u_")) || adminLobbyEdit;
   /** the private copy of the basement a new player does the introduction in; it looks and works like the basement, but nobody else comes in */
   const isTut = roomId === tutRoomId(me.uid);
   const isBasement = roomId === LOBBY_ID || isTut;
@@ -489,6 +511,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function openIdeas(): void { if (!ideasApi) ideasApi = openIdeasBoard(stage, ctx, () => { ideasApi = null; }); }
   let landlordApi: LandlordApi | null = null;
   let bagmandApi: BagmandShopApi | null = null;
+  let computerApi: ComputerApi | null = null;
+  let petShopApi: { close(): void } | null = null;
+  let caseApi: { close(): void } | null = null;
+  /** the pets walking about: where each one is (tiles), which way it faces, and since when it has been standing still */
+  const petStates = new Map<string, { look: string; x: number; y: number; dir: number; moving: boolean; t: number; still: number }>();
+  let hideoutDoorApi: { close(): void } | null = null;
+  let hlandlordApi: { close(): void } | null = null;
+  let hlandlordBubble: Bubble | null = null;
+  let hlandlordLast: HTMLCanvasElement | undefined;
+  /** the love booths: what look each was in last, and when it changed (a new look = a new test for the couple sitting on it) */
+  const loveSeen = new Map<string, { st: number; at: number }>();
   let bagmanBubble: Bubble | null = null;
   let bagmanLast: HTMLCanvasElement | undefined;
   /** the visit that is on now (bagmand's hour in the basement), looked at once a second: working it out takes a moment */
@@ -502,7 +535,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let furnishOn = false;
   let furnishUi: FurnishApi | null = null;
   let fzSel: string | null = null;
-  let fzPlacing: { kind: string; source: "inv" | "storage" | "catalog"; slot?: number } | null = null;
+  let fzPlacing: { kind: string; source: "inv" | "storage" | "catalog" | "box"; slot?: number; owner?: string } | null = null;
   let fzDir = 6;
   let fzDrag: { id: string; kind: string; grab: Pt; moved: boolean; spot: Spot } | null = null;
   let furniBoxes: Array<{ id: string; box: Box; depth: number }> = [];
@@ -530,7 +563,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const zzzAt = new Map<string, number>();
 
   /** you can edit your own room; the admin can also edit the public room's extra furniture */
-  const isOwner = () => def.ownerUid === me.uid || (def.id === LOBBY_ID && me.isAdmin);
+  /** what you may do in this hideout (the owner builds always; a member when the owner allows it and building is not locked) */
+  const hideoutCan = () => hideoutRole({ owner: def.ownerUid ?? undefined, lock: def.hideout?.lock, members: def.hideout?.members }, me.uid, me.isAdmin);
+  const isOwner = () => def.ownerUid === me.uid || (def.id === LOBBY_ID && me.isAdmin) || (isHideoutRoom && hideoutCan().canBuild);
 
   // ---- DOM ---------------------------------------------------------------------
   const canvas = h("canvas", { class: "room-canvas" });
@@ -606,7 +641,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return false;
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what, slot) => { if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
     onCombine: (a, b) => { void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
@@ -666,6 +701,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
+    else if (hoverObj && hoverObj.kind === "petbasket") text = "Pet merchant: buy a pet";
+    else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
+    else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
+    else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
     else if (hoverObj && hoverObj.kind === "bagman") text = "bagmand: poppy seeds, blue weed. He buys opium and what is mixed from it";
     else if (hoverObj && hoverObj.kind === "bed") text = mine()?.lying ? "Your bed: get up" : "Your bed: lie down";
     else if (hoverObj && (hoverObj.kind === "boombox" || hoverObj.kind === "f_boombox")) text = "Boombox: use a CD on it";
@@ -704,6 +743,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     for (const d of def.extraDoors ?? []) blocked.add(`${d.x},0`);
     seatTiles.clear();
     if (isBasement) blocked.add(`${SIXTY.x},${SIXTY.y}`); // 6ixty stands in the basement
+    if (roomId === LOBBY_ID) blocked.add(`${HIDEOUT_LANDLORD.x},${HIDEOUT_LANDLORD.y}`); // the hideout landlord, beside the hideout door
     if (roomId === LOBBY_ID) blocked.add(`${BAGMAN.x},${BAGMAN.y}`); // and bagmand next to the roulette table, in his hours (the tile stays blocked when he is away)
     if (isMines) blocked.add(`${MINES_SIXTY.x},${MINES_SIXTY.y}`); // and in the mines
     if (isShop) for (let x = LANDLORD.x; x < def.w; x++) blocked.add(`${x},0`); // the landlord and the space behind his counter
@@ -966,7 +1006,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hdoor" || obj.kind === "petbasket") startBag(obj.id);
+      else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "bagman") startBagman();
@@ -1032,6 +1073,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "minesixty") opts.push({ label: "Talk", target: SIXTY.name, action: () => startMinesSixty() });
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
+    if (obj?.kind === "petbasket") opts.push({ label: "Browse pets", target: "Pet merchant", action: () => startBag(obj.id) });
+    if (obj?.kind === "hcomputer") opts.push({ label: "Use", target: "Computer", action: () => startBag(obj.id) });
+    if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
+    if (obj?.kind === "hlandlord") opts.push({ label: "Talk", target: HIDEOUT_LANDLORD.name, action: () => startHideoutLandlord() });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
     if (isCdKind(obj?.kind)) {
       if (item?.useOnObject === "cdplayer") opts.push({ label: `Use ${item.name} →`, target: FURNI_KINDS[obj!.kind!].label, action: () => startCd(obj!.id) });
@@ -1163,6 +1208,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   };
   const fzPiece = () => (fzSel ? def.furni.find((f) => f.id === fzSel) ?? null : null);
   const refreshFz = () => { furnishUi?.refresh(); panel.refresh(); };
+  defListeners.add(() => furnishUi?.refresh()); // (the hideout box changes under you when somebody else uses it)
 
   function enterFurnish(): void {
     if (!mayFurnish || furnishOn) return;
@@ -1181,10 +1227,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       turn: fzTurn,
       ...(adminLobbyEdit || adminOwnEdit ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter").sort((a, b) => FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}),
       store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (/^lobby\d+$/.test(f.id) ? Promise.reject(new Error("That one is built into the basement: move it instead.")) : isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one can't be removed.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
-      startPlacing: (source, kind, slot) => { fzPlacing = { kind, source, slot }; fzDir = defaultDir(kind); fzSel = null; if (source === "inv" && slot !== undefined) { selectedSlot = slot; panel.setSelected(slot); } else if (selectedSlot !== null) clearSelection(); refreshFz(); },
+      startPlacing: (source, kind, slot, owner) => { fzPlacing = { kind, source, slot, owner }; fzDir = defaultDir(kind); fzSel = null; if (source === "inv" && slot !== undefined) { selectedSlot = slot; panel.setSelected(slot); } else if (selectedSlot !== null) clearSelection(); refreshFz(); },
       cancelPlacing: () => { fzPlacing = null; clearSelection(); refreshFz(); },
       storeFromInventory: (slot, qty) => void storeFromInventory(me, slot, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),
       takeFromStorage: (kind, qty) => void takeFromStorage(me, kind, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),
+      ...(isHideoutRoom ? { hideout: {
+        box: () => def.hideout?.box ?? {},
+        names: () => ({ ...(def.ownerUid ? { [def.ownerUid]: def.ownerName ?? "owner" } : {}), ...Object.fromEntries(Object.entries(def.hideout?.members ?? {}).map(([u, m]) => [u, m.name])) }),
+        note: () => (hideoutCan().canBuild ? null : def.hideout?.lock ? "Building is locked by the owner." : "The owner hasn't given you building rights."),
+        cap: () => def.hideout?.cap ?? MAX_FURNI,
+        boxStore: (kind, qty, slot) => void hideoutBoxStore(me, def.id, kind, qty, slot !== undefined ? { slot } : undefined).then(refreshFz, (err) => say((err as Error).message, "warn")),
+        boxTake: (kind, qty) => void hideoutBoxTake(me, def.id, kind, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),
+      } } : {}),
     });
   }
 
@@ -1219,11 +1273,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (isFixedLobbyPiece(f.id)) throw new Error("That one can't be moved.");
     await update(ref(db, `lobby/furni/${f.id}`), { x: spot.x, y: spot.y, dir: spot.dir || null });
   }
-  async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage" | "catalog"; slot?: number }, dir: number): Promise<void> {
+  async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage" | "catalog" | "box"; slot?: number; owner?: string }, dir: number): Promise<void> {
     const o = originFor(what.kind, dir, t);
     // a wall piece (a poster) snaps to the nearest wall instead of standing where you tapped
     const spot: Spot = FURNI_KINDS[what.kind].wall ? wallSpot(def, what.kind, t, dir) : { x: o.x, y: o.y, dir: FURNI_KINDS[what.kind].rotatable ? dir : 0 };
-    if (placedCount(def) >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
+    const cap = def.hideout?.cap ?? MAX_FURNI;
+    if (placedCount(def) >= cap) return say(`That's the limit: ${cap} pieces in this room.`, "warn");
     const why = whyNot(def, what.kind, spot, null, othersOccupy());
     if (why) return say(why, "warn");
     // a poster: first the menu where the picture is chosen and sized (cancelling leaves the poster in your hand)
@@ -1235,6 +1290,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     try {
       if (what.source === "catalog") await (adminLobbyEdit ? placeFurni(def.id, what.kind, spot.x, spot.y, spot.dir) : placeFromCatalog(me, def.id, what.kind, spot));
+      else if (what.source === "box") await call(me, "furniPlace", { room: def.id, source: "box", kind: what.kind, owner: what.owner, x: spot.x, y: spot.y, dir: spot.dir });
       else if (what.source === "inv") await placeFromInventory(me, def.id, what.slot!, spot, img);
       else await placeFromStorage(me, def.id, what.kind, spot, img);
       playSfx("select", 0.4);
@@ -1384,6 +1440,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       chud: typeof v.chud === "number" ? v.chud : undefined,
       spin: typeof v.spin === "number" ? v.spin : undefined,
       look: typeof v.look === "string" ? v.look : undefined,
+      pet: typeof v.pet === "string" ? v.pet : undefined,
+      un: typeof v.un === "string" ? v.un : undefined,
       lookUntil: typeof v.lookUntil === "number" ? v.lookUntil : undefined,
       nc: typeof v.nc === "string" && /^#[0-9a-fA-F]{6}$/.test(v.nc) ? v.nc : undefined,
       npc: v.sixty === true,
@@ -1534,6 +1592,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     craftApi?.close();
     landlordApi?.close();
     bagmandApi?.close();
+    computerApi?.close();
+    petShopApi?.close();
+    caseApi?.close();
+    hideoutDoorApi?.close();
+    hlandlordApi?.close();
     sixtyShop?.close();
   }
 
@@ -1547,9 +1610,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const prog = plantProgress(pl);
     const left = Math.max(0, growMsOf(pl.crop) * (1 - prog));
     const mins = Math.max(1, Math.ceil(left / 60000));
-    const water = plantWatered(pl) ? "watered" : plantThirsty(pl) ? "THIRSTY: water it now!" : `water bar ${Math.round(plantWater(pl) * 100)}%`;
+    const water = pl.crop === "poppy" ? "" : plantWatered(pl) ? "watered" : plantThirsty(pl) ? "THIRSTY: water it now!" : `water bar ${Math.round(plantWater(pl) * 100)}%`;
     const left2 = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
-    return prog >= 1 ? `It's ready to pick!${plantWatered(pl) ? "" : " It looks a bit sad."}` : `Growing: ${Math.round(prog * 100)}% (about ${left2} to go). ${water[0].toUpperCase()}${water.slice(1)}.`;
+    return prog >= 1 ? `It's ready to pick!${plantWatered(pl) ? "" : " It looks a bit sad."}` : `Growing: ${Math.round(prog * 100)}% (about ${left2} to go).${water ? ` ${water[0].toUpperCase()}${water.slice(1)}.` : ""}`;
   };
 
   /** Next to the sink or a growing kit: the sink fills a can; a kit gets a seed, water, or gets picked. */
@@ -1561,7 +1624,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (f.kind === "sink") {
         const cs = held?.item === "wateringcan" ? slot! : findSlot(me.inventory, "wateringcan");
         if (cs < 0 || cs === null) return say(findSlot(me.inventory, "wateringcan_full") >= 0 ? "Your watering can is already full." : "You have nowhere to put the water.", "warn");
-        await fillCan(me, cs);
+        await fillCan(me, cs, roomId);
         try { localStorage.setItem(`6ixplanet.sinkHint.${me.uid}`, String(sinkFills() + 1)); } catch { /* private mode */ }
         panel.refresh();
         tutorialGuide();
@@ -1569,19 +1632,20 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         return say("You fill the watering can.");
       }
       if (!k?.plant) return;
-      if (!isOwnRoom) return say("That's not your plant.", "warn");
+      if (!isHome) return say("That's not your plant.", "warn");
       if (!f.plant) {
         const isSeed = (n: string | undefined): boolean => n === "weedseed" || n === "shroomspore" || n === "poppyseed";
         const ss = isSeed(held?.item) ? slot : null; // (nothing is planted unless you hold a seed: tap the seed first, then the pot)
         if (ss === null) return say("An empty growing kit. Tap a weed seed, shroom spores or a poppy seed in your pocket first, then tap the kit to plant it.", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
-        return say(held?.item === "poppyseed" ? "You press the little black seed into the soil. A poppy takes 4 hours, and it needs one watering: water it any time." : me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");
+        return say(held?.item === "poppyseed" ? "You press the little black seed into the soil. A poppy takes 4 hours and needs no water." : me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");
       }
       const prog = plantProgress(f.plant);
       const canSlot = held?.item === "wateringcan_full" ? slot! : findSlot(me.inventory, "wateringcan_full");
       if (held?.item === "wateringcan_full" || (prog < 1 && canSlot >= 0 && !plantWatered(f.plant))) {
         if (canSlot < 0 || canSlot === null) return say("You need a full watering can.", "warn");
+        if (f.plant.crop === "poppy") return say("A poppy doesn't need water.");
         if (plantWatered(f.plant)) return say("It's already been watered. It'll grow fine now.");
         await waterPlant(me, def.id, f.id, f.plant, canSlot);
         panel.refresh();
@@ -1594,9 +1658,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         playSfx("give", 0.6);
         if (r.seed) window.setTimeout(() => { if (!disposed && r.seed) giftPop(`+1 ${itemDef(r.seed)?.name ?? r.seed}`, itemImg(r.seed)); }, 700);
         if (r.crop === "poppy") {
-          giftPop(`+1 ${r.ass ? "Weak opium" : "Opium"}`, itemImg("opium"));
-          logAction(me, "room", `picked ${r.ass ? "weak " : ""}opium`);
-          return say(r.ass ? "You cut the pod. Weak opium: it never got its water." : "You cut the pod and scrape off the milk. Opium. Bagmand will want this.");
+          giftPop("+1 Opium", itemImg("opium"));
+          logAction(me, "room", "picked opium");
+          return say("You cut the pod and scrape off the milk. Opium. Bagmand will want this.");
         }
         if (r.crop === "shroom") {
           giftPop(`+${r.qty ?? 1} ${r.ass ? "Weak shroom" : "Shroom"}`, itemImg(r.ass ? "weakshroom" : "shroom"));
@@ -1817,6 +1881,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       return;
     }
+    if (pending.type === "hlandlord") {
+      const goal = { x: HIDEOUT_LANDLORD.x, y: HIDEOUT_LANDLORD.y };
+      const r = approach(p, goal, now, pending);
+      if (r === "unreachable") { pending = null; return say("You can't get to him.", "warn"); }
+      if (r === "arrived") {
+        pending = null;
+        p.dir = dirOf(currentTile(p), goal);
+        update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
+        hlandlordBubble = { text: HIDEOUT_LANDLORD.line, until: performance.now() + 4200 };
+        if (!hlandlordApi) hlandlordApi = openHideoutLandlord(stage, ctx, () => panel.refresh(), () => { hlandlordApi = null; });
+      }
+      return;
+    }
     if (pending.type === "bagman") {
       if (bagVisit === null) { pending = null; return say("Bagmand has left.", "warn"); }
       const goal = { x: BAGMAN.x, y: BAGMAN.y };
@@ -1887,6 +1964,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "stash") { if (!stashApi) stashApi = openStashBox(stage, ctx, () => panel.refresh(), () => { stashApi = null; }); }
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "ideas") openIdeas();
+        else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
+        else if (opens === "computer") { if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
+        else if (opens === "hideouts") { if (!hideoutDoorApi) hideoutDoorApi = openHideoutDoor(stage, ctx, () => { hideoutDoorApi = null; }); }
         else if (opens === "ducky") openDucky();
         else if (opens === "raffle") openRaffle();
         else if (opens === "records") { if (!recordApi) recordApi = openRecordShop(stage, ctx, () => panel.refresh(), () => { recordApi = null; }); }
@@ -1894,7 +1974,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (mixerApi) { /* already open */ }
           else if (f.mix && f.mix.doneAt <= serverNow()) { // a finished batch: one tap and it's in your pocket (no window)
             const item = f.mix.item ? itemDef(f.mix.item)?.name : undefined;
-            void call<{ item?: string; qty?: number }>(me, "mixCollect", { fid: f.id }).then((r) => {
+            void call<{ item?: string; qty?: number }>(me, "mixCollect", { fid: f.id, ...(isHideoutRoom ? { room: roomId } : {}) }).then((r) => {
               playSfx("give", 0.5);
               panel.refresh();
               say(`You collect ${r.qty ?? 1} ${itemDef(r.item ?? "")?.name ?? item ?? "of it"} from the mixer.`);
@@ -2297,6 +2377,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function openLoudspeakerWindow(): void {
     if (loudspeakerApi) return;
     loudspeakerApi = openLoudspeaker(stage, ctx, () => { loudspeakerApi = null; });
+  }
+
+  function startHideoutLandlord(): void {
+    closeToolWindows();
+    clearSelection();
+    pending = { type: "hlandlord", since: performance.now(), lastTry: 0 };
   }
 
   function startBagman(): void {
@@ -2880,7 +2966,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : { x: back ? back.x : def.doorX, y: 1 };
+    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 11, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -2959,7 +3045,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** Someone else's room whose owner is offline shows the owner asleep in the bed (you can still stab them). Not stored anywhere. */
   function syncSleeper(): void {
     const owner = def.ownerUid;
-    if (!started || disposed || !owner || owner === me.uid || isPublicRoom(roomId)) return;
+    if (!started || disposed || !owner || owner === me.uid || isPublicRoom(roomId) || isHideoutRoom) return;
     const cur = players.get(owner);
     const wanted = !social.isOnline(owner) && !(cur && !cur.sleeper);
     if (!wanted) {
@@ -3024,6 +3110,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (burning) { mineP.smoke = burning; mineP.smokeKind = SMOKABLE[burningItem!.item].kind; }
     void onDisconnect(myRef).remove();
     set(myRef, { name: shownName, figure: shownFigure(), ...(me.nameColor ? { nc: me.nameColor } : {}), x: sleepingIn ? headTile().x : spawn.x, y: sleepingIn ? headTile().y : spawn.y, dir: startDir, ts: serverTimestamp(), ...(sleepingIn ? { bed: true } : {}), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.spin ? { spin: mineP.spin } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
+    { const un0 = unusualNow(); if (un0) { mineP.un = un0; void update(myRef, { un: un0 }).catch(() => undefined); } }
+    unsubs.push(onMyUnusual((id) => { const mp = mine(); if (mp) mp.un = id ?? undefined; if (started) void update(myRef, { un: id ?? null }).catch(() => undefined); }));
+    { const pl0 = petLookNow(); if (pl0) { mineP.pet = pl0; void update(myRef, { pet: pl0 }).catch(() => undefined); } }
+    unsubs.push(onMyPetLook((look) => { const mp = mine(); if (mp) mp.pet = look ?? undefined; if (started) void update(myRef, { pet: look ?? null }).catch(() => undefined); }));
     if (me.lookUntil > serverNow() && me.lookKind) { mineP.look = me.lookKind; mineP.lookUntil = me.lookUntil; void update(myRef, { look: me.lookKind, lookUntil: me.lookUntil }).catch(() => undefined); }
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
@@ -3150,6 +3240,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.chud = typeof v.chud === "number" ? v.chud : undefined;
         p.spin = typeof v.spin === "number" ? v.spin : undefined;
         p.look = typeof v.look === "string" ? v.look : undefined;
+        p.pet = typeof v.pet === "string" ? v.pet : undefined;
+        p.un = typeof v.un === "string" ? v.un : undefined;
         p.lookUntil = typeof v.lookUntil === "number" ? v.lookUntil : undefined;
         p.nc = typeof v.nc === "string" && /^#[0-9a-fA-F]{6}$/.test(v.nc) ? v.nc : undefined;
         p.npc = v.sixty === true;
@@ -3215,7 +3307,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const chatSweep = window.setInterval(sweepChat, 20_000);
     unsubs.push(() => window.clearInterval(chatSweep));
     // the lobby has a CD player; its state is shared with everyone in the room
-    if (roomId === LOBBY_ID || roomId.startsWith("u_")) unsubs.push(watchCdPlayer(roomId, onCdState)); // the CD player in the basement, or the boombox in a player's room
+    if (roomId === LOBBY_ID || roomId.startsWith("u_") || isHideoutRoom) unsubs.push(watchCdPlayer(roomId, onCdState)); // the CD player in the basement, or the boombox in a player's room
     renderOnline();
     syncSleeper();
   }
@@ -3329,7 +3421,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** how this player looks right now (bagmand's weeds and drugs), or null */
   const lookOf = (p: Player): string | null => (p.look && p.lookUntil && serverNow() < p.lookUntil ? p.look : null);
   /** the figure with the horse's head on while the horse look lasts (the hat is a design that ships with the game but is not for sale) */
-  const withLook = (figure: string, p: Player): string => (lookOf(p) === "horse" ? [...figure.split(".").filter((x) => !x.startsWith("ha-")), HORSE_HAT].join(".") : figure);
+  const withLook = (figure: string, p: Player): string => {
+    if (lookOf(p) === "horse") return [...figure.split(".").filter((x) => !x.startsWith("ha-")), HORSE_HAT].join(".");
+    const un = p.un ? unusualOf(p.un) : undefined; // an unusual replaces whatever is on the head
+    return un ? [...figure.split(".").filter((x) => !x.startsWith("ha-") && !x.startsWith("he-")), un.part].join(".") : figure;
+  };
 
   function frameFor(p: Player, now: number): { opts: Parameters<typeof getCached>[0]; yOff: number } {
     const moving = isMoving(p, now);
@@ -3467,6 +3563,66 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (p.cup && sn < p.cup) return { kind: "lean", glow: `rgba(150,90,230,${(0.6 + 0.25 * beat).toFixed(2)})`, blur: (9 + 7 * beat) * scale };
     return null;
+  }
+  /** An unusual's particles around the head: (fx, fy) = the player's feet. Each of the eight has its own. */
+  function drawUnusualFx(kind: string, color: string, fx: number, fy: number, now: number): void {
+    const s = scale, hx = fx, hy = fy - 58 * s;
+    const ph = (k: number, speed: number, i: number): number => (now / speed + i / k) % 1;
+    g.save();
+    if (kind === "flames") {
+      for (let i = 0; i < 12; i++) {
+        const t = ph(12, 900, i);
+        g.globalAlpha = Math.min(1, (1 - t) * 1.4);
+        pxBlob(hx + Math.sin(t * 6 + i * 2.3) * 9 * s, hy + 6 * s - t * 30 * s, (3.4 - 2.2 * t) * s, t < 0.35 ? "#ffe45c" : t < 0.7 ? "#ff8a1e" : "#d63a10");
+      }
+    } else if (kind === "stars") {
+      for (let i = 0; i < 9; i++) {
+        const a = now / 700 + (i / 9) * Math.PI * 2;
+        g.globalAlpha = 0.5 + 0.5 * Math.sin(now / 90 + i * 1.9);
+        pxStar(hx + Math.cos(a) * 17 * s, hy - 4 * s + Math.sin(a) * 6 * s, i % 3 === 0 ? 2 : 1, i % 2 ? "#ffd23a" : "#fff6c9");
+      }
+    } else if (kind === "hearts") {
+      for (let i = 0; i < 6; i++) {
+        const t = ph(6, 2300, i);
+        g.globalAlpha = Math.min(1, t * 6) * (1 - t * t);
+        pxHeart(hx + Math.sin(t * 7 + i * 2.1) * 13 * s, hy - 4 * s - t * 38 * s, i % 3 === 0 ? 1.4 : 1, i % 2 ? "#ff5c9a" : "#ff9ec4", "#fff");
+      }
+    } else if (kind === "snow") {
+      for (let i = 0; i < 14; i++) {
+        const t = ph(14, 2600, i);
+        g.globalAlpha = Math.min(1, t * 8) * (1 - t * 0.5);
+        pxBlob(hx + Math.sin(t * 5 + i * 1.7) * 19 * s, hy - 18 * s + t * 56 * s, (1 + (i % 3) * 0.5) * s, "#ffffff");
+      }
+    } else if (kind === "bubbles") {
+      for (let i = 0; i < 8; i++) {
+        const t = ph(8, 2400, i);
+        g.globalAlpha = 0.85 * (1 - t);
+        g.strokeStyle = "#bff3ff"; g.lineWidth = Math.max(1, 1.2 * s);
+        g.beginPath(); g.arc(hx + Math.sin(t * 5 + i * 2.4) * 14 * s, hy + 4 * s - t * 36 * s, (2 + (i % 3) * 1.4 + t * 2) * s, 0, Math.PI * 2); g.stroke();
+      }
+    } else if (kind === "bolts") {
+      const seed = Math.floor(now / 110);
+      for (let b = 0; b < 3; b++) {
+        let x = hx + (b - 1) * 12 * s, y = hy - 12 * s;
+        g.globalAlpha = 0.55 + 0.45 * ((Math.sin(seed * 12.9898 + b * 78.233) + 1) / 2);
+        g.strokeStyle = b % 2 ? "#ffffff" : "#7fb6ff"; g.lineWidth = Math.max(1.2, 1.6 * s);
+        g.beginPath(); g.moveTo(x, y);
+        for (let k = 1; k <= 4; k++) { x += (Math.sin(seed * 3.1 + b * 5 + k * 9.7) * 6) * s; y -= 6 * s; g.lineTo(x, y); }
+        g.stroke();
+      }
+    } else if (kind === "rainbow") {
+      const cols = ["#ff3b3b", "#ff9f1c", "#ffe14d", "#46d369", "#33c7ff", "#6a7bff"];
+      g.lineWidth = Math.max(1.5, 2.2 * s);
+      cols.forEach((c, i) => { g.globalAlpha = 0.75 + 0.2 * Math.sin(now / 300 + i); g.strokeStyle = c; g.beginPath(); g.arc(hx, hy + 6 * s, (14 + i * 2.1) * s, Math.PI * 1.08, Math.PI * 1.92); g.stroke(); });
+    } else { // embers
+      for (let i = 0; i < 12; i++) {
+        const t = ph(12, 1800, i);
+        g.globalAlpha = Math.min(1, t * 5) * (1 - t);
+        pxBlob(hx + Math.sin(t * 4 + i * 3.1) * 15 * s, hy + 4 * s - t * 34 * s, (1.3 + (i % 3) * 0.6) * s, i % 3 === 0 ? "#ffcf4a" : i % 3 === 1 ? "#ff6a1f" : "#a8230f");
+      }
+    }
+    void color;
+    g.restore();
   }
   /** A little four-point twinkle, drawn on the pixel grid. */
   function pxStar(cx: number, cy: number, arm: number, color: string): void {
@@ -3657,7 +3813,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const pot = poppyArt ? null : drawNitroSprites(g, potN, 1, 1, f.x, f.y, dir, k.nudge, toScreen, scale);
     let box = pot;
     const base = pot ?? (poppyArt ? drawNitroSpritesBox(poppyArt, f, dir, { x: 0, y: 0 }) : null);
-    if (pl && base && isOwnRoom) {
+    if (pl && base && isHome) {
       // a planted pot glows green like the mixers glow gold, and brighter when you point at it
       const hot = !!f.id && hoverObj?.id === f.id;
       const pulse = 0.5 + 0.5 * Math.sin(now / 450);
@@ -3702,7 +3858,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.fillStyle = color; g.fillRect(cx - bw / 2, yy, bw * Math.max(0, Math.min(1, frac)), bh);
         };
         bar(y, prog, prog >= 1 ? "#9dff5a" : "#4fa93a"); // growth
-        bar(y + bh + 3 * scale, water, water > 0 ? "#4aa8e8" : "#7a2a2a"); // water
+        if (pl.crop !== "poppy") bar(y + bh + 3 * scale, water, water > 0 ? "#4aa8e8" : "#7a2a2a"); // water (a poppy needs none)
         if (prog >= 1) {
           const bounce = Math.sin(now / 260) * 2 * scale;
           g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`; g.textAlign = "center"; g.textBaseline = "bottom";
@@ -3941,7 +4097,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   async function useFurni(id: string): Promise<void> {
     const f = def.furni.find((x) => x.id === id);
     const k = f ? FURNI_KINDS[f.kind] : undefined;
-    if (!f || !k?.states || k.states.length < 2 || !def.id.startsWith("u_")) return;
+    if (!f || !k?.states || k.states.length < 2 || !(def.id.startsWith("u_") || isHideoutRoom)) return;
     try {
       const r = await useFurniState(me, def.id, id);
       if (typeof r.st === "number") f.st = r.st; // (the room's data will say the same in a moment)
@@ -4029,7 +4185,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
       const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
-      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isOwnRoom : isOwnRoom || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle")) {
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : k.opens === "raffle" ? def.furni.find((x) => x.kind === "raffletable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
@@ -4640,7 +4796,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isOwnRoom || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -4814,6 +4970,104 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
     }
 
+    if (roomId === LOBBY_ID) {
+      // the hideout landlord: not a player, only drawn here, beside the hideout door at the far end of the basement. A yellow glow like the other landlord
+      const talking = !!hlandlordBubble && hlandlordBubble.until > now;
+      const hopts = { figure: HIDEOUT_LANDLORD.figure, dir: HIDEOUT_LANDLORD.dir, headDir: HIDEOUT_LANDLORD.dir, actions: ["std"], gesture: talking ? "spk" : "std", frame: talking ? Math.floor(now / 140) % 2 : 0 };
+      let himg = getCached(hopts);
+      if (!himg) { renderAvatar(hopts); himg = hlandlordLast; } else hlandlordLast = himg;
+      const hw = iso(HIDEOUT_LANDLORD.x, HIDEOUT_LANDLORD.y);
+      const hf = toScreen({ x: hw.x, y: hw.y + TILE_H / 2 });
+      objs.push({ id: HIDEOUT_LANDLORD.id, kind: "hlandlord", x0: hf.x - 22 * scale, x1: hf.x + 22 * scale, y0: hf.y - FEET_Y * scale, y1: hf.y + 8 * scale, depth: HIDEOUT_LANDLORD.x + HIDEOUT_LANDLORD.y });
+      const hHot = hoverObj?.kind === "hlandlord" || pending?.type === "hlandlord";
+      const hpulse = 0.5 + 0.5 * Math.sin(now / 450);
+      list.push({
+        depth: HIDEOUT_LANDLORD.x + HIDEOUT_LANDLORD.y + 0.5,
+        draw: () => {
+          const cx = hf.x, cy = hf.y - 48 * scale, r = 54 * scale * (hHot ? 1.2 : 1);
+          g.save();
+          const halo = g.createRadialGradient(cx, cy, 3 * scale, cx, cy, r);
+          const a = 0.12 + 0.05 * hpulse + (hHot ? 0.14 : 0);
+          halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
+          halo.addColorStop(0.55, `rgba(255,200,40,${(a * 0.6).toFixed(2)})`);
+          halo.addColorStop(1, "rgba(255,200,40,0)");
+          g.fillStyle = halo;
+          g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+          g.fillStyle = "rgba(0,0,0,0.18)";
+          g.beginPath(); g.ellipse(hf.x, hf.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); g.fill();
+          g.restore();
+          if (himg) {
+            g.drawImage(himg, hf.x - (32 + padOf(himg).x) * scale, hf.y - (FEET_Y + padOf(himg).y) * scale, himg.width * scale, himg.height * scale);
+            if (hHot) {
+              g.save(); g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.14 + 0.05 * hpulse;
+              g.drawImage(himg, hf.x - (32 + padOf(himg).x) * scale, hf.y - (FEET_Y + padOf(himg).y) * scale, himg.width * scale, himg.height * scale);
+              g.restore();
+            }
+          }
+        },
+      });
+      if (hlandlordBubble && hlandlordBubble.until > now) {
+        const left = hlandlordBubble.until - now;
+        const hb = hlandlordBubble;
+        bubbles.push(() => drawBubble(hb.text, HIDEOUT_LANDLORD.name, hf.x, hf.y - (FEET_Y + 4) * scale, left < 800 ? left / 800 : 1));
+      }
+    }
+
+    // the love booth: two players sitting on it get a verdict (a percentage over the pair) each time somebody taps it to change its look
+    for (const f of def.furni) {
+      if (f.kind !== "f_randomizer") continue;
+      const st = f.st ?? 0;
+      const seen = loveSeen.get(f.id);
+      if (!seen) loveSeen.set(f.id, { st, at: -1e9 });
+      else if (seen.st !== st) { seen.st = st; seen.at = now; }
+      const ls = loveSeen.get(f.id)!;
+      if (now - ls.at > 8000) continue;
+      const fp = footprint(f.kind, f.dir);
+      const seated = [...players.values()].filter((q) => { const t = currentTile(q); return q.sit && !q.sleeper && t.x >= f.x && t.x < f.x + fp.w && t.y >= f.y && t.y < f.y + fp.h; })
+        .sort((a, b) => currentTile(a).x + currentTile(a).y - (currentTile(b).x + currentTile(b).y) || a.uid.localeCompare(b.uid));
+      for (let i = 0; i + 1 < seated.length; i += 2) {
+        const a = seated[i], b = seated[i + 1];
+        const fa = feetOf(a, now), fb = feetOf(b, now);
+        const pct = lovePercent(a.uid, b.uid, st);
+        const left = 8000 - (now - ls.at);
+        bubbles.push(() => drawBubble(`💘 ${pct}%`, `${a.name} + ${b.name}`, (fa.x + fb.x) / 2, Math.min(fa.y, fb.y) - (FEET_Y + 26 + Math.sin(now / 260) * 3) * scale, left < 800 ? left / 800 : 1));
+      }
+    }
+
+    // pets: each one walks behind its owner (worked out here, the same for everybody who sees it: all it needs is the owner's position and `pet` in their presence)
+    for (const p of players.values()) {
+      if (!p.pet || p.sleeper || p.lying) { petStates.delete(p.uid); continue; }
+      const [type, palText] = p.pet.split(":");
+      const sheet = petSheet(type, Number(palText) || 0);
+      if (!sheet) continue;
+      const own = posOf(p, now);
+      let st = petStates.get(p.uid);
+      if (!st || st.look !== p.pet) { st = { look: p.pet, x: Math.min(def.w - 1, own.x + 1), y: Math.min(def.h - 1, own.y + 1), dir: 2, moving: false, t: now, still: now }; petStates.set(p.uid, st); }
+      const dt = Math.min(0.12, (now - st.t) / 1000);
+      st.t = now;
+      const dx = own.x - st.x, dy = own.y - st.y, dist = Math.hypot(dx, dy);
+      if (dist > 8) { st.x = own.x; st.y = own.y; st.moving = false; }
+      else if (dist > 1.7 || (st.moving && dist > 1.2)) {
+        const speed = ((p.fast && serverNow() < p.fast ? (p.fastMult ?? 2) : 1) * 2.8 + Math.max(0, dist - 3) * 1.2) * dt;
+        st.x += (dx / dist) * Math.min(speed, dist); st.y += (dy / dist) * Math.min(speed, dist);
+        st.dir = dirOf({ x: 0, y: 0 }, { x: Math.abs(dx) > 0.25 ? dx : 0, y: Math.abs(dy) > 0.25 ? dy : 0 });
+        st.moving = true; st.still = now;
+      } else st.moving = false;
+      st.x = Math.max(0, Math.min(def.w - 1, st.x)); st.y = Math.max(0, Math.min(def.h - 1, st.y));
+      const idle = now - st.still;
+      const pose = st.moving ? "mv" : idle > 25_000 && sheet.meta.rows.lay ? "lay" : idle > 7_000 && sheet.meta.rows.sit ? "sit" : "std";
+      const ps = toScreen({ x: iso(st.x, st.y).x, y: iso(st.x, st.y).y + TILE_H / 2 });
+      const dirNow = st.dir, step = Math.floor(now / 130);
+      list.push({
+        depth: st.x + st.y + 0.45,
+        draw: () => {
+          g.fillStyle = "rgba(0,0,0,0.16)";
+          g.beginPath(); g.ellipse(ps.x, ps.y, Math.max(6, sheet.meta.w * 0.22) * scale, 3.2 * scale, 0, 0, Math.PI * 2); g.fill();
+          drawPet(g, sheet, pose, dirNow, step, ps.x, ps.y, scale);
+        },
+      });
+    }
+
     if (roomId === LOBBY_ID && bagVisit !== null) {
       // bagmand: not a player, only drawn here, next to the roulette table, and only in his hour. He glows green like the other things you can use
       const talking = !!bagmanBubble && bagmanBubble.until > now;
@@ -4981,6 +5235,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             g.drawImage(img, ax, ay, img.width * scale, img.height * scale);
             if (glowing || chemOn || aura) g.restore();
             if (aura) drawAuraParticles(aura, feet.x + lunge.x, feet.y + lunge.y + lift, now);
+            if (p.un) { const un = unusualOf(p.un); if (un) drawUnusualFx(un.effect, un.color, feet.x + lunge.x, feet.y + lunge.y + lift, now); }
             if (chemOn) { // smoke pours off you
               for (let i = 0; i < 10; i++) {
                 const t = (now / 1400 + i / 10) % 1;
@@ -5114,7 +5369,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (disposed) return;
       if (!meta) return kicked("That room doesn't exist.");
       const trespassNow = me.shroomUntil > serverNow();
-      if (!me.isAdmin && !(await canEnter(meta, me.uid, social.friendUids(), trespassNow))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
+      if (isHideoutRoom) { if (!me.isAdmin && !hideoutRole({ owner: meta.owner, members: meta.members }, me.uid).member) return kicked("You aren't in that hideout."); }
+      else if (!me.isAdmin && !(await canEnter(meta, me.uid, social.friendUids(), trespassNow))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
       if (disposed) return;
       // in on a shroom or DMT rather than by the door rules: when it wears off the door closes behind you (the database stops letting you in at that moment too)
       if (trespassNow && !me.isAdmin && !(await canEnter(meta, me.uid, social.friendUids(), false))) {
@@ -5131,6 +5387,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       unsubs.push(watchMeta(roomId, (m) => {
         if (!m) return kicked("This room was deleted.");
         applyDef(defFromMeta(roomId, m));
+        if (isHideoutRoom && !me.isAdmin && !hideoutRole({ owner: m.owner, members: m.members }, me.uid).member) { toast("You are not in that hideout any more.", "err"); ctx.navigate("room", { roomId: LOBBY_ID, from: roomId }); } // (kicked, or left)
       }, () => kicked("You can't be in that room any more.")));
     } catch {
       kicked("Couldn't open that room.");
@@ -5164,6 +5421,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     craftApi?.close();
     landlordApi?.close();
     bagmandApi?.close();
+    computerApi?.close();
+    petShopApi?.close();
+    caseApi?.close();
+    hideoutDoorApi?.close();
+    hlandlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();
     roulette?.dispose();

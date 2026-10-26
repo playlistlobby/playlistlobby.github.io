@@ -49,7 +49,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
           class: "btn primary", disabled: !done,
           onclick: async () => {
             try {
-              const r = await call<{ item?: string; qty?: number }>(me, "mixCollect", { fid });
+              const r = await call<{ item?: string; qty?: number }>(me, "mixCollect", { fid, ...(roomId.startsWith("h_") ? { room: roomId } : {}) });
               playSfx("give", 0.5);
               toast(`You collect ${r.qty ?? j.qty} ${d?.name ?? "of it"}.`);
               onCollect?.(r.item ?? j.item, r.qty ?? j.qty); // the "+2 Thing" pop-up over your head, like a harvest
@@ -105,7 +105,7 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
           onclick: async () => {
             if (first === null || second === null) return;
             try {
-              const r = await call<{ note?: string }>(me, "mix", { fid, a: first, b: second });
+              const r = await call<{ note?: string }>(me, "mix", { fid, a: first, b: second, ...(roomId.startsWith("h_") ? { room: roomId } : {}) });
               playSfx("give", 0.5);
               toast(r.note || "The mixer starts up.");
               first = null; second = null;

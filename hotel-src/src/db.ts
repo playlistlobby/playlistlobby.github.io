@@ -355,7 +355,7 @@ export async function combineSlots(p: Profile, a: number, b: number): Promise<{ 
   const r = await call<{ note?: string; gave?: string }>(p, "combine", { a, b });
   return { note: String(r.note ?? ""), gave: String(r.gave ?? "") };
 }
-export const fillCan = (p: Profile, slot: number): Promise<unknown> => call(p, "fillCan", { slot });
+export const fillCan = (p: Profile, slot: number, room?: string): Promise<unknown> => call(p, "fillCan", { slot, ...(room?.startsWith("h_") ? { room } : {}) });
 /** Lights a cigarette, joint or blunt (needs a lighter). Resolves with when it was lit (server time). */
 export async function lightItem(p: Profile, slot: number): Promise<number> {
   return Number((await call<{ litAt?: number }>(p, "light", { slot })).litAt) || serverNow();
@@ -364,10 +364,12 @@ export async function lightItem(p: Profile, slot: number): Promise<number> {
 export const finishSmoke = (p: Profile, slot: number): Promise<{ passOut?: boolean; lookKind?: string; lookMs?: number; deadly?: number; mult?: number; boostMs?: number; speedMs?: number; chemMs?: number; shroomMs?: number; chudMs?: number }> => call(p, "finishSmoke", { slot });
 
 // ---- growing weed in a growing kit ---------------------------------------------------------------------------
-export const plantSeed = (p: Profile, _roomId: string, fid: string, seedSlot: number): Promise<unknown> => call(p, "plant", { fid, slot: seedSlot });
-export const waterPlant = (p: Profile, _roomId: string, fid: string, _pl: Plant, canSlot: number): Promise<unknown> => call(p, "water", { fid, slot: canSlot });
-export async function harvestPlant(p: Profile, _roomId: string, fid: string, _pl: Plant): Promise<{ ass: boolean; crop?: string; qty?: number; seed?: string }> {
-  const r = await call<{ ass?: boolean; crop?: string; qty?: number; seed?: string }>(p, "harvest", { fid });
+/** (in a hideout the room id goes along: every member may use its pots) */
+const hideoutArg = (roomId: string): { room?: string } => (roomId.startsWith("h_") ? { room: roomId } : {});
+export const plantSeed = (p: Profile, roomId: string, fid: string, seedSlot: number): Promise<unknown> => call(p, "plant", { fid, slot: seedSlot, ...hideoutArg(roomId) });
+export const waterPlant = (p: Profile, roomId: string, fid: string, _pl: Plant, canSlot: number): Promise<unknown> => call(p, "water", { fid, slot: canSlot, ...hideoutArg(roomId) });
+export async function harvestPlant(p: Profile, roomId: string, fid: string, _pl: Plant): Promise<{ ass: boolean; crop?: string; qty?: number; seed?: string }> {
+  const r = await call<{ ass?: boolean; crop?: string; qty?: number; seed?: string }>(p, "harvest", { fid, ...hideoutArg(roomId) });
   return { ass: !!r.ass, crop: r.crop, qty: r.qty, seed: r.seed };
 }
 

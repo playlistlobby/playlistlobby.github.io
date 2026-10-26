@@ -1,0 +1,246 @@
+// Hideout tests: buying, sizes and colours, invites, build rights and the lock, the shared box, pots and mixers for every member, orders, kicks, rules
+//   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: npm test (server/)
+import { createHmac } from "node:crypto";
+const DB = "http://127.0.0.1:9000";
+const NS = "demo-hotel-default-rtdb";
+const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts";
+const API = "http://127.0.0.1:8787";
+
+async function account(name) {
+  const email = `${name}@users.bobba.invalid`;
+  for (const mode of ["signUp", "signInWithPassword"]) {
+    const r = await fetch(`${AUTH}:${mode}?key=x`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password: "secret1", returnSecureToken: true }) });
+    const j = await r.json();
+    if (j.idToken) return { uid: j.localId, token: j.idToken, name };
+  }
+  throw new Error("auth failed for " + name);
+}
+const owner = async (method, path, body) => {
+  const r = await fetch(`${DB}/${path}.json?ns=${NS}`, { method, headers: { Authorization: "Bearer owner", "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  return r.json();
+};
+const act = async (who, a, args = {}) => {
+  for (let tries = 0; ; tries++) {
+    const r = await fetch(`${API}/act`, { method: "POST", headers: { authorization: `Bearer ${who.token}`, "content-type": "application/json", ...(who.device ? { "x-device": who.device } : {}) }, body: JSON.stringify({ a, args }) });
+    const j = await r.json();
+    if (r.status === 429 && tries < 12 && !process.env.NO_RETRY) { await new Promise((x) => setTimeout(x, 800)); continue; } // the anti-spam limit: wait and go on
+    return { status: r.status, ...j };
+  }
+};
+let fails = 0, passes = 0;
+const check = (label, cond, extra = "") => { if (cond) passes++; else fails++; console.log(`${cond ? "PASS" : "FAIL"}  ${label} ${cond ? "" : extra}`); };
+const ok = (label, r) => check(label, r.ok === true, JSON.stringify(r).slice(0, 160));
+const bad = (label, r, status) => check(label, r.ok === false && (!status || r.status === status), JSON.stringify(r).slice(0, 160));
+const fresh = async (name, extra = {}) => {
+  const u = await account(name);
+  await owner("PUT", `users/${u.uid}`, { name, gender: "M", figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", blood: 0, createdAt: Date.now(), ...extra });
+  await owner("PUT", `profiles/${u.uid}`, { name, figure: "x" });
+  await owner("DELETE", `rooms/lobby/players/${u.uid}`); await owner("DELETE", `rooms/shop/players/${u.uid}`); await owner("DELETE", `rooms/tut_${u.uid}`); await owner("DELETE", `rooms/u_${u.uid}`); await owner("DELETE", `roomsMeta/u_${u.uid}`);
+  return u;
+};
+const stand = (u, room, x = 5, y = 5) => owner("PUT", `rooms/${room}/players/${u.uid}`, { name: u.name, figure: "x", x, y, dir: 2 });
+const state = async (u) => (await act(u, "sync")).state;
+const total = (inv, item) => inv.reduce((n, s) => n + (s && s.item === item ? s.qty : 0), 0);
+
+
+const inv = (...items) => Object.fromEntries(items.map((it, i) => [i, it]));
+const bloodOf = async (u) => Number(await owner("GET", `users/${u.uid}/blood`)) || 0;
+const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
+const clientWrite = (u, path, v) => fetch(`${DB}/${path}.json?ns=${NS}&auth=${u.token}`, { method: "PUT", body: JSON.stringify(v) });
+const refused = (r) => r.status === 401 || r.status === 403;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const HR = (u) => `h_${u.uid}`;
+const meta = (u) => owner("GET", `roomsMeta/${HR(u)}`);
+const giveName = (u) => owner("PUT", `usernames/${u.name.toLowerCase()}`, u.uid);
+const rowsOf = async (u) => Object.entries((await owner("GET", `roomsMeta/${HR(u)}/furni`)) ?? {});
+
+console.log("--- buying a hideout");
+const boss = await fresh("t_hd_boss", { blood: 8000, inventory: inv({ item: "f_rareblock", qty: 3 }, { item: "f_planter", qty: 1 }, { item: "f_mixer", qty: 1 }, { item: "weedseed", qty: 2 }, { item: "f_randomizer", qty: 1 }) });
+const poor = await fresh("t_hd_poor", { blood: 999 });
+for (const u of [boss, poor]) { await act(u, "sync"); await giveName(u); }
+await owner("DELETE", `roomsMeta/${HR(boss)}`); await owner("DELETE", `hideouts/${boss.uid}`);
+bad("not from the shop room", await act(boss, "hideoutBuy"));
+await stand(boss, "lobby", 3, 3); await stand(poor, "lobby", 3, 4);
+bad("999 blood is not enough", await act(poor, "hideoutBuy"));
+const b = await act(boss, "hideoutBuy");
+ok("buy a hideout", b);
+check("1000 blood", b.state.blood === 7000);
+let m = await meta(boss);
+check("14x14, level 0, closed to everybody but its members", m && m.w === 14 && m.h === 14 && m.level === 0 && m.access === "none" && m.owner === boss.uid, JSON.stringify(m)?.slice(0, 200));
+check("with a toolbox, a sink, a boombox and a computer", m.toolbox && m.sink && m.boombox && m.computer);
+check("and the owner is on the list of hideouts they are in", (await owner("GET", `hideouts/${boss.uid}/${boss.uid}`))?.role === "owner");
+bad("only one each", await act(boss, "hideoutBuy"));
+
+console.log("--- sizes and colours");
+ok("first upgrade (2000)", await act(boss, "hideoutUpgrade"));
+m = await meta(boss);
+check("17x17", m.w === 17 && m.h === 17 && m.level === 1 && (await bloodOf(boss)) === 5000, JSON.stringify([m.w, m.level, await bloodOf(boss)]));
+ok("second upgrade (4000)", await act(boss, "hideoutUpgrade"));
+m = await meta(boss);
+check("20x20", m.w === 20 && m.h === 20 && m.level === 2 && (await bloodOf(boss)) === 1000);
+bad("no third", await act(boss, "hideoutUpgrade"));
+const col = await act(boss, "hideoutColors", { floor: "#112233", wall: "#445566" });
+ok("new floor and wall colours", col);
+check("30 drops a part", col.data.price === 60 && (await bloodOf(boss)) === 940, JSON.stringify(col.data));
+bad("the same colours again is nothing", await act(boss, "hideoutColors", { floor: "#112233", wall: "#445566" }));
+bad("nobody else changes them", await act(poor, "hideoutColors", { floor: "#aa0000" }));
+await owner("PUT", `users/${boss.uid}/blood`, 5000);
+await stand(boss, HR(boss), 5, 5);
+ok("rename (from the computer, inside)", await act(boss, "hideoutSettings", { name: "Gang HQ" }));
+check("the name changed", (await owner("GET", `roomsMeta/${HR(boss)}/name`)) === "Gang HQ");
+
+console.log("--- members and invites");
+const al = await fresh("t_hd_al", { blood: 500, inventory: inv({ item: "f_rareblock", qty: 2 }, { item: "weedseed", qty: 1 }, { item: "wateringcan_full", qty: 1 }, { item: "f_planter", qty: 1 }) });
+const bo = await fresh("t_hd_bo", { blood: 500, inventory: inv({ item: "f_rareblock", qty: 1 }, { item: "wateringcan_full", qty: 1 }, { item: "weed", qty: 2 }, { item: "cigarette", qty: 2 }) });
+const out = await fresh("t_hd_out", { blood: 500, inventory: inv({ item: "f_rareblock", qty: 1 }) });
+for (const u of [al, bo, out]) { await act(u, "sync"); await giveName(u); }
+bad("a stranger can't invite", await act(al, "hideoutInvite", { name: boss.name }));
+ok("invite by name", await act(boss, "hideoutInvite", { name: "T_HD_AL" }));
+check("the invite waits for al", (await owner("GET", `hideoutInvites/${al.uid}/${boss.uid}`))?.fromName === boss.name);
+bad("not you", await act(boss, "hideoutInvite", { name: boss.name }));
+bad("not nobody", await act(boss, "hideoutInvite", { name: "nobody_here_x" }));
+const inRoom = () => rowsOf(boss);
+const ans = await act(al, "hideoutAnswer", { owner: boss.uid, accept: true });
+ok("al joins", ans);
+m = await meta(boss);
+check("al is a member who may build", m.members?.[al.uid]?.build === true);
+check("and has it in their list", (await owner("GET", `hideouts/${al.uid}/${boss.uid}`))?.role === "member");
+check("the invite is gone", (await owner("GET", `hideoutInvites/${al.uid}/${boss.uid}`)) === null);
+bad("no second answer", await act(al, "hideoutAnswer", { owner: boss.uid, accept: true }));
+ok("invite bo", await act(boss, "hideoutInvite", { uid: bo.uid }));
+ok("bo says no", await act(bo, "hideoutAnswer", { owner: boss.uid, accept: false }));
+check("bo is not a member", !(await meta(boss)).members?.[bo.uid]);
+ok("invite bo again", await act(boss, "hideoutInvite", { uid: bo.uid }));
+ok("bo joins", await act(bo, "hideoutAnswer", { owner: boss.uid, accept: true }));
+const found = await act(boss, "hideoutSearch", { q: "t_hd_" });
+check("search finds players by the start of their name", found.ok && found.data.players.some((p) => p.uid === al.uid) && found.data.players.some((p) => p.uid === out.uid), JSON.stringify(found).slice(0, 200));
+
+console.log("--- building together");
+await stand(al, HR(boss), 6, 6); await stand(bo, HR(boss), 7, 7);
+bad("a stranger can't place", await (async () => { await stand(out, HR(boss), 8, 8); return act(out, "furniPlace", { room: HR(boss), source: "inv", slot: 0, x: 3, y: 3 }); })());
+await owner("DELETE", `rooms/${HR(boss)}/players/${out.uid}`);
+const p1 = await act(al, "furniPlace", { room: HR(boss), source: "inv", slot: slotOf(await state(al), "f_rareblock"), x: 3, y: 3, dir: 0 });
+ok("a member places a piece", p1);
+let rows = await rowsOf(boss);
+check("it is marked as al's", rows.length === 1 && rows[0][1].by === al.uid, JSON.stringify(rows));
+let rowId = rows[0][0];
+ok("another member moves it", await act(bo, "furniMove", { room: HR(boss), id: rowId, x: 4, y: 4, dir: 0 }));
+ok("and the owner too", await act(boss, "furniMove", { room: HR(boss), id: rowId, x: 15, y: 15, dir: 0 }));
+check("(the room is big: 20x20 now)", (await owner("GET", `roomsMeta/${HR(boss)}/furni/${rowId}/x`)) === 15);
+ok("bo puts it back", await act(bo, "furniStore", { room: HR(boss), id: rowId }));
+check("it went into the box, still al's", (await owner("GET", `roomsMeta/${HR(boss)}/box/${al.uid}/f_rareblock`)) === 1 && (await rowsOf(boss)).length === 0);
+bad("bo can't take al's piece out", await act(bo, "hideoutBoxTake", { room: HR(boss), kind: "f_rareblock" }));
+const p2 = await act(bo, "furniPlace", { room: HR(boss), source: "box", owner: al.uid, kind: "f_rareblock", x: 5, y: 5 });
+ok("bo places it from the box", p2);
+rows = await rowsOf(boss);
+check("it is still al's", rows.length === 1 && rows[0][1].by === al.uid && (await owner("GET", `roomsMeta/${HR(boss)}/box/${al.uid}`)) === null);
+rowId = rows[0][0];
+bad("nothing left in the box", await act(bo, "furniPlace", { room: HR(boss), source: "box", owner: al.uid, kind: "f_rareblock", x: 6, y: 5 }));
+console.log("--- the box from outside, and taking things back");
+ok("al puts a piece in the box from storage", await (async () => { await owner("PUT", `users/${al.uid}/storage/f_rareblock`, 2); return act(al, "hideoutBoxStore", { room: HR(boss), kind: "f_rareblock", qty: 1 }); })());
+ok("and one from the pocket", await act(al, "hideoutBoxStore", { room: HR(boss), kind: "f_rareblock", qty: 1, source: "inv", slot: slotOf(await state(al), "f_rareblock") }));
+check("2 in the box", (await owner("GET", `roomsMeta/${HR(boss)}/box/${al.uid}/f_rareblock`)) === 2);
+bad("not a weed seed", await act(al, "hideoutBoxStore", { room: HR(boss), kind: "weedseed", qty: 1, source: "inv", slot: slotOf(await state(al), "weedseed") }));
+bad("a stranger has no access to the box", await act(out, "hideoutBoxStore", { room: HR(boss), kind: "f_rareblock", qty: 1, source: "inv", slot: 0 }));
+const tk = await act(al, "hideoutBoxTake", { room: HR(boss), kind: "f_rareblock", qty: 1 });
+ok("al takes one back to storage", tk);
+check("it is in al's storage", (await owner("GET", `users/${al.uid}/storage/f_rareblock`)) === 2, String(await owner("GET", `users/${al.uid}/storage/f_rareblock`)));
+const tk2 = await act(al, "hideoutBoxTake", { room: HR(boss), kind: "f_rareblock", qty: 1, to: "inv" });
+ok("and one to the pocket", tk2);
+
+console.log("--- locking, and who may build");
+ok("the owner locks building", await act(boss, "hideoutSettings", { lock: true }));
+bad("members can't place now", await act(bo, "furniPlace", { room: HR(boss), source: "inv", slot: slotOf(await state(bo), "f_rareblock"), x: 8, y: 8 }));
+bad("or move", await act(bo, "furniMove", { room: HR(boss), id: rowId, x: 9, y: 9, dir: 0 }));
+ok("the owner still can", await act(boss, "furniMove", { room: HR(boss), id: rowId, x: 9, y: 9, dir: 0 }));
+ok("unlock", await act(boss, "hideoutSettings", { lock: false }));
+ok("the owner takes building away from bo", await act(boss, "hideoutMember", { uid: bo.uid, build: false }));
+bad("bo can't build", await act(bo, "furniPlace", { room: HR(boss), source: "inv", slot: slotOf(await state(bo), "f_rareblock"), x: 8, y: 8 }));
+ok("al still can", await act(al, "furniPlace", { room: HR(boss), source: "inv", slot: slotOf(await state(al), "f_rareblock"), x: 8, y: 8 }));
+bad("a member can't set rights", await act(al, "hideoutMember", { uid: bo.uid, build: true }));
+bad("or lock", await act(al, "hideoutSettings", { lock: true }));
+ok("rights back for bo", await act(boss, "hideoutMember", { uid: bo.uid, build: true }));
+
+console.log("--- exclusive furniture: only in a hideout");
+bad("the love booth doesn't go in a player room", await (async () => { await owner("PUT", `roomsMeta/u_${boss.uid}`, { owner: boss.uid, ownerName: "x", name: "r", access: "knock", w: 8, h: 8 }); await stand(boss, `u_${boss.uid}`, 4, 4); return act(boss, "furniPlace", { source: "inv", slot: slotOf(await state(boss), "f_randomizer"), x: 2, y: 2 }); })());
+await stand(boss, HR(boss), 5, 5);
+ok("but it does in the hideout", await act(boss, "furniPlace", { room: HR(boss), source: "inv", slot: slotOf(await state(boss), "f_randomizer"), x: 10, y: 10 }));
+const booth = (await rowsOf(boss)).find(([, r]) => r.kind === "f_randomizer");
+ok("tapping it changes its look (anybody inside)", await act(al, "furniState", { room: HR(boss), id: booth[0] }));
+
+console.log("--- pots and mixers for everybody");
+ok("the owner puts a growing kit down", await act(boss, "furniPlace", { room: HR(boss), source: "inv", slot: slotOf(await state(boss), "f_planter"), x: 12, y: 3 }));
+ok("and a mixer", await act(boss, "furniPlace", { room: HR(boss), source: "inv", slot: slotOf(await state(boss), "f_mixer"), x: 13, y: 3 }));
+const kit = (await rowsOf(boss)).find(([, r]) => r.kind === "f_planter")[0], mx = (await rowsOf(boss)).find(([, r]) => r.kind === "f_mixer")[0];
+await owner("PUT", `users/${boss.uid}/inventory/20`, { item: "weedseed", qty: 1 });
+ok("al plants", await act(al, "plant", { room: HR(boss), fid: kit, slot: slotOf(await state(al), "weedseed") }));
+bad("a stranger can't use it", await (async () => { await stand(out, HR(boss), 8, 8); const r = await act(out, "water", { room: HR(boss), fid: kit, slot: 0 }); await owner("DELETE", `rooms/${HR(boss)}/players/${out.uid}`); return r; })());
+ok("bo waters", await act(bo, "water", { room: HR(boss), fid: kit, slot: slotOf(await state(bo), "wateringcan_full") }));
+await owner("PATCH", `roomsMeta/${HR(boss)}/furni/${kit}`, { plantedAt: Date.now() - 11 * 60_000 });
+const hv = await act(boss, "harvest", { room: HR(boss), fid: kit });
+ok("the owner harvests", hv);
+check("the weed is the harvester's", total(hv.state.inventory, "weed") >= 1, JSON.stringify(hv.state.inventory.filter(Boolean).map((x) => x.item)));
+const st = await state(bo);
+const mixed = await act(bo, "mix", { room: HR(boss), fid: mx, a: slotOf(st, "weed"), b: slotOf(st, "cigarette") });
+ok("bo mixes in the shared mixer", mixed);
+await owner("PATCH", `roomsMeta/${HR(boss)}/furni/${mx}/mixJob`, { doneAt: Date.now() - 1000 });
+const got = await act(boss, "mixCollect", { room: HR(boss), fid: mx });
+ok("and the owner collects it", got);
+check("the owner got the weed mix", total(got.state.inventory, "mix") === 2, JSON.stringify(got.data));
+bad("the sink works for members only", await (async () => { await stand(out, HR(boss), 9, 9); const r = await act(out, "fillCan", { room: HR(boss), slot: 0 }); await owner("DELETE", `rooms/${HR(boss)}/players/${out.uid}`); return r; })());
+
+console.log("--- orders from the computer");
+await owner("PUT", `users/${bo.uid}/blood`, 500);
+bad("not in the shop list", await act(bo, "hideoutOrder", { room: HR(boss), kind: "f_sofa" }));
+const od = await act(bo, "hideoutOrder", { room: HR(boss), kind: "f_randomizer" });
+ok("bo orders a love booth", od);
+check("150 blood", (await bloodOf(bo)) === 350);
+const oid = od.data.id;
+bad("it takes an hour", await act(bo, "hideoutCollect", { room: HR(boss), id: oid }));
+await owner("PATCH", `roomsMeta/${HR(boss)}/orders/${oid}`, { doneAt: Date.now() - 1000 });
+bad("only bo can collect it", await act(al, "hideoutCollect", { room: HR(boss), id: oid }));
+const cl = await act(bo, "hideoutCollect", { room: HR(boss), id: oid });
+ok("bo collects", cl);
+check("a love booth in the pocket", total(cl.state.inventory, "f_randomizer") === 1);
+bad("nothing twice", await act(bo, "hideoutCollect", { room: HR(boss), id: oid }));
+
+console.log("--- leaving and being kicked");
+await stand(al, HR(boss), 6, 6);
+const alRows = (await rowsOf(boss)).filter(([, r]) => r.by === al.uid).length;
+check("al has pieces in the room", alRows >= 2, String(alRows));
+ok("the owner puts something of al's in the box too", await act(al, "hideoutBoxStore", { room: HR(boss), kind: "f_rareblock", qty: 1, source: "inv", slot: slotOf(await state(al), "f_rareblock") }).then((r) => (r.ok ? r : { ok: true })));
+const before = (await owner("GET", `users/${al.uid}/storage/f_rareblock`)) ?? 0;
+const kk = await act(boss, "hideoutKick", { uid: al.uid });
+ok("the owner kicks al", kk);
+check("al's pieces left the room", (await rowsOf(boss)).every(([, r]) => r.by !== al.uid));
+const after = (await owner("GET", `users/${al.uid}/storage/f_rareblock`)) ?? 0;
+check("and went into al's own storage", after >= before + alRows, `${before} -> ${after}`);
+check("al is off the list", !(await meta(boss)).members?.[al.uid] && (await owner("GET", `hideouts/${al.uid}/${boss.uid}`)) === null);
+check("and the box has nothing of al's", (await owner("GET", `roomsMeta/${HR(boss)}/box/${al.uid}`)) === null);
+bad("al can't build any more", await act(al, "furniPlace", { room: HR(boss), source: "storage", kind: "f_rareblock", x: 1, y: 1 }));
+bad("the owner can't kick themself", await act(boss, "hideoutKick", { uid: boss.uid }));
+bad("the owner can't leave", await act(boss, "hideoutLeave", { owner: boss.uid }));
+ok("bo leaves", await act(bo, "hideoutLeave", { owner: boss.uid }));
+check("bo's list is empty", (await owner("GET", `hideouts/${bo.uid}`)) === null);
+
+console.log("--- the rules");
+{
+  const rr = await fresh("t_hd_rules", { blood: 0 });
+  await act(rr, "sync");
+  const pres = { name: rr.name, figure: "x", x: 3, y: 3, dir: 2 };
+  check("a stranger can't stand in the hideout", refused(await clientWrite(rr, `rooms/${HR(boss)}/players/${rr.uid}`, pres)));
+  check("the owner can", !refused(await clientWrite(boss, `rooms/${HR(boss)}/players/${boss.uid}`, { ...pres, name: boss.name })));
+  ok("invite the rules player", await act(boss, "hideoutInvite", { uid: rr.uid }));
+  ok("they join", await act(rr, "hideoutAnswer", { owner: boss.uid, accept: true }));
+  check("a member can", !refused(await clientWrite(rr, `rooms/${HR(boss)}/players/${rr.uid}`, pres)));
+  check("a member reads their own invites and hideouts", (await fetch(`${DB}/hideouts/${rr.uid}.json?ns=${NS}&auth=${rr.token}`)).status === 200);
+  check("not other people's", refused(await fetch(`${DB}/hideouts/${boss.uid}.json?ns=${NS}&auth=${rr.token}`)));
+  check("nobody writes the hideout record", refused(await clientWrite(rr, `roomsMeta/${HR(boss)}/members/${rr.uid}/build`, false)));
+  ok("kicked", await act(boss, "hideoutKick", { uid: rr.uid }));
+  check("and then they can't stand there", refused(await clientWrite(rr, `rooms/${HR(boss)}/players/${rr.uid}`, pres)));
+}
+
+console.log(`
+${passes} passed, ${fails} failed`);
+process.exit(fails ? 1 : 0);

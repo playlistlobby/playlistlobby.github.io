@@ -13,7 +13,7 @@ const ALBUM_GRACE_MS = 15_000;
 const live = (r: CdRow | null, now: number): boolean => !!r && typeof r.endsAt === "number" && (r.pausedAt ? now - r.pausedAt < PAUSE_MAX_MS : r.endsAt + (r.track === "album" && (r.index ?? 0) < ALBUM_TRACKS.length - 1 ? ALBUM_GRACE_MS : 0) > now);
 const roomOf = (v: unknown): string => {
   const room = text(v, /^[A-Za-z0-9_-]{1,60}$/, "room");
-  if (room !== "lobby" && !/^u_[A-Za-z0-9]{1,40}$/.test(room)) fail("There's no music player there.");
+  if (room !== "lobby" && !/^[uh]_[A-Za-z0-9]{1,40}$/.test(room)) fail("There's no music player there.");
   return room;
 };
 const path = (room: string): string => `rooms/${room}/cdplayer`;
@@ -88,7 +88,7 @@ export const cdControl: Action = {
       return {};
     }
     if (!live(cur, c.now)) fail("Nothing is playing.");
-    if (row.by !== c.uid && room !== `u_${c.uid}` && !c.isAdmin) fail("Only the one who put the CD in (or the room's owner) can do that.");
+    if (row.by !== c.uid && room !== `u_${c.uid}` && room !== `h_${c.uid}` && !c.isAdmin) fail("Only the one who put the CD in (or the room's owner) can do that.");
     const duration = row.durationMs ?? Math.max(10_000, (row.endsAt ?? c.now) - (row.startedAt ?? c.now));
     const started = row.startedAt ?? c.now;
     if (op === "pause") {

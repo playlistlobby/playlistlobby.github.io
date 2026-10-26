@@ -86,7 +86,7 @@ console.log("--- buying: poppy seeds (5 per visit, shared) and natryger (as many
   ok("b takes the last 2", await act(b, "bagmandBuy", { item: "poppyseed", qty: 2 }));
   bad("sold out for everybody", await act(a, "bagmandBuy", { item: "poppyseed", qty: 1 }));
   check("the stock is kept for the visit", (await owner("GET", `bagmand/${start}/sold/poppyseed`)) === 5);
-  await owner("PUT", "bagmand/force", start + 5000); // (the next visit: new stock)
+  await owner("PUT", "bagmand/force", start + 1000); // (the next visit: new stock)
   ok("a new visit has new stock", await act(a, "bagmandBuy", { item: "poppyseed", qty: 1 }));
   const n = await act(a, "bagmandBuy", { item: "natryger", qty: 10 });
   ok("natryger is unlimited", n);
@@ -102,18 +102,18 @@ console.log("--- selling back (and only to him)");
   await act(a, "sync"); await stand(a, "lobby", 3, 3);
   let st = await state(a);
   const price = async (item, ass) => { const before = (await state(a)).blood; const s = await state(a); const r = await act(a, "bagmandSell", { slot: slotAss(s, item, ass), qty: 1 }); return r.ok ? r.state.blood - before : r; };
-  check("opium 100", (await price("opium", false)) === 100);
-  check("weak opium 50", (await price("opium", true)) === 50);
-  check("heroin 300", (await price("heroin", false)) === 300);
-  check("芬太尼 420", (await price("fentcn", false)) === 420);
-  check("loudpack 480", (await price("loudpack", false)) === 480);
+  check("opium 80", (await price("opium", false)) === 80);
+  check("weak opium 40", (await price("opium", true)) === 40);
+  check("heroin 130", (await price("heroin", false)) === 130);
+  check("芬太尼 145", (await price("fentcn", false)) === 145);
+  check("loudpack 265", (await price("loudpack", false)) === 265);
   bad("not the seeds", await act(a, "bagmandSell", { slot: slotAss(await state(a), "poppyseed", false), qty: 1 }));
   bad("not his own blue weed", await act(a, "bagmandSell", { slot: slotAss(await state(a), "natryger", false), qty: 1 }));
   bad("not ordinary weed", await act(a, "bagmandSell", { slot: slotAss(await state(a), "weed", false), qty: 1 }));
   bad("not a rolled joint", await act(a, "bagmandSell", { slot: slotAss(await state(a), "joint_nat", false), qty: 1 }));
   const all = await act(a, "bagmandSell", { slot: slotAss(await state(a), "opium", false), qty: 99 });
   ok("the rest of the opium at once", all);
-  check("2 good opium: 200 more (1 weak one is left)", total(all.state.inventory, "opium") === 1 && all.state.blood === 100 + 50 + 300 + 420 + 480 + 200, String(all.state.blood));
+  check("2 good opium: 160 more (1 weak one is left)", total(all.state.inventory, "opium") === 1 && all.state.blood === 80 + 40 + 130 + 145 + 265 + 160, String(all.state.blood));
   st = await state(a);
   bad("6ixty doesn't buy it", await act(a, "sellWeed", { slot: slotAss(st, "opium", true), qty: 1 }));
   await owner("DELETE", `rooms/lobby/players/${a.uid}`); await stand(a, "shop", 3, 3);
@@ -123,7 +123,7 @@ console.log("--- selling back (and only to him)");
   if (![1, 10, 15].includes(dkHour)) bad("and only while he's there", await act(a, "bagmandSell", { slot: slotAss(st, "opium", true), qty: 1 }));
 }
 
-console.log("--- the poppy: 4 hours, opium (weak if it never got water), no seed back");
+console.log("--- the poppy: 4 hours, no water needed, opium, no seed back");
 {
   const a = await fresh("t_bg_poppy", { blood: 0, inventory: inv({ item: "poppyseed", qty: 2 }, { item: "wateringcan_full", qty: 1 }) });
   await act(a, "sync");
@@ -137,14 +137,14 @@ console.log("--- the poppy: 4 hours, opium (weak if it never got water), no seed
   await owner("PATCH", `roomsMeta/${room}/furni/k1`, { plantedAt: Date.now() - 3 * 3_600_000 });
   bad("not ready after 3 hours", await act(a, "harvest", { fid: "k1" }));
   const st0 = await state(a);
-  ok("water the first", await act(a, "water", { fid: "k1", slot: slotAss(st0, "wateringcan_full", false) }));
+  bad("a poppy needs no water", await act(a, "water", { fid: "k1", slot: slotAss(st0, "wateringcan_full", false) }));
   await owner("PATCH", `roomsMeta/${room}/furni/k1`, { plantedAt: Date.now() - 4 * 3_600_000 - 1000, wateredAt: Date.now() - 3 * 3_600_000 });
   const h1 = await act(a, "harvest", { fid: "k1" });
   ok("harvest after 4 hours", h1);
   check("1 good opium, no seed back", total(h1.state.inventory, "opium") === 1 && !h1.state.inventory.some((x) => x && x.item === "opium" && x.ass) && !h1.data.seed && total(h1.state.inventory, "poppyseed") === 0, JSON.stringify([h1.data, h1.state.inventory.filter(Boolean)]));
   await owner("PATCH", `roomsMeta/${room}/furni/k2`, { plantedAt: Date.now() - 4 * 3_600_000 - 1000 });
   const h2 = await act(a, "harvest", { fid: "k2" });
-  check("the unwatered one gives weak opium", h2.ok === true && h2.state.inventory.some((x) => x && x.item === "opium" && x.ass), JSON.stringify(h2).slice(0, 200));
+  check("a poppy that was never watered gives good opium too", h2.ok === true && h2.state.inventory.some((x) => x && x.item === "opium" && !x.ass) && !h2.state.inventory.some((x) => x && x.item === "opium" && x.ass), JSON.stringify(h2).slice(0, 200));
   check("the pots are empty again", (await owner("GET", `roomsMeta/${room}/furni/k1/plantedAt`)) === null && (await owner("GET", `roomsMeta/${room}/furni/k1/crop`)) === null);
 }
 

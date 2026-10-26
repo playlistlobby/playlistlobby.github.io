@@ -1,6 +1,7 @@
 import { assetUrl } from "./assetUrl";
 import { FURNI_KINDS } from "./rooms";
 import { loadNitro } from "./nitro";
+import { UNUSUALS } from "./shared/cases";
 import { DISABLED_ITEMS, isLaced, ITEM_ID_LIST, parseInventoryWith, unlaced } from "./shared/items";
 export {
   combine, DEFAULT_ITEM_PRICE, DISABLED_ITEMS, emptyInventory, findSlot, findSlotAny, GROW_MS, growMsOf, INV_COLS, INV_SIZE, isFurniItem, ITEM_DEFAULTS,
@@ -20,7 +21,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak";
+  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear";
   /** select it, then click a piece of furniture of this kind (the sink, the growing kit) */
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
@@ -447,20 +448,25 @@ export function furniIcon(kind: string): string {
   return furniIcons.get(kind)!;
 }
 
+// mystery boxes, keys and unusuals (see src/shared/cases.ts)
+ITEMS.mysterycase = { id: "mysterycase", name: "Mystery box", examine: "A locked crate. Tap it to open it with a key: you never know what is inside. Boxes turn up in the bins.", icon: assetUrl("items/mysterycase.svg"), useSelf: "open" };
+ITEMS.casekey = { id: "casekey", name: "Box key", examine: "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (2 for 25 kr). One key opens one box.", icon: assetUrl("items/casekey.svg"), useSelf: "open" };
+for (const u of UNUSUALS) ITEMS[u.id] = { id: u.id, name: `Unusual ${u.name}`, examine: `An unusual: a hat with a particle effect of its own. Tap it to wear it. You can put it back in your inventory from the wardrobe in your room.`, icon: assetUrl(`items/${u.id}.svg`), useSelf: "wear" };
+
 // bagmand's things (see src/shared/bagmand.ts): the poppy and what it becomes, his blue weed and the special weeds rolled from them
 const bagmandItems: Array<[string, string, string, Partial<ItemDef>]> = [
-  ["poppyseed", "Poppy seed", "A pinch of tiny black seeds from bagmand. Select it, then click your growing kit to plant it. A poppy takes 4 hours to grow and needs one watering (any time). It gives opium.", { useOnObject: "f_planter" }],
-  ["opium", "Opium", "The milk of a poppy. Only bagmand buys it (100 drops). Mix it with water for heroin, with lean for ketamine, with a pill for percs, with a shroom for 2cb, with weed for cali weed or with fentanyl for 芬太尼. Opium from a poppy that never got its water is weak: half the price, and no good for mixing.", {}],
-  ["heroin", "Heroin", "Opium boiled down in water. Swallow it: you nod off for 10 seconds, then stabs give 4x blood for 3 minutes. Mix it into weed for brown weed. Bagmand pays 300.", { useSelf: "consume" }],
-  ["ketamine", "Ketamine", "Opium stirred into the lean. Swallow it: a horse's head grows on you for a minute, and you run twice as fast. Bagmand pays 300.", { useSelf: "consume" }],
-  ["percs", "Percs", "Opium pressed into a pill. Swallow it: a purple haze, double speed and triple blood for a stab, for 3 minutes. Bagmand pays 320.", { useSelf: "consume" }],
-  ["twocb", "2cb", "Opium and a shroom, ground together. Swallow it: the colours shift, every door is open and you run twice as fast, for 3 minutes. Mix it into weed for pink weed. Bagmand pays 360.", { useSelf: "consume" }],
-  ["fentcn", "芬太尼", "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 420.", { useSelf: "consume" }],
-  ["caliweed", "Cali weed", "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 330.", {}],
-  ["pinkweed", "Pink weed", "2cb crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 250.", {}],
-  ["brownweed", "Brown weed", "Heroin crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 260.", {}],
+  ["poppyseed", "Poppy seed", "A pinch of tiny black seeds from bagmand. Select it, then click your growing kit to plant it. A poppy takes 4 hours to grow and needs no water. It gives opium.", { useOnObject: "f_planter" }],
+  ["opium", "Opium", "The milk of a poppy. Only bagmand buys it (80 drops). Mix it with water for heroin, with lean for ketamine, with a pill for percs, with a shroom for 2cb, with weed for cali weed or with fentanyl for 芬太尼.", {}],
+  ["heroin", "Heroin", "Opium boiled down in water. Swallow it: you nod off for 10 seconds, then stabs give 4x blood for 3 minutes. Mix it into weed for brown weed. Bagmand pays 130.", { useSelf: "consume" }],
+  ["ketamine", "Ketamine", "Opium stirred into the lean. Swallow it: a horse's head grows on you for a minute, and you run twice as fast. Bagmand pays 140.", { useSelf: "consume" }],
+  ["percs", "Percs", "Opium pressed into a pill. Swallow it: a purple haze, double speed and triple blood for a stab, for 3 minutes. Bagmand pays 130.", { useSelf: "consume" }],
+  ["twocb", "2cb", "Opium and a shroom, ground together. Swallow it: the colours shift, every door is open and you run twice as fast, for 3 minutes. Mix it into weed for pink weed. Bagmand pays 150.", { useSelf: "consume" }],
+  ["fentcn", "芬太尼", "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 145.", { useSelf: "consume" }],
+  ["caliweed", "Cali weed", "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 140.", {}],
+  ["pinkweed", "Pink weed", "2cb crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 125.", {}],
+  ["brownweed", "Brown weed", "Heroin crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 110.", {}],
   ["natryger", "Bagmands natryger", "Bagmand's own blue weed. You have to roll it in joint paper or a blunt wrap to use it. Smoked, it lifts you off the ground in a blue glow and you run twice as fast for 4 minutes. Mix it with cali weed for a loudpack.", {}],
-  ["loudpack", "Loudpack", "Natryger and cali weed packed into one big bud that shines and sparkles. Roll it in joint paper or a blunt wrap. Smoked: you run twice as fast for a minute and get 2 deadly stabs. Bagmand pays 480.", {}],
+  ["loudpack", "Loudpack", "Natryger and cali weed packed into one big bud that shines and sparkles. Roll it in joint paper or a blunt wrap. Smoked: you run twice as fast for a minute and get 2 deadly stabs. Bagmand pays 265.", {}],
 ];
 for (const [id, name, examine, extra] of bagmandItems) ITEMS[id] = { id, name, examine, icon: assetUrl(`items/${id}.svg`), ...extra };
 // (each one written out in full so every text can be translated)

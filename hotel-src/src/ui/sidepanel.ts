@@ -24,7 +24,7 @@ export interface PanelOpts {
   onSelect(slot: number | null): void;
   onEmote(id: string): void;
   /** an item that is used on yourself with one click (the syringe) */
-  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak", slot: number): void;
+  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear", slot: number): void;
   /** one pocket item used on another (weed + paper, ...) */
   onCombine(a: number, b: number): void;
   /** a pocket item was tapped: return true if something else (the mixer, 6ixty's window) took the tap */

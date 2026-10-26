@@ -8,6 +8,7 @@ import { Action, requireInRoom } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv } from "../../../src/shared/economy";
 import { INV_SIZE } from "../../../src/shared/items";
+import { KEYS_PACK } from "../../../src/shared/cases";
 import { DICE_PRICE, DUCKY_STARTER, DuckyProduct, isHexColor, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../../src/shared/ducky";
 import { setSignInEmail } from "../authAdmin";
 
@@ -32,6 +33,13 @@ export async function grantDucky(c: Ctx, product: DuckyProduct, a: { color?: unk
     s.blood += DUCKY_STARTER.blood;
     s.owned.ducky_starter = true;
     return { ok: true };
+  }
+
+  if (product === "keys") { // 2 keys for the mystery boxes (as often as you like)
+    const next = addToInv(s.inventory, { item: "casekey", qty: KEYS_PACK.qty });
+    if (!next) fail("Your pockets are full: make room for the keys.");
+    s.inventory = next!;
+    return { ok: true, qty: KEYS_PACK.qty };
   }
 
   if (product === "color") {

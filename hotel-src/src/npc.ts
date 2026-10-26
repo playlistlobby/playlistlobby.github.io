@@ -35,6 +35,17 @@ export const BAGMAN = {
   line: "psst. fresh seeds. blue for the road.",
 };
 
+/** The hideout landlord: stands beside the hideout door in the corner of the basement's back wall. Sells hideouts. */
+export const HIDEOUT_LANDLORD = {
+  id: "hideoutlandlord",
+  name: "Landlord",
+  x: 10,
+  y: 1,
+  dir: 4,
+  figure: LANDLORD.figure,
+  line: "need a place for you and your boys? a hideout is 1000 blood.",
+};
+
 export interface NpcLook {
   figure: string;
   gender: Gender;

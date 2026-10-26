@@ -12,10 +12,11 @@ export const STARTER_ITEMS: string[] = [];
 export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
   // percentages (they add up to 100): a quarter cigarette butts, then seeds and spores (2 seeds to 1 spore) in what is left, a little weed and lean, and now and then a lighter
-  { item: "cigbutt", chance: 25, label: "cigarette butt" },
-  { item: "weedseed", chance: 43, label: "weed seed" },
-  { item: "shroomspore", chance: 22, label: "shroom spores" },
-  { item: "weed", chance: 7, label: "weed" },
+  { item: "cigbutt", chance: 22, label: "cigarette butt" },
+  { item: "weedseed", chance: 39, label: "weed seed" },
+  { item: "shroomspore", chance: 20, label: "shroom spores" },
+  { item: "weed", chance: 6, label: "weed" },
+  { item: "mysterycase", chance: 10, label: "mystery box" },
   { item: "codeine", chance: 2, label: "lean" },
   { item: "lighter", chance: 1, label: "lighter" },
 ];
@@ -134,7 +135,8 @@ export interface Snapshot {
 }
 
 /** How much blood this player can still hand over in trades right now. */
-export const tradeBloodLeft = (s: { tradeCap: { at: number; n: number }; noTradeLimit?: boolean }, now: number): number => (s.noTradeLimit ? Infinity : now - s.tradeCap.at >= TRADE_BLOOD_WINDOW_MS ? TRADE_BLOOD_CAP : Math.max(0, TRADE_BLOOD_CAP - s.tradeCap.n));
+/** There is no limit on the blood handed over in trades any more (it used to be 4000 per 24 hours): this always says "as much as you have". */
+export const tradeBloodLeft = (_s?: { tradeCap?: { at: number; n: number }; noTradeLimit?: boolean }, _now?: number): number => Infinity;
 
 export const todayStartAt = (now: number): number => now - (now % DAY_MS);
 
@@ -282,7 +284,7 @@ export const stabGainAt = (s: Pick<Snapshot, "boostUntil" | "boostMult">, now: n
 export interface Plant { at: number; water: number; neglect: boolean; /** "shroom" when spores were planted (grows for 25 minutes), else weed */ crop?: string }
 export const plantProgressAt = (pl: Plant, now: number): number => Math.min(1, (now - pl.at) / growMsOf(pl.crop));
 /** It has had its water: watered at any time since it was planted (before the bar is empty or after). One watering is enough. */
-export const plantWatered = (pl: Plant): boolean => pl.water > pl.at;
+export const plantWatered = (pl: Plant): boolean => pl.crop === "poppy" || pl.water > pl.at; // (a poppy needs no water at all)
 /** Thirsty and not yet watered. */
 export const plantThirsty = (pl: Plant, now: number): boolean => now >= pl.at + WATER_MS && !plantWatered(pl);
 /** The water bar: it drains over the first 5 minutes; once it's empty the plant needs its one watering, which fills it for good. */

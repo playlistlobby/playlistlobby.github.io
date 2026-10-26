@@ -1,4 +1,5 @@
 import { Ctx, fail } from "../ctx";
+import { hideoutRole, isHideoutId } from "../../../src/shared/hideout";
 
 export interface Action {
   run(c: Ctx, args: any): Promise<unknown>;
@@ -29,7 +30,38 @@ export async function roomSize(c: Ctx, roomId: string): Promise<{ w: number; h: 
     const side = (n: unknown) => (typeof n === "number" && n >= 8 && n <= 14 ? Math.floor(n) : 8);
     return { w: side(m?.w), h: side(m?.h) };
   }
+  if (isHideoutId(roomId)) { // a hideout: 14, 17 or 20 tiles a side (the server writes w and h)
+    const m = await c.db.get<{ w?: number; h?: number }>(`roomsMeta/${roomId}`);
+    const side = (n: unknown) => (typeof n === "number" && n >= 8 && n <= 24 ? Math.floor(n) : 14);
+    return { w: side(m?.w), h: side(m?.h) };
+  }
   return fail("Unknown room.");
+}
+
+export interface HideoutMetaRow { owner?: string; ownerName?: string; name?: string; w?: number; h?: number; level?: number; lock?: boolean; members?: Record<string, { name?: string; build?: boolean; at?: number }> }
+/** A hideout's record and what the caller may do in it (the owner and the members get in; the admin does everything). */
+export async function hideoutAccess(c: Ctx, room: string): Promise<{ meta: HideoutMetaRow; owner: boolean; member: boolean; canBuild: boolean }> {
+  if (!isHideoutId(room)) return fail("That isn't a hideout.");
+  const meta = await c.db.get<HideoutMetaRow>(`roomsMeta/${room}`);
+  if (!meta || !meta.owner) return fail("That hideout doesn't exist.");
+  return { meta, ...hideoutRole(meta, c.uid, c.isAdmin) };
+}
+/** The caller is a member of that hideout (they don't have to be standing in it). */
+export async function requireHideoutMember(c: Ctx, room: string): Promise<{ meta: HideoutMetaRow; owner: boolean; canBuild: boolean }> {
+  const h = await hideoutAccess(c, room);
+  if (!h.member) fail("You aren't in that hideout.");
+  return h;
+}
+/**
+ * The room a mixer, a growing kit or the sink is used in: your own room, or a hideout you are a member of (you have to be standing in it).
+ * Anyone in the hideout may use these, whether or not they may build.
+ */
+export async function requireWorkRoom(c: Ctx, want?: unknown): Promise<string> {
+  if (want === undefined || want === `u_${c.uid}`) return requireOwnRoom(c);
+  const room = text(want, /^h_[A-Za-z0-9]{1,40}$/, "room");
+  await requireHideoutMember(c, room);
+  await requireInRoom(c, room);
+  return room;
 }
 
 /** The caller must be standing in that room (their player node is there). Returns where they stand. */

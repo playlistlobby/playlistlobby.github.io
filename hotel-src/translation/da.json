@@ -9790,8 +9790,8 @@
   "where": "src/ui/room.ts"
  },
  "N1426": {
-  "en": "You press the little black seed into the soil. A poppy takes 4 hours, and it needs one watering: water it any time.",
-  "da": "Du trykker det lille sorte frø ned i jorden. En valmue tager 4 timer, og den skal vandes én gang: vand den når som helst.",
+  "en": "You press the little black seed into the soil. A poppy takes 4 hours and needs no water.",
+  "da": "Du trykker det lille sorte frø ned i jorden. En valmue tager 4 timer og skal ikke have vand.",
   "where": "src/ui/room.ts"
  },
  "N1427": {
@@ -9802,11 +9802,6 @@
  "N1428": {
   "en": "Opium",
   "da": "Opium",
-  "where": "src/ui/room.ts"
- },
- "N1429": {
-  "en": "You cut the pod. Weak opium: it never got its water.",
-  "da": "Du skærer kapslen op. Svag opium: den fik aldrig sit vand.",
   "where": "src/ui/room.ts"
  },
  "N1430": {
@@ -9960,13 +9955,13 @@
   "where": "src/npc.ts"
  },
  "N1460": {
-  "en": "A pinch of tiny black seeds from bagmand. Select it, then click your growing kit to plant it. A poppy takes 4 hours to grow and needs one watering (any time). It gives opium.",
-  "da": "En knivspids bittesmå sorte frø fra bagmanden. Vælg det, og klik på dit dyrkningssæt for at plante det. En valmue tager 4 timer at vokse og skal vandes én gang (når som helst). Den giver opium.",
+  "en": "A pinch of tiny black seeds from bagmand. Select it, then click your growing kit to plant it. A poppy takes 4 hours to grow and needs no water. It gives opium.",
+  "da": "En knivspids bittesmå sorte frø fra bagmanden. Vælg det, og klik på dit dyrkningssæt for at plante det. En valmue tager 4 timer at vokse og skal ikke have vand. Den giver opium.",
   "where": "src/items.ts"
  },
  "N1461": {
-  "en": "The milk of a poppy. Only bagmand buys it (100 drops). Mix it with water for heroin, with lean for ketamine, with a pill for percs, with a shroom for 2cb, with weed for cali weed or with fentanyl for 芬太尼. Opium from a poppy that never got its water is weak: half the price, and no good for mixing.",
-  "da": "Mælken fra en valmue. Kun bagmanden køber den (100 dråber). Bland den med vand til heroin, med lean til ketamin, med en pille til percs, med en svamp til 2cb, med weed til cali weed eller med fentanyl til 芬太尼. Opium fra en valmue, der aldrig fik vand, er svag: halv pris, og ikke god at blande.",
+  "en": "The milk of a poppy. Only bagmand buys it (80 drops). Mix it with water for heroin, with lean for ketamine, with a pill for percs, with a shroom for 2cb, with weed for cali weed or with fentanyl for 芬太尼.",
+  "da": "Mælken fra en valmue. Kun bagmanden køber den (80 dråber). Bland den med vand til heroin, med lean til ketamin, med en pille til percs, med en svamp til 2cb, med weed til cali weed eller med fentanyl til 芬太尼.",
   "where": "src/items.ts"
  },
  "N1462": {
@@ -9975,8 +9970,8 @@
   "where": "src/items.ts"
  },
  "N1463": {
-  "en": "Opium boiled down in water. Swallow it: you nod off for 10 seconds, then stabs give 4x blood for 3 minutes. Mix it into weed for brown weed. Bagmand pays 300.",
-  "da": "Opium kogt ind i vand. Indtag den: du nikker ud i 10 sekunder, bagefter giver stik 4x blod i 3 minutter. Bland den i weed til brun weed. Bagmanden betaler 300.",
+  "en": "Opium boiled down in water. Swallow it: you nod off for 10 seconds, then stabs give 4x blood for 3 minutes. Mix it into weed for brown weed. Bagmand pays 130.",
+  "da": "Opium kogt ind i vand. Indtag den: du nikker ud i 10 sekunder, bagefter giver stik 4x blod i 3 minutter. Bland den i weed til brun weed. Bagmanden betaler 130.",
   "where": "src/items.ts"
  },
  "N1464": {
@@ -9985,8 +9980,8 @@
   "where": "src/items.ts"
  },
  "N1465": {
-  "en": "Opium stirred into the lean. Swallow it: a horse's head grows on you for a minute, and you run twice as fast. Bagmand pays 300.",
-  "da": "Opium rørt ud i leanen. Indtag den: et hestehoved vokser ud på dig i et minut, og du løber dobbelt så hurtigt. Bagmanden betaler 300.",
+  "en": "Opium stirred into the lean. Swallow it: a horse's head grows on you for a minute, and you run twice as fast. Bagmand pays 140.",
+  "da": "Opium rørt ud i leanen. Indtag den: et hestehoved vokser ud på dig i et minut, og du løber dobbelt så hurtigt. Bagmanden betaler 140.",
   "where": "src/items.ts"
  },
  "N1466": {
@@ -9995,18 +9990,18 @@
   "where": "src/items.ts"
  },
  "N1467": {
-  "en": "Opium pressed into a pill. Swallow it: a purple haze, double speed and triple blood for a stab, for 3 minutes. Bagmand pays 320.",
-  "da": "Opium presset ind i en pille. Indtag den: en lilla dis, dobbelt fart og tredobbelt blod for et stik, i 3 minutter. Bagmanden betaler 320.",
+  "en": "Opium pressed into a pill. Swallow it: a purple haze, double speed and triple blood for a stab, for 3 minutes. Bagmand pays 130.",
+  "da": "Opium presset ind i en pille. Indtag den: en lilla dis, dobbelt fart og tredobbelt blod for et stik, i 3 minutter. Bagmanden betaler 130.",
   "where": "src/items.ts"
  },
  "N1468": {
-  "en": "Opium and a shroom, ground together. Swallow it: the colours shift, every door is open and you run twice as fast, for 3 minutes. Mix it into weed for pink weed. Bagmand pays 360.",
-  "da": "Opium og en svamp, malet sammen. Indtag den: farverne skifter, alle døre er åbne, og du løber dobbelt så hurtigt, i 3 minutter. Bland den i weed til pink weed. Bagmanden betaler 360.",
+  "en": "Opium and a shroom, ground together. Swallow it: the colours shift, every door is open and you run twice as fast, for 3 minutes. Mix it into weed for pink weed. Bagmand pays 150.",
+  "da": "Opium og en svamp, malet sammen. Indtag den: farverne skifter, alle døre er åbne, og du løber dobbelt så hurtigt, i 3 minutter. Bland den i weed til pink weed. Bagmanden betaler 150.",
   "where": "src/items.ts"
  },
  "N1469": {
-  "en": "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 420.",
-  "da": "Opium skåret med fentanyl. Indtag den: 10 sekunder i 10 gange din fart, mens du spinner, og derefter alle stoffer på én gang. Bagmanden betaler 420.",
+  "en": "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 145.",
+  "da": "Opium skåret med fentanyl. Indtag den: 10 sekunder i 10 gange din fart, mens du spinner, og derefter alle stoffer på én gang. Bagmanden betaler 145.",
   "where": "src/items.ts"
  },
  "N1470": {
@@ -10015,8 +10010,8 @@
   "where": "src/items.ts"
  },
  "N1471": {
-  "en": "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 330.",
-  "da": "Weed trukket i opium: den skinner gyldent. Rul den i jointpapir eller en blunt-wrap. Bland den med natryger til en loudpack. Bagmanden betaler 330.",
+  "en": "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 140.",
+  "da": "Weed trukket i opium: den skinner gyldent. Rul den i jointpapir eller en blunt-wrap. Bland den med natryger til en loudpack. Bagmanden betaler 140.",
   "where": "src/items.ts"
  },
  "N1472": {
@@ -10025,8 +10020,8 @@
   "where": "src/items.ts"
  },
  "N1473": {
-  "en": "2cb crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 250.",
-  "da": "2cb smuldret i weed. Rul den i jointpapir eller en blunt-wrap. Bagmanden betaler 250.",
+  "en": "2cb crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 125.",
+  "da": "2cb smuldret i weed. Rul den i jointpapir eller en blunt-wrap. Bagmanden betaler 125.",
   "where": "src/items.ts"
  },
  "N1474": {
@@ -10035,8 +10030,8 @@
   "where": "src/items.ts"
  },
  "N1475": {
-  "en": "Heroin crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 260.",
-  "da": "Heroin smuldret i weed. Rul den i jointpapir eller en blunt-wrap. Bagmanden betaler 260.",
+  "en": "Heroin crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 110.",
+  "da": "Heroin smuldret i weed. Rul den i jointpapir eller en blunt-wrap. Bagmanden betaler 110.",
   "where": "src/items.ts"
  },
  "N1476": {
@@ -10050,8 +10045,8 @@
   "where": "src/items.ts"
  },
  "N1478": {
-  "en": "Natryger and cali weed packed into one big bud that shines and sparkles. Roll it in joint paper or a blunt wrap. Smoked: you run twice as fast for a minute and get 2 deadly stabs. Bagmand pays 480.",
-  "da": "Natryger og cali weed pakket sammen til én stor top, der skinner og funkler. Rul den i jointpapir eller en blunt-wrap. Røget: du løber dobbelt så hurtigt i et minut og får 2 dødelige stik. Bagmanden betaler 480.",
+  "en": "Natryger and cali weed packed into one big bud that shines and sparkles. Roll it in joint paper or a blunt wrap. Smoked: you run twice as fast for a minute and get 2 deadly stabs. Bagmand pays 265.",
+  "da": "Natryger og cali weed pakket sammen til én stor top, der skinner og funkler. Rul den i jointpapir eller en blunt-wrap. Røget: du løber dobbelt så hurtigt i et minut og får 2 dødelige stik. Bagmanden betaler 265.",
   "where": "src/items.ts"
  },
  "N1479": {
@@ -10238,5 +10233,1050 @@
   "en": "The loudspeaker is still charging: {…} left.",
   "da": "Højttaleren lader stadig op: {…} tilbage.",
   "where": "server/src/actions/loudspeaker.ts"
+ },
+ "N1516": {
+  "en": "Hideout",
+  "da": "Skjulested",
+  "where": "src/ui/roomPanel.ts:82"
+ },
+ "N1517": {
+  "en": "{…} members: {…}",
+  "da": "{…} medlemmer: {…}",
+  "where": "src/ui/roomPanel.ts:86"
+ },
+ "N1518": {
+  "en": "Building is locked.",
+  "da": "Det er låst for byggeri.",
+  "where": "src/ui/roomPanel.ts:87"
+ },
+ "N1519": {
+  "en": "Members who may build can place and move furniture.",
+  "da": "Medlemmer der må bygge kan sætte og flytte møbler.",
+  "where": "src/ui/roomPanel.ts:87"
+ },
+ "N1520": {
+  "en": "The red computer: order furniture, members, settings. The toolbox: the shared box.",
+  "da": "Den røde computer: bestil møbler, medlemmer, indstillinger. Værktøjskassen: den fælles kasse.",
+  "where": "src/ui/roomPanel.ts:88"
+ },
+ "N1521": {
+  "en": "Start mixing ({…} min)",
+  "da": "Start blanding ({…} min)",
+  "where": "src/ui/mixer.ts:115"
+ },
+ "N1522": {
+  "en": "{placedCount}/{…} placed",
+  "da": "{placedCount}/{…} sat op",
+  "where": "src/ui/furnish.ts:60"
+ },
+ "N1523": {
+  "en": "🗑 Remove",
+  "da": "🗑 Fjern",
+  "where": "src/ui/furnish.ts:74"
+ },
+ "N1524": {
+  "en": "Search furniture",
+  "da": "Søg møbler",
+  "where": "src/ui/furnish.ts:83"
+ },
+ "N1525": {
+  "en": "All furniture ({length})",
+  "da": "Alle møbler ({length})",
+  "where": "src/ui/furnish.ts:86"
+ },
+ "N1526": {
+  "en": "Tap a piece, then a spot in the room. Drag a placed piece to move it.",
+  "da": "Tryk på et møbel, og så et sted i rummet. Træk et opsat møbel for at flytte det.",
+  "where": "src/ui/furnish.ts:86"
+ },
+ "N1527": {
+  "en": "→ Box",
+  "da": "→ Kasse",
+  "where": "src/ui/furnish.ts:119"
+ },
+ "N1528": {
+  "en": "Box ({…})",
+  "da": "Kasse ({…})",
+  "where": "src/ui/furnish.ts:128"
+ },
+ "N1529": {
+  "en": "Shared by everybody in the hideout. Each piece is still its owner's.",
+  "da": "Delt af alle i skjulestedet. Hvert møbel tilhører stadig sin ejer.",
+  "where": "src/ui/furnish.ts:129"
+ },
+ "N1530": {
+  "en": "The box is empty. Put pieces in it with → Box from your storage or the Carrying tab.",
+  "da": "Kassen er tom. Læg møbler i den med → Kasse fra dit lager eller fanen Bærer.",
+  "where": "src/ui/furnish.ts:130"
+ },
+ "N1531": {
+  "en": "🏚 {fromName} invites you to the hideout \"{roomName}\"",
+  "da": "🏚 {fromName} inviterer dig til skjulestedet \"{roomName}\"",
+  "where": "src/ui/messenger.ts:93"
+ },
+ "N1532": {
+  "en": "You joined \"{roomName}\". The hideout door is at the far end of the basement.",
+  "da": "Du er med i \"{roomName}\". Skjulestedets dør er for enden af kælderen.",
+  "where": "src/ui/messenger.ts:94"
+ },
+ "N1533": {
+  "en": "No thanks",
+  "da": "Nej tak",
+  "where": "src/ui/messenger.ts:95"
+ },
+ "N1534": {
+  "en": "Hideout invites",
+  "da": "Invitationer til skjulesteder",
+  "where": "src/ui/messenger.ts:111"
+ },
+ "N1535": {
+  "en": "invites you to the hideout",
+  "da": "inviterer dig til skjulestedet",
+  "where": "src/ui/messenger.ts:238"
+ },
+ "N1536": {
+  "en": "Two keys for mystery boxes (boxes turn up in the bins). One key opens one box. Buy as many as you like.",
+  "da": "To nøgler til mysteriekasser (kasser dukker op i skraldespandene). En nøgle åbner en kasse. Køb så mange du vil.",
+  "where": "src/ui/duckyShop.ts:103"
+ },
+ "N1537": {
+  "en": "Removed {removed} ticket{…}{…}.",
+  "da": "Fjernede {removed} lod{…}{…}.",
+  "where": "src/ui/raffleShop.ts:42"
+ },
+ "N1538": {
+  "en": "and gave the blood back",
+  "da": "og gav blodet tilbage",
+  "where": "src/ui/raffleShop.ts:42"
+ },
+ "N1539": {
+  "en": "Admin: the pool ({sold} tickets, {length} players)",
+  "da": "Admin: puljen ({sold} lod, {length} spillere)",
+  "where": "src/ui/raffleShop.ts:52"
+ },
+ "N1540": {
+  "en": "Remove and give the blood back",
+  "da": "Fjern og giv blodet tilbage",
+  "where": "src/ui/raffleShop.ts:55"
+ },
+ "N1541": {
+  "en": "Remove + refund",
+  "da": "Fjern + refunder",
+  "where": "src/ui/raffleShop.ts:55"
+ },
+ "N1542": {
+  "en": "Remove, the blood stays gone",
+  "da": "Fjern, blodet er væk",
+  "where": "src/ui/raffleShop.ts:56"
+ },
+ "N1543": {
+  "en": "Nobody has a ticket.",
+  "da": "Ingen har et lod.",
+  "where": "src/ui/raffleShop.ts:56"
+ },
+ "N1544": {
+  "en": "You have {tickets} tickets now.",
+  "da": "Du har {tickets} lod nu.",
+  "where": "src/ui/raffleShop.ts:84"
+ },
+ "N1545": {
+  "en": "You put it on.",
+  "da": "Du tog det på.",
+  "where": "src/ui/room.ts:644"
+ },
+ "N1546": {
+  "en": "It won't go on.",
+  "da": "Det vil ikke på.",
+  "where": "src/ui/room.ts:644"
+ },
+ "N1547": {
+  "en": "🛠 Edit room",
+  "da": "🛠 Indret rum",
+  "where": "src/ui/room.ts:681"
+ },
+ "N1548": {
+  "en": "🏠 Landlord",
+  "da": "🏠 Udlejer",
+  "where": "src/ui/room.ts:684"
+ },
+ "N1549": {
+  "en": "Pet merchant: buy a pet",
+  "da": "Dyrehandler: køb et kæledyr",
+  "where": "src/ui/room.ts:704"
+ },
+ "N1550": {
+  "en": "Landlord: hideouts",
+  "da": "Udlejer: skjulesteder",
+  "where": "src/ui/room.ts:705"
+ },
+ "N1551": {
+  "en": "Computer: order furniture, members, settings",
+  "da": "Computer: bestil møbler, medlemmer, indstillinger",
+  "where": "src/ui/room.ts:706"
+ },
+ "N1552": {
+  "en": "Door: your hideouts",
+  "da": "Dør: dine skjulesteder",
+  "where": "src/ui/room.ts:707"
+ },
+ "N1553": {
+  "en": "pay2win: things for real money",
+  "da": "pay2win: ting for rigtige penge",
+  "where": "src/ui/room.ts:721"
+ },
+ "N1554": {
+  "en": "Browse pets",
+  "da": "Se kæledyr",
+  "where": "src/ui/room.ts:1076"
+ },
+ "N1555": {
+  "en": "Pet merchant",
+  "da": "Dyrehandler",
+  "where": "src/ui/room.ts:1076"
+ },
+ "N1556": {
+  "en": "Computer",
+  "da": "Computer",
+  "where": "src/ui/room.ts:1077"
+ },
+ "N1557": {
+  "en": "Hideouts",
+  "da": "Skjulesteder",
+  "where": "src/ui/room.ts:1078"
+ },
+ "N1558": {
+  "en": "That one is built into the basement: move it instead.",
+  "da": "Den er bygget ind i kælderen: flyt den i stedet.",
+  "where": "src/ui/room.ts:1229"
+ },
+ "N1559": {
+  "en": "That one can't be removed.",
+  "da": "Den kan ikke fjernes.",
+  "where": "src/ui/room.ts:1229"
+ },
+ "N1560": {
+  "en": "Building is locked by the owner.",
+  "da": "Ejeren har låst for byggeri.",
+  "where": "src/ui/room.ts:1237"
+ },
+ "N1561": {
+  "en": "The owner hasn't given you building rights.",
+  "da": "Ejeren har ikke givet dig lov til at bygge.",
+  "where": "src/ui/room.ts:1237"
+ },
+ "N1562": {
+  "en": "That one can't be moved.",
+  "da": "Den kan ikke flyttes.",
+  "where": "src/ui/room.ts:1273"
+ },
+ "N1563": {
+  "en": "That's the limit: {cap} pieces in this room.",
+  "da": "Det er grænsen: {cap} møbler i dette rum.",
+  "where": "src/ui/room.ts:1281"
+ },
+ "N1564": {
+  "en": "Growing: {…}% (about {left2} to go).{…}",
+  "da": "Vokser: {…}% (ca. {left2} tilbage).{…}",
+  "where": "src/ui/room.ts:1615"
+ },
+ "N1565": {
+  "en": "A poppy doesn't need water.",
+  "da": "En valmue skal ikke have vand.",
+  "where": "src/ui/room.ts:1648"
+ },
+ "N1566": {
+  "en": "+1 Opium",
+  "da": "+1 Opium",
+  "where": "src/ui/room.ts:1661"
+ },
+ "N1567": {
+  "en": "{who} rolled a {n}.",
+  "da": "{who} slog en {n}'er.",
+  "where": "src/ui/room.ts:3025"
+ },
+ "N1568": {
+  "en": "You aren't in that hideout.",
+  "da": "Du er ikke med i det skjulested.",
+  "where": "src/ui/room.ts:5372"
+ },
+ "N1569": {
+  "en": "You are not in that hideout any more.",
+  "da": "Du er ikke med i det skjulested mere.",
+  "where": "src/ui/room.ts:5390"
+ },
+ "N1570": {
+  "en": "A hideout of your own",
+  "da": "Dit eget skjulested",
+  "where": "src/ui/hideoutLandlord.ts:70"
+ },
+ "N1571": {
+  "en": "A shared room three times the size of yours ({…} × {…}) for you and your gang. You invite the members, you decide who may build, and everybody can use its pots, mixers and sink. It comes with a computer, a toolbox, a sink and a boombox.",
+  "da": "Et delt rum tre gange så stort som dit ({…} × {…}) til dig og din gang. Du inviterer medlemmerne, du bestemmer hvem der må bygge, og alle kan bruge potter, blandere og vask. Det kommer med en computer, en værktøjskasse, en vask og en boombox.",
+  "where": "src/ui/hideoutLandlord.ts:71"
+ },
+ "N1572": {
+  "en": "It's yours. Take the door at the end of the basement.",
+  "da": "Det er dit. Tag døren for enden af kælderen.",
+  "where": "src/ui/hideoutLandlord.ts:72"
+ },
+ "N1573": {
+  "en": "Buy a hideout ({HIDEOUT_PRICE} drops)",
+  "da": "Køb et skjulested ({HIDEOUT_PRICE} dråber)",
+  "where": "src/ui/hideoutLandlord.ts:72"
+ },
+ "N1574": {
+  "en": "You need {…} more drops.",
+  "da": "Du mangler {…} dråber.",
+  "where": "src/ui/hideoutLandlord.ts:73"
+ },
+ "N1575": {
+  "en": "Your hideout is {size} × {size}.",
+  "da": "Dit skjulested er {size} × {size}.",
+  "where": "src/ui/hideoutLandlord.ts:83"
+ },
+ "N1576": {
+  "en": "Bigger hideout",
+  "da": "Større skjulested",
+  "where": "src/ui/hideoutLandlord.ts:84"
+ },
+ "N1577": {
+  "en": "{s} × {s} hideout",
+  "da": "{s} × {s} skjulested",
+  "where": "src/ui/hideoutLandlord.ts:88"
+ },
+ "N1578": {
+  "en": "Your hideout is now {size} × {size}.",
+  "da": "Dit skjulested er nu {size} × {size}.",
+  "where": "src/ui/hideoutLandlord.ts:90"
+ },
+ "N1579": {
+  "en": "{p} drops",
+  "da": "{p} dråber",
+  "where": "src/ui/hideoutLandlord.ts:90"
+ },
+ "N1580": {
+  "en": "Colours · {HIDEOUT_RECOLOR_PRICE} drops for each part you change",
+  "da": "Farver · {HIDEOUT_RECOLOR_PRICE} dråber for hver del du ændrer",
+  "where": "src/ui/hideoutLandlord.ts:92"
+ },
+ "N1581": {
+  "en": "New colours. That was {price} drops.",
+  "da": "Nye farver. Det kostede {price} dråber.",
+  "where": "src/ui/hideoutLandlord.ts:101"
+ },
+ "N1582": {
+  "en": "🚪 Hideouts",
+  "da": "🚪 Skjulesteder",
+  "where": "src/ui/hideoutDoor.ts:16"
+ },
+ "N1583": {
+  "en": "Invites",
+  "da": "Invitationer",
+  "where": "src/ui/hideoutDoor.ts:24"
+ },
+ "N1584": {
+  "en": "{fromName} invites you",
+  "da": "{fromName} inviterer dig",
+  "where": "src/ui/hideoutDoor.ts:26"
+ },
+ "N1585": {
+  "en": "You joined.",
+  "da": "Du er med.",
+  "where": "src/ui/hideoutDoor.ts:27"
+ },
+ "N1586": {
+  "en": "Your hideouts",
+  "da": "Dine skjulesteder",
+  "where": "src/ui/hideoutDoor.ts:30"
+ },
+ "N1587": {
+  "en": "You aren't in a hideout. The landlord next to the door sells them, or ask a friend to invite you.",
+  "da": "Du er ikke med i et skjulested. Udlejeren ved siden af døren sælger dem, eller bed en ven invitere dig.",
+  "where": "src/ui/hideoutDoor.ts:31"
+ },
+ "N1588": {
+  "en": "You are a member",
+  "da": "Du er medlem",
+  "where": "src/ui/hideoutDoor.ts:33"
+ },
+ "N1589": {
+  "en": "Enter",
+  "da": "Gå ind",
+  "where": "src/ui/hideoutDoor.ts:34"
+ },
+ "N1590": {
+  "en": "Orders",
+  "da": "Bestillinger",
+  "where": "src/ui/hideoutComputer.ts:19"
+ },
+ "N1591": {
+  "en": "Members",
+  "da": "Medlemmer",
+  "where": "src/ui/hideoutComputer.ts:20"
+ },
+ "N1592": {
+  "en": "Hideout furniture",
+  "da": "Skjulestedets møbler",
+  "where": "src/ui/hideoutComputer.ts:60"
+ },
+ "N1593": {
+  "en": "Only for hideouts. Ordered pieces arrive in {…} minutes — collect them under Orders.",
+  "da": "Kun til skjulesteder. Bestilte møbler kommer om {…} minutter — hent dem under Bestillinger.",
+  "where": "src/ui/hideoutComputer.ts:60"
+ },
+ "N1594": {
+  "en": "Arrives in {…} min · {…}",
+  "da": "Kommer om {…} min · {…}",
+  "where": "src/ui/hideoutComputer.ts:63"
+ },
+ "N1595": {
+  "en": "{w} × {h} tiles",
+  "da": "{w} × {h} felter",
+  "where": "src/ui/hideoutComputer.ts:63"
+ },
+ "N1596": {
+  "en": "{label} ordered. It arrives in an hour.",
+  "da": "{label} bestilt. Den kommer om en time.",
+  "where": "src/ui/hideoutComputer.ts:64"
+ },
+ "N1597": {
+  "en": "More pieces are coming soon.",
+  "da": "Flere møbler kommer snart.",
+  "where": "src/ui/hideoutComputer.ts:66"
+ },
+ "N1598": {
+  "en": "Your orders",
+  "da": "Dine bestillinger",
+  "where": "src/ui/hideoutComputer.ts:75"
+ },
+ "N1599": {
+  "en": "Only the one who ordered a piece can collect it.",
+  "da": "Kun den der bestilte et møbel kan hente det.",
+  "where": "src/ui/hideoutComputer.ts:75"
+ },
+ "N1600": {
+  "en": "Arrives in {countdownText}",
+  "da": "Kommer om {countdownText}",
+  "where": "src/ui/hideoutComputer.ts:80"
+ },
+ "N1601": {
+  "en": "{label} is in your pocket.",
+  "da": "{label} er i din lomme.",
+  "where": "src/ui/hideoutComputer.ts:82"
+ },
+ "N1602": {
+  "en": "No orders. Order something in the Shop.",
+  "da": "Ingen bestillinger. Bestil noget i Shoppen.",
+  "where": "src/ui/hideoutComputer.ts:83"
+ },
+ "N1603": {
+  "en": "{…} more on the way for other members.",
+  "da": "{…} mere på vej til andre medlemmer.",
+  "where": "src/ui/hideoutComputer.ts:84"
+ },
+ "N1604": {
+  "en": "Search a player's name to invite",
+  "da": "Søg efter en spillers navn for at invitere",
+  "where": "src/ui/hideoutComputer.ts:92"
+ },
+ "N1605": {
+  "en": "Invite sent to {name}.",
+  "da": "Invitation sendt til {name}.",
+  "where": "src/ui/hideoutComputer.ts:104"
+ },
+ "N1606": {
+  "en": "{…} of {…}",
+  "da": "{…} af {…}",
+  "where": "src/ui/hideoutComputer.ts:108"
+ },
+ "N1607": {
+  "en": "Owner",
+  "da": "Ejer",
+  "where": "src/ui/hideoutComputer.ts:111"
+ },
+ "N1608": {
+  "en": "May this member place and move furniture?",
+  "da": "Må dette medlem sætte og flytte møbler?",
+  "where": "src/ui/hideoutComputer.ts:116"
+ },
+ "N1609": {
+  "en": "🔨 Builds",
+  "da": "🔨 Bygger",
+  "where": "src/ui/hideoutComputer.ts:116"
+ },
+ "N1610": {
+  "en": "🚫 No building",
+  "da": "🚫 Ingen bygning",
+  "where": "src/ui/hideoutComputer.ts:116"
+ },
+ "N1611": {
+  "en": "Kick {name}? Their furniture goes back to their own storage.",
+  "da": "Smid {name} ud? Deres møbler går tilbage til deres eget lager.",
+  "where": "src/ui/hideoutComputer.ts:117"
+ },
+ "N1612": {
+  "en": "{name} is out.",
+  "da": "{name} er smidt ud.",
+  "where": "src/ui/hideoutComputer.ts:117"
+ },
+ "N1613": {
+  "en": "Kick",
+  "da": "Smid ud",
+  "where": "src/ui/hideoutComputer.ts:117"
+ },
+ "N1614": {
+  "en": "Builds",
+  "da": "Bygger",
+  "where": "src/ui/hideoutComputer.ts:118"
+ },
+ "N1615": {
+  "en": "No building",
+  "da": "Ingen bygning",
+  "where": "src/ui/hideoutComputer.ts:118"
+ },
+ "N1616": {
+  "en": "Only the owner can invite and kick.",
+  "da": "Kun ejeren kan invitere og smide ud.",
+  "where": "src/ui/hideoutComputer.ts:119"
+ },
+ "N1617": {
+  "en": "{w} × {h} · {placed}/{…} pieces",
+  "da": "{w} × {h} · {placed}/{…} møbler",
+  "where": "src/ui/hideoutComputer.ts:129"
+ },
+ "N1618": {
+  "en": "Hideout name",
+  "da": "Skjulestedets navn",
+  "where": "src/ui/hideoutComputer.ts:132"
+ },
+ "N1619": {
+  "en": "Save name",
+  "da": "Gem navn",
+  "where": "src/ui/hideoutComputer.ts:133"
+ },
+ "N1620": {
+  "en": "Lock building for everybody",
+  "da": "Lås byggeri for alle",
+  "where": "src/ui/hideoutComputer.ts:135"
+ },
+ "N1621": {
+  "en": "Building is open again.",
+  "da": "Det er åbent for byggeri igen.",
+  "where": "src/ui/hideoutComputer.ts:136"
+ },
+ "N1622": {
+  "en": "🔒 Locked",
+  "da": "🔒 Låst",
+  "where": "src/ui/hideoutComputer.ts:136"
+ },
+ "N1623": {
+  "en": "🔓 Open",
+  "da": "🔓 Åben",
+  "where": "src/ui/hideoutComputer.ts:136"
+ },
+ "N1624": {
+  "en": "While building is locked only you can place, move or take back furniture. Everybody can still use the pots, mixers, sink and the box.",
+  "da": "Mens byggeri er låst kan kun du sætte, flytte eller tage møbler tilbage. Alle kan stadig bruge potter, blandere, vask og kassen.",
+  "where": "src/ui/hideoutComputer.ts:137"
+ },
+ "N1625": {
+  "en": "Furniture you put down is yours: when you leave, it goes back to your own storage.",
+  "da": "Møbler du sætter op er dine: når du går, går de tilbage til dit eget lager.",
+  "where": "src/ui/hideoutComputer.ts:139"
+ },
+ "N1626": {
+  "en": "Leave this hideout? Your furniture goes back to your storage.",
+  "da": "Forlad dette skjulested? Dine møbler går tilbage til dit lager.",
+  "where": "src/ui/hideoutComputer.ts:140"
+ },
+ "N1627": {
+  "en": "Leave hideout",
+  "da": "Forlad skjulested",
+  "where": "src/ui/hideoutComputer.ts:140"
+ },
+ "N1628": {
+  "en": "Invite to hideout",
+  "da": "Inviter til skjulested",
+  "where": "src/ui/profileWindow.ts:126"
+ },
+ "N1629": {
+  "en": "You invited {name} to your hideout.",
+  "da": "Du inviterede {name} til dit skjulested.",
+  "where": "src/ui/profileWindow.ts:126"
+ },
+ "N1630": {
+  "en": "Ask them to join your hideout",
+  "da": "Bed dem være med i dit skjulested",
+  "where": "src/ui/profileWindow.ts:126"
+ },
+ "N1631": {
+  "en": "🐾 Pet merchant",
+  "da": "🐾 Dyrehandler",
+  "where": "src/ui/petShop.ts:20"
+ },
+ "N1632": {
+  "en": "Buy a pet",
+  "da": "Køb et kæledyr",
+  "where": "src/ui/petShop.ts:39"
+ },
+ "N1633": {
+  "en": "My pets ({length})",
+  "da": "Mine kæledyr ({length})",
+  "where": "src/ui/petShop.ts:40"
+ },
+ "N1634": {
+  "en": "Every pet comes in a colour you can't pick: you find out when it is yours. It walks behind you, and everybody sees it.",
+  "da": "Hvert kæledyr kommer i en farve du ikke kan vælge: du finder ud af det når det er dit. Det går efter dig, og alle kan se det.",
+  "where": "src/ui/petShop.ts:43"
+ },
+ "N1635": {
+  "en": "{label} is yours. It follows you now.",
+  "da": "{label} er din. Den følger dig nu.",
+  "where": "src/ui/petShop.ts:49"
+ },
+ "N1636": {
+  "en": "It waits at home.",
+  "da": "Den venter derhjemme.",
+  "where": "src/ui/petShop.ts:57"
+ },
+ "N1637": {
+  "en": "{label} walks with you.",
+  "da": "{label} går med dig.",
+  "where": "src/ui/petShop.ts:57"
+ },
+ "N1638": {
+  "en": "Send home",
+  "da": "Send hjem",
+  "where": "src/ui/petShop.ts:57"
+ },
+ "N1639": {
+  "en": "Take along",
+  "da": "Tag med",
+  "where": "src/ui/petShop.ts:57"
+ },
+ "N1640": {
+  "en": "You have no pets yet. Buy one on the first page.",
+  "da": "Du har ingen kæledyr endnu. Køb et på første side.",
+  "where": "src/ui/petShop.ts:58"
+ },
+ "N1641": {
+  "en": "Junk",
+  "da": "Skrald",
+  "where": "src/ui/caseOpen.ts:12"
+ },
+ "N1642": {
+  "en": "Common",
+  "da": "Almindelig",
+  "where": "src/ui/caseOpen.ts:12"
+ },
+ "N1643": {
+  "en": "Rare",
+  "da": "Sjælden",
+  "where": "src/ui/caseOpen.ts:12"
+ },
+ "N1644": {
+  "en": "Unusual",
+  "da": "Unusual",
+  "where": "src/ui/caseOpen.ts:12"
+ },
+ "N1645": {
+  "en": "Mystery box",
+  "da": "Mysteriekasse",
+  "where": "src/ui/caseOpen.ts:43"
+ },
+ "N1646": {
+  "en": "📦 {boxes} box{…}",
+  "da": "📦 {boxes} kasse{…}",
+  "where": "src/ui/caseOpen.ts:62"
+ },
+ "N1647": {
+  "en": "🔑 {keys} key{…}",
+  "da": "🔑 {keys} nøgle{…}",
+  "where": "src/ui/caseOpen.ts:62"
+ },
+ "N1648": {
+  "en": "You have no box. Boxes turn up in the bins.",
+  "da": "Du har ingen kasse. Kasser dukker op i skraldespandene.",
+  "where": "src/ui/caseOpen.ts:63"
+ },
+ "N1649": {
+  "en": "You need a key: 6ixty sells them (250 blood), and so does the pay2win machine in the shop (2 for 25 kr).",
+  "da": "Du skal bruge en nøgle: 6ixty sælger dem (250 blod), og det gør pay2win-maskinen i shoppen også (2 for 25 kr).",
+  "where": "src/ui/caseOpen.ts:63"
+ },
+ "N1650": {
+  "en": "One key opens one box.",
+  "da": "En nøgle åbner en kasse.",
+  "where": "src/ui/caseOpen.ts:63"
+ },
+ "N1651": {
+  "en": "Open another",
+  "da": "Åbn en til",
+  "where": "src/ui/caseOpen.ts:65"
+ },
+ "N1652": {
+  "en": "Open (uses 1 key)",
+  "da": "Åbn (bruger 1 nøgle)",
+  "where": "src/ui/caseOpen.ts:65"
+ },
+ "N1653": {
+  "en": "It won't open.",
+  "da": "Den vil ikke åbne.",
+  "where": "src/ui/caseOpen.ts:73"
+ },
+ "N1654": {
+  "en": "pay2win: 2 nøgler",
+  "da": "pay2win: 2 nøgler",
+  "where": "src/shared/ducky.ts:33"
+ },
+ "N1655": {
+  "en": "mystery box",
+  "da": "mysteriekasse",
+  "where": "src/shared/economy.ts:19"
+ },
+ "N1656": {
+  "en": "A booth for two. Sit down together and tap it: it tells you how well you match.",
+  "da": "En bås til to. Sæt jer sammen og tryk på den: den fortæller hvor godt I passer sammen.",
+  "where": "src/shared/hideout.ts:46"
+ },
+ "N1657": {
+  "en": "Rare furniture",
+  "da": "Sjældne møbler",
+  "where": "src/shared/cases.ts:29"
+ },
+ "N1658": {
+  "en": "Burning Icarus Crown",
+  "da": "Burning Icarus Crown",
+  "where": "src/shared/cases.ts:43"
+ },
+ "N1659": {
+  "en": "Starry Loyalty Crown",
+  "da": "Starry Loyalty Crown",
+  "where": "src/shared/cases.ts:44"
+ },
+ "N1660": {
+  "en": "Lovestruck Cat Hat",
+  "da": "Lovestruck Cat Hat",
+  "where": "src/shared/cases.ts:45"
+ },
+ "N1661": {
+  "en": "Frosted Lion Mask",
+  "da": "Frosted Lion Mask",
+  "where": "src/shared/cases.ts:46"
+ },
+ "N1662": {
+  "en": "Bubbly Shark Head",
+  "da": "Bubbly Shark Head",
+  "where": "src/shared/cases.ts:47"
+ },
+ "N1663": {
+  "en": "Electric Devil Horns",
+  "da": "Electric Devil Horns",
+  "where": "src/shared/cases.ts:48"
+ },
+ "N1664": {
+  "en": "Rainbow Bear",
+  "da": "Rainbow Bear",
+  "where": "src/shared/cases.ts:49"
+ },
+ "N1665": {
+  "en": "Smoldering Gold Bandana",
+  "da": "Smoldering Gold Bandana",
+  "where": "src/shared/cases.ts:50"
+ },
+ "N1666": {
+  "en": "need a place for you and your boys? a hideout is 1000 blood.",
+  "da": "brug for et sted til dig og dine drenge? et skjulested koster 1000 blod.",
+  "where": "src/npc.ts:46"
+ },
+ "N1667": {
+  "en": "2 box keys are in your pockets.",
+  "da": "2 kassenøgler er i dine lommer.",
+  "where": "src/payReturn.ts:23"
+ },
+ "N1668": {
+  "en": "A locked crate. Tap it to open it with a key: you never know what is inside. Boxes turn up in the bins.",
+  "da": "En låst kasse. Tryk på den for at åbne den med en nøgle: man ved aldrig hvad der er i. Kasser dukker op i skraldespandene.",
+  "where": "src/items.ts:452"
+ },
+ "N1669": {
+  "en": "Box key",
+  "da": "Kassenøgle",
+  "where": "src/items.ts:453"
+ },
+ "N1670": {
+  "en": "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (2 for 25 kr). One key opens one box.",
+  "da": "En nøgle til en mysteriekasse. 6ixty sælger dem, og det gør pay2win-maskinen i shoppen også (2 for 25 kr). En nøgle åbner en kasse.",
+  "where": "src/items.ts:453"
+ },
+ "N1671": {
+  "en": "Unusual {name}",
+  "da": "Unusual {name}",
+  "where": "src/items.ts:454"
+ },
+ "N1672": {
+  "en": "An unusual: a hat with a particle effect of its own. Tap it to wear it. You can put it back in your inventory from the wardrobe in your room.",
+  "da": "En unusual: en hat med sin egen partikeleffekt. Tryk på den for at tage den på. Du kan lægge den tilbage i din taske fra garderoben i dit rum.",
+  "where": "src/items.ts:454"
+ },
+ "N1673": {
+  "en": "Boombox",
+  "da": "Boombox",
+  "where": "src/rooms.ts:110"
+ },
+ "N1674": {
+  "en": "Hideouts",
+  "da": "Skjulesteder",
+  "where": "src/rooms.ts:120"
+ },
+ "N1675": {
+  "en": "You are wearing it. Everybody sees its particles.",
+  "da": "Du har den på. Alle kan se dens partikler.",
+  "where": "src/unusual.ts:28"
+ },
+ "N1676": {
+  "en": "It is back in your inventory.",
+  "da": "Den er tilbage i din taske.",
+  "where": "src/unusual.ts:29"
+ },
+ "N1677": {
+  "en": "Put back in inventory",
+  "da": "Læg tilbage i tasken",
+  "where": "src/unusual.ts:29"
+ },
+ "N1678": {
+  "en": "No unusual on. Tap one in your inventory to wear it.",
+  "da": "Ingen unusual på. Tryk på en i din taske for at tage den på.",
+  "where": "src/unusual.ts:30"
+ },
+ "N1679": {
+  "en": "You aren't in that hideout.",
+  "da": "Du er ikke med i det skjulested.",
+  "where": "server/src/actions/toolbox.ts:29"
+ },
+ "N1680": {
+  "en": "Building is locked in this hideout.",
+  "da": "Der er låst for byggeri i dette skjulested.",
+  "where": "server/src/actions/toolbox.ts:30"
+ },
+ "N1681": {
+  "en": "You aren't allowed to build in this hideout.",
+  "da": "Du må ikke bygge i dette skjulested.",
+  "where": "server/src/actions/toolbox.ts:30"
+ },
+ "N1682": {
+  "en": "There's no box here.",
+  "da": "Der er ingen kasse her.",
+  "where": "server/src/actions/toolbox.ts:185"
+ },
+ "N1683": {
+  "en": "There's none of that in the box.",
+  "da": "Der er ikke noget af det i kassen.",
+  "where": "server/src/actions/toolbox.ts:189"
+ },
+ "N1684": {
+  "en": "That piece only fits in a hideout.",
+  "da": "Det møbel passer kun i et skjulested.",
+  "where": "server/src/actions/toolbox.ts:212"
+ },
+ "N1685": {
+  "en": "Only the owner can take the boombox.",
+  "da": "Kun ejeren kan tage boomboxen.",
+  "where": "server/src/actions/toolbox.ts:264"
+ },
+ "N1686": {
+  "en": "The box is full of those.",
+  "da": "Kassen er fuld af dem.",
+  "where": "server/src/actions/toolbox.ts:284"
+ },
+ "N1687": {
+  "en": "Your pockets are full: make room for the keys.",
+  "da": "Dine lommer er fulde: gør plads til nøglerne.",
+  "where": "server/src/actions/ducky.ts:40"
+ },
+ "N1688": {
+  "en": "That isn't a hideout.",
+  "da": "Det er ikke et skjulested.",
+  "where": "server/src/actions/util.ts:44"
+ },
+ "N1689": {
+  "en": "That hideout doesn't exist.",
+  "da": "Det skjulested findes ikke.",
+  "where": "server/src/actions/util.ts:46"
+ },
+ "N1690": {
+  "en": "Talk to the landlord at the hideout door, or use the computer in your hideout.",
+  "da": "Tal med udlejeren ved skjulestedets dør, eller brug computeren i dit skjulested.",
+  "where": "server/src/actions/hideout.ts:23"
+ },
+ "N1691": {
+  "en": "You haven't got a hideout yet.",
+  "da": "Du har ikke et skjulested endnu.",
+  "where": "server/src/actions/hideout.ts:29"
+ },
+ "N1692": {
+  "en": "You already have a hideout.",
+  "da": "Du har allerede et skjulested.",
+  "where": "server/src/actions/hideout.ts:39"
+ },
+ "N1693": {
+  "en": "{name}'s hideout",
+  "da": "{name}s skjulested",
+  "where": "server/src/actions/hideout.ts:45"
+ },
+ "N1694": {
+  "en": "Your hideout is as big as it gets.",
+  "da": "Dit skjulested er så stort som det bliver.",
+  "where": "server/src/actions/hideout.ts:61"
+ },
+ "N1695": {
+  "en": "Bad name.",
+  "da": "Dårligt navn.",
+  "where": "server/src/actions/hideout.ts:106"
+ },
+ "N1696": {
+  "en": "You can't kick yourself.",
+  "da": "Du kan ikke smide dig selv ud.",
+  "where": "server/src/actions/hideout.ts:137"
+ },
+ "N1697": {
+  "en": "They aren't in your hideout.",
+  "da": "De er ikke med i dit skjulested.",
+  "where": "server/src/actions/hideout.ts:138"
+ },
+ "N1698": {
+  "en": "It's your hideout: you can't leave it.",
+  "da": "Det er dit skjulested: du kan ikke forlade det.",
+  "where": "server/src/actions/hideout.ts:149"
+ },
+ "N1699": {
+  "en": "There's nobody with that name.",
+  "da": "Der er ingen med det navn.",
+  "where": "server/src/actions/hideout.ts:187"
+ },
+ "N1700": {
+  "en": "That's you.",
+  "da": "Det er dig.",
+  "where": "server/src/actions/hideout.ts:188"
+ },
+ "N1701": {
+  "en": "They are already in your hideout.",
+  "da": "De er allerede med i dit skjulested.",
+  "where": "server/src/actions/hideout.ts:191"
+ },
+ "N1702": {
+  "en": "A hideout holds {HIDEOUT_MAX_MEMBERS} members at most.",
+  "da": "Et skjulested har plads til højst {HIDEOUT_MAX_MEMBERS} medlemmer.",
+  "where": "server/src/actions/hideout.ts:192"
+ },
+ "N1703": {
+  "en": "That invite is gone.",
+  "da": "Den invitation er væk.",
+  "where": "server/src/actions/hideout.ts:204"
+ },
+ "N1704": {
+  "en": "That hideout doesn't exist any more.",
+  "da": "Det skjulested findes ikke mere.",
+  "where": "server/src/actions/hideout.ts:209"
+ },
+ "N1705": {
+  "en": "That hideout is full.",
+  "da": "Det skjulested er fuldt.",
+  "where": "server/src/actions/hideout.ts:210"
+ },
+ "N1706": {
+  "en": "The boombox can't go in the box.",
+  "da": "Boomboxen kan ikke komme i kassen.",
+  "where": "server/src/actions/hideout.ts:224"
+ },
+ "N1707": {
+  "en": "Only furniture goes in the box.",
+  "da": "Kun møbler kan komme i kassen.",
+  "where": "server/src/actions/hideout.ts:225"
+ },
+ "N1708": {
+  "en": "There's not enough of that in storage.",
+  "da": "Der er ikke nok af det på lageret.",
+  "where": "server/src/actions/hideout.ts:236"
+ },
+ "N1709": {
+  "en": "The box is full of those.",
+  "da": "Kassen er fuld af dem.",
+  "where": "server/src/actions/hideout.ts:240"
+ },
+ "N1710": {
+  "en": "You have none of that in the box.",
+  "da": "Du har ikke noget af det i kassen.",
+  "where": "server/src/actions/hideout.ts:254"
+ },
+ "N1711": {
+  "en": "You already have 5 orders on the way.",
+  "da": "Du har allerede 5 bestillinger på vej.",
+  "where": "server/src/actions/hideout.ts:281"
+ },
+ "N1712": {
+  "en": "That isn't your order.",
+  "da": "Det er ikke din bestilling.",
+  "where": "server/src/actions/hideout.ts:301"
+ },
+ "N1713": {
+  "en": "It hasn't arrived yet.",
+  "da": "Den er ikke kommet endnu.",
+  "where": "server/src/actions/hideout.ts:302"
+ },
+ "N1714": {
+  "en": "A poppy doesn't need water.",
+  "da": "En valmue skal ikke have vand.",
+  "where": "server/src/actions/rewards.ts:291"
+ },
+ "N1715": {
+  "en": "The merchant doesn't have that one.",
+  "da": "Handleren har ikke den.",
+  "where": "server/src/actions/pets.ts:15"
+ },
+ "N1716": {
+  "en": "You can't look after more than {PETS_MAX} pets.",
+  "da": "Du kan ikke tage dig af mere end {PETS_MAX} kæledyr.",
+  "where": "server/src/actions/pets.ts:18"
+ },
+ "N1717": {
+  "en": "That isn't your pet.",
+  "da": "Det er ikke dit kæledyr.",
+  "where": "server/src/actions/pets.ts:42"
+ },
+ "N1718": {
+  "en": "You haven't got a mystery box.",
+  "da": "Du har ikke en mysteriekasse.",
+  "where": "server/src/actions/cases.ts:25"
+ },
+ "N1719": {
+  "en": "You need a key to open it. 6ixty sells them.",
+  "da": "Du skal bruge en nøgle for at åbne den. 6ixty sælger dem.",
+  "where": "server/src/actions/cases.ts:26"
+ },
+ "N1720": {
+  "en": "That prize doesn't exist any more. Try again.",
+  "da": "Den præmie findes ikke mere. Prøv igen.",
+  "where": "server/src/actions/cases.ts:39"
+ },
+ "N1721": {
+  "en": "Your pockets are full: make room for the prize first.",
+  "da": "Dine lommer er fulde: gør plads til præmien først.",
+  "where": "server/src/actions/cases.ts:43"
+ },
+ "N1722": {
+  "en": "That isn't an unusual.",
+  "da": "Det er ikke en unusual.",
+  "where": "server/src/actions/cases.ts:56"
+ },
+ "N1723": {
+  "en": "Your pockets are full.",
+  "da": "Dine lommer er fulde.",
+  "where": "server/src/actions/cases.ts:59"
+ },
+ "N1724": {
+  "en": "You aren't wearing one.",
+  "da": "Du har ikke en på.",
+  "where": "server/src/actions/cases.ts:71"
  }
 }

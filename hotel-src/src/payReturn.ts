@@ -20,6 +20,7 @@ export async function collectPaidCds(p: Profile): Promise<void> {
       for (const d of r.ducky) {
         if (d.stuck) { toast(`${d.stuck} Your payment is safe: tell the admin and you get it sorted.`, "err"); continue; }
         if (d.product === "starter") toast("The starter package is in your pockets, and 50 blood.");
+        else if (d.product === "keys") toast("2 box keys are in your pockets.");
         else if (d.product === "color" && d.color) { p.nameColor = d.color; window.dispatchEvent(new CustomEvent("name-color", { detail: d.color })); toast("Your name has a colour now."); }
         else if (d.product === "fx") toast("The chat tool is yours: tap the ✨ next to the chat bar.");
         else if (d.product === "rename" && d.name) { toast(`You are ${d.name} now. The page reloads.`); window.setTimeout(() => window.location.reload(), 1600); }

@@ -1,5 +1,5 @@
 // Things that pay blood or change what you carry: stabbing, the syringe, Flappy Bird, cats, bins, smoking, rolling, watering, growing.
-import { Action, cheb, ID_RE, int, requireInRoom, requireOwnRoom, text } from "./util";
+import { Action, cheb, ID_RE, int, requireInRoom, requireWorkRoom, text } from "./util";
 import { fail } from "../ctx";
 import { skipTime } from "../skipTime";
 import {
@@ -245,7 +245,7 @@ export const combineItems: Action = {
 
 export const fillCan: Action = {
   async run(c, a) {
-    await requireOwnRoom(c); // the sink is in your own room
+    await requireWorkRoom(c, a.room); // the sink is in your own room (or a hideout you are in)
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "wateringcan") fail("That can isn't empty.");
@@ -255,8 +255,8 @@ export const fillCan: Action = {
 };
 
 // ---- growing weed in a growing kit (a piece of furniture in your own room) ----------------------------------------------
-async function planter(c: import("../ctx").Ctx, fid: unknown) {
-  const room = await requireOwnRoom(c);
+async function planter(c: import("../ctx").Ctx, fid: unknown, want?: unknown) {
+  const room = await requireWorkRoom(c, want); // (your own room, or a hideout you are in: every member may plant, water and harvest)
   const id = text(fid, ID_RE, "kit");
   const path = `roomsMeta/${room}/furni/${id}`;
   const row = await c.db.get<{ kind?: string; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string }>(path);
@@ -264,9 +264,11 @@ async function planter(c: import("../ctx").Ctx, fid: unknown) {
   return { path, row };
 }
 
+const roomLock = (c: import("../ctx").Ctx, a: any): string[] => [`room:${typeof a?.room === "string" ? a.room : `u_${c.uid}`}`];
 export const plant: Action = {
+  locks: (c, a) => roomLock(c, a),
   async run(c, a) {
-    const { path, row } = await planter(c, a.fid);
+    const { path, row } = await planter(c, a.fid, a.room);
     if (typeof row.plantedAt === "number") fail("Something is already growing there.");
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
@@ -282,9 +284,11 @@ export const plant: Action = {
 };
 
 export const water: Action = {
+  locks: (c, a) => roomLock(c, a),
   async run(c, a) {
-    const { path, row } = await planter(c, a.fid);
+    const { path, row } = await planter(c, a.fid, a.room);
     if (typeof row.plantedAt !== "number") fail("There's nothing planted there.");
+    if (row.crop === "poppy") fail("A poppy doesn't need water.");
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "wateringcan_full") fail("That can is empty.");
@@ -297,21 +301,22 @@ export const water: Action = {
 };
 
 export const harvest: Action = {
+  locks: (c, a) => roomLock(c, a),
   async run(c, a) {
-    const { path, row } = await planter(c, a.fid);
+    const { path, row } = await planter(c, a.fid, a.room);
     if (typeof row.plantedAt !== "number") fail("There's nothing planted there.");
     if (c.now - row.plantedAt! < growMsOf(row.crop)) fail("It isn't ready yet.");
     const ass = !(typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!); // never got its one watering
     const w = await c.user();
-    if (row.crop === "poppy") { // opium: one per poppy (weak, worth half and no good for mixing, if it never got its water), no seed falls out
-      const got = addToInv(w.s.inventory, { item: "opium", qty: 1, ...(ass ? { ass: true } : {}) });
+    if (row.crop === "poppy") { // opium: one per poppy, no seed falls out (a poppy needs no water)
+      const got = addToInv(w.s.inventory, { item: "opium", qty: 1 });
       if (!got) fail("Your inventory is full");
       w.s.inventory = got!;
       c.extra[`${path}/crop`] = null;
       c.extra[`${path}/plantedAt`] = null;
       c.extra[`${path}/wateredAt`] = null;
       c.extra[`${path}/neglect`] = null;
-      return { ass, crop: "poppy", qty: 1 };
+      return { ass: false, crop: "poppy", qty: 1 };
     }
     const shrooms = row.crop === "shroom";
     const qty = Math.random() < DOUBLE_HARVEST_CHANCE ? 2 : 1; // one per harvest, and now and then two

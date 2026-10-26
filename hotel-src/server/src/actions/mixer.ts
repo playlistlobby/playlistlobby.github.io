@@ -1,13 +1,13 @@
 // The mixer: a piece of furniture in your own room. Two of your things go in; it works for 10 minutes; you collect what it made.
 // The batch lives on the mixer's row (mixJob), so it carries on while you're away.
-import { Action, ID_RE, int, requireOwnRoom, text } from "./util";
+import { Action, ID_RE, int, requireWorkRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, MIX_MS, takeOneFrom } from "../../../src/shared/economy";
 import { mixRecipe } from "../../../src/shared/items";
 
 interface MixerRow { kind?: string; mixJob?: { item: string; qty: number; doneAt: number; ms?: number } }
-async function mixer(c: Ctx, fid: unknown): Promise<{ path: string; row: MixerRow }> {
-  const room = await requireOwnRoom(c);
+async function mixer(c: Ctx, fid: unknown, want?: unknown): Promise<{ path: string; row: MixerRow }> {
+  const room = await requireWorkRoom(c, want); // (your own room, or a hideout you are in: every member may use its mixers)
   const id = text(fid, ID_RE, "mixer");
   const path = `roomsMeta/${room}/furni/${id}`;
   const row = await c.db.get<MixerRow>(path);
@@ -16,8 +16,9 @@ async function mixer(c: Ctx, fid: unknown): Promise<{ path: string; row: MixerRo
 }
 
 export const mix: Action = {
+  locks: (c, a) => [`room:${typeof a?.room === "string" ? a.room : `u_${c.uid}`}`],
   async run(c, a) {
-    const { path, row } = await mixer(c, a.fid);
+    const { path, row } = await mixer(c, a.fid, a.room);
     if (row.mixJob) fail("The mixer is busy.");
     const w = await c.user();
     const ia = int(a.a, 0, 27, "slot"), ib = int(a.b, 0, 27, "slot");
@@ -37,8 +38,9 @@ export const mix: Action = {
 };
 
 export const mixCollect: Action = {
+  locks: (c, a) => [`room:${typeof a?.room === "string" ? a.room : `u_${c.uid}`}`],
   async run(c, a) {
-    const { path, row } = await mixer(c, a.fid);
+    const { path, row } = await mixer(c, a.fid, a.room);
     const job = row.mixJob;
     if (!job) fail("There's nothing in the mixer.");
     if (c.now < job!.doneAt) fail("It isn't done yet.");

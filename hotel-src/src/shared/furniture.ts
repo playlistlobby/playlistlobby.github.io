@@ -6,7 +6,7 @@ export interface ShopPiece { id: string; label: string; icon: string; price: num
   /** a piece with several looks or animations (a TV, a fridge, candles...): the animation numbers it has; tapping it goes to the next one */ states?: number[];
   /** the one it shows when it is put down (candles burn, a TV is on) */ defaultState?: number;
   /** the facing it has on its display platform in the shop */ showDir: number;
-  /** a rare piece: only the raffle gives it away (never in the shop's daily four, and 6ixty does not buy it) */ rare?: boolean }
+  /** a rare piece: only the raffle gives it away (never in the shop's daily four, and 6ixty does not buy it) */ rare?: boolean; /** hideout furniture: only ordered on a hideout's computer (see shared/hideout.ts), never in the daily four */ hideout?: boolean }
 export const SHOP_PIECES: ShopPiece[] = [
   { id: "bloodfloor", label: "Blood streak", icon: "🩸", price: 30, w: 1, h: 3, height: 3, flat: true, showDir: 2 },
   { id: "toastfriend", label: "Toast friend", icon: "🍞", price: 30, w: 1, h: 1, height: 30, showDir: 2 },
@@ -75,7 +75,7 @@ export const SHOP_PIECES: ShopPiece[] = [
   { id: "regalsofa", label: "Regal black sofa", icon: "🛋️", price: 72, w: 2, h: 1, height: 38, seat: true, seatHeight: 16, showDir: 2 },
   { id: "schoolchair", label: "Gold school chair", icon: "🪑", price: 54, w: 1, h: 1, height: 35, seat: true, seatHeight: 14, showDir: 2 },
   { id: "schoolconsole", label: "Gold school console", icon: "🎛️", price: 51, w: 1, h: 1, height: 38, surface: 36, showDir: 2 },
-  { id: "randomizer", label: "Love booth", icon: "💘", price: 72, w: 4, h: 1, height: 45, states: [11, 12, 13, 14, 21, 22, 23, 24, 30, 31, 32], defaultState: 11, seat: true, seatHeight: 14, showDir: 2 },
+  { id: "randomizer", label: "Love booth", icon: "💘", price: 150, w: 4, h: 1, height: 45, states: [11, 12, 13, 14, 21, 22, 23, 24, 30, 31, 32], defaultState: 11, seat: true, seatHeight: 14, showDir: 2, hideout: true },
   { id: "barrel", label: "Barrel", icon: "🛢️", price: 42, w: 1, h: 1, height: 56, surface: 40, showDir: 2 },
   { id: "coffin", label: "Black coffin", icon: "⚰️", price: 66, w: 1, h: 3, height: 35, states: [0, 1, 2, 3, 4, 5], showDir: 2 },
   { id: "cratechairlight", label: "Crate chair", icon: "📦", price: 45, w: 1, h: 1, height: 38, seat: true, seatHeight: 14, showDir: 2 },

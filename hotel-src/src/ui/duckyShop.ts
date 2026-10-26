@@ -12,7 +12,7 @@ import type { Ctx } from "../main";
 
 export interface DuckyShopApi { close(): void }
 
-const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", rename: "🏷️", dice: "🎲" };
+const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", rename: "🏷️", dice: "🎲", keys: "🔑" };
 
 export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): DuckyShopApi {
   const me = ctx.profile;
@@ -100,6 +100,8 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
         fxHave ? ownedBtn() : buyBtn("fx", () => void buy("fx"))),
       card("dice", "Dice", "Hold them in your hand and roll a number from 1 to 6 for the whole room to see. Make a casino of your own.",
         h("button", { class: "btn small primary", disabled: busy || me.blood < DICE_PRICE, onclick: () => void buy("dice") }, ...(busy ? ["…"] : [h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${DICE_PRICE}`]))),
+      card("keys", "2 box keys", "Two keys for mystery boxes (boxes turn up in the bins). One key opens one box. Buy as many as you like.",
+        buyBtn("keys", () => void buy("keys"))),
       card("rename", "Change your name", "Pick a new username. Your things, friends and room come with you.",
         open === "rename" ? h("button", { class: "btn small", onclick: () => { open = null; render(); } }, "Close") : h("button", { class: "btn small primary", disabled: busy, onclick: () => { open = "rename"; render(); } }, price("rename")),
         open === "rename" ? nameInput : undefined),
