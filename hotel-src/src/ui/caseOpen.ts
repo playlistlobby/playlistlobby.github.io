@@ -2,7 +2,7 @@ import { h, toast } from "./dom";
 import { call } from "../db";
 import { findSlot, itemDef, onFurniIcon } from "../items";
 import { CASE_ITEM, CASE_TABLE, KEY_ITEM, Tier, UNUSUAL_IDS } from "../shared/cases";
-import { CASE_FURNI, CASE_RARE_FURNI } from "../shared/cases";
+import { CASE_FURNI, CASE_JUNK, CASE_RARE_FURNI, randomUnusualPet } from "../shared/cases";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
@@ -20,9 +20,10 @@ function randomTile(): Prize {
   let r = Math.random() * 100;
   let row = CASE_TABLE[0];
   for (const p of CASE_TABLE) { if (r < p.chance) { row = p; break; } r -= p.chance; }
-  const pick = (l: string[]): string => l[Math.floor(Math.random() * l.length)];
-  const item = row.id === "asweed" ? "weed" : row.id === "furni" ? pick(CASE_FURNI) : row.id === "unusual" ? pick(UNUSUAL_IDS) : row.id === "rarefurni" ? pick(CASE_RARE_FURNI) : row.id;
-  return { id: row.id, tier: row.tier, item, qty: 1, ass: row.id === "asweed" };
+  const pick = <T,>(l: T[]): T => l[Math.floor(Math.random() * l.length)];
+  const junk = row.id === "junk" ? pick(CASE_JUNK) : null;
+  const item = junk ? junk.item : row.id === "furni" ? pick(CASE_FURNI) : row.id === "unusual" ? pick(UNUSUAL_IDS) : row.id === "knifeskin" ? "knife_tt" : row.id === "unusualpet" ? randomUnusualPet((n) => Math.floor(Math.random() * n)) : row.id === "rarefurni" ? pick(CASE_RARE_FURNI) : row.id;
+  return { id: row.id, tier: row.tier, item, qty: 1, ass: !!junk?.ass };
 }
 
 /**

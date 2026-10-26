@@ -88,6 +88,13 @@ const rw2 = await act(u, "caseOpen", { room: "u_nobodyhere" });
 ok("a room you aren't in just means no announcement", rw2);
 await setInv(u, inv());
 
+// the knife skin: an item of its own, tradable, and 6ixty doesn't buy it
+await setInv(u, inv({ item: "knife", qty: 1 }, { item: "knife_tt", qty: 1 }, { item: "pet_cat_2_galaxy", qty: 1 }));
+const stK = await state(u);
+check("the knife skin and an unusual pet are valid items", total(stK.inventory, "knife_tt") === 1 && total(stK.inventory, "pet_cat_2_galaxy") === 1 && total(stK.inventory, "knife") === 1);
+bad("6ixty doesn't buy the skin", await act(u, "sellWeed", { slot: slotOf(stK, "knife_tt"), qty: 1 }));
+await setInv(u, inv());
+
 // the unusual: wear, swap, remove, rules
 await setInv(u, inv({ item: "unusual_flame", qty: 1 }, { item: "unusual_star", qty: 1 }));
 bad("not a normal item", await act(u, "unusualWear", { slot: 5 }));

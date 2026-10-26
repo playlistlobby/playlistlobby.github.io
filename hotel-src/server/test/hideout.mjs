@@ -241,6 +241,52 @@ console.log("--- the rules");
   check("and then they can't stand there", refused(await clientWrite(rr, `rooms/${HR(boss)}/players/${rr.uid}`, pres)));
 }
 
+console.log("--- the list at the door");
+{
+  const lo = await fresh("t_hd_list_o", { blood: 3000 });
+  const ls = await fresh("t_hd_list_s", { blood: 100 });
+  for (const x of [lo, ls]) await act(x, "sync");
+  await owner("DELETE", `hideoutList/${lo.uid}`); await owner("DELETE", `hideoutRequests/${lo.uid}`);
+  await owner("DELETE", `roomsMeta/h_${lo.uid}`); await owner("DELETE", `hideouts/${lo.uid}`);
+  await owner("PUT", `rooms/lobby/players/${lo.uid}`, { name: lo.name, figure: "x", x: 5, y: 5, dir: 2 });
+  ok("buy", await act(lo, "hideoutBuy"));
+  let row = await owner("GET", `hideoutList/${lo.uid}`);
+  check("it is on the list at once", row && row.name === "t_hd_list_o's hideout" && row.members === 1 && row.boostUntil === 0, JSON.stringify(row));
+  await owner("PUT", `rooms/h_${lo.uid}/players/${lo.uid}`, { name: lo.name, figure: "x", x: 5, y: 5, dir: 2 });
+  ok("a description", await act(lo, "hideoutSettings", { desc: "we sell nothing" }));
+  row = await owner("GET", `hideoutList/${lo.uid}`);
+  check("it shows on the list", row.desc === "we sell nothing");
+  check("the list is readable for everybody who is signed in", (await fetch(`${DB}/hideoutList.json?ns=${NS}&auth=${ls.token}`)).status === 200);
+  check("nobody writes it", refused(await clientWrite(ls, `hideoutList/${lo.uid}/name`, "mine")));
+  check("a request queue is only the owner's to read", refused(await fetch(`${DB}/hideoutRequests/${lo.uid}.json?ns=${NS}&auth=${ls.token}`)));
+  const b0 = await bloodOf(lo);
+  ok("boost for 50", await act(lo, "hideoutBoost"));
+  check("it costs 50", (await bloodOf(lo)) === b0 - 50);
+  row = await owner("GET", `hideoutList/${lo.uid}`);
+  check("and the list says until when", row.boostUntil > Date.now() + 3_000_000 && row.boostUntil < Date.now() + 3_700_000, JSON.stringify(row));
+  ok("boosting again adds an hour", await act(lo, "hideoutBoost"));
+  const row2 = await owner("GET", `hideoutList/${lo.uid}`);
+  check("it adds up", row2.boostUntil > row.boostUntil + 3_000_000);
+  bad("only the owner boosts", await act(ls, "hideoutBoost"));
+  bad("asking to join your own", await act(lo, "hideoutRequest", { owner: lo.uid }));
+  ok("a stranger asks to join", await act(ls, "hideoutRequest", { owner: lo.uid }));
+  bad("not twice", await act(ls, "hideoutRequest", { owner: lo.uid }));
+  check("the owner reads the request", (await fetch(`${DB}/hideoutRequests/${lo.uid}.json?ns=${NS}&auth=${lo.token}`)).status === 200 && !!(await owner("GET", `hideoutRequests/${lo.uid}/${ls.uid}`)));
+  bad("only the owner answers", await act(ls, "hideoutRequestAnswer", { uid: ls.uid, accept: true }));
+  ok("let them in", await act(lo, "hideoutRequestAnswer", { uid: ls.uid, accept: true }));
+  check("they are a member and the request is gone", !!(await owner("GET", `roomsMeta/h_${lo.uid}/members/${ls.uid}`)) && (await owner("GET", `hideoutRequests/${lo.uid}/${ls.uid}`)) === null);
+  check("the list counts two", (await owner("GET", `hideoutList/${lo.uid}/members`)) === 2);
+  ok("take it off the list", await act(lo, "hideoutSettings", { listed: false }));
+  check("it is gone from the list", (await owner("GET", `hideoutList/${lo.uid}`)) === null);
+  bad("no boost when it isn't listed", await act(lo, "hideoutBoost"));
+  const st2 = await fresh("t_hd_list_x", { blood: 0 });
+  bad("nobody asks to join one that isn't on the list", await act(st2, "hideoutRequest", { owner: lo.uid }));
+  ok("back on the list", await act(lo, "hideoutSettings", { listed: true }));
+  check("with the members counted", (await owner("GET", `hideoutList/${lo.uid}/members`)) === 2);
+  ok("the member leaves", await act(ls, "hideoutLeave", { owner: lo.uid }));
+  check("and the list counts one", (await owner("GET", `hideoutList/${lo.uid}/members`)) === 1);
+}
+
 console.log(`
 ${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

@@ -1,11 +1,11 @@
 import { h, toast } from "./dom";
-import { hideoutCollect, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings } from "../hideout";
+import { hideoutBoost, hideoutCollect, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutRequestAnswer, hideoutSearch, hideoutSettings, watchHideoutRequests } from "../hideout";
 import { hideoutLandlordPanel } from "./hideoutLandlord";
 import type { HideoutLandlordPanel } from "./hideoutLandlord";
 import { BLOOD_ICON, furniIcon, onFurniIcon } from "../items";
 import { FURNI_KINDS, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
-import { HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
+import { HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
 import { countdownText } from "../shared/raffle";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
@@ -35,6 +35,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   let searchTimer = 0;
   let searchQ = "";
   let busy = false;
+  let requests: Array<{ uid: string; name: string; at: number }> = [];
   const owner = (): boolean => getDef().ownerUid === me.uid;
 
   const url = h("div", { class: "hc-url" });
@@ -107,6 +108,13 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     return [
       h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Members"), h("div", { class: "hc-sub" }, `${members.length + 1} of ${HIDEOUT_MAX_MEMBERS + 1}`)),
       ...(isOwner ? [h("div", { class: "hc-group" }, input, resultsBox)] : []),
+      ...(isOwner && requests.length ? [h("div", { class: "hc-group" },
+        h("div", { class: "hc-label" }, "Asking to join"),
+        ...requests.map((r) => h("div", { class: "hc-person" },
+          h("span", { class: "hc-pname" }, r.name),
+          h("span", { class: "hc-actions" },
+            h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { await hideoutRequestAnswer(me, r.uid, true); return `${r.name} is in.`; }) }, "Let in"),
+            h("button", { class: "btn small", disabled: busy, onclick: () => void act(async () => { await hideoutRequestAnswer(me, r.uid, false); }) }, "No")))))] : []),
       h("div", { class: "hc-group" },
         h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, d.ownerName ?? "?"), h("span", { class: "hc-tag" }, "Owner")),
         ...members.map(([uid, m]) => h("div", { class: "hc-person" },
@@ -125,12 +133,23 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const isOwner = owner();
     const placed = d.furni.filter((f) => !["toolbox", "computer", "sink", "boombox"].includes(f.id)).length;
     const name = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_NAME_MAX), value: d.name }) as HTMLInputElement;
+    const desc = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_DESC_MAX), placeholder: "A line about your hideout", value: d.hideout?.desc ?? "" }) as HTMLInputElement;
+    const boosted = (d.hideout?.boostUntil ?? 0) > Date.now();
     return [
       h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Settings"), h("div", { class: "hc-sub" }, `${d.w} × ${d.h} · ${placed}/${d.hideout?.cap ?? "?"} pieces`)),
       ...(isOwner ? [
         h("div", { class: "hc-group" },
           h("div", { class: "hc-label" }, "Hideout name"), name,
           h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { name: name.value }); return "Renamed."; }) }, "Save name")),
+        h("div", { class: "hc-group" },
+          h("div", { class: "hc-label" }, "Description (on the list at the door)"), desc,
+          h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { desc: desc.value }); return "Saved."; }) }, "Save description"),
+          h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Show on the list for everybody"),
+            h("button", { class: "btn small" + (d.hideout?.listed ? " primary" : ""), disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { listed: !d.hideout?.listed }); return d.hideout?.listed ? "It is off the list. Only members can find it." : "It is on the list."; }) }, d.hideout?.listed ? "✅ Listed" : "🙈 Hidden")),
+          ...(d.hideout?.listed ? [
+            h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, boosted ? `Shown first for ${Math.max(1, Math.ceil(((d.hideout?.boostUntil ?? 0) - Date.now()) / 60000))} more min` : "Show it first on the list for an hour"),
+              h("button", { class: "btn small primary", disabled: busy || me.blood < HIDEOUT_BOOST_PRICE, onclick: () => void act(async () => { await hideoutBoost(me); return "Boosted: it is shown first for a while."; }) }, `🔥 Boost (${HIDEOUT_BOOST_PRICE} drops)`)),
+          ] : [])),
         h("div", { class: "hc-group" },
           h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Lock building for everybody"),
             h("button", { class: "btn small" + (d.hideout?.lock ? " danger" : ""), disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { lock: !d.hideout?.lock }); return d.hideout?.lock ? "Building is open again." : "Building is locked."; }) }, d.hideout?.lock ? "🔒 Locked" : "🔓 Open")),
@@ -160,13 +179,14 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     tabs.replaceChildren(...PAGES.filter((p) => !p.owner || isOwner).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.icon), h("span", {}, p.label))));
   }
   render();
+  const stopRequests = getDef().ownerUid === me.uid ? watchHideoutRequests(me.uid, (l) => { requests = l; render(); }) : () => undefined; // (people asking to join: only the owner sees them)
   const off = onFurniIcon(() => { if (page === "shop" || page === "orders") render(); });
   const tick = window.setInterval(() => { if (page !== "landlord") render(); }, 1000);
   function close(): void {
     if (closed) return;
     closed = true;
     window.clearInterval(tick); window.clearTimeout(searchTimer);
-    off(); landlord?.dispose(); el.remove(); onClose();
+    off(); stopRequests(); landlord?.dispose(); el.remove(); onClose();
   }
   return { close, refresh: render };
 }

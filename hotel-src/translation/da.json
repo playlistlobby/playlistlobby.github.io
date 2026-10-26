@@ -11288,5 +11288,245 @@
   "en": "{who} opened a case and got {label}.",
   "da": "{who} åbnede en case og fik {label}.",
   "where": "src/ui/room.ts"
+ },
+ "N1727": {
+  "en": "It walks with you now.",
+  "da": "Den går med dig nu.",
+  "where": "src/ui/room.ts:648"
+ },
+ "N1728": {
+  "en": "It won't come out.",
+  "da": "Den vil ikke ud.",
+  "where": "src/ui/room.ts:648"
+ },
+ "N1729": {
+  "en": "Your pet: tap to pick it up",
+  "da": "Dit kæledyr: tryk for at samle det op",
+  "where": "src/ui/room.ts:709"
+ },
+ "N1730": {
+  "en": "Your pet",
+  "da": "Dit kæledyr",
+  "where": "src/ui/room.ts:1082"
+ },
+ "N1731": {
+  "en": "You picked your pet up.",
+  "da": "Du samlede dit kæledyr op.",
+  "where": "src/ui/room.ts:1736"
+ },
+ "N1732": {
+  "en": "It won't come.",
+  "da": "Den vil ikke komme.",
+  "where": "src/ui/room.ts:1736"
+ },
+ "N1733": {
+  "en": "A hideout/group room.",
+  "da": "et hideout/group room",
+  "where": "src/ui/hideoutLandlord.ts:71"
+ },
+ "N1734": {
+  "en": "{ownerName} · {members} member{…}{…}",
+  "da": "{ownerName} · {members} medlem{…}{…}",
+  "where": "src/ui/hideoutDoor.ts:46"
+ },
+ "N1735": {
+  "en": "You asked to join. The owner decides.",
+  "da": "Du bad om at komme med. Ejeren bestemmer.",
+  "where": "src/ui/hideoutDoor.ts:47"
+ },
+ "N1736": {
+  "en": "Asked",
+  "da": "Spurgt",
+  "where": "src/ui/hideoutDoor.ts:47"
+ },
+ "N1737": {
+  "en": "Ask to join",
+  "da": "Bed om at komme med",
+  "where": "src/ui/hideoutDoor.ts:47"
+ },
+ "N1738": {
+  "en": "Asking to join",
+  "da": "Beder om at komme med",
+  "where": "src/ui/hideoutComputer.ts:112"
+ },
+ "N1739": {
+  "en": "{name} is in.",
+  "da": "{name} er med.",
+  "where": "src/ui/hideoutComputer.ts:116"
+ },
+ "N1740": {
+  "en": "A line about your hideout",
+  "da": "En linje om dit skjulested",
+  "where": "src/ui/hideoutComputer.ts:136"
+ },
+ "N1741": {
+  "en": "Description (on the list at the door)",
+  "da": "Beskrivelse (på listen ved døren)",
+  "where": "src/ui/hideoutComputer.ts:145"
+ },
+ "N1742": {
+  "en": "Save description",
+  "da": "Gem beskrivelse",
+  "where": "src/ui/hideoutComputer.ts:146"
+ },
+ "N1743": {
+  "en": "Show on the list for everybody",
+  "da": "Vis på listen for alle",
+  "where": "src/ui/hideoutComputer.ts:147"
+ },
+ "N1744": {
+  "en": "It is off the list. Only members can find it.",
+  "da": "Det er taget af listen. Kun medlemmer kan finde det.",
+  "where": "src/ui/hideoutComputer.ts:148"
+ },
+ "N1745": {
+  "en": "It is on the list.",
+  "da": "Det er på listen.",
+  "where": "src/ui/hideoutComputer.ts:148"
+ },
+ "N1746": {
+  "en": "✅ Listed",
+  "da": "✅ På listen",
+  "where": "src/ui/hideoutComputer.ts:148"
+ },
+ "N1747": {
+  "en": "🙈 Hidden",
+  "da": "🙈 Skjult",
+  "where": "src/ui/hideoutComputer.ts:148"
+ },
+ "N1748": {
+  "en": "Shown first for {…} more min",
+  "da": "Vist først i {…} min mere",
+  "where": "src/ui/hideoutComputer.ts:150"
+ },
+ "N1749": {
+  "en": "Show it first on the list for an hour",
+  "da": "Vis det først på listen i en time",
+  "where": "src/ui/hideoutComputer.ts:150"
+ },
+ "N1750": {
+  "en": "Boosted: it is shown first for a while.",
+  "da": "Boostet: det vises først et stykke tid.",
+  "where": "src/ui/hideoutComputer.ts:151"
+ },
+ "N1751": {
+  "en": "🔥 Boost ({HIDEOUT_BOOST_PRICE} drops)",
+  "da": "🔥 Boost ({HIDEOUT_BOOST_PRICE} dråber)",
+  "where": "src/ui/hideoutComputer.ts:151"
+ },
+ "N1752": {
+  "en": "Every pet comes in a colour you can't pick: you find out when it is yours. It goes into your pocket: tap it there to let it out. Then it walks behind you, and everybody sees it. Tap it in the room to pick it up again.",
+  "da": "Hvert kæledyr kommer i en farve du ikke kan vælge: du finder ud af det når det er dit. Det kommer i din lomme: tryk på det der for at lukke det ud. Så går det efter dig, og alle kan se det. Tryk på det i rummet for at samle det op igen.",
+  "where": "src/ui/petShop.ts:37"
+ },
+ "N1753": {
+  "en": "{petLabel} is yours. It is in your pocket.",
+  "da": "{petLabel} er din. Den er i din lomme.",
+  "where": "src/ui/petShop.ts:43"
+ },
+ "N1754": {
+  "en": "Unusual pet",
+  "da": "Unusual kæledyr",
+  "where": "src/shared/cases.ts:33"
+ },
+ "N1755": {
+  "en": "Karambit | Tiger Tooth",
+  "da": "Karambit | Tiger Tooth",
+  "where": "src/shared/cases.ts:34"
+ },
+ "N1756": {
+  "en": "Cosmic Halo",
+  "da": "Cosmic Halo",
+  "where": "src/shared/cases.ts:61"
+ },
+ "N1757": {
+  "en": "Blossom Frog Hat",
+  "da": "Blossom Frog Hat",
+  "where": "src/shared/cases.ts:62"
+ },
+ "N1758": {
+  "en": "Radioactive Watermelon",
+  "da": "Radioactive Watermelon",
+  "where": "src/shared/cases.ts:63"
+ },
+ "N1759": {
+  "en": "Sparkler Headband",
+  "da": "Sparkler Headband",
+  "where": "src/shared/cases.ts:64"
+ },
+ "N1760": {
+  "en": "Unusual {petLabel}",
+  "da": "Unusual {petLabel}",
+  "where": "src/items.ts:500"
+ },
+ "N1761": {
+  "en": "An unusual pet: it has a particle effect of its own. Tap it to let it out: it walks behind you and everybody sees it. Tap it in the room to pick it up again.",
+  "da": "Et unusual kæledyr: det har sin egen partikeleffekt. Tryk på det for at lukke det ud: det går efter dig og alle kan se det. Tryk på det i rummet for at samle det op igen.",
+  "where": "src/items.ts:503"
+ },
+ "N1762": {
+  "en": "A pet. Tap it to let it out: it walks behind you and everybody sees it. Tap it in the room to pick it up again.",
+  "da": "Et kæledyr. Tryk på det for at lukke det ud: det går efter dig og alle kan se det. Tryk på det i rummet for at samle det op igen.",
+  "where": "src/items.ts:503"
+ },
+ "N1763": {
+  "en": "A karambit with a tiger tooth finish: it is your knife, only prettier. Use it like the knife. You can trade it or give it away: you keep your plain knife.",
+  "da": "En karambit med tiger tooth-finish: det er din kniv, bare flottere. Brug den som kniven. Du kan bytte den eller give den væk: du beholder din almindelige kniv.",
+  "where": "src/items.ts"
+ },
+ "N1764": {
+  "en": "Put the hideout on the list first.",
+  "da": "Sæt skjulestedet på listen først.",
+  "where": "server/src/actions/hideout.ts:143"
+ },
+ "N1765": {
+  "en": "That's your own hideout.",
+  "da": "Det er dit eget skjulested.",
+  "where": "server/src/actions/hideout.ts:262"
+ },
+ "N1766": {
+  "en": "That hideout isn't on the list.",
+  "da": "Det skjulested er ikke på listen.",
+  "where": "server/src/actions/hideout.ts:265"
+ },
+ "N1767": {
+  "en": "You are already in that hideout.",
+  "da": "Du er allerede med i det skjulested.",
+  "where": "server/src/actions/hideout.ts:266"
+ },
+ "N1768": {
+  "en": "You already asked. Wait for the owner.",
+  "da": "Du har allerede spurgt. Vent på ejeren.",
+  "where": "server/src/actions/hideout.ts:268"
+ },
+ "N1769": {
+  "en": "Too many people are waiting to get in there.",
+  "da": "For mange venter på at komme ind der.",
+  "where": "server/src/actions/hideout.ts:270"
+ },
+ "N1770": {
+  "en": "That request is gone.",
+  "da": "Den anmodning er væk.",
+  "where": "server/src/actions/hideout.ts:283"
+ },
+ "N1771": {
+  "en": "Your pockets are full: make room for the pet first.",
+  "da": "Dine lommer er fulde: gør plads til kæledyret først.",
+  "where": "server/src/actions/pets.ts:21"
+ },
+ "N1772": {
+  "en": "That isn't a pet.",
+  "da": "Det er ikke et kæledyr.",
+  "where": "server/src/actions/pets.ts:36"
+ },
+ "N1773": {
+  "en": "Your pockets are full: make room for the pet that is out.",
+  "da": "Dine lommer er fulde: gør plads til det kæledyr der er ude.",
+  "where": "server/src/actions/pets.ts:39"
+ },
+ "N1774": {
+  "en": "You haven't got a pet out.",
+  "da": "Du har ikke et kæledyr ude.",
+  "where": "server/src/actions/pets.ts:51"
  }
 }

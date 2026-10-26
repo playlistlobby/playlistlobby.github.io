@@ -24,7 +24,7 @@ export interface PanelOpts {
   onSelect(slot: number | null): void;
   onEmote(id: string): void;
   /** an item that is used on yourself with one click (the syringe) */
-  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear", slot: number): void;
+  onUseSelf(what: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear" | "pet", slot: number): void;
   /** one pocket item used on another (weed + paper, ...) */
   onCombine(a: number, b: number): void;
   /** a pocket item was tapped: return true if something else (the mixer, 6ixty's window) took the tap */
@@ -110,7 +110,7 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     const out: MenuOption[] = [];
     const laced = isLaced(slot.item); // looks like the real thing, but using it kills you (the hotel handles it as a swallow)
     if (def.useSelf && !slot.lit) {
-      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : def.useSelf === "consume" ? (slot.item === "codeine" ? "Drink" : "Swallow") : "Draw blood", target: def.name, action: () => opts.onUseSelf(laced ? "consume" : def.useSelf!, i) });
+      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "open" ? "Open" : def.useSelf === "wear" ? "Wear" : def.useSelf === "speak" ? "Speak" : def.useSelf === "pet" ? "Let it out" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : def.useSelf === "consume" ? (slot.item === "codeine" ? "Drink" : "Swallow") : "Draw blood", target: def.name, action: () => opts.onUseSelf(laced ? "consume" : def.useSelf!, i) });
     }
     const combinable = profile.inventory.some((o, j) => j !== i && !!o && (combine(slot, o) || combine(o, slot)));
     if (def.furniture || def.useOnObject || def.useOnPlayer || def.rolls || combinable || slot.item === "superpill") {
@@ -125,9 +125,10 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     unsubMusic?.();
     unsubMusic = null;
     const grid = h("div", { class: "inv-grid" });
+    const skinned = profile.inventory.some((x) => x?.item === "knife_tt"); // (a knife skin stands in for the plain knife)
     for (let i = 0; i < INV_SIZE; i++) {
       const slot = profile.inventory[i];
-      const def = slot ? itemDef(slot.item) ?? null : null;
+      const def = slot && !(skinned && slot.item === "knife") ? itemDef(slot.item) ?? null : null;
       const loaned = !!slot?.inPlayer; // e.g. the CD is sitting in the CD player right now
       const el = h("div", {
         class: "inv-slot" + (selected === i ? " selected" : "") + (guided.includes(i) && def ? " guide" : "") + (dropMode && def && !loaned && !slot?.lit && !NO_DROP.has(slot!.item) ? " drop-glow" : "") + (def ? " filled" : "") + (loaned ? " loaned" : ""),

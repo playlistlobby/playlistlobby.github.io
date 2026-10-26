@@ -81,6 +81,14 @@
         ".read": "@PW@ && auth.uid === $uid"
       }
     },
+    "hideoutRequests": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "hideoutList": {
+      ".read": "@PW@"
+    },
     "loudspeaker": {
       "$uid": {
         ".read": "@PW@ && auth.uid === $uid"

@@ -33,6 +33,8 @@ import { openCaseWindow } from "./caseOpen";
 import { onMyUnusual, unusualNow, wearUnusual } from "../unusual";
 import { unusualOf } from "../shared/cases";
 import { drawPet, onMyPetLook, petLookNow, petSheet } from "../pets";
+import { pickUpPet, releasePet } from "../petActions";
+import { parsePetLook } from "../shared/petItems";
 import { hideoutBoxStore, hideoutBoxTake } from "../hideout";
 import { openLoudspeaker } from "./loudspeaker";
 import { awayMessage, visitNow, watchBagmand } from "../bagmand";
@@ -643,7 +645,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return false;
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
     onCombine: (a, b) => { void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
@@ -704,6 +706,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
     else if (hoverObj && hoverObj.kind === "petbasket") text = "Pet merchant: buy a pet";
+    else if (hoverObj && hoverObj.kind === "mypet") text = "Your pet: tap to pick it up";
     else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
@@ -1010,6 +1013,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (isCdKind(obj.kind)) openCdPopup();
       else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hdoor" || obj.kind === "petbasket") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
+      else if (obj.kind === "mypet") pickUpMyPet();
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "bagman") startBagman();
@@ -1075,6 +1079,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "minesixty") opts.push({ label: "Talk", target: SIXTY.name, action: () => startMinesSixty() });
     if (obj && (FURNI_KINDS[obj.kind ?? ""]?.states?.length ?? 0) > 1 && !isDisplayPiece(obj.id)) opts.push({ label: "Use", target: FURNI_KINDS[obj.kind!].label, action: () => void useFurni(obj.id) });
     if (obj?.kind === "toolbox") opts.push({ label: "Furnish", target: "Toolbox", action: () => startBag(obj.id) });
+    if (obj?.kind === "mypet") opts.push({ label: "Pick up", target: "Your pet", action: () => pickUpMyPet() });
     if (obj?.kind === "petbasket") opts.push({ label: "Browse pets", target: "Pet merchant", action: () => startBag(obj.id) });
     if (obj?.kind === "hcomputer") opts.push({ label: "Use", target: "Computer", action: () => startBag(obj.id) });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
@@ -1726,6 +1731,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** Walk over to the bag of clothes; processPending opens the Character page once you're next to it. */
+  /** a tap on your own pet: it goes back into the pocket */
+  function pickUpMyPet(): void {
+    void pickUpPet(me).then(() => { panel.refresh(); say("You picked your pet up."); }, (err) => say((err as Error).message || "It won't come.", "warn"));
+  }
+
   function startBag(fid: string): void {
     closeToolWindows();
     clearSelection();
@@ -3484,13 +3494,41 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** The knife (Habbo's survival knife, one picture per way it can point) in a player's hand: while it's selected, and during a stab. */
-  function drawKnifeInHand(fx: number, fy: number, dir: number): void {
+  /** the karambit skin in the fist: a hooked, curved blade (gold to amber with dark tiger stripes), a dark grip and a finger ring, turned to the way they face */
+  function drawKarambit(hx: number, hy: number, ux: number, uy: number): void {
+    const u = scale * 0.8;
+    g.save();
+    g.translate(hx, hy);
+    g.rotate(Math.atan2(uy, ux));
+    if (ux < 0) g.scale(1, -1); // (pointing left it would be upside down: the curve stays on the same side)
+    g.lineJoin = "round";
+    // the grip with its ring at the back
+    g.fillStyle = "#232323"; g.strokeStyle = "#0c0c0c"; g.lineWidth = 0.8 * u;
+    g.beginPath(); g.roundRect(-9 * u, -1.9 * u, 11 * u, 3.8 * u, 1.4 * u); g.fill(); g.stroke();
+    g.strokeStyle = "#b8bcc4"; g.lineWidth = 1.5 * u;
+    g.beginPath(); g.arc(-10.8 * u, 0.4 * u, 2.7 * u, 0, Math.PI * 2); g.stroke();
+    // the blade: a crescent that curves down at the tip
+    const blade = new Path2D();
+    blade.moveTo(2 * u, -1.6 * u); blade.bezierCurveTo(12 * u, -2.6 * u, 17 * u, 2 * u, 15.5 * u, 11 * u); blade.lineTo(13.6 * u, 9.6 * u); blade.bezierCurveTo(14.4 * u, 4.4 * u, 10 * u, 1.6 * u, 2 * u, 1.8 * u); blade.closePath();
+    const gr = g.createLinearGradient(2 * u, -2 * u, 15 * u, 10 * u);
+    gr.addColorStop(0, "#fff0a6"); gr.addColorStop(0.45, "#f6b81b"); gr.addColorStop(1, "#c25a0b");
+    g.fillStyle = gr; g.fill(blade);
+    g.save(); g.clip(blade);
+    g.strokeStyle = "rgba(138,61,5,0.8)"; g.lineWidth = 0.9 * u;
+    for (let i = 0; i < 6; i++) { g.beginPath(); g.moveTo((3 + i * 2.4) * u, -3 * u); g.lineTo((6 + i * 2.4) * u, 12 * u); g.stroke(); }
+    g.restore();
+    g.strokeStyle = "#6b3a05"; g.lineWidth = 0.8 * u; g.stroke(blade);
+    g.restore();
+  }
+  function drawKnifeInHand(fx: number, fy: number, dir: number, skin = false): void {
     const n = nitroIfReady(KNIFE_NITRO);
-    if (!n) return;
+    if (!n && !skin) return;
     const [hdx, hdy] = KNIFE_HAND[dir] ?? KNIFE_HAND[2];
     const [ux, uy] = KNIFE_AXIS[dir] ?? KNIFE_AXIS[2]; // which way the blade points on screen = the way they face
     const hx = fx + hdx * scale; // the fist (where the arm ends in the "carry" pose)
     const hy = fy + hdy * scale;
+    if (skin) { drawKarambit(hx, hy, ux, uy); return; }
+    if (!n) return;
     const k = scale * 0.7;
     g.save();
     g.imageSmoothingEnabled = false;
@@ -3587,61 +3625,130 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (p.cup && sn < p.cup) return { kind: "lean", glow: `rgba(150,90,230,${(0.6 + 0.25 * beat).toFixed(2)})`, blur: (9 + 7 * beat) * scale };
     return null;
   }
-  /** An unusual's particles around the head: (fx, fy) = the player's feet. Each of the eight has its own. */
+  /** An unusual's particles around the head: (fx, fy) = the player's feet (a pet passes a point that puts the effect over its own head). Every effect has layers: a glow behind, the particles, and little details. */
   function drawUnusualFx(kind: string, color: string, fx: number, fy: number, now: number): void {
     const s = scale, hx = fx, hy = fy - 58 * s;
     const ph = (k: number, speed: number, i: number): number => (now / speed + i / k) % 1;
+    const rnd = (n: number): number => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const glow = (x: number, y: number, r: number, c0: string, a: number): void => {
+      const gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, c0); gr.addColorStop(1, "rgba(0,0,0,0)");
+      g.save(); g.globalAlpha = a; g.globalCompositeOperation = "lighter"; g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.restore();
+    };
+    const line = (x0: number, y0: number, x1: number, y1: number, c: string, w: number, a: number): void => { g.save(); g.globalAlpha = a; g.strokeStyle = c; g.lineWidth = Math.max(1, w); g.lineCap = "round"; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore(); };
     g.save();
     if (kind === "flames") {
-      for (let i = 0; i < 12; i++) {
-        const t = ph(12, 900, i);
-        g.globalAlpha = Math.min(1, (1 - t) * 1.4);
-        pxBlob(hx + Math.sin(t * 6 + i * 2.3) * 9 * s, hy + 6 * s - t * 30 * s, (3.4 - 2.2 * t) * s, t < 0.35 ? "#ffe45c" : t < 0.7 ? "#ff8a1e" : "#d63a10");
+      glow(hx, hy + 2 * s, 24 * s, "rgba(255,120,20,0.9)", 0.45 + 0.15 * Math.sin(now / 130));
+      for (let i = 0; i < 18; i++) { // the fire: tongues of three colours rising and shrinking
+        const t = ph(18, 1000, i), sway = Math.sin(t * 7 + i * 2.3) * (4 + t * 8) * s;
+        g.globalAlpha = Math.min(1, (1 - t) * 1.5);
+        pxBlob(hx + (rnd(i) - 0.5) * 16 * s + sway, hy + 8 * s - t * 36 * s, (3.8 - 2.6 * t) * s, t < 0.3 ? "#fff3a0" : t < 0.6 ? "#ffa31f" : "#e0401a");
+      }
+      for (let i = 0; i < 7; i++) { // sparks flying off
+        const t = ph(7, 700, i + 20);
+        g.globalAlpha = 1 - t;
+        pxBlob(hx + (rnd(i + 9) - 0.5) * 30 * s * (0.4 + t), hy - t * 44 * s, 1.2 * s, "#ffe27a");
       }
     } else if (kind === "stars") {
-      for (let i = 0; i < 9; i++) {
-        const a = now / 700 + (i / 9) * Math.PI * 2;
-        g.globalAlpha = 0.5 + 0.5 * Math.sin(now / 90 + i * 1.9);
-        pxStar(hx + Math.cos(a) * 17 * s, hy - 4 * s + Math.sin(a) * 6 * s, i % 3 === 0 ? 2 : 1, i % 2 ? "#ffd23a" : "#fff6c9");
+      glow(hx, hy - 4 * s, 22 * s, "rgba(255,214,90,0.8)", 0.3 + 0.1 * Math.sin(now / 300));
+      for (let ring = 0; ring < 2; ring++) for (let i = 0; i < 6; i++) { // two rings of stars going round at different speeds
+        const a = (ring ? -now / 520 : now / 760) + (i / 6) * Math.PI * 2, rx = (ring ? 12 : 20) * s, ry = (ring ? 4 : 7) * s;
+        g.globalAlpha = 0.45 + 0.55 * Math.abs(Math.sin(now / 110 + i * 1.7 + ring * 2));
+        pxStar(hx + Math.cos(a) * rx, hy - 6 * s + Math.sin(a) * ry, ring || i % 3 ? 1 : 2, i % 2 ? "#ffd23a" : "#fff6c9");
       }
+      const t = ph(1, 2600, 0); // now and then a shooting star
+      if (t < 0.25) line(hx - 26 * s + t * 4 * 52 * s, hy - 30 * s + t * 4 * 22 * s, hx - 34 * s + t * 4 * 52 * s, hy - 34 * s + t * 4 * 22 * s, "#fff6c9", 1.6 * s, 1 - t * 4);
     } else if (kind === "hearts") {
-      for (let i = 0; i < 6; i++) {
-        const t = ph(6, 2300, i);
-        g.globalAlpha = Math.min(1, t * 6) * (1 - t * t);
-        pxHeart(hx + Math.sin(t * 7 + i * 2.1) * 13 * s, hy - 4 * s - t * 38 * s, i % 3 === 0 ? 1.4 : 1, i % 2 ? "#ff5c9a" : "#ff9ec4", "#fff");
-      }
-    } else if (kind === "snow") {
-      for (let i = 0; i < 14; i++) {
-        const t = ph(14, 2600, i);
-        g.globalAlpha = Math.min(1, t * 8) * (1 - t * 0.5);
-        pxBlob(hx + Math.sin(t * 5 + i * 1.7) * 19 * s, hy - 18 * s + t * 56 * s, (1 + (i % 3) * 0.5) * s, "#ffffff");
-      }
-    } else if (kind === "bubbles") {
+      glow(hx, hy - 4 * s, 22 * s, "rgba(255,92,154,0.85)", 0.3 + 0.1 * Math.sin(now / 240));
       for (let i = 0; i < 8; i++) {
-        const t = ph(8, 2400, i);
-        g.globalAlpha = 0.85 * (1 - t);
+        const t = ph(8, 2600, i), big = i % 3 === 0;
+        g.globalAlpha = Math.min(1, t * 6) * (1 - t * t);
+        pxHeart(hx + Math.sin(t * 7 + i * 2.1) * 15 * s, hy - 2 * s - t * 44 * s, big ? 1.5 : 1, i % 2 ? "#ff5c9a" : "#ff9ec4", "#fff");
+      }
+      for (let i = 0; i < 6; i++) { g.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(now / 90 + i * 2.2)); pxBlob(hx + Math.cos(i * 1.7 + now / 900) * 17 * s, hy - 8 * s + Math.sin(i * 2.9 + now / 700) * 10 * s, 1 * s, "#fff"); }
+    } else if (kind === "snow") {
+      glow(hx, hy - 2 * s, 24 * s, "rgba(150,215,255,0.8)", 0.28 + 0.08 * Math.sin(now / 400));
+      for (let i = 0; i < 20; i++) {
+        const t = ph(20, 2800, i);
+        g.globalAlpha = Math.min(1, t * 8) * (1 - t * 0.4);
+        pxBlob(hx + Math.sin(t * 5 + i * 1.7) * 22 * s, hy - 22 * s + t * 62 * s, (0.9 + (i % 3) * 0.55) * s, "#ffffff");
+      }
+      for (let i = 0; i < 5; i++) { g.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(now / 160 + i * 1.3)); pxStar(hx + (rnd(i + 3) - 0.5) * 34 * s, hy - 14 * s + (rnd(i + 11) - 0.5) * 18 * s, 1, "#cdeeff"); } // ice glints
+    } else if (kind === "bubbles") {
+      glow(hx, hy - 2 * s, 24 * s, "rgba(95,208,232,0.8)", 0.25);
+      for (let i = 0; i < 10; i++) {
+        const t = ph(10, 2600, i), r = (2 + (i % 4) * 1.3 + t * 2.2) * s, x = hx + Math.sin(t * 5 + i * 2.4) * 16 * s, y = hy + 4 * s - t * 42 * s;
+        g.globalAlpha = 0.9 * (1 - t * t);
         g.strokeStyle = "#bff3ff"; g.lineWidth = Math.max(1, 1.2 * s);
-        g.beginPath(); g.arc(hx + Math.sin(t * 5 + i * 2.4) * 14 * s, hy + 4 * s - t * 36 * s, (2 + (i % 3) * 1.4 + t * 2) * s, 0, Math.PI * 2); g.stroke();
+        g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke();
+        g.fillStyle = "rgba(190,243,255,0.18)"; g.fill();
+        g.globalAlpha = 0.9 * (1 - t); g.strokeStyle = "#fff"; g.beginPath(); g.arc(x, y, r * 0.65, Math.PI * 1.1, Math.PI * 1.5); g.stroke(); // the shine
       }
     } else if (kind === "bolts") {
-      const seed = Math.floor(now / 110);
-      for (let b = 0; b < 3; b++) {
-        let x = hx + (b - 1) * 12 * s, y = hy - 12 * s;
-        g.globalAlpha = 0.55 + 0.45 * ((Math.sin(seed * 12.9898 + b * 78.233) + 1) / 2);
-        g.strokeStyle = b % 2 ? "#ffffff" : "#7fb6ff"; g.lineWidth = Math.max(1.2, 1.6 * s);
-        g.beginPath(); g.moveTo(x, y);
-        for (let k = 1; k <= 4; k++) { x += (Math.sin(seed * 3.1 + b * 5 + k * 9.7) * 6) * s; y -= 6 * s; g.lineTo(x, y); }
-        g.stroke();
+      const seed = Math.floor(now / 90), flash = rnd(seed) > 0.72 ? 1 : 0;
+      glow(hx, hy - 6 * s, 26 * s, "rgba(127,182,255,0.9)", 0.22 + flash * 0.4);
+      for (let b = 0; b < 4; b++) {
+        let x = hx + (b - 1.5) * 11 * s, y = hy - 4 * s;
+        const pts: [number, number][] = [[x, y]];
+        for (let k = 1; k <= 5; k++) { x += (rnd(seed * 3 + b * 7 + k) - 0.5) * 12 * s; y -= 6.5 * s; pts.push([x, y]); }
+        const on = 0.5 + 0.5 * rnd(seed + b * 13);
+        for (const [w, c, a] of [[4.2 * s, "#4f7dff", 0.35 * on], [2 * s, "#9fc4ff", 0.8 * on], [1 * s, "#ffffff", on]] as const) { g.save(); g.globalAlpha = a; g.strokeStyle = c; g.lineWidth = Math.max(1, w); g.lineJoin = "round"; g.beginPath(); pts.forEach(([px, py], k) => (k ? g.lineTo(px, py) : g.moveTo(px, py))); g.stroke(); g.restore(); }
+        g.globalAlpha = on; pxBlob(pts[pts.length - 1][0], pts[pts.length - 1][1], 1.4 * s, "#ffffff");
       }
     } else if (kind === "rainbow") {
-      const cols = ["#ff3b3b", "#ff9f1c", "#ffe14d", "#46d369", "#33c7ff", "#6a7bff"];
-      g.lineWidth = Math.max(1.5, 2.2 * s);
-      cols.forEach((c, i) => { g.globalAlpha = 0.75 + 0.2 * Math.sin(now / 300 + i); g.strokeStyle = c; g.beginPath(); g.arc(hx, hy + 6 * s, (14 + i * 2.1) * s, Math.PI * 1.08, Math.PI * 1.92); g.stroke(); });
-    } else { // embers
-      for (let i = 0; i < 12; i++) {
-        const t = ph(12, 1800, i);
-        g.globalAlpha = Math.min(1, t * 5) * (1 - t);
-        pxBlob(hx + Math.sin(t * 4 + i * 3.1) * 15 * s, hy + 4 * s - t * 34 * s, (1.3 + (i % 3) * 0.6) * s, i % 3 === 0 ? "#ffcf4a" : i % 3 === 1 ? "#ff6a1f" : "#a8230f");
+      const cols = ["#ff3b3b", "#ff9f1c", "#ffe14d", "#46d369", "#33c7ff", "#6a7bff", "#c45bff"];
+      glow(hx, hy, 24 * s, "rgba(255,255,255,0.7)", 0.18);
+      g.lineWidth = Math.max(1.5, 2.1 * s);
+      cols.forEach((c, i) => { g.globalAlpha = 0.8 + 0.2 * Math.sin(now / 280 + i); g.strokeStyle = c; g.beginPath(); g.arc(hx, hy + 8 * s, (13 + i * 2.2) * s, Math.PI * 1.06, Math.PI * 1.94); g.stroke(); });
+      for (let i = 0; i < 9; i++) { // sparkles slide along the arc
+        const t = ph(9, 2200, i), a = Math.PI * (1.06 + 0.88 * t), r = (13 + (i % 7) * 2.2) * s;
+        g.globalAlpha = Math.sin(t * Math.PI); pxStar(hx + Math.cos(a) * r, hy + 8 * s + Math.sin(a) * r, 1, "#ffffff");
+      }
+    } else if (kind === "embers") {
+      glow(hx, hy, 24 * s, "rgba(220,60,20,0.85)", 0.35 + 0.12 * Math.sin(now / 160));
+      for (let i = 0; i < 5; i++) { // smoke curling up
+        const t = ph(5, 2400, i + 30);
+        g.globalAlpha = 0.28 * Math.sin(t * Math.PI);
+        pxBlob(hx + Math.sin(t * 4 + i) * 9 * s, hy - 10 * s - t * 38 * s, (3 + t * 5) * s, "#6b6560");
+      }
+      for (let i = 0; i < 16; i++) {
+        const t = ph(16, 1900, i);
+        g.globalAlpha = Math.min(1, t * 5) * (1 - t) * (0.6 + 0.4 * Math.abs(Math.sin(now / 70 + i)));
+        pxBlob(hx + Math.sin(t * 4 + i * 3.1) * 17 * s, hy + 4 * s - t * 38 * s, (1.1 + (i % 3) * 0.6) * s, i % 3 === 0 ? "#ffcf4a" : i % 3 === 1 ? "#ff6a1f" : "#a8230f");
+      }
+    } else if (kind === "galaxy") {
+      const ax = hx, ay = hy - 8 * s;
+      g.save(); g.translate(ax, ay); g.scale(1, 0.38); g.rotate(now / 1800);
+      const neb = g.createRadialGradient(0, 0, 0, 0, 0, 30 * s);
+      neb.addColorStop(0, "rgba(180,120,255,0.85)"); neb.addColorStop(0.5, "rgba(80,60,200,0.45)"); neb.addColorStop(1, "rgba(20,10,60,0)");
+      g.globalAlpha = 0.9; g.fillStyle = neb; g.beginPath(); g.arc(0, 0, 30 * s, 0, Math.PI * 2); g.fill(); g.restore();
+      for (let i = 0; i < 16; i++) { // stars on a spiral
+        const a = now / 900 + i * 0.7, r = (5 + (i * 1.9) % 24) * s;
+        g.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(now / 130 + i * 2.1));
+        pxBlob(ax + Math.cos(a) * r * 1.1, ay + Math.sin(a) * r * 0.42, (i % 4 === 0 ? 1.4 : 0.8) * s, i % 3 ? "#ffffff" : "#b9a6ff");
+      }
+      const pa = now / 1100; // a little planet goes round
+      g.globalAlpha = 1; pxBlob(ax + Math.cos(pa) * 26 * s, ay + Math.sin(pa) * 10 * s, 2.4 * s, "#6fd0ff"); g.globalAlpha = 0.7; pxBlob(ax + Math.cos(pa) * 26 * s + 0.8 * s, ay + Math.sin(pa) * 10 * s - 0.6 * s, 1 * s, "#ffffff");
+    } else if (kind === "sakura") {
+      glow(hx, hy - 4 * s, 24 * s, "rgba(255,170,200,0.8)", 0.26);
+      for (let i = 0; i < 14; i++) { // petals drifting down, turning
+        const t = ph(14, 3200, i), x = hx + Math.sin(t * 4.5 + i * 1.9) * 22 * s, y = hy - 24 * s + t * 66 * s;
+        g.save(); g.translate(x, y); g.rotate(t * 9 + i); g.globalAlpha = Math.min(1, t * 7) * (1 - t * 0.5);
+        g.fillStyle = i % 3 ? "#ffb7d1" : "#ff8fb8"; g.beginPath(); g.ellipse(0, 0, 2.6 * s, 1.5 * s, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "#fff0f5"; g.beginPath(); g.ellipse(-0.6 * s, -0.3 * s, 1 * s, 0.5 * s, 0, 0, Math.PI * 2); g.fill(); g.restore();
+      }
+    } else if (kind === "toxic") {
+      glow(hx, hy - 2 * s, 24 * s, "rgba(90,255,60,0.85)", 0.3 + 0.12 * Math.sin(now / 200));
+      for (let i = 0; i < 9; i++) { // green bubbles rising and popping
+        const t = ph(9, 2000, i), x = hx + Math.sin(t * 6 + i * 2) * 14 * s, y = hy + 4 * s - t * 40 * s, r = (1.8 + (i % 3) * 1.2) * s * (1 - t * 0.3);
+        g.globalAlpha = 0.9 * (1 - t); g.strokeStyle = "#8cff5a"; g.lineWidth = Math.max(1, 1.2 * s); g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); g.fillStyle = "rgba(120,255,80,0.25)"; g.fill();
+      }
+      for (let i = 0; i < 5; i++) { const t = ph(5, 1500, i + 40); g.globalAlpha = 1 - t; pxBlob(hx + (rnd(i + 5) - 0.5) * 24 * s, hy + 6 * s + t * 18 * s, 1.2 * s, "#b6ff7a"); } // drips
+    } else { // sparks: a sparkler
+      glow(hx, hy - 4 * s, 20 * s, "rgba(255,230,140,0.9)", 0.3 + 0.15 * rnd(Math.floor(now / 60)));
+      for (let i = 0; i < 14; i++) {
+        const a = rnd(Math.floor(now / 80) + i * 5) * Math.PI * 2, t = (now / 160 + i / 14) % 1, r0 = 3 * s, r1 = (6 + 22 * t) * s;
+        line(hx + Math.cos(a) * r0 * (0.3 + t), hy - 6 * s + Math.sin(a) * r0 * (0.3 + t) * 0.8, hx + Math.cos(a) * r1, hy - 6 * s + Math.sin(a) * r1 * 0.8, i % 2 ? "#fff6c9" : "#ffc83a", 1.2 * s, 1 - t);
       }
     }
     void color;
@@ -5061,6 +5168,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     for (const p of players.values()) {
       if (!p.pet || p.sleeper || p.lying) { petStates.delete(p.uid); continue; }
       const [type, palText] = p.pet.split(":");
+      const petFx = parsePetLook(p.pet)?.fx;
       const sheet = petSheet(type, Number(palText) || 0);
       if (!sheet) continue;
       const own = posOf(p, now);
@@ -5087,8 +5195,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.fillStyle = "rgba(0,0,0,0.16)";
           g.beginPath(); g.ellipse(ps.x, ps.y, Math.max(6, sheet.meta.w * 0.22) * scale, 3.2 * scale, 0, 0, Math.PI * 2); g.fill();
           drawPet(g, sheet, pose, dirNow, step, ps.x, ps.y, scale);
+          if (petFx) drawUnusualFx(petFx, "#ffffff", ps.x, ps.y - sheet.meta.oy * scale * 0.9 + 58 * scale, now); // (an unusual pet: its own particles over its head)
         },
       });
+      if (p.uid === me.uid) objs.push({ id: `pet:${p.uid}`, kind: "mypet", x0: ps.x - sheet.meta.ox * scale, x1: ps.x - sheet.meta.ox * scale + sheet.meta.w * scale, y0: ps.y - sheet.meta.oy * scale, y1: ps.y - sheet.meta.oy * scale + sheet.meta.h * scale, depth: st.x + st.y + 0.45 });
     }
 
     if (roomId === LOBBY_ID && bagVisit !== null) {
@@ -5231,7 +5341,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           // facing away from the camera (up-right, up-left, up) the knife hand is behind the body: draw the knife first so the body covers it
           const knifeOut = !isMoving(p, now) && !p.emote && !smoking && holdsKnife(p, now);
           const knifeBehind = knifeOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
-          if (knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          const skinKnife = p.uid === me.uid && selectedDef()?.id === "knife_tt"; // (the karambit skin: you see it in your own hand)
+          if (knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, skinKnife);
           const cupOut = !knifeOut && !isMoving(p, now) && !p.emote && !smoking && (holdsCup(p) || holdsDice(p));
           const heldId = holdsCup(p) ? "codeine" : "dice", heldSize = holdsCup(p) ? 26 : 18;
           const cupBehind = cupOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
@@ -5274,7 +5385,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           }
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
           if (smoking && p.smokeKind === "hashjoint") drawHearts(feet.x + lunge.x, feet.y + lunge.y + lift, now); // the hash joint: hearts float up over the head
-          if (knifeOut && !knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          if (knifeOut && !knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, skinKnife);
           if (cupOut && !cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, heldId, heldSize);
           // name plate (highlighted while it's a valid stab target)
           const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";

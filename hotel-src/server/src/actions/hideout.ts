@@ -5,7 +5,7 @@ import { Ctx, fail } from "../ctx";
 import { addToInv, lighterHex, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { SHIPPED_DIMS } from "../../../src/shared/furniture";
 import {
-  HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
+  HIDEOUT_BOOST_MS, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HideoutListing, HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
   HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize,
 } from "../../../src/shared/hideout";
 
@@ -29,6 +29,17 @@ async function ownHideout(c: Ctx): Promise<{ room: string; meta: Record<string, 
   if (!meta?.owner) return fail("You haven't got a hideout yet.");
   return { room, meta: meta! };
 }
+/** the public list (hideoutList/<owner>): every hideout that is listed, with its line, how many are in it and until when it is boosted. `over` = what is about to change. */
+function publishListing(c: Ctx, owner: string, meta: Record<string, any>, over: { name?: string; desc?: string; listed?: boolean; membersDelta?: number; boostUntil?: number } = {}): void {
+  const listed = over.listed ?? meta.listed !== false;
+  if (!listed) { c.extra[`hideoutList/${owner}`] = null; return; }
+  const members = Object.keys((meta.members ?? {}) as Record<string, unknown>).length + 1 + (over.membersDelta ?? 0);
+  const row: HideoutListing = {
+    name: String(over.name ?? meta.name ?? "hideout").slice(0, HIDEOUT_NAME_MAX), desc: String(over.desc ?? meta.desc ?? "").slice(0, HIDEOUT_DESC_MAX),
+    ownerName: String(meta.ownerName ?? "?").slice(0, 16), members: Math.max(1, members), boostUntil: Number(over.boostUntil ?? meta.boostUntil ?? 0) || 0,
+  };
+  c.extra[`hideoutList/${owner}`] = row;
+}
 const nameOf = async (c: Ctx, uid: string): Promise<string> => String((await c.db.get<string>(`profiles/${uid}/name`)) ?? "?").slice(0, 16);
 
 /** The landlord at the hideout door sells a hideout: 14x14, with a computer, a toolbox, a sink and a boombox. One per player. */
@@ -46,6 +57,7 @@ export const hideoutBuy: Action = {
       theme: { ...HIDEOUT_THEME }, toolbox: HIDEOUT_FIXED_POS.toolbox, sink: HIDEOUT_FIXED_POS.sink, boombox: HIDEOUT_FIXED_POS.boombox, computer: HIDEOUT_FIXED_POS.computer,
     };
     c.extra[`hideouts/${c.uid}/${c.uid}`] = { name: `${name}'s hideout`.slice(0, HIDEOUT_NAME_MAX), role: "owner" };
+    publishListing(c, c.uid, { name: `${name}'s hideout`, ownerName: name }, {});
     return { room };
   },
 };
@@ -99,17 +111,43 @@ export const hideoutColors: Action = {
 export const hideoutSettings: Action = {
   locks: (c) => [`room:${hideoutRoomId(c.uid)}`],
   async run(c, a) {
-    const { room } = await ownHideout(c);
+    const { room, meta } = await ownHideout(c);
     await requireInRoom(c, room);
+    const over: { name?: string; desc?: string; listed?: boolean } = {};
+    if (a.desc !== undefined) {
+      const desc = String(a.desc ?? "").replace(/[\n\r]+/g, " ").trim().slice(0, HIDEOUT_DESC_MAX);
+      c.extra[`roomsMeta/${room}/desc`] = desc || null;
+      over.desc = desc;
+    }
+    if (a.listed !== undefined) { c.extra[`roomsMeta/${room}/listed`] = a.listed ? null : false; over.listed = !!a.listed; }
     if (a.name !== undefined) {
       const name = text(a.name, /^[^\n\r]{3,28}$/, "name").trim();
       if (name.length < 3) fail("Bad name.");
+      over.name = name;
       c.extra[`roomsMeta/${room}/name`] = name;
       c.extra[`hideouts/${c.uid}/${c.uid}/name`] = name;
       for (const uid of Object.keys((await c.db.get<Record<string, unknown>>(`roomsMeta/${room}/members`)) ?? {})) c.extra[`hideouts/${uid}/${c.uid}/name`] = name;
     }
     if (a.lock !== undefined) c.extra[`roomsMeta/${room}/lock`] = !!a.lock;
+    publishListing(c, c.uid, meta, over);
     return {};
+  },
+};
+
+/** The owner pays 50 drops to be shown first on the list at the hideout door for an hour (boosts add up). */
+export const hideoutBoost: Action = {
+  locks: (c) => [`room:${hideoutRoomId(c.uid)}`],
+  async run(c) {
+    const { room, meta } = await ownHideout(c);
+    await requireInRoom(c, room);
+    if (meta.listed === false) fail("Put the hideout on the list first.");
+    const w = await c.user();
+    if (w.s.blood < HIDEOUT_BOOST_PRICE) fail(`You need ${HIDEOUT_BOOST_PRICE - w.s.blood} more drops`);
+    w.s.blood -= HIDEOUT_BOOST_PRICE;
+    const boostUntil = Math.min(Math.max(c.now, Number(meta.boostUntil) || 0) + HIDEOUT_BOOST_MS, c.now + 24 * HIDEOUT_BOOST_MS);
+    c.extra[`roomsMeta/${room}/boostUntil`] = boostUntil;
+    publishListing(c, c.uid, meta, { boostUntil });
+    return { boostUntil, price: HIDEOUT_BOOST_PRICE };
   },
 };
 
@@ -126,6 +164,8 @@ async function removeMember(c: Ctx, room: string, uid: string): Promise<{ pieces
   c.extra[`roomsMeta/${room}/members/${uid}`] = null;
   c.extra[`hideouts/${uid}/${room.slice(2)}`] = null;
   c.extra[`rooms/${room}/players/${uid}`] = null; // (their browser sees it is not a member any more and goes back to the basement)
+  const meta = await c.db.get<Record<string, any>>(`roomsMeta/${room}`);
+  if (meta?.owner) publishListing(c, room.slice(2), meta, { membersDelta: -1 });
   return { pieces };
 }
 
@@ -210,7 +250,46 @@ export const hideoutAnswer: Action = {
     if (Object.keys(meta!.members ?? {}).length >= HIDEOUT_MAX_MEMBERS) fail("That hideout is full.");
     c.extra[`roomsMeta/${room}/members/${c.uid}`] = { name: await nameOf(c, c.uid), build: true, at: c.now };
     c.extra[`hideouts/${c.uid}/${owner}`] = { name: String(meta!.name ?? inv!.roomName ?? "hideout").slice(0, HIDEOUT_NAME_MAX), role: "member" };
+    publishListing(c, owner, meta as Record<string, any>, { membersDelta: 1 });
     return { joined: true, room };
+  },
+};
+
+/** Somebody who sees a hideout on the list asks the owner to let them in (the owner answers on the computer, under Members). */
+export const hideoutRequest: Action = {
+  async run(c, a) {
+    const owner = text(a.owner, UID_RE, "hideout");
+    if (owner === c.uid) fail("That's your own hideout.");
+    const room = hideoutRoomId(owner);
+    const meta = await c.db.get<Record<string, any>>(`roomsMeta/${room}`);
+    if (!meta?.owner || meta.listed === false) fail("That hideout isn't on the list.");
+    if (meta!.members?.[c.uid]) fail("You are already in that hideout.");
+    if (Object.keys(meta!.members ?? {}).length >= HIDEOUT_MAX_MEMBERS) fail("That hideout is full.");
+    if (await c.db.get(`hideoutRequests/${owner}/${c.uid}`)) fail("You already asked. Wait for the owner.");
+    const queue = (await c.db.get<Record<string, unknown>>(`hideoutRequests/${owner}`)) ?? {};
+    if (Object.keys(queue).length >= 20) fail("Too many people are waiting to get in there.");
+    c.extra[`hideoutRequests/${owner}/${c.uid}`] = { name: await nameOf(c, c.uid), at: c.now };
+    return {};
+  },
+};
+
+/** The owner lets a requester in (building allowed until the owner says otherwise) or sends them away. */
+export const hideoutRequestAnswer: Action = {
+  locks: (c) => [`room:${hideoutRoomId(c.uid)}`],
+  async run(c, a) {
+    const { room, meta } = await ownHideout(c);
+    const uid = text(a.uid, UID_RE, "player");
+    const req = await c.db.get<{ name?: string }>(`hideoutRequests/${c.uid}/${uid}`);
+    if (!req) fail("That request is gone.");
+    c.extra[`hideoutRequests/${c.uid}/${uid}`] = null;
+    if (!a.accept) return { joined: false };
+    const members = (meta.members ?? {}) as Record<string, unknown>;
+    if (members[uid]) return { joined: true };
+    if (Object.keys(members).length >= HIDEOUT_MAX_MEMBERS) fail(`A hideout holds ${HIDEOUT_MAX_MEMBERS} members at most.`);
+    c.extra[`roomsMeta/${room}/members/${uid}`] = { name: await nameOf(c, uid), build: true, at: c.now };
+    c.extra[`hideouts/${uid}/${c.uid}`] = { name: String(meta.name ?? "hideout").slice(0, HIDEOUT_NAME_MAX), role: "member" };
+    publishListing(c, c.uid, meta, { membersDelta: 1 });
+    return { joined: true };
   },
 };
 

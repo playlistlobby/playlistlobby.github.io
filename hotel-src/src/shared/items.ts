@@ -34,7 +34,7 @@ export const ITEM_ID_LIST = [
   // the loudspeaker: a message on every screen for 10 seconds, once every 6 hours (see shared/loudspeaker.ts)
   "loudspeaker",
   // mystery boxes and keys (see shared/cases.ts), and the unusuals the boxes give: a hat with particle effects, worn from the pocket
-  "mysterycase", "casekey", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember",
+  "mysterycase", "casekey", "knife_tt", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -279,7 +279,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
   "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "pickaxe", "machete", "dice", "f_sofa",
-  "loudspeaker", "mysterycase", "casekey", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember",
+  "loudspeaker", "mysterycase", "casekey", "knife_tt", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
   // bagmand only buys his own things back (see shared/bagmand.ts)
   "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",
   "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",
@@ -291,6 +291,7 @@ export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
  * Things in SELL_BUNDLE are paid per bundle. `furniPrices` = the admin's furniture prices (shared/furniture.ts furniPrice).
  */
 export function sellPrice(item: string, ass?: boolean, furniPrices: Record<string, number> = {}): number | null {
+  if (item.startsWith("pet_")) return null; // (6ixty has no use for pets: swap them with players)
   if (isLaced(item)) return sellPrice(unlaced(item), ass, furniPrices); // (it looks like the real thing, so he pays the same)
   if (NEVER_BOUGHT.has(item) || SHOP_PIECES.some((p) => p.rare && SHOP_KIND_PREFIX + p.id === item)) return null; // (the raffle's rare pieces are not for sale: not even to him)
   if (/^[fx]_/.test(item)) return Math.max(1, Math.floor(furniPrice(item, furniPrices) * 0.75)); // furniture: 75% of the shop price

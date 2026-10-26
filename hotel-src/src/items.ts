@@ -2,6 +2,8 @@ import { assetUrl } from "./assetUrl";
 import { FURNI_KINDS } from "./rooms";
 import { loadNitro } from "./nitro";
 import { UNUSUALS } from "./shared/cases";
+import { onPetSheet, petIconUrl } from "./pets";
+import { parsePetItem, petLabel } from "./shared/petItems";
 import { DISABLED_ITEMS, isLaced, ITEM_ID_LIST, parseInventoryWith, unlaced } from "./shared/items";
 export {
   combine, DEFAULT_ITEM_PRICE, DISABLED_ITEMS, emptyInventory, findSlot, findSlotAny, GROW_MS, growMsOf, INV_COLS, INV_SIZE, isFurniItem, ITEM_DEFAULTS,
@@ -21,7 +23,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear";
+  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear" | "pet";
   /** select it, then click a piece of furniture of this kind (the sink, the growing kit) */
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
@@ -448,6 +450,10 @@ export function furniIcon(kind: string): string {
   return furniIcons.get(kind)!;
 }
 
+// the knife skin from the mystery boxes: it stands in for the plain knife in the pocket (the plain one is hidden while you have it), works exactly like it,
+// and can be traded, given or stored: the plain knife is still there afterwards
+ITEMS.knife_tt = { id: "knife_tt", name: "Karambit | Tiger Tooth", examine: "A karambit with a tiger tooth finish: it is your knife, only prettier. Use it like the knife. You can trade it or give it away: you keep your plain knife.", icon: assetUrl("items/knife_tt.svg"), useOnPlayer: "stab" };
+
 // mystery boxes, keys and unusuals (see src/shared/cases.ts)
 ITEMS.mysterycase = { id: "mysterycase", name: "Mystery box", examine: "A locked crate. Tap it to open it with a key: you never know what is inside. Boxes turn up in the bins.", icon: assetUrl("items/mysterycase.svg"), useSelf: "open" };
 ITEMS.casekey = { id: "casekey", name: "Box key", examine: "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (2 for 25 kr). One key opens one box.", icon: assetUrl("items/casekey.svg"), useSelf: "open" };
@@ -485,8 +491,19 @@ const bagmandSmokes: Array<[string, string, string]> = [
 for (const [id, name, examine] of bagmandSmokes) ITEMS[id] = { id, name, examine, icon: assetUrl(`items/${id}.svg`), useSelf: "smoke" };
 
 /** The definition of any inventory item: the fixed ones above, or a piece of furniture. */
+let petIconWatch = false;
 export function itemDef(id: string): ItemDef | undefined {
   if (ITEMS[id]) return ITEMS[id];
+  const pet = parsePetItem(id);
+  if (pet) {
+    if (!petIconWatch) { petIconWatch = true; onPetSheet(() => furniIconListeners.forEach((l) => l())); } // (the pictures are drawn when their sheets have loaded)
+    const kind = pet.fx ? `Unusual ${petLabel(pet.type)}` : petLabel(pet.type);
+    return {
+      id, name: pet.fx ? `${kind} (${pet.fx})` : kind,
+      examine: pet.fx ? "An unusual pet: it has a particle effect of its own. Tap it to let it out: it walks behind you and everybody sees it. Tap it in the room to pick it up again." : "A pet. Tap it to let it out: it walks behind you and everybody sees it. Tap it in the room to pick it up again.",
+      icon: petIconUrl(pet.type, pet.palette), useSelf: "pet",
+    };
+  }
   if (isLaced(id)) return itemDef(unlaced(id)); // laced with fentanyl: it looks exactly like the real thing
   const k = FURNI_KINDS[id];
   if (!k || !isFurniItem(id)) return undefined;

@@ -38,12 +38,17 @@ function readSwf(file) {
       const idx = new Uint8Array(w * h), alpha = new Uint8Array(w * h), rgb = new Uint8Array(w * h * 3);
       if (format === 3) {
         const entry = type === 36 ? 4 : 3, row = (w + 3) & ~3;
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = data[table * entry + y * row + x]; idx[y * w + x] = i; alpha[y * w + x] = type === 36 ? data[i * 4 + 3] : 255; }
+        // (a pet's colour palette is indexed by the RED level of a pixel, not by its place in the bitmap's own colour table)
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const i = data[table * entry + y * row + x], o = i * entry;
+          idx[y * w + x] = data[o]; alpha[y * w + x] = type === 36 ? data[o + 3] : 255;
+          for (let c = 0; c < 3; c++) rgb[(y * w + x) * 3 + c] = data[o + c];
+        }
       } else if (format === 5) {
-        // the pets' sprites are grey: the grey level of a pixel is its place in the palette (palette_N.bin: 256 colours of 3 bytes)
-        for (let i = 0; i < w * h; i++) { const a = data[i * 4]; alpha[i] = a; idx[i] = a ? Math.min(255, Math.round(data[i * 4 + 1] * 255 / a)) : 0; for (let c = 0; c < 3; c++) rgb[i * 3 + c] = a ? Math.min(255, Math.round(data[i * 4 + 1 + c] * 255 / a)) : 0; }
+        // a pixel's GREEN level is its place in the colour palette (the grey pets: grey level; the others: a slot number, with red and blue already right)
+        for (let i = 0; i < w * h; i++) { const a = data[i * 4]; alpha[i] = a; idx[i] = a ? Math.min(255, Math.round(data[i * 4 + 2] * 255 / a)) : 0; for (let c = 0; c < 3; c++) rgb[i * 3 + c] = a ? Math.min(255, Math.round(data[i * 4 + 1 + c] * 255 / a)) : 0; }
       } else continue;
-      bitmaps[id] = { w, h, idx, alpha, rgb: format === 5 ? rgb : null };
+      bitmaps[id] = { w, h, idx, alpha, rgb };
     }
   }
   const byName = {}, binByName = {};
@@ -79,10 +84,14 @@ function png(w, h, rgba) {
 }
 
 // ---- one pet ------------------------------------------------------------------------------------------------------------------
-const POSES = { std: 0, mv: 13, sit: 10, lay: 6 };
+// (which animation is standing, walking, sitting and lying differs from pet to pet: each one says so in its <postures>)
+const POSES = ["std", "mv", "sit", "lay"];
+/** pets that bake into something that isn't a pet you would want walking behind you (grey boxes, boulders, a pot, a flying scrap) */
+const LEFT_OUT = new Set(["fools", "monster", "monsterplant", "pterosaur"]);
 const summary = {};
 for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
   const pet = file.replace(/\.swf$/, "");
+  if (LEFT_OUT.has(pet)) continue;
   const { bitmaps, bins } = readSwf(`${dir}/${file}`);
   const xmlOf = (suffix) => { const k = Object.keys(bins).find((n) => n.endsWith(suffix)); return k ? bins[k].toString("utf8") : null; };
   const assetsXml = xmlOf(`${pet}_assets`) ?? xmlOf("_assets"), visXml = xmlOf(`${pet}_visualization`) ?? xmlOf("_visualization");
@@ -95,6 +104,11 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
   for (const l of find(find(vis, "layers")[0] ?? { kids: [] }, "layer")) layerTags[l.attrs.id] = l.attrs.tag;
   if (!Object.keys(layerTags).length) { // an older pet: the layers are the letters its assets use (a, b, c...), the shadow (sd) is left out
     for (const n of Object.keys(assets)) { const m = new RegExp(`^${pet}_64_([a-z])_`).exec(n); if (m) layerTags[m[1].charCodeAt(0) - 97] = "layer"; }
+  }
+  if (process.env.DIAG) {
+    const posts = {};
+    for (const po of find(find(vis, "postures")[0] ?? { kids: [] }, "posture")) posts[po.attrs.id] = po.attrs.animationId;
+    console.log(`DIAG ${pet}: layers ${JSON.stringify(layerTags)} postures std=${posts.std} mv=${posts.mv} sit=${posts.sit} lay=${posts.lay} anims=${Object.keys(find(vis, "animations")[0]?.kids ? Object.fromEntries(find(find(vis, "animations")[0], "animation").map((a) => [a.attrs.id, 1])) : {}).join(",")}`);
   }
   const dirZ = {};
   for (const d of find(find(vis, "directions")[0] ?? { kids: [] }, "direction")) { dirZ[d.attrs.id] = {}; for (const l of find(d, "layer")) dirZ[d.attrs.id][l.attrs.id] = Number(l.attrs.z ?? 0); }
@@ -117,13 +131,15 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
     const bmp = bitmaps[`${pet}_${a.source ?? name}`] ?? bitmaps[`${pet}_${name}`];
     if (!bmp) return null;
     const flip = a.flipH === "1";
-    return { bmp, flip, pal: a.usesPalette === "1" || !bmp.rgb, left: flip ? Number(a.x) - bmp.w : -Number(a.x), top: -Number(a.y) };
+    return { bmp, flip, pal: a.usesPalette === "1", left: flip ? Number(a.x) - bmp.w : -Number(a.x), top: -Number(a.y) };
   };
   // the frames of every pose: for each step and direction, the sprites with where they go
   const rows = [], rowOf = {};
   let minX = 0, minY = 0, maxX = 0, maxY = 0;
-  for (const [pose, animId] of Object.entries(POSES)) {
-    const an = anims[animId];
+  const postureAnim = {};
+  for (const po of find(find(vis, "postures")[0] ?? { kids: [] }, "posture")) postureAnim[po.attrs.id] = po.attrs.animationId;
+  for (const pose of POSES) {
+    const an = anims[postureAnim[pose] ?? (pose === "std" ? "0" : "none")];
     if (!an && pose !== "std") continue;
     const layers = an ?? {};
     const steps = pose === "mv" ? Math.min(6, Math.max(1, ...Object.values(layers).map((s) => s.length))) : 1; // (standing, sitting and lying are one still picture; walking is up to 6 frames)
@@ -141,16 +157,27 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
           const o = f.offs[d] ?? { x: 0, y: 0 };
           const left = s.left + o.x, top = s.top + o.y;
           parts.push({ ...s, left, top, z: dirZ[d]?.[id] ?? 0 });
-          minX = Math.min(minX, left); minY = Math.min(minY, top); maxX = Math.max(maxX, left + s.bmp.w); maxY = Math.max(maxY, top + s.bmp.h);
         }
         parts.sort((p, q) => p.z - q.z);
         cells.push(parts);
       }
+      // a direction a pet has no pictures for is its mirror image (1 and 7, 2 and 6, 3 and 5 are each other's)
+      for (let d = 0; d < 8; d++) {
+        const m = (8 - d) % 8;
+        if (!cells[d].length && cells[m].length) cells[d] = cells[m].map((q) => ({ ...q, flip: !q.flip, left: -(q.left + q.bmp.w) }));
+      }
+      for (const d of [0, 4]) if (!cells[d].length) cells[d] = cells[(d + 1) % 8].length ? cells[(d + 1) % 8] : cells[(d + 7) % 8]; // (straight up or down with nothing to mirror: the picture next to it)
+      for (const parts of cells) for (const q of parts) { minX = Math.min(minX, q.left); minY = Math.min(minY, q.top); maxX = Math.max(maxX, q.left + q.bmp.w); maxY = Math.max(maxY, q.top + q.bmp.h); }
       rowOf[pose].push(rows.length);
       rows.push(cells);
     }
   }
-  const palettes = Object.keys(bins).filter((n) => /_palette_\d+$/.test(n)).sort((a, b) => Number(a.split("_").pop()) - Number(b.split("_").pop())).map((n) => bins[n].toString("base64"));
+  // the colours of a pet that comes in many colours: one bin per colour, 256 RGB triplets (768 bytes, some with 4 more after them); the green level of a sprite pixel
+  // says which entry is its colour. A pet with several sets (a different one for the body, the hair, the saddle...) can't be done this simple way and is left out.
+  const palNames = Object.keys(bins).filter((n) => bins[n].length === 768 || bins[n].length === 772);
+  const families = new Set(palNames.map((n) => n.replace(new RegExp(`^${pet}_`), "").replace(/\d.*$/, "")));
+  if (families.size > 1) { console.warn(`${pet}: ${families.size} sets of colours (${[...families].join(", ")}), left out`); continue; }
+  const palettes = palNames.sort((a, b) => Number((a.match(/\d+/g) ?? ["0"]).pop()) - Number((b.match(/\d+/g) ?? ["0"]).pop()) || a.localeCompare(b)).map((n) => bins[n].subarray(0, 768).toString("base64"));
   const hasPalette = palettes.length > 0;
   const W = Math.ceil(maxX - minX) + 2, H = Math.ceil(maxY - minY) + 2;
   const ox = Math.round(-minX) + 1, oy = Math.round(-minY) + 1;
@@ -169,8 +196,9 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
     }
   }));
   writeFileSync(`${out}/${pet}.png`, png(W * 8, H * rows.length, sheet));
-  if (process.env.PREVIEW) { // (a coloured look at the first colour, for checking the bake)
-    const pal = Buffer.from(palettes[Number(process.env.PREVIEW) || 0], "base64");
+  if (process.env.PREVIEW) {
+    const pal0 = palettes[Number(process.env.PREVIEW) || 0] ?? palettes[0] ?? ""; // (a coloured look at the first colour, for checking the bake)
+    const pal = Buffer.from(pal0, "base64");
     const prev = Buffer.from(sheet);
     for (let i = 0; i < prev.length; i += 4) if (prev[i + 3] === 254) { const k = prev[i]; prev[i] = pal[k * 3]; prev[i + 1] = pal[k * 3 + 1]; prev[i + 2] = pal[k * 3 + 2]; }
     writeFileSync(`${out}/${pet}_preview.png`, png(W * 8, H * rows.length, prev));

@@ -1,12 +1,11 @@
-// The pet merchant in the shop room: buy a pet (1000-2000 blood, its colour is a surprise) and choose which one walks with you.
-//   users/<uid>/pets/<id>   { type, palette, at }     the pets a player owns (written only here)
-//   users/<uid>/activePet   the id of the one that walks with them
-//   users/<uid>/petLook     "<type>:<palette>" of that one: the room's presence field `pet` has to match it (see the rules)
-import { Action, ID_RE, requireInRoom, text } from "./util";
+// Pets are items. The pet merchant in the shop room sells them (1000-2000 blood, the colour is a surprise): a bought pet goes into the pocket. Tap it there and it
+// walks with you (users/<uid>/petLook, "<type>:<colour>[:<effect>]": the room's presence field `pet` has to match it, see the rules); tap it in the room and it
+// goes back into the pocket. An unusual pet (from a mystery box) is the same with a particle effect of its own.
+import { Action, int, requireInRoom, text } from "./util";
 import { fail } from "../ctx";
+import { addToInv, takeOneFrom } from "../../../src/shared/economy";
 import { PET_COLORS, PET_TYPES, petPrice } from "../../../src/shared/pets";
-
-export const PETS_MAX = 12;
+import { parsePetItem, parsePetLook, petItemId, petLookOf } from "../../../src/shared/petItems";
 
 export const petBuy: Action = {
   async run(c, a) {
@@ -14,34 +13,46 @@ export const petBuy: Action = {
     const type = text(a.type, /^[a-z]{3,20}$/, "pet");
     if (!PET_TYPES.includes(type)) fail("The merchant doesn't have that one.");
     const w = await c.user();
-    const owned = Object.keys((await c.db.get<Record<string, unknown>>(`users/${c.uid}/pets`)) ?? {});
-    if (owned.length >= PETS_MAX) fail(`You can't look after more than ${PETS_MAX} pets.`);
     const price = petPrice(type);
     if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
-    w.s.blood -= price;
     const colors = PET_COLORS[type] ?? 0;
     const palette = colors > 0 ? Math.floor(Math.random() * colors) : 0;
-    const id = `p${c.now.toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-    c.extra[`users/${c.uid}/pets/${id}`] = { type, palette, at: c.now };
-    if (!w.raw.activePet) { c.extra[`users/${c.uid}/activePet`] = id; c.extra[`users/${c.uid}/petLook`] = `${type}:${palette}`; }
+    const give = addToInv(w.s.inventory, { item: petItemId({ type, palette }), qty: 1 });
+    if (!give) fail("Your pockets are full: make room for the pet first.");
+    w.s.inventory = give!;
+    w.s.blood -= price;
     c.note = type;
-    return { id, type, palette, price };
+    return { type, palette, price };
   },
 };
 
-/** Which pet walks with you (or none). */
-export const petActive: Action = {
+/** Lets the pet in a pocket slot out: it walks with you from now on (the one that did goes back into the pocket). */
+export const petRelease: Action = {
   async run(c, a) {
-    if (a.id === null || a.id === undefined) {
-      c.extra[`users/${c.uid}/activePet`] = null;
-      c.extra[`users/${c.uid}/petLook`] = null;
-      return {};
-    }
-    const id = text(a.id, ID_RE, "pet");
-    const pet = await c.db.get<{ type?: string; palette?: number }>(`users/${c.uid}/pets/${id}`);
-    if (!pet?.type) fail("That isn't your pet.");
-    c.extra[`users/${c.uid}/activePet`] = id;
-    c.extra[`users/${c.uid}/petLook`] = `${pet!.type}:${Number(pet!.palette) || 0}`;
+    const w = await c.user();
+    const slot = int(a.slot, 0, 27, "slot");
+    const it = w.s.inventory[slot];
+    const pet = it ? parsePetItem(it.item) : null;
+    if (!it || !pet) fail("That isn't a pet.");
+    let inv = takeOneFrom(w.s.inventory, slot);
+    const old = parsePetLook(w.raw.petLook);
+    if (old) { const back = addToInv(inv, { item: petItemId(old), qty: 1 }); if (!back) fail("Your pockets are full: make room for the pet that is out."); inv = back!; }
+    w.s.inventory = inv;
+    c.extra[`users/${c.uid}/petLook`] = petLookOf(pet!);
+    return { look: petLookOf(pet!) };
+  },
+};
+
+/** Picks the pet that walks with you up: it goes into the pocket. */
+export const petPickup: Action = {
+  async run(c) {
+    const w = await c.user();
+    const old = parsePetLook(w.raw.petLook);
+    if (!old) fail("You haven't got a pet out.");
+    const back = addToInv(w.s.inventory, { item: petItemId(old!), qty: 1 });
+    if (!back) fail("Your pockets are full.");
+    w.s.inventory = back!;
+    c.extra[`users/${c.uid}/petLook`] = null;
     return {};
   },
 };

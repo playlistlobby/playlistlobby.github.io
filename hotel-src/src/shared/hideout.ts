@@ -24,6 +24,15 @@ export const HIDEOUT_MAX_MEMBERS = 10;
 /** changing the floor, walls or rug costs 15 times what it costs in a player room, per part */
 export const HIDEOUT_RECOLOR_PRICE = RECOLOR_PRICE * 15;
 export const HIDEOUT_NAME_MAX = 28;
+/** the list of hideouts everybody can see (at the door): a line about the hideout, and paying to be shown first for a while */
+export const HIDEOUT_DESC_MAX = 80;
+export const HIDEOUT_BOOST_PRICE = 50;
+export const HIDEOUT_BOOST_MS = 60 * 60 * 1000;
+/** what the public list says about a hideout (written by the server to hideoutList/<owner>) */
+export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number }
+/** the order of the list: boosted ones first (the latest boost on top), then the bigger crowds */
+export const sortListings = <T extends { listing: HideoutListing }>(rows: T[], now: number): T[] =>
+  [...rows].sort((a, b) => (Number(b.listing.boostUntil > now) - Number(a.listing.boostUntil > now)) || (b.listing.boostUntil > now ? b.listing.boostUntil - a.listing.boostUntil : 0) || b.listing.members - a.listing.members || a.listing.name.localeCompare(b.listing.name));
 
 /** how a new hideout looks until the owner pays for other colours */
 export const HIDEOUT_THEME = { floorA: "#6f6a63", floorB: "#78736b", wall: "#8b9096", rug: false, rugColor: "#7a2f2f" };

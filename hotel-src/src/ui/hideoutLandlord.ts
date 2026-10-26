@@ -68,7 +68,7 @@ export function hideoutLandlordPanel(ctx: Ctx, onChange: () => void): HideoutLan
     if (!meta) { // no hideout yet: for sale
       el.replaceChildren(
         h("div", { class: "ll-label" }, "A hideout of your own"),
-        h("div", { class: "hint" }, `A shared room three times the size of yours (${HIDEOUT_SIZES[0]} × ${HIDEOUT_SIZES[0]}) for you and your gang. You invite the members, you decide who may build, and everybody can use its pots, mixers and sink. It comes with a computer, a toolbox, a sink and a boombox.`),
+        h("div", { class: "hint" }, "A hideout/group room."),
         h("div", { class: "row center" }, h("button", { class: "btn primary", disabled: me.blood < HIDEOUT_PRICE || busy, onclick: () => void run(async () => { await hideoutBuy(me); return "It's yours. Take the door at the end of the basement."; }) }, `Buy a hideout (${HIDEOUT_PRICE} drops)`)),
         me.blood < HIDEOUT_PRICE ? h("div", { class: "hint" }, `You need ${HIDEOUT_PRICE - me.blood} more drops.`) : h("div", {}));
       return;

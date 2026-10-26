@@ -1,11 +1,9 @@
 // Pets in the browser: the sheets made by scripts/bake-pets.mjs (public/pets/<type>.png + .json), coloured with one of the pet's palettes, and a few
-// helpers to read what a player owns. A pet walks behind its owner in every room (see the pets block in src/ui/room.ts); everybody in the room sees it
-// because the owner's presence in the room carries `pet: "<type>:<palette>"` (the database rules check it against users/<uid>/petLook, written by the server).
+// helpers. A pet is an item (see shared/petItems.ts): let out of the pocket it walks behind its owner in every room (see the pets block in src/ui/room.ts); everybody in the room sees it
+// because the owner's presence in the room carries `pet: "<type>:<palette>[:<effect>]"` (the database rules check it against users/<uid>/petLook, written by the server).
 import { onValue, ref } from "firebase/database";
 import { db } from "./firebase";
 import { assetUrl } from "./assetUrl";
-import { call } from "./db";
-import type { Profile } from "./db";
 
 export interface PetMeta { name: string; w: number; h: number; ox: number; oy: number; rows: Record<string, number[]>; palettes: string[] }
 export interface PetSheet { meta: PetMeta; canvas: HTMLCanvasElement }
@@ -69,17 +67,6 @@ export function petPreview(s: PetSheet, height = 56): HTMLCanvasElement {
   return c;
 }
 
-// ---- what the player owns ------------------------------------------------------------------------------------------------------
-export interface OwnedPet { id: string; type: string; palette: number }
-export function watchMyPets(uid: string, cb: (pets: OwnedPet[], active: string | null) => void): () => void {
-  let pets: OwnedPet[] = [], active: string | null = null;
-  const stops = [
-    onValue(ref(db, `users/${uid}/pets`), (s) => { const v = (s.val() ?? {}) as Record<string, { type?: string; palette?: number }>; pets = Object.entries(v).filter(([, p]) => typeof p?.type === "string").map(([id, p]) => ({ id, type: p.type!, palette: Number(p.palette) || 0 })); cb(pets, active); }, () => undefined),
-    onValue(ref(db, `users/${uid}/activePet`), (s) => { active = typeof s.val() === "string" ? (s.val() as string) : null; cb(pets, active); }, () => undefined),
-  ];
-  return () => stops.forEach((s) => s());
-}
-
 /** "<type>:<palette>" of the pet that walks with me (null = none), kept live so rooms can tell everybody */
 let myLook: string | null = null;
 const lookListeners = new Set<(look: string | null) => void>();
@@ -89,5 +76,18 @@ export function startPetLook(uid: string): () => void {
   return onValue(ref(db, `users/${uid}/petLook`), (s) => { myLook = typeof s.val() === "string" ? (s.val() as string) : null; lookListeners.forEach((l) => l(myLook)); }, () => undefined);
 }
 
-export const buyPet = (p: Profile, type: string): Promise<{ id: string; type: string; palette: number; price: number }> => call(p, "petBuy", { type });
-export const setActivePet = (p: Profile, id: string | null): Promise<unknown> => call(p, "petActive", { id });
+
+// ---- the picture of a pet in the pocket ---------------------------------------------------------------------------------------------
+const BLANK = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="20" r="7" fill="#8a8f99"/><circle cx="8" cy="12" r="3" fill="#8a8f99"/><circle cx="24" cy="12" r="3" fill="#8a8f99"/><circle cx="13" cy="7" r="2.5" fill="#8a8f99"/><circle cx="19" cy="7" r="2.5" fill="#8a8f99"/></svg>');
+const icons = new Map<string, string>();
+/** the pet as a little picture (a plain paw until its sheet has loaded: onPetSheet tells when it has) */
+export function petIconUrl(type: string, palette: number): string {
+  const key = `${type}:${palette}`;
+  const got = icons.get(key);
+  if (got) return got;
+  const s = petSheet(type, palette);
+  if (!s) return BLANK;
+  const url = petPreview(s, 32).toDataURL("image/png");
+  icons.set(key, url);
+  return url;
+}
