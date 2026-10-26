@@ -545,6 +545,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let furnishOn = false;
   let furnishUi: FurnishApi | null = null;
   let fzSel: string | null = null;
+  /** what the last press on the room was made with ("touch" on a phone: building is then done with taps, never with dragging) */
+  let lastPointer = "mouse";
   let fzPlacing: { kind: string; source: "inv" | "storage" | "catalog" | "box"; slot?: number; owner?: string } | null = null;
   let fzDir = 6;
   let fzDrag: { id: string; kind: string; grab: Pt; moved: boolean; spot: Spot } | null = null;
@@ -706,6 +708,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const item = selectedDef();
     let text = "";
     if (tool && isOwner()) text = tool === "pickup" ? "Pick up furniture: click it" : `Place ${FURNI_KINDS[tool]?.label ?? tool}: click a tile${FURNI_KINDS[tool]?.rotatable ? " (R turns it)" : ""}`;
+    else if (furnishOn && fzSel && lastPointer !== "mouse") text = "In your hand: tap a free spot to put it down (tap it again to let go)";
     else if (item?.useOnObject) text = hoverObj && (hoverObj.kind === item.useOnObject || (item.useOnObject === "cdplayer" && isCdKind(hoverObj.kind))) ? `Use ${item.name} → ${FURNI_KINDS[hoverObj.kind!].label}` : `Use ${item.name} →`;
     else if (item?.rolls) text = "Dice in your hand: press Roll";
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
@@ -1317,7 +1320,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
   }
 
-  let fzHinted = false;
   function fzTurn(): void {
     if (fzPlacing) { fzDir = nextDir(fzPlacing.kind, fzDir); return; }
     const f = fzPiece();
@@ -1339,24 +1341,32 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   canvas.addEventListener("pointerdown", (e) => {
     if (!furnishOn || (e.pointerType === "mouse" && e.button !== 0)) return;
+    lastPointer = e.pointerType;
     const m = mousePos(e);
     const t = tileAt(m.x, m.y);
     hover = t;
     if (fzPlacing) { if (t) void putDown(t, fzPlacing, fzDir); return; }
+    const tapMode = e.pointerType !== "mouse" || adminLobbyEdit; // on a phone nothing is dragged: tap a piece to pick it up in your hand, then tap the floor where it goes
     const f = pieceAtPointer(m, t);
-    if (!f && fzSel && t && (e.pointerType !== "mouse" || adminLobbyEdit)) { // on a phone: a piece is selected and you tap an empty spot, it goes there (no dragging needed)
+    if (tapMode && fzSel) {
       const sel = fzPiece();
       if (sel) {
-        const spot: Spot = FURNI_KINDS[sel.kind].wall ? wallSpot(def, sel.kind, t) : { x: t.x, y: t.y, dir: sel.dir ?? 0 };
+        if (f && f.id === sel.id) { fzSel = null; furnishUi?.refresh(); updateHint(); return; } // (tapping it again: let go of it where it stands)
+        if (!t) return;
+        const o = originFor(sel.kind, sel.dir ?? 0, t);
+        const spot: Spot = FURNI_KINDS[sel.kind].wall ? wallSpot(def, sel.kind, t) : { x: o.x, y: o.y, dir: sel.dir ?? 0 };
         const why = whyNot(def, sel.kind, spot, sel.id, othersOccupy());
-        if (why) say(why, "warn");
-        else void movePieceHere(sel, spot).catch((err) => say((err as Error).message || "Couldn't move that.", "warn"));
+        if (why) { say(why, "warn"); return; }
+        playSfx("select", 0.4);
+        fzSel = null; furnishUi?.refresh(); updateHint();
+        void movePieceHere(sel, spot).catch((err) => say((err as Error).message || "Couldn't move that.", "warn"));
         return;
       }
     }
-    if (!f) { fzSel = null; furnishUi?.refresh(); return; }
-    if (f.id !== fzSel && e.pointerType !== "mouse" && !fzHinted) { fzHinted = true; say("Tap a free spot to move it there."); }
+    if (!f) { fzSel = null; furnishUi?.refresh(); updateHint(); return; }
     fzSel = f.id;
+    updateHint();
+    if (tapMode) { furnishUi?.refresh(); return; } // (picked up: no dragging, the next tap on the floor puts it down)
     fzDrag = { id: f.id, kind: f.kind, grab: t ? { x: t.x - f.x, y: t.y - f.y } : { x: 0, y: 0 }, moved: false, spot: { x: f.x, y: f.y, dir: f.dir ?? 0 } };
     canvas.setPointerCapture?.(e.pointerId);
     furnishUi?.refresh();

@@ -11638,5 +11638,25 @@
   "en": "Only the members can use the computer.",
   "da": "Kun medlemmerne kan bruge computeren.",
   "where": "src/ui/room.ts"
+ },
+ "N1797": {
+  "en": "In your hand: tap a free spot to put it down.",
+  "da": "I din hånd: tryk på et frit sted for at sætte det ned.",
+  "where": "src/ui/furnish.ts"
+ },
+ "N1798": {
+  "en": "Tap a piece in the room to pick it up, then tap where it goes. Tap a piece below to put it down.",
+  "da": "Tryk på et møbel i rummet for at tage det op, og tryk så hvor det skal hen. Tryk på et møbel nedenfor for at sætte det ned.",
+  "where": "src/ui/furnish.ts"
+ },
+ "N1799": {
+  "en": "Tap a piece, then a spot in the room. Tap a placed piece to pick it up, then tap where it goes.",
+  "da": "Tryk på et møbel, og så et sted i rummet. Tryk på et opsat møbel for at tage det op, og tryk så hvor det skal hen.",
+  "where": "src/ui/furnish.ts"
+ },
+ "N1800": {
+  "en": "In your hand: tap a free spot to put it down (tap it again to let go)",
+  "da": "I din hånd: tryk på et frit sted for at sætte det ned (tryk på det igen for at give slip)",
+  "where": "src/ui/room.ts"
  }
 }

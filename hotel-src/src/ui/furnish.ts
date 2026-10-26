@@ -5,6 +5,9 @@ import { freeSlots, isFixedPiece, canTurn, isFurnitureKey, isStorable, MAX_FURNI
 import type { Profile } from "../db";
 import type { PlacedFurni, RoomDef } from "../rooms";
 
+/** a phone or tablet: building is done with taps, nothing is dragged */
+const coarse = (): boolean => typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches;
+
 /** What the furnishing menu asks the room to do. The room owns the canvas; this file is only the buttons around it. */
 export interface FurnishHost {
   profile: Profile;
@@ -69,11 +72,11 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
     } else if (sel) {
       const k = FURNI_KINDS[sel.kind];
       bar.replaceChildren(
-        h("div", { class: "fz-sel" }, h("b", {}, k?.label ?? sel.kind), h("span", { class: "hint" }, "Drag it to move it.")),
+        h("div", { class: "fz-sel" }, h("b", {}, k?.label ?? sel.kind), h("span", { class: "hint" }, coarse() ? "In your hand: tap a free spot to put it down." : "Drag it to move it.")),
         ...(canTurn(sel) ? [h("button", { class: "btn small", onclick: () => fh.turn() }, "⟳ Turn")] : []),
         ...(isFixedPiece(sel.id) && sel.id !== "boombox" ? [] : [h("button", { class: "btn small", onclick: () => fh.store() }, fh.catalog ? "🗑 Remove" : "📦 Store")]));
     } else {
-      bar.replaceChildren(h("div", { class: "fz-sel hint" }, fh.hideout?.note() ?? "Tap a piece to select it, then drag it. Tap a piece below to put it down."));
+      bar.replaceChildren(h("div", { class: "fz-sel hint" }, fh.hideout?.note() ?? (coarse() ? "Tap a piece in the room to pick it up, then tap where it goes. Tap a piece below to put it down." : "Tap a piece to select it, then drag it. Tap a piece below to put it down.")));
     }
 
     tray.style.display = placing ? "none" : ""; // while you're choosing where to put a piece down, the tray steps out of the way so the whole room shows
@@ -83,7 +86,7 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
       const box = h("input", { type: "search", class: "input", placeholder: "Search furniture", value: search, style: { width: "170px" }, oninput: (e: Event) => { search = (e.target as HTMLInputElement).value; render(); } }) as HTMLInputElement;
       const keep = document.activeElement === box || search !== "";
       tray.replaceChildren(
-        h("div", { class: "fz-tabs" }, h("button", { class: "tab on" }, `All furniture (${kinds.length})`), box, h("span", { class: "hint" }, "Tap a piece, then a spot in the room. Drag a placed piece to move it.")),
+        h("div", { class: "fz-tabs" }, h("button", { class: "tab on" }, `All furniture (${kinds.length})`), box, h("span", { class: "hint" }, coarse() ? "Tap a piece, then a spot in the room. Tap a placed piece to pick it up, then tap where it goes." : "Tap a piece, then a spot in the room. Drag a placed piece to move it.")),
         h("div", { class: "fz-list" }, ...kinds.map((kind) => h("div", { class: "fz-cell", title: FURNI_KINDS[kind].label },
           h("button", { class: "fz-pick", onclick: () => fh.startPlacing("catalog", kind) }, h("img", { src: furniIcon(kind), alt: FURNI_KINDS[kind].label, draggable: false })),
           h("div", { class: "fz-name" }, FURNI_KINDS[kind].label)))));
