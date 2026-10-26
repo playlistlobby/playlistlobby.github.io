@@ -13,6 +13,7 @@ import { roleOf } from "./mod";
 async function openVisit(c: Ctx): Promise<number> {
   if (isEmulator(c.env)) {
     const forced = await c.db.get<number>("bagmand/force");
+    if (forced === 1) return Math.floor(c.now / VISIT_MS) * VISIT_MS; // (a test: 1 = he is always here)
     if (typeof forced === "number" && c.now >= forced && c.now < forced + VISIT_MS) return forced;
   }
   const start = currentVisit(c.now);

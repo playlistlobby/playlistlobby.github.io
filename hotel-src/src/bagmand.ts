@@ -38,6 +38,7 @@ export function watchBagmand(onChange: () => void): () => void {
 /** the start of the visit that is on now, or null */
 export function visitNow(): number | null {
   const now = serverNow();
+  if (forced === 1) return Math.floor(now / VISIT_MS) * VISIT_MS; // (a test: bagmand/force = 1 keeps him here round the clock, with fresh stock every hour)
   if (forced !== null && now >= forced && now < forced + VISIT_MS) return forced;
   return currentVisit(now);
 }
