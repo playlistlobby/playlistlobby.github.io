@@ -35,6 +35,7 @@ import { onMyUnusual, unusualNow, wearUnusual } from "../unusual";
 import { unusualOf } from "../shared/cases";
 import { drawPet, onMyPetLook, petLookNow, petPreview, petSheet } from "../pets";
 import { pickUpPet, releasePet } from "../petActions";
+import { LOUDSPEAKER_ON } from "../shared/loudspeaker";
 import { parsePetLook } from "../shared/petItems";
 import { hideoutBoxStore, hideoutBoxTake } from "../hideout";
 import { openLoudspeaker } from "./loudspeaker";
@@ -2418,6 +2419,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   let loudspeakerApi: { close(): void } | null = null;
   function openLoudspeakerWindow(): void {
+    if (!LOUDSPEAKER_ON && import.meta.env.MODE !== "emulator") return say("The loudspeaker is switched off for now.", "warn");
     if (loudspeakerApi) return;
     loudspeakerApi = openLoudspeaker(stage, ctx, () => { loudspeakerApi = null; });
   }

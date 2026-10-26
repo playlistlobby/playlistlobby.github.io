@@ -2,11 +2,13 @@
 import { Action, text } from "./util";
 import { fail } from "../ctx";
 import { findSlot } from "../../../src/shared/items";
-import { LOUDSPEAKER_COOLDOWN_MS, LOUDSPEAKER_MAX_LEN } from "../../../src/shared/loudspeaker";
+import { LOUDSPEAKER_COOLDOWN_MS, LOUDSPEAKER_MAX_LEN, LOUDSPEAKER_ON } from "../../../src/shared/loudspeaker";
+import { isEmulator } from "../env";
 
 export const loudspeaker: Action = {
   locks: () => ["broadcast"],
   async run(c, a) {
+    if (!LOUDSPEAKER_ON && !isEmulator(c.env)) fail("The loudspeaker is switched off for now.");
     const w = await c.user();
     if (findSlot(w.s.inventory, "loudspeaker") < 0) fail("You don't have a loudspeaker.");
     const msg = text(a.text, new RegExp(`^[^\\n\\r]{1,${LOUDSPEAKER_MAX_LEN}}$`), "message").trim();

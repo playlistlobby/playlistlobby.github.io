@@ -11738,5 +11738,10 @@
   "en": "You've already stabbed them: you can stab each person every 3 hours.",
   "da": "Du har allerede stukket dem: du kan stikke hver person hver 3. time.",
   "where": "server/src/actions/rewards.ts"
+ },
+ "N1817": {
+  "en": "The loudspeaker is switched off for now.",
+  "da": "Højttaleren er slukket for nu.",
+  "where": "src/ui/room.ts"
  }
 }
