@@ -3991,6 +3991,58 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { id: "", ...b, depth: f.x + f.y };
   }
 
+  /** The automatic waterer: a little steel peg with a blue nozzle stands by the pot (it is the thing you see) and every few seconds a pixel spray arcs from it over the plant. */
+  function drawSprinkler(f: { x: number; y: number }, now: number): void {
+    const o = toScreen(iso(f.x + 0.5, f.y + 0.5));
+    const u = Math.max(2, Math.round(scale * 3)); // one chunky pixel (the peg is the thing you look at: it is big and never thinner than 2 screen pixels)
+    const px = (x: number, y: number, w: number, h: number, c: string): void => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); };
+    const bx = o.x + 30 * scale, by = o.y + 14 * scale; // where the peg goes into the ground (right and in front of the pot)
+    const head = { x: bx - 3 * u, y: by - 15 * u }; // the nozzle, pointing up at the pot
+    const target = { x: o.x + 1 * scale, y: o.y - 8 * scale }; // the soil of the pot
+    const cycle = 3600, burst = 2700;
+    const ph = now % cycle;
+    g.save();
+    g.imageSmoothingEnabled = false;
+    g.globalAlpha = 0.25; px(bx - 3 * u, by - 0.5 * u, 6 * u, 1 * u, "#000"); g.globalAlpha = 1; // its shadow
+    px(bx - 0.5 * u, by - 1 * u, 1 * u, 1.5 * u, "#5a4630"); // the spike in the soil
+    px(bx - 0.5 * u, by - 12 * u, 1 * u, 11 * u, "#8da0af"); // the steel stake
+    px(bx + 0.5 * u, by - 12 * u, 0.5 * u, 11 * u, "#4b5662");
+    px(bx - 1.5 * u, by - 3 * u, 3 * u, 1 * u, "#2c333b"); // a foot plate
+    // the head: a blue dome on the stake with a nozzle that points at the pot
+    px(bx - 2 * u, by - 14 * u, 4 * u, 2 * u, "#2f7fc4");
+    px(bx - 1 * u, by - 15 * u, 2 * u, 1 * u, "#2f7fc4");
+    px(bx - 1 * u, by - 14 * u, 1 * u, 1 * u, "#8fd0ff");
+    px(bx + 1 * u, by - 13 * u, 1 * u, 1 * u, "#1b4f80");
+    px(bx - 3 * u, by - 14.5 * u, 1 * u, 1 * u, "#222a31"); // the nozzle tip
+    const spraying = ph < burst;
+    // the spray: three jets of drops leave the nozzle one after another and fall in an arc onto the soil
+    const drops = 36;
+    for (let i = 0; i < drops; i++) {
+      const life = 760;
+      const t0 = (i / drops) * (burst - life);
+      const t = (ph - t0) / life;
+      if (!spraying || t < 0 || t > 1) continue;
+      const jet = i % 3; // left, middle, right of the pot
+      const aim = target.x + (jet - 1) * 6 * scale + Math.sin(i * 12.9898) * 2 * scale;
+      const x = head.x + (aim - head.x) * t;
+      const y = head.y + (target.y - head.y) * t * t - Math.sin(t * Math.PI) * (12 + jet * 4) * scale;
+      const big = i % 4 === 0 ? 1.6 : 1;
+      px(x, y, u * big, u * big, i % 3 === 0 ? "#ffffff" : i % 2 ? "#9fd8ff" : "#5fb4f0");
+      if (t > 0.8) { // it lands: a small splash on the soil
+        const sp = (t - 0.8) / 0.2;
+        px(x - (1 + 2 * sp) * u, y - sp * 2 * u, u, u, "#bfe6ff");
+        px(x + (1 + 2 * sp) * u, y - sp * 2 * u, u, u, "#bfe6ff");
+      }
+    }
+    if (spraying) { // a puff of mist at the nozzle while it works
+      g.globalAlpha = 0.45; px(head.x - 2 * u, head.y - 1 * u, 2 * u, 2 * u, "#dff3ff"); g.globalAlpha = 1;
+    } else { // between bursts the nozzle drips now and then
+      const d = ((now % 1300) / 1300);
+      if (d < 0.7) px(head.x, head.y + 1.5 * u + d * 8 * u, u, 1.5 * u, "#7fc4f5");
+    }
+    g.restore();
+  }
+
   function drawPlanter(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     const potN = k.nitro ? nitroIfReady(k.nitro) : undefined;
@@ -4336,7 +4388,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (k.opens === "mixer" && f.mix) return drawMixing(f, now);
     if (k.plant) {
       const hb = drawPlanter(f, now);
-      if (f.auto) drawNitroFurni(g, "sprinkler", f.x, f.y, f.dir ?? 0, toScreen, scale, 1, true, { state: 1, t: now }); // the automatic waterer on the pot, spraying
+      if (f.auto) drawSprinkler(f, now); // the automatic waterer: a peg beside the pot that sends water over it now and then
       return hb;
     }
     if (k.poster) return drawPoster(f, now);
