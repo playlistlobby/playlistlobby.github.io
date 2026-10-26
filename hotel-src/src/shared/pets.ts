@@ -22,7 +22,6 @@ export const PET_COLORS: Record<string, number> = {
   "pig": 7,
   "pigeonevil": 0,
   "pigeongood": 0,
-  "pigletbaby": 21,
   "rhino": 8,
   "terrier": 7,
   "turtle": 12,

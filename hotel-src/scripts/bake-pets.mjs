@@ -87,7 +87,7 @@ function png(w, h, rgba) {
 // (which animation is standing, walking, sitting and lying differs from pet to pet: each one says so in its <postures>)
 const POSES = ["std", "mv", "sit", "lay"];
 /** pets that bake into something that isn't a pet you would want walking behind you (grey boxes, boulders, a pot, a flying scrap) */
-const LEFT_OUT = new Set(["fools", "monster", "monsterplant", "pterosaur", "spider", "terrierbaby", "bearbaby", "puppybaby"]);
+const LEFT_OUT = new Set(["fools", "monster", "monsterplant", "pterosaur", "spider", "terrierbaby", "bearbaby", "puppybaby", "pigletbaby"]);
 const summary = {};
 for (const file of readdirSync(dir).filter((f) => f.endsWith(".swf")).sort()) {
   const pet = file.replace(/\.swf$/, "");
