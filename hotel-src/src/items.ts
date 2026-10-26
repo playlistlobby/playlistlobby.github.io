@@ -455,8 +455,8 @@ export function furniIcon(kind: string): string {
 ITEMS.knife_tt = { id: "knife_tt", name: "Karambit | Tiger Tooth", examine: "A karambit with a tiger tooth finish: it is your knife, only prettier. Use it like the knife. You can trade it or give it away: you keep your plain knife.", icon: assetUrl("items/knife_tt.svg"), useOnPlayer: "stab" };
 
 // mystery boxes, keys and unusuals (see src/shared/cases.ts)
-ITEMS.mysterycase = { id: "mysterycase", name: "Mystery box", examine: "A locked crate. Tap it to open it with a key: you never know what is inside. Boxes turn up in the bins.", icon: assetUrl("items/mysterycase.svg"), useSelf: "open" };
-ITEMS.casekey = { id: "casekey", name: "Box key", examine: "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (2 for 25 kr). One key opens one box.", icon: assetUrl("items/casekey.svg"), useSelf: "open" };
+ITEMS.mysterycase = { id: "mysterycase", name: "Mystery box", examine: "A locked crate. Tap it to open it with a key: you never know what is inside. Boxes turn up in the bins.", icon: assetUrl("items/mysterycase.png"), useSelf: "open" };
+ITEMS.casekey = { id: "casekey", name: "Box key", examine: "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (2 for 25 kr). One key opens one box.", icon: assetUrl("items/casekey.png"), useSelf: "open" };
 for (const u of UNUSUALS) ITEMS[u.id] = { id: u.id, name: `Unusual ${u.name}`, examine: `An unusual: a hat with a particle effect of its own. Tap it to wear it. You can put it back in your inventory from the wardrobe in your room.`, icon: assetUrl(`items/${u.id}.svg`), useSelf: "wear" };
 
 // bagmand's things (see src/shared/bagmand.ts): the poppy and what it becomes, his blue weed and the special weeds rolled from them

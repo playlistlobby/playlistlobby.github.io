@@ -1174,8 +1174,8 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .case-body { padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
 .case-body > * { flex: none; }
 .case-hero { display: flex; justify-content: center; gap: 14px; }
-.case-pic { width: 78px; height: 78px; image-rendering: pixelated; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .35)); }
-.case-pic.key { width: 64px; height: 64px; align-self: center; transform: rotate(-12deg); }
+.case-pic { width: 78px; height: 78px; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .35)); }
+.case-pic.key { width: 64px; height: 64px; image-rendering: pixelated; align-self: center; transform: rotate(-12deg); }
 .case-view { position: relative; height: 112px; overflow: hidden; border-radius: 8px; background: linear-gradient(#2a2f38, #14171c); border: 1px solid #0b0d10; box-shadow: inset 0 3px 8px rgba(0, 0, 0, .8), 0 1px 0 rgba(255, 255, 255, .6); }
 .case-strip { position: absolute; left: 0; top: 8px; display: flex; gap: 6px; will-change: transform; }
 .case-tile { flex: none; width: 86px; height: 94px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 6px; background: linear-gradient(#4a525f, #2d333c); border-bottom: 5px solid #8f98a6; padding: 4px; box-sizing: border-box; }
