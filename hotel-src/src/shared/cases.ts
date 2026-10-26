@@ -12,7 +12,7 @@ export const KEY_ITEM = "casekey";
 export const CASE_KEY_PRICE = 200;
 export const KEYS_PACK = { qty: 2, ore: 2500 };
 /** the chance (in percent) that a search of a bin finds a box */
-export const CASE_BIN_CHANCE = 10;
+export const CASE_BIN_CHANCE = 5;
 
 export type Tier = "junk" | "common" | "rare" | "unusual";
 export interface CasePrize { id: string; chance: number; tier: Tier; label: string }

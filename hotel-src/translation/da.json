@@ -11718,5 +11718,25 @@
   "en": "You have had your share of those this visit.",
   "da": "Du har fået din andel af dem i dette besøg.",
   "where": "server/src/actions/bagmand.ts"
+ },
+ "N1813": {
+  "en": "You've already stabbed {name} lately. You can stab them again in {…}.",
+  "da": "Du har lige stukket {name}. Du kan stikke dem igen om {…}.",
+  "where": "src/ui/room.ts"
+ },
+ "N1814": {
+  "en": "You've already stabbed {name} lately.",
+  "da": "Du har lige stukket {name}.",
+  "where": "src/ui/room.ts"
+ },
+ "N1815": {
+  "en": "A small, sharp knife. Use it on another player: you can stab each person once every 12 hours, and every stab draws a drop of blood.",
+  "da": "En lille, skarp kniv. Brug den på en anden spiller: du kan stikke hver person en gang hver 12. time, og hvert stik trækker en dråbe blod.",
+  "where": "src/items.ts"
+ },
+ "N1816": {
+  "en": "You've already stabbed them: you can stab each person every 12 hours.",
+  "da": "Du har allerede stukket dem: du kan stikke hver person hver 12. time.",
+  "where": "server/src/actions/rewards.ts"
  }
 }

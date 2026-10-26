@@ -4,7 +4,7 @@ import { act } from "./api";
 import { DEFAULT_FIGURE, Gender } from "./catalog";
 import { DISABLED_ITEMS, Inventory, INV_SIZE, itemDef } from "./items";
 import {
-  DAY_MS, parseEconomy, plantProgressAt, plantThirsty as plantThirstyAt, plantWatered as plantWateredAt, plantWaterAt, Snapshot, stabGainAt, SYRINGE_CD_MS, JOB_DELAY_MS,
+  DAY_MS, STAB_PERIOD_MS, stabPeriodStartAt, parseEconomy, plantProgressAt, plantThirsty as plantThirstyAt, plantWatered as plantWateredAt, plantWaterAt, Snapshot, stabGainAt, SYRINGE_CD_MS, JOB_DELAY_MS,
 } from "./shared/economy";
 
 // The numbers of the economy live in shared/economy.ts (the server uses the very same ones).
@@ -126,9 +126,12 @@ export const todayStart = (): number => {
   return n - (n % DAY_MS);
 };
 export const msUntilTomorrow = (): number => todayStart() + DAY_MS - serverNow();
+/** Start of the current 12-hour stab period, and how long until the next one. */
+export const stabPeriodStart = (): number => stabPeriodStartAt(serverNow());
+export const msUntilNextStab = (): number => stabPeriodStart() + STAB_PERIOD_MS - serverNow();
 
-/** You can stab each person once a day (the server has the final say). */
-export const canStab = (p: Profile, targetUid: string): boolean => (p.stabs[targetUid] ?? 0) < todayStart();
+/** You can stab each person once every 12 hours (the server has the final say). */
+export const canStab = (p: Profile, targetUid: string): boolean => (p.stabs[targetUid] ?? 0) < stabPeriodStart();
 export const stabsToday = (p: Profile): number => Object.values(p.stabs).filter((d) => d >= todayStart()).length;
 export const syringeWaitMs = (p: Profile, who: "self" | "bag"): number => Math.max(0, (who === "self" ? p.syringeSelfAt : p.syringeBagAt) + SYRINGE_CD_MS - serverNow());
 /** 6ixty has the lighter job ready: the introduction is over and a couple of hours have passed since the first blood */

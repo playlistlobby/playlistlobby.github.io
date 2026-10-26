@@ -13,10 +13,10 @@ export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
   // percentages (they add up to 100): a quarter cigarette butts, then seeds and spores (2 seeds to 1 spore) in what is left, a little weed and lean, and now and then a lighter
   { item: "cigbutt", chance: 22, label: "cigarette butt" },
-  { item: "weedseed", chance: 39, label: "weed seed" },
-  { item: "shroomspore", chance: 20, label: "shroom spores" },
+  { item: "weedseed", chance: 42, label: "weed seed" },
+  { item: "shroomspore", chance: 22, label: "shroom spores" },
   { item: "weed", chance: 6, label: "weed" },
-  { item: "mysterycase", chance: 10, label: "mystery box" },
+  { item: "mysterycase", chance: 5, label: "mystery box" },
   { item: "codeine", chance: 2, label: "lean" },
   { item: "lighter", chance: 1, label: "lighter" },
 ];
@@ -139,6 +139,9 @@ export interface Snapshot {
 export const tradeBloodLeft = (_s?: { tradeCap?: { at: number; n: number }; noTradeLimit?: boolean }, _now?: number): number => Infinity;
 
 export const todayStartAt = (now: number): number => now - (now % DAY_MS);
+/** you can stab each person once every 12 hours (it was once a day): the periods are half days, and the last stab is kept as the start of its period */
+export const STAB_PERIOD_MS = DAY_MS / 2;
+export const stabPeriodStartAt = (now: number): number => now - (now % STAB_PERIOD_MS);
 
 /**
  * The vending machine's daily stock of the mixer and the growing kit: 5 a day on your first day, one fewer every day, never fewer than 1.

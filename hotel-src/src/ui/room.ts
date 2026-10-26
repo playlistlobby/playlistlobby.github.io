@@ -20,7 +20,7 @@ import { db } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
 import { plantThirsty, plantWatered } from "../db";
 import { giveCommand } from "../db";
-import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilTomorrow, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
+import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilNextStab, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
@@ -1552,8 +1552,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (findSlot(me.inventory, "knife") < 0 && findSlot(me.inventory, "machete") < 0) return say("You need a knife for that.", "warn");
     if (uid === LEGEND.id && me.tutorial >= 2) return say("He isn't getting up.", "warn");
     if (!deadlyReady() && !canStab(me, uid)) {
-      const mins = Math.max(1, Math.ceil(msUntilTomorrow() / 60000));
-      return say(`You've already stabbed ${target.name} today. You can stab them again in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`, "warn");
+      const mins = Math.max(1, Math.ceil(msUntilNextStab() / 60000));
+      return say(`You've already stabbed ${target.name} lately. You can stab them again in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`, "warn");
     }
     pending = { type: "stab", uid, since: performance.now(), lastTry: 0 };
     clearSelection(); // like OSRS, the item stops being a "selected" cursor once you commit to a target
@@ -2238,7 +2238,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (isTut && uid === LEGEND.id) return tutorialStab();
     stabbing = true;
     try {
-      if (!deadlyReady() && !canStab(me, uid)) return say(`You've already stabbed ${target.name} today.`, "warn");
+      if (!deadlyReady() && !canStab(me, uid)) return say(`You've already stabbed ${target.name} lately.`, "warn");
       p.dir = dirOf(currentTile(p), currentTile(target));
       p.emote = undefined;
       update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(console.warn);

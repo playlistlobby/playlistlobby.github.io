@@ -385,7 +385,7 @@ export const ITEMS: Record<string, ItemDef> = {
   knife: {
     id: "knife",
     name: "Knife",
-    examine: "A small, sharp knife. Use it on another player: you can stab each person once a day, and every stab draws a drop of blood.",
+    examine: "A small, sharp knife. Use it on another player: you can stab each person once every 12 hours, and every stab draws a drop of blood.",
     icon: assetUrl("items/knife.png"), // Habbo's survival knife (catalog icon of survival_c26_knife.nitro), as crisp pixels
     useOnPlayer: "stab",
   },

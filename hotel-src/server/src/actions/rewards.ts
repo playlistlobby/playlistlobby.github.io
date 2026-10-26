@@ -3,7 +3,7 @@ import { Action, cheb, ID_RE, int, requireInRoom, requireWorkRoom, text } from "
 import { fail } from "../ctx";
 import { skipTime } from "../skipTime";
 import {
-  addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabPeriodStartAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { combine, DRUG_USE, fentanylDeathCost, findSlot, growMsOf, isLaced, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
 import type { UseDef } from "../../../src/shared/items";
@@ -28,8 +28,8 @@ export const stab: Action = {
     const w = await c.user();
     const s = w.s;
     if (findSlot(s.inventory, "knife") < 0 && findSlot(s.inventory, "machete") < 0) fail("You need a knife for that.");
-    const today = todayStartAt(c.now);
-    if ((s.stabs[target] ?? 0) >= today) fail("You've already stabbed them today.");
+    const today = stabPeriodStartAt(c.now); // (the start of this 12-hour period)
+    if ((s.stabs[target] ?? 0) >= today) fail("You've already stabbed them: you can stab each person every 12 hours.");
     // somebody asleep (an offline owner in their bed, or lying in bed) is always worth exactly 1 drop: no boost counts, so sleepers can't be farmed
     const sleeping = !theirs || theirs.bed === true;
     const gain = sleeping ? 1 : stabGainAt(s, c.now) * (findSlot(s.inventory, "machete") >= 0 ? 2 : 1); // (the machete: twice the blood)
