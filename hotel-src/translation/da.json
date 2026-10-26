@@ -11678,5 +11678,45 @@
   "en": "🔑 {keys} keys",
   "da": "🔑 {keys} nøgler",
   "where": "src/ui/caseOpen.ts"
+ },
+ "N1805": {
+  "en": "You have had your share. He has more next visit.",
+  "da": "Du har fået din andel. Han har flere næste besøg.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1806": {
+  "en": "You can buy {left} more this visit.",
+  "da": "Du kan købe {left} mere i dette besøg.",
+  "where": "src/ui/bagmandShop.ts"
+ },
+ "N1807": {
+  "en": "Anyone can enter (no knocking)",
+  "da": "Alle kan komme ind (ingen banken på)",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1808": {
+  "en": "Visitors have to knock now.",
+  "da": "Gæster skal banke på nu.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1809": {
+  "en": "Anyone can walk in now.",
+  "da": "Alle kan gå ind nu.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1810": {
+  "en": "🚪 Open to all",
+  "da": "🚪 Åben for alle",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1811": {
+  "en": "✊ Knock first",
+  "da": "✊ Bank på først",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1812": {
+  "en": "You have had your share of those this visit.",
+  "da": "Du har fået din andel af dem i dette besøg.",
+  "where": "server/src/actions/bagmand.ts"
  }
 }

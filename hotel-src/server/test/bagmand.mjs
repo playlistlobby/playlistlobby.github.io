@@ -69,7 +69,7 @@ console.log("--- bagmand is only there in his hours");
   if (![1, 10, 15].includes(dkHour)) bad("and one that ended is not open either", await act(a, "bagmandBuy", { item: "poppyseed", qty: 1 }));
 }
 
-console.log("--- buying: poppy seeds (5 per visit, shared) and natryger (as many as you like)");
+console.log("--- buying: poppy seeds (5 per visit for each player) and natryger (as many as you like)");
 {
   await owner("DELETE", "bagmand");
   const start = Date.now() - 2000;
@@ -82,15 +82,18 @@ console.log("--- buying: poppy seeds (5 per visit, shared) and natryger (as many
   const r1 = await act(a, "bagmandBuy", { item: "poppyseed", qty: 3 });
   ok("a buys 3 seeds", r1);
   check("150 blood, 3 seeds", r1.state.blood === 350 && total(r1.state.inventory, "poppyseed") === 3, JSON.stringify([r1.state.blood, r1.data]));
-  bad("b wants 3 but only 2 are left", await act(b, "bagmandBuy", { item: "poppyseed", qty: 3 }));
-  ok("b takes the last 2", await act(b, "bagmandBuy", { item: "poppyseed", qty: 2 }));
-  bad("sold out for everybody", await act(a, "bagmandBuy", { item: "poppyseed", qty: 1 }));
-  check("the stock is kept for the visit", (await owner("GET", `bagmand/${start}/sold/poppyseed`)) === 5);
+  bad("a wants 3 more but only 2 are left for a", await act(a, "bagmandBuy", { item: "poppyseed", qty: 3 }));
+  ok("a takes the last 2", await act(a, "bagmandBuy", { item: "poppyseed", qty: 2 }));
+  bad("a has had the 5", await act(a, "bagmandBuy", { item: "poppyseed", qty: 1 }));
+  ok("but b has 5 of his own", await act(b, "bagmandBuy", { item: "poppyseed", qty: 5 }));
+  bad("and not a sixth", await act(b, "bagmandBuy", { item: "poppyseed", qty: 1 }));
+  check("what each player bought is kept for the visit", (await owner("GET", `bagmand/${start}/sold/poppyseed/${a.uid}`)) === 5 && (await owner("GET", `bagmand/${start}/sold/poppyseed/${b.uid}`)) === 5);
   await owner("PUT", "bagmand/force", start + 1000); // (the next visit: new stock)
   ok("a new visit has new stock", await act(a, "bagmandBuy", { item: "poppyseed", qty: 1 }));
+  await owner("PUT", `users/${a.uid}/blood`, 400); // (the seeds have used it up)
   const n = await act(a, "bagmandBuy", { item: "natryger", qty: 10 });
   ok("natryger is unlimited", n);
-  check("10 natryger for 250", n.state.blood === 350 - 50 - 250 && total(n.state.inventory, "natryger") === 10, String(n.state.blood));
+  check("10 natryger for 250", n.state.blood === 400 - 250 && total(n.state.inventory, "natryger") === 10, String(n.state.blood));
   await owner("DELETE", `rooms/lobby/players/${a.uid}`); await stand(a, "shop", 3, 3);
   bad("only in the basement", await act(a, "bagmandBuy", { item: "natryger", qty: 1 }));
 }

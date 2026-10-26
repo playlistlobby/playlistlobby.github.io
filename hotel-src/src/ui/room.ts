@@ -5596,7 +5596,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const trespassNow = me.shroomUntil > serverNow();
       if (isHideoutRoom) {
         if (!me.isAdmin && !hideoutRole({ owner: meta.owner, members: meta.members }, me.uid).member) {
-          hideoutGuest = (await get(ref(db, `roomInvites/${roomId}/${me.uid}`)).catch(() => null))?.exists() === true;
+          hideoutGuest = meta.access === "open" || (await get(ref(db, `roomInvites/${roomId}/${me.uid}`)).catch(() => null))?.exists() === true; // (open to all, or the owner let me in)
           if (!hideoutGuest) return kicked("You aren't in that hideout.");
         }
       }

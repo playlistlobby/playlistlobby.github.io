@@ -293,6 +293,17 @@ console.log("--- the list at the door");
   bad("but a guest can't use the box", await act(st2, "hideoutBoxStore", { room: `h_${lo.uid}`, kind: "f_rareblock", qty: 1 }));
   bad("or order from the computer", await act(st2, "hideoutOrder", { room: `h_${lo.uid}`, kind: "f_randomizer" }));
   check("the knock can be taken back by the one who made it", (await knock(st2)).status < 300 && !refused(await clientWrite(st2, `hideoutKnocks/${lo.uid}/${st2.uid}`, null)));
+  // open to everybody: no knocking
+  const st3 = await fresh("t_hd_list_y", { blood: 0 });
+  const pres3 = { name: st3.name, figure: "x", x: 5, y: 5, dir: 2 };
+  check("before it is open a stranger can't walk in", refused(await clientWrite(st3, `rooms/h_${lo.uid}/players/${st3.uid}`, pres3)));
+  bad("only the owner opens it", await act(st3, "hideoutSettings", { open: true }));
+  ok("the owner opens it to everybody", await act(lo, "hideoutSettings", { open: true }));
+  check("the list says it is open", (await owner("GET", `hideoutList/${lo.uid}/open`)) === true && (await owner("GET", `roomsMeta/h_${lo.uid}/access`)) === "open");
+  check("a stranger walks in without knocking", !refused(await clientWrite(st3, `rooms/h_${lo.uid}/players/${st3.uid}`, pres3)));
+  bad("but is still no member (the box)", await act(st3, "hideoutBoxStore", { room: `h_${lo.uid}`, kind: "f_rareblock", qty: 1 }));
+  ok("the owner closes it again", await act(lo, "hideoutSettings", { open: false }));
+  check("and the list and the door say so", (await owner("GET", `hideoutList/${lo.uid}/open`)) === false && (await owner("GET", `roomsMeta/h_${lo.uid}/access`)) === "none");
 }
 
 console.log(`

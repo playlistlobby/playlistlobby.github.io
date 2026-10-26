@@ -236,6 +236,8 @@ export interface HideoutInfo {
   desc: string;
   listed: boolean;
   boostUntil: number;
+  /** anybody can walk in (no knocking) */
+  open: boolean;
 }
 
 export interface ExtraDoor { x: number; to: string; label: string; yellow?: boolean; /** a rusty brown door (the mines) */ brown?: boolean }
@@ -475,7 +477,7 @@ function hideoutDef(id: string, meta: RoomMeta): RoomDef {
   for (const [uid, m] of Object.entries(meta.members ?? {})) members[uid] = { name: String(m?.name ?? "?"), build: m?.build !== false };
   const orders: HideoutInfo["orders"] = {};
   for (const [oid, o] of Object.entries(meta.orders ?? {})) if (o && typeof o.kind === "string" && typeof o.by === "string") orders[oid] = { kind: o.kind, by: o.by, doneAt: Number(o.doneAt) || 0 };
-  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: "none", w, h, theme, rug, furni, doorX: DOOR_X, doorTo: LOBBY_ID, hideout: { level, lock: meta.lock === true, desc: String(meta.desc ?? ""), listed: meta.listed !== false, boostUntil: Number(meta.boostUntil) || 0, members, box: meta.box ?? {}, orders, cap: HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] } };
+  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: "none", w, h, theme, rug, furni, doorX: DOOR_X, doorTo: LOBBY_ID, hideout: { level, lock: meta.lock === true, desc: String(meta.desc ?? ""), listed: meta.listed !== false, boostUntil: Number(meta.boostUntil) || 0, open: meta.access === "open", members, box: meta.box ?? {}, orders, cap: HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] } };
 }
 
 export function defFromMeta(id: string, meta: RoomMeta): RoomDef {

@@ -29,7 +29,7 @@ export const HIDEOUT_DESC_MAX = 80;
 export const HIDEOUT_BOOST_PRICE = 50;
 export const HIDEOUT_BOOST_MS = 60 * 60 * 1000;
 /** what the public list says about a hideout (written by the server to hideoutList/<owner>) */
-export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number }
+export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number; /** anybody can walk in (no knocking) */ open: boolean }
 /** the order of the list: boosted ones first (the latest boost on top), then the bigger crowds */
 export const sortListings = <T extends { listing: HideoutListing }>(rows: T[], now: number): T[] =>
   [...rows].sort((a, b) => (Number(b.listing.boostUntil > now) - Number(a.listing.boostUntil > now)) || (b.listing.boostUntil > now ? b.listing.boostUntil - a.listing.boostUntil : 0) || b.listing.members - a.listing.members || a.listing.name.localeCompare(b.listing.name));

@@ -9,7 +9,7 @@ import type { HideoutListing } from "./shared/hideout";
 export const hideoutBuy = (p: Profile): Promise<{ room: string }> => call(p, "hideoutBuy");
 export const hideoutUpgrade = (p: Profile): Promise<{ size: number; price: number }> => call(p, "hideoutUpgrade");
 export const hideoutColors = (p: Profile, d: { floor?: string; wall?: string; rug?: string }): Promise<{ price: number }> => call(p, "hideoutColors", d);
-export const hideoutSettings = (p: Profile, patch: { name?: string; lock?: boolean; desc?: string; listed?: boolean }): Promise<unknown> => call(p, "hideoutSettings", patch);
+export const hideoutSettings = (p: Profile, patch: { name?: string; lock?: boolean; desc?: string; listed?: boolean; open?: boolean }): Promise<unknown> => call(p, "hideoutSettings", patch);
 export const hideoutBoost = (p: Profile): Promise<{ boostUntil: number; price: number }> => call(p, "hideoutBoost");
 export const hideoutInvite = (p: Profile, who: { name?: string; uid?: string }): Promise<{ name: string }> => call(p, "hideoutInvite", who);
 export const hideoutAnswer = (p: Profile, owner: string, accept: boolean): Promise<{ joined: boolean; room?: string }> => call(p, "hideoutAnswer", { owner, accept });
@@ -42,6 +42,6 @@ export function watchHideoutInvites(uid: string, cb: (list: Array<{ owner: strin
 export function watchHideoutList(cb: (list: Array<{ owner: string; listing: HideoutListing }>) => void): () => void {
   return onValue(ref(db, "hideoutList"), (s) => {
     const v = (s.val() ?? {}) as Record<string, Partial<HideoutListing>>;
-    cb(Object.entries(v).map(([owner, l]) => ({ owner, listing: { name: String(l?.name ?? "Hideout"), desc: String(l?.desc ?? ""), ownerName: String(l?.ownerName ?? "?"), members: Number(l?.members) || 1, boostUntil: Number(l?.boostUntil) || 0 } })));
+    cb(Object.entries(v).map(([owner, l]) => ({ owner, listing: { name: String(l?.name ?? "Hideout"), desc: String(l?.desc ?? ""), ownerName: String(l?.ownerName ?? "?"), members: Number(l?.members) || 1, boostUntil: Number(l?.boostUntil) || 0, open: l?.open === true } })));
   }, () => cb([]));
 }

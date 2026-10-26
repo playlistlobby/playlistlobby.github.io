@@ -47,7 +47,9 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
         h("div", { class: "door-row-main" },
           h("div", { class: "door-row-name" }, `${o.listing.boostUntil > Date.now() ? "🔥 " : ""}${o.listing.name}`),
           h("div", { class: "hint" }, `${o.listing.ownerName} · ${o.listing.members} member${o.listing.members === 1 ? "" : "s"}${o.listing.desc ? ` · ${o.listing.desc}` : ""}`)),
-        knocking?.owner === o.owner
+        o.listing.open
+          ? h("button", { class: "btn small primary", onclick: () => { playSfx("select", 0.5); close(); ctx.navigate("room", { roomId: `h_${o.owner}`, from: LOBBY_ID }); } }, "Enter")
+          : knocking?.owner === o.owner
           ? (knocking.state === "waiting" ? h("span", { class: "hint" }, "Knocking…") : h("span", { class: "hint" }, knocking.state === "declined" ? "Sent away" : "Nobody answered"))
           : h("button", { class: "btn small", disabled: !!knocking && knocking.state === "waiting", onclick: () => startKnock(o.owner, o.listing.name) }, "Knock")));
     }

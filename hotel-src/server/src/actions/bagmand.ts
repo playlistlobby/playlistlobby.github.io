@@ -21,7 +21,7 @@ async function openVisit(c: Ctx): Promise<number> {
   return start!;
 }
 
-/** Buying: the stock of the limited things is the same for everybody in a visit, first come first served. */
+/** Buying: the limited things (the poppy seeds) are limited per player in a visit. */
 export const bagmandBuy: Action = {
   locks: () => ["bagmand"],
   async run(c, a) {
@@ -33,9 +33,9 @@ export const bagmandBuy: Action = {
     const qty = int(a.qty ?? 1, 1, 99, "amount");
     let sold = 0;
     if (def.stock !== null) {
-      sold = (await c.db.get<number>(`bagmand/${start}/sold/${item}`)) ?? 0;
+      sold = (await c.db.get<number>(`bagmand/${start}/sold/${item}/${c.uid}`)) ?? 0;
       const left = def.stock - sold;
-      if (left <= 0) fail("He's sold out of those for today's visit.");
+      if (left <= 0) fail("You have had your share of those this visit.");
       if (qty > left) fail(left === 1 ? "There is only 1 left." : `There are only ${left} left.`);
     }
     const w = await c.user();
@@ -45,7 +45,7 @@ export const bagmandBuy: Action = {
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;
     w.s.blood -= cost;
-    if (def.stock !== null) c.extra[`bagmand/${start}/sold/${item}`] = sold + qty;
+    if (def.stock !== null) c.extra[`bagmand/${start}/sold/${item}/${c.uid}`] = sold + qty;
     c.note = `${qty} ${item}`;
     return { cost, left: def.stock === null ? null : def.stock - sold - qty };
   },

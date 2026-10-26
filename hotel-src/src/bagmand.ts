@@ -7,8 +7,8 @@ import { awayLine, BAGMAND_BUY, currentVisit, nextVisit, VISIT_MS } from "./shar
 
 /** the visit start a test opened by hand (the node is only written in the local emulator and only honoured there) */
 let forced: number | null = null;
-/** how many of each limited thing were sold, per visit start (ms) */
-let sold: Record<string, Record<string, number>> = {};
+/** how many of each limited thing each player bought, per visit start (ms): visit -> item -> player -> how many */
+let sold: Record<string, Record<string, Record<string, number>>> = {};
 const listeners = new Set<() => void>();
 let stop: (() => void) | null = null;
 let users = 0;
@@ -23,7 +23,7 @@ export function watchBagmand(onChange: () => void): () => void {
       sold = {};
       for (const [k, row] of Object.entries(v)) {
         if (k === "force" || !row || typeof row !== "object") continue;
-        const so = (row as { sold?: Record<string, number> }).sold;
+        const so = (row as { sold?: Record<string, Record<string, number>> }).sold;
         if (so) sold[k] = so;
       }
       listeners.forEach((l) => l());
@@ -45,11 +45,11 @@ export function visitNow(): number | null {
 /** when the open visit ends (ms) */
 export const visitEnd = (start: number): number => start + VISIT_MS;
 
-/** how many of a limited thing are left in this visit (null: no limit) */
-export function stockLeft(item: string, start: number): number | null {
+/** how many of a limited thing THIS player may still buy in this visit (null: no limit): the limit is per player */
+export function stockLeft(item: string, start: number, uid: string): number | null {
   const def = BAGMAND_BUY[item];
   if (!def || def.stock === null) return null;
-  return Math.max(0, def.stock - (sold[String(start)]?.[item] ?? 0));
+  return Math.max(0, def.stock - (sold[String(start)]?.[item]?.[uid] ?? 0));
 }
 
 /**

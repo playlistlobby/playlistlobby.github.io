@@ -138,6 +138,8 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
           h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { desc: desc.value }); return "Saved."; }) }, "Save description"),
           h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Show on the list for everybody"),
             h("button", { class: "btn small" + (d.hideout?.listed ? " primary" : ""), disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { listed: !d.hideout?.listed }); return d.hideout?.listed ? "It is off the list. Only members can find it." : "It is on the list."; }) }, d.hideout?.listed ? "✅ Listed" : "🙈 Hidden")),
+          h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Anyone can enter (no knocking)"),
+            h("button", { class: "btn small" + (d.hideout?.open ? " primary" : ""), disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { open: !d.hideout?.open }); return d.hideout?.open ? "Visitors have to knock now." : "Anyone can walk in now."; }) }, d.hideout?.open ? "🚪 Open to all" : "✊ Knock first")),
           ...(d.hideout?.listed ? [
             h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, boosted ? `Shown first for ${Math.max(1, Math.ceil(((d.hideout?.boostUntil ?? 0) - Date.now()) / 60000))} more min` : "Show it first on the list for an hour"),
               h("button", { class: "btn small primary", disabled: busy || me.blood < HIDEOUT_BOOST_PRICE, onclick: () => void act(async () => { await hideoutBoost(me); return "Boosted: it is shown first for a while."; }) }, `🔥 Boost (${HIDEOUT_BOOST_PRICE} drops)`)),

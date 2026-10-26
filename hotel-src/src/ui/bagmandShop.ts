@@ -31,12 +31,12 @@ export function openBagmandShop(host: HTMLElement, ctx: Ctx, onChange: () => voi
     // what he sells
     const shelf = Object.entries(BAGMAND_BUY).map(([id, def]) => {
       const it = itemDef(id)!;
-      const left = stockLeft(id, start);
+      const left = stockLeft(id, start, me.uid);
       const soldOut = left !== null && left <= 0;
       const affordable = me.blood >= def.price && !soldOut;
       return h("div", { class: "sixty-row" },
         h("img", { src: it.icon, alt: it.name, class: "sixty-ico" }),
-        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, it.name), h("div", { class: "hint" }, left === null ? "As many as you like." : soldOut ? "Sold out. He has more next visit." : `${left} left this visit, for everybody.`)),
+        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, it.name), h("div", { class: "hint" }, left === null ? "As many as you like." : soldOut ? "You have had your share. He has more next visit." : `You can buy ${left} more this visit.`)),
         h("button", {
           class: "btn small primary",
           disabled: !affordable,

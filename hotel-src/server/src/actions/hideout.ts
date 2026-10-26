@@ -30,13 +30,13 @@ async function ownHideout(c: Ctx): Promise<{ room: string; meta: Record<string, 
   return { room, meta: meta! };
 }
 /** the public list (hideoutList/<owner>): every hideout that is listed, with its line, how many are in it and until when it is boosted. `over` = what is about to change. */
-function publishListing(c: Ctx, owner: string, meta: Record<string, any>, over: { name?: string; desc?: string; listed?: boolean; membersDelta?: number; boostUntil?: number } = {}): void {
+function publishListing(c: Ctx, owner: string, meta: Record<string, any>, over: { name?: string; desc?: string; listed?: boolean; open?: boolean; membersDelta?: number; boostUntil?: number } = {}): void {
   const listed = over.listed ?? meta.listed !== false;
   if (!listed) { c.extra[`hideoutList/${owner}`] = null; return; }
   const members = Object.keys((meta.members ?? {}) as Record<string, unknown>).length + 1 + (over.membersDelta ?? 0);
   const row: HideoutListing = {
     name: String(over.name ?? meta.name ?? "hideout").slice(0, HIDEOUT_NAME_MAX), desc: String(over.desc ?? meta.desc ?? "").slice(0, HIDEOUT_DESC_MAX),
-    ownerName: String(meta.ownerName ?? "?").slice(0, 16), members: Math.max(1, members), boostUntil: Number(over.boostUntil ?? meta.boostUntil ?? 0) || 0,
+    ownerName: String(meta.ownerName ?? "?").slice(0, 16), members: Math.max(1, members), boostUntil: Number(over.boostUntil ?? meta.boostUntil ?? 0) || 0, open: over.open ?? meta.access === "open",
   };
   c.extra[`hideoutList/${owner}`] = row;
 }
@@ -113,12 +113,13 @@ export const hideoutSettings: Action = {
   async run(c, a) {
     const { room, meta } = await ownHideout(c);
     await requireInRoom(c, room);
-    const over: { name?: string; desc?: string; listed?: boolean } = {};
+    const over: { name?: string; desc?: string; listed?: boolean; open?: boolean } = {};
     if (a.desc !== undefined) {
       const desc = String(a.desc ?? "").replace(/[\n\r]+/g, " ").trim().slice(0, HIDEOUT_DESC_MAX);
       c.extra[`roomsMeta/${room}/desc`] = desc || null;
       over.desc = desc;
     }
+    if (a.open !== undefined) { c.extra[`roomsMeta/${room}/access`] = a.open ? "open" : "none"; over.open = !!a.open; } // (anybody can walk in, or only members and the guests the owner lets in)
     if (a.listed !== undefined) { c.extra[`roomsMeta/${room}/listed`] = a.listed ? null : false; over.listed = !!a.listed; }
     if (a.name !== undefined) {
       const name = text(a.name, /^[^\n\r]{3,28}$/, "name").trim();
