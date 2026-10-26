@@ -37,6 +37,11 @@ import { drawPet, onMyPetLook, petLookNow, petPreview, petSheet } from "../pets"
 import { pickUpPet, releasePet } from "../petActions";
 import { LOUDSPEAKER_ON } from "../shared/loudspeaker";
 import { openHideoutChest } from "./hideoutChest";
+import { openPoker } from "./pokerTable";
+import type { PokerApi } from "./pokerTable";
+import { mountPokerFx } from "./pokerFx";
+import { pokerLeave, watchPokerSeat } from "../poker";
+import { pokerKindOf } from "../shared/poker";
 import { parsePetLook } from "../shared/petItems";
 import { hideoutBoxStore, hideoutBoxTake } from "../hideout";
 import { openLoudspeaker } from "./loudspeaker";
@@ -523,6 +528,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let computerApi: ComputerApi | null = null;
   let petShopApi: { close(): void } | null = null;
   let chestApi: { close(): void; refresh(): void } | null = null;
+  /** the poker window (it stands you up when it closes); if the server still has you sitting at a table after a refresh, you are stood up here and get your blood back */
+  let pokerApi: PokerApi | null = null;
+  /** a player who loses their last blood at a poker table shoots themselves, in front of everybody in the room */
+  const pokerFx = mountPokerFx({ me, roomId, scale: () => scale });
+  const stopPokerSeat = watchPokerSeat(me.uid, (at) => { if (at && !pokerApi) void pokerLeave(me).then(() => panel.refresh()).catch(() => undefined); });
   let caseApi: { close(): void } | null = null;
   /** the pets walking about: where each one is (tiles), which way it faces, and since when it has been standing still */
   const petStates = new Map<string, { look: string; x: number; y: number; dir: number; moving: boolean; t: number; still: number }>();
@@ -722,6 +732,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "poker") text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to sit down and play`;
     else if (hoverObj && hoverObj.kind === "hchest") text = "Shared stash: the whole hideout puts things in and takes them out";
     else if (hoverObj && hoverObj.kind === "bagman") text = "bagmand: poppy seeds, blue weed. He buys opium and what is mixed from it";
     else if (hoverObj && hoverObj.kind === "bed") text = mine()?.lying ? "Your bed: get up" : "Your bed: lie down";
@@ -832,6 +843,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     floorOrigin = shell.origin;
     layout();
     void ensureFurniSprites(def);
+    pokerFx.setTables(def.furni.filter((f) => pokerKindOf(f.kind)).map((f) => f.id));
     void ensureDoorArt();
     // textured floors/walls need their images first; draw again once they're in
     const forDef = def;
@@ -1025,7 +1037,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
@@ -1097,6 +1109,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "mypet") opts.push({ label: "Pick up", target: "Your pet", action: () => pickUpMyPet() });
     if (obj?.kind === "pmerchant") opts.push({ label: "Browse pets", target: PET_MERCHANT.name, action: () => startPetMerchant() });
     if (obj?.kind === "hcomputer") opts.push({ label: "Use", target: "Computer", action: () => startBag(obj.id) });
+    if (obj && FURNI_KINDS[obj.kind!]?.opens === "poker") opts.push({ label: "Play", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
     if (obj?.kind === "hchest") opts.push({ label: "Open", target: "Shared stash", action: () => startBag(obj.id) });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
     if (obj?.kind === "hlandlord") opts.push({ label: "Talk", target: HIDEOUT_LANDLORD.name, action: () => startHideoutLandlord() });
@@ -2028,6 +2041,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
         else if (opens === "computer") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the computer.", "warn"); else if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
         else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
+        else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }); }
         else if (opens === "hideouts") { if (!hideoutDoorApi) hideoutDoorApi = openHideoutDoor(stage, ctx, () => { hideoutDoorApi = null; }); }
         else if (opens === "ducky") openDucky();
         else if (opens === "raffle") openRaffle();
@@ -3539,7 +3553,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (sitting) yOff = -sitLift(p);
     if (lookOf(p) === "blue" && !p.lying && !p.faint) yOff -= 14 + Math.sin(now / 260) * 3; // natryger: hovering over the ground
     const rtArm = sitting && roulette ? roulette.armFor(p.uid, now) : null; // the gun is in this hand (or at this head)
-    const actions = moving ? ["wlk"] : rtArm ? ["sit", rtArm === "raised" ? "drk=9999" : "crr=9999"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsCup(p) || holdsDice(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
+    const pkArm = !moving && !sitting && !em ? pokerFx.armFor(p.uid, now) : null; // a player who busted at poker puts the gun to their head
+    const actions = moving ? ["wlk"] : pkArm ? ["drk=9999"] : rtArm ? ["sit", rtArm === "raised" ? "drk=9999" : "crr=9999"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsCup(p) || holdsDice(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
       ? Math.floor((now - p.stepStart) / (stepOf(p) / 4)) % 4
@@ -4928,6 +4943,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const dpr = window.devicePixelRatio || 1;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (roulette) { const sh = roulette.shake(now); if (sh.x || sh.y) g.translate(sh.x, sh.y); } // the shot shakes the picture a moment
+    { const sh = pokerFx.shake(now); if (sh.x || sh.y) g.translate(sh.x, sh.y); }
     g.imageSmoothingEnabled = scale < 1;
     g.clearRect(0, 0, canvas.width, canvas.height);
     if (greenScreen) { g.fillStyle = "#00ff00"; g.fillRect(0, 0, canvas.width, canvas.height); } // chroma green instead of the floor and the walls
@@ -5041,7 +5057,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -5474,6 +5490,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       let img = getCached(opts);
       if (!img) { renderAvatar(opts); img = p.last; } else p.last = img;
       if (img && roulette) img = roulette.imageFor(p.uid, img, opts, now); // (the dead player at the roulette table has no head)
+      if (img) img = pokerFx.imageFor(p.uid, img, opts, now); // (and the one who shot themselves after going bust at poker)
       if (img && p.ghost) img = dimmed(img); // (a player who dropped out of a roulette game: a little darker)
       const feet = feetOf(p, now);
 
@@ -5532,6 +5549,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (img) {
             const ax = feet.x + lunge.x - (32 + padOf(img).x) * scale;
             const ay = feet.y + lunge.y + lift - (FEET_Y + padOf(img).y) * scale;
+            pokerFx.drawFloor(g, p.uid, { x: feet.x + lunge.x, y: feet.y + lunge.y + lift }, now);
             if (glowing) { g.save(); g.shadowColor = `rgba(255,214,90,${(0.75 + 0.25 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 18 * pulse) * scale; }
             else if (chemOn) { g.save(); g.shadowColor = `hsla(${Math.floor(now / 2.5) % 360},100%,60%,0.95)`; g.shadowBlur = (14 + 14 * Math.abs(Math.sin(now / 90))) * scale; }
             else if (aura) { g.save(); g.shadowColor = aura.glow; g.shadowBlur = aura.blur; }
@@ -5551,6 +5569,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             }
             if (flash > 0.02) g.drawImage(redWash(img, flash), ax, ay, img.width * scale, img.height * scale);
             if (roulette) roulette.drawBody(g, p.uid, { x: feet.x + lunge.x, y: feet.y + lunge.y + lift }, now);
+            pokerFx.drawBody(g, p.uid, { x: feet.x + lunge.x, y: feet.y + lunge.y + lift }, now);
+            pokerFx.drawGun(g, p.uid, { x: feet.x + lunge.x, y: feet.y + lunge.y + lift }, p.dir, now);
           }
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
           if (smoking && p.smokeKind === "hashjoint") drawHearts(feet.x + lunge.x, feet.y + lunge.y + lift, now); // the hash joint: hearts float up over the head
@@ -5737,6 +5757,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     hlandlordApi?.close();
     mixerApi?.close();
     dropConfirmApi?.close();
+    pokerApi?.close();
+    stopPokerSeat();
+    pokerFx.dispose();
     roulette?.dispose();
     pillCleanup?.();
     furnishUi?.dispose();
@@ -5764,6 +5787,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       active = false;
       if (isBasement) setAmbience(false); if (roomId === SHOP_ID) setShopMusic(false);
       sixtyShop?.close();
+      pokerApi?.close();
       furniBuyApi?.close();
       vendingApi?.close();
       recordApi?.close();

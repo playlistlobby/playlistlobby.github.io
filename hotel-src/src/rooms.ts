@@ -172,6 +172,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the bag of clothes in the corner of your own room: click it (your avatar walks over first) to open the Character page
   bag: { id: "bag", label: "Bag of clothes", icon: "🛍️", w: 1, h: 1, height: 26, color: "#2a2a2a", placeable: false, nitro: "furni/messy_c21_trashbags.nitro", rotatable: true, fixed: true, opens: "character" },
 };
+// the poker tables (they come from the hideout computer like any shop piece): tap one to sit down and play
+for (const id of ["f_pokertable", "f_pokertablehi"]) if (FURNI_KINDS[id]) FURNI_KINDS[id].opens = "poker";
 
 /** Furniture you can click on and do something with (not just walk around). */
 export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench"]);
