@@ -10336,7 +10336,7 @@
  },
  "N1536": {
   "en": "Two keys for mystery boxes (boxes turn up in the bins). One key opens one box. Buy as many as you like.",
-  "da": "To nøgler til mysteriekasser (kasser dukker op i skraldespandene). En nøgle åbner en kasse. Køb så mange du vil.",
+  "da": "To nøgler til cases (cases dukker op i skraldespandene). En nøgle åbner en case. Køb så mange du vil.",
   "where": "src/ui/duckyShop.ts:103"
  },
  "N1537": {
@@ -10881,7 +10881,7 @@
  },
  "N1645": {
   "en": "Mystery box",
-  "da": "Mysteriekasse",
+  "da": "Case",
   "where": "src/ui/caseOpen.ts:43"
  },
  "N1646": {
@@ -10896,7 +10896,7 @@
  },
  "N1648": {
   "en": "You have no box. Boxes turn up in the bins.",
-  "da": "Du har ingen kasse. Kasser dukker op i skraldespandene.",
+  "da": "Du har ingen case. Cases dukker op i skraldespandene.",
   "where": "src/ui/caseOpen.ts:63"
  },
  "N1649": {
@@ -10906,7 +10906,7 @@
  },
  "N1650": {
   "en": "One key opens one box.",
-  "da": "En nøgle åbner en kasse.",
+  "da": "En nøgle åbner en case.",
   "where": "src/ui/caseOpen.ts:63"
  },
  "N1651": {
@@ -10931,7 +10931,7 @@
  },
  "N1655": {
   "en": "mystery box",
-  "da": "mysteriekasse",
+  "da": "case",
   "where": "src/shared/economy.ts:19"
  },
  "N1656": {
@@ -10991,22 +10991,22 @@
  },
  "N1667": {
   "en": "2 box keys are in your pockets.",
-  "da": "2 kassenøgler er i dine lommer.",
+  "da": "2 casenøgler er i dine lommer.",
   "where": "src/payReturn.ts:23"
  },
  "N1668": {
   "en": "A locked crate. Tap it to open it with a key: you never know what is inside. Boxes turn up in the bins.",
-  "da": "En låst kasse. Tryk på den for at åbne den med en nøgle: man ved aldrig hvad der er i. Kasser dukker op i skraldespandene.",
+  "da": "En låst case. Tryk på den for at åbne den med en nøgle: man ved aldrig hvad der er i. Cases dukker op i skraldespandene.",
   "where": "src/items.ts:452"
  },
  "N1669": {
   "en": "Box key",
-  "da": "Kassenøgle",
+  "da": "Casenøgle",
   "where": "src/items.ts:453"
  },
  "N1670": {
   "en": "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (2 for 25 kr). One key opens one box.",
-  "da": "En nøgle til en mysteriekasse. 6ixty sælger dem, og det gør pay2win-maskinen i shoppen også (2 for 25 kr). En nøgle åbner en kasse.",
+  "da": "En nøgle til en case. 6ixty sælger dem, og det gør pay2win-maskinen i shoppen også (2 for 25 kr). En nøgle åbner en case.",
   "where": "src/items.ts:453"
  },
  "N1671": {
@@ -11246,7 +11246,7 @@
  },
  "N1718": {
   "en": "You haven't got a mystery box.",
-  "da": "Du har ikke en mysteriekasse.",
+  "da": "Du har ikke en case.",
   "where": "server/src/actions/cases.ts:25"
  },
  "N1719": {
@@ -11658,5 +11658,25 @@
   "en": "In your hand: tap a free spot to put it down (tap it again to let go)",
   "da": "I din hånd: tryk på et frit sted for at sætte det ned (tryk på det igen for at give slip)",
   "where": "src/ui/room.ts"
+ },
+ "N1801": {
+  "en": "📦 1 box",
+  "da": "📦 1 case",
+  "where": "src/ui/caseOpen.ts"
+ },
+ "N1802": {
+  "en": "📦 {boxes} boxes",
+  "da": "📦 {boxes} cases",
+  "where": "src/ui/caseOpen.ts"
+ },
+ "N1803": {
+  "en": "🔑 1 key",
+  "da": "🔑 1 nøgle",
+  "where": "src/ui/caseOpen.ts"
+ },
+ "N1804": {
+  "en": "🔑 {keys} keys",
+  "da": "🔑 {keys} nøgler",
+  "where": "src/ui/caseOpen.ts"
  }
 }
