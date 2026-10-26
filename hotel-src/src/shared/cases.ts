@@ -23,11 +23,12 @@ export interface CasePrize { id: string; chance: number; tier: Tier; label: stri
  */
 export const CASE_TABLE: CasePrize[] = [
   { id: "junk", chance: 35, tier: "junk", label: "Junk" },
-  { id: "furni", chance: 33.95, tier: "common", label: "Furniture" },
+  { id: "furni", chance: 30.95, tier: "common", label: "Furniture" },
   { id: "caliweed", chance: 9.5, tier: "rare", label: "Cali weed" },
   { id: "fentcn", chance: 6.5, tier: "rare", label: "芬太尼" },
   { id: "poppyseed", chance: 10, tier: "rare", label: "Poppy seed" },
   { id: "loudspeaker", chance: 0.05, tier: "rare", label: "Loudspeaker" },
+  { id: "gun", chance: 3, tier: "rare", label: "Gun" },
   { id: "unusual", chance: 2.5, tier: "unusual", label: "Unusual" },
   { id: "rarefurni", chance: 1, tier: "unusual", label: "Rare furniture" },
   { id: "unusualpet", chance: 1, tier: "unusual", label: "Unusual pet" },
@@ -46,7 +47,7 @@ export const CASE_JUNK: { item: string; ass?: true }[] = [
 ];
 
 /** roughly what each prize is worth in blood (the furniture's shop prices average about 39 sold back; an unusual is far more), to check the boxes don't pay */
-export const CASE_VALUE: Record<string, number> = { junk: 5, furni: 39, caliweed: 225, fentcn: 300, poppyseed: 50, loudspeaker: 100, unusual: 600, rarefurni: 500, unusualpet: 450, knifeskin: 800 };
+export const CASE_VALUE: Record<string, number> = { junk: 5, furni: 39, caliweed: 225, fentcn: 300, poppyseed: 50, loudspeaker: 100, gun: 250, unusual: 600, rarefurni: 500, unusualpet: 450, knifeskin: 800 };
 export const caseExpectedValue = (): number => CASE_TABLE.reduce((n, p) => n + (p.chance / 100) * (CASE_VALUE[p.id] ?? 0), 0);
 
 /** the ordinary furniture a box can give (what the daily shop sells) and the rare pieces (the raffle's) */

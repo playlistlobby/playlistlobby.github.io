@@ -34,7 +34,7 @@ export const ITEM_ID_LIST = [
   // the loudspeaker: a message on every screen for 10 seconds, once every 6 hours (see shared/loudspeaker.ts)
   "loudspeaker",
   // mystery boxes and keys (see shared/cases.ts), and the unusuals the boxes give: a hat with particle effects, worn from the pocket
-  "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
+  "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "gun", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -76,7 +76,7 @@ export function parseInventoryWith(raw: unknown, valid: (id: string) => boolean)
 }
 
 /** Things that can never be put on the floor, given or traded (the knife stays with you). */
-export const NO_DROP: ReadonlySet<string> = new Set(["loudspeaker", "knife", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
+export const NO_DROP: ReadonlySet<string> = new Set(["loudspeaker", "knife", "gun", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
 
 /** First slot holding `item`. Items that are loaned out (inPlayer) don't count as available. */
 export const findSlot = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item && !s.inPlayer);
@@ -277,9 +277,9 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife), every CD, the dice and the starter sofa everybody is given. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
-  "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
+  "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife", "gun",
   "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "pickaxe", "machete", "dice", "f_sofa",
-  "loudspeaker", "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
+  "loudspeaker", "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "gun", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
   // bagmand only buys his own things back (see shared/bagmand.ts)
   "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",
   "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",

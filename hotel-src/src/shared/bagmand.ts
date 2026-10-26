@@ -18,6 +18,7 @@ export const BAGMAND_BUY: Record<string, { price: number; stock: number | null; 
   natryger: { price: 25, stock: null, label: "Bagmands natryger" },
   syringe: { price: 20, stock: null, label: "Syringe" },
   dice: { price: 500, stock: null, label: "Dice" }, // (they were sold at the pay2win machine before)
+  gun: { price: 250, stock: 1, label: "Gun" }, // (one use: it shoots once and is gone; one per player per visit)
 };
 /**
  * What he pays (blood each), for only the things from him: opium from the poppies and what is mixed from it. The prices are about 1.6x what went into it

@@ -19,7 +19,7 @@ export interface ItemDef {
   examine: string;
   icon: string;
   /** what "Use" does when this item is selected and you click a player */
-  useOnPlayer?: "stab";
+  useOnPlayer?: "stab" | "shoot";
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
@@ -413,6 +413,13 @@ export const ITEMS: Record<string, ItemDef> = {
     examine: "Made on the crafting bench in the mines. Use it on another player like the knife: every stab draws twice the blood. It stays with you.",
     icon: assetUrl("items/machete.svg"),
     useOnPlayer: "stab",
+  },
+  gun: {
+    id: "gun",
+    name: "Gun",
+    examine: "A revolver with one bullet. Tap it to hold it: the bounties on people's heads show over them. Tap a player and confirm to shoot (only the name you picked): a bounty is yours, and they drop blood and are dead for a minute. Without a bounty they are dead for 10 seconds. It shoots once and is gone. Bagmand sells one a visit, and the bins and the boxes give them now and then.",
+    icon: assetUrl("items/gun.png"),
+    useOnPlayer: "shoot",
   },
   dice: {
     id: "dice",

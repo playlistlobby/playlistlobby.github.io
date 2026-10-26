@@ -91,6 +91,9 @@
         }
       }
     },
+    "hits": {
+      ".read": "@PW@"
+    },
     "poker": {
       "$table": { ".read": "@PW@" }
     },
