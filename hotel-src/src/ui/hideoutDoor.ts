@@ -1,5 +1,6 @@
 import { h, toast } from "./dom";
-import { hideoutAnswer, hideoutRequest, watchHideoutInvites, watchHideoutList, watchMyHideouts } from "../hideout";
+import { hideoutAnswer, watchHideoutInvites, watchHideoutList, watchMyHideouts } from "../hideout";
+import { social } from "../social";
 import { sortListings } from "../shared/hideout";
 import type { HideoutListing } from "../shared/hideout";
 import type { MyHideout } from "../hideout";
@@ -14,7 +15,9 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
   let mine: MyHideout[] = [];
   let invites: Array<{ owner: string; fromName: string; roomName: string; at: number }> = [];
   let list: Array<{ owner: string; listing: HideoutListing }> = [];
-  const asked = new Set<string>();
+  let knocking: { owner: string; name: string; state: "waiting" | "declined" | "none" } | null = null;
+  let stopKnock: (() => void) | null = null;
+  let knockTimer = 0;
   const body = h("div", { class: "door-body" });
   const el = h("div", { class: "door-popup hideout-door", role: "dialog", "aria-label": "Hideouts" },
     h("div", { class: "door-head" }, h("strong", {}, "🚪 Hideouts"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
@@ -36,7 +39,7 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
     for (const r of mine) rows.push(h("div", { class: "door-row" },
       h("div", { class: "door-row-main" }, h("div", { class: "door-row-name" }, r.name), h("div", { class: "hint" }, r.role === "owner" ? "Yours" : "You are a member")),
       h("button", { class: "btn small primary", onclick: () => enter(r) }, "Enter")));
-    // the hideouts whose owners put them on the list: the ones you aren't in. Tap Ask to join and the owner decides.
+    // the hideouts whose owners left them on the list: you can't ask to be a member (the owner adds members on the hideout's computer), but you can knock and be let in as a guest
     const others = sortListings(list.filter((l) => l.owner !== me.uid && !mine.some((m) => m.owner === l.owner)), Date.now());
     if (others.length) {
       rows.push(h("div", { class: "fp-label" }, "Hideouts"));
@@ -44,12 +47,35 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
         h("div", { class: "door-row-main" },
           h("div", { class: "door-row-name" }, `${o.listing.boostUntil > Date.now() ? "🔥 " : ""}${o.listing.name}`),
           h("div", { class: "hint" }, `${o.listing.ownerName} · ${o.listing.members} member${o.listing.members === 1 ? "" : "s"}${o.listing.desc ? ` · ${o.listing.desc}` : ""}`)),
-        h("button", { class: "btn small", disabled: asked.has(o.owner), onclick: () => void hideoutRequest(me, o.owner).then(() => { asked.add(o.owner); toast("You asked to join. The owner decides."); render(); }, (e) => toast((e as Error).message, "err")) }, asked.has(o.owner) ? "Asked" : "Ask to join")));
+        knocking?.owner === o.owner
+          ? (knocking.state === "waiting" ? h("span", { class: "hint" }, "Knocking…") : h("span", { class: "hint" }, knocking.state === "declined" ? "Sent away" : "Nobody answered"))
+          : h("button", { class: "btn small", disabled: !!knocking && knocking.state === "waiting", onclick: () => startKnock(o.owner, o.listing.name) }, "Knock")));
     }
     body.replaceChildren(...rows);
   }
+  function startKnock(owner: string, name: string): void {
+    knocking = { owner, name, state: "waiting" };
+    render();
+    social.hideoutKnock(owner).then(() => {
+      if (closed || knocking?.owner !== owner) return;
+      stopKnock = social.watchHideoutKnock(owner, (answer) => {
+        if (closed || knocking?.owner !== owner) return;
+        stopKnock?.(); stopKnock = null; window.clearTimeout(knockTimer);
+        if (answer === "accepted") { toast("You are let in as a guest."); playSfx("select", 0.5); close(); ctx.navigate("room", { roomId: `h_${owner}`, from: LOBBY_ID }); }
+        else { knocking = { owner, name, state: "declined" }; render(); }
+      });
+      knockTimer = window.setTimeout(() => {
+        if (closed || knocking?.state !== "waiting") return;
+        stopKnock?.(); stopKnock = null;
+        void social.cancelHideoutKnock(owner);
+        knocking = { owner, name, state: "none" };
+        render();
+      }, 30_000);
+      playSfx("knock", 0.35);
+    }, () => { toast("Couldn't knock.", "err"); knocking = null; render(); });
+  }
   const stops = [watchHideoutList((l) => { list = l; render(); }), watchMyHideouts(me.uid, (l) => { mine = l; render(); }), watchHideoutInvites(me.uid, (l) => { invites = l; render(); })];
   render();
-  function close(): void { if (closed) return; closed = true; stops.forEach((s) => s()); el.remove(); onClose(); }
+  function close(): void { if (closed) return; closed = true; window.clearTimeout(knockTimer); stopKnock?.(); if (knocking?.state === "waiting") void social.cancelHideoutKnock(knocking.owner); stops.forEach((s) => s()); el.remove(); onClose(); }
   return { close };
 }

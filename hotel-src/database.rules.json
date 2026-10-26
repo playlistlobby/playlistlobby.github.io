@@ -81,9 +81,14 @@
         ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $uid"
       }
     },
-    "hideoutRequests": {
-      "$uid": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $uid"
+    "hideoutKnocks": {
+      "$owner": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $owner",
+        "$visitor": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $visitor",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && ((auth.uid === $visitor && $visitor !== $owner && (!newData.exists() || (root.child('roomsMeta').child('h_' + $owner).child('owner').exists() && root.child('roomsMeta').child('h_' + $owner).child('listed').val() !== false))) || (auth.uid === $owner && !newData.exists()))",
+          ".validate": "newData.hasChildren(['name', 'ts']) && newData.child('name').isString() && newData.child('name').val().length <= 16 && newData.child('ts').isNumber() && newData.child('ts').val() === now"
+        }
       }
     },
     "hideoutList": {

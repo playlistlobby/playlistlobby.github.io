@@ -1,4 +1,5 @@
 import {
+  get,
   onChildAdded,
   onChildChanged,
   onChildRemoved,
@@ -406,6 +407,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const isHideoutRoom = isHideoutId(roomId);
   /** a place that is yours to use: your own room, or a hideout you are in */
   const isHome = isOwnRoom || isHideoutRoom;
+  let hideoutGuest = false; // (a guest of a hideout: let in by its owner, may look around but is not a member)
   /** your own room, or (an account with the decorator power) any player's room: furniture and posters can be put down here */
   const adminLobbyEdit = me.isAdmin && roomId === LOBBY_ID; // the admin furnishes the basement from the same menu, with every piece there is
   const adminOwnEdit = me.isAdmin && isOwnRoom; // the admin has every piece there is in his own room too (and the landlord's window)
@@ -1996,7 +1998,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "ideas") openIdeas();
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
-        else if (opens === "computer") { if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
+        else if (opens === "computer") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the computer.", "warn"); else if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
         else if (opens === "hideouts") { if (!hideoutDoorApi) hideoutDoorApi = openHideoutDoor(stage, ctx, () => { hideoutDoorApi = null; }); }
         else if (opens === "ducky") openDucky();
         else if (opens === "raffle") openRaffle();
@@ -5582,7 +5584,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (disposed) return;
       if (!meta) return kicked("That room doesn't exist.");
       const trespassNow = me.shroomUntil > serverNow();
-      if (isHideoutRoom) { if (!me.isAdmin && !hideoutRole({ owner: meta.owner, members: meta.members }, me.uid).member) return kicked("You aren't in that hideout."); }
+      if (isHideoutRoom) {
+        if (!me.isAdmin && !hideoutRole({ owner: meta.owner, members: meta.members }, me.uid).member) {
+          hideoutGuest = (await get(ref(db, `roomInvites/${roomId}/${me.uid}`)).catch(() => null))?.exists() === true;
+          if (!hideoutGuest) return kicked("You aren't in that hideout.");
+        }
+      }
       else if (!me.isAdmin && !(await canEnter(meta, me.uid, social.friendUids(), trespassNow))) return kicked(`${meta.ownerName}'s room is closed. Knock on its door from the basement to ask.`);
       if (disposed) return;
       // in on a shroom or DMT rather than by the door rules: when it wears off the door closes behind you (the database stops letting you in at that moment too)
@@ -5600,7 +5607,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       unsubs.push(watchMeta(roomId, (m) => {
         if (!m) return kicked("This room was deleted.");
         applyDef(defFromMeta(roomId, m));
-        if (isHideoutRoom && !me.isAdmin && !hideoutRole({ owner: m.owner, members: m.members }, me.uid).member) { toast("You are not in that hideout any more.", "err"); ctx.navigate("room", { roomId: LOBBY_ID, from: roomId }); } // (kicked, or left)
+        if (isHideoutRoom && !me.isAdmin && !hideoutGuest && !hideoutRole({ owner: m.owner, members: m.members }, me.uid).member) { toast("You are not in that hideout any more.", "err"); ctx.navigate("room", { roomId: LOBBY_ID, from: roomId }); } // (kicked, or left)
       }, () => kicked("You can't be in that room any more.")));
     } catch {
       kicked("Couldn't open that room.");

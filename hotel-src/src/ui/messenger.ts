@@ -71,6 +71,11 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
         h("button", { class: "btn small primary", title: "Let them in", onclick: () => social.answerKnock(k.uid, true).then(() => { logAction(me, "room", `let ${k.name} into their room`); toast(`${k.name} can come in until you log off.`); }, () => toast("Couldn't let them in.", "err")) }, "Let in"),
         h("button", { class: "btn small", title: "Send them away", onclick: () => void social.answerKnock(k.uid, false) }, "✕")));
 
+    const hideoutKnockRows = [...social.hideoutKnocks.values()].map((k) =>
+      h("div", { class: "frow" }, h("span", { class: "knock-ico" }, "✊"), h("span", { class: "fname knock-name" }, `${k.name} is at your hideout`),
+        h("button", { class: "btn small primary", title: "Let them in as a guest", onclick: () => social.answerHideoutKnock(k.uid, true).then(() => toast(`${k.name} can look around your hideout until you log off.`), () => toast("Couldn't let them in.", "err")) }, "Let in"),
+        h("button", { class: "btn small", title: "Send them away", onclick: () => void social.answerHideoutKnock(k.uid, false) }, "✕")));
+
     const reqRows = [...social.requests.values()].map((r) =>
       h("div", { class: "frow" }, headBox(r.figure), h("span", { class: "fname" }, r.name),
         h("button", { class: "btn small primary", title: "Accept", onclick: () => social.accept(r.uid).then(() => { playSfx("friend"); toast(`You and ${r.name} are friends now.`); }, () => toast("Couldn't accept that.", "err")) }, "✓"),
@@ -107,6 +112,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     }
     dyn.replaceChildren(
       ...(knockRows.length ? [h("div", { class: "fp-sec fp-knocks" }, h("div", { class: "fp-label" }, `Room requests (${knockRows.length})`), ...knockRows)] : []),
+      ...(hideoutKnockRows.length ? [h("div", { class: "fp-sec fp-knocks" }, h("div", { class: "fp-label" }, `Hideout guests (${hideoutKnockRows.length})`), ...hideoutKnockRows)] : []),
       ...(inviteRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, "Room invites"), ...inviteRows)] : []),
       ...(hideoutRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, "Hideout invites"), ...hideoutRows)] : []),
       ...(reqRows.length ? [h("div", { class: "fp-sec" }, h("div", { class: "fp-label" }, `Friend requests (${reqRows.length})`), ...reqRows)] : []),
@@ -268,9 +274,23 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     setTimeout(() => card.remove(), 25000);
   });
 
+  // somebody knocking on my hideout's door: the same pop-up (the owner lets them in as a guest)
+  const offHideoutKnock = social.onHideoutKnock((k) => {
+    playSfx("knock", 0.5);
+    const card = h("div", { class: "invite-card knock-card" },
+      h("div", {}, "✊ ", h("strong", {}, k.name), " is knocking on your hideout."),
+      h("div", { class: "row" },
+        h("button", { class: "btn small primary", onclick: () => { card.remove(); void social.answerHideoutKnock(k.uid, true).then(() => toast(`${k.name} can look around your hideout until you log off.`), () => toast("Couldn't let them in.", "err")); } }, "Let in"),
+        h("button", { class: "btn small", onclick: () => { card.remove(); void social.answerHideoutKnock(k.uid, false); } }, "Send away"),
+        h("button", { class: "btn small", onclick: () => card.remove() }, "Later")));
+    popups.append(card);
+    setTimeout(() => card.remove(), 25000);
+  });
+
   renderPanel();
   return () => {
     offStore();
+    offHideoutKnock();
     offDm();
     offInvite();
     offHideoutInvite();

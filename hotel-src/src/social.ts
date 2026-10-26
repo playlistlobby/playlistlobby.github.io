@@ -232,6 +232,8 @@ class SocialStore {
   invites: Invite[] = [];
   /** people knocking on my room's door right now */
   knocks = new Map<string, Knock>();
+  /** people knocking on my hideout's door right now (the owner lets them in as guests) */
+  hideoutKnocks = new Map<string, Knock>();
   /** people who want to trade with me right now */
   tradeInvites = new Map<string, TradeInvite>();
   /** gifts waiting for me, gifts of mine that were declined, and my partner / best friends (and who asks to be) */
@@ -248,6 +250,7 @@ class SocialStore {
 
   private listeners = new Set<Listener>();
   private knockListeners = new Set<(k: Knock) => void>();
+  private hideoutKnockListeners = new Set<(k: Knock) => void>();
   private tradeInviteListeners = new Set<(i: TradeInvite) => void>();
   private tradeStartListeners = new Set<(id: string) => void>();
   private inviteListeners = new Set<(i: Invite) => void>();
@@ -279,6 +282,10 @@ class SocialStore {
     this.tradeStartListeners.add(fn);
     return () => this.tradeStartListeners.delete(fn);
   }
+  onHideoutKnock(fn: (k: Knock) => void): () => void {
+    this.hideoutKnockListeners.add(fn);
+    return () => this.hideoutKnockListeners.delete(fn);
+  }
   onKnock(fn: (k: Knock) => void): () => void {
     this.knockListeners.add(fn);
     return () => this.knockListeners.delete(fn);
@@ -298,7 +305,7 @@ class SocialStore {
   }
   /** what the Friends button's red badge counts: unread messages, friend requests and people knocking */
   get badgeCount(): number {
-    return this.totalUnread + this.requests.size + this.knocks.size + this.tradeInvites.size + this.gifts.length + this.giftReturns.length + this.relationRequests.size + this.hideoutInvites.size;
+    return this.totalUnread + this.requests.size + this.knocks.size + this.hideoutKnocks.size + this.tradeInvites.size + this.gifts.length + this.giftReturns.length + this.relationRequests.size + this.hideoutInvites.size;
   }
   /** the presence list has arrived (until then nobody can be called gone) */
   presenceLoaded = false;
@@ -356,6 +363,14 @@ class SocialStore {
         this.knocks = next;
         this.emit();
         fresh.forEach((k) => this.knockListeners.forEach((l) => l(k)));
+      }, () => undefined),
+      onValue(ref(db, `hideoutKnocks/${me.uid}`), (snap) => {
+        const next = new Map<string, Knock>();
+        for (const [uid, v] of Object.entries<any>(snap.val() ?? {})) next.set(uid, { uid, name: v.name ?? "?", ts: typeof v.ts === "number" ? v.ts : serverNow() });
+        const fresh = [...next.values()].filter((k) => !this.hideoutKnocks.has(k.uid));
+        this.hideoutKnocks = next;
+        this.emit();
+        fresh.forEach((k) => this.hideoutKnockListeners.forEach((l) => l(k)));
       }, () => undefined),
       onValue(ref(db, `tradeInvites/${me.uid}`), (snap) => {
         const next = new Map<string, TradeInvite>();
@@ -428,6 +443,7 @@ class SocialStore {
     this.presence.clear();
     this.invites = [];
     this.knocks.clear();
+    this.hideoutKnocks.clear();
     this.tradeInvites.clear();
     this.gifts = [];
     this.giftReturns = [];
@@ -611,6 +627,47 @@ class SocialStore {
     const updates: Record<string, unknown> = { [`knocks/${me.uid}/${visitor}`]: null };
     if (allow) updates[`roomInvites/${ownRoomId(me.uid)}/${visitor}`] = true;
     await update(ref(db), updates);
+  }
+
+  // ---- knocking on a hideout's door: a guest visit (members are added on the hideout's computer, nobody can ask for that) ----
+  async hideoutKnock(owner: string): Promise<void> {
+    const me = this.me!;
+    const r = ref(db, `hideoutKnocks/${owner}/${me.uid}`);
+    await set(r, { name: me.name, ts: serverTimestamp() });
+    void onDisconnect(r).remove();
+  }
+  cancelHideoutKnock(owner: string): Promise<void> {
+    const r = ref(db, `hideoutKnocks/${owner}/${this.me!.uid}`);
+    void onDisconnect(r).cancel().catch(() => undefined);
+    return remove(r).catch(() => undefined);
+  }
+  /** "accepted" once the owner lets me in as a guest, "declined" if they send me away */
+  watchHideoutKnock(owner: string, cb: (answer: "accepted" | "declined") => void): Unsubscribe {
+    const me = this.me!;
+    let seenKnock = false;
+    let accepted = false;
+    let timer = 0;
+    const offInvite = onValue(ref(db, `roomInvites/h_${owner}/${me.uid}`), (s) => {
+      if (!s.exists() || accepted) return;
+      accepted = true;
+      window.clearTimeout(timer);
+      cb("accepted");
+    }, () => undefined);
+    const offKnock = onValue(ref(db, `hideoutKnocks/${owner}/${me.uid}`), (s) => {
+      if (s.exists()) { seenKnock = true; return; }
+      if (!seenKnock || accepted) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => { if (!accepted) cb("declined"); }, 700);
+    }, () => undefined);
+    return () => { window.clearTimeout(timer); offInvite(); offKnock(); };
+  }
+  /** Owner: let a knocker in as a guest (until I log off) or send them away. */
+  async answerHideoutKnock(visitor: string, allow: boolean): Promise<void> {
+    const me = this.me!;
+    const updates: Record<string, unknown> = { [`hideoutKnocks/${me.uid}/${visitor}`]: null };
+    if (allow) updates[`roomInvites/h_${me.uid}/${visitor}`] = true;
+    await update(ref(db), updates);
+    if (allow) void onDisconnect(ref(db, `roomInvites/h_${me.uid}`)).remove().catch(() => undefined); // (guests only stay as long as I am online)
   }
 
   /** Let-in grants only last for one session: they're wiped when I disconnect. Call after signing in and after creating my room. */

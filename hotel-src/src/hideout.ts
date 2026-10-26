@@ -11,8 +11,6 @@ export const hideoutUpgrade = (p: Profile): Promise<{ size: number; price: numbe
 export const hideoutColors = (p: Profile, d: { floor?: string; wall?: string; rug?: string }): Promise<{ price: number }> => call(p, "hideoutColors", d);
 export const hideoutSettings = (p: Profile, patch: { name?: string; lock?: boolean; desc?: string; listed?: boolean }): Promise<unknown> => call(p, "hideoutSettings", patch);
 export const hideoutBoost = (p: Profile): Promise<{ boostUntil: number; price: number }> => call(p, "hideoutBoost");
-export const hideoutRequest = (p: Profile, owner: string): Promise<unknown> => call(p, "hideoutRequest", { owner });
-export const hideoutRequestAnswer = (p: Profile, uid: string, accept: boolean): Promise<{ joined: boolean }> => call(p, "hideoutRequestAnswer", { uid, accept });
 export const hideoutInvite = (p: Profile, who: { name?: string; uid?: string }): Promise<{ name: string }> => call(p, "hideoutInvite", who);
 export const hideoutAnswer = (p: Profile, owner: string, accept: boolean): Promise<{ joined: boolean; room?: string }> => call(p, "hideoutAnswer", { owner, accept });
 export const hideoutLeave = (p: Profile, owner: string): Promise<unknown> => call(p, "hideoutLeave", { owner });
@@ -45,12 +43,5 @@ export function watchHideoutList(cb: (list: Array<{ owner: string; listing: Hide
   return onValue(ref(db, "hideoutList"), (s) => {
     const v = (s.val() ?? {}) as Record<string, Partial<HideoutListing>>;
     cb(Object.entries(v).map(([owner, l]) => ({ owner, listing: { name: String(l?.name ?? "Hideout"), desc: String(l?.desc ?? ""), ownerName: String(l?.ownerName ?? "?"), members: Number(l?.members) || 1, boostUntil: Number(l?.boostUntil) || 0 } })));
-  }, () => cb([]));
-}
-/** Players asking to get into this player's hideout, live (only the owner can read it). */
-export function watchHideoutRequests(owner: string, cb: (list: Array<{ uid: string; name: string; at: number }>) => void): () => void {
-  return onValue(ref(db, `hideoutRequests/${owner}`), (s) => {
-    const v = (s.val() ?? {}) as Record<string, { name?: string; at?: number }>;
-    cb(Object.entries(v).map(([uid, r]) => ({ uid, name: String(r?.name ?? "?"), at: Number(r?.at) || 0 })).sort((a, b) => a.at - b.at));
   }, () => cb([]));
 }

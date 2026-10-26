@@ -81,9 +81,14 @@
         ".read": "@PW@ && auth.uid === $uid"
       }
     },
-    "hideoutRequests": {
-      "$uid": {
-        ".read": "@PW@ && auth.uid === $uid"
+    "hideoutKnocks": {
+      "$owner": {
+        ".read": "@PW@ && auth.uid === $owner",
+        "$visitor": {
+          ".read": "@PW@ && auth.uid === $visitor",
+          ".write": "@PW@ && ((auth.uid === $visitor && $visitor !== $owner && (!newData.exists() || (root.child('roomsMeta').child('h_' + $owner).child('owner').exists() && root.child('roomsMeta').child('h_' + $owner).child('listed').val() !== false))) || (auth.uid === $owner && !newData.exists()))",
+          ".validate": "newData.hasChildren(['name', 'ts']) && newData.child('name').isString() && newData.child('name').val().length <= 16 && newData.child('ts').isNumber() && newData.child('ts').val() === now"
+        }
       }
     },
     "hideoutList": {

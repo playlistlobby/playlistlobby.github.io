@@ -11588,5 +11588,55 @@
   "en": "{…}t {…}m",
   "da": "{…}t {…}m",
   "where": "src/ui/petShop.ts"
+ },
+ "N1787": {
+  "en": "{name} is at your hideout",
+  "da": "{name} er ved dit skjulested",
+  "where": "src/ui/messenger.ts"
+ },
+ "N1788": {
+  "en": "Let them in as a guest",
+  "da": "Lad dem komme ind som gæst",
+  "where": "src/ui/messenger.ts"
+ },
+ "N1789": {
+  "en": "{name} can look around your hideout until you log off.",
+  "da": "{name} kan se sig omkring i dit skjulested indtil du logger af.",
+  "where": "src/ui/messenger.ts"
+ },
+ "N1790": {
+  "en": "Hideout guests ({length})",
+  "da": "Gæster ved skjulestedet ({length})",
+  "where": "src/ui/messenger.ts"
+ },
+ "N1791": {
+  "en": "is knocking on your hideout.",
+  "da": "banker på dit skjulested.",
+  "where": "src/ui/messenger.ts"
+ },
+ "N1792": {
+  "en": "Sent away",
+  "da": "Sendt væk",
+  "where": "src/ui/hideoutDoor.ts"
+ },
+ "N1793": {
+  "en": "Nobody answered",
+  "da": "Ingen svarede",
+  "where": "src/ui/hideoutDoor.ts"
+ },
+ "N1794": {
+  "en": "You are let in as a guest.",
+  "da": "Du er lukket ind som gæst.",
+  "where": "src/ui/hideoutDoor.ts"
+ },
+ "N1795": {
+  "en": "Knocking…",
+  "da": "Banker på…",
+  "where": "src/ui/hideoutDoor.ts"
+ },
+ "N1796": {
+  "en": "Only the members can use the computer.",
+  "da": "Kun medlemmerne kan bruge computeren.",
+  "where": "src/ui/room.ts"
  }
 }

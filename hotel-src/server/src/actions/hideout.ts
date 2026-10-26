@@ -255,44 +255,6 @@ export const hideoutAnswer: Action = {
   },
 };
 
-/** Somebody who sees a hideout on the list asks the owner to let them in (the owner answers on the computer, under Members). */
-export const hideoutRequest: Action = {
-  async run(c, a) {
-    const owner = text(a.owner, UID_RE, "hideout");
-    if (owner === c.uid) fail("That's your own hideout.");
-    const room = hideoutRoomId(owner);
-    const meta = await c.db.get<Record<string, any>>(`roomsMeta/${room}`);
-    if (!meta?.owner || meta.listed === false) fail("That hideout isn't on the list.");
-    if (meta!.members?.[c.uid]) fail("You are already in that hideout.");
-    if (Object.keys(meta!.members ?? {}).length >= HIDEOUT_MAX_MEMBERS) fail("That hideout is full.");
-    if (await c.db.get(`hideoutRequests/${owner}/${c.uid}`)) fail("You already asked. Wait for the owner.");
-    const queue = (await c.db.get<Record<string, unknown>>(`hideoutRequests/${owner}`)) ?? {};
-    if (Object.keys(queue).length >= 20) fail("Too many people are waiting to get in there.");
-    c.extra[`hideoutRequests/${owner}/${c.uid}`] = { name: await nameOf(c, c.uid), at: c.now };
-    return {};
-  },
-};
-
-/** The owner lets a requester in (building allowed until the owner says otherwise) or sends them away. */
-export const hideoutRequestAnswer: Action = {
-  locks: (c) => [`room:${hideoutRoomId(c.uid)}`],
-  async run(c, a) {
-    const { room, meta } = await ownHideout(c);
-    const uid = text(a.uid, UID_RE, "player");
-    const req = await c.db.get<{ name?: string }>(`hideoutRequests/${c.uid}/${uid}`);
-    if (!req) fail("That request is gone.");
-    c.extra[`hideoutRequests/${c.uid}/${uid}`] = null;
-    if (!a.accept) return { joined: false };
-    const members = (meta.members ?? {}) as Record<string, unknown>;
-    if (members[uid]) return { joined: true };
-    if (Object.keys(members).length >= HIDEOUT_MAX_MEMBERS) fail(`A hideout holds ${HIDEOUT_MAX_MEMBERS} members at most.`);
-    c.extra[`roomsMeta/${room}/members/${uid}`] = { name: await nameOf(c, uid), build: true, at: c.now };
-    c.extra[`hideouts/${uid}/${c.uid}`] = { name: String(meta.name ?? "hideout").slice(0, HIDEOUT_NAME_MAX), role: "member" };
-    publishListing(c, c.uid, meta, { membersDelta: 1 });
-    return { joined: true };
-  },
-};
-
 /** Moves furniture into the shared box from your own storage or pocket. It stays yours: only you can take it out again (anybody who builds can place it). */
 export const hideoutBoxStore: Action = {
   locks: (c, a) => roomLock(c, a),
