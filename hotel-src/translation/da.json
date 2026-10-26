@@ -11568,5 +11568,25 @@
   "en": "Skal du bruge et sted til dig og dine guys?",
   "da": "Skal du bruge et sted til dig og dine guys?",
   "where": "src/npc.ts"
+ },
+ "N1783": {
+  "en": "har nogen nye kreaturer eller whatver om {untilText}",
+  "da": "har nogen nye kreaturer eller whatver om {untilText}",
+  "where": "src/ui/petShop.ts"
+ },
+ "N1784": {
+  "en": "He hasn't got that one right now: he swaps his pets every 6 hours.",
+  "da": "Han har ikke den lige nu: han skifter sine kæledyr hver 6. time.",
+  "where": "server/src/actions/pets.ts"
+ },
+ "N1785": {
+  "en": "pets bih",
+  "da": "pets bih",
+  "where": "src/ui/petShop.ts"
+ },
+ "N1786": {
+  "en": "{…}t {…}m",
+  "da": "{…}t {…}m",
+  "where": "src/ui/petShop.ts"
  }
 }

@@ -51,7 +51,7 @@ export const PET_MERCHANT = {
   id: "petmerchant",
   name: "pets bih",
   x: 13,
-  y: 6,
+  y: 5,
   dir: 6,
   figure: "hd-600-1.hr-98104-9002.he-98089-74.fa-97041.ch-98028-74.lg-98120-9002.sh-98142-1408.wa-98147-82", // what the player Emil wears
   line: "pets. 1000 to 2000 blood. some are on sale, some are not. dont ask.",

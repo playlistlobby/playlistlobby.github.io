@@ -5,13 +5,19 @@ import { Action, int, requireInRoom, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, takeOneFrom } from "../../../src/shared/economy";
 import { PET_COLORS, PET_TYPES, petPrice } from "../../../src/shared/pets";
-import { parsePetItem, parsePetLook, petItemId, petLookOf } from "../../../src/shared/petItems";
+import { parsePetItem, parsePetLook, petItemId, petLookOf, petStock, petStockEnds } from "../../../src/shared/petItems";
+
+/** the four pets he has right now, and when they change */
+export const petStockNow: Action = {
+  async run(c) { return { types: petStock(c.now), until: petStockEnds(c.now) }; },
+};
 
 export const petBuy: Action = {
   async run(c, a) {
     await requireInRoom(c, "shop");
     const type = text(a.type, /^[a-z]{3,20}$/, "pet");
     if (!PET_TYPES.includes(type)) fail("The merchant doesn't have that one.");
+    if (!petStock(c.now).includes(type)) fail("He hasn't got that one right now: he swaps his pets every 6 hours.");
     const w = await c.user();
     const price = petPrice(type);
     if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);

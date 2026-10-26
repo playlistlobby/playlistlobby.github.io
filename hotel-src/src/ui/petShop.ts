@@ -2,11 +2,15 @@ import { h, toast } from "./dom";
 import { BLOOD_ICON } from "../items";
 import { onPetSheet, petPreview, petSheet } from "../pets";
 import { buyPet } from "../petActions";
-import { PET_TYPES, petPrice } from "../shared/pets";
-import { petLabel } from "../shared/petItems";
+import { petPrice } from "../shared/pets";
+import { petLabel, petStock, petStockEnds } from "../shared/petItems";
+import { serverNow } from "../db";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
+
+/** "3t 12m" for the time until he has new pets */
+const untilText = (ms: number): string => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}t ${m % 60}m` : `${m}m`; };
 
 /** pets bih's window: buy a pet (1000-2000 drops, the colour is a surprise). It goes into your pocket: tap it there to let it out. */
 export function openPetShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): { close(): void } {
@@ -34,8 +38,8 @@ export function openPetShop(host: HTMLElement, ctx: Ctx, onChange: () => void, o
     if (closed) return;
     const scrolled = el.scrollTop;
     body.replaceChildren(
-      h("div", { class: "hint" }, "Every pet comes in a colour you can't pick: you find out when it is yours. It goes into your pocket: tap it there to let it out. Then it walks behind you, and everybody sees it. Tap it in the room to pick it up again."),
-      h("div", { class: "pet-grid" }, ...PET_TYPES.map((type) => {
+      h("div", { class: "hint" }, `har nogen nye kreaturer eller whatver om ${untilText(petStockEnds(serverNow()) - serverNow())}`),
+      h("div", { class: "pet-grid" }, ...petStock(serverNow()).map((type) => {
         const price = petPrice(type);
         return h("div", { class: "pet-card" },
           h("div", { class: "pet-pic" }, previewOf(type)),
@@ -45,7 +49,9 @@ export function openPetShop(host: HTMLElement, ctx: Ctx, onChange: () => void, o
       })));
     el.scrollTop = scrolled;
   }
-  const stops = [onPetSheet(render)];
+  let stockKey = Math.floor(serverNow() / 60_000);
+  const tick = window.setInterval(() => { const k = Math.floor(serverNow() / 60_000); if (k !== stockKey && !busy) { stockKey = k; render(); } }, 5000); // (the time left, and the new four when it is time)
+  const stops = [onPetSheet(render), () => window.clearInterval(tick)];
   render();
   function close(): void { if (closed) return; closed = true; stops.forEach((s) => s()); el.remove(); onClose(); }
   return { close };

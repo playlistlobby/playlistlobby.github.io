@@ -24,3 +24,17 @@ export function parsePetLook(look: unknown): PetItem | null {
 }
 /** the name shown for a pet */
 export const petLabel = (type: string): string => type.replace(/baby$/, " baby").replace(/^./, (c) => c.toUpperCase());
+
+// ---- what pets bih has: four pets at a time, a new four every 6 hours (the same for everybody: it only depends on the clock) ----
+export const PET_STOCK_COUNT = 4;
+export const PET_STOCK_MS = 6 * 60 * 60 * 1000;
+/** the four pets on sale at this time, picked by a shuffle seeded with the 6-hour period we are in */
+export function petStock(now: number): string[] {
+  let seed = Math.floor(now / PET_STOCK_MS) + 12345;
+  const rand = (): number => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const pool = [...PET_TYPES];
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  return pool.slice(0, PET_STOCK_COUNT);
+}
+/** when the pets on sale are swapped for the next four (ms) */
+export const petStockEnds = (now: number): number => (Math.floor(now / PET_STOCK_MS) + 1) * PET_STOCK_MS;
