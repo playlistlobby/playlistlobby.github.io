@@ -1203,3 +1203,5 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .pet-tag { font: 700 10px var(--font); text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 8px; color: #fff; }
 .pet-tag.sale { background: #2f9e44; }
 .pet-tag.rare { background: #c2410c; }
+.pet-head-ico { display: inline-flex; vertical-align: middle; margin-right: 2px; }
+.pet-head-ico canvas { image-rendering: pixelated; }

@@ -18,8 +18,9 @@ export function openPetShop(host: HTMLElement, ctx: Ctx, onChange: () => void, o
   let closed = false;
   let busy = false;
   const body = h("div", { class: "pet-body" });
+  const ico = h("span", { class: "pet-head-ico" }); // the white bunny: the pets' icon
   const el = h("div", { class: "cd-popup pet-shop", role: "dialog", "aria-label": "pets bih" },
-    h("div", { class: "cd-head" }, h("strong", {}, "🐾 pets bih"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
+    h("div", { class: "cd-head" }, h("strong", {}, ico, " pets bih"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
     body);
   host.append(el);
 
@@ -37,6 +38,8 @@ export function openPetShop(host: HTMLElement, ctx: Ctx, onChange: () => void, o
   function render(): void {
     if (closed) return;
     const scrolled = el.scrollTop;
+    const bunny = petSheet("bunnyeaster", 0);
+    ico.replaceChildren(...(bunny ? [petPreview(bunny, 22)] : ["🐾"]));
     body.replaceChildren(
       h("div", { class: "hint" }, `har nogen nye kreaturer eller whatver om ${untilText(petStockEnds(serverNow()) - serverNow())}`),
       h("div", { class: "pet-grid" }, ...petStock(serverNow()).map((type) => {
