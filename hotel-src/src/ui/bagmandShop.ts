@@ -92,7 +92,7 @@ export function openBagmandShop(host: HTMLElement, ctx: Ctx, onChange: () => voi
           ...(grp.qty > 1 ? [h("button", { class: "btn small danger", onclick: () => void sell(grp.qty) }, `All ${grp.qty}`)] : [])));
     });
     body.replaceChildren(...shelf,
-      h("div", { class: "hint pad" }, sellRows.length ? "He buys back what comes from his poppies and his weed (and nothing else, nobody else buys it):" : "He only buys what comes from his poppies and his weed: opium and everything mixed from it. Nothing to sell right now."),
+      h("div", { class: "hint pad" }, "Bagmand is the only one who deals in the result of these products, so you have to catch him again if you want to sell back."),
       ...sellRows);
   }
   const tick = (): void => {

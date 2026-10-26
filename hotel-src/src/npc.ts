@@ -29,9 +29,9 @@ export const BAGMAN = {
   id: "bagman",
   name: "bagmand",
   x: 0,
-  y: 19,
-  dir: 2,
-  figure: "hd-600-1.hr-98104-9002.he-98089-74.fa-97041.ch-98028-74.lg-98120-9002.sh-98142-1408.wa-98147-82", // what the player Emil wears now
+  y: 21,
+  dir: 0,
+  figure: "hd-190-1.hr-97012-42.ch-98188-1408.lg-98120-9004.sh-98136-1408.wa-98147-1408", // what the player Emil wears now
   line: "psst. fresh seeds. blue for the road.",
 };
 
@@ -43,7 +43,7 @@ export const HIDEOUT_LANDLORD = {
   y: 22,
   dir: 2,
   figure: LANDLORD.figure,
-  line: "need a place for you and your boys? a hideout is 1000 blood.",
+  line: "Skal du bruge et sted til dig og dine guys?",
 };
 
 /** The pet merchant: "pets bih", who stands in the shop room where the basket was. He looks like the player Emil. Sells pets. */

@@ -11558,5 +11558,15 @@
   "en": "Click it to pick it up.",
   "da": "klik på den for samle den op",
   "where": "src/items.ts"
+ },
+ "N1781": {
+  "en": "Bagmand is the only one who deals in the result of these products, so you have to catch him again if you want to sell back.",
+  "da": "bagmanden er den eneste der forhandler i resultatet af disse produkter, så du må fange ham igen hvis du vil sælge tilbage.",
+  "where": "src/ui/bagmandShop.ts:95"
+ },
+ "N1782": {
+  "en": "Skal du bruge et sted til dig og dine guys?",
+  "da": "Skal du bruge et sted til dig og dine guys?",
+  "where": "src/npc.ts"
  }
 }
