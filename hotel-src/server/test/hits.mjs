@@ -1,5 +1,5 @@
 // Hit and gun tests: putting a hit on somebody from a hideout (500-1500, once per 2 hours per hideout, 3 a day per person), the gun (bagmand sells two a visit), and shooting:
-// a bounty is claimed, the one who is shot drops blood and is dead for a minute (10 seconds without a bounty), the gun is always spent
+// a bounty is claimed, the one who is shot drops blood and is dead for two minutes, the gun is always spent
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: node test/hits.mjs (server/)
 const DB = "http://127.0.0.1:9000";
 const NS = "demo-hotel-default-rtdb";
@@ -105,6 +105,72 @@ console.log("--- guns and rocket launchers can be traded and dropped");
   bad("a knife still can not be dropped", await (async () => { await owner("PUT", `users/${mid.uid}/inventory`, inv({ item: "knife", qty: 1 })); return act(mid, "drop", { room: "lobby", slot: 0, x: 8, y: 7, qty: 1 }); })());
 }
 
+console.log("--- a laced thing pays its giver the bounty of the one it kills");
+{
+  const giver = await fresh("t_ht_lg", { blood: 100 }), away = await fresh("t_ht_lo", { blood: 100 }), vic = await fresh("t_ht_lv", { blood: 5000 });
+  const bounty = (id, amount) => owner("PUT", `hits/${id}`, { target: vic.uid, targetName: "t_ht_lv", amount, by: "someone", byName: "x", hideout: "x", hideoutName: "x", at: Date.now() - 5000 });
+  const give = (items) => owner("PUT", `users/${vic.uid}/inventory`, inv(...items));
+  const lighter = { item: "lighter", qty: 1 };
+  await owner("PUT", `presence/${giver.uid}`, { name: "t_ht_lg", room: "lobby", seen: Date.now() });
+  await owner("PUT", `presence/${away.uid}`, { name: "t_ht_lo", room: "lobby", seen: Date.now() - 600_000 });
+  await act(vic, "sync"); await act(giver, "sync");
+  await owner("DELETE", "hits");
+
+  await bounty("lb1", 400); await give([{ item: "laced_joint", qty: 1, giver: giver.uid }, lighter]);
+  const g0 = await bloodOf(giver);
+  const d1 = await act(vic, "light", { slot: 0 });
+  check("smoking a laced joint kills", d1.ok && d1.data?.kind === "fentdeath", JSON.stringify(d1));
+  check("the bounty went to the one who gave it", d1.data?.bounty === 400 && (await bloodOf(giver)) === g0 + 400, JSON.stringify(d1.data));
+  check("and it is off the board", !(await hits()).some((h) => h.id === "lb1"));
+
+  await bounty("lb2", 500); await give([{ item: "laced_joint", qty: 1, giver: away.uid }, lighter]);
+  const a0 = await bloodOf(away);
+  const d2 = await act(vic, "light", { slot: 0 });
+  check("a giver who is offline: it kills, but the bounty stays", d2.ok && d2.data?.bounty === undefined && (await bloodOf(away)) === a0 && (await hits()).some((h) => h.id === "lb2"), JSON.stringify(d2.data));
+
+  await give([{ item: "laced_joint", qty: 1 }, lighter]);
+  const d3 = await act(vic, "light", { slot: 0 });
+  check("one they made themselves: the bounty stays", d3.ok && d3.data?.bounty === undefined && (await hits()).some((h) => h.id === "lb2"), JSON.stringify(d3.data));
+
+  await give([{ item: "laced_joint", qty: 1, giver: vic.uid }, lighter]);
+  const d4 = await act(vic, "light", { slot: 0 });
+  check("their own name on it counts as made by themselves", d4.ok && d4.data?.bounty === undefined && (await hits()).some((h) => h.id === "lb2"), JSON.stringify(d4.data));
+
+  const g1 = await bloodOf(giver);
+  await give([{ item: "laced_pill", qty: 1, giver: giver.uid }]);
+  const d5 = await act(vic, "consume", { slot: 0 });
+  check("swallowing a laced pill pays the giver too", d5.ok && d5.data?.bounty === 500 && (await bloodOf(giver)) === g1 + 500, JSON.stringify(d5.data));
+
+  await owner("DELETE", "hits");
+  await give([{ item: "laced_joint", qty: 1, giver: giver.uid }, lighter]);
+  const g2 = await bloodOf(giver);
+  const d6 = await act(vic, "light", { slot: 0 });
+  check("no bounty on them: nothing is paid", d6.ok && d6.data?.bounty === undefined && (await bloodOf(giver)) === g2, JSON.stringify(d6.data));
+
+  // where the giver comes from: a trade, a gift, the floor
+  await owner("PUT", `users/${vic.uid}/inventory`, {});
+  const tradeLaced = async (a, b, item) => {
+    const id = `tr${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    await owner("PUT", `users/${a.uid}/inventory`, inv({ item, qty: 1 }));
+    await owner("PUT", `users/${b.uid}/inventory`, {});
+    await owner("PUT", `trades/${id}`, { a: a.uid, b: b.uid, status: "open", names: { [a.uid]: a.name, [b.uid]: b.name }, ready: { [a.uid]: true, [b.uid]: true }, confirm: { [a.uid]: true, [b.uid]: true }, offer: { [a.uid]: { blood: 0, items: { 0: { item, qty: 1 } } }, [b.uid]: { blood: 0, items: {} } } });
+    return act(a, "tradeFinish", { id });
+  };
+  const tr = await tradeLaced(giver, vic, "laced_joint");
+  ok("a laced joint is traded", tr);
+  const got = Object.values((await owner("GET", `users/${vic.uid}/inventory`)) ?? {}).find((x) => x && x.item === "laced_joint");
+  check("it remembers who traded it", got && got.giver === giver.uid, JSON.stringify(got));
+  // dropped on the floor by one, picked up by another
+  await owner("PUT", `users/${giver.uid}/inventory`, inv({ item: "laced_joint", qty: 1 })); await owner("PUT", `users/${vic.uid}/inventory`, {});
+  await stand(giver, "lobby", 3, 3); await stand(vic, "lobby", 4, 3); await owner("DELETE", "rooms/lobby/drops/3_4");
+  ok("the giver drops it", await act(giver, "drop", { room: "lobby", slot: 0, x: 3, y: 4, qty: 1 }));
+  ok("the other picks it up", await act(vic, "pickup", { room: "lobby", key: "3_4" }));
+  const got2 = Object.values((await owner("GET", `users/${vic.uid}/inventory`)) ?? {}).find((x) => x && x.item === "laced_joint");
+  check("it remembers who dropped it", got2 && got2.giver === giver.uid, JSON.stringify(got2));
+  await owner("DELETE", `rooms/lobby/players/${giver.uid}`); await owner("DELETE", `rooms/lobby/players/${vic.uid}`);
+  await owner("DELETE", "hits");
+}
+
 console.log("--- putting a hit on somebody");
 const place = (u, target, amount, room = HR) => act(u, "hitPlace", { room, target: target.uid, amount });
 bad("only a member of the hideout", await place(stranger, rich, 500));
@@ -183,14 +249,14 @@ const s0 = await shoot(small);
 check("somebody with no bounty can't be shot", s0.ok === false && /bounty/i.test(s0.error ?? ""), JSON.stringify(s0));
 check("the gun is kept", hasItem((await act(shooter, "sync")).state, "gun"));
 check("and they were not touched", (await bloodOf(small)) === 400 && (await owner("GET", `sendHome/${small.uid}`)) === null);
-// with the smallest bounty (300) they can: 20 drop (they have 400) and a minute down
+// with the smallest bounty (300) they can: 20 drop (they have 400) and two minutes down
 await owner("PUT", "hits/hs", { target: small.uid, targetName: "t_ht_small", amount: 300, by: host.uid, byName: "host", hideout: host.uid, hideoutName: "x", at: Date.now() - 3000 });
 const s1 = await shoot(small);
 ok("shoot somebody with a bounty", s1);
-check("they drop 20 and are dead for a minute, the bounty is claimed", s1.data?.dropped === 20 && s1.data?.secs === 60 && s1.data?.bounty === 300, JSON.stringify(s1.data));
+check("they drop 20 and are dead for two minutes, the bounty is claimed", s1.data?.dropped === 20 && s1.data?.secs === 120 && s1.data?.bounty === 300, JSON.stringify(s1.data));
 check("their blood is 380", (await bloodOf(small)) === 380);
 const sh = await owner("GET", `sendHome/${small.uid}`);
-check("they are sent down: shot, a minute", sh && sh.shot === true && sh.secs === 60 && sh.lost === 20 && sh.byName === "t_ht_shooter", JSON.stringify(sh));
+check("they are sent down: shot, two minutes", sh && sh.shot === true && sh.secs === 120 && sh.lost === 20 && sh.byName === "t_ht_shooter", JSON.stringify(sh));
 check("the gun is gone", !hasItem((await act(shooter, "sync")).state, "gun"));
 const drops = Object.values((await owner("GET", "rooms/lobby/drops")) ?? {}).filter((d) => d.item === "blood" && d.by === small.uid && d.qty === 20);
 check("their blood lies on the floor", drops.length >= 1);
@@ -203,7 +269,7 @@ await owner("PUT", `users/${shooter.uid}/inventory`, inv({ item: "gun", qty: 3 }
 const s2 = await shoot(mid);
 check("over 1000 blood and no bounty: 10 drop... but mid has a hit on them", s2.ok);
 // mid has a hit of 700 placed above: it was a bounty shot
-check("a bounty of 700 is claimed", s2.data?.bounty === 700 && s2.data?.secs === 60 && s2.data?.dropped === 100, JSON.stringify(s2.data));
+check("a bounty of 700 is claimed", s2.data?.bounty === 700 && s2.data?.secs === 120 && s2.data?.dropped === 100, JSON.stringify(s2.data));
 check("the shooter got the 700 (on top of the 300 from before)", (await bloodOf(shooter)) === 1100, String(await bloodOf(shooter)));
 check("the hit is gone", !(await hits()).some((h) => h.target === mid.uid));
 check("the gun count went down one (3 -> 2)", (await act(shooter, "sync")).state.inventory.find((x) => x && x.item === "gun")?.qty === 2);
@@ -214,7 +280,7 @@ await owner("PUT", "hits/hb", { target: rich.uid, targetName: "t_ht_rich", amoun
 const rBefore = await bloodOf(rich), shBefore = await bloodOf(shooter);
 const s3 = await shoot(rich);
 ok("shoot the rich one (two hits on them)", s3);
-check("the biggest, 1300, is claimed; they drop 200 and are dead a minute", s3.data?.bounty === 1300 && s3.data?.dropped === 200 && s3.data?.secs === 60, JSON.stringify(s3.data));
+check("the biggest, 1300, is claimed; they drop 200 and are dead two minutes", s3.data?.bounty === 1300 && s3.data?.dropped === 200 && s3.data?.secs === 120, JSON.stringify(s3.data));
 check("blood moves: the shooter +1300, the target -200", (await bloodOf(shooter)) === shBefore + 1300 && (await bloodOf(rich)) === rBefore - 200);
 const left = (await hits()).filter((h) => h.target === rich.uid);
 check("the smaller hit is still open (500) and so is one of the old ones", left.length >= 1 && left.some((h) => h.id === "ha"), JSON.stringify(left.map((h) => h.amount)));

@@ -265,7 +265,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
 export function addToInv(inv: Inventory, give: InvItem): Inventory | null {
   const out: Inventory = inv.map((s) => (s ? { ...s } : null));
   if (STACKABLE.has(give.item) && !give.lit) {
-    const t = out.findIndex((s) => s && s.item === give.item && !s.lit && !s.inPlayer && !!s.ass === !!give.ass && s.qty + give.qty <= 999);
+    const t = out.findIndex((s) => s && s.item === give.item && !s.lit && !s.inPlayer && !!s.ass === !!give.ass && s.giver === give.giver && s.qty + give.qty <= 999);
     if (t >= 0) { out[t]!.qty += give.qty; return out; }
   }
   const f = out.findIndex((s) => s === null);
@@ -297,7 +297,7 @@ export function mergeStacks(inv: Inventory): Inventory {
     if (!a || !STACKABLE.has(a.item) || a.lit || a.inPlayer) continue;
     for (let j = i + 1; j < out.length; j++) {
       const b = out[j];
-      if (b && b.item === a.item && !!b.ass === !!a.ass && !b.lit && !b.inPlayer) { a.qty += b.qty; out[j] = null; }
+      if (b && b.item === a.item && !!b.ass === !!a.ass && b.giver === a.giver && !b.lit && !b.inPlayer) { a.qty += b.qty; out[j] = null; }
     }
   }
   return compactInv(out);

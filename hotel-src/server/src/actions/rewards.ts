@@ -6,6 +6,7 @@ import { skipTime } from "../skipTime";
 import {
   addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabWaitAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
+import { parseHits, HIT_ONLINE_FRESH_MS } from "../../../src/shared/hits";
 import { BADTRIP_CHANCE, combine, DRUG_USE, fentanylDeathCost, findSlot, growMsOf, isLaced, PSYCHEDELICS, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
 import type { UseDef } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
@@ -110,13 +111,36 @@ export const dumpster: Action = {
 /** How long you are dead for after fentanyl (the browser shows the screen and then puts you back in your room). */
 export const FENT_DEATH_MS = 10_000;
 /** You died of fentanyl: the price in blood comes off (see fentanylDeathCost); `laced` is what killed you if it wasn't the plain fentanyl. */
-function fentDeath(c: import("../ctx").Ctx, s: { blood: number }, laced?: string): { kind: "fentdeath"; lost: number; ms: number; item?: string } {
+async function fentDeath(c: import("../ctx").Ctx, s: { blood: number }, laced?: string, giver?: string): Promise<{ kind: "fentdeath"; lost: number; ms: number; item?: string; bountyTo?: string; bounty?: number }> {
   const lost = fentanylDeathCost(s.blood, laced);
   s.blood -= lost;
   c.note = laced ? `laced ${unlaced(laced)}` : "fentanyl"; // (the blood ledger says what killed you)
   if (lost > 0) c.extra[`fentOwed/${c.uid}`] = { lost, at: c.now }; // (the blood falls on the floor where you go down: see fentDrop in floor.ts)
-  return { kind: "fentdeath", lost, ms: FENT_DEATH_MS, ...(laced ? { item: unlaced(laced) } : {}) };
+  // dying of a laced thing somebody handed you while there is a bounty on you: the one who handed it over is paid it, if they are online (if not, the bounty stays up)
+  let paid: { to: string; amount: number } | null = null;
+  if (laced && giver && giver !== c.uid) {
+    const hit = parseHits(await c.db.get("hits")).filter((h) => h.target === c.uid)[0]; // (the biggest, like a shot)
+    const seen = hit ? await c.db.get<number>(`presence/${giver}/seen`) : null;
+    if (hit && typeof seen === "number" && c.now - seen < HIT_ONLINE_FRESH_MS) {
+      const gw = await c.user(giver);
+      gw.s.blood += hit.amount;
+      c.extra[`hits/${hit.id}`] = null;
+      paid = { to: giver, amount: hit.amount };
+      c.note += ` (the ${hit.amount} bounty went to the one who gave it)`;
+    }
+  }
+  return { kind: "fentdeath", lost, ms: FENT_DEATH_MS, ...(laced ? { item: unlaced(laced) } : {}), ...(paid ? { bountyTo: paid.to, bounty: paid.amount } : {}) };
 }
+
+/** the locks for an action that may pay a giver: the giver's account and the bounties (the item is read from the slot before the locks are taken) */
+const lacedLocks = async (c: import("../ctx").Ctx, a: { slot?: unknown }): Promise<string[]> => {
+  try {
+    const slot = Number(a?.slot);
+    if (!Number.isInteger(slot) || slot < 0 || slot > 27) return [];
+    const it = (await c.user()).s.inventory[slot];
+    return it && isLaced(it.item) && it.giver && it.giver !== c.uid ? [`user:${it.giver}`, "hits"] : [];
+  } catch { return []; }
+};
 
 /** What a drug or a special weed does to you (shared/items.ts DRUG_USE and SMOKABLE): the timers it sets on the player. */
 function applyEffects(s: import("../../../src/shared/economy").Snapshot, now: number, d: UseDef & { deadly?: { n: number; ms: number } }): void {
@@ -131,6 +155,7 @@ function applyEffects(s: import("../../../src/shared/economy").Snapshot, now: nu
 
 /** Swallowing fentanyl (it kills you), or anything laced with it, or drinking the lean (the cup in your hand for 2 minutes, an hour of better bins). */
 export const consume: Action = {
+  locks: lacedLocks,
   async run(c, a) {
     const w = await c.user();
     const s = w.s;
@@ -139,7 +164,7 @@ export const consume: Action = {
     if (!it || it.inPlayer || it.lit) fail("You aren't carrying that.");
     if (it!.item === "superpill" || isLaced(it!.item)) { // fentanyl on its own kills, and so does anything that was laced with it
       s.inventory = takeOneFrom(s.inventory, slot);
-      return fentDeath(c, s, isLaced(it!.item) ? it!.item : undefined);
+      return await fentDeath(c, s, isLaced(it!.item) ? it!.item : undefined, it!.giver);
     }
     const badtrip = PSYCHEDELICS.has(it!.item) && ((isEmulator(c.env) && a.badtrip === true) || Math.random() < BADTRIP_CHANCE); // (one time in ten: the browser plays it out)
     if (it!.item === "shroom" || it!.item === "weakshroom") { // a weak shroom works the same, it just can't be mixed
@@ -179,13 +204,14 @@ export const consume: Action = {
 
 /** Lights a cigarette, joint or blunt (needs a lighter, which isn't used up). One at a time. */
 export const light: Action = {
+  locks: lacedLocks,
   async run(c, a) {
     const w = await c.user();
     const s = w.s;
     const slot = int(a.slot, 0, 27, "slot");
     const it = s.inventory[slot];
     if (!it || !SMOKABLE[it.item] || it.lit) fail("That can't be lit.");
-    if (isLaced(it!.item)) { s.inventory = takeOneFrom(s.inventory, slot); return fentDeath(c, s, it!.item); }
+    if (isLaced(it!.item)) { s.inventory = takeOneFrom(s.inventory, slot); return await fentDeath(c, s, it!.item, it!.giver); }
     if (findSlot(s.inventory, "lighter") < 0) fail("You need a lighter for that. The vending machine in the shop sells them.");
     if (s.inventory.some((x) => x && SMOKABLE[x.item] && x.lit && c.now - x.lit < smokeMsOf(x.item))) fail("You're already smoking one.");
     let next: Inventory;
@@ -236,7 +262,8 @@ export const combineItems: Action = {
     if (!res) fail("Those don't go together.");
     let next = takeOneFrom(w.s.inventory, ia);
     next = takeOneFrom(next, ib);
-    let added = addToInv(next, res!.give);
+    const handedBy = [x, y].find((i) => i && isLaced(i.item) && i.giver)?.giver; // (what you roll from a laced thing somebody gave you is still theirs to be paid for)
+    let added = addToInv(next, { ...res!.give, ...(handedBy && isLaced(res!.give.item) ? { giver: handedBy } : {}) });
     if (added && res!.back) added = addToInv(added, res!.back); // the watering can comes back empty
     if (!added) fail("Your inventory is full");
     w.s.inventory = added!;

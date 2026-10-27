@@ -1,7 +1,7 @@
 // Putting things on the floor and picking them up. Every pile lives at rooms/<room>/drops/<x>_<y>: the key is the tile, so a tile holds one pile.
 import { Action, cheb, int, isPublicRoom, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
-import { NO_DROP } from "../../../src/shared/items";
+import { isLaced, NO_DROP } from "../../../src/shared/items";
 import { addToInv, BULK_AT, DROP_LIFE_BULK_MS, DROP_LIFE_MS, takeQtyFrom } from "../../../src/shared/economy";
 
 interface DropRow { item: string; qty: number; ass?: boolean; x: number; y: number; by: string; byName?: string; at?: number; exp?: number }
@@ -93,7 +93,7 @@ export const pickup: Action = {
       c.extra[path] = null;
       return { item: "blood", qty: n };
     }
-    const next = addToInv(w.s.inventory, { item: d.item, qty: Math.max(1, Number(d.qty) || 1), ...(d.ass ? { ass: true } : {}) });
+    const next = addToInv(w.s.inventory, { item: d.item, qty: Math.max(1, Number(d.qty) || 1), ...(d.ass ? { ass: true } : {}), ...(isLaced(d.item) && typeof d.by === "string" && /^[A-Za-z0-9]{1,40}$/.test(d.by) && d.by !== c.uid ? { giver: d.by } : {}) }); // (a laced thing remembers who dropped it)
     if (!next) fail("Your inventory is full.");
     w.s.inventory = next!;
     c.extra[path] = null;

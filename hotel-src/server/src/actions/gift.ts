@@ -5,7 +5,7 @@
 import { Action, ID_RE, int, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
-import { NO_DROP, STACKABLE } from "../../../src/shared/items";
+import { isLaced, NO_DROP, STACKABLE } from "../../../src/shared/items";
 
 const UID_RE = /^[A-Za-z0-9]{1,40}$/;
 /** how many gifts can wait for one player at a time */
@@ -18,7 +18,7 @@ function intoPocket(c: Ctx, w: Awaited<ReturnType<Ctx["user"]>>, g: GiftRec): vo
   let inv = w.s.inventory;
   const parts = STACKABLE.has(g.item) ? [g.qty] : Array.from({ length: g.qty }, () => 1);
   for (const q of parts) {
-    const next = addToInv(inv, { item: g.item, qty: q, ...(g.ass ? { ass: true } : {}) });
+    const next = addToInv(inv, { item: g.item, qty: q, ...(g.ass ? { ass: true } : {}), ...(isLaced(g.item) && g.from !== c.uid ? { giver: g.from } : {}) });
     if (!next) return fail("Your pocket hasn't got room for it. Make some space first.");
     inv = next;
   }

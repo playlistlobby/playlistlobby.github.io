@@ -3,7 +3,7 @@
 import { Action, ID_RE, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, takeQtyFrom, TRADE_BLOOD_CAP, tradeBloodLeft, TRADE_BLOOD_WINDOW_MS } from "../../../src/shared/economy";
-import { NO_DROP } from "../../../src/shared/items";
+import { isLaced, NO_DROP } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
 interface Offer { blood: number; items: Array<{ slot: number; item: string; qty: number; ass: boolean }> }
@@ -45,7 +45,7 @@ export const tradeFinish: Action = {
       { w: wb, offer: parseOffer(t.offer?.[B]), other: wa, name: String(t.names?.[B] ?? "They") },
     ];
     // what each side hands over must really be in their pocket right now
-    const received = new Map<string, Array<{ item: string; qty: number; ass: boolean }>>([[A, []], [B, []]]);
+    const received = new Map<string, Array<{ item: string; qty: number; ass: boolean; giver: string }>>([[A, []], [B, []]]);
     for (const { w, offer, other } of sides) {
       if (offer.blood > w.s.blood) fail("Somebody doesn't have that much blood any more.");
       if (offer.blood > 0) {
@@ -60,7 +60,7 @@ export const tradeFinish: Action = {
         const have = inv[it.slot];
         if (!have || have.item !== it.item || have.qty < it.qty || have.lit || have.inPlayer || NO_DROP.has(have.item) || !!have.ass !== it.ass) fail("Something in a pocket changed, so the trade can't finish. Change your offer and try again.");
         inv = takeQtyFrom(inv, it.slot, it.qty);
-        received.get(other.uid)!.push({ item: it.item, qty: it.qty, ass: it.ass });
+        received.get(other.uid)!.push({ item: it.item, qty: it.qty, ass: it.ass, giver: w.uid });
       }
       w.s.inventory = inv;
       w.s.blood -= offer.blood;
@@ -70,7 +70,7 @@ export const tradeFinish: Action = {
     for (const { w, name } of sides) {
       let inv = w.s.inventory;
       for (const r of received.get(w.uid)!) {
-        const next = addToInv(inv, { item: r.item, qty: r.qty, ...(r.ass ? { ass: true } : {}) });
+        const next = addToInv(inv, { item: r.item, qty: r.qty, ...(r.ass ? { ass: true } : {}), ...(isLaced(r.item) ? { giver: r.giver } : {}) }); // (a laced thing remembers who handed it over)
         if (!next) fail(`${w.uid === c.uid ? "Your" : `${name}'s`} pocket hasn't got room for all of it. Make some space.`);
         inv = next!;
       }

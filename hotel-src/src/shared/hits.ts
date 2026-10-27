@@ -27,13 +27,13 @@ export const SHOT_RANGE = 8;
 export interface Hit { id: string; target: string; targetName: string; amount: number; by: string; byName: string; hideout: string; hideoutName: string; at: number }
 
 /**
- * What a shot costs the one who is hit, and how long they are dead for. With a hit on them: they drop 20 blood (100 with more than 1000, 200 with more than 5000) and are dead for a minute.
+ * What a shot costs the one who is hit, and how long they are dead for. With a hit on them: they drop 20 blood (100 with more than 1000, 200 with more than 5000) and are dead for two minutes.
  * Without one: they drop 5 (10 / 25) and are dead for 10 seconds. The blood falls on the floor where they stood.
  */
 export function shotLoss(blood: number, hasHit: boolean): { drop: number; secs: number } {
   const b = Math.max(0, Math.floor(blood));
   const want = hasHit ? (b > 5000 ? 200 : b > 1000 ? 100 : 20) : (b > 5000 ? 25 : b > 1000 ? 10 : 5);
-  return { drop: Math.min(want, b), secs: hasHit ? 60 : 10 };
+  return { drop: Math.min(want, b), secs: hasHit ? 120 : 10 }; // (only somebody with a bounty can be shot now: they are down for 2 minutes)
 }
 
 /** the open hits turned into a list per target: the biggest bounty (what a shot claims) and how many there are */

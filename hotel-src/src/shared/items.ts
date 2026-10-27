@@ -51,6 +51,8 @@ export interface InvItem {
   lit?: number;
   /** bad weed ("ass weed", from a plant that ran dry): passes on to what you roll from it */
   ass?: boolean;
+  /** a laced thing remembers who handed it over (a trade, a gift, a pick-up off the floor): if it kills you while you have a bounty, the giver is paid it. Not set when you made it yourself. */
+  giver?: string;
 }
 export type Inventory = Array<InvItem | null>;
 
@@ -69,7 +71,7 @@ export function parseInventoryWith(raw: unknown, valid: (id: string) => boolean)
   for (const [k, v] of Object.entries(raw as Record<string, InvItem | null>)) {
     const slot = Number(k);
     if (v && slot >= 0 && slot < INV_SIZE && valid(v.item) && !DISABLED_ITEMS.has(v.item)) {
-      inv[slot] = { item: v.item, qty: v.qty ?? 1, ...(v.inPlayer ? { inPlayer: typeof v.inPlayer === "string" ? v.inPlayer : true } : {}), ...(typeof v.lit === "number" ? { lit: v.lit } : {}), ...(v.ass ? { ass: true } : {}) };
+      inv[slot] = { item: v.item, qty: v.qty ?? 1, ...(v.inPlayer ? { inPlayer: typeof v.inPlayer === "string" ? v.inPlayer : true } : {}), ...(typeof v.lit === "number" ? { lit: v.lit } : {}), ...(v.ass ? { ass: true } : {}), ...(typeof v.giver === "string" && /^[A-Za-z0-9]{1,40}$/.test(v.giver) ? { giver: v.giver } : {}) };
     }
   }
   return inv;
