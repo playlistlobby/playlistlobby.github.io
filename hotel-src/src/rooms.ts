@@ -40,7 +40,7 @@ export interface FurniKind {
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
   /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
   wallArt?: { left: number; back: number };
-  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits";
+  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits" | "board";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -128,6 +128,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // posters: a frame on the wall; the picture inside is the player's own (chosen when it is hung). The one in the shop room is for sale.
   f_poster: { id: "f_poster", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: true, nitro: "furni/poster.nitro", rotatable: true, flat: true, wall: true, poster: true, nudge: { x: 0, y: -52 } },
   // the notice board by the hideouts: who has blood on their head (drawn by the room itself: names and bounties, black and white); tap it for the list
+  discordboard: { id: "discordboard", label: "Notice board", icon: "📢", w: 1, h: 1, height: 60, color: "#2f6fd0", placeable: false, nitro: "derived:blue_board", rotatable: true, flat: true, wall: true, wallArt: { left: 0, back: 2 }, opens: "board" },
   wantedboard: { id: "wantedboard", label: "Wanted board", icon: "📋", w: 1, h: 1, height: 60, color: "#777777", placeable: false, nitro: "derived:wanted_board", rotatable: true, flat: true, wall: true, wallArt: { left: 0, back: 2 }, opens: "hits" },
   shopposter: { id: "shopposter", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: false, nitro: "furni/poster.nitro", rotatable: true, fixed: true, flat: true, wall: true, poster: true, opens: "poster", nudge: { x: 0, y: -52 } },
   // the record player on the counter at the left of the shop room: the CDs are sold here
@@ -331,6 +332,8 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby13", kind: "sink", x: 0, y: 4, dir: 2 },
   // the wanted board next to the door to the hideouts
   { id: "lobby14", kind: "wantedboard", x: 0, y: 20, dir: 2 },
+  // the blue notice board (the Discord): the admin writes on it, and moves it where he wants it
+  { id: "lobby15", kind: "discordboard", x: 0, y: 2, dir: 2 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);

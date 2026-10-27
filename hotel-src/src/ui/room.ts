@@ -156,6 +156,7 @@ import { BADTRIP_LINES, BADTRIP_MS, BADTRIP_RUN_MS, BADTRIP_SLEEP_MS } from "../
 import { bountiesOf } from "../shared/hits";
 import type { Hit } from "../shared/hits";
 import { openWantedBoard } from "./wantedBoard";
+import { openDiscordBoard } from "./discordBoard";
 import { drawGun, drawMuzzleFlash, GUN_K } from "./rouletteFx";
 import { setAmbience, setShopMusic } from "../ambience";
 import type { Ctx } from "../main";
@@ -573,6 +574,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let hitsOpen: Hit[] = [];
   const stopHits = watchHits((l) => { hitsOpen = l; bounties = bountiesOf(l); });
   let wantedApi: { close(): void } | null = null;
+  let noticeApi: { close(): void } | null = null;
   let shootBox: HTMLElement | null = null;
   let shootUid = "";
   let rocketAt = 0; // when you last fired the rocket launcher
@@ -810,6 +812,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind!]?.opens === "poker" || FURNI_KINDS[hoverObj.kind!]?.opens === "blackjack")) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to play`;
     else if (hoverObj && hoverObj.kind === "wantedboard") text = "Wanted board";
+    else if (hoverObj && hoverObj.kind === "discordboard") text = "Notice board";
     else if (hoverObj && hoverObj.kind === "hchest") text = "Shared stash";
     else if (hoverObj && hoverObj.kind === "bagman") text = "bagmand: poppy seeds, blue weed. He buys opium and what is mixed from it";
     else if (hoverObj && hoverObj.kind === "bed") text = mine()?.lying ? "Your bed: get up" : "Your bed: lie down";
@@ -1120,7 +1123,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || obj.kind === "wantedboard") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
@@ -1183,6 +1186,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
     if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
     if (obj?.kind === "wantedboard") opts.push({ label: "Open", target: "Wanted board", action: () => startBag(obj.id) });
+    if (obj?.kind === "discordboard") opts.push({ label: "Open", target: "Notice board", action: () => startBag(obj.id) });
     if (obj?.kind === "ducky") opts.push({ label: "Shop", target: "pay2win", action: () => startBag(obj.id) });
     if (obj?.kind === "gacha" || obj?.kind === "raffletable") opts.push({ label: "Raffle", target: "Royal gacha", action: () => startBag(obj.id) });
     if (obj?.kind === "mrock") opts.push({ label: "Mine", target: "Iron rock", action: () => startMine(obj.id) });
@@ -2134,6 +2138,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }, tableChat); }
         else if (opens === "blackjack") { if (!bjApi) bjApi = openBlackjack(stage, ctx, roomId, f.id, () => panel.refresh(), () => { bjApi = null; }, tableChat); }
         else if (opens === "hits") openWanted();
+        else if (opens === "board") openNotice();
         else if (opens === "hideouts") { if (!hideoutDoorApi) hideoutDoorApi = openHideoutDoor(stage, ctx, () => { hideoutDoorApi = null; }); }
         else if (opens === "ducky") openDucky();
         else if (opens === "raffle") openRaffle();
@@ -4238,6 +4243,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     stage.append(shootBox);
   }
   function openWanted(): void { if (!wantedApi) wantedApi = openWantedBoard(document.body, () => { wantedApi = null; }); }
+  function openNotice(): void { if (!noticeApi) noticeApi = openDiscordBoard(document.body, ctx, () => { noticeApi = null; }); }
 
   function drawPlanter(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
@@ -4608,8 +4614,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.restore();
       } else b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now), f.kind === "rchair" ? "back" : undefined); // (a roulette chair's backrest is drawn after the player in it: see below)
       if (lift) { g.restore(); if (b) { b.y0 -= lift * scale; b.y1 -= lift * scale; } }
-      if (b && (f.kind === "ideaboard" || f.kind === "wantedboard") && !furnishOn) { // the ideas board glows a little (more when you point at it), so people notice it is there (the wanted board glows red)
-        const red = f.kind === "wantedboard";
+      if (b && (f.kind === "ideaboard" || f.kind === "wantedboard" || f.kind === "discordboard") && !furnishOn) { // the ideas board glows a little (more when you point at it), so people notice it is there (the wanted board glows red)
+        const red = f.kind === "wantedboard", blue = f.kind === "discordboard";
         const hot = !!f.id && hoverObj?.id === f.id;
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
         const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, r = 44 * scale * (hot ? 1.3 : 1);
@@ -4617,8 +4623,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.globalCompositeOperation = "lighter";
         const halo = g.createRadialGradient(cx, cy, 3 * scale, cx, cy, r);
         const a = 0.14 + 0.06 * pulse + (hot ? 0.16 : 0);
-        halo.addColorStop(0, red ? `rgba(255,60,50,${(a + 0.06).toFixed(2)})` : `rgba(255,214,70,${a.toFixed(2)})`);
-        halo.addColorStop(1, red ? "rgba(255,50,40,0)" : "rgba(255,200,40,0)");
+        halo.addColorStop(0, red ? `rgba(255,60,50,${(a + 0.06).toFixed(2)})` : blue ? `rgba(70,150,255,${(a + 0.06).toFixed(2)})` : `rgba(255,214,70,${a.toFixed(2)})`);
+        halo.addColorStop(1, red ? "rgba(255,50,40,0)" : blue ? "rgba(60,140,255,0)" : "rgba(255,200,40,0)");
         g.fillStyle = halo;
         g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
         g.restore();
@@ -5251,7 +5257,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -5963,6 +5969,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     pokerApi?.close();
     bjApi?.close();
     wantedApi?.close();
+    noticeApi?.close();
     closeShootBox();
     stopHits();
     stopPokerSeat();

@@ -80,6 +80,19 @@ console.log("--- the machine: paying and getting");
   check("the purchase is on record: 30 kr, claimed", pur.length === 1 && pur[0].amount === 3000 && pur[0].status === "claimed", JSON.stringify(pur));
   bad("only once", await pay(a, "starter"));
   bad("and the free machine does not give it", await act(a, "duckyBuy", { product: "starter" }));
+  { // the keys: 5 for 30 kr, or 1 for 10 kr (as often as you like)
+    const k = await fresh("t_dk_keys", { blood: 0 });
+    await inShop(k);
+    const keysOf = async () => Object.values((await owner("GET", `users/${k.uid}/inventory`)) ?? {}).reduce((n, x) => n + (x && x.item === "casekey" ? x.qty : 0), 0);
+    const p5 = await pay(k, "keys");
+    ok("5 keys are bought", p5);
+    check("5 keys in the pocket", (await keysOf()) === 5, String(await keysOf()));
+    const p1 = await pay(k, "key1");
+    ok("1 key is bought", p1);
+    check("6 keys now", (await keysOf()) === 6, String(await keysOf()));
+    const recs = Object.values((await owner("GET", `purchases`)) ?? {}).filter((x) => x.uid === k.uid);
+    check("5 keys cost 30 kr and 1 key costs 10 kr", recs.some((x) => x.product === "ducky_keys" && x.amount === 3000) && recs.some((x) => x.product === "ducky_key1" && x.amount === 1000), JSON.stringify(recs));
+  }
   const items = [];
   for (let i = 0; i < 24; i++) items.push([i, { item: "wateringcan", qty: 1 }]);
   items.push([24, { item: "lighter", qty: 1 }], [25, { item: "knife", qty: 1 }], [26, { item: "cd", qty: 1 }], [27, { item: "syringe", qty: 1 }]);

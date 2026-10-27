@@ -13060,8 +13060,8 @@
   "where": "src/items.ts:471"
  },
  "N2081": {
-  "en": "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (3 for 25 kr). One key opens one box.",
-  "da": "En nøgle til en mysteriekasse. 6ixty sælger dem, og det gør pay2win-maskinen i butikken også (3 for 25 kr). Én nøgle åbner én kasse.",
+  "en": "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (5 for 30 kr, or 1 for 10 kr). One key opens one box.",
+  "da": "En nøgle til en mysteriekasse. 6ixty sælger dem, og det gør pay2win-maskinen i butikken også (5 for 30 kr eller 1 for 10 kr). Én nøgle åbner én kasse.",
   "where": "src/items.ts:479"
  },
  "N534": {
@@ -13128,5 +13128,60 @@
   "en": "A purple CD: yungxware - russisk roulette, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
   "da": "En lilla cd: yungxware - russisk roulette, fra pladekassen i butikken. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
   "where": "src/items.ts"
+ },
+ "N547": {
+  "en": "📢 Notice board",
+  "da": "📢 Opslagstavle",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N548": {
+  "en": "Notice board",
+  "da": "Opslagstavle",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N549": {
+  "en": "Nothing is written on the board yet.",
+  "da": "Der står ikke noget på tavlen endnu.",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N550": {
+  "en": "Open the link",
+  "da": "Åbn linket",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N551": {
+  "en": "Edit the board",
+  "da": "Rediger tavlen",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N552": {
+  "en": "Title (Discord)",
+  "da": "Titel (Discord)",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N553": {
+  "en": "What the board says",
+  "da": "Hvad tavlen siger",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N554": {
+  "en": "Link (https)",
+  "da": "Link (https)",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N555": {
+  "en": "The board is updated.",
+  "da": "Tavlen er opdateret.",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N556": {
+  "en": "The link has to start with https:// and can't have spaces.",
+  "da": "Linket skal starte med https:// og må ikke have mellemrum.",
+  "where": "src/ui/discordBoard.ts"
+ },
+ "N557": {
+  "en": "Bad text.",
+  "da": "Dårlig tekst.",
+  "where": "src/ui/discordBoard.ts"
  }
 }

@@ -16,6 +16,7 @@ import { cdControl, cdInsert, cdReturn } from "./cd";
 import { mix, mixCollect } from "./mixer";
 import { pokerAct, pokerLeave, pokerSit, pokerTick } from "./poker";
 import { gunShoot, hitPlace, hitSearch, rocketFire } from "./hits";
+import { boardSet } from "./board";
 import { bjAct, bjBet, bjDealer, bjLeave, bjSit, bjTickAction } from "./blackjack";
 import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick } from "./roulette";
 import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
@@ -43,7 +44,7 @@ export const ACTIONS: Record<string, Action> = {
   cdInsert, cdReturn, cdControl, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   pokerSit, pokerAct, pokerLeave, pokerTick,
-  hitPlace, hitSearch, gunShoot, rocketFire,
+  hitPlace, hitSearch, gunShoot, rocketFire, boardSet,
   bjSit, bjBet, bjAct, bjLeave, bjDealer, bjTick: bjTickAction,
   ideaPost, ideaComment, ideaLike, ideaDelete,
   duckyBuy, rollDice, register,

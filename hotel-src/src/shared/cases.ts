@@ -1,5 +1,5 @@
 // Mystery boxes and keys (like cases and case keys in CS:GO): a box you find in the bins, a key you buy from 6ixty (200 blood) or in the Ducky machine
-// (3 for 25 kr). A key opens one box. Pure data and rules: the browser (the opening window) and the server (the roll: server/src/actions/cases.ts) use it.
+// (5 for 30 kr, or 1 for 10 kr). A key opens one box. Pure data and rules: the browser (the opening window) and the server (the roll: server/src/actions/cases.ts) use it.
 import { SHOP_PIECES } from "./furniture";
 import { UNUSUAL_FX, type UnusualEffect } from "./unusualFx";
 import { PET_COLORS, PET_TYPES } from "./pets";
@@ -8,9 +8,11 @@ import { RAFFLE_POOL } from "./raffle";
 
 export const CASE_ITEM = "mysterycase";
 export const KEY_ITEM = "casekey";
-/** what a key costs from 6ixty (blood), and what the Ducky machine sells (3 keys for 25 kr) */
+/** what a key costs from 6ixty (blood), and what the Ducky machine sells (5 keys for 30 kr, or 1 for 10 kr) */
 export const CASE_KEY_PRICE = 250;
-export const KEYS_PACK = { qty: 3, ore: 2500 };
+export const KEYS_PACK = { qty: 5, ore: 3000 };
+/** one key on its own */
+export const KEY_SINGLE = { qty: 1, ore: 1000 };
 /** the chance (in percent) that a search of a bin finds a box */
 export const CASE_BIN_CHANCE = 5;
 

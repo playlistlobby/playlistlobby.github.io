@@ -136,6 +136,9 @@
     "hideoutList": {
       ".read": "@PW@"
     },
+    "discordBoard": {
+      ".read": "@PW@"
+    },
     "loudspeaker": {
       "$uid": {
         ".read": "@PW@ && auth.uid === $uid"

@@ -3,7 +3,7 @@
 import { claimPurchases } from "./db";
 import type { Profile } from "./db";
 import { itemDef } from "./items";
-import { KEYS_PACK } from "./shared/cases";
+import { KEYS_PACK, KEY_SINGLE } from "./shared/cases";
 import { toast } from "./ui/dom";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => window.setTimeout(r, ms));
@@ -22,6 +22,7 @@ export async function collectPaidCds(p: Profile): Promise<void> {
         if (d.stuck) { toast(`${d.stuck} Your payment is safe: tell the admin and you get it sorted.`, "err"); continue; }
         if (d.product === "starter") toast("The starter package is in your pockets, and 50 blood.");
         else if (d.product === "keys") toast(`${KEYS_PACK.qty} box keys are in your pockets.`);
+        else if (d.product === "key1") toast(`${KEY_SINGLE.qty} box key is in your pocket.`);
         else if (d.product === "color" && d.color) { p.nameColor = d.color; window.dispatchEvent(new CustomEvent("name-color", { detail: d.color })); toast("Your name has a colour now."); }
         else if (d.product === "fx") toast("The chat tool is yours: tap the ✨ next to the chat bar.");
         else if (d.product === "rename" && d.name) { toast(`You are ${d.name} now. The page reloads.`); window.setTimeout(() => window.location.reload(), 1600); }
