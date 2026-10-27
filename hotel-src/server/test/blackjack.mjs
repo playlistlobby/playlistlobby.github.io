@@ -273,7 +273,7 @@ console.log("--- auto-deal: the dealer's switch (the table plays the dealer's cl
   ok("b sits", await sit(b, 2));
   bad("a player can't switch it on", await act(a, "bjDealer", { room: ROOM, fid: "bt1", op: "auto", on: true }));
   ok("the dealer switches it on", await d("auto", { on: true }));
-  check("it is written on the table, for 15 minutes", (await tbl()).auto === true && (await tbl()).autoUntil > Date.now() + 14 * 60_000 && (await tbl()).autoUntil < Date.now() + 16 * 60_000, JSON.stringify((await tbl()).autoUntil));
+  check("it is written on the table, with no time limit", (await tbl()).auto === true && (await tbl()).autoUntil === undefined);
   const back = (ms) => owner("PATCH", `blackjack/${KEY}`, { dealerAt: Date.now() - ms });
   await tick(a);
   check("a round does not open before the pause", (await tbl()).phase === "idle");
@@ -304,14 +304,9 @@ console.log("--- auto-deal: the dealer's switch (the table plays the dealer's cl
   await back(3000);
   ok("and the next round opens by itself", await tick(a));
   check("a new round is open", (await tbl()).phase === "betting" && (await tbl()).round === r1 + 1);
-  // a dealer who walked away: the 15 minutes run out and no new round opens (a round already going plays itself out)
-  await owner("PATCH", `blackjack/${KEY}`, { phase: "idle", dealerAt: Date.now() - 5000, autoUntil: Date.now() - 1000 });
-  await tick(a);
-  check("auto-deal that has run out opens no new round", (await tbl()).phase === "idle" && (await tbl()).auto === true, (await tbl()).phase);
-  ok("the dealer presses keep going", await d("auto", { on: true }));
-  check("another 15 minutes", (await tbl()).autoUntil > Date.now() + 14 * 60_000);
-  await owner("PATCH", `blackjack/${KEY}`, { dealerAt: Date.now() - 5000 });
-  ok("and the next round opens", await tick(a));
+  // there is no time limit: it keeps opening rounds for as long as it is on and somebody sits
+  await owner("PATCH", `blackjack/${KEY}`, { phase: "idle", dealerAt: Date.now() - 5000 });
+  ok("the next round opens by itself, however long it has been on", await tick(a));
   check("a round is open", (await tbl()).phase === "betting");
   ok("the dealer switches it off", await d("auto", { on: false }));
   check("it is off", (await tbl()).auto !== true);
