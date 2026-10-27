@@ -19,7 +19,7 @@ async function openVisit(c: Ctx): Promise<number> {
   let start = currentVisit(c.now);
   if (start === null) { // (an admin can ask him to stay on a while longer: bagmand/stayUntil, a time in ms; it carries on the visit that started last)
     const stay = await c.db.get<number>("bagmand/stayUntil");
-    if (typeof stay === "number" && c.now < stay) start = lastVisit(c.now);
+    if (typeof stay === "number" && c.now < stay) start = lastVisit(c.now) + VISIT_MS; // (the time he stays on is a visit of its own with fresh stock: it starts when the last one ended)
   }
   if (start === null) fail("Bagmand isn't here. He comes at 01:00, 10:00 and 15:00 for an hour.");
   return start!;

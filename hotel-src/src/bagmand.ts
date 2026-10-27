@@ -44,11 +44,11 @@ export function visitNow(): number | null {
   if (forced === 1) return Math.floor(now / VISIT_MS) * VISIT_MS; // (a test: bagmand/force = 1 keeps him here round the clock, with fresh stock every hour)
   if (forced !== null && now >= forced && now < forced + VISIT_MS) return forced;
   const start = currentVisit(now);
-  if (start === null && stayUntil !== null && now < stayUntil) return lastVisit(now);
+  if (start === null && stayUntil !== null && now < stayUntil) return lastVisit(now) + VISIT_MS; // (a visit of its own, with fresh stock)
   return start;
 }
 /** when the open visit ends (ms) */
-export const visitEnd = (start: number): number => (stayUntil !== null && stayUntil > start + VISIT_MS && serverNow() < stayUntil ? stayUntil : start + VISIT_MS);
+export const visitEnd = (start: number): number => (stayUntil !== null && stayUntil > start && serverNow() < stayUntil ? stayUntil : start + VISIT_MS);
 
 /** how many of a limited thing THIS player may still buy in this visit (null: no limit): the limit is per player */
 export function stockLeft(item: string, start: number, uid: string): number | null {
