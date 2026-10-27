@@ -376,6 +376,7 @@ console.log("--- the list at the door");
   const row2 = await owner("GET", `hideoutList/${lo.uid}`);
   check("it adds up", row2.boostUntil > row.boostUntil + 21_000_000);
   bad("only the owner boosts", await act(ls, "hideoutBoost"));
+  await owner("DELETE", `hideoutFavs/${ls.uid}`); await owner("DELETE", `roomsMeta/h_${lo.uid}/favs`); await owner("DELETE", `hideoutList/${lo.uid}/favs`); // (a clean start: earlier runs left favourites behind)
   const fv = await act(ls, "hideoutFavorite", { owner: lo.uid });
   ok("ls makes it a favourite", fv);
   check("the list counts it", (await owner("GET", `hideoutList/${lo.uid}/favs`)) === 1 && (await owner("GET", `hideoutFavs/${ls.uid}/${lo.uid}`)) === true, JSON.stringify(fv.data));

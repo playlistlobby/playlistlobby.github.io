@@ -47,28 +47,23 @@ const clientWrite = (u, path, v) => fetch(`${DB}/${path}.json?ns=${NS}&auth=${u.
 const refused = (r) => r.status === 401 || r.status === 403;
 const sleep = (ms) => new Promise((x) => setTimeout(x, ms));
 
-console.log("--- buying the dice from bagmand (500 blood)");
+console.log("--- nobody sells dice any more (the ones people have stay with them)");
 await owner("PUT", "bagmand/force", 1); // (a test: he is always there)
 const inLobby = async (u) => { await act(u, "sync"); await stand(u, "lobby", 4, 4); };
 const a = await fresh("t_dice_a", { blood: 520, createdAt: Date.now() - 3_600_000 });
 await act(a, "sync");
-bad("not from across the map", await act(a, "bagmandBuy", { item: "dice" })); // (not standing in the basement)
 await inLobby(a);
-ok("buy", await act(a, "bagmandBuy", { item: "dice" }));
+bad("bagmand does not sell dice", await act(a, "bagmandBuy", { item: "dice" }));
+check("nothing was taken", (await state(a)).blood === 520 && total((await state(a)).inventory, "dice") === 0);
+await owner("PUT", `users/${a.uid}/blood`, 20);
+await owner("PUT", `users/${a.uid}/inventory`, { 0: { item: "dice", qty: 1 } }); // (a die somebody bought before)
 let st = await state(a);
-check("500 blood gone, 20 left", st.blood === 20, String(st.blood));
 check("one die in the pocket", total(st.inventory, "dice") === 1);
-bad("20 blood is not enough for another", await act(a, "bagmandBuy", { item: "dice" }));
-check("and nothing was taken", (await state(a)).blood === 20 && total((await state(a)).inventory, "dice") === 1);
 const noPay = await fetch(`${API}/pay/checkout`, { method: "POST", headers: { authorization: `Bearer ${a.token}`, "content-type": "application/json" }, body: JSON.stringify({ product: "ducky_dice" }) });
 check("the payment page does not sell it", noPay.status >= 400);
 await stand(a, "shop", 3, 3);
 bad("the pay2win machine doesn't sell it any more", await act(a, "duckyBuy", { product: "dice" }));
 bad("6ixty does not sell it", await act(a, "buySixty", { item: "dice" }));
-const full = await fresh("t_dice_full", { blood: 600, inventory: Object.fromEntries(Array.from({ length: 28 }, (_, i) => [i, { item: "wateringcan", qty: 1 }])) });
-await inLobby(full);
-bad("a full pocket keeps the blood", await act(full, "bagmandBuy", { item: "dice" }));
-check("(still 600)", (await state(full)).blood === 600);
 
 console.log("--- rolling");
 const lobby = (u) => stand(u, "lobby", 4, 4);
