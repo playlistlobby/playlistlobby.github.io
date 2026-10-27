@@ -1505,3 +1505,19 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .nb-row { display: flex; gap: 8px; justify-content: flex-end; }
 
 .fb-del.fb-shadow { margin-left: 4px; border-color: #3b3b55; background: linear-gradient(#a9a9d6, #6a6aa8 49%, #55558f 51%, #6a6aa8); }
+
+/* the colour wheel (wardrobe and clothes shop) */
+.swatch-wheel { background: conic-gradient(#f33, #fc3, #6d3, #3cf, #63f, #f3c, #f33); }
+.swatch-wheel.open { outline: 2px solid #2a64d6; outline-offset: 1px; }
+.wheel-host:empty { display: none; }
+.wheel-panel { margin: 0 0 10px; padding: 8px; border: 1px solid rgba(0, 0, 0, .25); border-radius: 8px; background: rgba(255, 255, 255, .45); display: grid; justify-items: center; gap: 8px; }
+.cw { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; }
+.cw-wheel { position: relative; width: 150px; height: 150px; touch-action: none; }
+.cw-disc { width: 150px; height: 150px; display: block; border-radius: 50%; cursor: crosshair; box-shadow: 0 1px 4px rgba(0, 0, 0, .35); touch-action: none; }
+.cw-knob { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .7); pointer-events: none; }
+.cw-side { display: grid; gap: 6px; min-width: 120px; }
+.cw-label { font-size: 12px; color: var(--muted); }
+.cw-bright { width: 100%; }
+.cw-row { display: flex; gap: 6px; align-items: center; }
+.cw-chip { width: 26px; height: 26px; border-radius: 5px; border: 1px solid rgba(0, 0, 0, .55); flex: 0 0 auto; }
+.cw-hex { width: 90px; font-family: monospace; }

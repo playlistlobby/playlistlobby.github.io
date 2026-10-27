@@ -212,7 +212,7 @@ export function defaultColors(item: Item, previous?: FigurePart): string[] {
   const out: string[] = [];
   for (let i = 0; i < item.colors; i++) {
     const prev = previous?.colors[i];
-    out.push(prev && sw.some((s) => s.id === prev) ? prev : sw[Math.min(i * 3, sw.length - 1)]?.id ?? "1");
+    out.push(prev && (sw.some((s) => s.id === prev) || /^x[0-9a-f]{6}$/i.test(prev)) ? prev : sw[Math.min(i * 3, sw.length - 1)]?.id ?? "1");
   }
   return out;
 }

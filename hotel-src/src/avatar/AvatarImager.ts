@@ -495,6 +495,7 @@ export default class AvatarImager {
     }
 
     getColorByPaletteId(paletteId: string, colorId: string): any {
+        if (typeof colorId === "string" && /^x[0-9a-fA-F]{6}$/.test(colorId)) return colorId.slice(1).toUpperCase(); // a custom colour from the colour wheel
         if (this.figuredata['palette'][paletteId] != null && this.figuredata['palette'][paletteId][colorId] != null && this.figuredata['palette'][paletteId][colorId]['color'] != null) {
             return this.figuredata['palette'][paletteId][colorId]['color'];
         }

@@ -13338,5 +13338,20 @@
   "en": "You haven't got that.",
   "da": "Det har du ikke.",
   "where": "server/src/actions/rewards.ts"
+ },
+ "N2113": {
+  "en": "Colour wheel",
+  "da": "Farvehjul",
+  "where": "src/ui/editor.ts"
+ },
+ "N2114": {
+  "en": "Brightness",
+  "da": "Lysstyrke",
+  "where": "src/ui/editor.ts"
+ },
+ "N2115": {
+  "en": "Hex colour",
+  "da": "Hex-farve",
+  "where": "src/ui/editor.ts"
  }
 }

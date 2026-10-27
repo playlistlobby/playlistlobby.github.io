@@ -61,7 +61,7 @@ export const sync: Action = {
 /** Saves the look. Anything that costs drops must already be owned (the admin can wear anything). */
 export const setLook: Action = {
   async run(c, a) {
-    const figure = text(a.figure, /^[a-z]{2}-[0-9]{1,7}(-[0-9]{1,5})*(\.[a-z]{2}-[0-9]{1,7}(-[0-9]{1,5})*)*$/, "look");
+    const figure = text(a.figure, /^[a-z]{2}-[0-9]{1,7}(-([0-9]{1,5}|x[0-9a-f]{6}))*(\.[a-z]{2}-[0-9]{1,7}(-([0-9]{1,5}|x[0-9a-f]{6}))*)*$/, "look");
     if (figure.length > 190) fail("Bad look.");
     const gender = a.gender === "F" ? "F" : "M";
     const w = await c.user();

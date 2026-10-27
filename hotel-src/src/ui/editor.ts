@@ -21,6 +21,7 @@ import { playSfx } from "../sfx";
 import { saveSixtyLook, SIXTY, sixtyLook } from "../npc";
 import type { Ctx } from "../main";
 import { unusualPanel } from "../unusual";
+import { createColorWheel } from "./colorWheel";
 
 /** customize = your own look (owned items), shop = try and buy, npc = the admin dressing 6ixty (every item, nothing owned or bought) */
 export type EditorMode = "customize" | "shop" | "npc";
@@ -56,6 +57,8 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   const nameTag = h("div", { class: "preview-name" }, mode === "npc" ? SIXTY.name : profile.name);
   const tabsEl = h("div", { class: "tabs" });
   const colorsEl = h("div", { class: "colors" });
+  const wheelEl = h("div", { class: "wheel-host" }); // (the colour wheel opens here, under the colours)
+  let wheelFor: number | null = null;
   const gridEl = h("div", { class: "grid" });
   const pagerEl = h("div", { class: "pager" });
   const footerEl = h("div", { class: "editor-footer" });
@@ -74,7 +77,7 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
           h("button", { class: "btn small", title: "Turn right", onclick: () => rotate(1) }, "⟳")),
         ...(mode === "customize" ? [unusualBox.el] : []),
         ...(mode === "shop" ? [footerEl] : []),
-        genderEl, tabsEl, colorsEl, gridEl, pagerEl,
+        genderEl, tabsEl, colorsEl, wheelEl, gridEl, pagerEl,
         ...(mode === "shop" ? [] : [footerEl]))));
 
   // ---- preview ---------------------------------------------------------------
@@ -107,23 +110,47 @@ export function mountEditor(root: HTMLElement, ctx: Ctx, mode: EditorMode): () =
   }
 
   // ---- colors ----------------------------------------------------------------
+  const isCustom = (id: string | undefined): boolean => !!id && /^x[0-9a-f]{6}$/i.test(id);
+  let gridTimer = 0;
   function renderColors(): void {
     colorsEl.replaceChildren();
+    wheelEl.replaceChildren();
     const part = parts[slotId];
     const item = part && findItem(slotId, part.id);
-    if (!part || !item || item.colors === 0) return;
+    if (!part || !item || item.colors === 0) { wheelFor = null; return; }
+    if (wheelFor !== null && wheelFor >= item.colors) wheelFor = null;
     const sw = swatchesFor(slotId);
     for (let i = 0; i < item.colors; i++) {
+      const cur = part.colors[i];
+      const custom = isCustom(cur);
       colorsEl.append(
         h("div", { class: "swatch-row" },
           item.colors > 1 ? h("span", { class: "swatch-label" }, `Color ${i + 1}`) : null,
           ...sw.map((c) =>
             h("button", {
-              class: "swatch" + (part.colors[i] === c.id ? " on" : ""),
+              class: "swatch" + (cur === c.id ? " on" : ""),
               style: { background: "#" + c.hex },
               title: "#" + c.hex,
               onclick: () => { part.colors[i] = c.id; drawPreview(); renderColors(); renderGrid(); },
-            }))));
+            })),
+          custom ? h("button", { class: "swatch on", style: { background: "#" + cur.slice(1) }, title: "#" + cur.slice(1), onclick: () => { wheelFor = wheelFor === i ? null : i; renderColors(); } }) : null,
+          h("button", { class: "swatch swatch-wheel" + (wheelFor === i ? " open" : ""), title: "Any colour", "aria-label": "Colour wheel", onclick: () => { wheelFor = wheelFor === i ? null : i; renderColors(); } })));
+    }
+    if (wheelFor !== null) {
+      const i = wheelFor;
+      const cur = part.colors[i];
+      const start = isCustom(cur) ? cur.slice(1) : sw.find((c) => c.id === cur)?.hex ?? "8899aa";
+      const wheel = createColorWheel(start, (hex) => {
+        part.colors[i] = "x" + hex;
+        drawPreview();
+        // the swatch row shows the colour that was picked (updated in place: the wheel stays where it is while it is dragged); the item grid follows a moment after
+        const chip = colorsEl.querySelectorAll(".swatch-row")[i]?.querySelector<HTMLElement>(".swatch.on");
+        if (chip && !chip.classList.contains("swatch-wheel") && !sw.some((c) => c.id === cur)) chip.style.background = "#" + hex;
+        window.clearTimeout(gridTimer);
+        gridTimer = window.setTimeout(() => { const keep = wheelFor; renderGrid(); wheelFor = keep; }, 250);
+      });
+      wheelEl.append(h("div", { class: "wheel-panel" }, item.colors > 1 ? h("div", { class: "swatch-label" }, `Color ${i + 1}`) : null, wheel.el,
+        h("button", { class: "btn small", onclick: () => { wheelFor = null; renderColors(); renderGrid(); } }, "Done")));
     }
   }
 
