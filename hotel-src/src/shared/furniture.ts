@@ -80,6 +80,7 @@ export const SHOP_PIECES: ShopPiece[] = [
   { id: "pokertable", label: "Poker table", icon: "🃏", price: 1000, w: 3, h: 2, height: 40, showDir: 2, hideout: true },
   { id: "pokertablehi", label: "High stakes poker table", icon: "🃏", price: 4000, w: 3, h: 2, height: 40, showDir: 2, hideout: true, nitro: "derived:poker_hi" },
   { id: "blackjacktable", label: "Blackjack table", icon: "🂡", price: 500, w: 3, h: 2, height: 40, showDir: 2, hideout: true, nitro: "derived:blackjack" },
+  { id: "cdpress", label: "CD printer", icon: "💿", price: 500, w: 1, h: 1, height: 30, showDir: 2, hideout: true },
   { id: "randomizer", label: "Love booth", icon: "💘", price: 150, w: 4, h: 1, height: 45, states: [11, 12, 13, 14, 21, 22, 23, 24, 30, 31, 32], defaultState: 11, seat: true, seatHeight: 14, showDir: 2, hideout: true },
   { id: "barrel", label: "Barrel", icon: "🛢️", price: 42, w: 1, h: 1, height: 56, surface: 40, showDir: 2 },
   { id: "coffin", label: "Black coffin", icon: "⚰️", price: 66, w: 1, h: 3, height: 35, states: [0, 1, 2, 3, 4, 5], showDir: 2 },

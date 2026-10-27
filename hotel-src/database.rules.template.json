@@ -103,6 +103,9 @@
     "songArchive": {
       ".read": "@PW@"
     },
+    "cdTitles": {
+      ".read": "@PW@"
+    },
     "songMeta": {
       ".read": "@PW@"
     },

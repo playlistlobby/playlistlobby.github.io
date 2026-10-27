@@ -319,7 +319,7 @@ export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
  * Things in SELL_BUNDLE are paid per bundle. `furniPrices` = the admin's furniture prices (shared/furniture.ts furniPrice).
  */
 export function sellPrice(item: string, ass?: boolean, furniPrices: Record<string, number> = {}): number | null {
-  if (item.startsWith("pet_")) return null; // (6ixty has no use for pets: swap them with players)
+  if (item.startsWith("pet_") || item.startsWith("cdp_")) return null; // (6ixty has no use for pets or pressed CDs: swap them with players)
   if (isLaced(item)) return sellPrice(unlaced(item), ass, furniPrices); // (it looks like the real thing, so he pays the same)
   if (NEVER_BOUGHT.has(item) || SHOP_PIECES.some((p) => p.rare && SHOP_KIND_PREFIX + p.id === item)) return null; // (the raffle's rare pieces are not for sale: not even to him)
   if (/^[fx]_/.test(item)) return Math.max(1, Math.floor(furniPrice(item, furniPrices) * 0.75)); // furniture: 75% of the shop price

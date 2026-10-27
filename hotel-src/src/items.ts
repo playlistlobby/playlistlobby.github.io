@@ -4,6 +4,8 @@ import { loadNitro } from "./nitro";
 import { UNUSUALS } from "./shared/cases";
 import { onPetSheet, petIconUrl } from "./pets";
 import { parsePetItem, petLabel } from "./shared/petItems";
+import { parsePressedCd, PRESS_COLOURS } from "./shared/cds";
+import { pressedTitle } from "./cdTitles";
 import { canonFx, FX_LABELS } from "./shared/unusualFx";
 import { DISABLED_ITEMS, isLaced, ITEM_ID_LIST, parseInventoryWith, unlaced } from "./shared/items";
 export {
@@ -551,6 +553,12 @@ export function itemDef(id: string): ItemDef | undefined {
       examine: "Click it to pick it up.",
       icon: petIconUrl(pet.type, pet.palette), useSelf: "pet",
     };
+  }
+  const cdp = parsePressedCd(id);
+  if (cdp) { // a CD made at a CD printer: the song in the name, the colour in the picture
+    const col = PRESS_COLOURS.find((c) => c.id === cdp.colour) ?? PRESS_COLOURS[0];
+    const title = pressedTitle(cdp.song);
+    return { id, name: title ? `${title} (CD)` : "Pressed CD", examine: `A ${col.name.toLowerCase()} CD with a song from SoundCloud. Use it on a boombox or a CD player. It comes back when it's done.`, icon: assetUrl(`items/${col.file}.png`), useOnObject: "cdplayer" };
   }
   if (isLaced(id)) return itemDef(unlaced(id)); // laced with fentanyl: it looks exactly like the real thing
   const k = FURNI_KINDS[id];

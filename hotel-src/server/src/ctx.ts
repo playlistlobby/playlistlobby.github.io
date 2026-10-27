@@ -5,6 +5,7 @@ import { Env, isEmulator } from "./env";
 import { Rtdb } from "./rtdb";
 import { cloneSnapshot, compactInv, parseEconomy, Snapshot, snapshotPatch } from "../../src/shared/economy";
 import { isPetItem } from "../../src/shared/petItems";
+import { parsePressedCd } from "../../src/shared/cds";
 import { DEFAULT_ITEM_PRICE, DISABLED_ITEMS, ITEM_DEFAULTS, ITEM_IDS } from "../../src/shared/items";
 import { SHIPPED_DIMS } from "../../src/shared/furniture";
 import { hourBucket } from "../../src/shared/backup";
@@ -106,7 +107,7 @@ export class Ctx {
   /** Does this item id exist (an ordinary item, a shipped piece of furniture, or an uploaded one)? */
   async validItem(): Promise<(id: string) => boolean> {
     const meta = await this.furniMeta();
-    return (id) => (ITEM_IDS.has(id) && !DISABLED_ITEMS.has(id)) || !!SHIPPED_DIMS[id] || !!meta[id] || isPetItem(id);
+    return (id) => (ITEM_IDS.has(id) && !DISABLED_ITEMS.has(id)) || !!SHIPPED_DIMS[id] || !!meta[id] || isPetItem(id) || parsePressedCd(id) !== null;
   }
   /** Size of a piece of furniture a player may place, or null. */
   async placeableDims(kind: string): Promise<{ w: number; h: number } | null> {

@@ -4,7 +4,8 @@ import { call, serverNow } from "./db";
 import type { Profile } from "./db";
 import { assetUrl } from "./assetUrl";
 import { musicMuted, onMusicMuteChange } from "./sfx";
-import { ALBUM_TRACKS, CD_ITEMS, isCdItem } from "./shared/cds";
+import { ALBUM_TRACKS, CD_ITEMS, isCdItem, parsePressedCd } from "./shared/cds";
+import { pressedTitle } from "./cdTitles";
 import { audioUrl } from "./audio";
 
 // The CD player in the lobby plays whatever is on the CD you put in. For now every CD holds the same stand-in track.
@@ -97,6 +98,12 @@ export function trackDurationMs(track: CdTrack): Promise<number> {
 
 /** Puts the CD in `slot` into the player of this room (the server checks it is a CD, you are in the room and the player is free). */
 export async function insertCd(me: Profile, slot: number, roomId: string): Promise<CdState> {
+  const pressed = parsePressedCd(me.inventory[slot]?.item);
+  if (pressed) { // a pressed CD: the server reads the song and its length itself
+    const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, room: roomId, durationMs: 60_000 });
+    const startedAt = Number(r.startedAt) || serverNow(), endsAt = Number(r.endsAt) || startedAt + 60_000;
+    return { by: me.uid, byName: me.name, track: "pressed", title: pressedTitle(pressed.song) ?? "CD", startedAt, endsAt, durationMs: endsAt - startedAt };
+  }
   const def = CD_ITEMS[me.inventory[slot]?.item ?? ""] ?? CD_ITEMS.cd;
   const track = def.track === "album" ? albumCdTrack(0) : CD_TRACKS[def.track] ?? CD_TRACKS[DEFAULT_CD_TRACK];
   const duration = await trackDurationMs(track);
@@ -218,7 +225,7 @@ export class CdAudio {
       this.stop();
       return;
     }
-    if (this.state.track === "sc") { this.syncSoundcloud(this.state); return; }
+    if (this.state.track === "sc" || this.state.track === "pressed") { this.syncSoundcloud(this.state); return; }
     const track = trackOfState(this.state);
     if (!track) return this.stop();
     if (this.state.pausedAt) { this.audio.pause(); this.onChange(); return; } // paused: quiet until it is played on

@@ -37,7 +37,7 @@ export const CD_ITEMS: Record<string, CdDef> = {
 /** the CDs the record box sells for blood (the id is the item) */
 export const BLOOD_CDS: string[] = ["cd", "cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip"];
 export const CD_ITEM_IDS: string[] = Object.keys(CD_ITEMS);
-export const isCdItem = (item: string | undefined): boolean => !!item && Object.prototype.hasOwnProperty.call(CD_ITEMS, item);
+export const isCdItem = (item: string | undefined): boolean => !!item && (Object.prototype.hasOwnProperty.call(CD_ITEMS, item) || parsePressedCd(item) !== null);
 /** the three mystery CDs: a buy gives one you haven't got, and after three buys there are none left */
 export const MYSTERY_CDS = ["cd_yellow", "cd_green", "cd_blue"];
 export const ALBUM_CD = "cd_album";
@@ -47,3 +47,26 @@ export const cdOwnedKey = (item: string): string => `item_${item}`;
 /** Real money, in øre (100 øre = 1 kr): the mystery CD costs 150 kr. (The full album is no longer sold; players who bought it keep it, and an old paid order is still handed over.) */
 export const MYSTERY_PRICE_ORE = 15_000;
 export type PayProduct = "mystery" | "album" | `ducky_${string}`;
+
+// ---- pressed CDs: a song of SoundCloud's Charts on a CD, made at a hideout's CD printer ----------------------------------------------------------------
+/** the colours of a pressed CD (the picture is public/items/<file>.png) */
+export const PRESS_COLOURS: Array<{ id: string; name: string; file: string }> = [
+  { id: "s", name: "Silver", file: "cd" }, { id: "b", name: "Blue", file: "cd_blue" }, { id: "g", name: "Green", file: "cd_green" }, { id: "o", name: "Orange", file: "cd_orange" },
+  { id: "p", name: "Pink", file: "cd_pink" }, { id: "u", name: "Purple", file: "cd_purple" }, { id: "r", name: "Red", file: "cd_red" }, { id: "y", name: "Yellow", file: "cd_yellow" },
+];
+/** the CD item of a song: "cdp_<colour>_<song id>" ("cdp_r_smvrb0zjqz6l30bmp") */
+export const pressedCdId = (colour: string, song: string): string => `cdp_${colour}_${song}`;
+export function parsePressedCd(id: unknown): { colour: string; song: string } | null {
+  if (typeof id !== "string") return null;
+  const m = /^cdp_([sbgopury])_([a-z0-9]{3,24})$/.exec(id);
+  return m ? { colour: m[1], song: m[2] } : null;
+}
+/** the most CDs one player can press in a day (all hideouts together) */
+export const PRESS_DAILY_MAX = 50;
+/** what the printer's owner may charge strangers for a CD (the owner and the members press for free) */
+export const PRESS_PRICE_MIN = 10;
+export const PRESS_PRICE_MAX = 100;
+export const PRESS_PRICE_DEFAULT = 25;
+/** the printer is a piece of furniture; the computer sells it */
+export const CDPRESS_KIND = "f_cdpress";
+export const CDPRESS_PRICE = 500;

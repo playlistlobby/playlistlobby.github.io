@@ -13938,5 +13938,145 @@
   "en": "SoundCloud is on the speaker: use its buttons.",
   "da": "SoundCloud er på højttaleren: brug dens knapper.",
   "where": "server/src/actions/cd.ts"
+ },
+ "N2233": {
+  "en": "CD printer",
+  "da": "CD-printer",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2234": {
+  "en": "The CD is in your pocket. You can press {left} more today.",
+  "da": "CD'en er i din lomme. Du kan presse {left} mere i dag.",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2235": {
+  "en": "The printer jams.",
+  "da": "Printeren sidder fast.",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2236": {
+  "en": "The price is set.",
+  "da": "Prisen er sat.",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2237": {
+  "en": "There are no songs in the Charts yet.",
+  "da": "Der er ingen sange på hitlisten endnu.",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2238": {
+  "en": "Pick one of the 10 best songs on SoundCloud and a colour. The CD plays on any boombox.",
+  "da": "Vælg en af de 10 bedste sange på SoundCloud og en farve. CD'en kan spilles på alle boomboxe.",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2239": {
+  "en": "Free for you",
+  "da": "Gratis for dig",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2240": {
+  "en": "Price:",
+  "da": "Pris:",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2241": {
+  "en": "Pressing",
+  "da": "Presser",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2242": {
+  "en": "Press a CD",
+  "da": "Pres en CD",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2243": {
+  "en": "Price for visitors",
+  "da": "Pris for gæster",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2244": {
+  "en": "Set",
+  "da": "Sæt",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2245": {
+  "en": "Between {PRESS_PRICE_MIN} and {PRESS_PRICE_MAX}. You and the members press for free. What visitors pay is on your Tables page.",
+  "da": "Mellem {PRESS_PRICE_MIN} og {PRESS_PRICE_MAX}. Du og medlemmerne presser gratis. Det gæster betaler står på din Borde-side.",
+  "where": "src/ui/cdPress.ts"
+ },
+ "N2246": {
+  "en": "{title} (CD)",
+  "da": "{title} (CD)",
+  "where": "src/items.ts"
+ },
+ "N2247": {
+  "en": "Pressed CD",
+  "da": "Presset CD",
+  "where": "src/items.ts"
+ },
+ "N2248": {
+  "en": "A {…} CD with a song from SoundCloud. Use it on a boombox or a CD player. It comes back when it's done.",
+  "da": "En {…} CD med en sang fra SoundCloud. Brug den på en boombox eller en CD-afspiller. Den kommer tilbage når den er færdig.",
+  "where": "src/items.ts"
+ },
+ "N2249": {
+  "en": "Silver",
+  "da": "Sølv",
+  "where": "src/shared/cds.ts"
+ },
+ "N2250": {
+  "en": "Orange",
+  "da": "Orange",
+  "where": "src/shared/cds.ts"
+ },
+ "N2251": {
+  "en": "Pink",
+  "da": "Pink",
+  "where": "src/shared/cds.ts"
+ },
+ "N2252": {
+  "en": "Red",
+  "da": "Rød",
+  "where": "src/shared/cds.ts"
+ },
+ "N2253": {
+  "en": "Yellow",
+  "da": "Gul",
+  "where": "src/shared/cds.ts"
+ },
+ "N2254": {
+  "en": "Press the best songs on SoundCloud onto CDs. You set the price for visitors.",
+  "da": "Pres de bedste sange på SoundCloud på CD'er. Du bestemmer prisen for gæster.",
+  "where": "src/shared/hideout.ts"
+ },
+ "N2255": {
+  "en": "That colour isn't there.",
+  "da": "Den farve findes ikke.",
+  "where": "server/src/actions/cdpress.ts"
+ },
+ "N2256": {
+  "en": "There's no CD printer here.",
+  "da": "Der er ingen CD-printer her.",
+  "where": "server/src/actions/cdpress.ts"
+ },
+ "N2257": {
+  "en": "That song isn't in the Charts any more.",
+  "da": "Den sang er ikke på hitlisten mere.",
+  "where": "server/src/actions/cdpress.ts"
+ },
+ "N2258": {
+  "en": "You have pressed {PRESS_DAILY_MAX} CDs today. That's the most.",
+  "da": "Du har presset {PRESS_DAILY_MAX} CD'er i dag. Det er det meste.",
+  "where": "server/src/actions/cdpress.ts"
+ },
+ "N2259": {
+  "en": "Only the owner can set the price.",
+  "da": "Kun ejeren kan sætte prisen.",
+  "where": "server/src/actions/cdpress.ts"
+ },
+ "N2260": {
+  "en": "That CD is scratched: the song is gone.",
+  "da": "Den CD er ridset: sangen er væk.",
+  "where": "server/src/actions/cd.ts"
  }
 }

@@ -82,6 +82,7 @@ export const HIDEOUT_SHOP: HideoutShopItem[] = [
   { kind: "f_pokertable", label: "Poker table", price: 1000, etaMs: HIDEOUT_ORDER_MS, blurb: "Poker for five. Buy in 25-300." },
   { kind: "f_pokertablehi", label: "High stakes poker table", price: 4000, etaMs: 2 * HIDEOUT_ORDER_MS, blurb: "Poker for five. Buy in 500-2000." },
   { kind: "f_blackjacktable", label: "Blackjack table", price: 500, steps: [500, 1000, 2000], etaMs: HIDEOUT_ORDER_MS, blurb: "Blackjack for five. A member deals." },
+  { kind: "f_cdpress", label: "CD printer", price: 500, etaMs: HIDEOUT_ORDER_MS, blurb: "Press the best songs on SoundCloud onto CDs. You set the price for visitors." },
 ];
 /** what one of them costs when the hideout has already bought `bought` of that kind */
 export const hideoutPriceOf = (item: HideoutShopItem, bought: number): number => (item.steps?.length ? item.steps[Math.min(Math.max(0, bought), item.steps.length - 1)] : item.tier && bought >= item.tier.first ? item.tier.then : item.price);

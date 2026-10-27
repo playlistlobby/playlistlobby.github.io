@@ -26,6 +26,7 @@ import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watch
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
 import { BAGMAN, HIDEOUT_LANDLORD, LANDLORD, PET_MERCHANT, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
 import { openBagmandShop, BagmandShopApi } from "./bagmandShop";
+import { openCdPress } from "./cdPress";
 import { openHideoutComputer, ComputerApi } from "./hideoutComputer";
 import { openHideoutLandlord } from "./hideoutLandlord";
 import { openHideoutDoor } from "./hideoutDoor";
@@ -568,6 +569,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let landlordApi: LandlordApi | null = null;
   let bagmandApi: BagmandShopApi | null = null;
   let computerApi: ComputerApi | null = null;
+  let cdPressApi: { close(): void } | null = null;
   let petShopApi: { close(): void } | null = null;
   let chestApi: { close(): void; refresh(): void } | null = null;
   /** the poker window (it stands you up when it closes); if the server still has you sitting at a table after a refresh, you are stood up here and get your blood back */
@@ -1734,6 +1736,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     landlordApi?.close();
     bagmandApi?.close();
     computerApi?.close();
+    cdPressApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
@@ -2140,6 +2143,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "ideas") openIdeas();
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
         else if (opens === "computer") { if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
+        else if (opens === "cdpress") { if (!cdPressApi) cdPressApi = openCdPress(stage, ctx, roomId, () => def, () => panel.refresh(), () => { cdPressApi = null; }); }
         else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
         else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }, tableChat); }
         else if (opens === "blackjack") { if (!bjApi) bjApi = openBlackjack(stage, ctx, roomId, f.id, () => panel.refresh(), () => { bjApi = null; }, tableChat); }
@@ -6068,6 +6072,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     landlordApi?.close();
     bagmandApi?.close();
     computerApi?.close();
+    cdPressApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();

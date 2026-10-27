@@ -3,7 +3,7 @@
 // The full album plays song after song: `index` is the song, and next / back / advance move it on.
 import { Action, int, requireInRoom, text } from "./util";
 import { fail } from "../ctx";
-import { ALBUM_TRACKS, CD_ITEMS, isCdItem } from "../../../src/shared/cds";
+import { ALBUM_TRACKS, CD_ITEMS, isCdItem, parsePressedCd } from "../../../src/shared/cds";
 
 interface CdRow { by?: string; endsAt?: number; startedAt?: number; pausedAt?: number; durationMs?: number; track?: string; index?: number }
 /** a paused CD that nobody continues is given up after this long */
@@ -29,9 +29,23 @@ export const cdInsert: Action = {
     const slot = int(a.slot, 0, 27, "slot");
     const it = w.s.inventory[slot];
     if (!it || !isCdItem(it.item) || it.inPlayer) fail("That isn't a CD you can use.");
+    const pressed = parsePressedCd(it!.item);
     const def = CD_ITEMS[it!.item];
     const cur = await c.db.get<CdRow>(path(room));
     if (live(cur, c.now)) fail("The CD player is busy.");
+    if (pressed) {
+      // a CD made at a CD printer: its song is read from SoundCloud (or from the archive, once it has been taken off), the length comes from there too
+      let song = await c.db.get<{ ready?: boolean; title?: string; ownerName?: string; durMs?: number; pieces?: number; mime?: string }>(`songs/${pressed.song}`);
+      if (!song || song.ready !== true) song = await c.db.get(`songArchive/${pressed.song}`);
+      if (!song || typeof song.durMs !== "number" || typeof song.pieces !== "number") fail("That CD is scratched: the song is gone.");
+      const ms = song!.durMs!;
+      w.s.inventory = w.s.inventory.map((x, i) => (i === slot && x ? { ...x, inPlayer: room } : x));
+      c.extra[path(room)] = {
+        by: c.uid, byName: String(w.raw.name ?? "").slice(0, 16), track: "pressed", title: `${song!.title ?? "?"} - ${song!.ownerName ?? "?"}`.slice(0, 60),
+        song: { id: pressed.song, pieces: song!.pieces, mime: String(song!.mime || "audio/mpeg") }, startedAt: c.now, endsAt: c.now + ms, durationMs: ms,
+      };
+      return { startedAt: c.now, endsAt: c.now + ms };
+    }
     const ms = songMs(a.durationMs);
     w.s.inventory = w.s.inventory.map((x, i) => (i === slot && x ? { ...x, inPlayer: room } : x));
     const album = def.track === "album";

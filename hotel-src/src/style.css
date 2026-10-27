@@ -1589,6 +1589,25 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .sc-speaker-top { display: flex; align-items: center; gap: 8px; }
 .sc-speaker-top > .sc-ico { width: 22px; height: 22px; color: #ffb066; flex: none; }
 .sc-speaker .sc-ctrl { flex-wrap: wrap; align-items: center; }
+.cdp { display: flex; flex-direction: column; gap: 8px; }
+.cdp-list { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+.cdp-song { display: flex; align-items: center; gap: 8px; text-align: left; padding: 6px 8px; border: 1px solid #aeb7c8; border-radius: 8px; background: linear-gradient(#fff, #e3e8f1); color: #26304a; font: 13px var(--font); cursor: pointer; }
+.cdp-song.on { border-color: #a14a0a; background: linear-gradient(#ffe3c2, #f6b877); }
+.cdp-rank { width: 18px; text-align: center; font-weight: 800; color: #7a8399; }
+.cdp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cdp-main b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cdp-main small { color: #6b7388; font-size: 11px; }
+.cdp-votes { font-size: 11px; color: #6b7388; }
+.cdp-label { font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--muted); }
+.cdp-cols { display: flex; flex-wrap: wrap; gap: 6px; }
+.cdp-col { width: 46px; height: 40px; padding: 3px; border-radius: 8px; border: 2px solid transparent; background: #dfe4ee; cursor: pointer; }
+.cdp-col.on { border-color: #d9741e; background: #fff; }
+.cdp-col img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.cdp-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cdp-price { font-weight: 800; }
+.cdp-owner { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #c4cad8; padding-top: 8px; }
+.cdp-row { display: flex; align-items: center; gap: 6px; }
+.cdp-num { min-width: 60px; text-align: center; font-weight: 800; }
 .sc-now { position: sticky; bottom: 0; margin-top: auto; padding: 6px 10px 8px; background: linear-gradient(#5a5f68, #23262b); border-top: 1px solid #000; color: #fff; border-radius: 10px 10px 0 0; }
 .sc-now[hidden] { display: none; }
 .sc-now-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
