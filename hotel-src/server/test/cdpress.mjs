@@ -52,6 +52,8 @@ await owner("PUT", "songs/cpa", song("Press A", 900, 0));
 await owner("PUT", "songs/cpb", song("Press B", 899, 0));
 await owner("PUT", "songs/cpbad", song("Press Bad", 0, 900));
 await owner("PUT", "audio/cpa/0", "AAAA");
+// eight better songs, so that Press A and Press B are 9th and 10th in the Charts and Press Bad is 11th (out)
+for (let i = 0; i < 8; i++) await owner("PUT", `songs/cpf${i}`, song(`Filler ${i}`, 950 - i, 0));
 
 console.log("--- no printer, no CD");
 bad("no printer in the room", await act(mem, "cdPress", { room: ROOM, song: "cpa", colour: "r" }));
@@ -129,6 +131,7 @@ await owner("PUT", "songs/cpz", song("Press Z", 800, 0));
 ok("deleted", await act(boss, "songDelete", { id: "cpz" }));
 check("no archive", (await owner("GET", "songArchive/cpz")) === null);
 
+for (let i = 0; i < 8; i++) await owner("DELETE", `songs/cpf${i}`);
 for (const p of ["songs/cpa", "songs/cpb", "songs/cpbad", "songs/cpz", "songArchive/cpa", "songArchive/cpb", "audio/cpa", "cdTitles/cpa", "cdTitles/cpb", `roomsMeta/${ROOM}`, `rooms/${ROOM}`, `rooms/${BB}`, `hideoutTill/${boss.uid}`]) await owner("DELETE", p);
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);
