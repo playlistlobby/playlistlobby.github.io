@@ -498,8 +498,11 @@ console.log("--- the vending machine's daily stock of mixers and growing kits");
   await act(older, "sync");
   await stand(older, room, 3, 3);
   let n3 = 0;
-  for (let i = 0; i < 4; i++) if ((await act(older, "buyVending", { id: "mixer" })).ok) n3++;
-  check("day 5 and later: one a day", n3 === 1, String(n3));
+  for (let i = 0; i < 7; i++) if ((await act(older, "buyVending", { id: "mixer" })).ok) n3++;
+  check("mixers: five a day for everybody, however old the account", n3 === 5, String(n3));
+  let n4 = 0;
+  for (let i = 0; i < 7; i++) if ((await act(older, "buyVending", { id: "planter" })).ok) n4++;
+  check("kits: one a day for an old account", n4 === 1, String(n4));
 }
 console.log("--- weak shrooms");
 {

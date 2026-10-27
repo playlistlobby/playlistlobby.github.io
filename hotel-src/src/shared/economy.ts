@@ -146,13 +146,39 @@ export const STAB_COOLDOWN_MS = 3 * 3_600_000;
 export const stabWaitAt = (last: number | undefined, now: number): number => Math.max(0, (last ?? 0) + STAB_COOLDOWN_MS - now);
 
 /**
- * The vending machine's daily stock of the mixer and the growing kit: 5 a day on your first day, one fewer every day, never fewer than 1.
+ * The vending machine's daily stock. The mixer: 5 a day for everybody, and the 5 come back every morning at 10:00 Danish time.
+ * The growing kit: 5 a day on your first day, one fewer every day, never fewer than 1 (and the day starts at midnight).
  * (keys are the vending machine's ids)
  */
 export const VENDING_DAILY: Record<string, number> = { mixer: 5, planter: 5 };
+/** the stock that does not get smaller from day to day */
+const VENDING_FLAT: ReadonlySet<string> = new Set(["mixer"]);
+/** when the mixer's stock comes back (Danish time) */
+export const MIXER_RESTOCK_HOUR = 10;
+
+/** the moment of the last 10:00 Danish time (summer or winter time as it is then) at or before `now` */
+export function lastRestockAt(now: number, hour = MIXER_RESTOCK_HOUR): number {
+  const parts = (t: number): { y: number; mo: number; d: number; h: number; offset: number } => {
+    const f = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Copenhagen", hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" });
+    const v: Record<string, number> = {};
+    for (const p of f.formatToParts(new Date(t))) if (p.type !== "literal") v[p.type] = Number(p.value);
+    const asUtc = Date.UTC(v.year, v.month - 1, v.day, v.hour, v.minute, v.second);
+    return { y: v.year, mo: v.month, d: v.day, h: v.hour, offset: asUtc - Math.floor(t / 1000) * 1000 };
+  };
+  const p = parts(now);
+  let day = Date.UTC(p.y, p.mo - 1, p.d);
+  if (p.h < hour) day -= DAY_MS; // (before 10 in the morning: the last one was yesterday)
+  let at = day + hour * 3_600_000 - p.offset;
+  const q = parts(at); // (the clocks may have changed in between: use the offset at that moment)
+  at = day + hour * 3_600_000 - q.offset;
+  return at;
+}
+/** the day the stock of this thing is counted in (a number that changes when its stock comes back) */
+export const vendDay = (id: string, now: number): number => (VENDING_FLAT.has(id) ? lastRestockAt(now) : todayStartAt(now));
 export function vendLimit(id: string, joinAt: number, now: number): number | null {
   const first = VENDING_DAILY[id];
   if (first === undefined) return null;
+  if (VENDING_FLAT.has(id)) return first;
   const days = Math.max(0, Math.floor((todayStartAt(now) - todayStartAt(joinAt || now)) / DAY_MS));
   return Math.max(1, first - days);
 }
@@ -161,7 +187,7 @@ export function vendLeft(s: { joinAt: number; vend: Record<string, { day: number
   const limit = vendLimit(id, s.joinAt, now);
   if (limit === null) return null;
   const got = s.vend[id];
-  return Math.max(0, limit - (got && got.day === todayStartAt(now) ? got.n : 0));
+  return Math.max(0, limit - (got && got.day === vendDay(id, now) ? got.n : 0));
 }
 
 /** The economy part of a player's database node as a Snapshot, with the defaults for older accounts. `valid` says which item ids exist. */

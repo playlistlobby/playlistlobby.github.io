@@ -32,7 +32,7 @@ export function openVending(host: HTMLElement, ctx: Ctx, onChange: () => void, o
       const flash = s.item === "lighter" && lighterStage(me) === "lighter"; // the lighter job: the lighter flashes until you have bought one
       return h("div", { class: "sixty-row" + (flash ? " flash-hint" : "") },
         h("img", { src: def.icon, alt: def.name, class: "sixty-ico" }),
-        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, s.label), h("div", { class: "hint" }, s.qty > 1 ? `${s.qty} in a pack.` : def.examine), ...(left !== null ? [h("div", { class: "hint" }, left > 0 ? `${left} left today` : "Sold out today. New stock tomorrow.")] : [])),
+        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, s.label), h("div", { class: "hint" }, s.qty > 1 ? `${s.qty} in a pack.` : def.examine), ...(left !== null ? [h("div", { class: "hint" }, s.id === "mixer" ? (left > 0 ? `${left} left. New ones at 10:00 every morning.` : "Sold out. New ones at 10:00 every morning.") : left > 0 ? `${left} left today` : "Sold out today. New stock tomorrow.")] : [])),
         h("button", {
           class: "btn small primary",
           disabled: !affordable,

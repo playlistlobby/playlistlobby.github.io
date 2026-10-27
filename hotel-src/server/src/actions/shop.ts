@@ -4,7 +4,7 @@ import { fail } from "../ctx";
 import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, STASHBOX_OWNED_KEY, STASHBOX_PRICE, takeQtyFrom } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPeriodStart, furniPicksToday, furniPrice, POSTER_KIND, POSTER_PRICE, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
-import { todayStartAt, vendLeft } from "../../../src/shared/economy";
+import { todayStartAt, vendDay, vendLeft } from "../../../src/shared/economy";
 import { BLOOD_CDS, cdOwnedKey } from "../../../src/shared/cds";
 import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, skinOf, skinOwnedKey, SkinPart } from "../../../src/shared/skins";
 
@@ -72,12 +72,12 @@ export const buyVending: Action = {
     const w = await c.user();
     if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
     const left = vendLeft(w.s, stock.id, c.now); // the mixer and the growing kit: a daily stock that gets smaller every day
-    if (left !== null && left <= 0) fail("Sold out for today. New stock tomorrow.");
+    if (left !== null && left <= 0) fail(stock.id === "mixer" ? "Sold out. New mixers at 10:00 every morning." : "Sold out for today. New stock tomorrow.");
     const next = addToInv(w.s.inventory, { item: stock.item, qty: stock.qty });
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;
     w.s.blood -= price;
-    if (left !== null) { const today = todayStartAt(c.now); const got = w.s.vend[stock.id]; w.s.vend[stock.id] = { day: today, n: (got && got.day === today ? got.n : 0) + 1 }; }
+    if (left !== null) { const today = vendDay(stock.id, c.now); const got = w.s.vend[stock.id]; w.s.vend[stock.id] = { day: today, n: (got && got.day === today ? got.n : 0) + 1 }; }
     return { price };
   },
 };
