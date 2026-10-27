@@ -163,18 +163,18 @@ export async function pocketFromRoom(p: Profile, roomId: string, f: PlacedFurni)
 }
 
 /** Puts what you carry into the toolbox: a piece of furniture, or `qty` of an item (a whole stack of cigarettes, say). */
-export async function storeFromInventory(p: Profile, slot: number, qty = 1): Promise<void> {
+export async function storeFromInventory(p: Profile, slot: number, qty = 1, room?: string): Promise<void> {
   const s = p.inventory[slot];
   if (!s) return;
   if (s.lit) throw new Error("Wait for it to burn out first.");
   if (s.inPlayer) throw new Error("That's in the player right now.");
-  await call(p, "store", { slot, qty });
+  await call(p, "store", { slot, qty, ...(room ? { room } : {}) });
 }
 
 /** Takes things back out of the toolbox into your pocket (`qty` of them; stackable items share a slot, the rest need one slot each). */
-export async function takeFromStorage(p: Profile, key: string, qty = 1): Promise<void> {
+export async function takeFromStorage(p: Profile, key: string, qty = 1, room?: string): Promise<void> {
   if (storedCount(p, key) < 1) return;
-  await call(p, "take", { key, qty });
+  await call(p, "take", { key, qty, ...(room ? { room } : {}) });
 }
 
 export { MAX_FURNI };

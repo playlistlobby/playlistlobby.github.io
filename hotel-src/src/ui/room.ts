@@ -39,6 +39,7 @@ import { LOUDSPEAKER_ON } from "../shared/loudspeaker";
 import { openHideoutChest } from "./hideoutChest";
 import { openPoker } from "./pokerTable";
 import type { TableChat } from "./tableChat";
+import { setRoomChat } from "./roomChat";
 import { fillTextWithEmoji, measureWithEmoji } from "./iosEmoji";
 import type { PokerApi } from "./pokerTable";
 import { mountPokerFx } from "./pokerFx";
@@ -672,6 +673,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recent: () => Array.from(log.children).map((c) => c.cloneNode(true) as HTMLElement),
     subscribe: (cb) => { tableLineListeners.add(cb); return () => { tableLineListeners.delete(cb); }; },
   };
+  const releaseRoomChat = setRoomChat(tableChat); // (the trade window talks through the room you are in)
   function addLine(el: HTMLElement, lifeMs: number, msg?: ReturnType<typeof ref>): void {
     log.append(el);
     tableLineListeners.forEach((l) => l(el.cloneNode(true) as HTMLElement));
@@ -1330,8 +1332,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       mine: () => def.furni.filter((f) => !isFixedPiece(f.id) && (!isHideoutRoom || f.by === me.uid)),
       startPlacing: (source, kind, slot, owner) => { fzPlacing = { kind, source, slot, owner }; fzDir = defaultDir(kind); fzSel = null; if (source === "inv" && slot !== undefined) { selectedSlot = slot; panel.setSelected(slot); } else if (selectedSlot !== null) clearSelection(); refreshFz(); },
       cancelPlacing: () => { fzPlacing = null; clearSelection(); refreshFz(); },
-      storeFromInventory: (slot, qty) => void storeFromInventory(me, slot, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),
-      takeFromStorage: (kind, qty) => void takeFromStorage(me, kind, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),
+      storeFromInventory: (slot, qty) => void storeFromInventory(me, slot, qty, isHideoutRoom ? roomId : undefined).then(refreshFz, (err) => say((err as Error).message, "warn")),
+      takeFromStorage: (kind, qty) => void takeFromStorage(me, kind, qty, isHideoutRoom ? roomId : undefined).then(refreshFz, (err) => say((err as Error).message, "warn")),
       ...(isHideoutRoom ? { hideout: {
         box: () => def.hideout?.box ?? {},
         names: () => ({ ...(def.ownerUid ? { [def.ownerUid]: def.ownerName ?? "owner" } : {}), ...Object.fromEntries(Object.entries(def.hideout?.members ?? {}).map(([u, m]) => [u, m.name])) }),
@@ -5908,6 +5910,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   function dispose(): void {
     disposed = true;
+    releaseRoomChat();
     document.body.classList.remove("greenscreen");
     cancelAnimationFrame(raf);
     resizeObs.disconnect();

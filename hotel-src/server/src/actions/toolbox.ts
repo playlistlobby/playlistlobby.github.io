@@ -1,6 +1,6 @@
 // The toolbox in your own room: storing things, and putting furniture down / moving it / taking it back. A piece exists in exactly one place
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
-import { Action, hideoutAccess, ID_RE, int, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
+import { Action, hideoutAccess, ID_RE, int, requireHideoutMember, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, MAX_FURNI, STASH_PIECES, STASHBOX_OWNED_KEY, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { isFurniItem, STACKABLE } from "../../../src/shared/items";
@@ -46,9 +46,18 @@ const roomLock = (c: Ctx, a: Record<string, unknown>): string[] => [`room:${type
 const furniCap = (hideout: boolean, level: number): number => (hideout ? HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] : MAX_FURNI);
 
 /** What you carry goes into the toolbox: a piece of furniture, or `qty` of an item. Ass weed is kept apart as "ass_<item>". */
+/** where the toolbox is: your own room, or a hideout you are in (your toolbox storage is yours wherever you stand at one) */
+async function storageRoom(c: Ctx, a: { room?: unknown }): Promise<string> {
+  if (a?.room === undefined) return requireOwnRoom(c);
+  const room = text(a.room, /^h_[A-Za-z0-9]{1,40}$/, "room");
+  await requireHideoutMember(c, room);
+  await requireInRoom(c, room);
+  return room;
+}
+
 export const storeItem: Action = {
   async run(c, a) {
-    await requireOwnRoom(c);
+    await storageRoom(c, a);
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     const it = w.s.inventory[slot];
@@ -72,7 +81,7 @@ export const storeItem: Action = {
 /** Takes things back out of the toolbox (stackable items share a slot, everything else needs one slot each). */
 export const takeItem: Action = {
   async run(c, a) {
-    await requireOwnRoom(c);
+    await storageRoom(c, a);
     const w = await c.user();
     const key = text(a.key, KEY_RE, "item");
     if (key === "f_boombox") fail("The boombox can't be carried around: put it down in your room."); // it stays in the toolbox or in a room, never in a pocket (so it can't be traded or sold)

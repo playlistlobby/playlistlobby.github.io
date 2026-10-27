@@ -9,6 +9,8 @@ import { TRADE_BLOOD_CAP, tradeBloodLeft } from "../shared/economy";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
+import { mountTableChat } from "./tableChat";
+import { roomChat } from "./roomChat";
 
 /** Tells the room to redraw the pocket (the trade moved things in or out of it). */
 const pocketChanged = (): void => { window.dispatchEvent(new Event("pocket-changed")); };
@@ -57,7 +59,8 @@ function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
   let note = "";
   const acted = new Set<string>();
   const body = h("div", { class: "trade-body" });
-  const root = h("div", { class: "trade-overlay" }, h("div", { class: "trade-win", role: "dialog", "aria-label": "Trade" }, body));
+  const chatBox = mountTableChat(roomChat); // (you can talk while you trade: the same chat as in the room)
+  const root = h("div", { class: "trade-overlay" }, h("div", { class: "trade-win", role: "dialog", "aria-label": "Trade" }, body, chatBox.el));
   document.body.append(root);
   playSfx("give", 0.4);
 
@@ -196,6 +199,7 @@ function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
     if (closed) return;
     closed = true;
     off();
+    chatBox.dispose();
     root.remove();
     onGone();
   }

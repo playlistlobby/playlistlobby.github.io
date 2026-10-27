@@ -15,7 +15,7 @@ export const ITEM_ID_LIST = [
   // shrooms (grown from spores found in the bins) let you into any room; a shroom pressed into a pill is DMT
   "shroomspore", "shroom", "weakshroom", "dmt",
   // the mystery CDs (yellow, green, blue) and the full album (red), bought with real money from the record player in the shop
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "cd_lykk", "cd_roulette",
   // hash (ass weed + kodimagnyl), hash mix (hash + cigarette) and the hash joint (hash mix + joint paper)
   "hash", "hashmix", "joint_hash",
   // chud mix (shroom + weed, rolled like weed): the chud joint and chud blunt
@@ -92,6 +92,8 @@ export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   pill: { on: true, price: 3 },
   casekey: { on: true, price: 250 }, // a key for a mystery box (6ixty sells them; the Ducky machine sells 3 for 25 kr)
   cd_blodig: { on: true, price: 5 }, // the Blodig oktober CD, sold at the record player in the shop: one per player (see buyRecord)
+  cd_lykk: { on: true, price: 5 }, // leolegit - blodoktober (prod. Lykk), the same shop and rules
+  cd_roulette: { on: true, price: 5 }, // yungxware - russisk roulette, the same shop and rules
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
   wood: { on: true, price: WOOD_PRICE }, // sold by 6ixty in the mines (see buySixty)
   kodimagnyl: { on: true, price: 4 }, // sold by 6ixty (the growing kit moved to the vending machine)
@@ -299,7 +301,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife), every CD, the dice and the starter sofa everybody is given. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife", "gun",
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "pickaxe", "machete", "dice", "f_sofa",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "cd_lykk", "cd_roulette", "pickaxe", "machete", "dice", "f_sofa",
   "loudspeaker", "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "mixerchip2", "gun", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
   // bagmand only buys his own things back (see shared/bagmand.ts)
   "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",

@@ -341,6 +341,20 @@ export const ITEMS: Record<string, ItemDef> = {
     icon: assetUrl("items/cd_green.png"),
     useOnObject: "cdplayer",
   },
+  cd_lykk: {
+    id: "cd_lykk",
+    name: "leolegit - blodoktober",
+    examine: "An orange CD: leolegit - blodoktober (prod. Lykk), from the record box in the shop. Use it on a boombox. It comes back when it's done.",
+    icon: assetUrl("items/cd_orange.png"),
+    useOnObject: "cdplayer",
+  },
+  cd_roulette: {
+    id: "cd_roulette",
+    name: "yungxware - russisk roulette",
+    examine: "A purple CD: yungxware - russisk roulette, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
+    icon: assetUrl("items/cd_purple.png"),
+    useOnObject: "cdplayer",
+  },
   cd_green: {
     id: "cd_green",
     name: "Blodig oktober",

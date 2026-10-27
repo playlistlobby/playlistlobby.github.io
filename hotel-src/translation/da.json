@@ -13118,5 +13118,15 @@
   "en": "Bad message.",
   "da": "Dårlig besked.",
   "where": "server/src/actions/hideout.ts"
+ },
+ "N545": {
+  "en": "An orange CD: leolegit - blodoktober (prod. Lykk), from the record box in the shop. Use it on a boombox. It comes back when it's done.",
+  "da": "En orange cd: leolegit - blodoktober (prod. Lykk), fra pladekassen i butikken. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
+  "where": "src/items.ts"
+ },
+ "N546": {
+  "en": "A purple CD: yungxware - russisk roulette, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
+  "da": "En lilla cd: yungxware - russisk roulette, fra pladekassen i butikken. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
+  "where": "src/items.ts"
  }
 }

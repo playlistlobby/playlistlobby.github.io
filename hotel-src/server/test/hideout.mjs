@@ -319,6 +319,16 @@ bad("the 41st mixer doesn't fit", await act(boss, "furniPlace", { room: HR(boss)
 for (let i = 0; i < 40 - mixNow; i++) await owner("DELETE", `roomsMeta/${HR(boss)}/furni/capm${i}`);
 await owner("PUT", `users/${boss.uid}/inventory`, inv({ item: "f_planter", qty: 1 }, { item: "weedseed", qty: 2 }));
 
+// the toolbox storage works inside a hideout too (Store from the pocket, Take back into it)
+await owner("PUT", `users/${boss.uid}/inventory`, inv({ item: "f_planter", qty: 1 }));
+await owner("DELETE", `users/${boss.uid}/storage`);
+ok("store a piece in a hideout", await act(boss, "store", { slot: 0, qty: 1, room: HR(boss) }));
+check("it is in the storage", (await owner("GET", `users/${boss.uid}/storage/f_planter`)) === 1);
+ok("take it back in a hideout", await act(boss, "take", { key: "f_planter", qty: 1, room: HR(boss) }));
+check("it is in the pocket again", (await owner("GET", `users/${boss.uid}/storage/f_planter`)) === null);
+bad("not in a hideout you are not in", await act(poor, "take", { key: "f_planter", qty: 1, room: HR(boss) }));
+await owner("PUT", `users/${boss.uid}/inventory`, inv({ item: "f_planter", qty: 1 }, { item: "weedseed", qty: 2 }));
+
 console.log("--- leaving and being kicked");
 await stand(al, HR(boss), 6, 6);
 const alRows = (await rowsOf(boss)).filter(([, r]) => r.by === al.uid).length;

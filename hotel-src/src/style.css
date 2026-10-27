@@ -1475,3 +1475,8 @@ html.kb .tc-log { max-height: 34px; }
 
 /* the iPhone-style emoji pictures (src/ui/iosEmoji.ts): as big as the letters round them */
 .ios-emoji { display: inline-block; width: 1.18em; height: 1.18em; vertical-align: -0.22em; margin: 0 .02em; object-fit: contain; image-rendering: auto; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+
+/* the chat inside the trade window (it covers the room's chat bar): stuck to the bottom of the window, and on a phone with the keyboard up the window is as tall as what is left */
+.trade-win .tc-box { position: sticky; bottom: -10px; margin: 10px -12px -10px; border-radius: 0 0 14px 14px; z-index: 2; }
+html.kb .trade-overlay { inset: auto; left: 0; right: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100dvh); padding: 0; }
+html.kb .trade-win { max-height: 100%; border-radius: 0; }
