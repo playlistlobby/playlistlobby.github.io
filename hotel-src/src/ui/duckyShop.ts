@@ -12,7 +12,7 @@ import type { Ctx } from "../main";
 
 export interface DuckyShopApi { close(): void }
 
-const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", rename: "🏷️", keys: "🔑", key1: "🔑" };
+const ICONS: Record<DuckyProduct, string> = { starter: "🌱", color: "🎨", fx: "💬", rename: "🏷️", keys: "🔑", key1: "🔑", vape: "💨" };
 
 export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): DuckyShopApi {
   const me = ctx.profile;
@@ -95,6 +95,8 @@ export function openDuckyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
         buyBtn("keys", () => void buy("keys"))),
       card("key1", "1 box key", "One key for a mystery box. One key opens one box.",
         buyBtn("key1", () => void buy("key1"))),
+      card("vape", "Puff-bar", "Vape med en klam abe på. Puff it once a minute: 35 seconds of walking 1.5x as fast and double blood from stabs. You can trade it.",
+        buyBtn("vape", () => void buy("vape"))),
       card("rename", "Change your name", "Pick a new username. Your things, friends and room come with you.",
         open === "rename" ? h("button", { class: "btn small", onclick: () => { open = null; render(); } }, "Close") : h("button", { class: "btn small primary", disabled: busy, onclick: () => { open = "rename"; render(); } }, price("rename")),
         open === "rename" ? nameInput : undefined),

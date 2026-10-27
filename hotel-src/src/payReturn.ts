@@ -23,6 +23,7 @@ export async function collectPaidCds(p: Profile): Promise<void> {
         if (d.product === "starter") toast("The starter package is in your pockets, and 50 blood.");
         else if (d.product === "keys") toast(`${KEYS_PACK.qty} box keys are in your pockets.`);
         else if (d.product === "key1") toast(`${KEY_SINGLE.qty} box key is in your pocket.`);
+        else if (d.product === "vape") toast("The puff-bar is in your pocket.");
         else if (d.product === "color" && d.color) { p.nameColor = d.color; window.dispatchEvent(new CustomEvent("name-color", { detail: d.color })); toast("Your name has a colour now."); }
         else if (d.product === "fx") toast("The chat tool is yours: tap the ✨ next to the chat bar.");
         else if (d.product === "rename" && d.name) { toast(`You are ${d.name} now. The page reloads.`); window.setTimeout(() => window.location.reload(), 1600); }

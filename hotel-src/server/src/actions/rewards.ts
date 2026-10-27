@@ -1,4 +1,5 @@
 // Things that pay blood or change what you carry: stabbing, the syringe, Flappy Bird, cats, bins, smoking, rolling, watering, growing.
+import { VAPE_BLOOD_MULT, VAPE_COOLDOWN_MS, VAPE_ITEM, VAPE_MS, VAPE_SPEED } from "../../../src/shared/ducky";
 import { Action, cheb, ID_RE, int, requireInRoom, requireWorkRoom, text } from "./util";
 import { fail } from "../ctx";
 import { isEmulator } from "../env";
@@ -37,6 +38,29 @@ export const stab: Action = {
     s.blood += gain;
     s.stabs[target] = c.now; // (when: they can be stabbed again 3 hours later)
     return { gain };
+  },
+};
+
+/**
+ * The puff-bar (a vape): puff it from a pocket slot once a minute for 35 seconds of 1.5x walking speed and double blood from stabs (the same boost the drugs give: boostMult; it never
+ * replaces a stronger one that is still going). The cloud over your head (everybody sees it) is vapeUntil.
+ */
+export const vapePuff: Action = {
+  async run(c, a) {
+    const w = await c.user();
+    const s = w.s;
+    const slot = Number(a.slot);
+    if (!Number.isInteger(slot) || slot < 0 || slot > 27) fail("Bad slot.");
+    const it = s.inventory[slot];
+    if (!it || it.item !== VAPE_ITEM) fail("You haven't got that.");
+    const wait = s.vapeAt + VAPE_COOLDOWN_MS - c.now;
+    if (wait > 0) fail(`It needs ${Math.ceil(wait / 1000)} more seconds.`);
+    s.vapeAt = c.now;
+    s.vapeUntil = c.now + VAPE_MS;
+    if (!(s.boostUntil > c.now && s.boostMult > VAPE_BLOOD_MULT)) { s.boostMult = VAPE_BLOOD_MULT; s.boostUntil = Math.max(s.boostUntil, c.now + VAPE_MS); } // (a stronger boost that is on stays)
+    if (!(s.speedUntil > c.now)) { s.speedMult = VAPE_SPEED; s.speedUntil = c.now + VAPE_MS; } // (any other speed is faster than this one: it stays)
+    c.note = "puff";
+    return { until: s.vapeUntil };
   },
 };
 

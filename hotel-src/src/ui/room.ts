@@ -20,7 +20,7 @@ import { db, useEmulator } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
 import { plantThirsty, plantWatered } from "../db";
 import { giveCommand } from "../db";
-import { call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, attachUpgrade, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilNextStab, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
+import { puffVape, call, useFurniState, canStab, combineSlots, debugCommand, eatItem, fillCan, finishSmoke, harvestPlant, lightItem, plantProgress, plantSeed, plantWater, attachUpgrade, swallowPill, waterPlant, rewardFlappyDrop, dumpsterWaitMs, msUntilNextStab, searchDumpster, rewardStab, rewardSyringe, sixtyGiveKnife, SYRINGE_BLOOD, serverNow, FIRST_BLOOD, JOB_REWARD, jobReady, jobWaitMs, rewardFirstStab, sixtyGivePill, sixtyJobMoney, sixtyJobReward, syringeWaitMs } from "../db";
 import { itemEntry } from "../shopConfig";
 import { Drop, dropItem, isExpired, landingTile, pickUpDrop, sweepExpired, watchDrops, whyNotDrop, dropKey } from "../drops";
 import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
@@ -149,6 +149,7 @@ import { dimmed } from "./rouletteFx";
 import { assetUrl } from "../assetUrl";
 import { drawFx } from "./fxSprites";
 import { canonFx } from "../shared/unusualFx";
+import { VAPE_COOLDOWN_MS } from "../shared/ducky";
 import { playBang, playSfx, playThud } from "../sfx";
 import { gunShoot as gunShootCall, rocketFire as rocketFireCall, watchHits, watchRocketAt } from "../hits";
 import { ROCKET_COOLDOWN_MS, ROCKET_LINE } from "../shared/hits";
@@ -315,6 +316,8 @@ interface Player {
   cup?: number;
   /** flashing with smoke pouring off them until this time */
   chem?: number;
+  /** a puff-bar cloud is over them until this time (server time, ms) */
+  vape?: number;
   /** until when the name plate reads "chud" (server time, ms) */
   chud?: number;
   /** spinning round and round until then (LSD; server time, ms) */
@@ -744,7 +747,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return false;
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "vape") void usePuff(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
     onCombine: (a, b) => { void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
@@ -1571,6 +1574,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       fastMult: typeof v.fastMult === "number" ? v.fastMult : undefined,
       cup: typeof v.cup === "number" ? v.cup : undefined,
       chem: typeof v.chem === "number" ? v.chem : undefined,
+      vape: typeof v.vape === "number" ? v.vape : undefined,
       chud: typeof v.chud === "number" ? v.chud : undefined,
       spin: typeof v.spin === "number" ? v.spin : undefined,
       look: typeof v.look === "string" ? v.look : undefined,
@@ -2133,7 +2137,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "ideas") openIdeas();
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
-        else if (opens === "computer") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the computer.", "warn"); else if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
+        else if (opens === "computer") { if (!me.enterAnywhere && !hideoutCan().member) say("Only the members can use the computer.", "warn"); else if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
         else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
         else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }, tableChat); }
         else if (opens === "blackjack") { if (!bjApi) bjApi = openBlackjack(stage, ctx, roomId, f.id, () => panel.refresh(), () => { bjApi = null; }, tableChat); }
@@ -2903,6 +2907,29 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (r.rushMs) startRush(p, r.rushMs);
   }
 
+  /** the puff-bar: puff it (once a minute): 35 seconds of 1.5x speed and double stab blood, with the cloud over you (everybody sees it) */
+  async function usePuff(slot: number): Promise<void> {
+    const p = mine();
+    if (!p || p.lying || faintUntil || woozy || trippingOn || dying) return;
+    const wait = me.vapeAt + VAPE_COOLDOWN_MS - serverNow();
+    if (wait > 0) return say(`The puff-bar needs ${Math.ceil(wait / 1000)} more seconds.`, "warn");
+    try {
+      const r = await puffVape(me, slot);
+      clearSelection();
+      panel.refresh();
+      playSfx("select", 0.5);
+      const sn = serverNow();
+      p.path = []; p.vape = r.until;
+      p.fast = me.speedUntil > sn ? me.speedUntil : undefined;
+      p.fastMult = me.speedMult;
+      void update(myRef, { vape: r.until, fast: p.fast ?? null, fastMult: p.fast ? me.speedMult : null }).catch(() => undefined);
+      logAction(me, "room", "puffed the puff-bar");
+      say("You take a long puff. Something clammy looks back at you. 35 seconds of speed and double stab blood.");
+    } catch (err) {
+      say((err as Error).message || "Nothing comes out.", "warn");
+    }
+  }
+
   async function consumeSlot(slot: number): Promise<void> {
     const p = mine();
     if (!p || p.lying || faintUntil || woozy || trippingOn || dying) return;
@@ -3387,6 +3414,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     unsubs.push(onMyUnusual((id) => { const mp = mine(); if (mp) mp.un = id ?? undefined; if (started) void update(myRef, { un: id ?? null }).catch(() => undefined); }));
     { const pl0 = petLookNow(); if (pl0) { mineP.pet = pl0; void update(myRef, { pet: pl0 }).catch(() => undefined); } }
     unsubs.push(onMyPetLook((look) => { const mp = mine(); if (mp) mp.pet = look ?? undefined; if (started) void update(myRef, { pet: look ?? null }).catch(() => undefined); }));
+    if (me.vapeUntil > serverNow()) { mineP.vape = me.vapeUntil; void update(myRef, { vape: me.vapeUntil }).catch(() => undefined); } // (a puff-bar cloud still on you when you walk in)
     if (me.lookUntil > serverNow() && me.lookKind) { mineP.look = me.lookKind; mineP.lookUntil = me.lookUntil; void update(myRef, { look: me.lookKind, lookUntil: me.lookUntil }).catch(() => undefined); }
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
@@ -3530,6 +3558,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         p.fastMult = typeof v.fastMult === "number" ? v.fastMult : undefined;
         p.cup = typeof v.cup === "number" ? v.cup : undefined;
         p.chem = typeof v.chem === "number" ? v.chem : undefined;
+        p.vape = typeof v.vape === "number" ? v.vape : undefined;
         p.chud = typeof v.chud === "number" ? v.chud : undefined;
         p.spin = typeof v.spin === "number" ? v.spin : undefined;
         p.look = typeof v.look === "string" ? v.look : undefined;
@@ -5767,6 +5796,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             g.beginPath(); g.arc(gx, gy, gr, 0, Math.PI * 2); g.fill();
           }
           const chemOn = !!p.chem && serverNow() < p.chem;
+          const vapeOn = !!p.vape && serverNow() < p.vape; // (a puff-bar cloud: the Raincloud effect over them, and vapour)
           const aura = glowing ? null : auraOf(p, now);
           if (img) {
             const ax = feet.x + lunge.x - (32 + padOf(img).x) * scale;
@@ -5774,6 +5804,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             pokerFx.drawFloor(g, p.uid, { x: feet.x + lunge.x, y: feet.y + lunge.y + lift }, now);
             const unusual = p.un ? unusualOf(p.un) : undefined;
             if (unusual) drawFx(g, unusual.effect, true, feet.x + lunge.x, feet.y + lunge.y + lift, scale, p.dir, now); // (an unusual: the part of its effect that goes behind)
+            if (vapeOn) drawFx(g, "raincloud", true, feet.x + lunge.x, feet.y + lunge.y + lift, scale, p.dir, now);
             if (glowing) { g.save(); g.shadowColor = `rgba(255,214,90,${(0.75 + 0.25 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 18 * pulse) * scale; }
             else if (chemOn) { g.save(); g.shadowColor = `hsla(${Math.floor(now / 2.5) % 360},100%,60%,0.95)`; g.shadowBlur = (14 + 14 * Math.abs(Math.sin(now / 90))) * scale; }
             else if (aura) { g.save(); g.shadowColor = aura.glow; g.shadowBlur = aura.blur; }
@@ -5781,6 +5812,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             if (glowing || chemOn || aura) g.restore();
             if (aura) drawAuraParticles(aura, feet.x + lunge.x, feet.y + lunge.y + lift, now);
             if (unusual) drawFx(g, unusual.effect, false, feet.x + lunge.x, feet.y + lunge.y + lift, scale, p.dir, now); // (and the part in front)
+            if (vapeOn) {
+              drawFx(g, "raincloud", false, feet.x + lunge.x, feet.y + lunge.y + lift, scale, p.dir, now);
+              for (let i = 0; i < 6; i++) { // vapour rolls off the head: soft blue-white puffs
+                const t = (now / 1800 + i / 6) % 1;
+                const px = feet.x + lunge.x + Math.sin(t * 7 + i * 1.9) * (8 + t * 16) * scale;
+                const py = feet.y + lunge.y + lift - (40 + t * 46) * scale;
+                const pr = (3 + t * 9) * scale;
+                pxBlob(px, py, pr + pxCell(), `rgba(110,170,210,${(0.35 * (1 - t)).toFixed(3)})`);
+                pxBlob(px, py, pr, `rgba(236,248,255,${(0.75 * (1 - t)).toFixed(3)})`);
+              }
+            }
             if (chemOn) { // smoke pours off you
               for (let i = 0; i < 10; i++) {
                 const t = (now / 1400 + i / 10) % 1;

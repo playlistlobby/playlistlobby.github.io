@@ -34,6 +34,7 @@ export const caseOpen: Action = {
       : row.id === "poppyseed" ? { item: "poppyseed", qty: 1 }
       : row.id === "loudspeaker" ? { item: "loudspeaker", qty: 1 }
       : row.id === "gun" ? { item: "gun", qty: 1 }
+      : row.id === "puffbar" ? { item: "puffbar", qty: 1 }
       : row.id === "unusual" ? { item: pick(UNUSUAL_IDS), qty: 1 }
       : row.id === "knifeskin" ? { item: "knife_tt", qty: 1 }
       : row.id === "unusualpet" ? { item: randomUnusualPet(fairInt), qty: 1 }

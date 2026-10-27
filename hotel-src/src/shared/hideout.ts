@@ -41,9 +41,12 @@ export const HIDEOUT_BOOST_MS = 60 * 60 * 1000;
 export const HIDEOUT_BOOST_MAX_AHEAD_MS = 6 * HIDEOUT_BOOST_MS;
 /** what the public list says about a hideout (written by the server to hideoutList/<owner>) */
 export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number; /** anybody can walk in (no knocking) */ open: boolean; /** how many players have it as a favourite: the more, the higher it is on the list */ favs?: number; /** what the landlord outside calls out about it while it is boosted */ ad?: string }
-/** the order of the list: advertised ones first (the latest on top), then the open ones (anybody can walk in), then the most favourited, then the bigger crowds */
-export const sortListings = <T extends { listing: HideoutListing }>(rows: T[], now: number): T[] =>
-  [...rows].sort((a, b) => (Number(b.listing.boostUntil > now) - Number(a.listing.boostUntil > now)) || (b.listing.boostUntil > now ? b.listing.boostUntil - a.listing.boostUntil : 0) || (Number(b.listing.open) - Number(a.listing.open)) || (b.listing.favs ?? 0) - (a.listing.favs ?? 0) || b.listing.members - a.listing.members || a.listing.name.localeCompare(b.listing.name));
+/**
+ * the order of the list: advertised ones first (the latest on top), then the ones with the most players inside right now (`inside`), then the open ones (anybody can
+ * walk in), then the most favourited, then the bigger crowds
+ */
+export const sortListings = <T extends { owner?: string; listing: HideoutListing }>(rows: T[], now: number, inside: (owner: string) => number = () => 0): T[] =>
+  [...rows].sort((a, b) => (Number(b.listing.boostUntil > now) - Number(a.listing.boostUntil > now)) || (b.listing.boostUntil > now ? b.listing.boostUntil - a.listing.boostUntil : 0) || (inside(b.owner ?? "") - inside(a.owner ?? "")) || (Number(b.listing.open) - Number(a.listing.open)) || (b.listing.favs ?? 0) - (a.listing.favs ?? 0) || b.listing.members - a.listing.members || a.listing.name.localeCompare(b.listing.name));
 /** how many hideouts a player can have as favourites */
 export const HIDEOUT_MAX_FAVS = 30;
 

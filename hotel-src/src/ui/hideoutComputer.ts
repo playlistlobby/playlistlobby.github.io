@@ -46,6 +46,8 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   let revenge: Revenge[] = [];
   const stops = [watchHideoutTill(me.uid, (t) => { till = t; if (page === "tables") render(); }), watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; }), watchRevenge(me.uid, (l) => { revenge = l; })];
   const owner = (): boolean => getDef().ownerUid === me.uid;
+  /** the staff can open any hideout's computer to see who is in it (they get the Members page only, and can't change anything) */
+  const staffView = (): boolean => { const d = getDef(); return me.enterAnywhere && d.ownerUid !== me.uid && !d.hideout?.members?.[me.uid]; };
 
   const url = h("div", { class: "hc-url" });
   const body = h("div", { class: "hc-body" });
@@ -250,13 +252,14 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     if (closed) return;
     const isOwner = owner();
     if (page === "tables" && !isOwner) page = "shop";
+    if (staffView()) page = "members";
     const scrolled = body.scrollTop;
     const focused = document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement) ? document.activeElement : null;
     if (focused) return; // (don't rebuild the page while somebody is typing in it)
     url.textContent = `🔒 hideout.6ix/${page}`;
     body.replaceChildren(...(page === "shop" ? shopPage() : page === "orders" ? ordersPage() : page === "members" ? membersPage() : page === "hits" ? hitsPage() : page === "settings" ? settingsPage() : tablesPage()));
     body.scrollTop = scrolled;
-    tabs.replaceChildren(...PAGES.filter((p) => !p.owner || isOwner).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.icon), h("span", {}, p.label))));
+    tabs.replaceChildren(...PAGES.filter((p) => staffView() ? p.id === "members" : !p.owner || isOwner).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.icon), h("span", {}, p.label))));
   }
   render();
   const off = onFurniIcon(() => { if (page === "shop" || page === "orders") render(); });

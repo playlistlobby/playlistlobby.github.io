@@ -954,7 +954,10 @@
               ".validate": "newData.isBoolean()"
             },
             "fastMult": {
-              ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 10"
+              ".validate": "newData.isNumber() && newData.val() >= 1.5 && newData.val() <= 10"
+            },
+            "vape": {
+              ".validate": "newData.isNumber() && newData.val() === root.child('users').child($uid).child('vapeUntil').val()"
             },
             "cup": {
               ".validate": "newData.isNumber()"

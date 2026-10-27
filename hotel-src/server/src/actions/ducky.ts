@@ -9,7 +9,7 @@ import { Ctx, fail } from "../ctx";
 import { addToInv } from "../../../src/shared/economy";
 import { INV_SIZE } from "../../../src/shared/items";
 import { KEYS_PACK, KEY_SINGLE } from "../../../src/shared/cases";
-import { DUCKY_STARTER, DuckyProduct, isHexColor, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../../src/shared/ducky";
+import { DUCKY_STARTER, DuckyProduct, isHexColor, VAPE_ITEM, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../../src/shared/ducky";
 import { setSignInEmail } from "../authAdmin";
 
 const toEmail = (name: string): string => `${name.toLowerCase()}@users.bobba.invalid`;
@@ -40,6 +40,13 @@ export async function grantDucky(c: Ctx, product: DuckyProduct, a: { color?: unk
     if (!next) fail("Your pockets are full: make room for the keys.");
     s.inventory = next!;
     return { ok: true, qty };
+  }
+
+  if (product === "vape") { // a puff-bar (as many as you like)
+    const next = addToInv(s.inventory, { item: VAPE_ITEM, qty: 1 });
+    if (!next) fail("Your pockets are full: make room for the puff-bar.");
+    s.inventory = next!;
+    return { ok: true };
   }
 
   if (product === "color") {

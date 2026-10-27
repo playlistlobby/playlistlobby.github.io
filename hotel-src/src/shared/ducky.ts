@@ -2,7 +2,7 @@
 // While the machine is in test mode (the local server) a buy goes straight through without paying; paying through Stripe comes when it is published.
 
 import { KEYS_PACK, KEY_SINGLE } from "./cases";
-export type DuckyProduct = "starter" | "color" | "fx" | "rename" | "keys" | "key1";
+export type DuckyProduct = "starter" | "color" | "fx" | "rename" | "keys" | "key1" | "vape";
 
 export interface DuckyDef {
   id: DuckyProduct;
@@ -21,6 +21,7 @@ export const DUCKY_PRODUCTS: DuckyDef[] = [
   { id: "rename", ore: 1000 },
   { id: "keys", ore: KEYS_PACK.ore }, // 5 keys for mystery boxes: can be bought as often as you like
   { id: "key1", ore: KEY_SINGLE.ore }, // or one key on its own
+  { id: "vape", ore: 2000 }, // a puff-bar (a tradeable vape: see VAPE_* below), as many as you like
 ];
 export const duckyDef = (id: unknown): DuckyDef | undefined => DUCKY_PRODUCTS.find((p) => p.id === id);
 /** what a purchase of one of them is called when it is paid for (Stripe, and the purchase records): "ducky_starter" ... */
@@ -28,7 +29,7 @@ export type DuckyPayProduct = `ducky_${DuckyProduct}`;
 export const duckyPayId = (id: DuckyProduct): DuckyPayProduct => `ducky_${id}`;
 export const duckyOfPayId = (id: unknown): DuckyDef | undefined => (typeof id === "string" && id.startsWith("ducky_") ? [duckyDef(id.slice(6))].find((d) => d && d.ore > 0) : undefined);
 /** the name on the payment page */
-export const DUCKY_PAY_NAMES: Record<DuckyProduct, string> = { starter: "pay2win: Startpakke", color: "pay2win: Navnefarve", fx: "pay2win: Chat-værktøj", rename: "pay2win: Skift navn", keys: "pay2win: 5 nøgler", key1: "pay2win: 1 nøgle" };
+export const DUCKY_PAY_NAMES: Record<DuckyProduct, string> = { starter: "pay2win: Startpakke", color: "pay2win: Navnefarve", fx: "pay2win: Chat-værktøj", rename: "pay2win: Skift navn", keys: "pay2win: 5 nøgler", key1: "pay2win: 1 nøgle", vape: "pay2win: Puff-bar" };
 
 /** the starter package: 3 growing kits, 3 mixers and 50 blood (it takes six free pocket slots) */
 export const DUCKY_STARTER = { items: [{ item: "f_planter", qty: 3 }, { item: "f_mixer", qty: 3 }], blood: 50 };
@@ -53,3 +54,10 @@ export const RESERVED_NAMES: ReadonlySet<string> = new Set(["adminsidia", "admin
 
 /** øre -> "1 kr" / "2,50 kr" */
 export const kr = (ore: number): string => `${(ore / 100).toLocaleString("da-DK", { minimumFractionDigits: ore % 100 ? 2 : 0 })} kr`;
+
+/** The puff-bar (a vape, sold at the Ducky machine for 20 kr and found in the mystery boxes): puff it once a minute for 35 seconds of walking 1.5 times as fast and double blood from stabs. */
+export const VAPE_ITEM = "puffbar";
+export const VAPE_COOLDOWN_MS = 60_000;
+export const VAPE_MS = 35_000;
+export const VAPE_SPEED = 1.5;
+export const VAPE_BLOOD_MULT = 2;

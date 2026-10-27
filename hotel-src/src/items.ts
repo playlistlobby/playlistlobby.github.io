@@ -24,7 +24,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear" | "pet";
+  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear" | "pet" | "vape";
   /** select it, then click a piece of furniture of this kind (the sink, the growing kit) */
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
@@ -305,6 +305,13 @@ export const ITEMS: Record<string, ItemDef> = {
     examine: "A red and white pill",
     icon: assetUrl("items/pill.svg"),
     useSelf: "pill",
+  },
+  puffbar: {
+    id: "puffbar",
+    name: "Puff-bar",
+    examine: "A vape with a clammy ape on it. Click it to puff: 35 seconds of walking 1.5x as fast and double blood from stabs, once a minute. You can trade it.",
+    icon: assetUrl("items/puffbar.png"),
+    useSelf: "vape",
   },
   loudspeaker: {
     id: "loudspeaker",

@@ -110,6 +110,9 @@ export interface Profile {
   /** when the syringe last drew blood from yourself / from a body bag (server time, ms); each works once every 20 minutes */
   syringeSelfAt: number;
   syringeBagAt: number;
+  /** the puff-bar: when it was last puffed (server time, ms), and until when the cloud is on you */
+  vapeAt: number;
+  vapeUntil: number;
   flappyAt: number;
 }
 
@@ -178,6 +181,8 @@ export function applyState(p: Profile, s: Snapshot): void {
   p.roomLevel = s.roomLevel;
   p.syringeSelfAt = s.syringeSelfAt;
   p.syringeBagAt = s.syringeBagAt;
+  p.vapeAt = s.vapeAt;
+  p.vapeUntil = s.vapeUntil;
   p.flappyAt = s.flappyAt;
   p.tutorial = s.tutorial;
   p.questAt = s.questAt;
@@ -271,6 +276,8 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     questAt: 0,
     syringeSelfAt: 0,
     syringeBagAt: 0,
+    vapeAt: 0,
+    vapeUntil: 0,
     flappyAt: 0,
   };
   applyState(profile, state);
@@ -421,6 +428,8 @@ export function watchFlappyBoard(cb: (rows: BoardRow[]) => void, myUid?: string)
 /** A drop of blood caught in Flappy Bird. */
 export const rewardFlappyDrop = (p: Profile, roomId: string): Promise<unknown> => call(p, "flappy", { room: roomId });
 /** The syringe's drop: from yourself, or from a body bag in the room. */
+/** Puffs the puff-bar in a pocket slot: 35 seconds of 1.5x speed and double stab blood (once a minute). */
+export const puffVape = (p: Profile, slot: number): Promise<{ until: number }> => call(p, "vapePuff", { slot });
 export const rewardSyringe = (p: Profile, who: "self" | "bag", roomId: string): Promise<unknown> => call(p, "syringe", { who, room: roomId });
 
 /** Sends an item from a pocket slot to a friend as a gift (items only; they can decline it). */

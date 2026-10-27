@@ -93,6 +93,17 @@ console.log("--- the machine: paying and getting");
     const recs = Object.values((await owner("GET", `purchases`)) ?? {}).filter((x) => x.uid === k.uid);
     check("5 keys cost 30 kr and 1 key costs 10 kr", recs.some((x) => x.product === "ducky_keys" && x.amount === 3000) && recs.some((x) => x.product === "ducky_key1" && x.amount === 1000), JSON.stringify(recs));
   }
+  { // the puff-bar: 20 kr, as often as you like, a tradeable item
+    const v = await fresh("t_dk_vape", { blood: 0 });
+    await inShop(v);
+    const vapes = async () => Object.values((await owner("GET", `users/${v.uid}/inventory`)) ?? {}).reduce((n, x) => n + (x && x.item === "puffbar" ? x.qty : 0), 0);
+    ok("a puff-bar is bought", await pay(v, "vape"));
+    check("it is in the pocket", (await vapes()) === 1, String(await vapes()));
+    ok("and another (as often as you like)", await pay(v, "vape"));
+    check("two now", (await vapes()) === 2, String(await vapes()));
+    const recs = Object.values((await owner("GET", `purchases`)) ?? {}).filter((x) => x.uid === v.uid);
+    check("a puff-bar costs 20 kr", recs.length >= 2 && recs.every((x) => x.product === "ducky_vape" && x.amount === 2000), JSON.stringify(recs));
+  }
   const items = [];
   for (let i = 0; i < 24; i++) items.push([i, { item: "wateringcan", qty: 1 }]);
   items.push([24, { item: "lighter", qty: 1 }], [25, { item: "knife", qty: 1 }], [26, { item: "cd", qty: 1 }], [27, { item: "syringe", qty: 1 }]);

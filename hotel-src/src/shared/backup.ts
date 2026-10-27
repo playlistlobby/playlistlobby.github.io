@@ -10,7 +10,7 @@ export const hourBucket = (ms: number): number => ms - (ms % 3_600_000);
 /** The parts of a player's database node a backup holds and a rollback puts back: everything the server decides (blood, pockets, storage, what is owned...). Names, looks, friends and chat are not touched. */
 export const USER_BACKUP_KEYS = [
   "blood", "owned", "inventory", "storage", "stash", "vend", "mixed", "stabs", "dumpsters", "boostUntil", "boostMult", "speedUntil", "speedMult",
-  "leanUntil", "cupUntil", "shroomUntil", "chemUntil", "lookKind", "lookUntil", "deadlyLeft", "deadlyUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt",
+  "leanUntil", "cupUntil", "shroomUntil", "chemUntil", "lookKind", "lookUntil", "deadlyLeft", "deadlyUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "vapeAt", "vapeUntil", "flappyAt", "tutorial", "questAt",
   "sixty", "tradeCap", "bloodBy",
 ] as const;
 /** The parts of a player room a backup holds: the furniture in it and everything the server changes about it. */

@@ -127,6 +127,9 @@ export interface Snapshot {
   roomLevel: number;
   syringeSelfAt: number;
   syringeBagAt: number;
+  /** the puff-bar: when it was last puffed (once a minute), and until when the cloud is on you */
+  vapeAt: number;
+  vapeUntil: number;
   flappyAt: number;
   /** the introduction and 6ixty's jobs: 0 woke up, 1 has the knife, 2 stabbed the guy, 3 has the pill, 4 intro done, 5 got lighter money, 6 brought the lighter back */
   tutorial: number;
@@ -218,7 +221,7 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     boostUntil: Number(v.boostUntil) || 0,
     boostMult: Math.min(4, Math.max(2, Number(v.boostMult) || 2)),
     speedUntil: Number(v.speedUntil) || 0,
-    speedMult: Math.min(10, Math.max(2, Number(v.speedMult) || 2)),
+    speedMult: Math.min(10, Math.max(1.5, Number(v.speedMult) || 2)), // (1.5 is the puff-bar)
     leanUntil: Number(v.leanUntil) || 0,
     cupUntil: Number(v.cupUntil) || 0,
     shroomUntil: Number(v.shroomUntil) || 0,
@@ -231,6 +234,8 @@ export function parseEconomy(v: any, valid: (id: string) => boolean, isAdmin: bo
     roomLevel: Math.min(ROOM_UPGRADES.length, Math.max(0, Math.floor(Number(v.roomLevel) || 0))),
     syringeSelfAt: Number(v.syringeSelfAt) || 0,
     syringeBagAt: Number(v.syringeBagAt) || 0,
+    vapeAt: Number(v.vapeAt) || 0,
+    vapeUntil: Number(v.vapeUntil) || 0,
     flappyAt: Number(v.flappyAt) || 0,
     tutorial,
     questAt: Number(v.questAt) || 0,
@@ -245,7 +250,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
   const patch: Record<string, unknown> = {};
   const base = `users/${uid}/`;
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "speedMult", "leanUntil", "cupUntil", "shroomUntil", "chemUntil", "lookKind", "lookUntil", "deadlyLeft", "deadlyUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "flappyAt", "tutorial", "questAt"] as const) {
+  for (const k of ["blood", "boostUntil", "boostMult", "speedUntil", "speedMult", "leanUntil", "cupUntil", "shroomUntil", "chemUntil", "lookKind", "lookUntil", "deadlyLeft", "deadlyUntil", "catsCarved", "roomLevel", "syringeSelfAt", "syringeBagAt", "vapeAt", "vapeUntil", "flappyAt", "tutorial", "questAt"] as const) {
     if (before[k] !== after[k]) patch[base + k] = after[k];
   }
   if (before.tradeCap.at !== after.tradeCap.at || before.tradeCap.n !== after.tradeCap.n) patch[`${base}tradeCap`] = after.tradeCap;

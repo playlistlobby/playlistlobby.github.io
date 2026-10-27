@@ -313,6 +313,8 @@ class SocialStore {
     const t = v.seen ?? v.since;
     return typeof t === "number" && serverNow() - t > STALE_MS;
   };
+  /** how many signed-in players are standing in this room right now (from everybody's presence) */
+  playersIn = (room: string): number => { let n = 0; for (const v of this.presence.values()) if (v.room === room && !this.stale(v)) n++; return n; };
   isOnline = (uid: string) => { const v = this.presence.get(uid); return !!v && !this.stale(v); };
   isIdle = (uid: string) => !!this.presence.get(uid)?.idle;
   friendUids = () => new Set(this.friends.keys());

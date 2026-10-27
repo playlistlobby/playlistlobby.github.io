@@ -13298,5 +13298,45 @@
   "en": "The message is bought together with the advertising.",
   "da": "Beskeden købes sammen med reklamen.",
   "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2105": {
+  "en": "A vape with a clammy ape on it. Click it to puff: 35 seconds of walking 1.5x as fast and double blood from stabs, once a minute. You can trade it.",
+  "da": "Vape med en klam abe på. Klik på den for at pulse: 35 sekunder med 1,5 gange gangfart og dobbelt blod fra stik, én gang i minuttet. Du kan bytte den.",
+  "where": "src/items.ts"
+ },
+ "N2106": {
+  "en": "Vape med en klam abe på. Puff it once a minute: 35 seconds of walking 1.5x as fast and double blood from stabs. You can trade it.",
+  "da": "Vape med en klam abe på. Pust til den én gang i minuttet: 35 sekunder med 1,5 gange gangfart og dobbelt blod fra stik. Du kan bytte den.",
+  "where": "src/ui/duckyShop.ts"
+ },
+ "N2107": {
+  "en": "Puff-bar",
+  "da": "Puff-bar",
+  "where": "src/items.ts"
+ },
+ "N2108": {
+  "en": "Puff",
+  "da": "Pust",
+  "where": "src/ui/sidepanel.ts"
+ },
+ "N2109": {
+  "en": "The puff-bar is in your pocket.",
+  "da": "Puff-baren er i din lomme.",
+  "where": "src/payReturn.ts"
+ },
+ "N2110": {
+  "en": "You take a long puff. Something clammy looks back at you. 35 seconds of speed and double stab blood.",
+  "da": "Du tager et langt hiv. Noget klamt kigger tilbage på dig. 35 sekunder med fart og dobbelt stikblod.",
+  "where": "src/ui/room.ts"
+ },
+ "N2111": {
+  "en": "Your pockets are full: make room for the puff-bar.",
+  "da": "Dine lommer er fulde: gør plads til puff-baren.",
+  "where": "server/src/actions/ducky.ts"
+ },
+ "N2112": {
+  "en": "You haven't got that.",
+  "da": "Det har du ikke.",
+  "where": "server/src/actions/rewards.ts"
  }
 }
