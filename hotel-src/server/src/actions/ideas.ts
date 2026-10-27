@@ -17,8 +17,9 @@ interface PostRow { uid?: string; name?: string; title?: string; ts?: number; cn
 /** a short text from the browser: trimmed, one line, within the limit */
 function line(v: unknown, max: number, what: string, optional = false): string {
   if (v === undefined || v === null || v === "") { if (optional) return ""; return fail(`Write something in the ${what}.`); }
-  if (typeof v !== "string" || !noControl.test(v)) return fail(`Bad ${what}.`);
-  const t = v.replace(/\s+/g, " ").trim();
+  if (typeof v !== "string") return fail(`Bad ${what}.`);
+  const t = v.replace(/\s+/g, " ").trim(); // (a line break in the box is a space: only the other control characters are refused)
+  if (!noControl.test(t)) return fail(`Bad ${what}.`);
   if (!t && !optional) return fail(`Write something in the ${what}.`);
   if (t.length > max) return fail(`The ${what} can be ${max} characters at most.`);
   return t;

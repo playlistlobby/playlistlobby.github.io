@@ -69,6 +69,8 @@ console.log("--- posting");
   check("the post is on the board", !!p && p.title === "More lamps" && p.text === "we need them" && p.uid === a.uid && p.name === "t_id_a" && p.img === true, JSON.stringify(p));
   check("the picture is kept apart", (await ideasRead(`ideasImg/${id}`)) === PX);
   { const big = "data:image/jpeg;base64," + "A".repeat(200000); const x = await fresh("t_id_big", { blood: 0 }); await inLobby(x); ok("a 200 KB picture gets through the worker", await act(x, "ideaPost", { title: "big", image: big })); bad("but not 300 KB", await act(x, "ideaPost", { title: "bigger", image: "data:image/jpeg;base64," + "A".repeat(300000) })); }
+  { const x = await fresh("t_id_nl", { blood: 0 }); await inLobby(x); const rr = await act(x, "ideaPost", { title: "two\nlines", text: "first\r\nsecond\tthird" }); ok("line breaks in the box are fine", rr); const pp = (await posts())[rr.data?.id]; check("and they become spaces", !!pp && pp.title === "two lines" && pp.text === "first second third", JSON.stringify(pp)); }
+  { const x = await fresh("t_id_ctl", { blood: 0 }); await inLobby(x); bad("another control character is refused", await act(x, "ideaPost", { title: "a\u0007b" })); }
   bad("posting again at once is too fast", await act(a, "ideaPost", { title: "again" }));
   ok("somebody else can post", await act(b, "ideaPost", { title: "A cat" }));
   check("a post without a picture has none", Object.values(await posts()).some((x) => x.title === "A cat" && !x.img));
