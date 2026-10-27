@@ -1,4 +1,4 @@
-// Hit and gun tests: putting a hit on somebody from a hideout (500-1500, once per 2 hours per hideout, 3 a day per person), the gun (bagmand sells one a visit), and shooting:
+// Hit and gun tests: putting a hit on somebody from a hideout (250-2000, once per 2 hours per hideout, 3 a day per person), the gun (bagmand sells one a visit), and shooting:
 // a bounty is claimed, the one who is shot drops blood and is dead for two minutes, the gun is always spent
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: node test/hits.mjs (server/)
 const DB = "http://127.0.0.1:9000";
@@ -174,8 +174,8 @@ console.log("--- a laced thing pays its giver the bounty of the one it kills");
 console.log("--- putting a hit on somebody");
 const place = (u, target, amount, room = HR) => act(u, "hitPlace", { room, target: target.uid, amount });
 bad("only a member of the hideout", await place(stranger, rich, 500));
-bad("not under 300", await place(host, rich, 299));
-bad("not over 1500", await place(host, rich, 1501));
+bad("not under 250", await place(host, rich, 249));
+bad("not over 2000", await place(host, rich, 2001));
 bad("not on yourself", await place(host, host, 500));
 bad("not on nobody", await act(host, "hitPlace", { room: HR, target: "nobody12345", amount: 500 }));
 bad("not on an admin (they are protected)", await place(host, guard, 500));
@@ -189,7 +189,7 @@ check("the target can see who did it (the revenge button)", Object.values((await
 check("only the target reads it", (await fetch(`${DB}/hitRevenge/${rich.uid}.json?ns=${NS}&auth=${stranger.token}`)).status >= 400);
 bad("one hit per hideout per 2 hours", await place(mem, mid, 500));
 await owner("PUT", `hitCool/${host.uid}`, Date.now() - 3 * 3_600_000);
-ok("2 hours later the hideout can again (a member)", await place(mem, rich, 1500));
+ok("2 hours later the hideout can again (a member), up to 2000", await place(mem, rich, 2000));
 list = await hits();
 check("two hits on the rich one", list.filter((h) => h.target === rich.uid).length === 2);
 await owner("PUT", `hitCool/${host.uid}`, Date.now() - 3 * 3_600_000);
