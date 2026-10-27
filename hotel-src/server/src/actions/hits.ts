@@ -114,13 +114,14 @@ export const gunShoot: Action = {
     if (!name) fail("They aren't a player.");
     if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't shoot someone who plays on your device.");
     if (await isProtected(c, target)) fail("The gun jams. That one is protected.");
+    const hits = parseHits(await c.db.get("hits")).filter((h) => h.target === target);
+    if (!hits.length) fail("Nobody has put a bounty on them (any more): the gun won't fire."); // (only somebody with blood on their head can be shot; the gun is kept)
     const w = await c.user();
     const want = a.slot ?? findSlot(w.s.inventory, "gun");
     if (want === undefined || Number(want) < 0) fail("You have no gun.");
     const slot = int(want, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "gun") fail("You have no gun.");
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1); // (it is spent whatever happens next)
-    const hits = parseHits(await c.db.get("hits")).filter((h) => h.target === target);
     const hit = hits[0]; // (the biggest)
     const v = await c.user(target);
     const loss = shotLoss(v.s.blood, !!hit);

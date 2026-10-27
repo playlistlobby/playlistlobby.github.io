@@ -4,7 +4,7 @@
 //   hitLog/<target>    when hits were put on this player (the last few): a player can be the target of 3 hits a day
 //   hitCool/<owner>    when a hideout last put a hit on somebody: a hideout can put one hit every 2 hours
 
-export const HIT_MIN = 500;
+export const HIT_MIN = 300;
 export const HIT_MAX = 1500;
 /** a hideout may put one hit on somebody's head this often */
 export const HIT_HIDEOUT_COOLDOWN_MS = 2 * 3_600_000;

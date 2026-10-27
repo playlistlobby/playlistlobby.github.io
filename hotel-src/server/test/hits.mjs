@@ -108,7 +108,7 @@ console.log("--- guns and rocket launchers can be traded and dropped");
 console.log("--- putting a hit on somebody");
 const place = (u, target, amount, room = HR) => act(u, "hitPlace", { room, target: target.uid, amount });
 bad("only a member of the hideout", await place(stranger, rich, 500));
-bad("not under 500", await place(host, rich, 499));
+bad("not under 300", await place(host, rich, 299));
 bad("not over 1500", await place(host, rich, 1501));
 bad("not on yourself", await place(host, host, 500));
 bad("not on nobody", await act(host, "hitPlace", { room: HR, target: "nobody12345", amount: 500 }));
@@ -177,20 +177,26 @@ bad("too far away", await shoot(small));
 await stand(small, "lobby", 5, 6);
 check("the gun is still there after refusals", hasItem((await act(shooter, "sync")).state, "gun"));
 
-// no bounty: a little blood and 10 seconds
+// no bounty: no shot (and the gun is kept)
 await owner("DELETE", `sendHome/${small.uid}`);
+const s0 = await shoot(small);
+check("somebody with no bounty can't be shot", s0.ok === false && /bounty/i.test(s0.error ?? ""), JSON.stringify(s0));
+check("the gun is kept", hasItem((await act(shooter, "sync")).state, "gun"));
+check("and they were not touched", (await bloodOf(small)) === 400 && (await owner("GET", `sendHome/${small.uid}`)) === null);
+// with the smallest bounty (300) they can: 20 drop (they have 400) and a minute down
+await owner("PUT", "hits/hs", { target: small.uid, targetName: "t_ht_small", amount: 300, by: host.uid, byName: "host", hideout: host.uid, hideoutName: "x", at: Date.now() - 3000 });
 const s1 = await shoot(small);
-ok("shoot somebody with no bounty", s1);
-check("they drop 5 (a small purse) and are dead for 10 seconds", s1.data?.dropped === 5 && s1.data?.secs === 10 && s1.data?.bounty === 0, JSON.stringify(s1.data));
-check("their blood is 395", (await bloodOf(small)) === 395);
+ok("shoot somebody with a bounty", s1);
+check("they drop 20 and are dead for a minute, the bounty is claimed", s1.data?.dropped === 20 && s1.data?.secs === 60 && s1.data?.bounty === 300, JSON.stringify(s1.data));
+check("their blood is 380", (await bloodOf(small)) === 380);
 const sh = await owner("GET", `sendHome/${small.uid}`);
-check("they are sent down: shot, 10 seconds", sh && sh.shot === true && sh.secs === 10 && sh.lost === 5 && sh.byName === "t_ht_shooter", JSON.stringify(sh));
+check("they are sent down: shot, a minute", sh && sh.shot === true && sh.secs === 60 && sh.lost === 20 && sh.byName === "t_ht_shooter", JSON.stringify(sh));
 check("the gun is gone", !hasItem((await act(shooter, "sync")).state, "gun"));
-const drops = Object.values((await owner("GET", "rooms/lobby/drops")) ?? {}).filter((d) => d.item === "blood" && d.by === small.uid && d.qty === 5);
+const drops = Object.values((await owner("GET", "rooms/lobby/drops")) ?? {}).filter((d) => d.item === "blood" && d.by === small.uid && d.qty === 20);
 check("their blood lies on the floor", drops.length >= 1);
 const evs = Object.values((await owner("GET", "rooms/lobby/events")) ?? {}).filter((e) => e.type === "shot" && e.to === small.uid && e.from === shooter.uid);
 check("everybody in the room is told (a shot event)", evs.length >= 1);
-bad("a second shot needs a second gun", await shoot(small));
+bad("a second shot needs a second gun (and a second bounty)", await shoot(small));
 
 // over 1000 and over 5000 with no bounty
 await owner("PUT", `users/${shooter.uid}/inventory`, inv({ item: "gun", qty: 3 }));
@@ -198,7 +204,7 @@ const s2 = await shoot(mid);
 check("over 1000 blood and no bounty: 10 drop... but mid has a hit on them", s2.ok);
 // mid has a hit of 700 placed above: it was a bounty shot
 check("a bounty of 700 is claimed", s2.data?.bounty === 700 && s2.data?.secs === 60 && s2.data?.dropped === 100, JSON.stringify(s2.data));
-check("the shooter got the 700", (await bloodOf(shooter)) === 800, String(await bloodOf(shooter)));
+check("the shooter got the 700 (on top of the 300 from before)", (await bloodOf(shooter)) === 1100, String(await bloodOf(shooter)));
 check("the hit is gone", !(await hits()).some((h) => h.target === mid.uid));
 check("the gun count went down one (3 -> 2)", (await act(shooter, "sync")).state.inventory.find((x) => x && x.item === "gun")?.qty === 2);
 
@@ -213,22 +219,20 @@ check("blood moves: the shooter +1300, the target -200", (await bloodOf(shooter)
 const left = (await hits()).filter((h) => h.target === rich.uid);
 check("the smaller hit is still open (500) and so is one of the old ones", left.length >= 1 && left.some((h) => h.id === "ha"), JSON.stringify(left.map((h) => h.amount)));
 
-// no bounty over 5000: 25, and over 1000: 10
+// no bounty, however rich: no shot
 await clearHits();
 await owner("PUT", `users/${shooter.uid}/inventory`, inv({ item: "gun", qty: 2 }));
 await owner("PUT", `users/${rich.uid}/blood`, 7000);
 const s4 = await shoot(rich);
-check("over 5000 and no bounty: 25 drop, 10 seconds", s4.ok && s4.data.dropped === 25 && s4.data.secs === 10 && s4.data.bounty === 0, JSON.stringify(s4.data));
-await owner("PUT", `users/${mid.uid}/blood`, 3000);
-await stand(mid, "lobby", 5, 5);
-const s5 = await shoot(mid);
-check("over 1000 and no bounty: 10 drop", s5.ok && s5.data.dropped === 10 && s5.data.secs === 10, JSON.stringify(s5.data));
+check("a rich one with no bounty can't be shot", s4.ok === false && /bounty/i.test(s4.error ?? "") && (await bloodOf(rich)) === 7000, JSON.stringify(s4));
+check("and the gun stays", hasItem((await act(shooter, "sync")).state, "gun"));
 
 // nobody has less than they drop
 await owner("PUT", `users/${small.uid}/blood`, 3);
+await owner("PUT", "hits/hz", { target: small.uid, targetName: "t_ht_small", amount: 400, by: host.uid, byName: "host", hideout: host.uid, hideoutName: "x", at: Date.now() - 2000 });
 await owner("PUT", `users/${shooter.uid}/inventory`, inv({ item: "gun", qty: 1 }));
 const s6 = await shoot(small);
-check("with 3 blood they drop 3, not 5", s6.ok && s6.data.dropped === 3 && (await bloodOf(small)) === 0, JSON.stringify(s6.data));
+check("with 3 blood they drop 3, not 20", s6.ok && s6.data.dropped === 3 && (await bloodOf(small)) === 0, JSON.stringify(s6.data));
 
 console.log("--- blood is not made out of nothing");
 await clearHits();
