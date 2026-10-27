@@ -19,7 +19,7 @@ export const DUCKY_PRODUCTS: DuckyDef[] = [
   { id: "color", ore: 2000, once: "ducky_color" },
   { id: "fx", ore: 2000, once: "ducky_fx" },
   { id: "rename", ore: 1000 },
-  { id: "keys", ore: KEYS_PACK.ore }, // 5 keys for mystery boxes: can be bought as often as you like
+  { id: "keys", ore: KEYS_PACK.ore }, // 3 keys for mystery boxes: can be bought as often as you like
 ];
 export const duckyDef = (id: unknown): DuckyDef | undefined => DUCKY_PRODUCTS.find((p) => p.id === id);
 /** what a purchase of one of them is called when it is paid for (Stripe, and the purchase records): "ducky_starter" ... */

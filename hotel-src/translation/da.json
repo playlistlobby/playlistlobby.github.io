@@ -13060,8 +13060,8 @@
   "where": "src/items.ts:471"
  },
  "N2081": {
-  "en": "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (5 for 25 kr). One key opens one box.",
-  "da": "En nøgle til en mysteriekasse. 6ixty sælger dem, og det gør pay2win-maskinen i butikken også (5 for 25 kr). Én nøgle åbner én kasse.",
+  "en": "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (3 for 25 kr). One key opens one box.",
+  "da": "En nøgle til en mysteriekasse. 6ixty sælger dem, og det gør pay2win-maskinen i butikken også (3 for 25 kr). Én nøgle åbner én kasse.",
   "where": "src/items.ts:479"
  },
  "N534": {
