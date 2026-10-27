@@ -454,6 +454,14 @@ console.log("--- the list at the door");
   const vip = await fresh("t_hd_list_vip", { blood: 0 });
   const presV = { name: vip.name, figure: "x", x: 5, y: 5, dir: 2 };
   check("without the perk nobody walks into a closed hideout", refused(await clientWrite(vip, `rooms/h_${lo.uid}/players/${vip.uid}`, presV)));
+  { // the staff never have to knock: a mod walks in anywhere without the perk
+    const mo = await fresh("t_hd_list_mod", { blood: 0 });
+    const presM = { name: mo.name, figure: "x", x: 5, y: 5, dir: 2 };
+    check("a plain player can't walk into a closed hideout", refused(await clientWrite(mo, `rooms/h_${lo.uid}/players/${mo.uid}`, presM)));
+    await owner("PUT", `roles/${mo.uid}`, "mod");
+    check("a mod walks in", !refused(await clientWrite(mo, `rooms/h_${lo.uid}/players/${mo.uid}`, presM)));
+    await owner("DELETE", `roles/${mo.uid}`);
+  }
   await owner("PUT", `perks/${vip.uid}/enterAnywhere`, true);
   check("with the perk they do", !refused(await clientWrite(vip, `rooms/h_${lo.uid}/players/${vip.uid}`, presV)));
   await owner("PUT", `roomsMeta/u_${lo.uid}`, { owner: lo.uid, ownerName: lo.name, name: "closed room", access: "closed", w: 8, h: 8 });

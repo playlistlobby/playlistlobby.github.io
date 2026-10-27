@@ -71,9 +71,10 @@ await stand(far, ROOM(host), 13, 0);
 const everyone = [a, b, c];
 const heads = [a, b];
 const chipsOn = async (fid) => { const t = await tbl(host, fid); return seatsOf(t).reduce((n, s) => n + s.stack, 0) + (t && t.phase === "play" ? seatsOf(t).reduce((n, s) => n + s.total, 0) : 0); };
-const worth = async () => { let n = 0; for (const u of [a, b, c, far]) n += await bloodOf(u); return n + (await chipsOn("pt1")) + (await chipsOn("pt2")); };
+// (the owner of the room is paid the table fee and the rake: count them too)
+const worth = async () => { let n = 0; for (const u of [host, a, b, c, far]) n += await bloodOf(u); return n + (await chipsOn("pt1")) + (await chipsOn("pt2")); };
 const START = await worth();
-check("12000 blood in play", START === 12000, String(START));
+check("12100 blood in play", START === 12100, String(START));
 
 console.log("--- sitting down");
 bad("not at a table that is not there", await sit(a, host, "nope", 0, 300));
@@ -85,7 +86,8 @@ bad("300 is the most here", await sit(a, host, "pt1", 0, 301));
 bad("the high table wants 500", await sit(a, host, "pt2", 0, 499));
 bad("there are five seats", await sit(a, host, "pt1", 5, 300));
 ok("a sits and buys in for 300", await sit(a, host, "pt1", 0, 300));
-check("a's blood is 2700", (await bloodOf(a)) === 2700);
+check("a's blood is 2694 (300 buy-in + 6 table fee)", (await bloodOf(a)) === 2694);
+check("the owner got the 6 fee", (await bloodOf(host)) === 106);
 let t = await tbl(host, "pt1");
 check("a is at the table with 300, no hand yet", t && t.phase === "idle" && seatsOf(t).length === 1 && seatsOf(t)[0].stack === 300 && seatsOf(t)[0].uid === a.uid, JSON.stringify(t));
 check("a points at the table", (await owner("GET", `pokerSeat/${a.uid}`))?.fid === "pt1");
@@ -238,6 +240,53 @@ const mid = await bloodOf(a);
 ok("a logs in again somewhere else and is stood up (no table named)", await act(a, "pokerLeave"));
 check("a has the 1200 back", (await bloodOf(a)) === mid + 1200 && (await owner("GET", `pokerSeat/${a.uid}`)) === null && (await tbl(host, "pt2")) === null);
 check("blood is conserved", (await worth()) === START, String(await worth()));
+
+console.log("--- the owner's cut: a 2% table fee on top of the buy-in, 1% of pots that saw a flop (at most 5 here)");
+{
+  await owner("PUT", `roomsMeta/${ROOM(host)}/furni/pt3`, { kind: "f_pokertable", x: 3, y: 9, dir: 2 });
+  await owner("DELETE", `poker/${KEY(host, "pt3")}`); await owner("DELETE", `pokerDeck/${KEY(host, "pt3")}`); await owner("DELETE", `pokerHole/${KEY(host, "pt3")}`);
+  for (const u of [a, b, c]) { await leave(u, host, "pt1"); await leave(u, host, "pt2"); await owner("DELETE", `pokerSeat/${u.uid}`); await stand(u, ROOM(host), 4, 9); await owner("PUT", `users/${u.uid}/blood`, 3000); }
+  await stand(host, ROOM(host), 4, 10);
+  const h0 = await bloodOf(host);
+  ok("a buys in for 100: fee 2", await sit(a, host, "pt3", 0, 100));
+  check("a paid 102 and has 100 on the table", (await bloodOf(a)) === 2898 && seatsOf(await tbl(host, "pt3"))[0].stack === 100);
+  check("the owner got 2", (await bloodOf(host)) === h0 + 2);
+  ok("b buys in for 25: the fee is at least 1", await sit(b, host, "pt3", 3, 25));
+  check("the owner got 1 more", (await bloodOf(host)) === h0 + 3, String((await bloodOf(host)) - h0));
+  await owner("PUT", `users/${host.uid}/blood`, 500);
+  ok("the owner buys in at their own table", await sit(host, host, "pt3", 1, 100));
+  check("and pays no fee", (await bloodOf(host)) === 400);
+  await leave(host, host, "pt3"); await leave(a, host, "pt3"); await leave(b, host, "pt3");
+  await owner("DELETE", `poker/${KEY(host, "pt3")}`); await owner("DELETE", `pokerDeck/${KEY(host, "pt3")}`); await owner("DELETE", `pokerHole/${KEY(host, "pt3")}`);
+  for (const u of [host, a, b, c]) await owner("DELETE", `pokerSeat/${u.uid}`);
+  await owner("PUT", `users/${a.uid}/blood`, 3000); await owner("PUT", `users/${b.uid}/blood`, 3000); await owner("PUT", `users/${host.uid}/blood`, 100);
+  const W0 = await worth();
+  ok("a sits (300)", await sit(a, host, "pt3", 0, 300));
+  ok("b sits (300)", await sit(b, host, "pt3", 3, 300));
+  check("the two fees of 6 went to the owner", (await bloodOf(host)) === 112, String(await bloodOf(host)));
+  await sleep(3700);
+  ok("a tick starts the hand", await tick(b, host, "pt3"));
+  let t3 = await tbl(host, "pt3");
+  const folder = turnUser(t3, heads);
+  ok("the first to act folds before the flop", await move(folder, host, "pt3", "fold"));
+  t3 = await tbl(host, "pt3");
+  check("no flop, no rake: the owner got nothing", t3.phase === "over" && (await bloodOf(host)) === 112, `${t3.phase} ${await bloodOf(host)}`);
+  await owner("PATCH", `poker/${KEY(host, "pt3")}`, { nextAt: Date.now() - 1 });
+  await tick(a, host, "pt3"); await tick(a, host, "pt3");
+  t3 = await tbl(host, "pt3");
+  const stacksBefore = seatsOf(t3).reduce((n, s) => n + s.stack + s.total, 0);
+  for (let g = 0; g < 20 && t3.phase === "play"; g++) {
+    if (t3.turn < 0) { await owner("PATCH", `poker/${KEY(host, "pt3")}`, { nextAt: Date.now() - 1 }); await tick(a, host, "pt3"); }
+    else { const u = turnUser(t3, heads); if (!u) break; const r = await move(u, host, "pt3", "allin"); if (!r.ok) { check("an all in is possible", false, JSON.stringify(r)); break; } }
+    t3 = await tbl(host, "pt3");
+  }
+  check("everybody all in: a showdown", t3.phase === "over" && !t3.over?.uncontested, JSON.stringify(t3.over)?.slice(0, 120));
+  check("the owner got 1% of the 600 pot, capped at 5", (await bloodOf(host)) === 117, String(await bloodOf(host)));
+  check("the players share the pot less the 5", seatsOf(t3).reduce((n, s) => n + s.stack, 0) === stacksBefore - 5, `${seatsOf(t3).reduce((n, s) => n + s.stack, 0)} vs ${stacksBefore}`);
+  check("blood is conserved in all (the owner included)", (await worth()) + (await chipsOn("pt3")) === W0, `${(await worth()) + (await chipsOn("pt3"))} vs ${W0}`);
+  await leave(a, host, "pt3"); await leave(b, host, "pt3");
+  await owner("DELETE", `roomsMeta/${ROOM(host)}/furni/pt3`);
+}
 
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

@@ -4,7 +4,7 @@ import { BLOOD_ICON } from "../items";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
 import { pokerAct, pokerLeave, pokerSit, pokerTick, watchPokerHole, watchPokerTable } from "../poker";
-import { canAct, evaluate, handName, potOf, POKER_KINDS, POKER_SEATS, POKER_TURN_MS, raiseRange, seatOfUid } from "../shared/poker";
+import { canAct, evaluate, handName, potOf, pokerFee, pokerOwnerOf, POKER_FEE_PCT, POKER_KINDS, POKER_RAKE_PCT, POKER_SEATS, POKER_TURN_MS, raiseRange, seatOfUid } from "../shared/poker";
 import type { PokerKind, PokerSeat, PokerTable } from "../shared/poker";
 import { cardBackUrl, cardSlotUrl, cardUrl, chipsFor, chipUrl } from "./pokerCards";
 import type { Ctx } from "../main";
@@ -196,17 +196,23 @@ export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: stri
   }
   const seatsCount = (tb: PokerTable): number => tb.seats.filter((s) => s && !s.left).length;
 
+  const feeOn = pokerOwnerOf(roomId) !== me.uid; // (the owner of the room pays no table fee at their own table)
+  const afford = (b: number): boolean => b + (feeOn ? pokerFee(b) : 0) <= me.blood;
   function buyPanel(): HTMLElement {
-    const max = Math.min(info.max, me.blood);
+    let max = info.max; while (max > info.min && !afford(max)) max--; // (the fee goes on top of the buy-in)
     const slider = h("input", { type: "range", min: String(info.min), max: String(Math.max(info.min, max)), step: String(Math.max(1, info.min >= 500 ? 50 : 10)), value: String(Math.min(buyIn, Math.max(info.min, max))), class: "pk-slider" }) as HTMLInputElement;
     const num = h("div", { class: "pk-bignum" }, h("img", { src: BLOOD_ICON, alt: "" }), blood(buyIn));
     slider.addEventListener("input", () => { buyIn = Number(slider.value); num.replaceChildren(h("img", { src: BLOOD_ICON, alt: "" }), blood(buyIn)); });
-    const short = me.blood < info.min;
+    const short = !afford(info.min);
+    const feeText = (): string => (feeOn ? `Table fee ${blood(pokerFee(Math.min(max, Math.max(info.min, buyIn))))} (${POKER_FEE_PCT}%) goes to the owner of the room, on top of your buy-in.` : "");
+    const feeEl = h("div", { class: "pk-hint" }, feeText());
+    slider.addEventListener("input", () => { feeEl.textContent = feeText(); });
     return h("div", { class: "pk-buy" },
       h("div", { class: "pk-buybox" },
         h("strong", {}, `Sit down · seat ${sitting! + 1}`),
-        h("div", { class: "pk-hint" }, `Blinds ${info.sb}/${info.bb}. You can stand up any time and take what is in front of you.`),
-        short ? h("div", { class: "pk-warn" }, `You need ${blood(info.min - me.blood)} more blood for the smallest buy-in (${blood(info.min)}).`) : h("div", {}, num, slider,
+        h("div", { class: "pk-hint" }, `Blinds ${info.sb}/${info.bb}. You can stand up any time and take what is in front of you. The owner of the room takes ${POKER_RAKE_PCT}% of pots that see a flop.`),
+        ...(short ? [] : [feeEl]),
+        short ? h("div", { class: "pk-warn" }, `You need ${blood(info.min + (feeOn ? pokerFee(info.min) : 0) - me.blood)} more blood for the smallest buy-in (${blood(info.min)}${feeOn ? ` + ${blood(pokerFee(info.min))} fee` : ""}).`) : h("div", {}, num, slider,
           h("div", { class: "pk-presets" }, h("button", { onclick: () => { buyIn = info.min; render(); } }, "Min"), h("button", { onclick: () => { buyIn = Math.round((info.min + info.max) / 2 / 10) * 10; render(); } }, "Half"), h("button", { onclick: () => { buyIn = max; render(); } }, "Max"))),
         h("div", { class: "pk-row" },
           h("button", { class: "pk-btn", onclick: () => { sitting = null; render(); } }, "Cancel"),

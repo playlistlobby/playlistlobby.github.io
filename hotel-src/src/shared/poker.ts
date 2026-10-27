@@ -4,12 +4,22 @@
 
 export const POKER_SEATS = 5;
 export type PokerKind = "std" | "hi";
-export interface PokerKindInfo { label: string; min: number; max: number; sb: number; bb: number }
+export interface PokerKindInfo { label: string; min: number; max: number; sb: number; bb: number; /** the most the owner's cut of one pot can be */ rakeCap: number }
 /** the two tables: the normal one (buy in for 25 to 300, blinds 5/10: 2.5 to 30 big blinds) and the high stakes one (500 to 2000, blinds 20/40: 12.5 to 50 big blinds) */
 export const POKER_KINDS: Record<PokerKind, PokerKindInfo> = {
-  std: { label: "Poker table", min: 25, max: 300, sb: 5, bb: 10 },
-  hi: { label: "High stakes poker table", min: 500, max: 2000, sb: 20, bb: 40 },
+  std: { label: "Poker table", min: 25, max: 300, sb: 5, bb: 10, rakeCap: 5 },
+  hi: { label: "High stakes poker table", min: 500, max: 2000, sb: 20, bb: 40, rakeCap: 15 },
 };
+/**
+ * What the table pays whoever owns the room it stands in (the owner of the hideout, or of the player room): a fee of 2% of every buy-in, charged ON TOP of the buy-in
+ * (the stack and the pot are not touched), and 1% of every pot that saw a flop (no flop, no drop), at most `rakeCap` a pot. Blood only moves from the players to the owner.
+ */
+export const POKER_FEE_PCT = 2;
+export const POKER_RAKE_PCT = 1;
+/** the buy-in fee for a buy-in (at least 1 blood) */
+export const pokerFee = (buy: number): number => Math.max(1, Math.ceil((buy * POKER_FEE_PCT) / 100));
+/** who owns a table in this room: the owner of the hideout (h_<uid>) or of the player room (u_<uid>); null for any other room */
+export const pokerOwnerOf = (room: string): string | null => (/^[hu]_[A-Za-z0-9]{1,40}$/.test(room) ? room.slice(2) : null);
 /** the furniture piece (kind id) that is a poker table, and which one */
 export const pokerKindOf = (furniKind: string | undefined): PokerKind | null => (furniKind === "f_pokertable" ? "std" : furniKind === "f_pokertablehi" ? "hi" : null);
 
@@ -136,12 +146,25 @@ export interface PokerTable {
   seq: number;
   over?: PokerOver;
   lastAct?: { seat: number; act: string; at: number };
+  /** the owner's cut of the pots so far that is less than a whole blood, in hundredths of a blood (carried from hand to hand) */
+  rakeH: number;
+  /** blood the owner has earned that the server has not paid yet (it pays it after every action and sets this back to 0) */
+  till: number;
 }
 
 export const newTable = (kind: PokerKind): PokerTable => ({
   kind, seats: new Array<PokerSeat | null>(POKER_SEATS).fill(null), phase: "idle", street: 0, board: [], bet: 0, minRaise: POKER_KINDS[kind].bb,
-  dealer: -1, turn: -1, turnAt: 0, nextAt: 0, hand: 0, seq: 0,
+  dealer: -1, turn: -1, turnAt: 0, nextAt: 0, hand: 0, seq: 0, rakeH: 0, till: 0,
 });
+
+/** the owner's cut of a pot that saw a flop: 1% (capped), carried in hundredths so only whole blood moves. Returns the whole blood to take out of the pot. */
+function takeRake(t: PokerTable, pot: number): number {
+  t.rakeH += Math.min(pot * POKER_RAKE_PCT, POKER_KINDS[t.kind].rakeCap * 100);
+  const whole = Math.floor(t.rakeH / 100);
+  t.rakeH -= whole * 100;
+  t.till += whole;
+  return whole;
+}
 
 /** what the server needs to play: the rest of the shuffled deck (cards come off the end), everybody's hole cards by seat, and the time */
 export interface PokerCtx { deck: number[]; holes: Record<number, number[]>; now: number }
@@ -248,7 +271,8 @@ export function buildPots(t: PokerTable): { amt: number; elig: number[] }[] {
 }
 
 function awardUncontested(t: PokerTable, winner: number, now: number): void {
-  const total = potOf(t);
+  const gross = potOf(t);
+  const total = gross - (winner >= 0 && t.street >= 1 ? takeRake(t, gross) : 0); // (no flop, no rake)
   if (winner >= 0) t.seats[winner]!.stack += total;
   t.over = { pots: [{ amt: total, win: winner >= 0 ? [winner] : [] }], show: {}, uncontested: true, at: now };
   endHand(t, now, POKER_FOLDWIN_MS);
@@ -256,6 +280,10 @@ function awardUncontested(t: PokerTable, winner: number, now: number): void {
 
 function showdown(t: PokerTable, ctx: PokerCtx): void {
   const pots = buildPots(t);
+  if (t.street >= 1) { // the owner's cut comes out of the first pots (the main pot) before anybody is paid
+    let cut = takeRake(t, pots.reduce((n, p) => n + p.amt, 0));
+    for (const p of pots) { const x = Math.min(cut, p.amt); p.amt -= x; cut -= x; }
+  }
   const live = seatsIn(t, (s) => s.in && !s.folded);
   const score: Record<number, number> = {};
   for (const i of live) score[i] = evaluate([...(ctx.holes[i] ?? []), ...t.board]);
@@ -383,7 +411,7 @@ export function pokerToDb(t: PokerTable): Record<string, unknown> {
   t.seats.forEach((s, i) => { if (s) seats[`s${i}`] = { ...s }; });
   return {
     kind: t.kind, seats, phase: t.phase, street: t.street, board: t.board, bet: t.bet, minRaise: t.minRaise, dealer: t.dealer, turn: t.turn, turnAt: t.turnAt,
-    nextAt: t.nextAt, hand: t.hand, seq: t.seq, pot: potOf(t),
+    nextAt: t.nextAt, hand: t.hand, seq: t.seq, pot: potOf(t), rakeH: t.rakeH, till: t.till,
     ...(t.over ? { over: { pots: t.over.pots.map((p) => ({ amt: p.amt, win: p.win, ...(p.name ? { name: p.name } : {}) })), show: Object.fromEntries(Object.entries(t.over.show).map(([k, v]) => [`s${k}`, v])), ...(t.over.uncontested ? { uncontested: true } : {}), at: t.over.at } } : {}),
     ...(t.lastAct ? { lastAct: t.lastAct } : {}),
   };
@@ -406,7 +434,7 @@ export function parsePoker(v: any): PokerTable | null {
   t.street = ([0, 1, 2, 3].includes(v.street) ? v.street : 0) as 0 | 1 | 2 | 3;
   t.board = Array.isArray(v.board) ? v.board.filter((c: unknown) => typeof c === "number") : [];
   t.bet = num(v.bet); t.minRaise = num(v.minRaise, POKER_KINDS[t.kind].bb); t.dealer = num(v.dealer, -1); t.turn = num(v.turn, -1);
-  t.turnAt = num(v.turnAt); t.nextAt = num(v.nextAt); t.hand = num(v.hand); t.seq = num(v.seq);
+  t.turnAt = num(v.turnAt); t.nextAt = num(v.nextAt); t.hand = num(v.hand); t.seq = num(v.seq); t.rakeH = num(v.rakeH); t.till = num(v.till);
   if (v.over && typeof v.over === "object") {
     const show: Record<number, number[]> = {};
     for (const [k, cards] of Object.entries<any>(v.over.show ?? {})) if (/^s\d$/.test(k) && Array.isArray(cards)) show[Number(k.slice(1))] = cards.filter((c) => typeof c === "number");

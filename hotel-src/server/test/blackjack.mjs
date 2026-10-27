@@ -136,9 +136,17 @@ const playRound = async () => {
   check("the round is over", t3.phase === "over", t3.phase);
   return t3;
 };
+// the dealer's 3% commission: a win pays 2x the bet less 3% of the win (whole blood, rounded), blackjack 2.5x less 3% of the 1.5x; nothing is taken from a loss or a tie
+const feeRight = (t) => seats(t).every((s) => {
+  if (s.result === "win") { const f = Math.round((s.bet * 3) / 100); return s.back === s.bet * 2 - f && (s.fee ?? 0) === f; }
+  if (s.result === "bj") { const win = Math.floor(s.bet * 1.5); const f = Math.round((win * 3) / 100); return s.back === s.bet + win - f && (s.fee ?? 0) === f; }
+  if (s.result === "push") return s.back === s.bet && !s.fee;
+  return s.back === 0 && !s.fee;
+});
 t = await playRound();
 check("every bettor has a result", seats(t).filter((s) => s.back !== undefined).length === seats(t).length);
 check("blood is conserved after the payout", (await worth()) === START, String(await worth()));
+check("the dealer's 3% commission is right on every seat", feeRight(t), JSON.stringify(seats(t)).slice(0, 300));
 const results = seats(t).map((s) => s.result);
 console.log("   results:", results.join(", "), "bank", t.bank);
 
@@ -154,6 +162,7 @@ for (let r = 0; r < 6; r++) {
   if (t.phase === "players") await playRound();
   t = await tbl();
   check("blood is conserved", (await worth()) === START, String(await worth()));
+  if (t.phase === "over") check(`the commission is right in round ${r + 2}`, feeRight(t), JSON.stringify(seats(t)).slice(0, 300));
 }
 
 console.log("--- running out of time");
@@ -226,6 +235,32 @@ const before = await bloodOf(dealer);
 ok("a log in elsewhere stands them up (no table named)", await act(dealer, "bjLeave"));
 check("they have the 400 back", (await bloodOf(dealer)) === before + 400 && (await tbl()) === null);
 check("blood is conserved", (await worth()) === START, String(await worth()));
+
+console.log("--- the dealer's 3% commission on a win");
+{
+  const snap = new Map(); for (const u of all) snap.set(u.uid, await bloodOf(u));
+  for (const u of [dealer, a]) await stand(u, ROOM, 6, 6);
+  ok("the dealer sits (bank 500)", await d("sit", { bank: 500 }));
+  ok("a sits", await sit(a, 0));
+  await owner("PUT", `users/${a.uid}/blood`, 1000);
+  // a stands on 20 (K Q) with 100 on the table; the dealer turned 17 (K 7): a wins
+  await owner("PATCH", `blackjack/${KEY}`, { phase: "dealer", dealerCards: [24, 5], hole: false, revealed: true, dealerAt: Date.now(), "seats/s0/bet": 100, "seats/s0/cards": [11, 10], "seats/s0/state": "stand" });
+  ok("the dealer pays out", await d("settle"));
+  const tw = await tbl();
+  check("a wins 97 net: 200 back less 3 commission", seats(tw)[0].result === "win" && seats(tw)[0].back === 197 && seats(tw)[0].fee === 3, JSON.stringify(seats(tw)[0]));
+  check("a's blood is 1197", (await bloodOf(a)) === 1197);
+  check("the bank is 403 (500 + 100 - 197)", tw.bank === 403, String(tw.bank));
+  // a blackjack on 100 pays 150 less 3% of 150 = 5 (4.5 rounds up): 245 back
+  await owner("PATCH", `blackjack/${KEY}`, { phase: "dealer", dealerCards: [24, 5], hole: false, revealed: true, dealerAt: Date.now(), "seats/s0/bet": 100, "seats/s0/cards": [12, 11], "seats/s0/state": "bj", "seats/s0/result": null, "seats/s0/back": null, "seats/s0/fee": null });
+  await owner("PUT", `users/${a.uid}/blood`, 1000);
+  ok("and again for a blackjack", await d("settle"));
+  const tb2 = await tbl();
+  check("blackjack: 250 back less 5", seats(tb2)[0].result === "bj" && seats(tb2)[0].back === 245 && seats(tb2)[0].fee === 5, JSON.stringify(seats(tb2)[0]));
+  ok("the dealer stops dealing", await d("leave"));
+  await act(a, "bjLeave");
+  for (const p of ["blackjack", "bjHole", "bjDeck"]) await owner("DELETE", `${p}/${KEY}`);
+  for (const u of all) { await owner("PUT", `users/${u.uid}/blood`, snap.get(u.uid)); await owner("DELETE", `bjSeat/${u.uid}`); }
+}
 
 console.log("--- auto-deal: the dealer's switch (the table plays the dealer's clicks itself)");
 {

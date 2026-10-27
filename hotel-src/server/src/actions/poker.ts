@@ -9,7 +9,7 @@
 import { Action, cheb, ID_RE, int, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import {
-  act as playMove, leaveSeat, newTable, parsePoker, pokerKindOf, pokerToDb, POKER_GONE_MS, POKER_KINDS, POKER_SEATS, seatOfUid, startHand, tick as tickTable,
+  act as playMove, leaveSeat, newTable, parsePoker, pokerFee, pokerKindOf, pokerOwnerOf, pokerToDb, POKER_GONE_MS, POKER_KINDS, POKER_SEATS, seatOfUid, startHand, tick as tickTable,
   type PokerCtx, type PokerMove, type PokerTable,
 } from "../../../src/shared/poker";
 
@@ -63,6 +63,17 @@ function save(c: Ctx, L: Loaded): void {
   c.extra[`pokerHole/${L.key}`] = Object.keys(byUid).length ? byUid : null;
 }
 
+/** writes the table back, after paying the owner of the room what the table has earned (the 1% of the pots: see POKER_RAKE_PCT) */
+async function saveTable(c: Ctx, L: Loaded): Promise<void> {
+  const t = L.t!;
+  if (t.till > 0) {
+    const owner = pokerOwnerOf(L.room);
+    if (owner) { await pay(c, owner, t.till); c.note = `${c.note ? c.note + " · " : ""}rake ${t.till}`; }
+    t.till = 0;
+  }
+  save(c, L);
+}
+
 /** a hand needs a shuffled deck: give the context one whenever a hand may start */
 const withDeck = (L: Loaded): void => { L.ctx.deck = shuffled(); };
 /** plays out the time that has passed. A new hand starts with a fresh deck. */
@@ -81,7 +92,8 @@ const tableLocks = async (c: Ctx, a: any): Promise<string[]> => {
   if (typeof room !== "string" || typeof fid !== "string") { const p = await pointerOf(c, c.uid); if (!p) return []; room = p.room; fid = p.fid; }
   if (!ROOM_RE.test(room) || !ID_RE.test(fid)) return [];
   const t = parsePoker(await c.db.get(`poker/${keyOf(room, fid)}`));
-  return [`poker:${keyOf(room, fid)}`, ...(t?.seats ?? []).flatMap((s) => (s ? [`user:${s.uid}`] : []))];
+  const owner = pokerOwnerOf(room); // (the owner is paid the table's earnings)
+  return [`poker:${keyOf(room, fid)}`, ...(owner ? [`user:${owner}`] : []), ...(t?.seats ?? []).flatMap((s) => (s ? [`user:${s.uid}`] : []))];
 };
 
 const figureOf = (w: { raw: any }): string => String(w.raw?.figure ?? "").slice(0, 200);
@@ -126,14 +138,17 @@ export const pokerSit: Action = {
     advance(L);
     if (L.t.seats[seat]) fail("That seat is taken.");
     const w = await c.user();
-    if (w.s.blood < buy) fail(`You need ${buy - w.s.blood} more blood.`);
-    w.s.blood -= buy;
+    const owner = pokerOwnerOf(room);
+    const fee = owner && owner !== c.uid ? pokerFee(buy) : 0; // (the table fee goes on top of the buy-in: your stack is the whole buy-in; the owner of the room is paid it)
+    if (w.s.blood < buy + fee) fail(`You need ${buy + fee - w.s.blood} more blood.`);
+    w.s.blood -= buy + fee;
+    if (fee) await pay(c, owner!, fee);
     L.t.seats[seat] = { uid: c.uid, name: nameOf(w), ...(figureOf(w) ? { figure: figureOf(w) } : {}), stack: buy, bet: 0, total: 0, in: false, folded: false, allin: false, acted: false };
     L.t.seq++;
     advance(L); // (the second player at an empty table starts the countdown to the first hand)
-    save(c, L);
+    await saveTable(c, L);
     c.extra[`pokerSeat/${c.uid}`] = { room, fid };
-    c.note = `${piece!.kind} ${buy}`;
+    c.note = `${piece!.kind} ${buy}${fee ? ` (+${fee} fee)` : ""}`;
     return { seat };
   },
 };
@@ -153,7 +168,7 @@ export const pokerAct: Action = {
     const err = playMove(L.t!, seat, move, a.to === undefined ? undefined : Number(a.to), L.ctx);
     if (err) fail(err);
     advance(L);
-    save(c, L);
+    await saveTable(c, L);
     return {};
   },
 };
@@ -175,7 +190,7 @@ export const pokerLeave: Action = {
     advance(L);
     const w = await c.user();
     w.s.blood += take;
-    save(c, L);
+    await saveTable(c, L);
     c.extra[`pokerSeat/${c.uid}`] = null;
     c.note = String(take);
     return { take };
@@ -202,7 +217,7 @@ export const pokerTick: Action = {
         const s = t.seats[i];
         if (s) { await pay(c, s.uid, s.stack); s.stack = 0; t.seats[i] = null; }
       }
-      save(c, L);
+      await saveTable(c, L);
       return { closed: true };
     }
     for (let i = 0; i < POKER_SEATS; i++) { // who is gone
@@ -218,7 +233,7 @@ export const pokerTick: Action = {
       }
     }
     if (advance(L)) changed = true;
-    if (changed) save(c, L);
+    if (changed) await saveTable(c, L);
     return { changed };
   },
 };

@@ -4,7 +4,7 @@ import { BLOOD_ICON } from "../items";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
 import { bjAct, bjBet, bjDealer, bjLeave, bjSit, bjTick, watchBjHole, watchBjTable } from "../blackjack";
-import { BJ_AUTO_OPEN, BJ_BET_WINDOW_MS, bjDueAt, BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS, bjSeatOfUid, bjValue, bjStakes, canSettle, handsToBeat, isBlackjack } from "../shared/blackjack";
+import { BJ_AUTO_OPEN, BJ_BET_WINDOW_MS, BJ_COMMISSION_PCT, bjDueAt, BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS, bjSeatOfUid, bjValue, bjStakes, canSettle, handsToBeat, isBlackjack } from "../shared/blackjack";
 import type { BjSeat, BjTable } from "../shared/blackjack";
 import { cardBackUrl, cardUrl, chipsFor, chipUrl } from "./pokerCards";
 import type { Ctx } from "../main";
@@ -137,7 +137,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     bloodEl.textContent = blood(me.blood);
     renderNav();
     felt.replaceChildren(h("div", { class: "pk-rail" }, h("div", { class: "pk-cloth" }, h("div", { class: "pk-logo bj-logo" }, "BLACKJACK"))));
-    felt.append(h("div", { class: "bj-arc" }, "Blackjack pays 3 to 2 · Dealer stands on 17"));
+    felt.append(h("div", { class: "bj-arc" }, `Blackjack pays 3 to 2 · Dealer stands on 17 · Dealer takes ${BJ_COMMISSION_PCT}% of wins`));
     felt.append(dealerEl());
     felt.append(h("div", { class: "bj-status" }, statusText()));
     for (let i = 0; i < BJ_SEATS; i++) felt.append(seatEl(i));

@@ -25,6 +25,8 @@ export const BJ_AUTO_OPEN = false;
 export const BJ_AUTO_STEP_MS = 1_500;
 /** auto-deal: after a late bet the other players still get this long before the cards go out */
 export const BJ_AUTO_BET_GAP_MS = 5_000;
+/** the dealer's commission: this many percent of what a player wins (blackjack included) stays in the dealer's bank. Nothing is taken when a player loses or ties. */
+export const BJ_COMMISSION_PCT = 3;
 /** a player who is gone from the room is stood up after this */
 export const BJ_GONE_MS = 20_000;
 
@@ -56,6 +58,8 @@ export interface BjSeat {
   /** how the round went and what they got back (the bet included) */
   result?: BjResult;
   back?: number;
+  /** the dealer's commission taken from a win (already out of `back`) */
+  fee?: number;
   /** since when they have not been in the room (server time) */
   gone?: number;
   /** stood up in the middle of a round: the hand is played out and paid, then the seat is cleared */
@@ -199,7 +203,7 @@ export function dealerDraw(t: BjTable, ctx: BjCtx): string | null {
 /** can the dealer pay out now? */
 export const canSettle = (t: BjTable): boolean => t.phase === "dealer" && t.revealed && (!handsToBeat(t) || bjValue(t.dealerCards).total >= 17);
 
-/** pays everybody: a win gives back twice the bet, blackjack two and a half times, a tie the bet; a loss goes to the bank. The caller credits each seat's `back`. */
+/** pays everybody: a win gives back twice the bet, blackjack two and a half times, a tie the bet (a win less the dealer's 3% commission); a loss goes to the bank. The caller credits each seat's `back`. */
 export function settle(t: BjTable, now: number): string | null {
   if (t.phase !== "dealer" && t.phase !== "players") return "Nothing to pay.";
   if (t.phase === "dealer" && !canSettle(t)) return "The dealer isn't done.";
@@ -214,7 +218,9 @@ export function settle(t: BjTable, now: number): string | null {
     else if (dv > 21 || pv > dv) { result = "win"; back = s.bet * 2; }
     else if (pv === dv) { result = "push"; back = s.bet; }
     else { result = "lose"; back = 0; }
-    s.result = result; s.back = back;
+    const fee = result === "win" || result === "bj" ? Math.round(((back - s.bet) * BJ_COMMISSION_PCT) / 100) : 0; // (3% of the win, whole blood: a win under 17 pays nothing)
+    back -= fee;
+    s.result = result; s.back = back; s.fee = fee || undefined;
     t.bank += s.bet - back;
   }
   t.phase = "over"; t.turn = -1; t.nextAt = now + BJ_RESULT_MS; t.seq++;
@@ -288,7 +294,7 @@ export function parseBj(v: any): BjTable | null {
       const result = (["win", "lose", "push", "bj"] as const).find((x) => x === s.result);
       t.seats[i] = {
         uid: s.uid, name: String(s.name ?? "?").slice(0, 30), ...(typeof s.figure === "string" ? { figure: s.figure.slice(0, 200) } : {}), bet: num(s.bet), cards: cardsOf(s.cards), state,
-        ...(s.doubled === true ? { doubled: true } : {}), ...(result ? { result } : {}), ...(typeof s.back === "number" ? { back: s.back } : {}), ...(typeof s.gone === "number" ? { gone: s.gone } : {}), ...(s.left === true ? { left: true } : {}),
+        ...(s.doubled === true ? { doubled: true } : {}), ...(result ? { result } : {}), ...(typeof s.back === "number" ? { back: s.back } : {}), ...(typeof s.fee === "number" && s.fee > 0 ? { fee: s.fee } : {}), ...(typeof s.gone === "number" ? { gone: s.gone } : {}), ...(s.left === true ? { left: true } : {}),
       };
     }
   }
