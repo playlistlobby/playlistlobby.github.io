@@ -24,6 +24,8 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
     h("div", { class: "cd-head" }, h("strong", {}, "Mixer"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
     body);
   host.append(el);
+  const label = (slot: number | null): string => { const s = slot === null ? null : me.inventory[slot]; return s ? `${itemDef(s.item)?.name ?? s.item}${s.ass ? " (ass)" : ""}` : "—"; };
+  const clock = (ms: number): string => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
   const off: Unsubscribe = onValue(ref(db, `roomsMeta/${roomId}/furni/${fid}/mixJob`), (snap) => {
     const v = snap.val() as Partial<Job> | null;
     job = v && typeof v.item === "string" && typeof v.doneAt === "number" ? { item: v.item, qty: Number(v.qty) || 1, doneAt: v.doneAt, ms: Number(v.ms) || MIX_MS } : null;
@@ -31,9 +33,6 @@ export function openMixer(host: HTMLElement, ctx: Ctx, fid: string, roomId: stri
   }, () => undefined);
   // the countdown ticks on its own
   const tick = window.setInterval(() => { if (job) render(); }, 1000);
-
-  const label = (slot: number | null): string => { const s = slot === null ? null : me.inventory[slot]; return s ? `${itemDef(s.item)?.name ?? s.item}${s.ass ? " (ass)" : ""}` : "—"; };
-  const clock = (ms: number): string => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 
   function renderJob(j: Job): void {
     const d = itemDef(j.item);
