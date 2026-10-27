@@ -101,6 +101,7 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
       bloodCd("cd_blodig", "kravle-blodig oktober"),
       bloodCd("cd_lykk", "leolegit - blodoktober"),
       bloodCd("cd_roulette", "yungxware - russisk roulette"),
+      bloodCd("cd_dipdip", "lemonade - Dip Dip"),
       row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "en af tre sange fra blodig oktober leaked, du for aldrig den samme cd igen", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
       h("div", { class: "hint" }, "Real money is paid on a payment page, and you come back to the game afterwards."));
   }

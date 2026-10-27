@@ -22,6 +22,7 @@ export const CD_TRACKS: Record<string, CdTrack> = {
   "blodig-oktober-cd": { id: "blodig-oktober-cd", title: "kravle-blodig oktober", artist: "Em", url: assetUrl("music/cd-blodigoktober.mp3") }, // (the CD for 5 blood from the record box)
   // the two players' songs from the record box
   "leolegit-blodoktober": { id: "leolegit-blodoktober", title: "leolegit - blodoktober", artist: "leolegit (prod. Lykk)", url: assetUrl("music/cd-leolegit-blodoktober.mp3") },
+  "lemonade-dip-dip": { id: "lemonade-dip-dip", title: "lemonade - Dip Dip", artist: "lemonade", url: assetUrl("music/cd-lemonade-dip-dip.mp3") },
   "yungxware-russisk-roulette": { id: "yungxware-russisk-roulette", title: "yungxware - russisk roulette", artist: "yungxware", url: assetUrl("music/cd-yungxware-russisk-roulette.mp3") },
   // the three mystery CDs
   "ahmingud": { id: "ahmingud", title: "Åhmingud", artist: "Em", url: assetUrl("music/album-ahmingud.mp3") },

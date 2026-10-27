@@ -348,6 +348,13 @@ export const ITEMS: Record<string, ItemDef> = {
     icon: assetUrl("items/cd_orange.png"),
     useOnObject: "cdplayer",
   },
+  cd_dipdip: {
+    id: "cd_dipdip",
+    name: "lemonade - Dip Dip",
+    examine: "A pink CD: lemonade - Dip Dip, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
+    icon: assetUrl("items/cd_pink.png"),
+    useOnObject: "cdplayer",
+  },
   cd_roulette: {
     id: "cd_roulette",
     name: "yungxware - russisk roulette",

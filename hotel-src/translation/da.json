@@ -13248,5 +13248,10 @@
   "en": "Collect {waiting}",
   "da": "Hent {waiting}",
   "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2095": {
+  "en": "A pink CD: lemonade - Dip Dip, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
+  "da": "En pink cd: lemonade - Dip Dip, fra pladekassen i butikken. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
+  "where": "src/items.ts"
  }
 }
