@@ -8,6 +8,8 @@ import { BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS,
 import type { BjSeat, BjTable } from "../shared/blackjack";
 import { cardBackUrl, cardUrl, chipsFor, chipUrl } from "./pokerCards";
 import type { Ctx } from "../main";
+import { mountTableChat } from "./tableChat";
+import type { TableChat } from "./tableChat";
 
 /**
  * The blackjack window: a blue table seen from above. The dealer (a member of the hideout) stands at the top with their own bank and does the clicks; the players sit along the
@@ -21,7 +23,7 @@ const SEATS: Array<[number, number]> = [[13, 60], [31, 78], [50, 85], [69, 78], 
 const BET_CHIPS = [10, 25, 50, 100, 250];
 const blood = (n: number): string => n.toLocaleString("en-US");
 
-export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: string, onChange: () => void, onClose: () => void): BlackjackApi {
+export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: string, onChange: () => void, onClose: () => void, chat?: TableChat): BlackjackApi {
   const me = ctx.profile;
   let closed = false;
   let t: BjTable | null = null;
@@ -39,11 +41,12 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
   const actions = h("div", { class: "pk-actions" });
   const bloodEl = h("span", { class: "pk-blood" });
   const leaveBtn = h("button", { class: "pk-leave", onclick: () => void leave() }, "Close");
+  const chatBox = chat ? mountTableChat(chat) : null;
   const win = h("div", { class: "pk-window bj", role: "dialog", "aria-label": "Blackjack" },
     h("div", { class: "pk-nav" }, leaveBtn,
       h("div", { class: "pk-title" }, h("strong", {}, "Blackjack"), h("span", {}, `Bets ${BJ_BET_MIN}-${BJ_BET_MAX} · Blackjack pays 3 to 2`)),
       h("div", { class: "pk-pocket" }, h("img", { src: BLOOD_ICON, alt: "" }), bloodEl)),
-    felt, actions);
+    felt, chatBox?.el ?? "", actions);
   const overlay = h("div", { class: "pk-overlay" }, win);
   (host.ownerDocument.body ?? host).append(overlay);
 
@@ -261,6 +264,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     closed = true;
     window.clearInterval(timer);
     stops.forEach((s) => s());
+    chatBox?.dispose();
     overlay.remove();
     if (was) void bjLeave(me, roomId, fid).then(() => onChange()).catch(() => undefined);
     onClose();

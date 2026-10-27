@@ -139,8 +139,8 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const cant = !hitTarget || busy || waiting || me.blood < hitAmount;
     const form = h("div", { class: "ht-form", id: "ht-form" },
       waiting ? h("div", { class: "ht-warn" }, `Your hideout has put a hit out already. The next one can go out in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`) : "",
-      hitTarget ? h("div", { class: "ht-target" }, headBoxFor(hitTarget.uid), h("div", { class: "ht-tn" }, h("span", {}, "The target"), h("strong", {}, hitTarget.name)), h("button", { class: "btn small", onclick: () => { hitTarget = null; render(); } }, "Change"))
-        : h("div", { class: "hc-group" }, ...searchUi("Search a player's name", () => new Set([me.uid]), (r) => h("button", { class: "btn small primary", onclick: () => { hitTarget = r; results = []; searchQ = ""; render(); } }, "Pick"))),
+      hitTarget ? h("div", { class: "ht-target" }, headBoxFor(hitTarget.uid), h("div", { class: "ht-tn" }, h("span", {}, "The target"), h("strong", {}, hitTarget.name)), h("button", { class: "btn small", onclick: () => { hitTarget = null; (document.activeElement as HTMLElement | null)?.blur(); render(); } }, "Change"))
+        : h("div", { class: "hc-group" }, ...searchUi("Search a player's name", () => new Set([me.uid]), (r) => h("button", { class: "btn small primary", onclick: () => { (document.activeElement as HTMLElement | null)?.blur(); hitTarget = r; results = []; searchQ = ""; render(); } }, "Pick"))),
       h("div", { class: "ht-bounty" }, h("span", {}, `The bounty (${HIT_MIN} to ${HIT_MAX})`), big, slider),
       h("button", { class: "ht-go", disabled: cant, onclick: () => void act(async () => { const t = hitTarget!; await hitPlace(me, roomId, t.uid, hitAmount); hitTarget = null; return `The hit on ${t.name} is out: ${hitAmount} blood.`; }) },
         hitTarget ? `Put out a hit on ${hitTarget.name}` : "Pick somebody first"),

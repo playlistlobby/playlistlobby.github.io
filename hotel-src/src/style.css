@@ -1409,8 +1409,8 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .ht-rev { flex: none; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #5a0f0f; background: linear-gradient(#e0584a, #8e2218); color: #fff; font: 800 13px var(--font); cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35); }
 .ht-revenge { border: 1px solid #8e2218; }
 .ht-open .ht-n { color: #fff; }
-.ht-form .hc-person .hc-pname { color: #fff; }
-.ht-form .hc-hint { color: #aaa; }
+.ht-form .hc-person .hc-pname { color: #14202e; } /* (the search answers sit in the white box: white names were invisible) */
+.ht-form .hc-hint { color: #5b6472; }
 
 /* ---- the hideout list: two tabs, a star for favourites; and the room list made to fit a phone ---- */
 .door-tabs { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: #e3e6ec; border: 1px solid #c7ccd6; margin-top: 4px; }
@@ -1433,6 +1433,24 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
   .door-profile { padding-left: 6px; padding-right: 6px; }
   .hc-card .hc-tab span:last-child { font-size: 11px; }
 }
+
+/* ---- the chat inside the poker and blackjack windows (the window covers the room's chat bar) ---- */
+.tc-box { flex: none; padding: 4px 8px 5px; background: #08111c; border-top: 1px solid #26384f; }
+.tc-log { display: none; flex-direction: column; justify-content: flex-end; max-height: 62px; overflow: hidden; margin-bottom: 4px; font: 12px/1.3 var(--font); color: #fff; text-shadow: 0 1px 2px #000; user-select: text; -webkit-user-select: text; pointer-events: none; }
+.tc-box.talk .tc-log { display: flex; }
+.tc-log .line { padding: 0; word-break: break-word; }
+.tc-log .line b.me { color: #ffe27a; }
+.tc-log .line.sys { color: #9fd0ff; }
+.tc-log .line.sys.warn { color: #ffb0a3; }
+.tc-bar { display: flex; gap: 6px; align-items: center; }
+.tc-input { flex: 1; min-width: 0; height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid #55627c; background: #fff; color: #14202e; font: 16px var(--font); user-select: text; -webkit-user-select: text; }
+.tc-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+.tc-send { flex: none; height: 34px; padding: 0 16px; font-size: 14px; border-radius: 17px; }
+/* a phone with the keyboard up: the window is only as tall as what is left of the screen, and the table gives up its room for the chat */
+html.kb .pk-overlay { inset: auto; left: 0; right: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100dvh); padding: 0; }
+html.kb .pk-window { height: 100%; border-radius: 0; }
+html.kb .pk-actions { min-height: 0; padding: 4px 8px 6px; }
+html.kb .tc-log { max-height: 34px; }
 
 /* ---- the iOS 6 gloss on the poker / blackjack / shoot buttons (the same look as the Drop button) ---- */
 .pk-btn, .shoot-row button, .pk-presets button, .pk-room {

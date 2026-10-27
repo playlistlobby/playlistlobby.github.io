@@ -8,6 +8,8 @@ import { canAct, evaluate, handName, potOf, POKER_KINDS, POKER_SEATS, POKER_TURN
 import type { PokerKind, PokerSeat, PokerTable } from "../shared/poker";
 import { cardBackUrl, cardSlotUrl, cardUrl, chipsFor, chipUrl } from "./pokerCards";
 import type { Ctx } from "../main";
+import { mountTableChat } from "./tableChat";
+import type { TableChat } from "./tableChat";
 
 /**
  * The poker window: a table seen from above (the felt, five seats, the cards, the chips and the pot), the way the big poker sites show it, in the game's pixel look.
@@ -29,7 +31,7 @@ const STREETS = ["Pre-flop", "Flop", "The turn", "River"];
 const nameOfSeat = (s: PokerSeat | null | undefined): string => (s ? s.name : "?");
 const blood = (n: number): string => n.toLocaleString("en-US");
 
-export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: string, kind: PokerKind, onChange: () => void, onClose: () => void): PokerApi {
+export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: string, kind: PokerKind, onChange: () => void, onClose: () => void, chat?: TableChat): PokerApi {
   const me = ctx.profile;
   const info = POKER_KINDS[kind];
   let closed = false;
@@ -52,11 +54,12 @@ export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: stri
   const leaveBtn = h("button", { class: "pk-leave", onclick: () => void leave() }, "Leave");
   const peekBtn = h("button", { class: "pk-room", title: "Look at the room", onclick: () => setPeek(!peeking) }, "Room");
   const backBtn = h("button", { class: "pk-back", onclick: () => setPeek(false) }, "Back to the table");
+  const chatBox = chat ? mountTableChat(chat) : null;
   const win = h("div", { class: `pk-window ${kind === "hi" ? "hi" : ""}`, role: "dialog", "aria-label": "Poker" },
     h("div", { class: "pk-nav" }, leaveBtn,
       h("div", { class: "pk-title" }, h("strong", {}, kind === "hi" ? "High stakes" : "Poker"), h("span", {}, `Blinds ${info.sb}/${info.bb} · Buy-in ${blood(info.min)}-${blood(info.max)}`)),
       peekBtn, h("div", { class: "pk-pocket" }, h("img", { src: BLOOD_ICON, alt: "" }), bloodEl)),
-    felt, actions);
+    felt, chatBox?.el ?? "", actions);
   const overlay = h("div", { class: "pk-overlay" }, win, backBtn);
   (host.ownerDocument.body ?? host).append(overlay); // (on the page itself, not inside the room: the room is under a filter that would keep the header on top of it)
 
@@ -322,6 +325,7 @@ export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: stri
     window.clearInterval(timer);
     window.clearTimeout(peekTimer);
     stops.forEach((s) => s());
+    chatBox?.dispose();
     overlay.remove();
     if (wasSeated) void pokerLeave(me, roomId, fid).then(() => onChange()).catch(() => undefined); // (closing the window stands you up: nobody sits at a table they can't see)
     onClose();

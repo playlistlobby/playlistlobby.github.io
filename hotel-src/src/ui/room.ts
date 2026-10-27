@@ -38,6 +38,7 @@ import { pickUpPet, releasePet } from "../petActions";
 import { LOUDSPEAKER_ON } from "../shared/loudspeaker";
 import { openHideoutChest } from "./hideoutChest";
 import { openPoker } from "./pokerTable";
+import type { TableChat } from "./tableChat";
 import type { PokerApi } from "./pokerTable";
 import { mountPokerFx } from "./pokerFx";
 import { openBlackjack } from "./blackjackTable";
@@ -661,8 +662,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // Every chat line disappears 15 minutes after it was said; the swept-out messages are also deleted from the database.
   const CHAT_LIFE_MS = 15 * 60_000;
   const lines: Array<{ el: HTMLElement; exp: number; msg?: ReturnType<typeof ref> }> = [];
+  /** the poker and blackjack windows cover the chat bar, so they get their own box that talks through this one (the same rules: the spam limit, the mute, the commands) */
+  const tableLineListeners = new Set<(line: HTMLElement) => void>();
+  const tableChat: TableChat = {
+    send: (text) => { if (Date.now() < spamUntil) return false; input.value = text; send(); return true; },
+    recent: () => Array.from(log.children).map((c) => c.cloneNode(true) as HTMLElement),
+    subscribe: (cb) => { tableLineListeners.add(cb); return () => { tableLineListeners.delete(cb); }; },
+  };
   function addLine(el: HTMLElement, lifeMs: number, msg?: ReturnType<typeof ref>): void {
     log.append(el);
+    tableLineListeners.forEach((l) => l(el.cloneNode(true) as HTMLElement));
     lines.push({ el, exp: Date.now() + lifeMs, msg });
     while (log.children.length > 60) log.firstElementChild?.remove();
     log.scrollTop = log.scrollHeight;
@@ -2096,8 +2105,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
         else if (opens === "computer") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the computer.", "warn"); else if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
         else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
-        else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }); }
-        else if (opens === "blackjack") { if (!bjApi) bjApi = openBlackjack(stage, ctx, roomId, f.id, () => panel.refresh(), () => { bjApi = null; }); }
+        else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }, tableChat); }
+        else if (opens === "blackjack") { if (!bjApi) bjApi = openBlackjack(stage, ctx, roomId, f.id, () => panel.refresh(), () => { bjApi = null; }, tableChat); }
         else if (opens === "hits") openWanted();
         else if (opens === "hideouts") { if (!hideoutDoorApi) hideoutDoorApi = openHideoutDoor(stage, ctx, () => { hideoutDoorApi = null; }); }
         else if (opens === "ducky") openDucky();
