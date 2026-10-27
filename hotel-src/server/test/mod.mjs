@@ -312,6 +312,19 @@ console.log("--- the log");
 const log = Object.values((await owner("GET", "modLog")) ?? {});
 check("what the mods did is written down", log.some((x) => x.what === "mute" && x.byName === "t_mod_m") && log.some((x) => x.what === "ban") && log.some((x) => x.what === "promote"), JSON.stringify(log).slice(0, 200));
 
+console.log("--- a ban or a kick takes them out of the room at once");
+{
+  const victim = await fresh("t_mod_out1"), victim2 = await fresh("t_mod_out2");
+  for (const v of [victim, victim2]) { await owner("PUT", `presence/${v.uid}`, { name: v.name, room: "lobby", seen: Date.now() }); await stand(v, "lobby", 6, 6); }
+  ok("a mod kicks", await act(mod, "modKick", { uid: victim.uid, reason: "out" }));
+  check("they are gone from the room", (await owner("GET", `rooms/lobby/players/${victim.uid}`)) === null);
+  const kick = await owner("GET", `kicks/${victim.uid}`);
+  check("and their browser is told", kick && kick.reason === "out", JSON.stringify(kick));
+  ok("a mod bans", await act(mod, "modBan", { uid: victim2.uid }));
+  check("a ban takes them out of the room too", (await owner("GET", `rooms/lobby/players/${victim2.uid}`)) === null);
+  check("and logs them out", !!(await owner("GET", `kicks/${victim2.uid}`)));
+}
+
 await owner("DELETE", "roles"); await owner("DELETE", "mutes"); await owner("DELETE", "reports");
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);
