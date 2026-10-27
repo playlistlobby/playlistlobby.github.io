@@ -6,6 +6,7 @@ import { get, limitToLast, onChildAdded, onValue, orderByChild, query, equalTo, 
 import { db } from "../firebase";
 import { h, toast } from "./dom";
 import { call } from "../db";
+import { mountAdminEconomy } from "./adminEconomy";
 import { MOD_BAN_MS, MOD_MUTE_MS } from "../shared/mod";
 import type { Ctx } from "../main";
 
@@ -21,7 +22,8 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   const me = ctx.profile;
   const isAdmin = me.isAdmin || me.role === "admin";
   const stops: Array<() => void> = [];
-  let tab: "live" | "dms" | "reports" | "uploads" | "staff" | "log" = "live";
+  let tab: "live" | "dms" | "reports" | "uploads" | "economy" | "staff" | "log" = "live";
+  let stopEconomy: (() => void) | null = null;
   let picked: Pick | null = null;
   let alts: Alt[] | null = null;
   let recent: ChatRow[] | null = null;
@@ -121,7 +123,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
 
   function paintTabs(): void {
     const t = (id: typeof tab, label: string): HTMLElement => h("button", { class: "mp-tab" + (tab === id ? " on" : ""), type: "button", onclick: () => { tab = id; paint(); } }, label);
-    tabs.replaceChildren(t("live", "💬 Live chat"), t("dms", "✉ Private"), t("reports", `🚩 Reports${reports.length ? ` (${reports.length})` : ""}`), t("uploads", "🖼 Uploads"), ...(isAdmin ? [t("staff", "🛡 Staff")] : []), t("log", "📜 Log"),
+    tabs.replaceChildren(t("live", "💬 Live chat"), t("dms", "✉ Private"), t("reports", `🚩 Reports${reports.length ? ` (${reports.length})` : ""}`), t("uploads", "🖼 Uploads"), t("economy", "🩸 Economy"), ...(isAdmin ? [t("staff", "🛡 Staff")] : []), t("log", "📜 Log"),
       ...(isAdmin ? [h("form", { class: "mp-find mp-all", onsubmit: (e: Event) => { e.preventDefault(); const i = (e.currentTarget as HTMLFormElement).querySelector("input")!; const t = i.value; if (t.trim() && confirm("Put this message on EVERYBODY's screen?")) void run("Sent to everybody.", async () => { await call(me, "modNotice", { uid: "all", kind: "msg", text: t }); i.value = ""; }); } },
         h("input", { class: "mini-input", maxLength: 200, placeholder: "Message to everybody…", "aria-label": "Message to everybody" }), h("button", { class: "btn small", type: "submit" }, "📢 All"))] : []),
       h("form", { class: "mp-find", onsubmit: (e: Event) => { e.preventDefault(); const i = (e.currentTarget as HTMLFormElement).querySelector("input")!; void findByName(i.value); } },
@@ -140,7 +142,13 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   }
 
   function paintBody(): void {
-    if (tab === "live") {
+    stopEconomy?.();
+    stopEconomy = null;
+    if (tab === "economy") {
+      const el = h("div", {});
+      body.replaceChildren(h("div", { class: "hint" }, "How much blood there is, where it comes from and what everybody holds. Look only: you can't change anything here."), el);
+      stopEconomy = mountAdminEconomy(el, ctx, true);
+    } else if (tab === "live") {
       body.replaceChildren(h("div", { class: "mp-bar" }, h("label", {}, h("input", { type: "checkbox", checked: pausedLive, onchange: (e: Event) => { pausedLive = (e.target as HTMLInputElement).checked; if (!pausedLive) paintLive(); } }), " Pause scrolling"), h("span", { class: "hint" }, "Every message in every room, live. Tap a name to see the player.")), live);
       paintLive();
     } else if (tab === "dms") {
@@ -197,7 +205,12 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
       h("div", { class: "mp-status" }, muted ? (status.mute - Date.now() > 365 * 24 * 3_600_000 ? "🔇 muted for good" : `🔇 muted ${mins(status.mute)} more min`) : "not muted", " · ", banned ? (status.ban!.until ? `⛔ banned ${mins(status.ban!.until)} more min` : "⛔ banned for good") : "not banned"),
       sec("Quick", row(...actionsFor(p)),
         row(...(muted ? [btn("Unmute", () => void run("Unmuted.", () => call(me, "modMute", { uid: p.uid, on: false })))] : []),
-          ...(banned ? [btn("Unban", () => void run("Unbanned.", () => call(me, "modBan", { uid: p.uid, on: false })))] : []))),
+          ...(banned ? [btn("Unban", () => void run("Unbanned.", () => call(me, "modBan", { uid: p.uid, on: false })))] : [])),
+        ...(!isAdmin && me.ipBan ? [row(
+          ...(me.banForever ? [btn("⛔ + address ban", () => { if (confirm(`Ban ${p.name} for good and ban the addresses they play from?`)) void run(`${p.name} is banned, and their addresses.`, async () => { await call(me, "modBan", { uid: p.uid }); await call(me, "modIpBan", { uid: p.uid }); }); }, "danger")] : []),
+          btn("Address ban", () => { if (confirm(`Ban the addresses ${p.name} plays from?`)) void run("Addresses banned.", () => call(me, "modIpBan", { uid: p.uid })); }, "danger"),
+          btn("Lift address ban", () => void run("Address ban lifted.", () => call(me, "modIpBan", { uid: p.uid, on: false }))),
+          btn("🌐 Addresses", () => void showIps()))] : [])),
       sec("Tell them", noteIn,
         row(btn("⚠ Warn", () => void run("Warning sent.", () => call(me, "modNotice", { uid: p.uid, kind: "warn", text: noteIn.value }))),
           btn("📢 Message", () => void run("Message sent.", () => call(me, "modNotice", { uid: p.uid, kind: "msg", text: noteIn.value }))),
@@ -257,5 +270,5 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
   }, () => undefined));
 
   paint();
-  return () => { stops.forEach((s) => s()); root.remove(); };
+  return () => { stopEconomy?.(); stops.forEach((s) => s()); root.remove(); };
 }

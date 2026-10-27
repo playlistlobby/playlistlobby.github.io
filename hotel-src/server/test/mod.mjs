@@ -239,6 +239,23 @@ console.log("--- blood, warnings, messages, kicks, addresses (full privileges)")
   const il = await act(adm, "modIps", { uid: w.uid });
   check("the admin sees it", il.data?.ips?.[0]?.ip === "203.0.113.7", JSON.stringify(il).slice(0, 150));
   bad("a mod can't ban an address", await act(mod, "modIpBan", { uid: w.uid }));
+  // the ipBan perk: a mod who was given it sees and bans addresses (a player with the perk but no mod role can't)
+  await owner("PUT", `perks/${mod2.uid}/ipBan`, true);
+  const il2 = await act(mod2, "modIps", { uid: w.uid });
+  check("a mod with the ipBan perk sees the addresses", il2.data?.ips?.[0]?.ip === "203.0.113.7", JSON.stringify(il2).slice(0, 150));
+  bad("another mod still can't", await act(mod, "modIps", { uid: w.uid }));
+  await owner("PUT", `perks/${p1.uid}/ipBan`, true);
+  bad("a player with the perk but no mod role can't", await act(p1, "modIpBan", { uid: w.uid }));
+  await owner("DELETE", `perks/${p1.uid}/ipBan`);
+  ok("the mod with the perk bans the address", await act(mod2, "modIpBan", { uid: w.uid }));
+  ok("and lifts it again", await act(mod2, "modIpBan", { uid: w.uid, on: false }));
+  await owner("DELETE", `perks/${mod2.uid}/ipBan`);
+  bad("without the perk he can't", await act(mod2, "modIpBan", { uid: w.uid }));
+  // the economy numbers: a mod reads them (they can't write them), a player can't
+  check("a mod reads the accounts", (await clientRead(mod, "users")).status === 200);
+  check("and the blood ledger", (await clientRead(mod, "ledger")).status === 200);
+  check("a player can't read the accounts", (await clientRead(p1, "users")).status !== 200);
+  check("a mod can't write blood", refused(await clientWrite(mod, `users/${w.uid}/blood`, 99999)));
   ok("the admin bans the address", await act(adm, "modIpBan", { uid: w.uid }));
   check("it is on the list", (await owner("GET", "bannedIps/203_0_113_7")) !== null);
   await sleepMs(16000);

@@ -43,8 +43,11 @@ function parseAcct(uid: string, v: any): Acct {
   return { uid, name: String(v?.name ?? "?"), blood: num(v?.blood), held, items: held.reduce((a, x) => a + x.qty, 0), earned: nums(v?.bloodBy?.earned), spent: nums(v?.bloodBy?.spent) };
 }
 
-/** The admin's economy page: all the blood in the game and where it came from, what every account holds, and the backups (with rollback). Live where it can be. */
-export function mountAdminEconomy(el: HTMLElement, ctx: Ctx): () => void {
+/**
+ * The admin's economy page: all the blood in the game and where it came from, what every account holds, and the backups (with rollback). Live where it can be.
+ * `readOnly` (the chat mods): only the numbers, no banning, no backups, no rollback.
+ */
+export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): () => void {
   let accts: Acct[] = [];
   let index: BackupIndexEntry[] = [];
   let bans = new Set<string>();
@@ -172,7 +175,7 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx): () => void {
     return h("div", { class: "panel", style: { margin: "6px 0 12px", padding: "10px 12px" } },
       h("div", { style: { display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", justifyContent: "space-between" } },
         h("b", {}, `${a.name} · ${fmt(a.blood)} blood`),
-        h("button", {
+        readOnly ? h("span", {}) : h("button", {
           class: "btn small" + (bans.has(a.uid) ? "" : " primary"), disabled: busy,
           onclick: () => void run(`${bans.has(a.uid) ? "unbanned" : "banned"} ${a.name}`, async () => { const on = !bans.has(a.uid); await banAccount(ctx.profile, a.uid, on, on ? "banned by the admin" : undefined); return on ? `${a.name} is banned.` : `${a.name} can play again.`; }),
         }, bans.has(a.uid) ? "Unban" : "Ban")),
@@ -245,6 +248,10 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx): () => void {
     if (closed) return;
     const list = [...index].sort((a, b) => b.at - a.at);
     const recent = feed.slice(0, 60);
+    if (readOnly) {
+      lower.replaceChildren(h("h3", {}, "Latest blood changes"), latest(recent));
+      return;
+    }
     lower.replaceChildren(
       h("h3", {}, "Backups"),
       h("div", { class: "hint" }, `Taken about every 20 minutes and kept ${BACKUP_KEEP_MS / 3_600_000} hours. Use one to roll the server back if somebody finds a dupe or an exploit: roll back, ban them, then fix it.`),
@@ -261,19 +268,22 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx): () => void {
           h("td", {}, h("button", { class: "btn small", disabled: busy, onclick: () => void openRollback(b.at) }, "Roll back…")))) : [h("tr", {}, h("td", { colSpan: 6, class: "hint" }, "No backups yet. The server makes the first one within about 20 minutes of someone playing, or press Back up now."))])))),
       ...(log.length ? [h("h3", {}, "Rollbacks so far"), ...log.map((l) => h("div", { class: "hint" }, `${when(l.at)}: back to ${when(l.to)} · ${fmt(l.users)} accounts, ${fmt(l.rooms)} rooms${l.banned.length ? ` · banned ${l.banned.map(nameOf).join(", ")}` : ""} · safety backup ${when(l.safety)}`))] : []),
       h("h3", {}, "Latest blood changes"),
-      recent.length
-        ? h("div", { class: "scroll-box", style: { maxHeight: "260px" } }, h("table", { class: "atable" }, h("tbody", {}, ...recent.map((e) => h("tr", {},
-            h("td", { class: "hint" }, when(e.t)), h("td", {}, h("b", {}, nameOf(e.uid))),
-            h("td", { style: { fontWeight: "700", color: e.d > 0 ? "#2f9e5a" : "#b3182b" } }, `${e.d > 0 ? "+" : ""}${fmt(e.d)}`),
-            h("td", {}, sourceLabel(e.a)))))))
-        : h("div", { class: "hint" }, "No blood changes recorded yet."));
+      latest(recent));
+  }
+  function latest(recent: Entry[]): HTMLElement {
+    return recent.length
+      ? h("div", { class: "scroll-box", style: { maxHeight: "260px" } }, h("table", { class: "atable" }, h("tbody", {}, ...recent.map((e) => h("tr", {},
+          h("td", { class: "hint" }, when(e.t)), h("td", {}, h("b", {}, nameOf(e.uid))),
+          h("td", { style: { fontWeight: "700", color: e.d > 0 ? "#2f9e5a" : "#b3182b" } }, `${e.d > 0 ? "+" : ""}${fmt(e.d)}`),
+          h("td", {}, sourceLabel(e.a)))))))
+      : h("div", { class: "hint" }, "No blood changes recorded yet.");
   }
 
   // ---- live parts -------------------------------------------------------------------------------------------
   const offs = [
     onValue(ref(db, "backupIndex"), (snap) => { index = Object.values((snap.val() ?? {}) as Record<string, BackupIndexEntry>); drawTop(); drawLower(); }, () => toast("Couldn't read the backups (are the new database rules deployed?)", "err")),
     onValue(ref(db, "bans"), (snap) => { bans = new Set(Object.keys((snap.val() ?? {}) as Record<string, unknown>)); drawAccounts(); }, () => undefined),
-    onValue(query(ref(db, "rollbackLog"), orderByKey(), limitToLast(10)), (snap) => { log = []; snap.forEach((c) => { log.unshift(c.val() as RollbackLogEntry); }); drawLower(); }, () => undefined),
+    ...(readOnly ? [] : [onValue(query(ref(db, "rollbackLog"), orderByKey(), limitToLast(10)), (snap) => { log = []; snap.forEach((c) => { log.unshift(c.val() as RollbackLogEntry); }); drawLower(); }, () => undefined)]),
   ];
   top.append(h("div", { class: "loading", style: { color: "#555" } }, "Loading…"));
   void refreshAll();

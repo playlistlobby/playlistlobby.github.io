@@ -53,6 +53,8 @@ export interface Profile {
   muteForever: boolean;
   /** may ban for good (admins, and mods with perks/<uid>/banForever) */
   banForever: boolean;
+  /** may ban the addresses a player plays from (admins, and mods with perks/<uid>/ipBan) */
+  ipBan: boolean;
   /** may enter any room and any hideout (admins, and the accounts with perks/<uid>/enterAnywhere) */
   enterAnywhere: boolean;
   /** muted until this time (server time, ms): the chat is refused meanwhile */
@@ -237,6 +239,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     role: null,
     muteForever: false,
     banForever: false,
+    ipBan: false,
     enterAnywhere: false,
     mutedUntil: 0,
     createdAt: 0,

@@ -14,6 +14,7 @@ export async function loadRole(p: Profile): Promise<void> {
   p.isMod = p.isAdmin || p.role !== null;
   try { p.enterAnywhere = p.role === "admin" || p.isAdmin || (await get(ref(db, `perks/${p.uid}/enterAnywhere`))).val() === true; } catch { p.enterAnywhere = false; }
   try { p.banForever = p.role === "admin" || p.isAdmin || (await get(ref(db, `perks/${p.uid}/banForever`))).val() === true; } catch { p.banForever = false; }
+  try { p.ipBan = p.role === "admin" || p.isAdmin || (await get(ref(db, `perks/${p.uid}/ipBan`))).val() === true; } catch { p.ipBan = false; }
   try { p.muteForever = p.role === "admin" || (await get(ref(db, `perks/${p.uid}/muteForever`))).val() === true; } catch { p.muteForever = false; }
   try { p.createdAt = Number((await get(ref(db, `users/${p.uid}/createdAt`))).val()) || 0; } catch { p.createdAt = 0; }
 }

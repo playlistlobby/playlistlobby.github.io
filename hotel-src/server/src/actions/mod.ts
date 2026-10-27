@@ -72,6 +72,9 @@ export const modMute: Action = {
 /** may the caller ban for good? (the admin, and a mod who was given perks/<uid>/banForever) */
 const mayBanForever = async (c: Ctx): Promise<boolean> => c.isAdmin || (await c.db.get(`perks/${c.uid}/banForever`)) === true;
 
+/** may the caller ban addresses? (the admin, and a mod who was given perks/<uid>/ipBan) */
+const mayIpBan = async (c: Ctx): Promise<boolean> => c.isAdmin || (c.isMod && (await c.db.get(`perks/${c.uid}/ipBan`)) === true);
+
 /** Takes somebody out of the room they stand in right away (everybody sees them leave), and tells their browser to log out (a kick row: see watchKick in src/notices.ts). */
 async function throwOut(c: Ctx, uid: string, reason: string): Promise<void> {
   const room = await c.db.get<string>(`presence/${uid}/room`);
@@ -154,10 +157,10 @@ export const modRename: Action = {
 };
 const sameAddress = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
 
-/** Admin: ban every address this account has played from (production only: the server notes the address at login). `on: false` lifts those address bans again. */
+/** Admin (or a mod with the ipBan perk): ban every address this account has played from (production only: the server notes the address at login). `on: false` lifts those address bans again. */
 export const modIpBan: Action = {
   async run(c, a) {
-    if (!c.isAdmin) fail("Only the admin can do that.");
+    if (!(await mayIpBan(c))) fail("Only the admin can do that.");
     const uid = text(a.uid, UID_RE, "player");
     const name = await mayAct(c, uid);
     const ips = Object.values((await c.db.get<Record<string, { ip?: string }>>(`ips/${uid}`)) ?? {}).map((x) => x.ip).filter((x): x is string => typeof x === "string");
@@ -168,10 +171,10 @@ export const modIpBan: Action = {
   },
 };
 
-/** Admin: the addresses an account has played from (for the police, if it comes to that). */
+/** Admin (or a mod with the ipBan perk): the addresses an account has played from (for the police, if it comes to that). */
 export const modIps: Action = {
   async run(c, a) {
-    if (!c.isAdmin) fail("Only the admin can do that.");
+    if (!(await mayIpBan(c))) fail("Only the admin can do that.");
     const uid = text(a.uid, UID_RE, "player");
     const rows = Object.values((await c.db.get<Record<string, { ip?: string; at?: number }>>(`ips/${uid}`)) ?? {}).filter((x) => typeof x.ip === "string");
     const banned = new Set(Object.keys((await c.db.get<Record<string, unknown>>("bannedIps")) ?? {}));
