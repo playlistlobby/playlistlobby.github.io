@@ -1,11 +1,12 @@
 // Things that pay blood or change what you carry: stabbing, the syringe, Flappy Bird, cats, bins, smoking, rolling, watering, growing.
 import { Action, cheb, ID_RE, int, requireInRoom, requireWorkRoom, text } from "./util";
 import { fail } from "../ctx";
+import { isEmulator } from "../env";
 import { skipTime } from "../skipTime";
 import {
   addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabWaitAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
-import { combine, DRUG_USE, fentanylDeathCost, findSlot, growMsOf, isLaced, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
+import { BADTRIP_CHANCE, combine, DRUG_USE, fentanylDeathCost, findSlot, growMsOf, isLaced, PSYCHEDELICS, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
 import type { UseDef } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
@@ -140,16 +141,17 @@ export const consume: Action = {
       s.inventory = takeOneFrom(s.inventory, slot);
       return fentDeath(c, s, isLaced(it!.item) ? it!.item : undefined);
     }
+    const badtrip = PSYCHEDELICS.has(it!.item) && ((isEmulator(c.env) && a.badtrip === true) || Math.random() < BADTRIP_CHANCE); // (one time in ten: the browser plays it out)
     if (it!.item === "shroom" || it!.item === "weakshroom") { // a weak shroom works the same, it just can't be mixed
       s.inventory = takeOneFrom(s.inventory, slot);
       s.shroomUntil = c.now + SHROOM_MS; // any room is open to you (the database rules look at this too)
-      return { kind: "shroom", ms: DMT_MS, tripMs: SHROOM_MS }; // (the subtle patterns are drawn by the browser)
+      return { kind: "shroom", ms: DMT_MS, tripMs: SHROOM_MS, ...(badtrip ? { badtrip: true } : {}) }; // (the subtle patterns are drawn by the browser)
     }
     if (it!.item === "lsd") {
       s.inventory = takeOneFrom(s.inventory, slot);
       s.speedUntil = c.now + LSD_MS; // 3x speed (the browser makes the character spin for as long); no open doors
       s.speedMult = LSD_SPEED;
-      return { kind: "lsd", ms: DMT_MS, tripMs: LSD_MS };
+      return { kind: "lsd", ms: DMT_MS, tripMs: LSD_MS, ...(badtrip ? { badtrip: true } : {}) };
     }
     if (it!.item === "dmt") {
       s.inventory = takeOneFrom(s.inventory, slot);
@@ -157,7 +159,7 @@ export const consume: Action = {
       s.shroomUntil = until;
       s.speedUntil = until;
       s.speedMult = 2;
-      return { kind: "dmt", ms: DMT_MS, tripMs: DMT_TRIP_MS };
+      return { kind: "dmt", ms: DMT_MS, tripMs: DMT_TRIP_MS, ...(badtrip ? { badtrip: true } : {}) };
     }
     if (it!.item === "codeine") {
       s.inventory = takeOneFrom(s.inventory, slot);
@@ -169,7 +171,7 @@ export const consume: Action = {
     if (use) { // bagmand's drugs: heroin, percs, 2cb, ketamine and the 芬太尼
       s.inventory = takeOneFrom(s.inventory, slot);
       applyEffects(s, c.now, use);
-      return { kind: "drug", drug: it!.item, nodMs: use.nodMs ?? 0, rushMs: use.rushMs ?? 0, lookKind: use.look?.kind ?? "", lookMs: use.look?.ms ?? 0 };
+      return { kind: "drug", drug: it!.item, nodMs: use.nodMs ?? 0, rushMs: use.rushMs ?? 0, lookKind: use.look?.kind ?? "", lookMs: use.look?.ms ?? 0, ...(badtrip ? { badtrip: true } : {}) };
     }
     return fail("You can't swallow that.");
   },

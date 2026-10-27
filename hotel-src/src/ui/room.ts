@@ -145,6 +145,7 @@ import { assetUrl } from "../assetUrl";
 import { playBang, playSfx, playThud } from "../sfx";
 import { gunShoot as gunShootCall, rocketFire as rocketFireCall, watchHits, watchRocketAt } from "../hits";
 import { ROCKET_COOLDOWN_MS, ROCKET_LINE } from "../shared/hits";
+import { BADTRIP_LINES, BADTRIP_MS, BADTRIP_RUN_MS, BADTRIP_SLEEP_MS } from "../shared/items";
 import { bountiesOf } from "../shared/hits";
 import type { Hit } from "../shared/hits";
 import { openWantedBoard } from "./wantedBoard";
@@ -1560,8 +1561,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   const mine = (): Player | undefined => players.get(me.uid);
 
-  function walkTo(dest: Pt): void {
+  function walkTo(dest: Pt, force = false): void {
     const p = mine();
+    if (badTripRun && !force) return; // (you run where the trip takes you)
     if (!p || frozen || faintUntil) return; // 6ixty doesn't walk, and nobody walks while out cold
     if (p.lying && !(introUntil && performance.now() < introUntil)) getUp(); // out of bed first
     if (p.sit && !seatTiles.has(`${dest.x},${dest.y}`)) { p.sit = false; update(ref(db, `rooms/${roomId}/players/${me.uid}`), { sit: null }).catch(() => undefined); } // you get up when you walk
@@ -2864,7 +2866,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const it = me.inventory[slot];
     if (!it) return;
     try {
-      const r = await consumeItem(me, slot);
+      const r = await consumeItem(me, slot, badTripNow());
       clearSelection();
       panel.refresh();
       playSfx("select", 0.5);
@@ -2903,6 +2905,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         logAction(me, "room", `took ${r.drug}`);
         applyDrug(p, r);
       }
+      if (r.badtrip) { logAction(me, "room", "bad trip"); startBadTrip(); }
     } catch (err) { say((err as Error).message || "Couldn't do that.", "warn"); }
   }
 
@@ -2911,6 +2914,65 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
    * a shroom's patterns are only a faint wash and you stay on your feet. `then` runs when it is over (the speed and room access come after the colours).
    */
   let trippingOn = false;
+  let badTripOn = false, badTripRun = false;
+  const badTripNow = (): boolean => { try { return useEmulator && localStorage.getItem("6ixplanet.badtrip") === "1"; } catch { return false; } }; // (only in the local test: a switch to get one every time)
+  /**
+   * A bad trip (the server says so after a psychedelic, one time in ten): for 30 seconds you say things in the chat; for the last 15 you are naked and run around the room by yourself at four times
+   * your speed; then you fall asleep for 4 seconds and wake up in your room.
+   */
+  function startBadTrip(): void {
+    const p = mine();
+    if (!p || badTripOn || disposed) return;
+    badTripOn = true;
+    const timers: number[] = [];
+    const later = (ms: number, fn: () => void): void => { timers.push(window.setTimeout(() => { if (!disposed) fn(); }, ms)); };
+    const others = (): string[] => [...players.values()].filter((q) => q.uid !== me.uid && !q.npc && !q.sleeper).map((q) => q.name);
+    const pick = BADTRIP_LINES.map((l, i) => ({ l, k: Math.random() + (i < 2 ? 0 : 0.0001) })).sort((x, y) => x.k - y.k).map((x) => x.l);
+    const count = 3 + Math.floor(Math.random() * 3); // 3 to 5 lines
+    const span = BADTRIP_MS - 5000;
+    for (let i = 0; i < count; i++) {
+      later(1500 + (i * span) / count + Math.random() * (span / count) * 0.6, () => {
+        const names = others();
+        let line = pick[i % pick.length];
+        if (line.includes("{name}")) {
+          if (!names.length) line = pick.find((l) => !l.includes("{name}")) ?? line;
+          else line = line.split("{name}").join(names[Math.floor(Math.random() * names.length)]);
+        }
+        sendChat(line);
+      });
+    }
+    const naked = (fig: string): string => fig.split(".").filter((part) => /^(hd|hr|fa|ey)-/.test(part)).join("."); // (only the head and the body are left)
+    later(BADTRIP_MS - BADTRIP_RUN_MS, () => {
+      const q = mine();
+      if (!q) return;
+      badTripRun = true;
+      q.figure = naked(q.figure);
+      const until = serverNow() + BADTRIP_RUN_MS + 400;
+      q.fast = until; q.fastMult = 4;
+      void update(myRef, { figure: q.figure, fast: until, fastMult: 4 }).catch(() => undefined);
+      say("Your clothes are gone and your legs will not stop.", "warn");
+      const run = window.setInterval(() => {
+        const r = mine();
+        if (!r || disposed) return;
+        if (r.path.length > 0) return;
+        for (let tries = 0; tries < 30; tries++) {
+          const x = Math.floor(Math.random() * def.w), y = Math.floor(Math.random() * def.h);
+          if (walkable(x, y)) { walkTo({ x, y }, true); if (r.path.length) break; }
+        }
+      }, 180);
+      timers.push(run);
+    });
+    later(BADTRIP_MS, () => {
+      for (const t of timers) { window.clearTimeout(t); window.clearInterval(t); }
+      badTripRun = false;
+      const q = mine();
+      if (q) { q.path = []; q.fast = undefined; q.fastMult = me.speedMult; q.faint = true; faintUntil = performance.now() + BADTRIP_SLEEP_MS + 8000; q.emote = undefined; q.sit = false; q.sitTo = undefined; pending = null; }
+      void update(myRef, { lay: true, sit: null, fast: null }).catch(() => undefined);
+      const stop = showDeathScreen(stage, "DU FALDT I SØVN", Math.round(BADTRIP_SLEEP_MS / 1000), () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }); });
+      unsubs.push(stop);
+    });
+    unsubs.push(() => { for (const t of timers) { window.clearTimeout(t); window.clearInterval(t); } badTripRun = false; });
+  }
   function startDmt(ms: number, opts: { lie: boolean; then?: () => void }): void {
     const p = mine();
     if (!p || disposed || faintUntil || trippingOn) return;

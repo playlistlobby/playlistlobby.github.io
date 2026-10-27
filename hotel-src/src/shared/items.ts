@@ -168,6 +168,27 @@ export const DRUG_USE: Record<string, UseDef> = {
   ketamine: { speedMs: 60_000, look: { kind: "horse", ms: 60_000 } }, // a horse's head for a minute
   fentcn: { mult: 4, boostMs: 180_000, speedMs: 180_000, shroomMs: 180_000, chemMs: 180_000, lean: true, look: { kind: "horse", ms: 60_000 }, rushMs: 10_000 }, // 10 s at 10x, then all of it
 };
+/**
+ * The psychedelics: shrooms, LSD, DMT and 2cb. One time in ten one of them gives you a bad trip (see the room: you say things for 30 seconds, and for the last 15 you are naked and run around at
+ * four times your speed, then you fall asleep for 4 seconds and wake up in your room).
+ */
+export const PSYCHEDELICS: ReadonlySet<string> = new Set(["shroom", "weakshroom", "lsd", "dmt", "twocb"]);
+export const BADTRIP_CHANCE = 0.1;
+export const BADTRIP_MS = 30_000;
+export const BADTRIP_RUN_MS = 15_000;
+export const BADTRIP_SLEEP_MS = 4_000;
+/** what you say on a bad trip (`{name}` is somebody else in the room) */
+export const BADTRIP_LINES: readonly string[] = [
+  'FUCK DIG "{name}"',
+  "{name} ER EN DEMON {name} ER EN DEMON.",
+  "Guys sorry min mor er lige blevet skudt real life skal lige spin back....",
+  "Brb guys jeg har skidt ud over min stol",
+  "IM STICKING RN AY IM STICKING RN AYY",
+  "IM STICKING RIGH NAHHHHHHH",
+  "67 57 57 57 SIX SEVEN GUYS",
+  "yooooo jeg elsker isreal",
+  "Der worms i min dih der worms i min idek broasdokfpælkj",
+];
 /** Items that pile up in one slot (everything else gets a slot of its own). */
 export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco", "iron", "wood", "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn", "mysterycase", "casekey"]);
 /** Weed grows for 10 minutes, shrooms for 25. The water bar runs dry after 5: water it once, any time while it grows (even before the bar is empty), or the harvest turns out poor. */

@@ -207,5 +207,22 @@ bad("it has to reload for 30 minutes", await rk(alex, mid));
 await owner("PUT", `rocketAt/${alex.uid}`, Date.now() - 31 * 60_000);
 ok("after 30 minutes it fires again", await rk(alex, mid));
 
+console.log("--- a bad trip (psychedelics only)");
+const tripper = await fresh("t_ht_tripper", { blood: 10 });
+await act(tripper, "sync");
+await owner("PUT", `users/${tripper.uid}/inventory`, inv({ item: "lsd", qty: 1 }, { item: "heroin", qty: 1 }, { item: "shroom", qty: 1 }, { item: "twocb", qty: 1 }));
+const c1 = await act(tripper, "consume", { slot: 0, badtrip: true });
+check("lsd with the switch on: a bad trip", c1.ok && c1.data.badtrip === true, JSON.stringify(c1));
+const c2 = await act(tripper, "consume", { slot: 0, badtrip: true });
+check("heroin is not a psychedelic: never a bad trip", c2.ok && !c2.data.badtrip, JSON.stringify(c2));
+const c3 = await act(tripper, "consume", { slot: 0, badtrip: true });
+check("a shroom can give one", c3.ok && c3.data.badtrip === true, JSON.stringify(c3));
+const c4 = await act(tripper, "consume", { slot: 0, badtrip: true });
+check("2cb can give one", c4.ok && c4.data.badtrip === true, JSON.stringify(c4));
+await owner("PUT", `users/${tripper.uid}/inventory`, Object.fromEntries(Array.from({ length: 20 }, (_, i) => [i, { item: "lsd", qty: 1 }])));
+let bads = 0;
+for (let i = 0; i < 20; i++) { const r = await act(tripper, "consume", { slot: 0 }); if (r.ok && r.data.badtrip) bads++; }
+check(`without the switch it is only now and then (${bads} of 20)`, bads <= 10);
+
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);
