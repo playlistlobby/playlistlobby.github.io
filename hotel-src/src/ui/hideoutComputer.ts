@@ -5,12 +5,12 @@ import type { HideoutLandlordPanel } from "./hideoutLandlord";
 import { BLOOD_ICON, furniIcon, itemDef, onFurniIcon } from "../items";
 import { FURNI_KINDS, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
-import { hitPlace, watchHitCool, watchHits, watchRevenge } from "../hits";
+import { hitPlace, hitSearch, watchHitCool, watchHits, watchRevenge } from "../hits";
 import type { Revenge } from "../hits";
 import { headBoxFor } from "./head";
 import { HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_MIN } from "../shared/hits";
 import type { Hit } from "../shared/hits";
-import { hideoutPriceOf, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
+import { hideoutPriceOf, HIDEOUT_AD_MAX, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
 import { countdownText } from "../shared/raffle";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
@@ -72,25 +72,40 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   const minText = (ms: number): string => (ms >= 3_600_000 ? `${Math.round(ms / 3_600_000)} hour${ms >= 7_200_000 ? "s" : ""}` : `${Math.round(ms / 60000)} minutes`);
 
   /** a search box for players: type a part of a name ("mem" finds hbmem); the answers come as you type, each with a button of your own */
-  function searchUi(placeholder: string, exclude: () => Set<string>, button: (r: { uid: string; name: string }) => HTMLElement): HTMLElement[] {
+  type Person = { uid: string; name: string };
+  /** the hitman site's list of who is online (kept for a while: the page is drawn again every second) */
+  let onlineList: { at: number; rows: Person[]; loading: boolean } = { at: 0, rows: [], loading: false };
+  function searchUi(placeholder: string, exclude: () => Set<string>, button: (r: Person) => HTMLElement, hits = false): HTMLElement[] {
     const input = h("input", { class: "hc-input", type: "search", placeholder, value: searchQ, autocomplete: "off", autocapitalize: "none", spellcheck: false }) as HTMLInputElement;
     const box = h("div", { class: "hc-results" });
     let state: "idle" | "short" | "searching" | "done" = searchQ.trim().length >= 2 ? "done" : "idle";
+    const person = (r: Person): HTMLElement => h("div", { class: "hc-person" }, headBoxFor(r.uid), h("span", { class: "hc-pname" }, r.name), button(r));
     const paint = (): void => {
       const rows = results.filter((r) => !exclude().has(r.uid));
+      if (hits && state === "idle") { // nothing typed yet: who is online right now (the protected ones are not in the list)
+        const on = onlineList.rows.filter((r) => !exclude().has(r.uid));
+        box.replaceChildren(h("div", { class: "hc-hint" }, onlineList.at === 0 ? "Looking for who is online…" : on.length ? "Online now" : "Nobody else is online."), ...on.map(person));
+        return;
+      }
       box.replaceChildren(...(state === "short" ? [h("div", { class: "hc-hint" }, "Type at least 2 letters.")]
         : state === "searching" ? [h("div", { class: "hc-hint" }, "Searching…")]
         : state === "done" && !rows.length && searchQ.trim().length >= 2 ? [h("div", { class: "hc-hint" }, "Nobody has a name like that.")]
-        : rows.map((r) => h("div", { class: "hc-person" }, headBoxFor(r.uid), h("span", { class: "hc-pname" }, r.name), button(r)))));
+        : rows.map(person)));
+    };
+    const loadOnline = (): void => {
+      if (!hits || onlineList.loading || Date.now() - onlineList.at < 20_000) return;
+      onlineList.loading = true;
+      void hitSearch(me, "").then((r) => { onlineList = { at: Date.now(), rows: r.players, loading: false }; if (searchQ.trim().length < 2) paint(); }, () => { onlineList.loading = false; onlineList.at = Date.now(); });
     };
     const run = (): void => {
       const q = searchQ.trim();
       if (q.length < 2) { results = []; state = q.length ? "short" : "idle"; paint(); return; }
       state = "searching"; paint();
-      void hideoutSearch(me, q).then((r) => { if (q === searchQ.trim()) { results = r.players; state = "done"; paint(); } }, () => { state = "done"; paint(); });
+      void (hits ? hitSearch(me, q) : hideoutSearch(me, q)).then((r) => { if (q === searchQ.trim()) { results = r.players; state = "done"; paint(); } }, () => { state = "done"; paint(); });
     };
     input.addEventListener("input", () => { searchQ = input.value; window.clearTimeout(searchTimer); searchTimer = window.setTimeout(run, 180); });
     if (searchQ.trim().length >= 2 && !results.length) run(); else paint();
+    loadOnline();
     return [input, box];
   }
 
@@ -140,11 +155,11 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const form = h("div", { class: "ht-form", id: "ht-form" },
       waiting ? h("div", { class: "ht-warn" }, `Your hideout has put a hit out already. The next one can go out in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`) : "",
       hitTarget ? h("div", { class: "ht-target" }, headBoxFor(hitTarget.uid), h("div", { class: "ht-tn" }, h("span", {}, "The target"), h("strong", {}, hitTarget.name)), h("button", { class: "btn small", onclick: () => { hitTarget = null; (document.activeElement as HTMLElement | null)?.blur(); render(); } }, "Change"))
-        : h("div", { class: "hc-group" }, ...searchUi("Search a player's name", () => new Set([me.uid]), (r) => h("button", { class: "btn small primary", onclick: () => { (document.activeElement as HTMLElement | null)?.blur(); hitTarget = r; results = []; searchQ = ""; render(); } }, "Pick"))),
+        : h("div", { class: "hc-group" }, ...searchUi("Search a player's name", () => new Set([me.uid]), (r) => h("button", { class: "btn small primary", onclick: () => { (document.activeElement as HTMLElement | null)?.blur(); hitTarget = r; results = []; searchQ = ""; render(); } }, "Pick"), true)),
       h("div", { class: "ht-bounty" }, h("span", {}, `The bounty (${HIT_MIN} to ${HIT_MAX})`), big, slider),
       h("button", { class: "ht-go", disabled: cant, onclick: () => void act(async () => { const t = hitTarget!; await hitPlace(me, roomId, t.uid, hitAmount); hitTarget = null; return `The hit on ${t.name} is out: ${hitAmount} blood.`; }) },
         hitTarget ? `Put out a hit on ${hitTarget.name}` : "Pick somebody first"),
-      h("div", { class: "hc-foot" }, "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 3 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells two a visit) can collect it."));
+      h("div", { class: "hc-foot" }, "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 2 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells two a visit) can collect it."));
     const revengeBox = revenge.length ? [h("div", { class: "ht-open ht-revenge" }, h("div", { class: "ht-open-t" }, "Somebody put a hit on you"),
       ...revenge.slice(0, 6).map((r) => h("div", { class: "ht-row ht-rv" }, headBoxFor(r.by), h("div", { class: "ht-who" }, h("span", { class: "ht-n" }, r.byName), h("span", { class: "ht-by" }, `${r.hideoutName ? r.hideoutName + " · " : ""}${r.amount.toLocaleString("en-US")} on your head`)),
         h("button", { class: "ht-rev", onclick: () => { hitTarget = { uid: r.by, name: r.byName }; results = []; searchQ = ""; render(); document.getElementById("ht-form")?.scrollIntoView({ block: "center" }); } }, "Revenge"))))] : [];
@@ -185,6 +200,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const placed = d.furni.filter((f) => !["toolbox", "computer", "sink", "boombox"].includes(f.id)).length;
     const name = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_NAME_MAX), value: d.name }) as HTMLInputElement;
     const desc = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_DESC_MAX), placeholder: "A line about your hideout", value: d.hideout?.desc ?? "" }) as HTMLInputElement;
+    const ad = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_AD_MAX), placeholder: "What the landlord shouts about it", value: d.hideout?.ad ?? "" }) as HTMLInputElement;
     const boosted = (d.hideout?.boostUntil ?? 0) > Date.now();
     return [
       h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Settings"), h("div", { class: "hc-sub" }, `${d.w} × ${d.h} · ${placed}/${d.hideout?.cap ?? "?"} pieces`)),
@@ -202,6 +218,8 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
           ...(d.hideout?.listed ? [
             h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, boosted ? `Shown first for ${Math.max(1, Math.ceil(((d.hideout?.boostUntil ?? 0) - Date.now()) / 60000))} more min` : "Show it first on the list for 6 hours"),
               h("button", { class: "btn small primary", disabled: busy || me.blood < HIDEOUT_BOOST_PRICE, onclick: () => void act(async () => { await hideoutBoost(me); return "Boosted: it is shown first for a while."; }) }, `🔥 Boost (${HIDEOUT_BOOST_PRICE} drops)`)),
+            h("div", { class: "hc-label" }, "The landlord outside shouts this every 2 to 5 minutes while it is boosted"), ad,
+            h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { ad: ad.value }); return ad.value.trim() ? "Saved. The landlord will shout it while the boost lasts." : "The landlord has nothing to shout now."; }) }, "Save the message"),
           ] : [])),
         h("div", { class: "hc-group" },
           h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Lock building for everybody"),

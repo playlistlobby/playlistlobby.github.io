@@ -8,6 +8,8 @@ import type { Hit } from "./shared/hits";
 
 /** put blood on somebody's head (from a hideout's computer) */
 export const hitPlace = (p: Profile, room: string, target: string, amount: number): Promise<{ id: string; amount: number }> => call(p, "hitPlace", { room, target, amount });
+/** the hitman site's player list: who is online (no search), or the names with the search in them; the protected ones are not in it */
+export const hitSearch = (p: Profile, q: string): Promise<{ players: Array<{ uid: string; name: string }> }> => call(p, "hitSearch", { q });
 /** shoot somebody in the room with the gun in this pocket slot */
 export const gunShoot = (p: Profile, room: string, target: string, slot: number): Promise<{ bounty: number; dropped: number; secs: number; name: string }> => call(p, "gunShoot", { room, target, slot });
 

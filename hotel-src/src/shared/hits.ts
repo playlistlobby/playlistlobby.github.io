@@ -2,17 +2,23 @@
 // (bagmand sells it, the bins and the boxes give it). Pure rules shared by the browser and the server (server/src/actions/hits.ts does the placing and the shooting).
 //   hits/<id>          an open hit: { target, targetName, amount, by, byName, hideout, hideoutName, at } (readable by everybody: the wanted board and the heads show it; written only by the server)
 //   hitLog/<target>    when hits were put on this player (the last few): a player can be the target of 3 hits a day
-//   hitCool/<owner>    when a hideout last put a hit on somebody: a hideout can put one hit every 3 hours
+//   hitCool/<owner>    when a hideout last put a hit on somebody: a hideout can put one hit every 2 hours
 
 export const HIT_MIN = 500;
 export const HIT_MAX = 1500;
 /** a hideout may put one hit on somebody's head this often */
-export const HIT_HIDEOUT_COOLDOWN_MS = 3 * 3_600_000;
+export const HIT_HIDEOUT_COOLDOWN_MS = 2 * 3_600_000;
 /** a player can be the target of this many hits in a day (24 hours) */
 export const HIT_PERSON_MAX = 3;
 export const HIT_PERSON_WINDOW_MS = 24 * 3_600_000;
 /** what the gun costs at bagmand's (one per player per visit) */
 export const GUN_PRICE = 250;
+/** moderators are protected from hits, the gun, the rocket and the knife, except these two (Mabs and leolegit: fair game like everybody else) */
+export const FAIR_GAME_UIDS: readonly string[] = ["QDcmwHxm7BbRcJ0AgKNX53pyArv2", "KuYLkc7O9AWxC9a2lny4xiklAQH3"];
+/** the most names the hitman site's list of who is online shows */
+export const HIT_ONLINE_MAX = 40;
+/** a player is online when their presence was seen this recently (ms) */
+export const HIT_ONLINE_FRESH_MS = 3 * 60_000;
 /** how far away (in tiles) somebody can be shot */
 export const SHOT_RANGE = 8;
 

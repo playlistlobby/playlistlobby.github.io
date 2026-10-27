@@ -15,7 +15,7 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
   let mine: MyHideout[] = [];
   let invites: Array<{ owner: string; fromName: string; roomName: string; at: number }> = [];
   let list: Array<{ owner: string; listing: HideoutListing }> = [];
-  let everyHideout: Array<{ owner: string; name: string; ownerName: string }> = []; // (for the accounts that may enter any hideout: all of them, listed or not)
+  let everyHideout: Array<{ owner: string; name: string; ownerName: string; members: number }> = []; // (for the accounts that may enter any hideout: all of them, listed or not)
   let favs = new Set<string>();
   let tab: "boosted" | "all" | null = null; // (null: the boosted ones if there are any, else all)
   let knocking: { owner: string; name: string; state: "waiting" | "declined" | "none" } | null = null;
@@ -42,19 +42,11 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
     for (const r of mine) rows.push(h("div", { class: "door-row" },
       h("div", { class: "door-row-main" }, h("div", { class: "door-row-name" }, r.name), h("div", { class: "hint" }, r.role === "owner" ? "Yours" : "You are a member")),
       h("button", { class: "btn small primary", onclick: () => enter(r) }, "Enter")));
-    if (me.enterAnywhere) {
-      const mineOwners = new Set(mine.map((m) => m.owner));
-      const rest = everyHideout.filter((x) => x.owner !== me.uid && !mineOwners.has(x.owner));
-      if (rest.length) {
-        rows.push(h("div", { class: "fp-label" }, "Every hideout"));
-        for (const x of rest) rows.push(h("div", { class: "door-row" },
-          h("div", { class: "door-row-main" }, h("div", { class: "door-row-name" }, x.name), h("div", { class: "hint" }, x.ownerName)),
-          h("button", { class: "btn small primary", onclick: () => { playSfx("select", 0.5); close(); ctx.navigate("room", { roomId: `h_${x.owner}`, from: LOBBY_ID }); } }, "Enter")));
-      }
-    }
     // the hideouts whose owners left them on the list: you can't ask to be a member (the owner adds members on the hideout's computer), but you can knock and be let in as a guest
     const now = Date.now();
-    const others = list.filter((l) => l.owner !== me.uid && !mine.some((m) => m.owner === l.owner));
+    // an account that may enter any hideout also gets the ones that are not on the list (open to it: it just walks in), in the same list with the same tabs
+    const unlisted = me.enterAnywhere ? everyHideout.filter((x) => x.owner !== me.uid && !list.some((l) => l.owner === x.owner)).map((x) => ({ owner: x.owner, listing: { name: x.name, desc: "not on the list", ownerName: x.ownerName, members: x.members, boostUntil: 0, open: true } as HideoutListing })) : [];
+    const others = [...list, ...unlisted].filter((l) => l.owner !== me.uid && !mine.some((m) => m.owner === l.owner));
     const boosted = sortListings(others.filter((l) => l.listing.boostUntil > now), now);
     const plain = sortListings(others.filter((l) => !(l.listing.boostUntil > now)), now);
     const favRows = sortListings(others.filter((l) => favs.has(l.owner)), now);
@@ -104,7 +96,7 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
       playSfx("knock", 0.35);
     }, () => { toast("Couldn't knock.", "err"); knocking = null; render(); });
   }
-  const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; render(); }), ...(me.enterAnywhere ? [watchAllRooms((all) => { everyHideout = Object.entries(all).filter(([id, m]) => isHideoutId(id) && m?.owner).map(([id, m]) => ({ owner: id.slice(2), name: String(m.name ?? "Hideout"), ownerName: String(m.ownerName ?? "?") })); render(); })] : []), watchHideoutList((l) => { list = l; render(); }), watchMyHideouts(me.uid, (l) => { mine = l; render(); }), watchHideoutInvites(me.uid, (l) => { invites = l; render(); })];
+  const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; render(); }), ...(me.enterAnywhere ? [watchAllRooms((all) => { everyHideout = Object.entries(all).filter(([id, m]) => isHideoutId(id) && m?.owner).map(([id, m]) => ({ owner: id.slice(2), name: String(m.name ?? "Hideout"), ownerName: String(m.ownerName ?? "?"), members: Object.keys((m as { members?: object }).members ?? {}).length + 1 })); render(); })] : []), watchHideoutList((l) => { list = l; render(); }), watchMyHideouts(me.uid, (l) => { mine = l; render(); }), watchHideoutInvites(me.uid, (l) => { invites = l; render(); })];
   render();
   function close(): void { if (closed) return; closed = true; window.clearTimeout(knockTimer); stopKnock?.(); if (knocking?.state === "waiting") void social.cancelHideoutKnock(knocking.owner); stops.forEach((s) => s()); el.remove(); onClose(); }
   return { close };

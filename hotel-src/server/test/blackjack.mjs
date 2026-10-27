@@ -65,20 +65,21 @@ const sit = (u, seat) => act(u, "bjSit", { room: ROOM, fid: "bt1", seat });
 const bet = (u, amount) => act(u, "bjBet", { room: ROOM, fid: "bt1", amount });
 const move = (u, m) => act(u, "bjAct", { room: ROOM, fid: "bt1", move: m });
 const d = (op, extra = {}) => act(dealer, "bjDealer", { room: ROOM, fid: "bt1", op, ...extra });
+const dealNow = async () => { await owner("PATCH", `blackjack/${KEY}`, { dealerAt: Date.now() - 11_000 }); return d("deal"); }; // (the players have 10 seconds to bet first: skip them)
 const tick = (u) => act(u, "bjTick", { room: ROOM, fid: "bt1" });
 
 console.log("--- the dealer sits down");
 bad("not at a sofa", await act(dealer, "bjDealer", { room: ROOM, fid: "sofa1", op: "sit", bank: 1000 }));
 bad("only a member of the hideout deals", await act(nobody, "bjDealer", { room: ROOM, fid: "bt1", op: "sit", bank: 1000 }));
-bad("the bank is at least 500", await d("sit", { bank: 400 }));
-bad("and at most 5000", await d("sit", { bank: 5001 }));
-ok("a member sits down as dealer with 2000", await d("sit", { bank: 2000 }));
-check("their blood is 4000", (await bloodOf(dealer)) === 4000);
+bad("the bank is at least 20", await d("sit", { bank: 19 }));
+bad("and at most 500", await d("sit", { bank: 501 }));
+ok("a member sits down as dealer with 500", await d("sit", { bank: 500 }));
+check("their blood is 5500", (await bloodOf(dealer)) === 5500);
 let t = await tbl();
-check("a table with a dealer and 2000 in the bank, nothing going on", t.dealer.uid === dealer.uid && t.bank === 2000 && t.phase === "idle", JSON.stringify(t));
-bad("one dealer only", await act(host, "bjDealer", { room: ROOM, fid: "bt1", op: "sit", bank: 1000 }));
+check("a table with a dealer and 500 in the bank, nothing going on", t.dealer.uid === dealer.uid && t.bank === 500 && t.phase === "idle", JSON.stringify(t));
+bad("one dealer only", await act(host, "bjDealer", { room: ROOM, fid: "bt1", op: "sit", bank: 500 }));
 check("the dealer's pointer is saved", (await owner("GET", `bjSeat/${dealer.uid}`))?.dealer === true);
-check("the table is public", (await readAs(a, `blackjack/${KEY}`)).body?.bank === 2000);
+check("the table is public", (await readAs(a, `blackjack/${KEY}`)).body?.bank === 500);
 check("and nobody can write it", refused(await clientWrite(a, `blackjack/${KEY}/bank`, 99999)));
 
 console.log("--- the players sit and bet");
@@ -95,12 +96,13 @@ bad("and no more", await bet(a, 251));
 ok("a bets 100", await bet(a, 100));
 check("a's blood is 2900", (await bloodOf(a)) === 2900);
 bad("one bet only", await bet(a, 50));
-ok("b bets 250", await bet(b, 250));
+ok("b bets 100", await bet(b, 100));
 bad("cards can't be dealt twice... not yet dealt: a stranger can't deal", await act(a, "bjDealer", { room: ROOM, fid: "bt1", op: "deal" }));
 check("blood is conserved", (await worth()) === START, String(await worth()));
 
 console.log("--- the deal");
-ok("the dealer deals", await d("deal"));
+bad("the dealer can not deal while the players are still betting (10 seconds)", await d("deal"));
+ok("the dealer deals", await dealNow());
 t = await tbl();
 check("two cards each, one card up and one hidden", t.phase === "players" || t.phase === "over" ? true : false);
 if (t.phase === "over") console.log("(the dealer had a blackjack: that round is over already)");
@@ -147,7 +149,7 @@ for (let r = 0; r < 6; r++) {
   await tick(a);
   ok(`round ${r + 2}: open`, await d("open"));
   await bet(a, 20 + r * 10); await bet(b, 30);
-  ok("deal", await d("deal"));
+  ok("deal", await dealNow());
   t = await tbl();
   if (t.phase === "players") await playRound();
   t = await tbl();
@@ -158,7 +160,7 @@ console.log("--- running out of time");
 t = await tbl();
 if (t.phase === "over") { await owner("PATCH", `blackjack/${KEY}`, { nextAt: Date.now() - 1 }); await tick(a); }
 let tries = 0;
-do { await d("open"); await bet(a, 20); await bet(b, 20); await d("deal"); t = await tbl(); tries++; } while (t.phase !== "players" && tries < 8 && (await (async () => { await owner("PATCH", `blackjack/${KEY}`, { nextAt: Date.now() - 1 }); await tick(a); return true; })()));
+do { await d("open"); await bet(a, 20); await bet(b, 20); await dealNow(); t = await tbl(); tries++; } while (t.phase !== "players" && tries < 8 && (await (async () => { await owner("PATCH", `blackjack/${KEY}`, { nextAt: Date.now() - 1 }); await tick(a); return true; })()));
 check("a round is waiting for a player", t.phase === "players");
 await owner("PATCH", `blackjack/${KEY}`, { turnAt: Date.now() - 30_000 });
 ok("a tick: the slow player stands", await tick(a));
@@ -188,7 +190,7 @@ ok("a leaves with a bet in betting: the bet comes back", await act(a, "bjLeave",
 check("a has it back", (await bloodOf(a)) === aBefore + 100);
 check("a and b sit again", (await sit(a, 0)).ok && (await sit(b, 1)).ok);
 await bet(a, 100); await bet(b, 60);
-ok("deal", await d("deal"));
+ok("deal", await dealNow());
 t = await tbl();
 if (t.phase === "players") {
   const dBefore = await bloodOf(dealer);
@@ -203,7 +205,7 @@ if (t.phase === "players") {
 }
 
 console.log("--- gone from the room, and the table picked up");
-ok("the dealer sits again", await d("sit", { bank: 1000 }));
+ok("the dealer sits again", await d("sit", { bank: 500 }));
 await owner("DELETE", `rooms/${ROOM}/players/${a.uid}`);
 ok("a tick notices a is gone", await tick(b));
 const aSeat = seats(await tbl()).find((s) => s.uid === a.uid);
@@ -219,10 +221,10 @@ check("no table, no pointers, blood in the pockets", (await tbl()) === null && (
 console.log("--- a refresh");
 await owner("PUT", `roomsMeta/${ROOM}/furni/bt1`, { kind: "f_blackjacktable", x: 5, y: 5, dir: 2 });
 await stand(dealer, ROOM, 6, 6);
-ok("the dealer sits", await d("sit", { bank: 800 }));
+ok("the dealer sits", await d("sit", { bank: 400 }));
 const before = await bloodOf(dealer);
 ok("a log in elsewhere stands them up (no table named)", await act(dealer, "bjLeave"));
-check("they have the 800 back", (await bloodOf(dealer)) === before + 800 && (await tbl()) === null);
+check("they have the 400 back", (await bloodOf(dealer)) === before + 400 && (await tbl()) === null);
 check("blood is conserved", (await worth()) === START, String(await worth()));
 
 console.log("--- ordering blackjack tables from the computer: 500, 1000, 2000, 2000");

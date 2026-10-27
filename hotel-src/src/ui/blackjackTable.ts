@@ -4,7 +4,7 @@ import { BLOOD_ICON } from "../items";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
 import { bjAct, bjBet, bjDealer, bjLeave, bjSit, bjTick, watchBjHole, watchBjTable } from "../blackjack";
-import { BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS, bjSeatOfUid, bjValue, bjStakes, canSettle, handsToBeat, isBlackjack } from "../shared/blackjack";
+import { BJ_BET_WINDOW_MS, BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS, bjSeatOfUid, bjValue, bjStakes, canSettle, handsToBeat, isBlackjack } from "../shared/blackjack";
 import type { BjSeat, BjTable } from "../shared/blackjack";
 import { cardBackUrl, cardUrl, chipsFor, chipUrl } from "./pokerCards";
 import type { Ctx } from "../main";
@@ -32,7 +32,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
   let busy = false;
   let sitting: number | null = null; // the seat the "sit here" is for
   let dealing = false; // the "deal at this table" panel is open
-  let bank = 1000;
+  let bank = 250;
   let bet = 0; // the bet being built from chips
   let lastTick = 0;
   let leaveArmed = 0;
@@ -144,7 +144,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
 
   function bankPanel(): HTMLElement {
     const top = Math.min(BJ_BANK_MAX, me.blood);
-    const slider = h("input", { type: "range", class: "pk-slider", min: String(BJ_BANK_MIN), max: String(Math.max(BJ_BANK_MIN, top)), step: "100", value: String(Math.min(bank, Math.max(BJ_BANK_MIN, top))) }) as HTMLInputElement;
+    const slider = h("input", { type: "range", class: "pk-slider", min: String(BJ_BANK_MIN), max: String(Math.max(BJ_BANK_MIN, top)), step: "10", value: String(Math.min(bank, Math.max(BJ_BANK_MIN, top))) }) as HTMLInputElement;
     const num = h("div", { class: "pk-bignum" }, h("img", { src: BLOOD_ICON, alt: "" }), blood(bank));
     slider.addEventListener("input", () => { bank = Number(slider.value); num.replaceChildren(h("img", { src: BLOOD_ICON, alt: "" }), blood(bank)); });
     const short = me.blood < BJ_BANK_MIN;
@@ -161,7 +161,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     actions.replaceChildren();
     if (!t || (!imAt())) {
       actions.append(h("div", { class: "pk-info" }, t?.dealer ? "Tap an empty seat to sit down and play." : "There's no dealer yet.",
-        !t?.dealer ? h("div", { class: "pk-row", style: { marginTop: "8px" } }, h("button", { class: "pk-btn raise", onclick: () => { dealing = true; bank = Math.min(BJ_BANK_MAX, Math.max(BJ_BANK_MIN, Math.min(me.blood, 1000))); render(); } }, "Deal at this table")) : "",
+        !t?.dealer ? h("div", { class: "pk-row", style: { marginTop: "8px" } }, h("button", { class: "pk-btn raise", onclick: () => { dealing = true; bank = Math.min(BJ_BANK_MAX, Math.max(BJ_BANK_MIN, Math.min(me.blood, 250))); render(); } }, "Deal at this table")) : "",
         t?.dealer ? h("div", { class: "pk-sub" }, `The dealer's bank: ${blood(t.bank)}`) : h("div", { class: "pk-sub" }, "Members of the hideout can deal.")));
       return;
     }
@@ -209,8 +209,10 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
         info = tb.phase === "over" ? "Round over. Open the next one when you are ready." : "Open a round and the players can bet.";
         body = row(click("open", "Open a round", "check")); break;
       case "betting":
-        info = stakes > 0 ? `${blood(stakes)} is bet. Deal when everybody has bet.` : "Waiting for bets…";
-        body = row(click("deal", "Deal the cards", "raise", stakes > 0)); break;
+        { const wait = Math.ceil((tb.dealerAt + BJ_BET_WINDOW_MS - serverNow()) / 1000); // (the players get 10 seconds to bet before the cards can go out)
+          info = wait > 0 ? "The players are betting…" : stakes > 0 ? `${blood(stakes)} is bet. Deal when everybody has bet.` : "Waiting for bets…";
+          body = row(click("deal", wait > 0 ? `Deal in ${wait}s` : "Deal the cards", "raise", stakes > 0 && wait <= 0)); }
+        break;
       case "players":
         info = tb.turn >= 0 ? `Waiting for ${tb.seats[tb.turn]?.name ?? "a player"} to hit or stand…` : "";
         body = h("div", {}); break;
@@ -235,6 +237,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     if (closed || !t) return;
     tickBars();
     const now = serverNow();
+    if (t.phase === "betting" && now < t.dealerAt + BJ_BET_WINDOW_MS + 1100) renderActions(); // (the Deal button counts down)
     const due = (t.phase === "players" && t.turn >= 0 && now > t.turnAt + BJ_TURN_MS + 500)
       || (t.phase === "over" && now > t.nextAt + 400)
       || ((t.phase === "betting" || t.phase === "dealer") && now > t.dealerAt + 45_000 + 500)

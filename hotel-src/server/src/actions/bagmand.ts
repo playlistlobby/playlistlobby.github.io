@@ -7,7 +7,7 @@ import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
 import { findSlot } from "../../../src/shared/items";
 import { BAGMAND_BUY, bagmandPays, BAGMAN_ROOM, currentVisit, DEADLY_DROP, lastVisit, VISIT_MS } from "../../../src/shared/bagmand";
 import { bloodPile } from "./floor";
-import { roleOf } from "./mod";
+import { isProtected } from "./hits";
 
 /** The start of the visit that is on now (in the local emulator a test can open one by hand: bagmand/force). */
 async function openVisit(c: Ctx): Promise<number> {
@@ -92,7 +92,7 @@ export const deadlyStab: Action = {
     const name = String((await c.db.get<string>(`profiles/${target}/name`)) ?? "");
     if (!name) fail("They aren't a player.");
     if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't stab someone who plays on your device.");
-    if (await roleOf(c, target)) fail("Your knife won't go in. That one is protected.");
+    if (await isProtected(c, target)) fail("Your knife won't go in. That one is protected.");
     const w = await c.user();
     const s = w.s;
     if (s.deadlyLeft <= 0 || c.now >= s.deadlyUntil) fail("You have no deadly stab.");

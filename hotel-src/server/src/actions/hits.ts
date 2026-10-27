@@ -6,13 +6,48 @@ import { Ctx, fail } from "../ctx";
 import { findSlot } from "../../../src/shared/items";
 import { takeQtyFrom } from "../../../src/shared/economy";
 import { isHideoutId } from "../../../src/shared/hideout";
-import { HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
+import { FAIR_GAME_UIDS, HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_ONLINE_FRESH_MS, HIT_ONLINE_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
 import { bloodPile } from "./floor";
 import { roleOf } from "./mod";
 
 const ROOM_RE = /^[A-Za-z0-9_-]{1,60}$/;
 
-/** Put blood on somebody's head. From the hideout computer (you must be a member of the hideout and standing in it): 500 to 1500, one hit per hideout every 12 hours, and nobody is hit more than 3 times a day. */
+/** moderators and the admin can't be hit, shot, rocketed or stabbed (all but the two in FAIR_GAME_UIDS) */
+export async function isProtected(c: Ctx, uid: string): Promise<boolean> {
+  if (FAIR_GAME_UIDS.includes(uid)) return false;
+  return !!(await roleOf(c, uid));
+}
+
+/**
+ * The hitman site's player list: with no search, the players who are online now; with one (2 letters or more of the name, anywhere in it), the players whose name has it.
+ * The protected ones (moderators, the admin) are left out, so nobody picks somebody the server would refuse.
+ */
+export const hitSearch: Action = {
+  async run(c, a) {
+    const q = String(a.q ?? "").trim().toLowerCase();
+    const fair = new Set<string>(FAIR_GAME_UIDS);
+    const roles = (await c.db.get<Record<string, string>>("roles")) ?? {};
+    const guarded = new Set<string>(Object.entries(roles).filter(([, r]) => r === "admin" || r === "mod").map(([u]) => u));
+    const first = await c.db.get<string>("usernames/adminsidia"); // (the first admin is known by the name of the account)
+    if (first) guarded.add(first);
+    const okUid = (u: string): boolean => u !== c.uid && (fair.has(u) || !guarded.has(u));
+    let uids: string[];
+    if (q === "") {
+      const pres = (await c.db.get<Record<string, { seen?: number }>>("presence")) ?? {};
+      uids = Object.entries(pres).filter(([u, p]) => okUid(u) && typeof p?.seen === "number" && c.now - p.seen < HIT_ONLINE_FRESH_MS).map(([u]) => u);
+    } else {
+      text(q, /^[a-z0-9_.-]{2,20}$/, "name");
+      const all = (await c.db.get<Record<string, string>>("usernames")) ?? {};
+      uids = Object.entries(all).filter(([n, u]) => n.includes(q) && okUid(u)).sort((x, y) => Number(y[0].startsWith(q)) - Number(x[0].startsWith(q)) || x[0].length - y[0].length || x[0].localeCompare(y[0])).slice(0, 8).map(([, u]) => u);
+    }
+    const out: Array<{ uid: string; name: string }> = [];
+    for (const u of uids) { const n = await c.db.get<string>(`profiles/${u}/name`); if (n) out.push({ uid: u, name: n }); }
+    if (q === "") out.sort((x, y) => x.name.localeCompare(y.name));
+    return { players: out.slice(0, q === "" ? HIT_ONLINE_MAX : 8) };
+  },
+};
+
+/** Put blood on somebody's head. From the hideout computer (you must be a member of the hideout and standing in it): 500 to 1500, one hit per hideout every 2 hours, and nobody is hit more than 3 times a day. */
 export const hitPlace: Action = {
   locks: (c, a) => [`user:${String(a?.target ?? "")}`, "hits", `hitroom:${String(a?.room ?? "")}`],
   async run(c, a) {
@@ -25,7 +60,7 @@ export const hitPlace: Action = {
     const amount = int(a.amount, HIT_MIN, HIT_MAX, "bounty");
     const name = String((await c.db.get<string>(`profiles/${target}/name`)) ?? "");
     if (!name) fail("They aren't a player.");
-    if (await roleOf(c, target)) fail("That one is protected: nobody puts a hit on them.");
+    if (await isProtected(c, target)) fail("That one is protected: nobody puts a hit on them.");
     const owner = room.slice(2);
     const cool = Number(await c.db.get<number>(`hitCool/${owner}`)) || 0;
     if (c.now - cool < HIT_HIDEOUT_COOLDOWN_MS) {
@@ -69,7 +104,7 @@ export const gunShoot: Action = {
     const name = String((await c.db.get<string>(`profiles/${target}/name`)) ?? "");
     if (!name) fail("They aren't a player.");
     if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't shoot someone who plays on your device.");
-    if (await roleOf(c, target)) fail("The gun jams. That one is protected.");
+    if (await isProtected(c, target)) fail("The gun jams. That one is protected.");
     const w = await c.user();
     const want = a.slot ?? findSlot(w.s.inventory, "gun");
     if (want === undefined || Number(want) < 0) fail("You have no gun.");
@@ -119,7 +154,7 @@ export const rocketFire: Action = {
     const name = String((await c.db.get<string>(`profiles/${target}/name`)) ?? "");
     if (!name) fail("They aren't a player.");
     if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't shoot someone who plays on your device.");
-    if (await roleOf(c, target)) fail("The launcher jams. That one is protected.");
+    if (await isProtected(c, target)) fail("The launcher jams. That one is protected.");
     c.extra[`rocketAt/${c.uid}`] = c.now;
     const shooterName = String(w.raw?.name ?? "someone").slice(0, 16);
     c.note = `rocket on ${name}`;

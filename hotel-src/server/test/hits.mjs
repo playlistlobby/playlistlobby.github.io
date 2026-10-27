@@ -1,4 +1,4 @@
-// Hit and gun tests: putting a hit on somebody from a hideout (500-1500, once per 3 hours per hideout, 3 a day per person), the gun (bagmand sells two a visit), and shooting:
+// Hit and gun tests: putting a hit on somebody from a hideout (500-1500, once per 2 hours per hideout, 3 a day per person), the gun (bagmand sells two a visit), and shooting:
 // a bounty is claimed, the one who is shot drops blood and is dead for a minute (10 seconds without a bounty), the gun is always spent
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: node test/hits.mjs (server/)
 const DB = "http://127.0.0.1:9000";
@@ -62,6 +62,23 @@ const hits = async () => Object.entries((await owner("GET", "hits")) ?? {}).map(
 const clearHits = async () => owner("DELETE", "hits");
 await clearHits();
 
+console.log("--- the hitman site's list of players");
+{
+  const names = (r) => (r.data?.players ?? []).map((p) => p.name);
+  for (const u of [rich, mid, guard]) await owner("PUT", `presence/${u.uid}`, { name: u.name, room: "lobby", seen: Date.now() });
+  await owner("PUT", `presence/${small.uid}`, { name: small.name, room: "lobby", seen: Date.now() - 600_000 }); // (gone for ten minutes)
+  const on = await act(host, "hitSearch", { q: "" });
+  ok("the list of who is online", on);
+  check("those who are online are in it", names(on).includes("t_ht_rich") && names(on).includes("t_ht_mid"), JSON.stringify(names(on)));
+  check("not the one who left", !names(on).includes("t_ht_small"), JSON.stringify(names(on)));
+  check("not the admin (protected)", !names(on).includes("t_ht_guard"), JSON.stringify(names(on)));
+  check("not yourself", !names(on).includes(host.name));
+  const find = await act(host, "hitSearch", { q: "t_ht_" });
+  check("a search finds names with it in them", names(find).includes("t_ht_rich"), JSON.stringify(names(find)));
+  check("and the protected one is not found", !names(find).includes("t_ht_guard"), JSON.stringify(names(find)));
+  bad("one letter is too short", await act(host, "hitSearch", { q: "t" }));
+}
+
 console.log("--- putting a hit on somebody");
 const place = (u, target, amount, room = HR) => act(u, "hitPlace", { room, target: target.uid, amount });
 bad("only a member of the hideout", await place(stranger, rich, 500));
@@ -78,12 +95,12 @@ let list = await hits();
 check("the hit is open for everybody to read", list.length === 1 && list[0].target === rich.uid && list[0].amount === 600 && list[0].targetName === "t_ht_rich" && list[0].hideoutName === "The Syndicate", JSON.stringify(list));
 check("the target can see who did it (the revenge button)", Object.values((await owner("GET", `hitRevenge/${rich.uid}`)) ?? {}).some((r) => r.by === host.uid && r.amount === 600), JSON.stringify(await owner("GET", `hitRevenge/${rich.uid}`)));
 check("only the target reads it", (await fetch(`${DB}/hitRevenge/${rich.uid}.json?ns=${NS}&auth=${stranger.token}`)).status >= 400);
-bad("one hit per hideout per 3 hours", await place(mem, mid, 500));
-await owner("PUT", `hitCool/${host.uid}`, Date.now() - 4 * 3_600_000);
-ok("3 hours later the hideout can again (a member)", await place(mem, rich, 1500));
+bad("one hit per hideout per 2 hours", await place(mem, mid, 500));
+await owner("PUT", `hitCool/${host.uid}`, Date.now() - 3 * 3_600_000);
+ok("2 hours later the hideout can again (a member)", await place(mem, rich, 1500));
 list = await hits();
 check("two hits on the rich one", list.filter((h) => h.target === rich.uid).length === 2);
-await owner("PUT", `hitCool/${host.uid}`, Date.now() - 4 * 3_600_000);
+await owner("PUT", `hitCool/${host.uid}`, Date.now() - 3 * 3_600_000);
 const now = Date.now();
 await owner("PUT", `hitLog/${mid.uid}`, { a: now - 1000, b: now - 2000, c: now - 3000 });
 bad("a player can be hit 3 times a day, not more", await place(host, mid, 500));

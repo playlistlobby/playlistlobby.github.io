@@ -14,7 +14,7 @@ export const isHideoutId = (id: string): boolean => HIDEOUT_ID_RE.test(id);
 export const ownerOfHideout = (id: string): string => id.slice(2);
 
 /** what the landlord sells it for, and what the two size upgrades cost */
-export const HIDEOUT_PRICE = 1000;
+export const HIDEOUT_PRICE = 750;
 export const HIDEOUT_UPGRADE_PRICES = [2000, 4000];
 /** the room's width and height by level (a player room is 8x8 = 64 tiles; the first hideout is 14x14 = 196, about three times that) */
 export const HIDEOUT_SIZES = [14, 17, 20];
@@ -28,10 +28,14 @@ export const HIDEOUT_RECOLOR_PRICE = RECOLOR_PRICE * 15;
 export const HIDEOUT_NAME_MAX = 28;
 /** the list of hideouts everybody can see (at the door): a line about the hideout, and paying to be shown first for a while */
 export const HIDEOUT_DESC_MAX = 80;
+/** the landlord outside calls out a boosted hideout's message (up to this many letters) every 2 to 5 minutes */
+export const HIDEOUT_AD_MAX = 80;
+export const HIDEOUT_AD_MIN_MS = 120_000;
+export const HIDEOUT_AD_MAX_MS = 300_000;
 export const HIDEOUT_BOOST_PRICE = 500;
 export const HIDEOUT_BOOST_MS = 6 * 60 * 60 * 1000;
 /** what the public list says about a hideout (written by the server to hideoutList/<owner>) */
-export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number; /** anybody can walk in (no knocking) */ open: boolean; /** how many players have it as a favourite: the more, the higher it is on the list */ favs?: number }
+export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number; /** anybody can walk in (no knocking) */ open: boolean; /** how many players have it as a favourite: the more, the higher it is on the list */ favs?: number; /** what the landlord outside calls out about it while it is boosted */ ad?: string }
 /** the order of the list: boosted ones first (the latest boost on top), then the most favourited, then the bigger crowds */
 export const sortListings = <T extends { listing: HideoutListing }>(rows: T[], now: number): T[] =>
   [...rows].sort((a, b) => (Number(b.listing.boostUntil > now) - Number(a.listing.boostUntil > now)) || (b.listing.boostUntil > now ? b.listing.boostUntil - a.listing.boostUntil : 0) || (b.listing.favs ?? 0) - (a.listing.favs ?? 0) || b.listing.members - a.listing.members || a.listing.name.localeCompare(b.listing.name));

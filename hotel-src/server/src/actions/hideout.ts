@@ -6,7 +6,7 @@ import { addToInv, lighterHex, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../
 import { isFurniItem, NO_DROP } from "../../../src/shared/items";
 import { SHIPPED_DIMS } from "../../../src/shared/furniture";
 import {
-  HIDEOUT_BOOST_MS, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HideoutListing, HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
+  HIDEOUT_AD_MAX, HIDEOUT_BOOST_MS, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HideoutListing, HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
   HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize, hideoutPriceOf, HIDEOUT_CHEST_MAX_QTY, HIDEOUT_CHEST_SLOTS, memberDefaults, type HideoutPerms, HIDEOUT_MAX_FAVS,
 } from "../../../src/shared/hideout";
 
@@ -31,7 +31,7 @@ async function ownHideout(c: Ctx): Promise<{ room: string; meta: Record<string, 
   return { room, meta: meta! };
 }
 /** the public list (hideoutList/<owner>): every hideout that is listed, with its line, how many are in it and until when it is boosted. `over` = what is about to change. */
-function publishListing(c: Ctx, owner: string, meta: Record<string, any>, over: { name?: string; desc?: string; listed?: boolean; open?: boolean; membersDelta?: number; boostUntil?: number } = {}): void {
+function publishListing(c: Ctx, owner: string, meta: Record<string, any>, over: { name?: string; desc?: string; ad?: string; listed?: boolean; open?: boolean; membersDelta?: number; boostUntil?: number } = {}): void {
   const listed = over.listed ?? meta.listed !== false;
   if (!listed) { c.extra[`hideoutList/${owner}`] = null; return; }
   const members = Object.keys((meta.members ?? {}) as Record<string, unknown>).length + 1 + (over.membersDelta ?? 0);
@@ -39,6 +39,8 @@ function publishListing(c: Ctx, owner: string, meta: Record<string, any>, over: 
     name: String(over.name ?? meta.name ?? "hideout").slice(0, HIDEOUT_NAME_MAX), desc: String(over.desc ?? meta.desc ?? "").slice(0, HIDEOUT_DESC_MAX),
     ownerName: String(meta.ownerName ?? "?").slice(0, 16), members: Math.max(1, members), boostUntil: Number(over.boostUntil ?? meta.boostUntil ?? 0) || 0, open: over.open ?? meta.access === "open", favs: Math.max(0, Number(meta.favs) || 0),
   };
+  const ad = String(over.ad ?? meta.ad ?? "").slice(0, HIDEOUT_AD_MAX);
+  if (ad) row.ad = ad; // (what the landlord outside calls out while the hideout is boosted)
   c.extra[`hideoutList/${owner}`] = row;
 }
 const nameOf = async (c: Ctx, uid: string): Promise<string> => String((await c.db.get<string>(`profiles/${uid}/name`)) ?? "?").slice(0, 16);
@@ -114,11 +116,17 @@ export const hideoutSettings: Action = {
   async run(c, a) {
     const { room, meta } = await ownHideout(c);
     await requireInRoom(c, room);
-    const over: { name?: string; desc?: string; listed?: boolean; open?: boolean } = {};
+    const over: { name?: string; desc?: string; ad?: string; listed?: boolean; open?: boolean } = {};
     if (a.desc !== undefined) {
       const desc = String(a.desc ?? "").replace(/[\n\r]+/g, " ").trim().slice(0, HIDEOUT_DESC_MAX);
       c.extra[`roomsMeta/${room}/desc`] = desc || null;
       over.desc = desc;
+    }
+    if (a.ad !== undefined) { // the message the landlord calls out while the hideout is boosted
+      const ad = String(a.ad ?? "").replace(/\s+/g, " ").trim().slice(0, HIDEOUT_AD_MAX);
+      if (/[\u0000-\u001f\u007f]/.test(ad)) fail("Bad message.");
+      c.extra[`roomsMeta/${room}/ad`] = ad || null;
+      over.ad = ad;
     }
     if (a.open !== undefined) { c.extra[`roomsMeta/${room}/access`] = a.open ? "open" : "none"; over.open = !!a.open; } // (anybody can walk in, or only members and the guests the owner lets in)
     if (a.listed !== undefined) { c.extra[`roomsMeta/${room}/listed`] = a.listed ? null : false; over.listed = !!a.listed; }

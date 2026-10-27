@@ -249,6 +249,8 @@ export interface HideoutInfo {
   cap: number;
   /** the line about it on the public list, whether it is on the list, and until when it is shown first */
   desc: string;
+  /** what the landlord outside calls out about it while it is boosted */
+  ad: string;
   listed: boolean;
   boostUntil: number;
   /** anybody can walk in (no knocking) */
@@ -453,6 +455,7 @@ export interface RoomMeta {
   level?: number;
   lock?: boolean;
   desc?: string;
+  ad?: string;
   listed?: boolean;
   boostUntil?: number;
   members?: Record<string, { name?: string; build?: boolean; grow?: boolean; stash?: boolean }>;
@@ -502,7 +505,7 @@ function hideoutDef(id: string, meta: RoomMeta): RoomDef {
   for (const [uid, m] of Object.entries(meta.members ?? {})) members[uid] = { name: String(m?.name ?? "?"), build: m?.build !== false, grow: m?.grow !== false, stash: m?.stash !== false };
   const orders: HideoutInfo["orders"] = {};
   for (const [oid, o] of Object.entries(meta.orders ?? {})) if (o && typeof o.kind === "string" && typeof o.by === "string") orders[oid] = { kind: o.kind, by: o.by, doneAt: Number(o.doneAt) || 0 };
-  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: "none", w, h, theme, rug, furni, doorX: DOOR_X, doorTo: LOBBY_ID, hideout: { bought: Object.fromEntries(Object.entries(meta.bought ?? {}).filter(([, n]) => Number.isFinite(Number(n))).map(([k, n]) => [k, Number(n)])), level, lock: meta.lock === true, desc: String(meta.desc ?? ""), listed: meta.listed !== false, boostUntil: Number(meta.boostUntil) || 0, open: meta.access === "open", members, box: meta.box ?? {}, orders, cap: HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] } };
+  return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: "none", w, h, theme, rug, furni, doorX: DOOR_X, doorTo: LOBBY_ID, hideout: { bought: Object.fromEntries(Object.entries(meta.bought ?? {}).filter(([, n]) => Number.isFinite(Number(n))).map(([k, n]) => [k, Number(n)])), level, lock: meta.lock === true, desc: String(meta.desc ?? ""), ad: String(meta.ad ?? ""), listed: meta.listed !== false, boostUntil: Number(meta.boostUntil) || 0, open: meta.access === "open", members, box: meta.box ?? {}, orders, cap: HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] } };
 }
 
 export function defFromMeta(id: string, meta: RoomMeta): RoomDef {

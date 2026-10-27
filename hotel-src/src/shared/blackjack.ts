@@ -6,14 +6,16 @@
 export const BJ_SEATS = 5;
 export const BJ_BET_MIN = 10;
 export const BJ_BET_MAX = 250;
-export const BJ_BANK_MIN = 500;
-export const BJ_BANK_MAX = 5000;
+export const BJ_BANK_MIN = 20;
+export const BJ_BANK_MAX = 500;
 /** a player has this long to hit or stand */
 export const BJ_TURN_MS = 25_000;
 /** the result stays on the table this long */
 export const BJ_RESULT_MS = 7_000;
 /** a dealer who does nothing for this long has the next click made for them (so the table never hangs) */
 export const BJ_DEALER_IDLE_MS = 45_000;
+/** after a round is opened the dealer can not deal for this long, so the players have time to bet */
+export const BJ_BET_WINDOW_MS = 10_000;
 /** a player who is gone from the room is stood up after this */
 export const BJ_GONE_MS = 20_000;
 
@@ -121,6 +123,7 @@ export function deal(t: BjTable, ctx: BjCtx): string | null {
   if (t.phase !== "betting") return "Open a round first.";
   const live = bjSeatsIn(t, (s) => s.bet > 0);
   if (!live.length) return "Nobody has bet yet.";
+  if (ctx.now < t.dealerAt + BJ_BET_WINDOW_MS) return `The players have ${Math.ceil((t.dealerAt + BJ_BET_WINDOW_MS - ctx.now) / 1000)} more seconds to bet.`;
   for (const i of live) { const s = t.seats[i]!; s.cards = [ctx.deck.pop()!, ctx.deck.pop()!]; s.state = isBlackjack(s.cards) ? "bj" : "play"; }
   t.dealerCards = [ctx.deck.pop()!]; ctx.hole = ctx.deck.pop()!; t.hole = true; t.revealed = false;
   t.phase = "players"; t.turnAt = ctx.now; t.dealerAt = ctx.now; t.seq++;

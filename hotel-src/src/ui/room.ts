@@ -47,7 +47,9 @@ import { bjLeave, watchBjSeat } from "../blackjack";
 import { pokerLeave, watchPokerSeat } from "../poker";
 import { pokerKindOf } from "../shared/poker";
 import { parsePetLook } from "../shared/petItems";
-import { hideoutBoxStore, hideoutBoxTake } from "../hideout";
+import { hideoutBoxStore, hideoutBoxTake, watchHideoutList } from "../hideout";
+import { HIDEOUT_AD_MAX_MS, HIDEOUT_AD_MIN_MS } from "../shared/hideout";
+import type { HideoutListing } from "../shared/hideout";
 import { openLoudspeaker } from "./loudspeaker";
 import { awayMessage, visitNow, watchBagmand } from "../bagmand";
 import { HORSE_HAT } from "../shared/bagmand";
@@ -1157,6 +1159,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
     if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
+    if (obj?.kind === "wantedboard") opts.push({ label: "Open", target: "Wanted board", action: () => startBag(obj.id) });
     if (obj?.kind === "ducky") opts.push({ label: "Shop", target: "pay2win", action: () => startBag(obj.id) });
     if (obj?.kind === "gacha" || obj?.kind === "raffletable") opts.push({ label: "Raffle", target: "Royal gacha", action: () => startBag(obj.id) });
     if (obj?.kind === "mrock") opts.push({ label: "Mine", target: "Iron rock", action: () => startMine(obj.id) });
@@ -3409,6 +3412,25 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (sixtyCalls() && !sixtyBusy && !sixtyShop && !(sixtyBubble && sixtyBubble.until > performance.now())) sixtySay(SIXTY_LINES.psst, 4500);
       }, 14_000);
       unsubs.push(() => window.clearInterval(psst));
+      // the landlord by the hideout door calls out the message of a boosted hideout every 2 to 5 minutes (the owner writes it in the boost section on the computer)
+      if (roomId === LOBBY_ID) {
+        let ads: Array<{ owner: string; listing: HideoutListing }> = [];
+        unsubs.push(watchHideoutList((l) => { ads = l; }));
+        let adTimer = 0;
+        const nextAd = (): void => {
+          adTimer = window.setTimeout(() => {
+            if (disposed) return;
+            const live = ads.filter((a) => a.listing.ad && a.listing.boostUntil > serverNow());
+            if (live.length && !(hlandlordBubble && hlandlordBubble.until > performance.now())) {
+              const pick = live[Math.floor(Math.random() * live.length)].listing;
+              hlandlordBubble = { text: `🔥 ${pick.name}: ${pick.ad}`, until: performance.now() + 9000 };
+            }
+            nextAd();
+          }, HIDEOUT_AD_MIN_MS + Math.random() * (HIDEOUT_AD_MAX_MS - HIDEOUT_AD_MIN_MS));
+        };
+        nextAd();
+        unsubs.push(() => window.clearTimeout(adTimer));
+      }
     }
     if (roomId === LOBBY_ID) {
       // bagmand's visits: follow the clock (and his stock), and 6ixty says when he is back, once for each coming visit while he is away
