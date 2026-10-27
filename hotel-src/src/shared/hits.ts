@@ -49,3 +49,10 @@ export function parseHits(v: any): Hit[] {
   }
   return out.sort((a, b) => b.amount - a.amount || a.at - b.at);
 }
+
+/**
+ * The rocket launcher (one player has it: Alex). It is not used up: it can be fired every 30 minutes. Whoever is hit is dead for 30 seconds, drops no blood, and says the line below in the chat.
+ */
+export const ROCKET_COOLDOWN_MS = 30 * 60_000;
+export const ROCKET_SECS = 30;
+export const ROCKET_LINE = "Jeg er en goy og alex er en chad";

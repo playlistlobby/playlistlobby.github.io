@@ -188,5 +188,24 @@ await shoot(rich);
 const floor = Object.values((await owner("GET", "rooms/lobby/drops")) ?? {}).filter((d) => d.item === "blood" && d.by === rich.uid && d.qty === 100).length ? 100 : 0;
 check("the blood that left the pockets lies on the floor", (await bloodOf(host)) + (await bloodOf(shooter)) + (await bloodOf(rich)) + floor === before, `${(await bloodOf(host)) + (await bloodOf(shooter)) + (await bloodOf(rich)) + floor} vs ${before}`);
 
+console.log("--- the rocket launcher");
+const alex = await fresh("t_ht_alex", { blood: 100, inventory: inv({ item: "rocket", qty: 1 }) });
+await act(alex, "sync"); await owner("PUT", `users/${alex.uid}/inventory`, inv({ item: "rocket", qty: 1 }));
+await owner("PUT", `users/${mid.uid}/blood`, 3000); await owner("DELETE", `rocketAt/${alex.uid}`);
+await stand(alex, "lobby", 5, 5); await stand(mid, "lobby", 6, 5); await stand(guard, "lobby", 6, 6);
+const rk = (who, target) => act(who, "rocketFire", { room: "lobby", target: target.uid });
+bad("without a launcher it fails", await rk(shooter, mid));
+bad("a protected player can't be hit", await rk(alex, guard));
+const r1 = await rk(alex, mid);
+check("the rocket: dead for 30 seconds", r1.ok && r1.data.secs === 30, JSON.stringify(r1));
+const home = await owner("GET", `sendHome/${mid.uid}`);
+check("they are sent home for 30 seconds, nothing dropped, marked as a rocket", home && home.rocket === true && home.secs === 30 && home.lost === 0, JSON.stringify(home));
+check("their blood is untouched", (await bloodOf(mid)) === 3000);
+const au = await owner("GET", `users/${alex.uid}`);
+check("the launcher is not used up", hasItem({ inventory: Object.values(au.inventory ?? {}) }, "rocket"));
+bad("it has to reload for 30 minutes", await rk(alex, mid));
+await owner("PUT", `rocketAt/${alex.uid}`, Date.now() - 31 * 60_000);
+ok("after 30 minutes it fires again", await rk(alex, mid));
+
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

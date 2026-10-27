@@ -143,7 +143,8 @@ import { mountRoulette, RouletteApi } from "./rouletteTable";
 import { dimmed } from "./rouletteFx";
 import { assetUrl } from "../assetUrl";
 import { playBang, playSfx, playThud } from "../sfx";
-import { gunShoot as gunShootCall, watchHits } from "../hits";
+import { gunShoot as gunShootCall, rocketFire as rocketFireCall, watchHits, watchRocketAt } from "../hits";
+import { ROCKET_COOLDOWN_MS, ROCKET_LINE } from "../shared/hits";
 import { bountiesOf } from "../shared/hits";
 import type { Hit } from "../shared/hits";
 import { openWantedBoard } from "./wantedBoard";
@@ -152,6 +153,11 @@ import { setAmbience, setShopMusic } from "../ambience";
 import type { Ctx } from "../main";
 
 /** The hanger that floats above the bag of clothes in your own room (it's Habbo's own wardrobe icon). */
+/** the pistol and the rocket launcher in the hand (and the pictures in the pocket) */
+const gunImg = new Image();
+gunImg.src = assetUrl("items/gun.png");
+const rocketImg = new Image();
+rocketImg.src = assetUrl("items/rocket.png");
 const hangerImg = new Image();
 hangerImg.src = assetUrl("ui/hanger.png");
 /** the little pixel "dkk" that floats over the pay2win machine while you point at it (you pay with real money there) */
@@ -329,7 +335,7 @@ interface Player {
 
 interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean }
 /** a shot from the gun: the shooter raises it at the target, the flash, the bullet and the hit */
-interface ShotFx { from: string; to: string; start: number; fired: boolean }
+interface ShotFx { from: string; to: string; start: number; fired: boolean; rocket?: boolean }
 const SHOT_MS = 900;
 interface SyringeFx { uid: string; start: number; burst: boolean }
 interface DropFx { from: string; to: string; start: number }
@@ -561,6 +567,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let wantedApi: { close(): void } | null = null;
   let shootBox: HTMLElement | null = null;
   let shootUid = "";
+  let rocketAt = 0; // when you last fired the rocket launcher
   let bjApi: BlackjackApi | null = null;
   const stopBjSeat = watchBjSeat(me.uid, (at) => { if (at && !bjApi) void bjLeave(me).then(() => panel.refresh()).catch(() => undefined); });
   const stopPokerSeat = watchPokerSeat(me.uid, (at) => { if (at && !pokerApi) void pokerLeave(me).then(() => panel.refresh()).catch(() => undefined); });
@@ -1045,7 +1052,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (t && selectedSlot !== null) void putDown(t, { kind: item.id, source: "inv", slot: selectedSlot }, toolDir || defaultDir(item.id));
       return;
     }
-    if (item?.useOnPlayer === "shoot") {
+    if (item?.useOnPlayer === "shoot" || item?.useOnPlayer === "rocket") {
       if (target && target.uid !== me.uid && !target.npc) openShootBox(target.uid);
       else if (target) say("You can't shoot that.", "warn");
       else { clearSelection(); closeShootBox(); if (t) { pending = null; walkTo(t); } }
@@ -2722,7 +2729,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
    * "DU OD'EDE PÅ FENT" shows for 10 seconds with what it cost you in blood, and you wake up in your own room. (The server took the blood and the item at once.)
    */
   let lastKilledAt = 0;
-  function startKilled(k: { byName?: string; lost?: number; secs?: number; shot?: boolean }): void {
+  function startKilled(k: { byName?: string; lost?: number; secs?: number; shot?: boolean; rocket?: boolean }): void {
     const p = mine();
     if (!p || dying) return;
     dying = true;
@@ -2740,8 +2747,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     stage.append(h("div", { class: "fent-flash" }));
     window.setTimeout(() => stage.querySelector(".fent-flash")?.remove(), 1400);
-    say(k.shot ? `${k.byName ?? "Somebody"} shot you.` : `${k.byName ?? "Somebody"} killed you with a deadly stab.`, "warn");
-    const stop = showDeathScreen(stage, k.shot ? "DU BLEV SKUDT" : "DU BLEV DRÆBT", k.secs ?? 10, () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }); }, k.lost ? { lost: `-${k.lost} blod`, icon: BLOOD_ICON } : undefined);
+    say(k.rocket ? `${k.byName ?? "Somebody"} blew you up.` : k.shot ? `${k.byName ?? "Somebody"} shot you.` : `${k.byName ?? "Somebody"} killed you with a deadly stab.`, "warn");
+    if (k.rocket) window.setTimeout(() => { if (!disposed) sendChat(ROCKET_LINE); }, 700); // (the rocket makes you say it)
+    const stop = showDeathScreen(stage, k.rocket ? "DU BLEV SPRÆNGT I LUFTEN" : k.shot ? "DU BLEV SKUDT" : "DU BLEV DRÆBT", k.secs ?? 10, () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }); }, k.lost ? { lost: `-${k.lost} blod`, icon: BLOOD_ICON } : undefined);
     unsubs.push(stop);
   }
 
@@ -3268,10 +3276,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     unsubs.push(() => sixtyTimers.forEach((t) => window.clearTimeout(t)), () => sixtyShop?.close());
     const burnTimer = window.setInterval(burnDown, 1000);
     unsubs.push(() => window.clearInterval(burnTimer));
+    unsubs.push(watchRocketAt(me.uid, (at) => { rocketAt = at; }));
     // a deadly stab on you (the server writes sendHome/<you>): you go down, your blood is on the floor, and you wake up in your room
     const homeFrom = serverNow();
     unsubs.push(onValue(ref(db, `sendHome/${me.uid}`), (s) => {
-      const k = s.val() as { at?: number; byName?: string; lost?: number; secs?: number; shot?: boolean } | null;
+      const k = s.val() as { at?: number; byName?: string; lost?: number; secs?: number; shot?: boolean; rocket?: boolean } | null;
       if (!k || typeof k.at !== "number" || k.at < homeFrom - 5000 || k.at === lastKilledAt || disposed) return;
       lastKilledAt = k.at;
       startKilled(k);
@@ -3448,7 +3457,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           syringeFx.push({ uid: ev.from, start: performance.now(), burst: false });
           return;
         }
-        if (ev.type === "shot") { shotFx.push({ from: ev.from, to: ev.to, start: performance.now(), fired: false }); return; }
+        if (ev.type === "shot") { shotFx.push({ from: ev.from, to: ev.to, start: performance.now(), fired: false, rocket: !!ev.rocket }); return; }
         if (ev.type !== "stab") return;
         stabFx.push({ from: ev.from, to: ev.to, start: performance.now(), impact: false, dropped: false });
         if (ev.to === me.uid && ev.from !== me.uid) {
@@ -3678,7 +3687,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.restore();
   }
   /** the gun in your own hand: while it is selected in your pocket (the bounties show over the heads, tap somebody to shoot) */
-  const holdsGun = (p: Player): boolean => p.uid === me.uid && selectedDef()?.useOnPlayer === "shoot";
+  const holdsGun = (p: Player): boolean => p.uid === me.uid && (selectedDef()?.useOnPlayer === "shoot" || selectedDef()?.useOnPlayer === "rocket");
   const holdsKnife = (p: Player, now: number): boolean =>
     (p.uid === me.uid && (selectedDef()?.useOnPlayer === "stab" || !!mining)) || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
 
@@ -4107,11 +4116,31 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.restore();
   }
 
-  /** the gun in the hand (the same fist as the knife and the cup), pointing the way they face */
-  function drawGunInHand(fx: number, fy: number, dir: number): void {
+  /** the pistol or the rocket launcher in the hand: its picture, turned to point along `ang` with the grip in the fist (the picture's grip and muzzle are given as shares of its size); returns where the muzzle is */
+  const HELD = {
+    gun: { img: gunImg, w: 26, grip: { x: 0.2, y: 0.62 }, muzzle: { x: 1, y: 0.12 } },
+    rocket: { img: rocketImg, w: 40, grip: { x: 0.4, y: 0.82 }, muzzle: { x: 1, y: 0.5 } },
+  } as const;
+  function drawHeld(kind: "gun" | "rocket", x: number, y: number, ang: number): { muzzle: { x: number; y: number } } {
+    const d = HELD[kind];
+    const w = d.w * scale, hgt = w * ((d.img.naturalHeight || 1) / (d.img.naturalWidth || 1));
+    const s = Math.cos(ang) < 0 ? -1 : 1; // (pointing left: the picture is turned over, so it is not upside down)
+    const gx = d.grip.x * w, gy = d.grip.y * hgt, mx = d.muzzle.x * w - gx, my = d.muzzle.y * hgt - gy;
+    if (d.img.complete && d.img.naturalWidth) {
+      g.save();
+      g.translate(x, y); g.rotate(ang); g.scale(1, s);
+      g.imageSmoothingEnabled = false;
+      g.drawImage(d.img, -gx, -gy, w, hgt);
+      g.restore();
+    } else drawGun(g, x, y, ang, scale * GUN_K * 1.8);
+    const c = Math.cos(ang), sn = Math.sin(ang);
+    return { muzzle: { x: x + mx * c - my * s * sn, y: y + mx * sn + my * s * c } };
+  }
+  /** the gun (or the rocket launcher) in the hand (the same fist as the knife and the cup), pointing the way they face */
+  function drawGunInHand(fx: number, fy: number, dir: number, rocket = false): void {
     const [hdx, hdy] = KNIFE_HAND[dir] ?? KNIFE_HAND[2];
     const [ux, uy] = KNIFE_AXIS[dir] ?? KNIFE_AXIS[2];
-    drawGun(g, fx + hdx * scale, fy + hdy * scale, Math.atan2(uy, ux), scale * GUN_K * 1.8);
+    drawHeld(rocket ? "rocket" : "gun", fx + hdx * scale, fy + hdy * scale, Math.atan2(uy, ux));
   }
   /** a wanted tag over a head: a black plate with the bounty in white (and how many hits there are) */
   function drawBountyTag(amount: number, count: number, x: number, y: number, now: number): void {
@@ -4141,8 +4170,31 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const hand = { x: fa.x + (KNIFE_HAND[a.dir]?.[0] ?? 14) * scale, y: fa.y + (KNIFE_HAND[a.dir]?.[1] ?? -24) * scale };
       const to = { x: fb.x, y: fb.y - 46 * scale };
       const ang = Math.atan2(to.y - hand.y, to.x - hand.x);
-      const r = drawGun(g, hand.x, hand.y, ang, scale * GUN_K * 1.8);
-      if (t < 160) drawMuzzleFlash(g, r.muzzle, 1 - t / 160, scale * 0.9);
+      const r = drawHeld(fx.rocket ? "rocket" : "gun", hand.x, hand.y, ang);
+      if (t < 160) drawMuzzleFlash(g, r.muzzle, 1 - t / 160, scale * (fx.rocket ? 1.5 : 0.9));
+      if (fx.rocket) { // the rocket: it flies to the target leaving smoke, and blows up
+        if (t >= 60 && t < 480) {
+          const k = (t - 60) / 420;
+          for (let i = 6; i >= 0; i--) { // the smoke trail
+            const kk = Math.max(0, k - i * 0.05);
+            const px = r.muzzle.x + (to.x - r.muzzle.x) * kk, py = r.muzzle.y + (to.y - r.muzzle.y) * kk;
+            g.save(); g.globalAlpha = 0.5 * (1 - i / 7); g.fillStyle = i < 2 ? "#ffb347" : "#c9c9c9"; g.beginPath(); g.arc(px, py, (2.5 + i * 0.6) * scale, 0, Math.PI * 2); g.fill(); g.restore();
+          }
+          const bx = r.muzzle.x + (to.x - r.muzzle.x) * k, by = r.muzzle.y + (to.y - r.muzzle.y) * k;
+          g.save(); g.translate(bx, by); g.rotate(ang); g.fillStyle = "#4f6a3c"; g.fillRect(-5 * scale, -1.8 * scale, 8 * scale, 3.6 * scale); g.fillStyle = "#d63428"; g.fillRect(3 * scale, -1.8 * scale, 3 * scale, 3.6 * scale); g.restore();
+        }
+        if (t >= 460 && t < 900) { // the explosion
+          const u = (t - 460) / 440, rad = (14 + 46 * u) * scale;
+          g.save();
+          const gr = g.createRadialGradient(to.x, to.y, 0, to.x, to.y, rad);
+          gr.addColorStop(0, `rgba(255,250,200,${(0.95 * (1 - u)).toFixed(2)})`);
+          gr.addColorStop(0.45, `rgba(255,150,40,${(0.85 * (1 - u)).toFixed(2)})`);
+          gr.addColorStop(1, "rgba(200,30,10,0)");
+          g.fillStyle = gr; g.beginPath(); g.arc(to.x, to.y, rad, 0, Math.PI * 2); g.fill();
+          g.restore();
+        }
+        continue;
+      }
       if (t >= 40 && t < 260) { // the bullet: a short bright streak from the muzzle to the target
         const k = Math.min(1, (t - 40) / 160);
         const bx = r.muzzle.x + (to.x - r.muzzle.x) * k, by = r.muzzle.y + (to.y - r.muzzle.y) * k;
@@ -4160,7 +4212,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function openShootBox(uid: string): void {
     const target = players.get(uid);
     const slot = selectedSlot;
-    if (!target || slot === null || me.inventory[slot]?.item !== "gun") return;
+    const rocket = slot !== null && me.inventory[slot]?.item === "rocket";
+    if (!target || slot === null || (me.inventory[slot]?.item !== "gun" && !rocket)) return;
     closeShootBox();
     shootUid = uid;
     const bt = bounties.get(uid);
@@ -4169,6 +4222,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (busy) return;
       busy = true; yes.setAttribute("disabled", "true");
       try {
+        if (rocket) {
+          const rr = await rocketFireCall(me, roomId, uid);
+          closeShootBox(); rocketAt = serverNow();
+          say(`You blew up ${rr.name}. They are down for ${rr.secs} seconds.`);
+          return;
+        }
         const r = await gunShootCall(me, roomId, uid, slot);
         closeShootBox(); clearSelection(); panel.refresh(); ctx.refreshHeader();
         if (r.bounty > 0) {
@@ -4177,12 +4236,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           say(`You shot ${r.name} and collected the ${r.bounty} on their head.`);
         } else say(`You shot ${r.name}. Nothing on their head: they are down for ${r.secs} seconds.`);
       } catch (err) { closeShootBox(); say((err as Error).message || "The gun jams.", "warn"); }
-    } }, "Shoot");
+    } }, rocket ? "Fire" : "Shoot");
+    const reload = rocket ? Math.max(0, rocketAt + ROCKET_COOLDOWN_MS - serverNow()) : 0;
+    if (reload > 0) yes.setAttribute("disabled", "true");
     shootBox = h("div", { class: "shoot-box" },
-      h("div", { class: "shoot-title" }, "Shoot"),
+      h("div", { class: "shoot-title" }, rocket ? "Rocket launcher" : "Shoot"),
       h("div", { class: "shoot-name" }, target.name),
-      bt ? h("div", { class: "shoot-bounty" }, h("img", { src: BLOOD_ICON, alt: "" }), `${bt.amount.toLocaleString("en-US")}${bt.count > 1 ? ` (${bt.count} hits)` : ""}`) : h("div", { class: "shoot-none" }, "Nothing on their head. They only go down for 10 seconds."),
-      h("div", { class: "shoot-note" }, "The gun has one bullet. It is gone after the shot."),
+      rocket ? h("div", { class: "shoot-none" }, reload > 0 ? `Reloading: ${Math.ceil(reload / 60000)} min` : "They are dead for 30 seconds.") : bt ? h("div", { class: "shoot-bounty" }, h("img", { src: BLOOD_ICON, alt: "" }), `${bt.amount.toLocaleString("en-US")}${bt.count > 1 ? ` (${bt.count} hits)` : ""}`) : h("div", { class: "shoot-none" }, "Nothing on their head. They only go down for 10 seconds."),
+      h("div", { class: "shoot-note" }, rocket ? "Once every 30 minutes." : "One bullet. It is gone after the shot."),
       h("div", { class: "shoot-row" }, h("button", { class: "no", onclick: () => closeShootBox() }, "Cancel"), yes));
     stage.append(shootBox);
   }
@@ -4956,7 +5017,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       if (now - fx.start > SHOT_MS + 200) shotFx.splice(i, 1);
     }
-    if (shootBox && (!players.has(shootUid) || selectedDef()?.useOnPlayer !== "shoot")) closeShootBox(); // (they left, or you put the gun away)
+    if (shootBox && (!players.has(shootUid) || (selectedDef()?.useOnPlayer !== "shoot" && selectedDef()?.useOnPlayer !== "rocket"))) closeShootBox(); // (they left, or you put the gun away)
     for (let i = stabFx.length - 1; i >= 0; i--) {
       const fx = stabFx[i];
       const t = (now - fx.start) / STAB_MS;
@@ -5674,7 +5735,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, skinKnife);
           const gunOut = !knifeOut && !isMoving(p, now) && !p.emote && !smoking && holdsGun(p);
           const gunBehind = gunOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
-          if (gunBehind) drawGunInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          if (gunBehind) drawGunInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, selectedDef()?.useOnPlayer === "rocket");
           const cupOut = !knifeOut && !gunOut && !isMoving(p, now) && !p.emote && !smoking && (holdsCup(p) || holdsDice(p));
           const heldId = holdsCup(p) ? "codeine" : "dice", heldSize = holdsCup(p) ? 26 : 18;
           const cupBehind = cupOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
@@ -5721,10 +5782,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
           if (smoking && p.smokeKind === "hashjoint") drawHearts(feet.x + lunge.x, feet.y + lunge.y + lift, now); // the hash joint: hearts float up over the head
           if (knifeOut && !knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, skinKnife);
-          if (gunOut && !gunBehind) drawGunInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          if (gunOut && !gunBehind) drawGunInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, selectedDef()?.useOnPlayer === "rocket");
           if (cupOut && !cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, heldId, heldSize);
           // name plate (highlighted while it's a valid stab target)
-          const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && (selectedDef()?.useOnPlayer === "stab" || selectedDef()?.useOnPlayer === "shoot");
+          const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && (selectedDef()?.useOnPlayer === "stab" || selectedDef()?.useOnPlayer === "shoot" || selectedDef()?.useOnPlayer === "rocket");
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
           const shownLabel = p.chud && serverNow() < p.chud ? "chud" : p.name; // the plain chud joint: your name reads "chud" for a while
           const tw = g.measureText(shownLabel).width + 10;

@@ -28,3 +28,9 @@ export function watchRevenge(uid: string, cb: (list: Revenge[]) => void): () => 
     cb(Object.entries(v).filter(([, r]) => typeof r?.by === "string").map(([id, r]) => ({ id, by: r.by!, byName: String(r.byName ?? "?"), hideoutName: String(r.hideoutName ?? ""), amount: Number(r.amount) || 0, at: Number(r.at) || 0 })).sort((a, b) => b.at - a.at));
   }, () => cb([]));
 }
+/** fire the rocket launcher at somebody in the room (it is not used up: once every 30 minutes) */
+export const rocketFire = (p: Profile, room: string, target: string): Promise<{ secs: number; name: string }> => call(p, "rocketFire", { room, target });
+/** when you last fired the rocket launcher, live */
+export function watchRocketAt(uid: string, cb: (at: number) => void): () => void {
+  return onValue(ref(db, `rocketAt/${uid}`), (s) => cb(typeof s.val() === "number" ? s.val() : 0), () => cb(0));
+}

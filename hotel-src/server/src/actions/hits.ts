@@ -6,7 +6,7 @@ import { Ctx, fail } from "../ctx";
 import { findSlot } from "../../../src/shared/items";
 import { takeQtyFrom } from "../../../src/shared/economy";
 import { isHideoutId } from "../../../src/shared/hideout";
-import { HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, parseHits, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
+import { HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
 import { bloodPile } from "./floor";
 import { roleOf } from "./mod";
 
@@ -93,5 +93,38 @@ export const gunShoot: Action = {
     c.extra[`sendHome/${target}`] = { at: c.now, by: c.uid, byName: shooterName, lost: loss.drop, secs: loss.secs, shot: true };
     c.extra[`rooms/${room}/events/s${c.now.toString(36)}${Math.random().toString(36).slice(2, 4)}`] = { type: "shot", from: c.uid, to: target, ts: c.now };
     return { bounty: got, dropped: loss.drop, secs: loss.secs, name };
+  },
+};
+
+/**
+ * Fire the rocket launcher at somebody in the room. It is not used up: it can be fired again after 30 minutes. They are dead for 30 seconds, drop no blood, and their browser makes them say a line in the chat.
+ */
+export const rocketFire: Action = {
+  locks: (c, a) => [`user:${String(a?.target ?? "")}`, `rocket:${c.uid}`, `room:${String(a?.room ?? "")}`],
+  async run(c, a) {
+    const target = text(a.target, ID_RE, "target");
+    if (target === c.uid) fail("You can't shoot yourself.");
+    const room = text(a.room, ROOM_RE, "room");
+    const me = await requireInRoom(c, room);
+    const w = await c.user();
+    if (findSlot(w.s.inventory, "rocket") < 0) fail("You have no rocket launcher.");
+    const last = Number(await c.db.get<number>(`rocketAt/${c.uid}`)) || 0;
+    if (c.now - last < ROCKET_COOLDOWN_MS) {
+      const mins = Math.ceil((ROCKET_COOLDOWN_MS - (c.now - last)) / 60000);
+      fail(`Reloading: ${mins} more minute${mins === 1 ? "" : "s"}.`);
+    }
+    const theirs = await c.db.get<{ x?: number; y?: number }>(`rooms/${room}/players/${target}`);
+    if (!theirs) fail("They've left the room.");
+    if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > SHOT_RANGE) fail("They're too far away.");
+    const name = String((await c.db.get<string>(`profiles/${target}/name`)) ?? "");
+    if (!name) fail("They aren't a player.");
+    if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't shoot someone who plays on your device.");
+    if (await roleOf(c, target)) fail("The launcher jams. That one is protected.");
+    c.extra[`rocketAt/${c.uid}`] = c.now;
+    const shooterName = String(w.raw?.name ?? "someone").slice(0, 16);
+    c.note = `rocket on ${name}`;
+    c.extra[`sendHome/${target}`] = { at: c.now, by: c.uid, byName: shooterName, lost: 0, secs: ROCKET_SECS, shot: true, rocket: true };
+    c.extra[`rooms/${room}/events/s${c.now.toString(36)}${Math.random().toString(36).slice(2, 4)}`] = { type: "shot", from: c.uid, to: target, rocket: true, ts: c.now };
+    return { secs: ROCKET_SECS, name };
   },
 };

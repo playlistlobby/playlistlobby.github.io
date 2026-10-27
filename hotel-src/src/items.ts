@@ -19,7 +19,7 @@ export interface ItemDef {
   examine: string;
   icon: string;
   /** what "Use" does when this item is selected and you click a player */
-  useOnPlayer?: "stab" | "shoot";
+  useOnPlayer?: "stab" | "shoot" | "rocket";
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
@@ -417,9 +417,16 @@ export const ITEMS: Record<string, ItemDef> = {
   gun: {
     id: "gun",
     name: "Gun",
-    examine: "A revolver with one bullet. Tap it to hold it: the bounties on people's heads show over them. Tap a player and confirm to shoot (only the name you picked): a bounty is yours, and they drop blood and are dead for a minute. Without a bounty they are dead for 10 seconds. It shoots once and is gone. Bagmand sells two a visit, and the bins and the boxes give them now and then.",
+    examine: "One bullet. Tap it to hold it, then tap a player. Shoot someone with a bounty on their head and the blood is yours. Bagmand sells it.",
     icon: assetUrl("items/gun.png"),
     useOnPlayer: "shoot",
+  },
+  rocket: {
+    id: "rocket",
+    name: "Rocket launcher",
+    examine: "Tap it to hold it, then tap a player and confirm: they blow up, drop nothing and are dead for 30 seconds. Once every 30 minutes.",
+    icon: assetUrl("items/rocket.png"),
+    useOnPlayer: "rocket",
   },
   dice: {
     id: "dice",

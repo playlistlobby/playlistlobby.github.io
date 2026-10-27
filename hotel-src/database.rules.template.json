@@ -94,6 +94,9 @@
     "hideoutFavs": {
       "$uid": { ".read": "@PW@ && auth.uid === $uid" }
     },
+    "rocketAt": {
+      "$uid": { ".read": "@PW@ && auth.uid === $uid" }
+    },
     "hitRevenge": {
       "$uid": { ".read": "@PW@ && auth.uid === $uid" }
     },
