@@ -3,12 +3,12 @@
 import { ACTIONS } from "./actions";
 import { Caller } from "./auth";
 import { Ctx, GameError } from "./ctx";
-import { Env } from "./env";
+import { Env, isEmulator } from "./env";
 import { Rtdb } from "./rtdb";
 import { createBackup, rollbackTo } from "./backup";
 import { BACKUP_EVERY_MS } from "../../src/shared/backup";
 import { FLOOR_SPAWN_CHANCE, FLOOR_SPAWN_ITEMS, FLOOR_SPAWN_MAX, FLOOR_SPAWN_MS } from "../../src/shared/economy";
-import { MINES_H, MINES_PIECES, MINES_SIXTY, MINES_W, WOOD_SPAWN_CHANCE, WOOD_SPAWN_MAX } from "../../src/shared/mines";
+import { MINES_H, MINES_OPEN, MINES_PIECES, MINES_SIXTY, MINES_W, WOOD_SPAWN_CHANCE, WOOD_SPAWN_MAX } from "../../src/shared/mines";
 
 interface Bucket { tokens: number; at: number }
 const RATE_PER_SEC = 8;
@@ -39,6 +39,7 @@ export class Economy {
 
   /** The mines: wood turns up on the floor twice as often as the seeds in the basement (a 50% chance every 10 minutes, up to 4 lying at once). */
   private async spawnMines(): Promise<void> {
+    if (!MINES_OPEN && !isEmulator(this.env)) return; // (the mines are not open yet)
     if (Math.random() >= WOOD_SPAWN_CHANCE) return;
     const release = await this.lock("room:mines"); // the same lock drop / pickup use for this room
     try {
