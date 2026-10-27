@@ -3517,6 +3517,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       });
     }
     setPresenceRoom(me, isTut ? ownRoomId(me.uid) : roomId); // the private copy isn't a place friends can follow you to
+    if (!isTut) { // the server clears the entries of players who are gone from this room (it asks when you arrive, and every 5 minutes)
+      const sweep = (): void => { if (!disposed && !document.hidden) void call(me, "roomSweep", { room: roomId }).catch(() => undefined); };
+      const first = window.setTimeout(sweep, 5000);
+      const sweepTimer = window.setInterval(sweep, 5 * 60_000);
+      unsubs.push(() => { window.clearTimeout(first); window.clearInterval(sweepTimer); });
+    }
     unsubs.push(social.subscribe(syncSleeper));
     tutorialGuide();
     if (isTut && me.tutorial === 1) say("Tap the glowing knife in your pocket, then tap LegendGamer2015.");
@@ -3525,7 +3531,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const denied = () => kicked("You don't have access to that room.");
     // what the database lists as standing here; people whose session has died (no heartbeat, or no presence any more) are hidden, not drawn as ghosts
     const known = new Map<string, any>();
-    const visible = (uid: string): boolean => !social.presenceLoaded || social.isOnline(uid);
+    // (somebody is drawn here only while they are online AND their presence says this room: an entry left behind by a player who has moved on is a ghost, not somebody standing here)
+    const visible = (uid: string): boolean => !social.presenceLoaded || (social.isOnline(uid) && (uid === me.uid || social.presence.get(uid)?.room === roomId));
     function applyVisibility(): void {
       if (disposed) return;
       let changed = false;
