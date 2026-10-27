@@ -302,9 +302,9 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife), every CD, the dice and the starter sofa everybody is given. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
-  "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife", "gun",
+  "f_mixer", "f_planter", "f_boombox", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
   "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "cd_lykk", "cd_roulette", "pickaxe", "machete", "dice", "f_sofa",
-  "loudspeaker", "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "mixerchip2", "gun", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
+  "loudspeaker", "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "mixerchip2", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
   // bagmand only buys his own things back (see shared/bagmand.ts)
   "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",
   "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",
@@ -329,6 +329,7 @@ export function sellPrice(item: string, ass?: boolean, furniPrices: Record<strin
     case "cigbutt": return 1; // per 2 butts
     case "tobacco": return 2; // from 2 butts (worth 1)
     case "cigar": return 2;
+    case "gun": return 240; // (the bagmand sells it for 250)
     // grown from seeds and spores (3 from each, so a seed is worth much less than what it grows into)
     case "weedseed": return 2;
     case "weed": return ass ? 4 : 6;

@@ -93,6 +93,14 @@ await setInv(u, inv({ item: "knife", qty: 1 }, { item: "knife_tt", qty: 1 }, { i
 const stK = await state(u);
 check("the knife skin and an unusual pet are valid items", total(stK.inventory, "knife_tt") === 1 && total(stK.inventory, "pet_cat_2_galaxy") === 1 && total(stK.inventory, "knife") === 1);
 bad("6ixty doesn't buy the skin", await act(u, "sellWeed", { slot: slotOf(stK, "knife_tt"), qty: 1 }));
+{ // 6ixty buys a gun for 240 (and still not the rocket)
+  await setInv(u, inv({ item: "gun", qty: 1 }, { item: "rocket", qty: 1 }));
+  const before = Number(await owner("GET", `users/${u.uid}/blood`)) || 0;
+  const stG = await state(u);
+  bad("6ixty doesn't buy the rocket launcher", await act(u, "sellWeed", { slot: slotOf(stG, "rocket"), qty: 1 }));
+  const sg = await act(u, "sellWeed", { slot: slotOf(stG, "gun"), qty: 1 });
+  check("6ixty buys a gun for 240", sg.ok && sg.data?.gain === 240 && (Number(await owner("GET", `users/${u.uid}/blood`)) || 0) === before + 240, JSON.stringify(sg).slice(0, 160));
+}
 await setInv(u, inv());
 
 // the unusual: wear, swap, remove, rules
