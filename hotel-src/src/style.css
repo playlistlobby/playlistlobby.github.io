@@ -1411,3 +1411,25 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .ht-open .ht-n { color: #fff; }
 .ht-form .hc-person .hc-pname { color: #fff; }
 .ht-form .hc-hint { color: #aaa; }
+
+/* ---- the hideout list: two tabs, a star for favourites; and the room list made to fit a phone ---- */
+.door-tabs { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: #e3e6ec; border: 1px solid #c7ccd6; margin-top: 4px; }
+.door-tab { flex: 1; min-width: 0; padding: 7px 6px; border: 0; border-radius: 8px; background: transparent; color: #4a5568; font: 700 13px var(--font); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.door-tab.on { background: linear-gradient(#fff, #e9edf3); color: #1d232b; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+.door-star { flex: none; padding: 0 8px; font-size: 16px; line-height: 24px; color: #9aa3b2; }
+.door-star.on { color: #e0a600; }
+.hideout-door .door-row { flex-wrap: wrap; }
+.hideout-door .door-row-main { flex: 1 1 140px; }
+.door-list { grid-template-columns: minmax(0, 1fr); }
+.door-row { min-width: 0; }
+.door-row > .btn, .door-row > .door-actions, .door-row > .door-star { flex: none; }
+@media (max-width: 520px) {
+  .door-popup { width: calc(100% - 8px); }
+  .door-main { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .door-big { min-height: 36px; font-size: 14px; padding: 0 6px; white-space: nowrap; }
+  .door-row { gap: 6px; padding: 6px 8px; }
+  .door-row .head { width: 30px; height: 30px; }
+  .door-rank { display: none; }
+  .door-profile { padding-left: 6px; padding-right: 6px; }
+  .hc-card .hc-tab span:last-child { font-size: 11px; }
+}

@@ -1,5 +1,5 @@
 import { h, toast } from "./dom";
-import { hideoutAnswer, watchHideoutInvites, watchHideoutList, watchMyHideouts } from "../hideout";
+import { hideoutAnswer, hideoutFavorite, watchHideoutFavs, watchHideoutInvites, watchHideoutList, watchMyHideouts } from "../hideout";
 import { social } from "../social";
 import { sortListings } from "../shared/hideout";
 import type { HideoutListing } from "../shared/hideout";
@@ -16,6 +16,8 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
   let invites: Array<{ owner: string; fromName: string; roomName: string; at: number }> = [];
   let list: Array<{ owner: string; listing: HideoutListing }> = [];
   let everyHideout: Array<{ owner: string; name: string; ownerName: string }> = []; // (for the accounts that may enter any hideout: all of them, listed or not)
+  let favs = new Set<string>();
+  let tab: "boosted" | "all" | null = null; // (null: the boosted ones if there are any, else all)
   let knocking: { owner: string; name: string; state: "waiting" | "declined" | "none" } | null = null;
   let stopKnock: (() => void) | null = null;
   let knockTimer = 0;
@@ -51,18 +53,33 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
       }
     }
     // the hideouts whose owners left them on the list: you can't ask to be a member (the owner adds members on the hideout's computer), but you can knock and be let in as a guest
-    const others = sortListings(list.filter((l) => l.owner !== me.uid && !mine.some((m) => m.owner === l.owner)), Date.now());
-    if (others.length) {
-      rows.push(h("div", { class: "fp-label" }, "Hideouts"));
-      for (const o of others) rows.push(h("div", { class: "door-row" },
+    const now = Date.now();
+    const others = list.filter((l) => l.owner !== me.uid && !mine.some((m) => m.owner === l.owner));
+    const boosted = sortListings(others.filter((l) => l.listing.boostUntil > now), now);
+    const plain = sortListings(others.filter((l) => !(l.listing.boostUntil > now)), now);
+    const favRows = sortListings(others.filter((l) => favs.has(l.owner)), now);
+    const rowFor = (o: { owner: string; listing: HideoutListing }): HTMLElement => {
+      const fav = favs.has(o.owner);
+      const n = o.listing.favs ?? 0;
+      return h("div", { class: "door-row" },
+        h("button", { class: "btn small door-star" + (fav ? " on" : ""), title: fav ? "Take it off your favourites" : "Add it to your favourites", "aria-label": "Favourite", onclick: () => void hideoutFavorite(me, o.owner).catch((e) => toast((e as Error).message, "err")) }, fav ? "★" : "☆"),
         h("div", { class: "door-row-main" },
-          h("div", { class: "door-row-name" }, `${o.listing.boostUntil > Date.now() ? "🔥 " : ""}${o.listing.name}`),
-          h("div", { class: "hint" }, `${o.listing.ownerName} · ${o.listing.members} member${o.listing.members === 1 ? "" : "s"}${o.listing.desc ? ` · ${o.listing.desc}` : ""}`)),
+          h("div", { class: "door-row-name" }, `${o.listing.boostUntil > now ? "🔥 " : ""}${o.listing.name}`),
+          h("div", { class: "hint" }, `${o.listing.ownerName} · ${o.listing.members} member${o.listing.members === 1 ? "" : "s"}${n ? ` · ★ ${n}` : ""}${o.listing.desc ? ` · ${o.listing.desc}` : ""}`)),
         o.listing.open
           ? h("button", { class: "btn small primary", onclick: () => { playSfx("select", 0.5); close(); ctx.navigate("room", { roomId: `h_${o.owner}`, from: LOBBY_ID }); } }, "Enter")
           : knocking?.owner === o.owner
           ? (knocking.state === "waiting" ? h("span", { class: "hint" }, "Knocking…") : h("span", { class: "hint" }, knocking.state === "declined" ? "Sent away" : "Nobody answered"))
-          : h("button", { class: "btn small", disabled: !!knocking && knocking.state === "waiting", onclick: () => startKnock(o.owner, o.listing.name) }, "Knock")));
+          : h("button", { class: "btn small", disabled: !!knocking && knocking.state === "waiting", onclick: () => startKnock(o.owner, o.listing.name) }, "Knock"));
+    };
+    if (favRows.length) { rows.push(h("div", { class: "fp-label" }, "★ Favourites")); rows.push(...favRows.map(rowFor)); }
+    if (others.length) {
+      const active = tab ?? (boosted.length ? "boosted" : "all");
+      const shownRows = active === "boosted" ? boosted : plain;
+      rows.push(h("div", { class: "door-tabs" },
+        h("button", { class: "door-tab" + (active === "boosted" ? " on" : ""), onclick: () => { tab = "boosted"; render(); } }, `🔥 Boosted (${boosted.length})`),
+        h("button", { class: "door-tab" + (active === "all" ? " on" : ""), onclick: () => { tab = "all"; render(); } }, `All (${plain.length})`)));
+      rows.push(...(shownRows.length ? shownRows.map(rowFor) : [h("div", { class: "hint pad" }, active === "boosted" ? "No boosted hideouts right now. A hideout's owner can boost it for 6 hours." : "No hideouts here yet.")]));
     }
     body.replaceChildren(...rows);
   }
@@ -87,7 +104,7 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
       playSfx("knock", 0.35);
     }, () => { toast("Couldn't knock.", "err"); knocking = null; render(); });
   }
-  const stops = [...(me.enterAnywhere ? [watchAllRooms((all) => { everyHideout = Object.entries(all).filter(([id, m]) => isHideoutId(id) && m?.owner).map(([id, m]) => ({ owner: id.slice(2), name: String(m.name ?? "Hideout"), ownerName: String(m.ownerName ?? "?") })); render(); })] : []), watchHideoutList((l) => { list = l; render(); }), watchMyHideouts(me.uid, (l) => { mine = l; render(); }), watchHideoutInvites(me.uid, (l) => { invites = l; render(); })];
+  const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; render(); }), ...(me.enterAnywhere ? [watchAllRooms((all) => { everyHideout = Object.entries(all).filter(([id, m]) => isHideoutId(id) && m?.owner).map(([id, m]) => ({ owner: id.slice(2), name: String(m.name ?? "Hideout"), ownerName: String(m.ownerName ?? "?") })); render(); })] : []), watchHideoutList((l) => { list = l; render(); }), watchMyHideouts(me.uid, (l) => { mine = l; render(); }), watchHideoutInvites(me.uid, (l) => { invites = l; render(); })];
   render();
   function close(): void { if (closed) return; closed = true; window.clearTimeout(knockTimer); stopKnock?.(); if (knocking?.state === "waiting") void social.cancelHideoutKnock(knocking.owner); stops.forEach((s) => s()); el.remove(); onClose(); }
   return { close };

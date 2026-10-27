@@ -47,6 +47,7 @@ const inv = (...items) => Object.fromEntries(items.map((it, i) => [i, it]));
 const bloodOf = async (u) => Number(await owner("GET", `users/${u.uid}/blood`)) || 0;
 const slotOf = (st, item) => st.inventory.findIndex((x) => x && x.item === item);
 const clientWrite = (u, path, v) => fetch(`${DB}/${path}.json?ns=${NS}&auth=${u.token}`, { method: "PUT", body: JSON.stringify(v) });
+const readAs = (who, path) => fetch(`${DB}/${path}.json?ns=${NS}&auth=${who.token}`).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) }));
 const refused = (r) => r.status === 401 || r.status === 403;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -375,6 +376,16 @@ console.log("--- the list at the door");
   const row2 = await owner("GET", `hideoutList/${lo.uid}`);
   check("it adds up", row2.boostUntil > row.boostUntil + 21_000_000);
   bad("only the owner boosts", await act(ls, "hideoutBoost"));
+  const fv = await act(ls, "hideoutFavorite", { owner: lo.uid });
+  ok("ls makes it a favourite", fv);
+  check("the list counts it", (await owner("GET", `hideoutList/${lo.uid}/favs`)) === 1 && (await owner("GET", `hideoutFavs/${ls.uid}/${lo.uid}`)) === true, JSON.stringify(fv.data));
+  check("favourites are private (nobody else reads them)", refused(await readAs(lo, `hideoutFavs/${ls.uid}`)));
+  ok("again: it is off", await act(ls, "hideoutFavorite", { owner: lo.uid }));
+  check("the count is back to nothing", !(await owner("GET", `hideoutList/${lo.uid}/favs`)));
+  bad("not your own", await act(lo, "hideoutFavorite", { owner: lo.uid }));
+  bad("not a hideout that isn't there", await act(ls, "hideoutFavorite", { owner: "zzzzzzzzzzzz" }));
+  ok("favourite once more", await act(ls, "hideoutFavorite", { owner: lo.uid, on: true }));
+
   ok("the owner invites", await act(lo, "hideoutInvite", { uid: ls.uid }));
   ok("they join", await act(ls, "hideoutAnswer", { owner: lo.uid, accept: true }));
   check("the list counts two", (await owner("GET", `hideoutList/${lo.uid}/members`)) === 2);

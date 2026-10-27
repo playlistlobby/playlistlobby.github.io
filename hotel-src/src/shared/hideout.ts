@@ -31,10 +31,12 @@ export const HIDEOUT_DESC_MAX = 80;
 export const HIDEOUT_BOOST_PRICE = 500;
 export const HIDEOUT_BOOST_MS = 6 * 60 * 60 * 1000;
 /** what the public list says about a hideout (written by the server to hideoutList/<owner>) */
-export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number; /** anybody can walk in (no knocking) */ open: boolean }
-/** the order of the list: boosted ones first (the latest boost on top), then the bigger crowds */
+export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number; /** anybody can walk in (no knocking) */ open: boolean; /** how many players have it as a favourite: the more, the higher it is on the list */ favs?: number }
+/** the order of the list: boosted ones first (the latest boost on top), then the most favourited, then the bigger crowds */
 export const sortListings = <T extends { listing: HideoutListing }>(rows: T[], now: number): T[] =>
-  [...rows].sort((a, b) => (Number(b.listing.boostUntil > now) - Number(a.listing.boostUntil > now)) || (b.listing.boostUntil > now ? b.listing.boostUntil - a.listing.boostUntil : 0) || b.listing.members - a.listing.members || a.listing.name.localeCompare(b.listing.name));
+  [...rows].sort((a, b) => (Number(b.listing.boostUntil > now) - Number(a.listing.boostUntil > now)) || (b.listing.boostUntil > now ? b.listing.boostUntil - a.listing.boostUntil : 0) || (b.listing.favs ?? 0) - (a.listing.favs ?? 0) || b.listing.members - a.listing.members || a.listing.name.localeCompare(b.listing.name));
+/** how many hideouts a player can have as favourites */
+export const HIDEOUT_MAX_FAVS = 30;
 
 /** how a new hideout looks until the owner pays for other colours: the same cold concrete as the basement */
 export const HIDEOUT_THEME = { floorA: "#5f6262", floorB: "#686b6b", wall: "#575c5d", rug: false, rugColor: "#000000", style: "grime" };

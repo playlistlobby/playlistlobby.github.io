@@ -20,6 +20,11 @@ export const hideoutSearch = (p: Profile, q: string): Promise<{ players: Array<{
 export const hideoutBoxStore = (p: Profile, room: string, kind: string, qty = 1, from?: { slot: number }): Promise<unknown> => call(p, "hideoutBoxStore", { room, kind, qty, ...(from ? { source: "inv", slot: from.slot } : {}) });
 export const hideoutBoxTake = (p: Profile, room: string, kind: string, qty = 1, to: "storage" | "inv" = "storage"): Promise<unknown> => call(p, "hideoutBoxTake", { room, kind, qty, to });
 export const hideoutOrder = (p: Profile, room: string, kind: string): Promise<{ id: string; doneAt: number }> => call(p, "hideoutOrder", { room, kind });
+export const hideoutFavorite = (p: Profile, owner: string, on?: boolean): Promise<{ on: boolean; favs: number }> => call(p, "hideoutFavorite", { owner, ...(on !== undefined ? { on } : {}) });
+/** the hideouts you have as favourites (owner uids), live */
+export function watchHideoutFavs(uid: string, cb: (owners: Set<string>) => void): () => void {
+  return onValue(ref(db, `hideoutFavs/${uid}`), (s) => cb(new Set(Object.keys((s.val() ?? {}) as Record<string, unknown>))), () => cb(new Set()));
+}
 export const hideoutCollect = (p: Profile, room: string, id: string): Promise<{ kind: string }> => call(p, "hideoutCollect", { room, id });
 
 export interface MyHideout { owner: string; room: string; name: string; role: "owner" | "member" }

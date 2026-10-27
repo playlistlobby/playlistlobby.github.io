@@ -7,7 +7,7 @@ import { isFurniItem, NO_DROP } from "../../../src/shared/items";
 import { SHIPPED_DIMS } from "../../../src/shared/furniture";
 import {
   HIDEOUT_BOOST_MS, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HideoutListing, HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
-  HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize, hideoutPriceOf, HIDEOUT_CHEST_MAX_QTY, HIDEOUT_CHEST_SLOTS, memberDefaults, type HideoutPerms,
+  HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize, hideoutPriceOf, HIDEOUT_CHEST_MAX_QTY, HIDEOUT_CHEST_SLOTS, memberDefaults, type HideoutPerms, HIDEOUT_MAX_FAVS,
 } from "../../../src/shared/hideout";
 
 const UID_RE = /^[A-Za-z0-9]{10,40}$/;
@@ -37,7 +37,7 @@ function publishListing(c: Ctx, owner: string, meta: Record<string, any>, over: 
   const members = Object.keys((meta.members ?? {}) as Record<string, unknown>).length + 1 + (over.membersDelta ?? 0);
   const row: HideoutListing = {
     name: String(over.name ?? meta.name ?? "hideout").slice(0, HIDEOUT_NAME_MAX), desc: String(over.desc ?? meta.desc ?? "").slice(0, HIDEOUT_DESC_MAX),
-    ownerName: String(meta.ownerName ?? "?").slice(0, 16), members: Math.max(1, members), boostUntil: Number(over.boostUntil ?? meta.boostUntil ?? 0) || 0, open: over.open ?? meta.access === "open",
+    ownerName: String(meta.ownerName ?? "?").slice(0, 16), members: Math.max(1, members), boostUntil: Number(over.boostUntil ?? meta.boostUntil ?? 0) || 0, open: over.open ?? meta.access === "open", favs: Math.max(0, Number(meta.favs) || 0),
   };
   c.extra[`hideoutList/${owner}`] = row;
 }
@@ -437,5 +437,28 @@ export const attachUpgrade: Action = {
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1);
     c.note = String(item);
     return {};
+  },
+};
+
+
+/** Make a hideout a favourite (or not): you find it again at the top of the list, and the more players favourite it the higher it sits. */
+export const hideoutFavorite: Action = {
+  locks: (c, a) => [`hfav:${String(a?.owner ?? "")}`, `user:${c.uid}`],
+  async run(c, a) {
+    const owner = text(a.owner, UID_RE, "hideout");
+    if (owner === c.uid) fail("It's your own hideout.");
+    const room = hideoutRoomId(owner);
+    const meta = await c.db.get<Record<string, any>>(`roomsMeta/${room}`);
+    if (!meta?.owner) fail("That hideout doesn't exist.");
+    const mine = (await c.db.get<Record<string, boolean>>(`hideoutFavs/${c.uid}`)) ?? {};
+    const has = !!mine[owner];
+    const want = a.on === undefined ? !has : !!a.on;
+    if (want === has) return { on: has, favs: Number(meta!.favs) || 0 };
+    if (want && Object.keys(mine).length >= HIDEOUT_MAX_FAVS) fail(`You can have ${HIDEOUT_MAX_FAVS} favourites at most.`);
+    const favs = Math.max(0, (Number(meta!.favs) || 0) + (want ? 1 : -1));
+    c.extra[`hideoutFavs/${c.uid}/${owner}`] = want ? true : null;
+    c.extra[`roomsMeta/${room}/favs`] = favs || null;
+    if (await c.db.get(`hideoutList/${owner}`)) c.extra[`hideoutList/${owner}/favs`] = favs;
+    return { on: want, favs };
   },
 };

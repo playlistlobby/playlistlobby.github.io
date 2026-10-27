@@ -76,6 +76,8 @@ ok("the owner puts 600 on the rich one", h1);
 check("their blood is 4400", (await bloodOf(host)) === 4400);
 let list = await hits();
 check("the hit is open for everybody to read", list.length === 1 && list[0].target === rich.uid && list[0].amount === 600 && list[0].targetName === "t_ht_rich" && list[0].hideoutName === "The Syndicate", JSON.stringify(list));
+check("the target can see who did it (the revenge button)", Object.values((await owner("GET", `hitRevenge/${rich.uid}`)) ?? {}).some((r) => r.by === host.uid && r.amount === 600), JSON.stringify(await owner("GET", `hitRevenge/${rich.uid}`)));
+check("only the target reads it", (await fetch(`${DB}/hitRevenge/${rich.uid}.json?ns=${NS}&auth=${stranger.token}`)).status >= 400);
 bad("one hit per hideout per 3 hours", await place(mem, mid, 500));
 await owner("PUT", `hitCool/${host.uid}`, Date.now() - 4 * 3_600_000);
 ok("3 hours later the hideout can again (a member)", await place(mem, rich, 1500));
