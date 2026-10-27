@@ -75,6 +75,16 @@ console.log("--- the flappy bird scoreboard");
   check("the score is still there", (await owner("GET", `flappyBoard/${victim.uid}/score`)) === 99);
   ok("the admin removes it", await act(boss, "flappyRemove", { uid: victim.uid }));
   check("the score is gone", (await owner("GET", `flappyBoard/${victim.uid}`)) === null);
+  console.log("--- banned from Flappy Bird (only from the game)");
+  await stand(victim, "lobby", 3, 3);
+  ok("not banned yet: can play", await act(victim, "flappyStart"));
+  ok("the admin bans them from it", await act(boss, "flappyRemove", { uid: victim.uid, ban: true }));
+  check("the ban is written", (await owner("GET", `flappyBans/${victim.uid}`)) === true);
+  bad("they can't start a run", await act(victim, "flappyStart"));
+  bad("and no score counts", await act(victim, "flappyScore", { score: 1 }));
+  ok("the admin lets them back", await act(boss, "flappyRemove", { uid: victim.uid, ban: false }));
+  ok("they can play again", await act(victim, "flappyStart"));
+  await owner("DELETE", `flappyBoard/${victim.uid}`);
 }
 console.log(`
 ${fails ? `${fails} FAILED, ${passes} passed` : `all ${passes} passed`}`);

@@ -1,11 +1,17 @@
 // The Flappy Bird scoreboard (flappyBoard/<uid> = { name, score, at }, best score per player; everyone logged in can read it, only the server writes it).
 // A score is only believed if the server saw the run start: a run takes at least a second per pipe, so a score can't be higher than the seconds the run took.
 import { Action, int, requireInRoom, text } from "./util";
-import { fail } from "../ctx";
+import { Ctx, fail } from "../ctx";
+
+/** a player the admin banned from Flappy Bird (flappyBans/<uid> = true): they can't play, and their scores don't count */
+async function notBanned(c: Ctx): Promise<void> {
+  if (await c.db.get(`flappyBans/${c.uid}`)) fail("You are banned from Flappy Bird.");
+}
 
 export const flappyStart: Action = {
   async run(c) {
     await requireInRoom(c, "lobby");
+    await notBanned(c);
     c.extra[`flappyRun/${c.uid}`] = c.now;
     return {};
   },
@@ -14,6 +20,7 @@ export const flappyStart: Action = {
 export const flappyScore: Action = {
   async run(c, a) {
     await requireInRoom(c, "lobby");
+    await notBanned(c);
     const score = int(a.score, 1, 5000, "score");
     const start = await c.db.get<number>(`flappyRun/${c.uid}`);
     if (typeof start !== "number") return fail("That run wasn't started.");
@@ -28,13 +35,15 @@ export const flappyScore: Action = {
   },
 };
 
-/** The admin takes a score off the scoreboard (a cheated one, or a name that should not be there). The player can post a new score by playing again. */
+/** The admin takes a score off the scoreboard (a cheated one, or a name that should not be there). The player can post a new score by playing again, unless `ban` is set: then they are banned from Flappy Bird (`ban: false` lets them back). */
 export const flappyRemove: Action = {
   async run(c, a) {
     if (!c.isAdmin) fail("Unknown action.");
     const uid = text(a.uid, /^[A-Za-z0-9]{1,40}$/, "player");
     c.extra[`flappyBoard/${uid}`] = null;
-    c.note = `removed ${uid} from the flappy board`;
+    if (a.ban === true) c.extra[`flappyBans/${uid}`] = true;
+    else if (a.ban === false) c.extra[`flappyBans/${uid}`] = null;
+    c.note = `removed ${uid} from the flappy board${a.ban === true ? " and banned them from it" : a.ban === false ? " and let them play again" : ""}`;
     return {};
   },
 };
