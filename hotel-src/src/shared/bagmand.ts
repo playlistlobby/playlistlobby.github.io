@@ -36,6 +36,8 @@ export const BAGMAND_SELL: Record<string, number> = {
   pinkweed: 125,
   brownweed: 110,
   loudpack: 265,
+  // what he sells he buys back for 90% (nothing is gained by buying his natryger and bringing it back; rolled into a joint or a blunt he does not buy it at all)
+  natryger: Math.floor(BAGMAND_BUY.natryger.price * 0.9),
 };
 /** what he pays for this item (null = he doesn't buy it) */
 export const bagmandPays = (it: Pick<InvItem, "item" | "ass">): number | null => {
