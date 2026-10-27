@@ -129,6 +129,7 @@ import { MixerApi, openMixer } from "./mixer";
 import { LandlordApi, openLandlord } from "./landlord";
 import { consumeItem } from "../db";
 import { FurnishApi, mountFurnishUi } from "./furnish";
+import { autoplantOn } from "../settings";
 import { pocketFromRoom, canTurn, defaultDir, isFixedPiece, nextDir, turnedWallSpot, wallSpot, movePiece, placeFromCatalog, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
 import { Box, drawNitroSprites, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { fetchProfile, setPresenceRoom, social } from "../social";
@@ -1723,8 +1724,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       if (!f.plant) {
         const isSeed = (n: string | undefined): boolean => n === "weedseed" || n === "shroomspore" || n === "poppyseed";
-        const ss = isSeed(held?.item) ? slot : null; // (nothing is planted unless you hold a seed: tap the seed first, then the pot)
-        if (ss === null) return say("An empty growing kit. Tap a weed seed, shroom spores or a poppy seed in your pocket first, then tap the kit to plant it.", "warn");
+        let ss = isSeed(held?.item) ? slot : null; // (nothing is planted unless you hold a seed: tap the seed first, then the pot... or turn Autoplant on in the menu)
+        if (ss === null && autoplantOn()) { const at = me.inventory.findIndex((x) => !!x && isSeed(x.item)); ss = at >= 0 ? at : null; if (ss === null) return say("Autoplant is on, but you have no seeds to plant.", "warn"); }
+        if (ss === null) return say("An empty growing kit. Tap a weed seed, shroom spores or a poppy seed in your pocket first, then tap the kit to plant it. (Or turn Autoplant on in the menu.)", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
         return say(held?.item === "poppyseed" ? "You press the little black seed into the soil. A poppy takes 4 hours and needs no water." : me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");

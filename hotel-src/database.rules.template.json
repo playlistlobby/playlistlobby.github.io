@@ -91,6 +91,12 @@
         }
       }
     },
+    "hideoutFavs": {
+      "$uid": { ".read": "@PW@ && auth.uid === $uid" }
+    },
+    "hitRevenge": {
+      "$uid": { ".read": "@PW@ && auth.uid === $uid" }
+    },
     "hitCool": {
       "$owner": {
         ".read": "@PW@ && (auth.uid === $owner || root.child('roomsMeta').child('h_' + $owner).child('members').child(auth.uid).exists())"

@@ -1,5 +1,6 @@
 import { h } from "./dom";
 import { sfxMuted, setSfxMuted } from "../sfx";
+import { autoplantOn, setAutoplant } from "../settings";
 import { BLOOD_ICON } from "../items";
 import { FLAG_SVG, Lang, LANG, setLang } from "../lang";
 import type { View } from "../main";
@@ -51,6 +52,10 @@ export function topBar(o: TopBarOpts): TopBarApi {
         setSfxMuted(!sfxMuted());
         (ev.currentTarget as HTMLElement).textContent = sfxMuted() ? "🔇 Sounds: off" : "🔊 Sounds: on";
       } }, sfxMuted() ? "🔇 Sounds: off" : "🔊 Sounds: on"),
+      h("button", { class: "nav-pop-item", title: "With autoplant on, tapping an empty growing kit plants a seed from your pocket", onclick: (ev: Event) => {
+        setAutoplant(!autoplantOn());
+        (ev.currentTarget as HTMLElement).textContent = autoplantOn() ? "🌱 Autoplant: on" : "🌱 Autoplant: off";
+      } }, autoplantOn() ? "🌱 Autoplant: on" : "🌱 Autoplant: off"),
       // the language: the flag of the one you are in; tap it to switch to the other
       h("button", { class: "nav-pop-item lang-item", title: LANG === "da" ? "Switch to English" : "Skift til dansk", onclick: () => setLang(LANG === "da" ? "en" : "da") }, flag(LANG), LANG === "da" ? "Dansk" : "English"),
       h("button", { class: "nav-pop-item danger", onclick: () => { closeMenu(); o.onLogout(); } }, "Log out"));
