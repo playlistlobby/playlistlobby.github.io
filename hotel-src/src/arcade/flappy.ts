@@ -52,15 +52,20 @@ export const flappy: ArcadeGame = {
     // ---- the scoreboard: the trophy button opens the best scores of everybody ----
     let boardRows: Array<{ uid: string; name: string; score: number }> = [];
     const boardList = h("div", { class: "fb-board-list" });
-    const boardPanel = h("div", { class: "fb-board", hidden: true },
+    const boardPanel = h("div", { class: "fb-board", hidden: !api.removeScore }, // (the admin sees the board at once: to take scores off)
       h("div", { class: "fb-board-head" }, h("strong", {}, "Scoreboard"), h("button", { class: "btn small", type: "button", onclick: (e: Event) => { e.stopPropagation(); boardPanel.hidden = true; } }, "Close")),
       boardList);
     const drawBoard = (): void => {
       const me = api.myUid;
-      const top = boardRows.slice(0, 10);
-      const rows = top.map((r, i) => h("div", { class: "fb-board-row" + (r.uid === me ? " me" : "") }, h("span", { class: "fb-rank" }, String(i + 1)), h("span", { class: "fb-name" }, r.name), h("span", { class: "fb-score" }, String(r.score)), ...(api.removeScore ? [h("button", { class: "fb-del", type: "button", title: "Take this score off", onclick: (e: Event) => { e.stopPropagation(); if (confirm(`Take ${r.name}'s score (${r.score}) off the scoreboard?`)) void api.removeScore!(r.uid).catch(() => undefined); } }, "✕")] : [])));
+      const admin = !!api.removeScore;
+      const top = boardRows.slice(0, admin ? 200 : 10); // (the admin sees everybody, to be able to take anybody off)
+      const rows = top.map((r, i) => h("div", { class: "fb-board-row" + (r.uid === me ? " me" : "") }, h("span", { class: "fb-rank" }, String(i + 1)), h("span", { class: "fb-name" }, r.name), h("span", { class: "fb-score" }, String(r.score)),
+        ...(admin ? [
+          h("button", { class: "fb-del", type: "button", title: "Take this score off", onclick: (e: Event) => { e.stopPropagation(); if (confirm(`Take ${r.name}'s score (${r.score}) off the scoreboard?`)) void api.removeScore!(r.uid).catch(() => undefined); } }, "✕"),
+          h("button", { class: "fb-del fb-shadow", type: "button", title: "Take it off and shadow ban: they can still play and see their own scores, nobody else sees them", onclick: (e: Event) => { e.stopPropagation(); if (confirm(`Shadow ban ${r.name}? Their score comes off and from now on only they can see their scores.`)) void api.removeScore!(r.uid, true).catch(() => undefined); } }, "👻"),
+        ] : [])));
       const mine = boardRows.findIndex((r) => r.uid === me);
-      if (mine >= 10) rows.push(h("div", { class: "fb-board-row me" }, h("span", { class: "fb-rank" }, String(mine + 1)), h("span", { class: "fb-name" }, boardRows[mine].name), h("span", { class: "fb-score" }, String(boardRows[mine].score))));
+      if (!admin && mine >= 10) rows.push(h("div", { class: "fb-board-row me" }, h("span", { class: "fb-rank" }, String(mine + 1)), h("span", { class: "fb-name" }, boardRows[mine].name), h("span", { class: "fb-score" }, String(boardRows[mine].score))));
       boardList.replaceChildren(...(rows.length ? rows : [h("div", { class: "hint" }, "No scores yet. Be the first!")]));
     };
     const stopBoard = api.watchBoard?.((rows) => { boardRows = rows; drawBoard(); });

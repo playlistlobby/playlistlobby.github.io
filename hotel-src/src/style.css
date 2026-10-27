@@ -1503,3 +1503,5 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .nb-input { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #a9bbdc; background: #fff; color: #10203a; font: 15px var(--font); }
 .nb-text { resize: vertical; min-height: 90px; }
 .nb-row { display: flex; gap: 8px; justify-content: flex-end; }
+
+.fb-del.fb-shadow { margin-left: 4px; border-color: #3b3b55; background: linear-gradient(#a9a9d6, #6a6aa8 49%, #55558f 51%, #6a6aa8); }

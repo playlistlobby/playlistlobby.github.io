@@ -2164,8 +2164,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         ...(roomId === LOBBY_ID ? {
           startRun: () => { void flappyRunStart(me).catch(() => undefined); },
           submitScore: (score: number) => flappySubmit(me, score),
-          watchBoard: (cb: (rows: Array<{ uid: string; name: string; score: number }>) => void) => watchFlappyBoard(cb),
-          ...(me.isAdmin ? { removeScore: (uid: string) => flappyRemoveScore(me, uid) } : {}),
+          watchBoard: (cb: (rows: Array<{ uid: string; name: string; score: number }>) => void) => watchFlappyBoard(cb, me.uid),
+          ...(me.isAdmin ? { removeScore: (uid: string, shadow?: boolean) => flappyRemoveScore(me, uid, shadow) } : {}),
         } : {}),
         collectBlood: async () => {
           try {

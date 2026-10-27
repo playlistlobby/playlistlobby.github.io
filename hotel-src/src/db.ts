@@ -392,16 +392,28 @@ export async function rewardStab(p: Profile, targetUid: string, roomId: string):
 export const flappyRunStart = (p: Profile): Promise<unknown> => call(p, "flappyStart");
 /** The score of the run that just ended: it goes on the scoreboard if it is the player's best. */
 export const flappySubmit = (p: Profile, score: number): Promise<{ best: number; improved: boolean }> => call(p, "flappyScore", { score });
-/** The admin takes somebody off the scoreboard. */
-export const flappyRemoveScore = (p: Profile, uid: string): Promise<unknown> => call(p, "flappyRemove", { uid });
+/** The admin takes somebody off the scoreboard (`shadow`: and shadow bans them from it: they keep playing and seeing their own scores, nobody else does). */
+export const flappyRemoveScore = (p: Profile, uid: string, shadow = false): Promise<unknown> => call(p, "flappyRemove", { uid, ...(shadow ? { ban: "shadow" } : {}) });
 export interface BoardRow { uid: string; name: string; score: number }
 /** Follows the Flappy Bird scoreboard (best score per player, highest first); returns the stop function. */
-export function watchFlappyBoard(cb: (rows: BoardRow[]) => void): Unsubscribe {
-  return onValue(ref(db, "flappyBoard"), (snap) => {
-    const rows = Object.entries<any>(snap.val() ?? {}).filter(([, v]) => v && typeof v.score === "number").map(([uid, v]) => ({ uid, name: String(v.name ?? "?"), score: v.score as number }));
-    rows.sort((a, b) => b.score - a.score);
-    cb(rows);
-  }, () => cb([]));
+export function watchFlappyBoard(cb: (rows: BoardRow[]) => void, myUid?: string): Unsubscribe {
+  let board: BoardRow[] = [];
+  let mine: BoardRow | null = null; // (a shadow banned player's own score: only they can read it, and only they see it on the board)
+  const emit = (): void => {
+    const rows = board.slice();
+    if (mine) { const i = rows.findIndex((r) => r.uid === mine!.uid); if (i < 0) rows.push(mine); else if (rows[i].score < mine.score) rows[i] = mine; }
+    cb(rows.sort((a, b) => b.score - a.score));
+  };
+  const stopBoard = onValue(ref(db, "flappyBoard"), (snap) => {
+    board = Object.entries<any>(snap.val() ?? {}).filter(([, v]) => v && typeof v.score === "number").map(([uid, v]) => ({ uid, name: String(v.name ?? "?"), score: v.score as number }));
+    emit();
+  }, () => { board = []; emit(); });
+  const stopMine = myUid ? onValue(ref(db, `flappyShadow/${myUid}`), (snap) => {
+    const v = snap.val();
+    mine = v && typeof v.score === "number" ? { uid: myUid, name: String(v.name ?? "?"), score: v.score as number } : null;
+    emit();
+  }, () => undefined) : () => undefined;
+  return () => { stopBoard(); stopMine(); };
 }
 /** A drop of blood caught in Flappy Bird. */
 export const rewardFlappyDrop = (p: Profile, roomId: string): Promise<unknown> => call(p, "flappy", { room: roomId });

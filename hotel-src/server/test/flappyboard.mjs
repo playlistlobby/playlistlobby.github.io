@@ -85,6 +85,20 @@ console.log("--- the flappy bird scoreboard");
   ok("the admin lets them back", await act(boss, "flappyRemove", { uid: victim.uid, ban: false }));
   ok("they can play again", await act(victim, "flappyStart"));
   await owner("DELETE", `flappyBoard/${victim.uid}`);
+  console.log("--- shadow banned: they play on, only they see their scores");
+  await owner("PUT", `users/${victim.uid}`, { name: "t_fbvictim", gender: "M", figure: "x", blood: 0, createdAt: Date.now() - 3_600_000 });
+  ok("the admin shadow bans them", await act(boss, "flappyRemove", { uid: victim.uid, ban: "shadow" }));
+  check("the ban is a shadow ban", (await owner("GET", `flappyBans/${victim.uid}`)) === "shadow");
+  ok("they can still start a run", await act(victim, "flappyStart"));
+  await new Promise((r) => setTimeout(r, 2200));
+  const sh = await act(victim, "flappyScore", { score: 2 });
+  ok("and finish it", sh);
+  check("the score is kept in the shadow, not on the board", (await owner("GET", `flappyShadow/${victim.uid}/score`)) === 2 && (await owner("GET", `flappyBoard/${victim.uid}`)) === null);
+  check("they can read their own shadow score", (await fetch(`${DB}/flappyShadow/${victim.uid}.json?ns=${NS}&auth=${victim.token}`)).status === 200);
+  const nosy = await account("t_fbnosy");
+  check("nobody else can read it", (await fetch(`${DB}/flappyShadow/${victim.uid}.json?ns=${NS}&auth=${nosy.token}`)).status >= 400);
+  ok("the admin lets them back", await act(boss, "flappyRemove", { uid: victim.uid, ban: false }));
+  check("the shadow is gone with the ban", (await owner("GET", `flappyShadow/${victim.uid}`)) === null && (await owner("GET", `flappyBans/${victim.uid}`)) === null);
 }
 console.log(`
 ${fails ? `${fails} FAILED, ${passes} passed` : `all ${passes} passed`}`);

@@ -46,6 +46,11 @@
     "flappyBoard": {
       ".read": "@PW@"
     },
+    "flappyShadow": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
     "ideas": {
       ".read": "@PW@"
     },
