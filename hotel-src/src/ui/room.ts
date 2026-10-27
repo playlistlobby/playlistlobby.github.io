@@ -64,7 +64,7 @@ import { isLaced, unlaced } from "../shared/items";
 import { DICE_GAP_MS } from "../shared/dice";
 import { NEW_ACCOUNT_CHAT_MS } from "../shared/mod";
 import { showDeathScreen } from "./deathScreen";
-import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, reconcileCd, watchCdPlayer } from "../cdplayer";
+import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, isScState, reconcileCd, speakerOp, watchCdPlayer } from "../cdplayer";
 import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
@@ -2207,17 +2207,24 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     pause: h("button", { class: "btn small", onclick: () => void cdControlOp(cdState?.pausedAt ? "play" : "pause") }, "Pause"),
     restart: h("button", { class: "btn small", onclick: () => void cdControlOp("restart") }, "Play from start"),
     eject: h("button", { class: "btn small danger", onclick: () => void ejectCd() }, "Eject"),
+    loop: h("button", { class: "btn small", title: "Loop this song", onclick: () => void speakerRun("loop", { on: !cdState?.loop }) }, "Loop"),
     prev: h("button", { class: "btn small", title: "Back", onclick: () => void albumOp("prev") }, "⏮"),
     next: h("button", { class: "btn small", title: "Skip", onclick: () => void albumOp("next") }, "⏭"),
   };
   /** the full album: the song before, or the next one */
   async function albumOp(op: "prev" | "next"): Promise<void> {
     const s = cdState;
+    if (s && isScState(s)) return speakerRun(op, { from: s.index ?? 0 });
     if (!s || s.track !== "album") return;
     try { await albumStep(me, roomId, op, s.index ?? 0); } catch (err) { say((err as Error).message || "That didn't work.", "warn"); }
   }
   /** the buttons in the player's window (for whoever put the CD in, and the owner of the room) */
+  /** SoundCloud on the speaker: its buttons (members: pause, skip; the one who connected it and the owner: loop, disconnect) */
+  async function speakerRun(op: "pause" | "play" | "next" | "prev" | "loop" | "disconnect", more: { from?: number; on?: boolean } = {}): Promise<void> {
+    try { await speakerOp(me, roomId, op, more); } catch (err) { say((err as Error).message || "That didn't work.", "warn"); }
+  }
   async function cdControlOp(op: "pause" | "play" | "restart"): Promise<void> {
+    if (isScState(cdState)) { if (op !== "restart") await speakerRun(op); return; }
     try { await controlCd(me, roomId, op); } catch (err) { say((err as Error).message || "That didn't work.", "warn"); }
   }
 
@@ -2225,20 +2232,26 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!cdPopup) return;
     const s = cdState && !cdEnded(cdState) ? cdState : null;
     cdUi.title.textContent = s ? `♪ ${s.title}${s.track === "album" ? ` (${(s.index ?? 0) + 1}/${ALBUM_TRACKS.length})` : ""}` : "Nothing playing";
-    cdUi.status.textContent = s ? `Put in by ${s.byName}` : "Use a CD from your inventory on the player.";
+    cdUi.status.textContent = s ? (isScState(s) ? `SoundCloud, connected by ${s.byName}${s.loop ? " (this song on loop)" : ""}` : `Put in by ${s.byName}`) : "Use a CD from your inventory on the player.";
     const total = s ? (s.durationMs ?? s.endsAt - s.startedAt) : 0;
     const pos = s ? Math.min(total, cdPositionMs(s)) : 0;
     cdUi.fill.style.width = total ? `${Math.max(0, Math.min(100, (pos / total) * 100))}%` : "0%";
     cdUi.time.textContent = s ? `${fmtTime(pos / 1000)} / ${fmtTime(total / 1000)}` : "";
     cdUi.vol.textContent = cdAudio.muted ? "muted" : `${Math.round(cdAudio.volume * 100)}%`;
     cdUi.mute.textContent = cdAudio.muted || cdAudio.volume === 0 ? "🔇" : "🔊";
-    const mayControl = !!s && (s.by === me.uid || isOwner());
-    cdUi.eject.classList.toggle("hidden", !mayControl);
+    const sc = isScState(s);
+    // SoundCloud: every member may pause and skip; only who connected it (or the owner) may loop and disconnect
+    const boss = sc && (s!.by === me.uid || def.ownerUid === me.uid || me.isAdmin);
+    const mayControl = !!s && (sc ? hideoutCan().member : s.by === me.uid || isOwner());
+    cdUi.eject.classList.toggle("hidden", !(sc ? boss : mayControl));
+    cdUi.eject.textContent = sc ? "Disconnect" : "Eject";
     cdUi.pause.classList.toggle("hidden", !mayControl);
     const isAlbum = !!s && s.track === "album";
-    cdUi.prev.classList.toggle("hidden", !(mayControl && isAlbum));
-    cdUi.next.classList.toggle("hidden", !(mayControl && isAlbum && (s!.index ?? 0) < ALBUM_TRACKS.length - 1));
-    cdUi.restart.classList.toggle("hidden", !mayControl);
+    cdUi.prev.classList.toggle("hidden", !(mayControl && (isAlbum || sc)));
+    cdUi.next.classList.toggle("hidden", !(mayControl && (sc || (isAlbum && (s!.index ?? 0) < ALBUM_TRACKS.length - 1))));
+    cdUi.restart.classList.toggle("hidden", !mayControl || sc);
+    cdUi.loop.classList.toggle("hidden", !boss);
+    cdUi.loop.classList.toggle("primary", !!s?.loop);
     cdUi.pause.textContent = s?.pausedAt ? "Resume" : "Pause";
   }
 
@@ -2275,7 +2288,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         h("button", { class: "btn small", title: "Louder", onclick: () => step(0.1) }, "+"),
         cdUi.mute),
       h("div", { class: "hint" }, "Volume is just for you. Other players keep their own."),
-      h("div", { class: "cd-row" }, cdUi.prev, cdUi.pause, cdUi.next, cdUi.restart, cdUi.eject));
+      h("div", { class: "cd-row" }, cdUi.prev, cdUi.pause, cdUi.next, cdUi.restart, cdUi.loop, cdUi.eject));
     stage.append(el);
     cdPopup = { el, timer: window.setInterval(refreshCdPopup, 500) };
     refreshCdPopup();
@@ -2320,6 +2333,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   async function ejectCd(): Promise<void> {
+    if (isScState(cdState)) { await speakerRun("disconnect"); say("You disconnect SoundCloud from the speaker."); return; }
     try {
       await controlCd(me, roomId, "eject");
       panel.refresh();
@@ -2344,6 +2358,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** Anyone may clear a CD that has finished; this also keeps a stuck CD from blocking the player. */
   let albumAdvancing = false;
+  let scAdvancing = false;
   let cdGuestGone: number | null = null;
   let cdEjecting = false;
   function tickCd(): void {
@@ -2353,8 +2368,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       albumAdvancing = true;
       void albumStep(me, roomId, "advance", cs.index ?? 0).catch(() => undefined).finally(() => setTimeout(() => { albumAdvancing = false; }, 2500));
     }
+    // SoundCloud on the speaker: when a song has ended somebody's browser asks the server to move on (it catches up over every song that ended and skips the ones taken off)
+    if (cs && isScState(cs) && isHideoutRoom && !cs.pausedAt && serverNow() >= cs.endsAt - 400 && !scAdvancing) {
+      scAdvancing = true;
+      void speakerOp(me, roomId, "advance").catch(() => undefined).finally(() => setTimeout(() => { scAdvancing = false; }, 2500));
+    }
     // a guest put a CD in the owner's player and walked out: the music stops (the owner's browser ejects it, so the CD goes back to the guest)
-    if (cs && !cdEnded(cs) && isOwnRoom && cs.by !== me.uid && !players.has(cs.by) && social.roomOf(cs.by) !== roomId) {
+    if (cs && !isScState(cs) && !cdEnded(cs) && isOwnRoom && cs.by !== me.uid && !players.has(cs.by) && social.roomOf(cs.by) !== roomId) {
       cdGuestGone ??= performance.now();
       if (performance.now() - cdGuestGone > 6000 && !cdEjecting) {
         cdEjecting = true;

@@ -5,7 +5,7 @@ import type { ScHandle } from "./soundcloud";
 import { donateToHideout, watchDonated } from "../soundcloud";
 import { DONATE_DAILY_MAX } from "../shared/songs";
 import { BLOOD_ICON, furniIcon, itemDef, onFurniIcon } from "../items";
-import { FURNI_KINDS, LOBBY_ID } from "../rooms";
+import { FURNI_KINDS, isCdKind, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
 import { hitPlace, hitSearch, watchHitCool, watchHits, watchRevenge } from "../hits";
 import type { Revenge } from "../hits";
@@ -277,7 +277,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const tabsFor = (): HTMLElement[] => PAGES.filter((p) => (guestView() ? p.id === "sound" || p.id === "members" : !p.owner || isOwner)).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.svg ? scIcon(p.svg) : p.icon), h("span", {}, p.label)));
     if (page === "sound") { // SoundCloud stays as it is (the player is in it): it is mounted once and the 1 second refresh leaves it alone
       url.textContent = "hideout.6ix/soundcloud";
-      if (!sc) { body.replaceChildren(scHost); sc = mountSoundcloud(scHost, { me }); } else if (body.firstChild !== scHost) body.replaceChildren(scHost);
+      if (!sc) { body.replaceChildren(scHost); sc = mountSoundcloud(scHost, { me, speaker: { roomId, can: () => owner() || !!getDef().hideout?.members?.[me.uid], hasBox: () => getDef().furni.some((f) => isCdKind(f.kind)), isOwner: () => owner() || me.isAdmin } }); } else if (body.firstChild !== scHost) body.replaceChildren(scHost);
       tabs.replaceChildren(...tabsFor());
       return;
     }

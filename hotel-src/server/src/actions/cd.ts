@@ -10,7 +10,7 @@ interface CdRow { by?: string; endsAt?: number; startedAt?: number; pausedAt?: n
 const PAUSE_MAX_MS = 10 * 60_000;
 /** the album has a moment between two songs for somebody's browser to move it on */
 const ALBUM_GRACE_MS = 15_000;
-const live = (r: CdRow | null, now: number): boolean => !!r && typeof r.endsAt === "number" && (r.pausedAt ? now - r.pausedAt < PAUSE_MAX_MS : r.endsAt + (r.track === "album" && (r.index ?? 0) < ALBUM_TRACKS.length - 1 ? ALBUM_GRACE_MS : 0) > now);
+const live = (r: CdRow | null, now: number): boolean => !!r && (r.track === "sc" ||  typeof r.endsAt === "number" && (r.pausedAt ? now - r.pausedAt < PAUSE_MAX_MS : r.endsAt + (r.track === "album" && (r.index ?? 0) < ALBUM_TRACKS.length - 1 ? ALBUM_GRACE_MS : 0) > now));
 const roomOf = (v: unknown): string => {
   const room = text(v, /^[A-Za-z0-9_-]{1,60}$/, "room");
   if (room !== "lobby" && !/^[uh]_[A-Za-z0-9]{1,40}$/.test(room)) fail("There's no music player there.");
@@ -76,6 +76,7 @@ export const cdControl: Action = {
     const cur = await c.db.get<CdRow & Record<string, unknown>>(path(room));
     const op = text(a.op, /^(pause|play|restart|eject|next|prev|advance)$/, "button");
     const row = cur!;
+    if (row?.track === "sc") fail("SoundCloud is on the speaker: use its buttons.");
     const album = row?.track === "album" && typeof row.index === "number";
     if (op === "advance") {
       // the song is over: anyone in the room may move the album on (the first request wins, the rest see the new song and do nothing)

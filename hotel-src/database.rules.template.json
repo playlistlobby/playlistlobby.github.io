@@ -1053,7 +1053,7 @@
           }
         },
         "cdplayer": {
-          ".write": "@PW@ && data.exists() && !newData.exists() && data.child('endsAt').val() < now && !data.child('pausedAt').exists()"
+          ".write": "@PW@ && data.exists() && !newData.exists() && data.child('endsAt').val() < now && !data.child('pausedAt').exists() && data.child('track').val() !== 'sc'"
         },
         "events": {
           ".indexOn": [

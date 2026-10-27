@@ -1584,6 +1584,11 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .sc-prog i { display: block; height: 100%; background: linear-gradient(#f4a259, #d9741e); }
 .sc-mine { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
 .sc-mine .sc-btn { align-self: flex-end; padding: 3px 10px; font-size: 12px; }
+.sc-actions-wrap { display: flex; flex-direction: column; gap: 6px; }
+.sc-speaker { padding: 8px 10px; border-radius: 10px; border: 1px solid #000; background: linear-gradient(#5a5f68, #23262b); color: #fff; display: flex; flex-direction: column; gap: 6px; }
+.sc-speaker-top { display: flex; align-items: center; gap: 8px; }
+.sc-speaker-top > .sc-ico { width: 22px; height: 22px; color: #ffb066; flex: none; }
+.sc-speaker .sc-ctrl { flex-wrap: wrap; align-items: center; }
 .sc-now { position: sticky; bottom: 0; margin-top: auto; padding: 6px 10px 8px; background: linear-gradient(#5a5f68, #23262b); border-top: 1px solid #000; color: #fff; border-radius: 10px 10px 0 0; }
 .sc-now[hidden] { display: none; }
 .sc-now-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }

@@ -29,6 +29,7 @@ import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
 import { bagmandBuy, bagmandSell, deadlyStab } from "./bagmand";
 import { bagmandHitTick, bountyShow } from "./bounty";
 import { roomSweep } from "./sweep";
+import { speakerConnect, speakerControl } from "./speaker";
 import { songBegin, songDelete, songFinish, songSweep, songVote } from "./songs";
 import { loudspeaker } from "./loudspeaker";
 import { petBuy, petPickup, petRelease, petStockNow } from "./pets";
@@ -44,7 +45,7 @@ export const ACTIONS: Record<string, Action> = {
   drop, pickup, fentDrop,
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,
   tradeFinish, flappyStart, flappyScore, flappyRemove,
-  cdInsert, cdReturn, cdControl, mix, mixCollect,
+  cdInsert, cdReturn, cdControl, speakerConnect, speakerControl, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   pokerSit, pokerAct, pokerLeave, pokerTick,
   hitPlace, hitSearch, gunShoot, rocketFire, boardSet,

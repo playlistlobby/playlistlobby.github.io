@@ -6,6 +6,8 @@ import { checkSongFile, deleteSong, scPlayer, SONG_SLOTS, sweepSongs, uploadSong
 import type { Profile } from "../db";
 import { serverNow } from "../db";
 import { fmtDur, titleFromName } from "../shared/audio";
+import { cdEnded, connectSpeaker, isScState, speakerOp, watchCdPlayer } from "../cdplayer";
+import type { CdState } from "../cdplayer";
 import { byRating, chartsOf, cleanTitle, CHARTS_SIZE, SWEEP_EVERY_MS } from "../shared/songs";
 import type { Song } from "../shared/songs";
 
@@ -15,7 +17,9 @@ import type { Song } from "../shared/songs";
  * `extra` is where the speaker connection goes (members get a Connect button there).
  */
 export interface ScHandle { dispose(): void }
-export interface ScOptions { me: Profile; extra?: () => HTMLElement | null; onChange?: () => void }
+/** the speaker of the hideout this computer is in: who may use it, and whether there is a boombox to play on */
+export interface ScSpeaker { roomId: string; can: () => boolean; hasBox: () => boolean; isOwner: () => boolean }
+export interface ScOptions { me: Profile; extra?: () => HTMLElement | null; onChange?: () => void; speaker?: ScSpeaker }
 
 const ICONS: Record<string, string> = {
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>',
@@ -40,6 +44,8 @@ export function mountSoundcloud(host: HTMLElement, o: ScOptions): ScHandle {
   let title = "";
   let uploading = -1; // -1: not uploading, 0..1: how far
   let disposed = false;
+  let spk: CdState | null = null; // SoundCloud on the speaker (the shared state of the room's player)
+  let cdBusy = false; // a CD is in the player
 
   const body = h("div", { class: "sc-body" });
   const bar = h("div", { class: "sc-now" });
@@ -72,9 +78,49 @@ export function mountSoundcloud(host: HTMLElement, o: ScOptions): ScHandle {
       h("button", { class: "sc-play" + (playing && scPlayer.state.playing ? " on" : ""), type: "button", "aria-label": `Play ${s.title}`, onclick: () => { if (playing) scPlayer.toggle(); else void scPlayer.playList(list, list.indexOf(s)); } }, scIcon(playing && scPlayer.state.playing ? "pause" : "play")));
   }
   const empty = (t: string): HTMLElement => h("div", { class: "sc-empty" }, t);
-  const actions = (list: Song[], label: string): HTMLElement => h("div", { class: "sc-actions" },
-    h("button", { class: "sc-btn", type: "button", disabled: !list.length, onclick: () => void scPlayer.playList(list, 0) }, scIcon("play"), `Play ${label}`),
-    h("button", { class: "sc-btn", type: "button", disabled: !list.length, onclick: () => void scPlayer.playList(list, 0, true) }, scIcon("shuffle"), "Shuffle"));
+  const actions = (list: Song[], label: string): HTMLElement => h("div", { class: "sc-actions-wrap" },
+    h("div", { class: "sc-actions" },
+      h("button", { class: "sc-btn", type: "button", disabled: !list.length, onclick: () => void scPlayer.playList(list, 0) }, scIcon("play"), `Play ${label}`),
+      h("button", { class: "sc-btn", type: "button", disabled: !list.length, onclick: () => void scPlayer.playList(list, 0, true) }, scIcon("shuffle"), "Shuffle")),
+    ...speakerActions(list));
+
+  // ---- the speaker --------------------------------------------------------------------------------------------------------------------------
+  const spkRoom = (): string => o.speaker!.roomId;
+  const spkErr = (e: unknown): void => toast((e as Error).message || "That didn't work.", "err");
+  async function toSpeaker(list: Song[], shuffle: boolean): Promise<void> {
+    const ids = list.map((s) => s.id);
+    if (shuffle) for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    scPlayer.stop(); // (it plays on the speaker now, not here)
+    try { await connectSpeaker(me, spkRoom(), ids); toast("SoundCloud is on the speaker."); } catch (e) { spkErr(e); }
+  }
+  /** the two buttons that send a list to the speaker (members only; there has to be a boombox, and nothing else on it) */
+  function speakerActions(list: Song[]): HTMLElement[] {
+    const sp = o.speaker;
+    if (!sp || !sp.can()) return [];
+    if (!sp.hasBox()) return [h("div", { class: "sc-sub dark" }, "This hideout has no speaker yet. Put a boombox in it.")];
+    const busy = !!spk || cdBusy;
+    return [h("div", { class: "sc-actions" },
+      h("button", { class: "sc-btn", type: "button", disabled: !list.length || busy, onclick: () => void toSpeaker(list, false) }, scIcon("note"), "Play on speaker"),
+      h("button", { class: "sc-btn", type: "button", disabled: !list.length || busy, onclick: () => void toSpeaker(list, true) }, scIcon("shuffle"), "Shuffle on speaker")),
+    ...(busy ? [h("div", { class: "sc-sub dark" }, spk ? `${spk.byName} has SoundCloud on the speaker.` : "A CD is in the speaker.")] : [])];
+  }
+  /** what is on the speaker right now (everybody in the room sees it; members get the buttons) */
+  function speakerPanel(): HTMLElement[] {
+    const sp = o.speaker;
+    if (!sp || !spk) return [];
+    const s = spk;
+    const member = sp.can();
+    const boss = s.by === me.uid || sp.isOwner();
+    const btn = (icon: string, label: string, fn: () => Promise<unknown>, on = false): HTMLElement => h("button", { class: "sc-cbtn" + (on ? " on" : ""), type: "button", "aria-label": label, title: label, onclick: () => void fn().catch(spkErr) }, scIcon(icon));
+    return [h("div", { class: "sc-speaker" },
+      h("div", { class: "sc-speaker-top" }, scIcon("note"), h("div", { class: "sc-now-text" }, h("small", {}, "On the speaker"), h("b", {}, s.title), h("small", {}, `Connected by ${s.byName}`))),
+      member ? h("div", { class: "sc-ctrl" },
+        btn("prev", "Previous", () => speakerOp(me, spkRoom(), "prev", { from: s.index ?? 0 })),
+        btn(s.pausedAt ? "play" : "pause", s.pausedAt ? "Play" : "Pause", () => speakerOp(me, spkRoom(), s.pausedAt ? "play" : "pause")),
+        btn("next", "Next", () => speakerOp(me, spkRoom(), "next", { from: s.index ?? 0 })),
+        ...(boss ? [btn("loop", "Loop this song", () => speakerOp(me, spkRoom(), "loop", { on: !s.loop }), !!s.loop),
+          h("button", { class: "sc-btn danger", type: "button", onclick: () => void speakerOp(me, spkRoom(), "disconnect").then(() => toast("Disconnected."), spkErr) }, "Disconnect")] : [])) : null)];
+  }
 
   // ---- the pages ----------------------------------------------------------------------------------------------------------------------------
   function charts(): HTMLElement[] {
@@ -156,7 +202,7 @@ export function mountSoundcloud(host: HTMLElement, o: ScOptions): ScHandle {
     const keep = body.parentElement?.parentElement?.scrollTop ?? 0;
     const hasInput = document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement);
     if (hasInput && tab === "profile" && uploading < 0) return; // (don't rebuild the page while somebody is typing the title)
-    body.replaceChildren(seg(), ...(artist ? artistPage(artist) : tab === "charts" ? charts() : tab === "all" ? allMusic() : profile()), ...(o.extra?.() ? [o.extra()!] : []));
+    body.replaceChildren(seg(), ...speakerPanel(), ...(artist ? artistPage(artist) : tab === "charts" ? charts() : tab === "all" ? allMusic() : profile()), ...(o.extra?.() ? [o.extra()!] : []));
     if (body.parentElement?.parentElement) body.parentElement.parentElement.scrollTop = keep;
     paintBar();
   }
@@ -184,6 +230,7 @@ export function mountSoundcloud(host: HTMLElement, o: ScOptions): ScHandle {
     watchMyVotes(me.uid, (v) => { votes = v; render(); }),
     onValue(ref(db, "songMeta/lastSweep"), (s) => { lastSweep = Number(s.val()) || 0; if (tab === "charts") render(); }, () => undefined),
   ];
+  if (o.speaker) stops.push(watchCdPlayer(o.speaker.roomId, (st) => { spk = isScState(st) && st && !cdEnded(st) ? st : null; cdBusy = !!st && !isScState(st) && !cdEnded(st); render(); }));
   let lastIndex = scPlayer.state.index, lastPlaying = scPlayer.state.playing;
   stops.push(scPlayer.subscribe(() => {
     const st = scPlayer.state;

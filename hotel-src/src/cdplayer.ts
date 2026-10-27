@@ -5,6 +5,7 @@ import type { Profile } from "./db";
 import { assetUrl } from "./assetUrl";
 import { musicMuted, onMusicMuteChange } from "./sfx";
 import { ALBUM_TRACKS, CD_ITEMS, isCdItem } from "./shared/cds";
+import { audioUrl } from "./audio";
 
 // The CD player in the lobby plays whatever is on the CD you put in. For now every CD holds the same stand-in track.
 // To give CDs different music later: add tracks here, store the track id on the inventory item, and pass it to insertCd.
@@ -52,9 +53,15 @@ export interface CdState {
   durationMs?: number;
   /** set while it is paused: when (server time) */
   pausedAt?: number;
-  /** the full album: which song it is on */
+  /** the full album: which song it is on (SoundCloud on the speaker: the place in the queue) */
   index?: number;
+  /** SoundCloud on the speaker (track "sc"): the queue (song ids), whether one song loops, and the song that is on now */
+  ids?: string[];
+  loop?: boolean;
+  song?: { id: string; pieces: number; mime: string };
 }
+/** SoundCloud is connected to the speaker (it never runs out by itself: it stays until somebody disconnects it) */
+export const isScState = (s: CdState | null | undefined): boolean => !!s && s.track === "sc";
 
 const cdRef = (roomId: string) => ref(db, `rooms/${roomId}/cdplayer`);
 
@@ -67,6 +74,7 @@ export const PAUSE_MAX_MS = 10 * 60_000;
 /** the album has a moment between two songs for somebody's browser to move it on before it counts as over */
 export const ALBUM_GRACE_MS = 15_000;
 export const cdEnded = (s: CdState): boolean => {
+  if (s.track === "sc") return false;
   if (s.pausedAt) return serverNow() - s.pausedAt > PAUSE_MAX_MS;
   const more = s.track === "album" && (s.index ?? 0) < ALBUM_TRACKS.length - 1;
   return serverNow() >= s.endsAt + (more ? ALBUM_GRACE_MS : 0);
@@ -105,6 +113,10 @@ export async function albumStep(me: Profile, roomId: string, op: "next" | "prev"
 
 /** Pause / play on / play from the start / eject (the one who put the CD in, and the owner of the room). */
 export const controlCd = (me: Profile, roomId: string, op: "pause" | "play" | "restart" | "eject"): Promise<unknown> => call(me, "cdControl", { room: roomId, op });
+
+/** Connects the songs of `ids` (in this order, from `start`) to the speaker of a hideout, or does a speaker button: pause / play / next / prev (members), loop / disconnect (who connected it, the owner). */
+export const connectSpeaker = (me: Profile, roomId: string, ids: string[], start = 0, loop = false): Promise<{ title: string }> => call(me, "speakerConnect", { room: roomId, ids, start, loop });
+export const speakerOp = (me: Profile, roomId: string, op: "pause" | "play" | "next" | "prev" | "loop" | "disconnect" | "advance", more: { from?: number; on?: boolean } = {}): Promise<unknown> => call(me, "speakerControl", { room: roomId, op, ...more });
 
 /** Clears a CD that has finished (the server and the database rules only allow it once it is over). */
 export const clearCdPlayer = (roomId: string): Promise<void> => remove(cdRef(roomId));
@@ -157,6 +169,7 @@ export class CdAudio {
   blocked = false;
   private key: string | null = null;
   private state: CdState | null = null;
+  private loading = 0;
 
   constructor(private onChange: () => void) {
     this.audio.preload = "auto";
@@ -205,6 +218,7 @@ export class CdAudio {
       this.stop();
       return;
     }
+    if (this.state.track === "sc") { this.syncSoundcloud(this.state); return; }
     const track = trackOfState(this.state);
     if (!track) return this.stop();
     if (this.state.pausedAt) { this.audio.pause(); this.onChange(); return; } // paused: quiet until it is played on
@@ -217,6 +231,25 @@ export class CdAudio {
     } else if (this.audio.paused) {
       this.tryPlay(); // played on after a pause (the song is already loaded)
     }
+    this.onChange();
+  }
+
+  /** SoundCloud on the speaker: the song's pieces are read from the database (cached), then it is played at the place the shared clock says */
+  private syncSoundcloud(st: CdState): void {
+    const song = st.song;
+    if (!song) return this.stop();
+    if (st.pausedAt) { this.audio.pause(); this.onChange(); return; }
+    const key = `sc:${song.id}:${st.startedAt}`;
+    if (key !== this.key) {
+      this.key = key;
+      const mine = ++this.loading;
+      audioUrl(song.id, song.pieces, song.mime).then((url) => {
+        if (mine !== this.loading || this.key !== key) return;
+        this.audio.src = url;
+        this.audio.addEventListener("loadedmetadata", () => this.seekAndPlay(), { once: true });
+        this.audio.load();
+      }, () => { if (mine === this.loading) this.audio.pause(); });
+    } else if (this.audio.paused) this.tryPlay();
     this.onChange();
   }
 
@@ -236,6 +269,7 @@ export class CdAudio {
   stop(): void {
     this.state = null;
     this.key = null;
+    this.loading++;
     this.audio.pause();
     this.audio.removeAttribute("src");
     this.audio.load();

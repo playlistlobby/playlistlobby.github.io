@@ -13823,5 +13823,120 @@
   "en": "That isn't a sound file.",
   "da": "Det er ikke en lydfil.",
   "where": "server/src/actions/audio.ts"
+ },
+ "N2210": {
+  "en": "SoundCloud is on the speaker.",
+  "da": "SoundCloud er på højttaleren.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2211": {
+  "en": "This hideout has no speaker yet. Put a boombox in it.",
+  "da": "Dette skjul har ingen højttaler endnu. Sæt en boombox i det.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2212": {
+  "en": "Play on speaker",
+  "da": "Afspil på højttaler",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2213": {
+  "en": "Shuffle on speaker",
+  "da": "Bland på højttaler",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2214": {
+  "en": "{byName} has SoundCloud on the speaker.",
+  "da": "{byName} har SoundCloud på højttaleren.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2215": {
+  "en": "A CD is in the speaker.",
+  "da": "Der er en CD i højttaleren.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2216": {
+  "en": "On the speaker",
+  "da": "På højttaleren",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2217": {
+  "en": "Connected by {byName}",
+  "da": "Forbundet af {byName}",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2218": {
+  "en": "Disconnect",
+  "da": "Afbryd",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2219": {
+  "en": "Loop",
+  "da": "Gentag",
+  "where": "src/ui/room.ts"
+ },
+ "N2220": {
+  "en": "SoundCloud, connected by {byName}{…}",
+  "da": "SoundCloud, forbundet af {byName}{…}",
+  "where": "src/ui/room.ts"
+ },
+ "N2221": {
+  "en": "(this song on loop)",
+  "da": " (gentager denne sang)",
+  "where": "src/ui/room.ts"
+ },
+ "N2222": {
+  "en": "You disconnect SoundCloud from the speaker.",
+  "da": "Du afbryder SoundCloud fra højttaleren.",
+  "where": "src/ui/room.ts"
+ },
+ "N2223": {
+  "en": "There's no speaker there.",
+  "da": "Der er ingen højttaler der.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2224": {
+  "en": "Only the owner and the members can use the speaker.",
+  "da": "Kun ejeren og medlemmerne kan bruge højttaleren.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2225": {
+  "en": "{byName} has SoundCloud on the speaker. They (or the owner) can disconnect it.",
+  "da": "{byName} har SoundCloud på højttaleren. De (eller ejeren) kan afbryde det.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2226": {
+  "en": "The speaker is busy.",
+  "da": "Højttaleren er optaget.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2227": {
+  "en": "Pick some songs first.",
+  "da": "Vælg nogle sange først.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2228": {
+  "en": "Those songs aren't on SoundCloud any more.",
+  "da": "De sange er ikke på SoundCloud mere.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2229": {
+  "en": "SoundCloud isn't on the speaker.",
+  "da": "SoundCloud er ikke på højttaleren.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2230": {
+  "en": "Only the one who connected it (or the owner) can disconnect it.",
+  "da": "Kun den der forbandt det (eller ejeren) kan afbryde det.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2231": {
+  "en": "Only the one who connected it (or the owner) can change that.",
+  "da": "Kun den der forbandt det (eller ejeren) kan ændre det.",
+  "where": "server/src/actions/speaker.ts"
+ },
+ "N2232": {
+  "en": "SoundCloud is on the speaker: use its buttons.",
+  "da": "SoundCloud er på højttaleren: brug dens knapper.",
+  "where": "server/src/actions/cd.ts"
  }
 }
