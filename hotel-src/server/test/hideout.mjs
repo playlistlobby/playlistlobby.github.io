@@ -461,6 +461,24 @@ console.log("--- the list at the door");
   await owner("DELETE", `roomsMeta/u_${lo.uid}`); await owner("DELETE", `perks/${vip.uid}`);
 }
 
+// at most 7 members besides the owner: the 8th can't be invited, and an invite sent earlier can't be accepted into a full hideout
+console.log("--- the member cap");
+{
+  const cb = boss; // (its hideout from above; the members it had are put back at the end)
+  const before = await owner("GET", `roomsMeta/${HR(cb)}/members`);
+  const late = await fresh("t_hd_late", { blood: 0 });
+  await act(late, "sync");
+  const fake = Object.fromEntries(Array.from({ length: 6 }, (_, i) => [`capfake${i}`, { name: `capfake${i}`, build: true, grow: true, stash: true, at: Date.now() }]));
+  await owner("PUT", `roomsMeta/${HR(cb)}/members`, fake);
+  ok("the 7th member can still be invited", await act(cb, "hideoutInvite", { uid: late.uid }));
+  await owner("PUT", `roomsMeta/${HR(cb)}/members/capfake6`, { name: "capfake6", build: true, grow: true, stash: true, at: Date.now() });
+  bad("a hideout with 7 members is full: they can't accept", await act(late, "hideoutAnswer", { owner: cb.uid, accept: true }));
+  await owner("PUT", `hideoutInvites/${late.uid}/${cb.uid}`, null);
+  bad("and nobody more can be invited", await act(cb, "hideoutInvite", { uid: late.uid }));
+  check("still 7 members", Object.keys((await owner("GET", `roomsMeta/${HR(cb)}/members`)) ?? {}).length === 7);
+  await owner("PUT", `roomsMeta/${HR(cb)}/members`, before);
+}
+
 console.log(`
 ${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);
