@@ -392,6 +392,8 @@ export async function rewardStab(p: Profile, targetUid: string, roomId: string):
 export const flappyRunStart = (p: Profile): Promise<unknown> => call(p, "flappyStart");
 /** The score of the run that just ended: it goes on the scoreboard if it is the player's best. */
 export const flappySubmit = (p: Profile, score: number): Promise<{ best: number; improved: boolean }> => call(p, "flappyScore", { score });
+/** The admin takes somebody off the scoreboard. */
+export const flappyRemoveScore = (p: Profile, uid: string): Promise<unknown> => call(p, "flappyRemove", { uid });
 export interface BoardRow { uid: string; name: string; score: number }
 /** Follows the Flappy Bird scoreboard (best score per player, highest first); returns the stop function. */
 export function watchFlappyBoard(cb: (rows: BoardRow[]) => void): Unsubscribe {

@@ -65,6 +65,17 @@ console.log("--- the flappy bird scoreboard");
   const r2 = await act(u, "flappyScore", { score: 1 });
   check("a lower score doesn't replace the best", r2.ok && r2.data?.improved === false && (await owner("GET", `flappyBoard/${u.uid}/score`)) === 3, JSON.stringify(r2.data));
 }
+{
+  console.log("--- the admin takes a score off the board");
+  const victim = await account("t_fbvictim");
+  await owner("PUT", `flappyBoard/${victim.uid}`, { name: "t_fbvictim", score: 99, at: Date.now() });
+  const boss = await account("t_fbadmin");
+  await owner("PUT", `roles/${boss.uid}`, "admin");
+  bad("an ordinary player can't remove a score", await act(victim, "flappyRemove", { uid: victim.uid }));
+  check("the score is still there", (await owner("GET", `flappyBoard/${victim.uid}/score`)) === 99);
+  ok("the admin removes it", await act(boss, "flappyRemove", { uid: victim.uid }));
+  check("the score is gone", (await owner("GET", `flappyBoard/${victim.uid}`)) === null);
+}
 console.log(`
 ${fails ? `${fails} FAILED, ${passes} passed` : `all ${passes} passed`}`);
 process.exit(fails ? 1 : 0);

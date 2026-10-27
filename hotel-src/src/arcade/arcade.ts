@@ -23,6 +23,8 @@ export interface ArcadeApi {
   startRun?(): void;
   submitScore?(score: number): Promise<{ best: number; improved: boolean }>;
   watchBoard?(cb: (rows: Array<{ uid: string; name: string; score: number }>) => void): () => void;
+  /** the admin only: take a score off the scoreboard */
+  removeScore?(uid: string): Promise<unknown>;
   /** who is playing (to mark their row) */
   myUid?: string;
 }

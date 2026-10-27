@@ -1,6 +1,6 @@
 // The Flappy Bird scoreboard (flappyBoard/<uid> = { name, score, at }, best score per player; everyone logged in can read it, only the server writes it).
 // A score is only believed if the server saw the run start: a run takes at least a second per pipe, so a score can't be higher than the seconds the run took.
-import { Action, int, requireInRoom } from "./util";
+import { Action, int, requireInRoom, text } from "./util";
 import { fail } from "../ctx";
 
 export const flappyStart: Action = {
@@ -25,5 +25,16 @@ export const flappyScore: Action = {
     const w = await c.user();
     c.extra[`flappyBoard/${c.uid}`] = { name: String(w.raw?.name ?? "?").slice(0, 30), score, at: c.now };
     return { best: score, improved: true };
+  },
+};
+
+/** The admin takes a score off the scoreboard (a cheated one, or a name that should not be there). The player can post a new score by playing again. */
+export const flappyRemove: Action = {
+  async run(c, a) {
+    if (!c.isAdmin) fail("Unknown action.");
+    const uid = text(a.uid, /^[A-Za-z0-9]{1,40}$/, "player");
+    c.extra[`flappyBoard/${uid}`] = null;
+    c.note = `removed ${uid} from the flappy board`;
+    return {};
   },
 };

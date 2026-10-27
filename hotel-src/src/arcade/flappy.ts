@@ -58,7 +58,7 @@ export const flappy: ArcadeGame = {
     const drawBoard = (): void => {
       const me = api.myUid;
       const top = boardRows.slice(0, 10);
-      const rows = top.map((r, i) => h("div", { class: "fb-board-row" + (r.uid === me ? " me" : "") }, h("span", { class: "fb-rank" }, String(i + 1)), h("span", { class: "fb-name" }, r.name), h("span", { class: "fb-score" }, String(r.score))));
+      const rows = top.map((r, i) => h("div", { class: "fb-board-row" + (r.uid === me ? " me" : "") }, h("span", { class: "fb-rank" }, String(i + 1)), h("span", { class: "fb-name" }, r.name), h("span", { class: "fb-score" }, String(r.score)), ...(api.removeScore ? [h("button", { class: "fb-del", type: "button", title: "Take this score off", onclick: (e: Event) => { e.stopPropagation(); if (confirm(`Take ${r.name}'s score (${r.score}) off the scoreboard?`)) void api.removeScore!(r.uid).catch(() => undefined); } }, "✕")] : [])));
       const mine = boardRows.findIndex((r) => r.uid === me);
       if (mine >= 10) rows.push(h("div", { class: "fb-board-row me" }, h("span", { class: "fb-rank" }, String(mine + 1)), h("span", { class: "fb-name" }, boardRows[mine].name), h("span", { class: "fb-score" }, String(boardRows[mine].score))));
       boardList.replaceChildren(...(rows.length ? rows : [h("div", { class: "hint" }, "No scores yet. Be the first!")]));

@@ -8,7 +8,7 @@ import { drop, fentDrop, pickup } from "./floor";
 import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, storeItem, takeItem } from "./toolbox";
 import { tradeFinish } from "./trade";
 import { debug } from "./debug";
-import { flappyScore, flappyStart } from "./flappyboard";
+import { flappyRemove, flappyScore, flappyStart } from "./flappyboard";
 import { backupNow, banPlayer } from "./admin";
 import { giftAnswer, giftCollect, giftSend } from "./gift";
 import { posterAdmin } from "./posters";
@@ -39,7 +39,7 @@ export const ACTIONS: Record<string, Action> = {
   consume, stab, syringe, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
   drop, pickup, fentDrop,
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,
-  tradeFinish, flappyStart, flappyScore,
+  tradeFinish, flappyStart, flappyScore, flappyRemove,
   cdInsert, cdReturn, cdControl, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   pokerSit, pokerAct, pokerLeave, pokerTick,

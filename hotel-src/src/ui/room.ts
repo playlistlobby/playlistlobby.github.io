@@ -122,7 +122,7 @@ import { CHAT_COLORS, CHAT_EFFECTS, isChatEffect, isHexColor } from "../shared/d
 import type { ChatEffect } from "../shared/ducky";
 import { figureAnimated } from "../designs";
 import { lighterStage, markLighterStep } from "../lighterHint";
-import { flappyRunStart, flappySubmit, watchFlappyBoard } from "../db";
+import { flappyRemoveScore, flappyRunStart, flappySubmit, watchFlappyBoard } from "../db";
 import { pickPosterPicture } from "./posterEditor";
 import { POSTER_KIND, POSTER_PRICE, POSTER_W, POSTER_H } from "../shared/furniture";
 import { MixerApi, openMixer } from "./mixer";
@@ -2123,6 +2123,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           startRun: () => { void flappyRunStart(me).catch(() => undefined); },
           submitScore: (score: number) => flappySubmit(me, score),
           watchBoard: (cb: (rows: Array<{ uid: string; name: string; score: number }>) => void) => watchFlappyBoard(cb),
+          ...(me.isAdmin ? { removeScore: (uid: string) => flappyRemoveScore(me, uid) } : {}),
         } : {}),
         collectBlood: async () => {
           try {
