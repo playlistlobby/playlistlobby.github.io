@@ -5,6 +5,9 @@ import type { HideoutLandlordPanel } from "./hideoutLandlord";
 import { BLOOD_ICON, furniIcon, itemDef, onFurniIcon } from "../items";
 import { FURNI_KINDS, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
+import { hitPlace, watchHitCool, watchHits } from "../hits";
+import { HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_MIN } from "../shared/hits";
+import type { Hit } from "../shared/hits";
 import { hideoutPriceOf, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
 import { countdownText } from "../shared/raffle";
 import { serverNow } from "../db";
@@ -13,11 +16,12 @@ import type { Ctx } from "../main";
 
 export interface ComputerApi { close(): void; refresh(): void }
 
-type Page = "shop" | "orders" | "members" | "settings" | "landlord";
+type Page = "shop" | "orders" | "members" | "hits" | "settings" | "landlord";
 const PAGES: Array<{ id: Page; icon: string; label: string; owner?: boolean }> = [
   { id: "shop", icon: "🛒", label: "Shop" },
   { id: "orders", icon: "📦", label: "Orders" },
   { id: "members", icon: "👥", label: "Members" },
+  { id: "hits", icon: "💀", label: "Hitman" },
   { id: "settings", icon: "⚙️", label: "Settings" },
   { id: "landlord", icon: "🏠", label: "Landlord", owner: true },
 ];
@@ -35,6 +39,11 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   let searchTimer = 0;
   let searchQ = "";
   let busy = false;
+  let hitTarget: { uid: string; name: string } | null = null;
+  let hitAmount = 500;
+  let hitCool = 0;
+  let openHits: Hit[] = [];
+  const stops = [watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; })];
   const owner = (): boolean => getDef().ownerUid === me.uid;
 
   const url = h("div", { class: "hc-url" });
@@ -90,6 +99,46 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
           h("button", { class: "btn small primary", disabled: left > 0 || busy, onclick: () => void act(async () => { await hideoutCollect(me, roomId, id); return `${label(o.kind)} is in your pocket.`; }) }, "Collect"));
       }) : [h("div", { class: "hc-empty" }, "No orders. Order something in the Shop.")]),
       ...(orders.length > mine.length ? [h("div", { class: "hc-foot" }, `${orders.length - mine.length} more on the way for other members.`)] : []),
+    ];
+  }
+
+  /** the hitman site: black and white. Put blood on somebody's head; whoever shoots them with a gun gets it. */
+  function hitsPage(): HTMLElement[] {
+    const left = hitCool + HIT_HIDEOUT_COOLDOWN_MS - serverNow();
+    const waiting = left > 0;
+    const input = h("input", { class: "hc-input", type: "search", placeholder: "Search a player's name", value: searchQ, autocomplete: "off", autocapitalize: "none" }) as HTMLInputElement;
+    input.addEventListener("input", () => {
+      searchQ = input.value;
+      window.clearTimeout(searchTimer);
+      if (searchQ.trim().length < 2) { results = []; paintResults(); return; }
+      searchTimer = window.setTimeout(() => { void hideoutSearch(me, searchQ).then((r) => { results = r.players; paintResults(); }, () => undefined); }, 300);
+    });
+    const resultsBox = h("div", { class: "hc-results" });
+    const paintResults = (): void => {
+      resultsBox.replaceChildren(...results.filter((r) => r.uid !== me.uid).map((r) => h("div", { class: "hc-person" },
+        h("span", { class: "hc-pname" }, r.name),
+        h("button", { class: "btn small primary", onclick: () => { hitTarget = r; results = []; searchQ = ""; render(); } }, "Pick"))));
+    };
+    paintResults();
+    const slider = h("input", { type: "range", class: "hc-slider", min: String(HIT_MIN), max: String(HIT_MAX), step: "50", value: String(hitAmount) }) as HTMLInputElement;
+    const big = h("div", { class: "ht-amt" }, h("img", { src: BLOOD_ICON, alt: "" }), hitAmount.toLocaleString("en-US"));
+    slider.addEventListener("input", () => { hitAmount = Number(slider.value); big.replaceChildren(h("img", { src: BLOOD_ICON, alt: "" }), hitAmount.toLocaleString("en-US")); });
+    const mins = Math.ceil(left / 60000);
+    const cant = !hitTarget || busy || waiting || me.blood < hitAmount;
+    const form = h("div", { class: "ht-form" },
+      waiting ? h("div", { class: "ht-warn" }, `Your hideout has put a hit out already. The next one can go out in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`) : "",
+      hitTarget ? h("div", { class: "ht-target" }, h("span", {}, "The target"), h("strong", {}, hitTarget.name), h("button", { class: "btn small", onclick: () => { hitTarget = null; render(); } }, "Change")) : h("div", { class: "hc-group" }, input, resultsBox),
+      h("div", { class: "ht-bounty" }, h("span", {}, `The bounty (${HIT_MIN} to ${HIT_MAX})`), big, slider),
+      h("button", { class: "ht-go", disabled: cant, onclick: () => void act(async () => { const t = hitTarget!; await hitPlace(me, roomId, t.uid, hitAmount); hitTarget = null; return `The hit on ${t.name} is out: ${hitAmount} blood.`; }) },
+        hitTarget ? `Put out a hit on ${hitTarget.name}` : "Pick somebody first"),
+      h("div", { class: "hc-foot" }, `The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 12 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells one a visit) can collect it.`));
+    const per = new Map<string, { name: string; amount: number }>();
+    for (const x of openHits) { const c = per.get(x.target); if (!c || x.amount > c.amount) per.set(x.target, { name: x.targetName, amount: x.amount }); }
+    return [
+      h("div", { class: "hc-hero ht-hero" }, h("div", { class: "hc-h1" }, "THE HITMAN"), h("div", { class: "hc-sub" }, "Put blood on a head. Somebody will come for it.")),
+      form,
+      h("div", { class: "ht-open" }, h("div", { class: "ht-open-t" }, `Open hits (${openHits.length})`),
+        ...(openHits.length ? openHits.map((x) => h("div", { class: "ht-row" }, h("span", { class: "ht-n" }, x.targetName), h("span", { class: "ht-by" }, x.hideoutName), h("span", { class: "ht-a" }, h("img", { src: BLOOD_ICON, alt: "" }), x.amount.toLocaleString("en-US")))) : [h("div", { class: "hc-empty" }, "Nobody has a price on their head right now.")])),
     ];
   }
 
@@ -176,7 +225,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const focused = document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement) ? document.activeElement : null;
     if (focused) return; // (don't rebuild the page while somebody is typing in it)
     url.textContent = `🔒 hideout.6ix/${page}`;
-    body.replaceChildren(...(page === "shop" ? shopPage() : page === "orders" ? ordersPage() : page === "members" ? membersPage() : page === "settings" ? settingsPage() : landlordPage()));
+    body.replaceChildren(...(page === "shop" ? shopPage() : page === "orders" ? ordersPage() : page === "members" ? membersPage() : page === "hits" ? hitsPage() : page === "settings" ? settingsPage() : landlordPage()));
     body.scrollTop = scrolled;
     tabs.replaceChildren(...PAGES.filter((p) => !p.owner || isOwner).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.icon), h("span", {}, p.label))));
   }
@@ -186,7 +235,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   function close(): void {
     if (closed) return;
     closed = true;
-    window.clearInterval(tick); window.clearTimeout(searchTimer);
+    window.clearInterval(tick); window.clearTimeout(searchTimer); stops.forEach((f) => f());
     off(); landlord?.dispose(); el.remove(); onClose();
   }
   return { close, refresh: render };

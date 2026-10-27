@@ -91,6 +91,11 @@
         }
       }
     },
+    "hitCool": {
+      "$owner": {
+        ".read": "@PW@ && (auth.uid === $owner || root.child('roomsMeta').child('h_' + $owner).child('members').child(auth.uid).exists())"
+      }
+    },
     "hits": {
       ".read": "@PW@"
     },

@@ -141,7 +141,12 @@ import { DoorApi, openDoor } from "./door";
 import { mountRoulette, RouletteApi } from "./rouletteTable";
 import { dimmed } from "./rouletteFx";
 import { assetUrl } from "../assetUrl";
-import { playSfx, playThud } from "../sfx";
+import { playBang, playSfx, playThud } from "../sfx";
+import { gunShoot as gunShootCall, watchHits } from "../hits";
+import { bountiesOf } from "../shared/hits";
+import type { Hit } from "../shared/hits";
+import { openWantedBoard } from "./wantedBoard";
+import { drawGun, drawMuzzleFlash, GUN_K } from "./rouletteFx";
 import { setAmbience, setShopMusic } from "../ambience";
 import type { Ctx } from "../main";
 
@@ -312,6 +317,9 @@ interface Player {
 }
 
 interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean }
+/** a shot from the gun: the shooter raises it at the target, the flash, the bullet and the hit */
+interface ShotFx { from: string; to: string; start: number; fired: boolean }
+const SHOT_MS = 900;
 interface SyringeFx { uid: string; start: number; burst: boolean }
 interface DropFx { from: string; to: string; start: number }
 interface Particle { x: number; y: number; vx: number; vy: number; born: number; life: number }
@@ -535,6 +543,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let pokerApi: PokerApi | null = null;
   /** a player who loses their last blood at a poker table shoots themselves, in front of everybody in the room */
   const pokerFx = mountPokerFx({ me, roomId, scale: () => scale });
+  /** every open hit (the biggest bounty per player shows over their head while you hold a gun) */
+  let bounties = bountiesOf([] as Hit[]);
+  let hitsOpen: Hit[] = [];
+  const stopHits = watchHits((l) => { hitsOpen = l; bounties = bountiesOf(l); });
+  let wantedApi: { close(): void } | null = null;
+  let shootBox: HTMLElement | null = null;
+  let shootUid = "";
   let bjApi: BlackjackApi | null = null;
   const stopBjSeat = watchBjSeat(me.uid, (at) => { if (at && !bjApi) void bjLeave(me).then(() => panel.refresh()).catch(() => undefined); });
   const stopPokerSeat = watchPokerSeat(me.uid, (at) => { if (at && !pokerApi) void pokerLeave(me).then(() => panel.refresh()).catch(() => undefined); });
@@ -585,6 +600,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let toolDir = 0;
 
   const stabFx: StabFx[] = [];
+  const shotFx: ShotFx[] = [];
   const syringeFx: SyringeFx[] = [];
   const dropFx: DropFx[] = [];
   const particles: Particle[] = [];
@@ -738,6 +754,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind!]?.opens === "poker" || FURNI_KINDS[hoverObj.kind!]?.opens === "blackjack")) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to sit down and play`;
+    else if (hoverObj && hoverObj.kind === "wantedboard") text = "Wanted board: who has blood on their head";
     else if (hoverObj && hoverObj.kind === "hchest") text = "Shared stash: the whole hideout puts things in and takes them out";
     else if (hoverObj && hoverObj.kind === "bagman") text = "bagmand: poppy seeds, blue weed. He buys opium and what is mixed from it";
     else if (hoverObj && hoverObj.kind === "bed") text = mine()?.lying ? "Your bed: get up" : "Your bed: lie down";
@@ -1017,6 +1034,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (t && selectedSlot !== null) void putDown(t, { kind: item.id, source: "inv", slot: selectedSlot }, toolDir || defaultDir(item.id));
       return;
     }
+    if (item?.useOnPlayer === "shoot") {
+      if (target && target.uid !== me.uid && !target.npc) openShootBox(target.uid);
+      else if (target) say("You can't shoot that.", "warn");
+      else { clearSelection(); closeShootBox(); if (t) { pending = null; walkTo(t); } }
+      return;
+    }
     if (item?.useOnPlayer === "stab" && obj && !target && obj.kind === "mrock") { startMine(obj.id); return; } // the knife on a rock: mine it
     if (item?.useOnPlayer === "stab") {
       if (target && target.uid !== me.uid) startStab(target.uid);
@@ -1042,7 +1065,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || obj.kind === "wantedboard") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
@@ -2048,6 +2071,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
         else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }); }
         else if (opens === "blackjack") { if (!bjApi) bjApi = openBlackjack(stage, ctx, roomId, f.id, () => panel.refresh(), () => { bjApi = null; }); }
+        else if (opens === "hits") openWanted();
         else if (opens === "hideouts") { if (!hideoutDoorApi) hideoutDoorApi = openHideoutDoor(stage, ctx, () => { hideoutDoorApi = null; }); }
         else if (opens === "ducky") openDucky();
         else if (opens === "raffle") openRaffle();
@@ -2682,7 +2706,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
    * "DU OD'EDE PÅ FENT" shows for 10 seconds with what it cost you in blood, and you wake up in your own room. (The server took the blood and the item at once.)
    */
   let lastKilledAt = 0;
-  function startKilled(k: { byName?: string; lost?: number }): void {
+  function startKilled(k: { byName?: string; lost?: number; secs?: number; shot?: boolean }): void {
     const p = mine();
     if (!p || dying) return;
     dying = true;
@@ -2700,8 +2724,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     stage.append(h("div", { class: "fent-flash" }));
     window.setTimeout(() => stage.querySelector(".fent-flash")?.remove(), 1400);
-    say(`${k.byName ?? "Somebody"} killed you with a deadly stab.`, "warn");
-    const stop = showDeathScreen(stage, "DU BLEV DRÆBT", 10, () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }); }, k.lost ? { lost: `-${k.lost} blod`, icon: BLOOD_ICON } : undefined);
+    say(k.shot ? `${k.byName ?? "Somebody"} shot you.` : `${k.byName ?? "Somebody"} killed you with a deadly stab.`, "warn");
+    const stop = showDeathScreen(stage, k.shot ? "DU BLEV SKUDT" : "DU BLEV DRÆBT", k.secs ?? 10, () => { dying = false; faintUntil = 0; ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", intro: true, force: true }); }, k.lost ? { lost: `-${k.lost} blod`, icon: BLOOD_ICON } : undefined);
     unsubs.push(stop);
   }
 
@@ -3231,7 +3255,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // a deadly stab on you (the server writes sendHome/<you>): you go down, your blood is on the floor, and you wake up in your room
     const homeFrom = serverNow();
     unsubs.push(onValue(ref(db, `sendHome/${me.uid}`), (s) => {
-      const k = s.val() as { at?: number; byName?: string; lost?: number } | null;
+      const k = s.val() as { at?: number; byName?: string; lost?: number; secs?: number; shot?: boolean } | null;
       if (!k || typeof k.at !== "number" || k.at < homeFrom - 5000 || k.at === lastKilledAt || disposed) return;
       lastKilledAt = k.at;
       startKilled(k);
@@ -3408,6 +3432,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           syringeFx.push({ uid: ev.from, start: performance.now(), burst: false });
           return;
         }
+        if (ev.type === "shot") { shotFx.push({ from: ev.from, to: ev.to, start: performance.now(), fired: false }); return; }
         if (ev.type !== "stab") return;
         stabFx.push({ from: ev.from, to: ev.to, start: performance.now(), impact: false, dropped: false });
         if (ev.to === me.uid && ev.from !== me.uid) {
@@ -3560,7 +3585,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (lookOf(p) === "blue" && !p.lying && !p.faint) yOff -= 14 + Math.sin(now / 260) * 3; // natryger: hovering over the ground
     const rtArm = sitting && roulette ? roulette.armFor(p.uid, now) : null; // the gun is in this hand (or at this head)
     const pkArm = !moving && !sitting && !em ? pokerFx.armFor(p.uid, now) : null; // a player who busted at poker puts the gun to their head
-    const actions = moving ? ["wlk"] : pkArm ? ["drk=9999"] : rtArm ? ["sit", rtArm === "raised" ? "drk=9999" : "crr=9999"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsCup(p) || holdsDice(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
+    const actions = moving ? ["wlk"] : pkArm ? ["drk=9999"] : rtArm ? ["sit", rtArm === "raised" ? "drk=9999" : "crr=9999"] : em?.def.actions ?? (!em && isSmoking(p) ? ["drk=9999"] : !em && (holdsKnife(p, now) || holdsGun(p) || holdsCup(p) || holdsDice(p)) ? ["crr=9999"] : sitting ? ["sit"] : ["std"]);
     const gesture = talking ? "spk" : em?.def.gesture ?? "std";
     const frame = moving
       ? Math.floor((now - p.stepStart) / (stepOf(p) / 4)) % 4
@@ -3636,6 +3661,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.drawImage(im, fx + hdx * scale - cw / 2, fy + hdy * scale - ch * 0.85, cw, ch);
     g.restore();
   }
+  /** the gun in your own hand: while it is selected in your pocket (the bounties show over the heads, tap somebody to shoot) */
+  const holdsGun = (p: Player): boolean => p.uid === me.uid && selectedDef()?.useOnPlayer === "shoot";
   const holdsKnife = (p: Player, now: number): boolean =>
     (p.uid === me.uid && (selectedDef()?.useOnPlayer === "stab" || !!mining)) || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
 
@@ -4064,6 +4091,121 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.restore();
   }
 
+  /** the gun in the hand (the same fist as the knife and the cup), pointing the way they face */
+  function drawGunInHand(fx: number, fy: number, dir: number): void {
+    const [hdx, hdy] = KNIFE_HAND[dir] ?? KNIFE_HAND[2];
+    const [ux, uy] = KNIFE_AXIS[dir] ?? KNIFE_AXIS[2];
+    drawGun(g, fx + hdx * scale, fy + hdy * scale, Math.atan2(uy, ux), scale * GUN_K * 1.8);
+  }
+  /** a wanted tag over a head: a black plate with the bounty in white (and how many hits there are) */
+  function drawBountyTag(amount: number, count: number, x: number, y: number, now: number): void {
+    const s = Math.max(1, scale);
+    const label = `${amount.toLocaleString("en-US")}${count > 1 ? ` ×${count}` : ""}`;
+    g.save();
+    g.font = `800 ${Math.round(11 * s)}px Verdana, sans-serif`;
+    const tw = g.measureText(label).width + 30 * s;
+    const bob = Math.sin(now / 300) * 1.5 * s;
+    g.fillStyle = "rgba(10,10,10,0.92)";
+    g.strokeStyle = "#f2f2f2"; g.lineWidth = Math.max(1, s * 0.8);
+    g.beginPath(); g.roundRect(x - tw / 2, y - 18 * s + bob, tw, 17 * s, 4 * s); g.fill(); g.stroke();
+    g.fillStyle = "#f2f2f2"; g.textAlign = "left"; g.textBaseline = "middle";
+    g.fillText("☠", x - tw / 2 + 4 * s, y - 9 * s + bob);
+    if (bloodImg.complete && bloodImg.naturalWidth) g.drawImage(bloodImg, x - tw / 2 + 17 * s, y - 15 * s + bob, 8 * s, 11 * s);
+    g.fillText(label, x - tw / 2 + 27 * s, y - 9 * s + bob);
+    g.restore();
+  }
+  /** the wanted board next to the hideout door: a black and white poster with the names and bounties (tap it for the whole list) */
+  function drawWantedBoard(f: { id?: string; x: number; y: number }, now: number): Hitbox | null {
+    const hot = !!f.id && hoverObj?.id === f.id;
+    const yA = f.y + 0.1, yB = f.y + 1.9;
+    const a = toScreen(iso(0, yA)), b = toScreen(iso(0, yB));
+    const W = 120, H = 80;
+    const top = 70 * scale; // (the height of the top edge above the wall's foot)
+    const ox = a.x, oy = a.y - top;
+    g.save();
+    g.translate(ox, oy);
+    g.transform((b.x - a.x) / W, (b.y - a.y) / W, 0, (top - 18 * scale) / H, 0, 0);
+    g.imageSmoothingEnabled = false;
+    g.fillStyle = "#0b0b0b"; g.fillRect(-3, -3, W + 6, H + 6);
+    g.fillStyle = hot ? "#3a3a3a" : "#262626"; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#f2f2f2"; g.fillRect(4, 4, W - 8, 18);
+    g.fillStyle = "#0b0b0b"; g.font = "900 15px Georgia, serif"; g.textBaseline = "middle"; g.textAlign = "center";
+    g.fillText("WANTED", W / 2, 13.5);
+    const per = [...bounties.entries()].sort((p, q) => q[1].amount - p[1].amount).slice(0, 4);
+    g.textAlign = "left";
+    per.forEach(([, bt], i) => {
+      const y = 26 + i * 13.5;
+      g.fillStyle = i % 2 ? "#dcdcdc" : "#f2f2f2"; g.fillRect(6, y, W - 12, 12);
+      g.fillStyle = "#0b0b0b"; g.font = "800 9px Verdana, sans-serif";
+      g.fillText(bt.name.length > 10 ? `${bt.name.slice(0, 9)}…` : bt.name, 9, y + 6.5);
+      g.textAlign = "right"; g.fillText(String(bt.amount), W - 9, y + 6.5); g.textAlign = "left";
+    });
+    if (!per.length) { g.fillStyle = "#bbb"; g.font = "italic 9px Georgia, serif"; g.textAlign = "center"; g.fillText("nobody is wanted", W / 2, 50); }
+    else if (bounties.size > 4) { g.fillStyle = "#bbb"; g.font = "700 8px Verdana, sans-serif"; g.textAlign = "center"; g.fillText(`+${bounties.size - 4} more`, W / 2, H - 4); }
+    g.restore();
+    void now;
+    const x0 = Math.min(a.x, b.x) - 3 * scale, x1 = Math.max(a.x, b.x) + 3 * scale;
+    const y0 = Math.min(a.y, b.y) - top - 3 * scale, y1 = Math.max(a.y, b.y) - 18 * scale + 3 * scale;
+    return { id: f.id ?? "", x0, y0, x1, y1, depth: f.x + f.y } as Hitbox;
+  }
+  /** the shot: the shooter's gun comes up at the target, the flash, the bullet and the hit (everybody in the room sees it) */
+  function drawShots(now: number): void {
+    for (const fx of shotFx) {
+      const a = players.get(fx.from), b = players.get(fx.to);
+      if (!a || !b) continue;
+      const t = now - fx.start;
+      if (t < 0 || t > SHOT_MS) continue;
+      const fa = feetOf(a, now), fb = feetOf(b, now);
+      const hand = { x: fa.x + (KNIFE_HAND[a.dir]?.[0] ?? 14) * scale, y: fa.y + (KNIFE_HAND[a.dir]?.[1] ?? -24) * scale };
+      const to = { x: fb.x, y: fb.y - 46 * scale };
+      const ang = Math.atan2(to.y - hand.y, to.x - hand.x);
+      const r = drawGun(g, hand.x, hand.y, ang, scale * GUN_K * 1.8);
+      if (t < 160) drawMuzzleFlash(g, r.muzzle, 1 - t / 160, scale * 0.9);
+      if (t >= 40 && t < 260) { // the bullet: a short bright streak from the muzzle to the target
+        const k = Math.min(1, (t - 40) / 160);
+        const bx = r.muzzle.x + (to.x - r.muzzle.x) * k, by = r.muzzle.y + (to.y - r.muzzle.y) * k;
+        const tx = r.muzzle.x + (to.x - r.muzzle.x) * Math.max(0, k - 0.25), ty = r.muzzle.y + (to.y - r.muzzle.y) * Math.max(0, k - 0.25);
+        g.save(); g.strokeStyle = "#fff6c0"; g.lineWidth = Math.max(2, scale * 2); g.beginPath(); g.moveTo(tx, ty); g.lineTo(bx, by); g.stroke(); g.restore();
+      }
+      if (t >= 200 && t < 420) { // the hit: a red flash on the target
+        g.save(); g.globalAlpha = 0.7 * (1 - (t - 200) / 220); g.fillStyle = "#ff2a1a"; g.beginPath(); g.arc(to.x, to.y, (10 + (t - 200) / 14) * scale, 0, Math.PI * 2); g.fill(); g.restore();
+      }
+    }
+  }
+
+  function closeShootBox(): void { shootBox?.remove(); shootBox = null; shootUid = ""; }
+  /** Tapping somebody with the gun in your hand: a box with their name (so you shoot the right one), the bounty if there is one, and Shoot or Cancel. */
+  function openShootBox(uid: string): void {
+    const target = players.get(uid);
+    const slot = selectedSlot;
+    if (!target || slot === null || me.inventory[slot]?.item !== "gun") return;
+    closeShootBox();
+    shootUid = uid;
+    const bt = bounties.get(uid);
+    let busy = false;
+    const yes = h("button", { class: "yes", onclick: async () => {
+      if (busy) return;
+      busy = true; yes.setAttribute("disabled", "true");
+      try {
+        const r = await gunShootCall(me, roomId, uid, slot);
+        closeShootBox(); clearSelection(); panel.refresh(); ctx.refreshHeader();
+        if (r.bounty > 0) {
+          const f0 = mine() ? feetOf(mine()!, performance.now()) : null;
+          if (f0) floaters.push({ text: `+${r.bounty}`, x: f0.x, y: f0.y - 78 * scale, born: performance.now(), color: "#9dff9a", icon: bloodImg, life: 3200, size: 2 });
+          say(`You shot ${r.name} and collected the ${r.bounty} on their head.`);
+        } else say(`You shot ${r.name}. Nothing on their head: they are down for ${r.secs} seconds.`);
+      } catch (err) { closeShootBox(); say((err as Error).message || "The gun jams.", "warn"); }
+    } }, "Shoot");
+    shootBox = h("div", { class: "shoot-box" },
+      h("div", { class: "shoot-title" }, "Shoot"),
+      h("div", { class: "shoot-name" }, target.name),
+      bt ? h("div", { class: "shoot-bounty" }, h("img", { src: BLOOD_ICON, alt: "" }), `${bt.amount.toLocaleString("en-US")}${bt.count > 1 ? ` (${bt.count} hits)` : ""}`) : h("div", { class: "shoot-none" }, "Nothing on their head. They only go down for 10 seconds."),
+      h("div", { class: "shoot-note" }, "The gun has one bullet. It is gone after the shot."),
+      h("div", { class: "shoot-row" }, h("button", { class: "no", onclick: () => closeShootBox() }, "Cancel"), yes));
+    stage.append(shootBox);
+  }
+  function openWanted(): void { if (!wantedApi) wantedApi = openWantedBoard(document.body, () => { wantedApi = null; }); }
+
   function drawPlanter(f: { id?: string; kind: string; x: number; y: number; dir?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string } }, now: number): Hitbox | null {
     const k = FURNI_KINDS[f.kind];
     const potN = k.nitro ? nitroIfReady(k.nitro) : undefined;
@@ -4404,6 +4546,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number; auto?: boolean; up?: boolean; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
+    if (f.kind === "wantedboard") return drawWantedBoard(f, now);
     if (f.up && f.kind === "f_mixer") f = { ...f, kind: "f_mixer_up" }; // (a mixer with a chip is drawn green)
     const k = FURNI_KINDS[f.kind];
     if (k.opens === "mixer" && f.mix) return drawMixing(f, now);
@@ -4680,6 +4823,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const flashAmount = (t: number) => (t < 0.3 ? 0 : t < 0.9 ? Math.max(0, 0.65 - (t - 0.3) * 1.0) : 0);
 
   function drawEffects(now: number): void {
+    drawShots(now);
     const chest = (p: Player): Pt => {
       const f = feetOf(p, now);
       return { x: f.x, y: f.y - 46 * scale };
@@ -4820,6 +4964,17 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function updateEffects(now: number): void {
+    for (let i = shotFx.length - 1; i >= 0; i--) {
+      const fx = shotFx[i];
+      if (!fx.fired) {
+        fx.fired = true;
+        if (active) playBang(0.75);
+        const b = players.get(fx.to);
+        if (b) { const f = feetOf(b, now); for (let k = 0; k < 10; k++) { const ang = -Math.PI / 2 + (Math.random() - 0.5) * 2.6; const sp = 0.05 + Math.random() * 0.1; particles.push({ x: f.x, y: f.y - 46 * scale, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, born: now + 200, life: 700 + Math.random() * 300 }); } }
+      }
+      if (now - fx.start > SHOT_MS + 200) shotFx.splice(i, 1);
+    }
+    if (shootBox && (!players.has(shootUid) || selectedDef()?.useOnPlayer !== "shoot")) closeShootBox(); // (they left, or you put the gun away)
     for (let i = stabFx.length - 1; i >= 0; i--) {
       const fx = stabFx[i];
       const t = (now - fx.start) / STAB_MS;
@@ -5063,7 +5218,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -5535,7 +5690,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           const knifeBehind = knifeOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
           const skinKnife = p.uid === me.uid && selectedDef()?.id === "knife_tt"; // (the karambit skin: you see it in your own hand)
           if (knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, skinKnife);
-          const cupOut = !knifeOut && !isMoving(p, now) && !p.emote && !smoking && (holdsCup(p) || holdsDice(p));
+          const gunOut = !knifeOut && !isMoving(p, now) && !p.emote && !smoking && holdsGun(p);
+          const gunBehind = gunOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
+          if (gunBehind) drawGunInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
+          const cupOut = !knifeOut && !gunOut && !isMoving(p, now) && !p.emote && !smoking && (holdsCup(p) || holdsDice(p));
           const heldId = holdsCup(p) ? "codeine" : "dice", heldSize = holdsCup(p) ? 26 : 18;
           const cupBehind = cupOut && (p.dir === 6 || p.dir === 7 || p.dir === 0);
           if (cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, heldId, heldSize);
@@ -5581,9 +5739,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (smoking) drawCigarette(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, now, p.smokeKind);
           if (smoking && p.smokeKind === "hashjoint") drawHearts(feet.x + lunge.x, feet.y + lunge.y + lift, now); // the hash joint: hearts float up over the head
           if (knifeOut && !knifeBehind) drawKnifeInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, skinKnife);
+          if (gunOut && !gunBehind) drawGunInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir);
           if (cupOut && !cupBehind) drawCupInHand(feet.x + lunge.x, feet.y + lunge.y + lift, p.dir, heldId, heldSize);
           // name plate (highlighted while it's a valid stab target)
-          const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && selectedDef()?.useOnPlayer === "stab";
+          const targeted = hoverPlayer?.uid === p.uid && p.uid !== me.uid && (selectedDef()?.useOnPlayer === "stab" || selectedDef()?.useOnPlayer === "shoot");
           g.font = `${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
           const shownLabel = p.chud && serverNow() < p.chud ? "chud" : p.name; // the plain chud joint: your name reads "chud" for a while
           const tw = g.measureText(shownLabel).width + 10;
@@ -5596,6 +5755,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.textAlign = "center";
           g.fillText(shownLabel, feet.x, feet.y + 9 * scale);
           if (p.ghost && roulette) { const gl = roulette.ghostLabel(p.uid); if (gl) drawGhostTag(gl, feet.x, feet.y + lift - (FEET_Y + 4) * scale); }
+          if (p.uid !== me.uid && !p.npc && selectedDef()?.useOnPlayer === "shoot") { const bt = bounties.get(p.uid); if (bt) drawBountyTag(bt.amount, bt.count, feet.x, feet.y + lift - (FEET_Y + 12) * scale, now); } // (holding a gun: who has a price on their head)
           if (glowing) { // a little arrow bobbing over his head
             g.fillStyle = "#ffd54a";
             g.font = `${Math.round(16 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
@@ -5765,6 +5925,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     dropConfirmApi?.close();
     pokerApi?.close();
     bjApi?.close();
+    wantedApi?.close();
+    closeShootBox();
+    stopHits();
     stopPokerSeat();
     stopBjSeat();
     pokerFx.dispose();
