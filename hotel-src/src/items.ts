@@ -417,7 +417,7 @@ export const ITEMS: Record<string, ItemDef> = {
   gun: {
     id: "gun",
     name: "Gun",
-    examine: "A revolver with one bullet. Tap it to hold it: the bounties on people's heads show over them. Tap a player and confirm to shoot (only the name you picked): a bounty is yours, and they drop blood and are dead for a minute. Without a bounty they are dead for 10 seconds. It shoots once and is gone. Bagmand sells one a visit, and the bins and the boxes give them now and then.",
+    examine: "A revolver with one bullet. Tap it to hold it: the bounties on people's heads show over them. Tap a player and confirm to shoot (only the name you picked): a bounty is yours, and they drop blood and are dead for a minute. Without a bounty they are dead for 10 seconds. It shoots once and is gone. Bagmand sells two a visit, and the bins and the boxes give them now and then.",
     icon: assetUrl("items/gun.png"),
     useOnPlayer: "shoot",
   },
@@ -467,7 +467,7 @@ ITEMS.knife_tt = { id: "knife_tt", name: "Karambit | Tiger Tooth", examine: "A k
 
 // mystery boxes, keys and unusuals (see src/shared/cases.ts)
 ITEMS.mysterycase = { id: "mysterycase", name: "Mystery box", examine: "A locked crate. Tap it to open it with a key: you never know what is inside. Boxes turn up in the bins.", icon: assetUrl("items/mysterycase.png"), useSelf: "open" };
-ITEMS.casekey = { id: "casekey", name: "Box key", examine: "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (2 for 25 kr). One key opens one box.", icon: assetUrl("items/casekey.png"), useSelf: "open" };
+ITEMS.casekey = { id: "casekey", name: "Box key", examine: "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (5 for 25 kr). One key opens one box.", icon: assetUrl("items/casekey.png"), useSelf: "open" };
 for (const u of UNUSUALS) ITEMS[u.id] = { id: u.id, name: `Unusual ${u.name}`, examine: `An unusual: a hat with a particle effect of its own. Tap it to wear it. You can put it back in your inventory from the wardrobe in your room.`, icon: assetUrl(`items/${u.id}.svg`), useSelf: "wear" };
 
 // bagmand's things (see src/shared/bagmand.ts): the poppy and what it becomes, his blue weed and the special weeds rolled from them
@@ -479,7 +479,7 @@ const bagmandItems: Array<[string, string, string, Partial<ItemDef>]> = [
   ["percs", "Percs", "Opium pressed into a pill. Swallow it: a purple haze, double speed and triple blood for a stab, for 3 minutes. Bagmand pays 130.", { useSelf: "consume" }],
   ["twocb", "2cb", "Opium and a shroom, ground together. Swallow it: the colours shift, every door is open and you run twice as fast, for 3 minutes. Mix it into weed for pink weed. Bagmand pays 150.", { useSelf: "consume" }],
   ["fentcn", "芬太尼", "Opium cut with fentanyl. Swallow it: 10 seconds at 10 times your speed, spinning, and after that every drug at once. Bagmand pays 300.", { useSelf: "consume" }],
-  ["caliweed", "Cali weed", "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 225.", {}],
+  ["caliweed", "Cali weed", "Weed soaked in opium: it shines gold. Roll it in joint paper or a blunt wrap. Mix it with natryger for a loudpack. Bagmand pays 255.", {}],
   ["pinkweed", "Pink weed", "2cb crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 125.", {}],
   ["brownweed", "Brown weed", "Heroin crumbled into weed. Roll it in joint paper or a blunt wrap. Bagmand pays 110.", {}],
   ["natryger", "Bagmands natryger", "Bagmand's own blue weed. You have to roll it in joint paper or a blunt wrap to use it. Smoked, it lifts you off the ground in a blue glow and you run twice as fast for 4 minutes. Mix it with cali weed for a loudpack.", {}],

@@ -131,7 +131,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
       h("div", { class: "ht-bounty" }, h("span", {}, `The bounty (${HIT_MIN} to ${HIT_MAX})`), big, slider),
       h("button", { class: "ht-go", disabled: cant, onclick: () => void act(async () => { const t = hitTarget!; await hitPlace(me, roomId, t.uid, hitAmount); hitTarget = null; return `The hit on ${t.name} is out: ${hitAmount} blood.`; }) },
         hitTarget ? `Put out a hit on ${hitTarget.name}` : "Pick somebody first"),
-      h("div", { class: "hc-foot" }, `The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 12 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells one a visit) can collect it.`));
+      h("div", { class: "hc-foot" }, `The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 3 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells one a visit) can collect it.`));
     const per = new Map<string, { name: string; amount: number }>();
     for (const x of openHits) { const c = per.get(x.target); if (!c || x.amount > c.amount) per.set(x.target, { name: x.targetName, amount: x.amount }); }
     return [

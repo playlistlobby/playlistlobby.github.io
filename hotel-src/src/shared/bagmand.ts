@@ -17,8 +17,7 @@ export const BAGMAND_BUY: Record<string, { price: number; stock: number | null; 
   poppyseed: { price: 50, stock: 5, label: "Poppy seed" },
   natryger: { price: 25, stock: null, label: "Bagmands natryger" },
   syringe: { price: 20, stock: null, label: "Syringe" },
-  dice: { price: 500, stock: null, label: "Dice" }, // (they were sold at the pay2win machine before)
-  gun: { price: 250, stock: 1, label: "Gun" }, // (one use: it shoots once and is gone; one per player per visit)
+  gun: { price: 250, stock: 2, label: "Gun" }, // (one use: it shoots once and is gone; two per player per visit)
 };
 /**
  * What he pays (blood each), for only the things from him: opium from the poppies and what is mixed from it. The prices are about 1.6x what went into it
@@ -26,16 +25,16 @@ export const BAGMAND_BUY: Record<string, { price: number; stock: number | null; 
  * way to sell his things to anybody else. Weak opium (a poppy that was never watered) is worth half.
  */
 export const BAGMAND_SELL: Record<string, number> = {
-  opium: 80,
-  heroin: 130,
-  ketamine: 140,
-  percs: 130,
-  twocb: 150,
-  caliweed: 225,
-  fentcn: 300,
-  pinkweed: 125,
-  brownweed: 110,
-  loudpack: 265,
+  opium: 110,
+  heroin: 160,
+  ketamine: 170,
+  percs: 160,
+  twocb: 180,
+  caliweed: 255,
+  fentcn: 330,
+  pinkweed: 155,
+  brownweed: 140,
+  loudpack: 295,
   // what he sells he buys back for 90% (nothing is gained by buying his natryger and bringing it back; rolled into a joint or a blunt he does not buy it at all)
   natryger: Math.floor(BAGMAND_BUY.natryger.price * 0.9),
 };

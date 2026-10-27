@@ -90,7 +90,7 @@ export const DEFAULT_ITEM_PRICE = 5;
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cigarette: { on: true, price: 2 },
   pill: { on: true, price: 3 },
-  casekey: { on: true, price: 200 }, // a key for a mystery box (6ixty sells them; the Ducky machine sells 2 for 25 kr)
+  casekey: { on: true, price: 250 }, // a key for a mystery box (6ixty sells them; the Ducky machine sells 5 for 25 kr)
   cd_blodig: { on: true, price: 5 }, // the Blodig oktober CD, sold at the record player in the shop: one per player (see buyRecord)
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
   wood: { on: true, price: WOOD_PRICE }, // sold by 6ixty in the mines (see buySixty)

@@ -2,12 +2,12 @@
 // (bagmand sells it, the bins and the boxes give it). Pure rules shared by the browser and the server (server/src/actions/hits.ts does the placing and the shooting).
 //   hits/<id>          an open hit: { target, targetName, amount, by, byName, hideout, hideoutName, at } (readable by everybody: the wanted board and the heads show it; written only by the server)
 //   hitLog/<target>    when hits were put on this player (the last few): a player can be the target of 3 hits a day
-//   hitCool/<owner>    when a hideout last put a hit on somebody: a hideout can put one hit every 12 hours
+//   hitCool/<owner>    when a hideout last put a hit on somebody: a hideout can put one hit every 3 hours
 
 export const HIT_MIN = 500;
 export const HIT_MAX = 1500;
 /** a hideout may put one hit on somebody's head this often */
-export const HIT_HIDEOUT_COOLDOWN_MS = 12 * 3_600_000;
+export const HIT_HIDEOUT_COOLDOWN_MS = 3 * 3_600_000;
 /** a player can be the target of this many hits in a day (24 hours) */
 export const HIT_PERSON_MAX = 3;
 export const HIT_PERSON_WINDOW_MS = 24 * 3_600_000;

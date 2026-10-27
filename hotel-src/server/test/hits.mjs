@@ -1,4 +1,4 @@
-// Hit and gun tests: putting a hit on somebody from a hideout (500-1500, once per 12 hours per hideout, 3 a day per person), the gun (bagmand sells one a visit), and shooting:
+// Hit and gun tests: putting a hit on somebody from a hideout (500-1500, once per 3 hours per hideout, 3 a day per person), the gun (bagmand sells two a visit), and shooting:
 // a bounty is claimed, the one who is shot drops blood and is dead for a minute (10 seconds without a bounty), the gun is always spent
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: node test/hits.mjs (server/)
 const DB = "http://127.0.0.1:9000";
@@ -76,12 +76,12 @@ ok("the owner puts 600 on the rich one", h1);
 check("their blood is 4400", (await bloodOf(host)) === 4400);
 let list = await hits();
 check("the hit is open for everybody to read", list.length === 1 && list[0].target === rich.uid && list[0].amount === 600 && list[0].targetName === "t_ht_rich" && list[0].hideoutName === "The Syndicate", JSON.stringify(list));
-bad("one hit per hideout per 12 hours", await place(mem, mid, 500));
-await owner("PUT", `hitCool/${host.uid}`, Date.now() - 13 * 3_600_000);
-ok("12 hours later the hideout can again (a member)", await place(mem, rich, 1500));
+bad("one hit per hideout per 3 hours", await place(mem, mid, 500));
+await owner("PUT", `hitCool/${host.uid}`, Date.now() - 4 * 3_600_000);
+ok("3 hours later the hideout can again (a member)", await place(mem, rich, 1500));
 list = await hits();
 check("two hits on the rich one", list.filter((h) => h.target === rich.uid).length === 2);
-await owner("PUT", `hitCool/${host.uid}`, Date.now() - 13 * 3_600_000);
+await owner("PUT", `hitCool/${host.uid}`, Date.now() - 4 * 3_600_000);
 const now = Date.now();
 await owner("PUT", `hitLog/${mid.uid}`, { a: now - 1000, b: now - 2000, c: now - 3000 });
 bad("a player can be hit 3 times a day, not more", await place(host, mid, 500));
@@ -98,7 +98,8 @@ const buy = await act(stranger, "bagmandBuy", { item: "gun", qty: 1 });
 if (!buy.ok && /here|stand|near|far/i.test(buy.error ?? "")) console.log("   (bagmand: " + buy.error + ")");
 check("bagmand sells a gun for 250", buy.ok && (await bloodOf(stranger)) === 750, JSON.stringify(buy).slice(0, 200));
 check("and it is in their pocket", buy.ok && hasItem((await act(stranger, "sync")).state, "gun"));
-if (buy.ok) bad("only one per player per visit", await act(stranger, "bagmandBuy", { item: "gun", qty: 1 }));
+if (buy.ok) ok("a second gun is allowed", await act(stranger, "bagmandBuy", { item: "gun", qty: 1 }));
+if (buy.ok) bad("only two per player per visit", await act(stranger, "bagmandBuy", { item: "gun", qty: 1 }));
 await owner("DELETE", "bagmand/force");
 await owner("PUT", `users/${stranger.uid}/inventory`, {});
 await owner("DELETE", `rooms/lobby/players/${stranger.uid}`);

@@ -8,9 +8,9 @@ import { RAFFLE_POOL } from "./raffle";
 
 export const CASE_ITEM = "mysterycase";
 export const KEY_ITEM = "casekey";
-/** what a key costs from 6ixty (blood), and what the Ducky machine sells (2 keys for 25 kr) */
-export const CASE_KEY_PRICE = 200;
-export const KEYS_PACK = { qty: 2, ore: 2500 };
+/** what a key costs from 6ixty (blood), and what the Ducky machine sells (5 keys for 25 kr) */
+export const CASE_KEY_PRICE = 250;
+export const KEYS_PACK = { qty: 5, ore: 2500 };
 /** the chance (in percent) that a search of a bin finds a box */
 export const CASE_BIN_CHANCE = 5;
 

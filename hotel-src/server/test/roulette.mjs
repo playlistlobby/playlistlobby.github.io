@@ -57,7 +57,7 @@ console.log("--- roulette: sitting down and the stake");
   const away = await fresh("t_rl_away", { blood: 100 }); await act(away, "sync");
   bad("not even in the basement", await act(away, "rouletteOpen", { stake: 10 }));
   bad("0 blood", await act(a, "rouletteOpen", { stake: 0 }));
-  bad("501 blood is too much", await act(a, "rouletteOpen", { stake: 501 }));
+  bad("1001 blood is too much", await act(a, "rouletteOpen", { stake: 1001 }));
   bad("not a number", await act(a, "rouletteOpen", { stake: "lots" }));
   bad("more than you have", await act(c3, "rouletteOpen", { stake: 10 }));
   ok("open with 25", await act(a, "rouletteOpen", { stake: 25 }));

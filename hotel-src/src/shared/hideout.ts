@@ -20,14 +20,14 @@ export const HIDEOUT_UPGRADE_PRICES = [2000, 4000];
 export const HIDEOUT_SIZES = [14, 17, 20];
 /** how many pieces fit in a hideout, by level */
 export const HIDEOUT_MAX_FURNI = [120, 160, 220];
-export const HIDEOUT_MAX_MEMBERS = 10;
+export const HIDEOUT_MAX_MEMBERS = 7;
 /** changing the floor, walls or rug costs 15 times what it costs in a player room, per part */
 export const HIDEOUT_RECOLOR_PRICE = RECOLOR_PRICE * 15;
 export const HIDEOUT_NAME_MAX = 28;
 /** the list of hideouts everybody can see (at the door): a line about the hideout, and paying to be shown first for a while */
 export const HIDEOUT_DESC_MAX = 80;
-export const HIDEOUT_BOOST_PRICE = 50;
-export const HIDEOUT_BOOST_MS = 60 * 60 * 1000;
+export const HIDEOUT_BOOST_PRICE = 500;
+export const HIDEOUT_BOOST_MS = 6 * 60 * 60 * 1000;
 /** what the public list says about a hideout (written by the server to hideoutList/<owner>) */
 export interface HideoutListing { name: string; desc: string; ownerName: string; members: number; boostUntil: number; /** anybody can walk in (no knocking) */ open: boolean }
 /** the order of the list: boosted ones first (the latest boost on top), then the bigger crowds */

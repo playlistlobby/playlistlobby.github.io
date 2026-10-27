@@ -2,7 +2,7 @@
 // Pure: the browser and the server both use it.
 
 /** the most blood one player can put on the table (both put the same amount down) */
-export const ROULETTE_MAX = 500;
+export const ROULETTE_MAX = 1000;
 /** one bullet in a revolver with six chambers: every pull is a roll, so the odds grow as the chambers run out (1 in 6, 1 in 5 ... a sure thing on the sixth) */
 export const ROULETTE_CHAMBERS = 6;
 /** how long a player may sit with the gun before the server pulls the trigger for them */
