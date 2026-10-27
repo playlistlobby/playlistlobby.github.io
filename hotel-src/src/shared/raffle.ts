@@ -26,6 +26,7 @@ export const RAFFLE_EFFECTS: Record<string, RareEffect> = {
   f_raresnow: "snow", // an icy blue glow and snow that drifts down around it
   f_rareplatform: "ring", // light rings that spread over the floor around it
   f_rarelamp: "embers", // a fire glow and embers that rise
+  f_rarepumpkin: "embers", // the pumpkin dragon breathes embers too
 };
 export const RAFFLE_POOL: string[] = Object.keys(RAFFLE_EFFECTS);
 

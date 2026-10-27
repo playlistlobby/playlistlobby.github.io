@@ -85,11 +85,21 @@ export const SHOP_PIECES: ShopPiece[] = [
   { id: "coffin", label: "Black coffin", icon: "⚰️", price: 66, w: 1, h: 3, height: 35, states: [0, 1, 2, 3, 4, 5], showDir: 2 },
   { id: "cratechairlight", label: "Crate chair", icon: "📦", price: 45, w: 1, h: 1, height: 38, seat: true, seatHeight: 14, showDir: 2 },
   { id: "makeshifttable", label: "Makeshift table", icon: "🕯️", price: 54, w: 2, h: 1, height: 36, surface: 36, showDir: 2 },
+  // ---- the third batch (the circus, the cat cafe, Cefalu, a fluffy thing, the bathroom) ----
+  { id: "cattree", label: "Cat tree", icon: "🐈", price: 66, w: 1, h: 1, height: 100, states: [0, 1, 2], showDir: 2 },
+  { id: "cefalugate", label: "Cefalu gate", icon: "⛩️", price: 60, w: 2, h: 1, height: 90, states: [0, 1], showDir: 2 },
+  { id: "cefaluwall", label: "Cefalu wall", icon: "🧱", price: 51, w: 2, h: 1, height: 70, states: [0, 1, 2, 3], showDir: 2 },
+  { id: "gymnastgroup", label: "Gymnast group", icon: "🤸", price: 57, w: 1, h: 1, height: 70, showDir: 2 },
+  { id: "acrobat", label: "Acrobat", icon: "🤹", price: 54, w: 1, h: 1, height: 70, showDir: 2 },
+  { id: "fluffby", label: "Fluffby", icon: "🦄", price: 45, w: 1, h: 1, height: 40, small: true, showDir: 2 },
+  { id: "toiletseat", label: "Marble toilet", icon: "🚽", price: 48, w: 1, h: 1, height: 40, seat: true, seatHeight: 12, states: [0, 1, 2, 3], showDir: 2 },
+  { id: "toiletpaper", label: "Toilet paper", icon: "🧻", price: 30, w: 1, h: 2, height: 3, flat: true, showDir: 2 },
   // ---- the rares: only the raffle in the shop room gives them away (see src/shared/raffle.ts) ----
   { id: "rarecloud", label: "Cotton cloud", icon: "☁️", price: 500, w: 1, h: 1, height: 40, rare: true, showDir: 2 },
   { id: "raresnow", label: "Snow drift", icon: "❄️", price: 500, w: 1, h: 1, height: 70, rare: true, showDir: 2 },
   { id: "rareplatform", label: "Frost platform", icon: "🔮", price: 500, w: 2, h: 2, height: 6, flat: true, rare: true, showDir: 2 },
   { id: "rarelamp", label: "Dragon lamp", icon: "🐉", price: 500, w: 1, h: 1, height: 60, states: [0, 1], defaultState: 1, rare: true, showDir: 4 },
+  { id: "rarepumpkin", label: "Pumpkin dragon", icon: "🎃", price: 500, w: 1, h: 1, height: 60, rare: true, showDir: 2 },
 ];
 export const SHOP_KIND_PREFIX = "f_";
 
