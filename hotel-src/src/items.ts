@@ -4,6 +4,7 @@ import { loadNitro } from "./nitro";
 import { UNUSUALS } from "./shared/cases";
 import { onPetSheet, petIconUrl } from "./pets";
 import { parsePetItem, petLabel } from "./shared/petItems";
+import { canonFx, FX_LABELS } from "./shared/unusualFx";
 import { DISABLED_ITEMS, isLaced, ITEM_ID_LIST, parseInventoryWith, unlaced } from "./shared/items";
 export {
   combine, DEFAULT_ITEM_PRICE, DISABLED_ITEMS, emptyInventory, findSlot, findSlotAny, GROW_MS, growMsOf, INV_COLS, INV_SIZE, isFurniItem, ITEM_DEFAULTS,
@@ -518,7 +519,7 @@ export function itemDef(id: string): ItemDef | undefined {
     if (!petIconWatch) { petIconWatch = true; onPetSheet(() => furniIconListeners.forEach((l) => l())); } // (the pictures are drawn when their sheets have loaded)
     const kind = pet.fx ? `Unusual ${petLabel(pet.type)}` : petLabel(pet.type);
     return {
-      id, name: pet.fx ? `${kind} (${pet.fx})` : kind,
+      id, name: pet.fx ? `${kind} (${FX_LABELS[canonFx(pet.fx)]})` : kind,
       examine: "Click it to pick it up.",
       icon: petIconUrl(pet.type, pet.palette), useSelf: "pet",
     };

@@ -58,18 +58,18 @@ export const CASE_RARE_FURNI: string[] = RAFFLE_POOL;
 export type { UnusualEffect };
 export interface Unusual { id: string; name: string; /** the figure part it puts on the head (a hat or a headpiece) */ part: string; effect: UnusualEffect; color: string }
 export const UNUSUALS: Unusual[] = [
-  { id: "unusual_flame", name: "Burning Icarus Crown", part: "ha-97015", effect: "flames", color: "#ff7a1a" },
-  { id: "unusual_star", name: "Starry Loyalty Crown", part: "ha-97058", effect: "stars", color: "#ffd23a" },
+  { id: "unusual_flame", name: "Totem Eagle Crown", part: "ha-97015", effect: "totem", color: "#ffb43a" },
+  { id: "unusual_star", name: "Untouchable Crown", part: "ha-97058", effect: "untouchable", color: "#ffd23a" },
   { id: "unusual_heart", name: "Lovestruck Cat Hat", part: "ha-97013", effect: "hearts", color: "#ff5c9a" },
-  { id: "unusual_snow", name: "Frosted Lion Mask", part: "ha-97057", effect: "snow", color: "#bfe6ff" },
-  { id: "unusual_bubble", name: "Bubbly Shark Head", part: "ha-97016", effect: "bubbles", color: "#5fd0e8" },
-  { id: "unusual_bolt", name: "Electric Devil Horns", part: "he-97008", effect: "bolts", color: "#7fb6ff" },
-  { id: "unusual_rainbow", name: "Rainbow Bear", part: "ha-97014", effect: "rainbow", color: "#c45bff" },
-  { id: "unusual_ember", name: "Smoldering Gold Bandana", part: "ha-97055", effect: "embers", color: "#e8431f" },
-  { id: "unusual_galaxy", name: "Cosmic Halo", part: "he-97007", effect: "galaxy", color: "#8f6bff" },
-  { id: "unusual_sakura", name: "Blossom Frog Hat", part: "ha-97056", effect: "sakura", color: "#ff9fc4" },
-  { id: "unusual_toxic", name: "Radioactive Watermelon", part: "ha-97059", effect: "toxic", color: "#6bff3a" },
-  { id: "unusual_sparks", name: "Sparkler Headband", part: "he-97036", effect: "sparks", color: "#ffd23a" },
+  { id: "unusual_snow", name: "Snow Warrior Lion Mask", part: "ha-97057", effect: "snowwar", color: "#7fb6ff" },
+  { id: "unusual_bubble", name: "Stormy Shark Head", part: "ha-97016", effect: "raincloud", color: "#9aa3ad" },
+  { id: "unusual_bolt", name: "Electric Devil Horns", part: "he-97008", effect: "lightning", color: "#5fd0e8" },
+  { id: "unusual_rainbow", name: "Easter Chick Bear", part: "ha-97014", effect: "chicks", color: "#ffd84a" },
+  { id: "unusual_ember", name: "Mystic Gold Bandana", part: "ha-97055", effect: "mystic", color: "#8f6bff" },
+  { id: "unusual_galaxy", name: "Firefly Halo", part: "he-97007", effect: "fireflies", color: "#e8c24a" },
+  { id: "unusual_sakura", name: "Completely Confused Frog Hat", part: "ha-97056", effect: "confused", color: "#c9ced6" },
+  { id: "unusual_toxic", name: "Buzzing Watermelon", part: "ha-97059", effect: "flies", color: "#6bff3a" },
+  { id: "unusual_sparks", name: "Thumbs Up Headband", part: "he-97036", effect: "thumbsup", color: "#ffb43a" },
 ];
 /** the unusual pets: any pet, in any of its colours, with any of the particle effects */
 export function randomUnusualPet(rand: (n: number) => number): string {
