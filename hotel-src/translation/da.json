@@ -12460,18 +12460,18 @@
   "where": "src/shared/hideout.ts"
  },
  "N1961": {
-  "en": "Mixer upgrade chip",
-  "da": "Mixer-opgraderingschip",
+  "en": "Mixer upgrade",
+  "da": "Mixer-opgradering",
   "where": "src/shared/hideout.ts"
  },
  "N1962": {
-  "en": "Put it on a growing kit and that plant never needs water again. 100 each for the first 5, then 200.",
-  "da": "Sæt den på en dyrkningskasse, og planten får aldrig brug for vand igen. 100 stykket for de første 5, derefter 200.",
+  "en": "Put it on a growing kit and that plant never needs water again. 250 each.",
+  "da": "Sæt den på en dyrkningskasse, og planten får aldrig brug for vand igen. 250 stykket.",
   "where": "src/shared/hideout.ts"
  },
  "N1963": {
-  "en": "Put it in a mixer: it mixes 25% faster, and turns green. 200 for the first, 300 for every one after.",
-  "da": "Sæt den i en mixer: den mixer 25% hurtigere og bliver grøn. 200 for den første, 300 for hver efter.",
+  "en": "Put it in a mixer: it mixes 25% faster, and turns green. 400 each.",
+  "da": "Sæt den i en mixer: den mixer 25% hurtigere og bliver grøn. 400 stykket.",
   "where": "src/shared/hideout.ts"
  },
  "N1964": {

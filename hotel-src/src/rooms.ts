@@ -127,7 +127,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // posters: a frame on the wall; the picture inside is the player's own (chosen when it is hung). The one in the shop room is for sale.
   f_poster: { id: "f_poster", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: true, nitro: "furni/poster.nitro", rotatable: true, flat: true, wall: true, poster: true, nudge: { x: 0, y: -52 } },
   // the notice board by the hideouts: who has blood on their head (drawn by the room itself: names and bounties, black and white); tap it for the list
-  wantedboard: { id: "wantedboard", label: "Wanted board", icon: "📋", w: 2, h: 1, height: 60, color: "#222222", placeable: false, rotatable: true, fixed: true, flat: true, wall: true, opens: "hits" },
+  wantedboard: { id: "wantedboard", label: "Wanted board", icon: "📋", w: 1, h: 1, height: 60, color: "#777777", placeable: false, nitro: "derived:wanted_board", rotatable: true, flat: true, wall: true, wallArt: { left: 0, back: 2 }, opens: "hits" },
   shopposter: { id: "shopposter", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: false, nitro: "furni/poster.nitro", rotatable: true, fixed: true, flat: true, wall: true, poster: true, opens: "poster", nudge: { x: 0, y: -52 } },
   // the record player on the counter at the left of the shop room: the CDs are sold here
   recordplayer: { id: "recordplayer", label: "Record player", icon: "💿", w: 1, h: 1, height: 30, color: "#3a3a44", placeable: false, nitro: "furni/recordplayer.nitro", rotatable: true, fixed: true, opens: "records", nudge: { x: 0, y: -34 } },

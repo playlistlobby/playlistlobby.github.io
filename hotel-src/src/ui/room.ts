@@ -16,7 +16,7 @@ import {
   update,
   Unsubscribe,
 } from "firebase/database";
-import { db } from "../firebase";
+import { db, useEmulator } from "../firebase";
 import { getCached, renderAvatar } from "../avatarService";
 import { plantThirsty, plantWatered } from "../db";
 import { giveCommand } from "../db";
@@ -3536,8 +3536,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       // TEMP: /give <item> [amount] [ass]: any item by its id or its name (admin only)
       const giveM = /^\/give(?:\s+(.+))?$/i.exec(text);
       if (giveM && !/^\/giveblud/i.test(text)) { void giveItem(giveM[1] ?? ""); return; }
-      const gift = /^\/giveblud\s+(\d{1,4})$/i.exec(text);
-      if (gift) { void testCommand("blood", Math.min(1000, Number(gift[1]))); return; }
+      const gift = /^\/giveblud\s+(\d{1,6})$/i.exec(text);
+      if (gift) { void testCommand("blood", Math.min(useEmulator ? 100000 : 1000, Number(gift[1]))); return; }
       const id = text.slice(1).toLowerCase();
       if (EMOTE_BY_ID[id]) return performEmote(id);
       return say(`Unknown command. Emotes: ${Object.keys(EMOTE_BY_ID).map((e) => "/" + e).join(" ")}`, "warn");
@@ -4114,40 +4114,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.fillText(label, x - tw / 2 + 27 * s, y - 9 * s + bob);
     g.restore();
   }
-  /** the wanted board next to the hideout door: a black and white poster with the names and bounties (tap it for the whole list) */
-  function drawWantedBoard(f: { id?: string; x: number; y: number }, now: number): Hitbox | null {
-    const hot = !!f.id && hoverObj?.id === f.id;
-    const yA = f.y + 0.1, yB = f.y + 1.9;
-    const a = toScreen(iso(0, yA)), b = toScreen(iso(0, yB));
-    const W = 120, H = 80;
-    const top = 70 * scale; // (the height of the top edge above the wall's foot)
-    const ox = a.x, oy = a.y - top;
-    g.save();
-    g.translate(ox, oy);
-    g.transform((b.x - a.x) / W, (b.y - a.y) / W, 0, (top - 18 * scale) / H, 0, 0);
-    g.imageSmoothingEnabled = false;
-    g.fillStyle = "#0b0b0b"; g.fillRect(-3, -3, W + 6, H + 6);
-    g.fillStyle = hot ? "#3a3a3a" : "#262626"; g.fillRect(0, 0, W, H);
-    g.fillStyle = "#f2f2f2"; g.fillRect(4, 4, W - 8, 18);
-    g.fillStyle = "#0b0b0b"; g.font = "900 15px Georgia, serif"; g.textBaseline = "middle"; g.textAlign = "center";
-    g.fillText("WANTED", W / 2, 13.5);
-    const per = [...bounties.entries()].sort((p, q) => q[1].amount - p[1].amount).slice(0, 4);
-    g.textAlign = "left";
-    per.forEach(([, bt], i) => {
-      const y = 26 + i * 13.5;
-      g.fillStyle = i % 2 ? "#dcdcdc" : "#f2f2f2"; g.fillRect(6, y, W - 12, 12);
-      g.fillStyle = "#0b0b0b"; g.font = "800 9px Verdana, sans-serif";
-      g.fillText(bt.name.length > 10 ? `${bt.name.slice(0, 9)}…` : bt.name, 9, y + 6.5);
-      g.textAlign = "right"; g.fillText(String(bt.amount), W - 9, y + 6.5); g.textAlign = "left";
-    });
-    if (!per.length) { g.fillStyle = "#bbb"; g.font = "italic 9px Georgia, serif"; g.textAlign = "center"; g.fillText("nobody is wanted", W / 2, 50); }
-    else if (bounties.size > 4) { g.fillStyle = "#bbb"; g.font = "700 8px Verdana, sans-serif"; g.textAlign = "center"; g.fillText(`+${bounties.size - 4} more`, W / 2, H - 4); }
-    g.restore();
-    void now;
-    const x0 = Math.min(a.x, b.x) - 3 * scale, x1 = Math.max(a.x, b.x) + 3 * scale;
-    const y0 = Math.min(a.y, b.y) - top - 3 * scale, y1 = Math.max(a.y, b.y) - 18 * scale + 3 * scale;
-    return { id: f.id ?? "", x0, y0, x1, y1, depth: f.x + f.y } as Hitbox;
-  }
   /** the shot: the shooter's gun comes up at the target, the flash, the bullet and the hit (everybody in the room sees it) */
   function drawShots(now: number): void {
     for (const fx of shotFx) {
@@ -4546,7 +4512,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number; auto?: boolean; up?: boolean; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
-    if (f.kind === "wantedboard") return drawWantedBoard(f, now);
     if (f.up && f.kind === "f_mixer") f = { ...f, kind: "f_mixer_up" }; // (a mixer with a chip is drawn green)
     const k = FURNI_KINDS[f.kind];
     if (k.opens === "mixer" && f.mix) return drawMixing(f, now);

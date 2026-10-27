@@ -60,8 +60,8 @@ export const HIDEOUT_ORDER_MS = 3_600_000;
 export const HIDEOUT_FAST_MS = 20 * 60_000;
 export interface HideoutShopItem { kind: string; label: string; price: number; blurb: string; etaMs: number; /** the price after this many have been bought in this hideout */ tier?: { first: number; then: number }; /** or the price of the 1st, 2nd, 3rd ... one (the last price holds for every one after) */ steps?: number[]; /** only a hideout you belong to may put it down */ hideoutOnly?: boolean }
 export const HIDEOUT_SHOP: HideoutShopItem[] = [
-  { kind: "waterer", label: "Automatic plant waterer", price: 100, tier: { first: 5, then: 200 }, etaMs: HIDEOUT_FAST_MS, blurb: "Put it on a growing kit and that plant never needs water again. 100 each for the first 5, then 200." },
-  { kind: "mixerchip", label: "Mixer upgrade chip", price: 200, tier: { first: 1, then: 300 }, etaMs: HIDEOUT_FAST_MS, blurb: "Put it in a mixer: it mixes 25% faster, and turns green. 200 for the first, 300 for every one after." },
+  { kind: "waterer", label: "Automatic plant waterer", price: 250, etaMs: HIDEOUT_FAST_MS, blurb: "Put it on a growing kit and that plant never needs water again. 250 each." },
+  { kind: "mixerchip", label: "Mixer upgrade", price: 400, etaMs: HIDEOUT_FAST_MS, blurb: "Put it in a mixer: it mixes 25% faster, and turns green. 400 each." },
   { kind: "f_pokertable", label: "Poker table", price: 1000, etaMs: HIDEOUT_ORDER_MS, blurb: "Texas hold 'em for five. Buy in for 200 to 500, blinds 5/10. Anybody can sit down at it." },
   { kind: "f_pokertablehi", label: "High stakes poker table", price: 4000, etaMs: 2 * HIDEOUT_ORDER_MS, blurb: "Texas hold 'em for five, in gold. Buy in for 1000 to 2000, blinds 20/40. Anybody can sit down at it." },
   { kind: "f_blackjacktable", label: "Blackjack table", price: 500, steps: [500, 1000, 2000], etaMs: HIDEOUT_ORDER_MS, blurb: "Blackjack for five with a blue cloth. A member of the hideout deals, with their own bank. 500 for the first, 1000 for the second, 2000 for every one after." },

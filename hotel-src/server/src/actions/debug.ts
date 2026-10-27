@@ -18,7 +18,7 @@ export const debug: Action = {
     if (!trusted) fail("Unknown command.");
     c.note = typeof a.cmd === "string" ? a.cmd : ""; // (the blood ledger says which admin command it was)
     if (a.cmd === "blood") {
-      const n = int(a.n, 1, 1000, "amount");
+      const n = int(a.n, 1, isEmulator(c.env) ? 100000 : 1000, "amount"); // (the local test may give as much as it likes: poker and blackjack buy-ins are big)
       w.s.blood += n;
       return { note: `(test) You got ${n} drops of blood.` };
     }

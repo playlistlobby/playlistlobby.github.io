@@ -258,8 +258,13 @@ export function renderRoomShell(def: RoomDef): Shell {
     x.restore();
     x.save();
     path(leftWall); x.clip();
-    x.transform(TILE_W / 2 / (wl.width / H), -TILE_H / 2 / (wl.width / H), 0, WALL_H / wl.height, bl.x, bl.y - WALL_H);
-    x.drawImage(wl, 0, 0);
+    if (def.id.startsWith("h_")) { // a hideout has no graffiti: its left wall is the right wall's picture, mirrored about the corner
+      x.transform(-TILE_W / 2 / (wr.width / H), TILE_H / 2 / (wr.width / H), 0, WALL_H / wr.height, o.x, o.y - WALL_H);
+      x.drawImage(wr, 0, 0);
+    } else {
+      x.transform(TILE_W / 2 / (wl.width / H), -TILE_H / 2 / (wl.width / H), 0, WALL_H / wl.height, bl.x, bl.y - WALL_H);
+      x.drawImage(wl, 0, 0);
+    }
     x.restore();
   } else {
     // baseboards
