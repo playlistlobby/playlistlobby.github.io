@@ -6,7 +6,7 @@ import { db } from "./firebase";
 import { addToInv, call } from "./db";
 import type { Profile } from "./db";
 import type { Inventory } from "./items";
-import { NO_DROP, NO_TRADE_EXCEPT } from "./shared/items";
+import { NO_DROP } from "./shared/items";
 import { tradeBloodLeft } from "./shared/economy";
 
 export interface TradeItem { item: string; qty: number; ass?: boolean }
@@ -49,7 +49,7 @@ export function watchTrade(id: string, cb: (t: Trade | null) => void): Unsubscri
 export const emptyOffer = (): TradeOffer => ({ blood: 0, items: {} });
 
 /** Can this pocket item be traded at all? (Not one that's lit or loaned out to the CD player.) */
-export const tradable = (s: Inventory[number]): boolean => !!s && !s.lit && !s.inPlayer && (!NO_DROP.has(s.item) || NO_TRADE_EXCEPT.has(s.item));
+export const tradable = (s: Inventory[number]): boolean => !!s && !s.lit && !s.inPlayer && !NO_DROP.has(s.item);
 
 /** How many of the item in pocket slot `slot` are not yet in your offer. */
 export const freeQty = (p: Profile, offer: TradeOffer, slot: number): number => {

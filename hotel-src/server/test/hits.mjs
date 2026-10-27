@@ -79,7 +79,7 @@ console.log("--- the hitman site's list of players");
   bad("one letter is too short", await act(host, "hitSearch", { q: "t" }));
 }
 
-console.log("--- guns and rocket launchers can be traded (but not dropped or given away)");
+console.log("--- guns and rocket launchers can be traded and dropped");
 {
   const tradeWith = async (a, b, item) => {
     const id = `tr${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
@@ -95,6 +95,14 @@ console.log("--- guns and rocket launchers can be traded (but not dropped or giv
   }
   const k = await tradeWith(mid, small, "knife");
   bad("a knife still can not", k);
+  // ...and dropped on the floor and given away too
+  for (const [i, item] of ["gun", "rocket"].entries()) {
+    await owner("PUT", `users/${mid.uid}/inventory`, inv({ item, qty: 1 }));
+    await stand(mid, "lobby", 6, 6);
+    ok(`a ${item} can be dropped`, await act(mid, "drop", { room: "lobby", slot: 0, x: 6 + i, y: 7, qty: 1 }));
+    await owner("DELETE", `rooms/lobby/drops/${6 + i}_7`);
+  }
+  bad("a knife still can not be dropped", await (async () => { await owner("PUT", `users/${mid.uid}/inventory`, inv({ item: "knife", qty: 1 })); return act(mid, "drop", { room: "lobby", slot: 0, x: 8, y: 7, qty: 1 }); })());
 }
 
 console.log("--- putting a hit on somebody");

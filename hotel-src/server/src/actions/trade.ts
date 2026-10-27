@@ -3,7 +3,7 @@
 import { Action, ID_RE, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, takeQtyFrom, TRADE_BLOOD_CAP, tradeBloodLeft, TRADE_BLOOD_WINDOW_MS } from "../../../src/shared/economy";
-import { NO_DROP, NO_TRADE_EXCEPT } from "../../../src/shared/items";
+import { NO_DROP } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
 interface Offer { blood: number; items: Array<{ slot: number; item: string; qty: number; ass: boolean }> }
@@ -58,7 +58,7 @@ export const tradeFinish: Action = {
       let inv: Inventory = w.s.inventory;
       for (const it of offer.items) {
         const have = inv[it.slot];
-        if (!have || have.item !== it.item || have.qty < it.qty || have.lit || have.inPlayer || (NO_DROP.has(have.item) && !NO_TRADE_EXCEPT.has(have.item)) || !!have.ass !== it.ass) fail("Something in a pocket changed, so the trade can't finish. Change your offer and try again.");
+        if (!have || have.item !== it.item || have.qty < it.qty || have.lit || have.inPlayer || NO_DROP.has(have.item) || !!have.ass !== it.ass) fail("Something in a pocket changed, so the trade can't finish. Change your offer and try again.");
         inv = takeQtyFrom(inv, it.slot, it.qty);
         received.get(other.uid)!.push({ item: it.item, qty: it.qty, ass: it.ass });
       }
