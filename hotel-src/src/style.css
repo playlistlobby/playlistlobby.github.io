@@ -1472,3 +1472,6 @@ html.kb .tc-log { max-height: 34px; }
 .pk-seat.me .pk-dealer { top: 60px; }
 .pk-hand-name { position: absolute; z-index: 3; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); white-space: nowrap; padding: 2px 10px; border-radius: 9px; font: 800 11.5px var(--font); color: #0a1830; background: linear-gradient(#fff6d6, #ffd75a); border: 1px solid rgba(0, 0, 0, .45); box-shadow: 0 2px 4px rgba(0, 0, 0, .5); pointer-events: none; }
 .fb-del { flex: none; margin-left: 6px; padding: 0 6px; height: 20px; line-height: 18px; border-radius: 5px; border: 1px solid #8e1b1b; color: #fff; font: 700 11px var(--font); cursor: pointer; background: linear-gradient(#f59a9a 0%, #e04545 49%, #c62020 51%, #e04a4a 100%); }
+
+/* the iPhone-style emoji pictures (src/ui/iosEmoji.ts): as big as the letters round them */
+.ios-emoji { display: inline-block; width: 1.18em; height: 1.18em; vertical-align: -0.22em; margin: 0 .02em; object-fit: contain; image-rendering: auto; user-select: none; -webkit-user-drag: none; pointer-events: none; }

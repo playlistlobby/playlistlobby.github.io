@@ -39,6 +39,7 @@ import { LOUDSPEAKER_ON } from "../shared/loudspeaker";
 import { openHideoutChest } from "./hideoutChest";
 import { openPoker } from "./pokerTable";
 import type { TableChat } from "./tableChat";
+import { fillTextWithEmoji, measureWithEmoji } from "./iosEmoji";
 import type { PokerApi } from "./pokerTable";
 import { mountPokerFx } from "./pokerFx";
 import { openBlackjack } from "./blackjackTable";
@@ -4763,7 +4764,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     let cur = "";
     for (const w of words) {
       const trial = cur ? cur + " " + w : w;
-      if (g.measureText(trial).width > maxW && cur) { lines.push(cur); cur = w; } else cur = trial;
+      if (measureWithEmoji(g, trial, px) > maxW && cur) { lines.push(cur); cur = w; } else cur = trial;
     }
     if (cur) lines.push(cur);
     const nameFont = `bold ${Math.round(12 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`;
@@ -4772,7 +4773,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.font = font;
     const lh = px * 1.25;
     const nlh = 15 * Math.max(1, scale);
-    const w = Math.max(...lines.map((l) => g.measureText(l).width)) + 18;
+    const w = Math.max(...lines.map((l) => measureWithEmoji(g, l, px))) + 18;
     const boxW = Math.max(w, nameW + 18);
     const boxH = lines.length * lh + nlh + 8;
     const x = cx - boxW / 2;
@@ -4800,7 +4801,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (fc) { g.strokeStyle = "rgba(0,0,0,0.5)"; g.lineWidth = 2; g.lineJoin = "round"; }
     lines.forEach((l, li) => {
       const ty = y + 5 + nlh + lh * li;
-      if (!fxName && !fc) { g.fillText(l, x + 9, ty); return; }
+      if (!fxName && !fc) { fillTextWithEmoji(g, l, x + 9, ty, px); return; }
       if (fxName === "pulse") g.globalAlpha = alpha * (0.55 + 0.45 * Math.abs(Math.sin(now / 260)));
       let tx = x + 9;
       [...l].forEach((ch, i) => {

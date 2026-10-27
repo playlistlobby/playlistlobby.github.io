@@ -12656,7 +12656,7 @@
  },
  "N2000": {
   "en": "🔥 Boosted ({length})",
-  "da": "🔥 Fremhævede ({length})",
+  "da": "🔥 Advertised ({length})",
   "where": "src/ui/hideoutDoor.ts:80"
  },
  "N2001": {
@@ -12666,7 +12666,7 @@
  },
  "N2002": {
   "en": "No boosted hideouts right now. A hideout's owner can boost it for 6 hours.",
-  "da": "Ingen fremhævede skjulesteder lige nu. Et skjulesteds ejer kan fremhæve det i 6 timer.",
+  "da": "Ingen advertised skjulesteder lige nu. Et skjulesteds ejer kan advertise det i 6 timer.",
   "where": "src/ui/hideoutDoor.ts:82"
  },
  "N2003": {

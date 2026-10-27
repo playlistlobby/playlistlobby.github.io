@@ -29,6 +29,7 @@ import { mountTrades } from "./ui/trade";
 import { mountAdmin } from "./ui/admin";
 import { runOnboarding } from "./ui/onboarding";
 import { trackKeyboard } from "./ui/keyboard";
+import { startIosEmoji } from "./ui/iosEmoji";
 import { ensureBasementArt, ensureDoorArt } from "./roomRender";
 import { watchIdle } from "./idle";
 import { player } from "./music";
@@ -70,6 +71,7 @@ export interface Ctx {
 
 const app = document.getElementById("app")!;
 trackKeyboard();
+startIosEmoji(); // (iPhone-style emoji on every device)
 /** things that live as long as you're signed in (messenger, presence, friends listeners) */
 let shellCleanup: (() => void) | null = null;
 
