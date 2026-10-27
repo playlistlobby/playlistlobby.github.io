@@ -23,7 +23,7 @@ function roll(n: number): number {
 }
 const shuffled = (): number[] => { const d = Array.from({ length: 52 }, (_, i) => i); for (let i = 51; i > 0; i--) { const j = roll(i + 1); [d[i], d[j]] = [d[j], d[i]]; } return d; };
 
-interface Loaded { room: string; fid: string; key: string; t: PokerTable | null; ctx: PokerCtx; before: Set<string> }
+interface Loaded { room: string; fid: string; key: string; t: PokerTable | null; ctx: PokerCtx; before: Set<string>; /** what the table has earned for the owner of the room in this action (fees), paid with the rake when the table is saved */ owed: number }
 const keyOf = (room: string, fid: string): string => `${room}_${fid}`;
 
 /** where the caller is sitting, from their pointer (null: nowhere) */
@@ -43,7 +43,7 @@ async function load(c: Ctx, room: string, fid: string): Promise<Loaded> {
     const deck = await c.db.get<number[]>(`pokerDeck/${key}`);
     ctx.deck = Array.isArray(deck) ? deck.filter((x) => typeof x === "number") : [];
   }
-  return { room, fid, key, t, ctx, before: new Set((t?.seats ?? []).flatMap((s) => (s && !s.left ? [s.uid] : []))) };
+  return { room, fid, key, t, ctx, before: new Set((t?.seats ?? []).flatMap((s) => (s && !s.left ? [s.uid] : []))), owed: 0 };
 }
 
 /** writes the table back (and clears everything of an empty one); stands up whoever is no longer in it */
@@ -63,13 +63,21 @@ function save(c: Ctx, L: Loaded): void {
   c.extra[`pokerHole/${L.key}`] = Object.keys(byUid).length ? byUid : null;
 }
 
-/** writes the table back, after paying the owner of the room what the table has earned (the 1% of the pots: see POKER_RAKE_PCT) */
+/**
+ * writes the table back, after crediting the owner of the room with what the table has earned (the buy-in fees and the 1% of the pots: see POKER_RAKE_PCT).
+ * In a hideout it waits in hideoutTill/<owner> until the owner collects it on the computer's Tables page; a player room has no computer, so that owner is paid at once.
+ */
 async function saveTable(c: Ctx, L: Loaded): Promise<void> {
   const t = L.t!;
-  if (t.till > 0) {
-    const owner = pokerOwnerOf(L.room);
-    if (owner) { await pay(c, owner, t.till); c.note = `${c.note ? c.note + " · " : ""}rake ${t.till}`; }
-    t.till = 0;
+  const owed = L.owed + t.till;
+  t.till = 0; L.owed = 0;
+  const owner = pokerOwnerOf(L.room);
+  if (owed > 0 && owner) {
+    if (L.room.startsWith("h_")) {
+      const cur = await c.db.get<{ blood?: number; total?: number }>(`hideoutTill/${owner}`);
+      c.extra[`hideoutTill/${owner}`] = { blood: (Number(cur?.blood) || 0) + owed, total: (Number(cur?.total) || 0) + owed };
+    } else await pay(c, owner, owed);
+    c.note = `${c.note ? c.note + " · " : ""}table earned ${owed}`;
   }
   save(c, L);
 }
@@ -93,7 +101,7 @@ const tableLocks = async (c: Ctx, a: any): Promise<string[]> => {
   if (!ROOM_RE.test(room) || !ID_RE.test(fid)) return [];
   const t = parsePoker(await c.db.get(`poker/${keyOf(room, fid)}`));
   const owner = pokerOwnerOf(room); // (the owner is paid the table's earnings)
-  return [`poker:${keyOf(room, fid)}`, ...(owner ? [`user:${owner}`] : []), ...(t?.seats ?? []).flatMap((s) => (s ? [`user:${s.uid}`] : []))];
+  return [`poker:${keyOf(room, fid)}`, ...(owner ? [room.startsWith("h_") ? `till:${owner}` : `user:${owner}`] : []), ...(t?.seats ?? []).flatMap((s) => (s ? [`user:${s.uid}`] : []))];
 };
 
 const figureOf = (w: { raw: any }): string => String(w.raw?.figure ?? "").slice(0, 200);
@@ -142,7 +150,7 @@ export const pokerSit: Action = {
     const fee = owner && owner !== c.uid ? pokerFee(buy) : 0; // (the table fee goes on top of the buy-in: your stack is the whole buy-in; the owner of the room is paid it)
     if (w.s.blood < buy + fee) fail(`You need ${buy + fee - w.s.blood} more blood.`);
     w.s.blood -= buy + fee;
-    if (fee) await pay(c, owner!, fee);
+    L.owed += fee;
     L.t.seats[seat] = { uid: c.uid, name: nameOf(w), ...(figureOf(w) ? { figure: figureOf(w) } : {}), stack: buy, bet: 0, total: 0, in: false, folded: false, allin: false, acted: false };
     L.t.seq++;
     advance(L); // (the second player at an empty table starts the countdown to the first hand)

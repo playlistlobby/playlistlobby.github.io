@@ -288,5 +288,41 @@ console.log("--- the owner's cut: a 2% table fee on top of the buy-in, 1% of pot
   await owner("DELETE", `roomsMeta/${ROOM(host)}/furni/pt3`);
 }
 
+console.log("--- in a hideout the owner's earnings wait on the computer until they are collected");
+{
+  const H = `h_${host.uid}`, HK = `${H}_pt9`;
+  await owner("PUT", `roomsMeta/${H}`, { owner: host.uid, ownerName: "host", name: "hq", access: "open", w: 14, h: 14 });
+  await owner("PUT", `roomsMeta/${H}/furni/pt9`, { kind: "f_pokertable", x: 5, y: 5, dir: 2 });
+  for (const p of ["poker", "pokerDeck", "pokerHole"]) await owner("DELETE", `${p}/${HK}`);
+  for (const u of [host, a, b, c]) { await owner("DELETE", `pokerSeat/${u.uid}`); await owner("DELETE", `rooms/${ROOM(host)}/players/${u.uid}`); await stand(u, H, 6, 6); await owner("PUT", `users/${u.uid}/blood`, 3000); }
+  await owner("DELETE", `hideoutTill/${host.uid}`);
+  const hsit = (u, seat, buy) => act(u, "pokerSit", { room: H, fid: "pt9", seat, buy });
+  const hmove = (u, m) => act(u, "pokerAct", { room: H, fid: "pt9", move: m });
+  const htick = (u) => act(u, "pokerTick", { room: H, fid: "pt9" });
+  ok("a buys in for 300 in a hideout", await hsit(a, 0, 300));
+  ok("b buys in for 300", await hsit(b, 3, 300));
+  check("the owner's pocket is untouched (the fees wait)", (await bloodOf(host)) === 3000, String(await bloodOf(host)));
+  let till = await owner("GET", `hideoutTill/${host.uid}`);
+  check("12 in the till (two fees of 6)", till?.blood === 12 && till?.total === 12, JSON.stringify(till));
+  check("only the owner reads the till", (await readAs(host, `hideoutTill/${host.uid}`)).status === 200 && refused(await clientWrite(host, `hideoutTill/${host.uid}/blood`, 99999)) && (await readAs(a, `hideoutTill/${host.uid}`)).status !== 200);
+  await sleep(3700);
+  ok("a tick starts the hand", await htick(b));
+  let th = await owner("GET", `poker/${HK}`);
+  for (let g = 0; g < 20 && th.phase === "play"; g++) {
+    if (th.turn < 0) { await owner("PATCH", `poker/${HK}`, { nextAt: Date.now() - 1 }); await htick(a); }
+    else { const u = seatsOf(th).find((q) => q.i === th.turn)?.uid === a.uid ? a : b; const r = await hmove(u, "allin"); if (!r.ok) { check("an all in is possible", false, JSON.stringify(r)); break; } }
+    th = await owner("GET", `poker/${HK}`);
+  }
+  till = await owner("GET", `hideoutTill/${host.uid}`);
+  check("the pot cut (5) joined the fees: 17 waiting", th.phase === "over" && till?.blood === 17 && till?.total === 17, `${th.phase} ${JSON.stringify(till)}`);
+  check("still nothing in the owner's pocket", (await bloodOf(host)) === 3000);
+  bad("a player can't collect it", await act(a, "hideoutTillCollect"));
+  ok("the owner collects", await act(host, "hideoutTillCollect"));
+  check("3017 in the pocket and the till is empty, the lifetime total stays", (await bloodOf(host)) === 3017 && (await owner("GET", `hideoutTill/${host.uid}/blood`)) === 0 && (await owner("GET", `hideoutTill/${host.uid}/total`)) === 17);
+  bad("nothing left to collect", await act(host, "hideoutTillCollect"));
+  await act(a, "pokerLeave", { room: H, fid: "pt9" }); await act(b, "pokerLeave", { room: H, fid: "pt9" });
+  await owner("DELETE", `roomsMeta/${H}`); await owner("DELETE", `hideoutTill/${host.uid}`);
+}
+
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

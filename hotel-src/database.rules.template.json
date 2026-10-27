@@ -141,6 +141,11 @@
     "hideoutList": {
       ".read": "@PW@"
     },
+    "hideoutTill": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
     "discordBoard": {
       ".read": "@PW@"
     },

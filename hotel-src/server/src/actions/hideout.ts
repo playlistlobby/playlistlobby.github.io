@@ -470,3 +470,19 @@ export const hideoutFavorite: Action = {
     return { on: want, favs };
   },
 };
+
+/** The owner of a hideout takes what their tables have earned (the buy-in fees and the pot cut of the poker tables: hideoutTill/<uid>, filled by server/src/actions/poker.ts). */
+export const hideoutTillCollect: Action = {
+  locks: (c) => [`till:${c.uid}`],
+  async run(c) {
+    if (!(await c.db.get(`roomsMeta/${hideoutRoomId(c.uid)}/owner`))) fail("You don't own a hideout.");
+    const till = await c.db.get<{ blood?: number; total?: number }>(`hideoutTill/${c.uid}`);
+    const n = Math.floor(Number(till?.blood) || 0);
+    if (n <= 0) fail("There is nothing to collect yet.");
+    const w = await c.user();
+    w.s.blood += n;
+    c.extra[`hideoutTill/${c.uid}/blood`] = 0;
+    c.note = `table earnings ${n}`;
+    return { got: n };
+  },
+};

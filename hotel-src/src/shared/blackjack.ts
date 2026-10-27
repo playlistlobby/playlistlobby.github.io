@@ -17,10 +17,10 @@ export const BJ_DEALER_IDLE_MS = 45_000;
 /** after a round is opened the dealer can not deal for this long, so the players have time to bet */
 export const BJ_BET_WINDOW_MS = 10_000;
 /**
- * the dealer's auto-deal button (a table that runs itself: opens the round, deals once the bets are in, turns the card, draws, pays). Off until it has been tested:
- * only the local test server has it while this is false (like MINES_OPEN).
+ * the dealer's auto-deal button (a table that runs itself: opens the round, deals once the bets are in, turns the card, draws, pays). Open since it was tested;
+ * while this is false only the local test server has it (like MINES_OPEN).
  */
-export const BJ_AUTO_OPEN = false;
+export const BJ_AUTO_OPEN = true;
 /** auto-deal: the pause between the dealer's steps (open, turn the card, each draw, pay out) */
 export const BJ_AUTO_STEP_MS = 1_500;
 /** auto-deal: after a late bet the other players still get this long before the cards go out */

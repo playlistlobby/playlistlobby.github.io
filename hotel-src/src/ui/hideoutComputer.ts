@@ -1,7 +1,5 @@
 import { h, toast } from "./dom";
-import { hideoutBoost, hideoutCollect, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings } from "../hideout";
-import { hideoutLandlordPanel } from "./hideoutLandlord";
-import type { HideoutLandlordPanel } from "./hideoutLandlord";
+import { hideoutBoost, hideoutCollect, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings, hideoutTillCollect, watchHideoutTill } from "../hideout";
 import { BLOOD_ICON, furniIcon, itemDef, onFurniIcon } from "../items";
 import { FURNI_KINDS, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
@@ -18,25 +16,25 @@ import type { Ctx } from "../main";
 
 export interface ComputerApi { close(): void; refresh(): void }
 
-type Page = "shop" | "orders" | "members" | "hits" | "settings" | "landlord";
+type Page = "shop" | "orders" | "members" | "hits" | "settings" | "tables";
 const PAGES: Array<{ id: Page; icon: string; label: string; owner?: boolean }> = [
   { id: "shop", icon: "🛒", label: "Shop" },
   { id: "orders", icon: "📦", label: "Orders" },
   { id: "members", icon: "👥", label: "Members" },
   { id: "hits", icon: "💀", label: "Hitman" },
   { id: "settings", icon: "⚙️", label: "Settings" },
-  { id: "landlord", icon: "🏠", label: "Landlord", owner: true },
+  { id: "tables", icon: "💰", label: "Tables", owner: true },
 ];
 
 /**
  * The hideout's computer: a website (iOS 6 look) for the gang. Order hideout furniture (it arrives in an hour), see your orders, manage the members
- * (invite by name, set who may build, kick), the settings (name, lock building, leave) and the landlord's menu (size, colours: the owner only).
+ * (invite by name, set who may build, kick), the settings (name, lock building, leave) and the Tables page (the owner collects what the poker tables have earned).
  */
 export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string, getDef: () => RoomDef, onChange: () => void, onClose: () => void): ComputerApi {
   const me = ctx.profile;
   let closed = false;
   let page: Page = "shop";
-  let landlord: HideoutLandlordPanel | null = null;
+  let till = { blood: 0, total: 0 };
   let results: Array<{ uid: string; name: string }> = [];
   let searchTimer = 0;
   let searchQ = "";
@@ -46,7 +44,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   let hitCool = 0;
   let openHits: Hit[] = [];
   let revenge: Revenge[] = [];
-  const stops = [watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; }), watchRevenge(me.uid, (l) => { revenge = l; })];
+  const stops = [watchHideoutTill(me.uid, (t) => { till = t; if (page === "tables") render(); }), watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; }), watchRevenge(me.uid, (l) => { revenge = l; })];
   const owner = (): boolean => getDef().ownerUid === me.uid;
 
   const url = h("div", { class: "hc-url" });
@@ -58,7 +56,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   const el = h("div", { class: "hc-overlay", onclick: (e: Event) => { if (e.target === el) close(); } }, card);
   host.append(el);
 
-  const go = (p: Page): void => { (document.activeElement as HTMLElement | null)?.blur(); if (page === "landlord" && p !== "landlord") { landlord?.dispose(); landlord = null; } page = p; render(); };
+  const go = (p: Page): void => { (document.activeElement as HTMLElement | null)?.blur(); page = p; render(); };
   const act = async (what: () => Promise<string | void>): Promise<void> => {
     if (busy) return;
     busy = true;
@@ -232,31 +230,40 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     ];
   }
 
-  function landlordPage(): HTMLElement[] {
-    if (!landlord) landlord = hideoutLandlordPanel(ctx, onChange);
-    return [landlord.el];
+  /** the Tables page: what the poker tables have earned for the owner (a fee on every buy-in and a cut of the pots), to collect */
+  function tablesPage(): HTMLElement[] {
+    const waiting = till.blood.toLocaleString("en-US"), earned = till.total.toLocaleString("en-US");
+    return [
+      h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Table earnings"), h("div", { class: "hc-sub" }, "What your tables have paid you")),
+      h("div", { class: "hc-group" },
+        h("div", { class: "hc-person" }, h("img", { src: BLOOD_ICON, alt: "", style: { width: "20px", height: "20px" } }), h("span", { class: "hc-pname" }, "Waiting for you"), h("span", { class: "hc-tag" }, waiting)),
+        h("button", { class: "btn primary", disabled: busy || till.blood <= 0, onclick: () => void act(async () => { const r = await hideoutTillCollect(me); playSfx("coins", 0.5); return `You collected ${r.got} blood.`; }) }, till.blood > 0 ? `Collect ${waiting}` : "Nothing to collect yet"),
+        h("div", { class: "hc-sub" }, `Earned so far: ${earned}`)),
+      h("div", { class: "hc-foot" }, "Your poker tables pay you a 2% fee on every buy-in (on top, so the players' stacks are not touched) and 1% of every pot that sees a flop. It all waits here until you collect it."),
+      h("div", { class: "hc-foot" }, "A blackjack dealer keeps a 3% commission on wins in their own bank, and takes it when they stop dealing."),
+    ];
   }
 
   function render(): void {
     if (closed) return;
     const isOwner = owner();
-    if (page === "landlord" && !isOwner) page = "shop";
+    if (page === "tables" && !isOwner) page = "shop";
     const scrolled = body.scrollTop;
     const focused = document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement) ? document.activeElement : null;
     if (focused) return; // (don't rebuild the page while somebody is typing in it)
     url.textContent = `🔒 hideout.6ix/${page}`;
-    body.replaceChildren(...(page === "shop" ? shopPage() : page === "orders" ? ordersPage() : page === "members" ? membersPage() : page === "hits" ? hitsPage() : page === "settings" ? settingsPage() : landlordPage()));
+    body.replaceChildren(...(page === "shop" ? shopPage() : page === "orders" ? ordersPage() : page === "members" ? membersPage() : page === "hits" ? hitsPage() : page === "settings" ? settingsPage() : tablesPage()));
     body.scrollTop = scrolled;
     tabs.replaceChildren(...PAGES.filter((p) => !p.owner || isOwner).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.icon), h("span", {}, p.label))));
   }
   render();
   const off = onFurniIcon(() => { if (page === "shop" || page === "orders") render(); });
-  const tick = window.setInterval(() => { if (page !== "landlord") render(); }, 1000);
+  const tick = window.setInterval(() => render(), 1000);
   function close(): void {
     if (closed) return;
     closed = true;
     window.clearInterval(tick); window.clearTimeout(searchTimer); stops.forEach((f) => f());
-    off(); landlord?.dispose(); el.remove(); onClose();
+    off(); el.remove(); onClose();
   }
   return { close, refresh: render };
 }

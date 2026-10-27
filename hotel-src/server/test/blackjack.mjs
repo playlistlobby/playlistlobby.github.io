@@ -213,6 +213,9 @@ if (t.phase === "players") {
   check("blood is conserved", (await worth()) === START, String(await worth()));
 }
 
+// (a dealt hand can start with a blackjack, and then the round above never reached "players" and the dealer is still sitting here: the next part needs a free dealer's chair)
+{ const tt = await tbl(); if (tt?.dealer) { console.log("   (the deal gave a blackjack: the dealer leaves here instead)"); await owner("PATCH", `blackjack/${KEY}`, { nextAt: Date.now() - 1 }); await tick(a); await d("leave"); } }
+
 console.log("--- gone from the room, and the table picked up");
 ok("the dealer sits again", await d("sit", { bank: 500 }));
 await owner("DELETE", `rooms/${ROOM}/players/${a.uid}`);

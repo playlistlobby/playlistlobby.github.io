@@ -13183,5 +13183,70 @@
   "en": "Bad text.",
   "da": "Dårlig tekst.",
   "where": "src/ui/discordBoard.ts"
+ },
+ "N2082": {
+  "en": "Tables",
+  "da": "Borde",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2083": {
+  "en": "Table earnings",
+  "da": "Bordenes indtjening",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2084": {
+  "en": "What your tables have paid you",
+  "da": "Det dine borde har betalt dig",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2085": {
+  "en": "Waiting for you",
+  "da": "Venter på dig",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2086": {
+  "en": "Nothing to collect yet",
+  "da": "Intet at hente endnu",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2087": {
+  "en": "Your poker tables pay you a 2% fee on every buy-in (on top, so the players' stacks are not touched) and 1% of every pot that sees a flop. It all waits here until you collect it.",
+  "da": "Dine pokerborde giver dig et gebyr på 2% af hver buy-in (oven i, så spillernes stakke ikke røres) og 1% af hver pot der når flop. Det hele venter her, til du henter det.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2088": {
+  "en": "A blackjack dealer keeps a 3% commission on wins in their own bank, and takes it when they stop dealing.",
+  "da": "En blackjack-dealer beholder 3% provision af gevinster i sin egen bank og tager dem med, når vedkommende stopper med at dele ud.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2089": {
+  "en": "There is nothing to collect yet.",
+  "da": "Der er intet at hente endnu.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2090": {
+  "en": "You don't own a hideout.",
+  "da": "Du ejer ikke et skjulested.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2091": {
+  "en": "You collected {got} blood.",
+  "da": "Du hentede {got} blod.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2092": {
+  "en": "Earned so far: {earned}",
+  "da": "Tjent i alt: {total}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2093": {
+  "en": "Auto-deal",
+  "da": "Auto-deal",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2094": {
+  "en": "Collect {waiting}",
+  "da": "Hent {waiting}",
+  "where": "src/ui/hideoutComputer.ts"
  }
 }

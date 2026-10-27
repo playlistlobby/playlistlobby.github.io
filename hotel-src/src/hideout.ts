@@ -13,6 +13,11 @@ export const hideoutSettings = (p: Profile, patch: { name?: string; lock?: boole
 export const hideoutBoost = (p: Profile): Promise<{ boostUntil: number; price: number }> => call(p, "hideoutBoost");
 export const hideoutInvite = (p: Profile, who: { name?: string; uid?: string }): Promise<{ name: string }> => call(p, "hideoutInvite", who);
 export const hideoutAnswer = (p: Profile, owner: string, accept: boolean): Promise<{ joined: boolean; room?: string }> => call(p, "hideoutAnswer", { owner, accept });
+export const hideoutTillCollect = (p: Profile): Promise<{ got: number }> => call(p, "hideoutTillCollect");
+/** what the poker tables of your hideout have earned and you have not collected yet (blood), and everything they ever earned */
+export function watchHideoutTill(uid: string, cb: (t: { blood: number; total: number }) => void): () => void {
+  return onValue(ref(db, `hideoutTill/${uid}`), (s) => { const v = s.val(); cb({ blood: Math.max(0, Number(v?.blood) || 0), total: Math.max(0, Number(v?.total) || 0) }); }, () => cb({ blood: 0, total: 0 }));
+}
 export const hideoutLeave = (p: Profile, owner: string): Promise<unknown> => call(p, "hideoutLeave", { owner });
 export const hideoutKick = (p: Profile, uid: string): Promise<unknown> => call(p, "hideoutKick", { uid });
 export const hideoutMember = (p: Profile, uid: string, perms: { build?: boolean; grow?: boolean; stash?: boolean }): Promise<unknown> => call(p, "hideoutMember", { uid, ...perms });
