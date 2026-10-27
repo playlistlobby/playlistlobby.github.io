@@ -227,6 +227,56 @@ ok("a log in elsewhere stands them up (no table named)", await act(dealer, "bjLe
 check("they have the 400 back", (await bloodOf(dealer)) === before + 400 && (await tbl()) === null);
 check("blood is conserved", (await worth()) === START, String(await worth()));
 
+console.log("--- auto-deal: the dealer's switch (the table plays the dealer's clicks itself)");
+{
+  for (const u of [dealer, a, b]) await stand(u, ROOM, 6, 6);
+  ok("the dealer sits", await d("sit", { bank: 500 }));
+  ok("a sits", await sit(a, 0));
+  ok("b sits", await sit(b, 2));
+  bad("a player can't switch it on", await act(a, "bjDealer", { room: ROOM, fid: "bt1", op: "auto", on: true }));
+  ok("the dealer switches it on", await d("auto", { on: true }));
+  check("it is written on the table", (await tbl()).auto === true);
+  const back = (ms) => owner("PATCH", `blackjack/${KEY}`, { dealerAt: Date.now() - ms });
+  await tick(a);
+  check("a round does not open before the pause", (await tbl()).phase === "idle");
+  await back(3000);
+  ok("a tick opens the round by itself", await tick(a));
+  check("betting is open", (await tbl()).phase === "betting" && (await tbl()).round >= 1);
+  ok("a bets 100", await bet(a, 100));
+  ok("b bets 50", await bet(b, 50));
+  await tick(a);
+  check("nothing is dealt before the 10 seconds are over", (await tbl()).phase === "betting");
+  await back(11_000);
+  ok("a tick deals by itself", await tick(a));
+  let t2 = await tbl();
+  check("cards are out", t2.phase === "players" || t2.phase === "dealer" || t2.phase === "over", t2.phase);
+  for (let g = 0; g < 30 && (await tbl()).phase === "players"; g++) { // the players stand
+    const x = await tbl();
+    const s = seats(x).find((q) => q.i === x.turn);
+    await move(all.find((q) => q.uid === s.uid), "stand");
+  }
+  for (let g = 0; g < 12 && (await tbl()).phase === "dealer"; g++) { await back(2000); await tick(a); } // (each tick plays one step: turn the card, draw, pay)
+  t2 = await tbl();
+  check("the table paid out by itself", t2.phase === "over" && seats(t2).every((s) => s.bet === 0 || s.result), JSON.stringify(t2).slice(0, 200));
+  check("blood is conserved", (await worth()) === START, String(await worth()));
+  await owner("PATCH", `blackjack/${KEY}`, { nextAt: Date.now() - 1 });
+  ok("the result goes away", await tick(a));
+  check("idle again, auto still on", (await tbl()).phase === "idle" && (await tbl()).auto === true);
+  const r1 = (await tbl()).round;
+  await back(3000);
+  ok("and the next round opens by itself", await tick(a));
+  check("a new round is open", (await tbl()).phase === "betting" && (await tbl()).round === r1 + 1);
+  ok("the dealer switches it off", await d("auto", { on: false }));
+  check("it is off", (await tbl()).auto !== true);
+  await back(3000); await tick(a);
+  check("nothing happens by itself now", (await tbl()).phase === "betting");
+  ok("the dealer switches it on again and stops dealing", await d("auto", { on: true }));
+  ok("the dealer leaves", await d("leave"));
+  check("the table is empty of dealer and auto, blood is conserved", ((await tbl())?.dealer ?? null) === null && (await tbl())?.auto !== true && (await worth()) === START, String(await worth()));
+  await act(a, "bjLeave"); await act(b, "bjLeave");
+  for (const p of ["blackjack", "bjHole", "bjDeck"]) await owner("DELETE", `${p}/${KEY}`);
+}
+
 console.log("--- ordering blackjack tables from the computer: 500, 1000, 2000, 2000");
 await owner("PUT", `users/${dealer.uid}/blood`, 9000);
 await owner("DELETE", `roomsMeta/${ROOM}/bought`);

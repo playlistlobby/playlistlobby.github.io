@@ -16,6 +16,15 @@ export const BJ_RESULT_MS = 7_000;
 export const BJ_DEALER_IDLE_MS = 45_000;
 /** after a round is opened the dealer can not deal for this long, so the players have time to bet */
 export const BJ_BET_WINDOW_MS = 10_000;
+/**
+ * the dealer's auto-deal button (a table that runs itself: opens the round, deals once the bets are in, turns the card, draws, pays). Off until it has been tested:
+ * only the local test server has it while this is false (like MINES_OPEN).
+ */
+export const BJ_AUTO_OPEN = false;
+/** auto-deal: the pause between the dealer's steps (open, turn the card, each draw, pay out) */
+export const BJ_AUTO_STEP_MS = 1_500;
+/** auto-deal: after a late bet the other players still get this long before the cards go out */
+export const BJ_AUTO_BET_GAP_MS = 5_000;
 /** a player who is gone from the room is stood up after this */
 export const BJ_GONE_MS = 20_000;
 
@@ -74,6 +83,8 @@ export interface BjTable {
   round: number;
   seq: number;
   lastAct?: { seat: number; act: string; at: number };
+  /** the dealer has switched auto-deal on: the table plays the dealer's clicks by itself (see bjTick) */
+  auto?: boolean;
 }
 
 export const newBjTable = (): BjTable => ({ dealer: null, bank: 0, seats: new Array<BjSeat | null>(BJ_SEATS).fill(null), phase: "idle", dealerCards: [], hole: false, revealed: false, turn: -1, turnAt: 0, dealerAt: 0, nextAt: 0, round: 0, seq: 0 });
@@ -110,6 +121,7 @@ export function placeBet(t: BjTable, seat: number, amount: number, now: number):
   if (!Number.isInteger(amount) || amount < BJ_BET_MIN || amount > BJ_BET_MAX) return `Bet from ${BJ_BET_MIN} to ${BJ_BET_MAX}.`;
   if (!bankCovers(t, bjStakes(t) + amount)) return "The dealer's bank can't cover that bet.";
   s.bet = amount; s.state = "bet"; say(t, seat, `Bet ${amount}`, now); t.seq++;
+  if (t.auto) t.dealerAt = Math.max(t.dealerAt, now - BJ_BET_WINDOW_MS + BJ_AUTO_BET_GAP_MS); // (auto-deal: a late bet still leaves the others a few seconds)
   return null;
 }
 
@@ -218,13 +230,23 @@ export function voidRound(t: BjTable): Record<number, number> {
   return back;
 }
 
+/** when the next thing happens by itself (a player's turn runs out, an auto-deal step, the result goes away), or null: the browsers use this to know when to ask the server to tick */
+export function bjDueAt(t: BjTable): number | null {
+  if (t.phase === "players") return t.turn >= 0 ? t.turnAt + BJ_TURN_MS : null;
+  if (t.phase === "betting") return bjSeatsIn(t, (s) => s.bet > 0).length ? t.dealerAt + (t.auto ? BJ_BET_WINDOW_MS : BJ_DEALER_IDLE_MS) : null;
+  if (t.phase === "dealer") return t.dealerAt + (t.auto ? BJ_AUTO_STEP_MS : BJ_DEALER_IDLE_MS);
+  if (t.phase === "over") return t.nextAt;
+  if (t.phase === "idle" && t.auto && t.dealer && t.seats.some((s) => s && !s.left)) return t.dealerAt + BJ_AUTO_STEP_MS;
+  return null;
+}
+
 /** the things that happen by themselves when time has passed: a player who took too long stands, a dealer who is idle has the next click made, the result goes away */
 export function bjTick(t: BjTable, ctx: BjCtx): boolean {
   let changed = false;
   for (let guard = 0; guard < 12; guard++) {
     if (t.phase === "players" && t.turn >= 0 && ctx.now >= t.turnAt + BJ_TURN_MS) { playerMove(t, t.turn, "stand", ctx); changed = true; continue; }
-    if (t.phase === "betting" && bjSeatsIn(t, (s) => s.bet > 0).length && ctx.now >= t.dealerAt + BJ_DEALER_IDLE_MS) { deal(t, ctx); changed = true; continue; }
-    if (t.phase === "dealer" && ctx.now >= t.dealerAt + BJ_DEALER_IDLE_MS) {
+    if (t.phase === "betting" && bjSeatsIn(t, (s) => s.bet > 0).length && ctx.now >= t.dealerAt + (t.auto ? BJ_BET_WINDOW_MS : BJ_DEALER_IDLE_MS)) { deal(t, ctx); changed = true; continue; }
+    if (t.phase === "dealer" && ctx.now >= t.dealerAt + (t.auto ? BJ_AUTO_STEP_MS : BJ_DEALER_IDLE_MS)) {
       if (!t.revealed) reveal(t, ctx);
       else if (!canSettle(t)) dealerDraw(t, ctx);
       else settle(t, ctx.now);
@@ -233,8 +255,9 @@ export function bjTick(t: BjTable, ctx: BjCtx): boolean {
     if (t.phase === "over" && ctx.now >= t.nextAt) {
       for (let i = 0; i < BJ_SEATS; i++) { const s = t.seats[i]; if (s?.left) t.seats[i] = null; else if (s) { s.bet = 0; s.cards = []; s.state = "wait"; s.doubled = undefined; s.result = undefined; s.back = undefined; } }
       t.dealerCards = []; t.hole = false; t.revealed = false;
-      t.phase = "idle"; t.nextAt = 0; t.seq++; changed = true; continue;
+      t.phase = "idle"; t.nextAt = 0; t.dealerAt = ctx.now; t.seq++; changed = true; continue;
     }
+    if (t.phase === "idle" && t.auto && t.dealer && t.seats.some((s) => s && !s.left) && ctx.now >= t.dealerAt + BJ_AUTO_STEP_MS) { openRound(t, ctx.now); changed = true; continue; } // (auto-deal: the next round opens by itself while somebody sits)
     break;
   }
   return changed;
@@ -249,7 +272,7 @@ export function bjToDb(t: BjTable): Record<string, unknown> {
   t.seats.forEach((s, i) => { if (s) seats[`s${i}`] = { ...s, cards: s.cards }; });
   return {
     ...(t.dealer ? { dealer: t.dealer } : {}), bank: t.bank, seats, phase: t.phase, dealerCards: t.dealerCards, hole: t.hole, revealed: t.revealed, turn: t.turn, turnAt: t.turnAt,
-    dealerAt: t.dealerAt, nextAt: t.nextAt, round: t.round, seq: t.seq, ...(t.lastAct ? { lastAct: t.lastAct } : {}),
+    dealerAt: t.dealerAt, nextAt: t.nextAt, round: t.round, seq: t.seq, ...(t.lastAct ? { lastAct: t.lastAct } : {}), ...(t.auto ? { auto: true } : {}),
   };
 }
 
@@ -272,6 +295,7 @@ export function parseBj(v: any): BjTable | null {
   t.phase = (["idle", "betting", "players", "dealer", "over"] as const).find((x) => x === v.phase) ?? "idle";
   t.dealerCards = cardsOf(v.dealerCards); t.hole = v.hole === true; t.revealed = v.revealed === true;
   t.turn = num(v.turn, -1); t.turnAt = num(v.turnAt); t.dealerAt = num(v.dealerAt); t.nextAt = num(v.nextAt); t.round = num(v.round); t.seq = num(v.seq);
+  if (v.auto === true) t.auto = true;
   if (v.lastAct && typeof v.lastAct.act === "string") t.lastAct = { seat: num(v.lastAct.seat, -1), act: v.lastAct.act, at: num(v.lastAct.at) };
   return t;
 }

@@ -9,10 +9,11 @@
 import { Action, cheb, ID_RE, int, requireHideoutMember, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import {
-  bankCovers, bjSeatOfUid, bjStakes, bjTick, bjToDb, BJ_BANK_MAX, BJ_BANK_MIN, BJ_GONE_MS, BJ_SEATS, dealerDraw, deal, newBjTable, openRound, parseBj, placeBet, playerMove, reveal, settle, voidRound,
+  bankCovers, bjSeatOfUid, bjStakes, bjTick, bjToDb, BJ_AUTO_OPEN, BJ_BANK_MAX, BJ_BANK_MIN, BJ_GONE_MS, BJ_SEATS, dealerDraw, deal, newBjTable, openRound, parseBj, placeBet, playerMove, reveal, settle, voidRound,
   type BjCtx, type BjTable,
 } from "../../../src/shared/blackjack";
 import { isHideoutId } from "../../../src/shared/hideout";
+import { isEmulator } from "../env";
 
 const ROOM_RE = /^(u|h)_[A-Za-z0-9]{1,40}$/;
 
@@ -188,7 +189,7 @@ async function leaveTable(c: Ctx, L: Loaded, uid: string): Promise<number> {
       const back = voidRound(t);
       for (const [i, amt] of Object.entries(back)) { const s = t.seats[Number(i)]; if (s) await pay(c, s.uid, amt); }
     }
-    take = t.bank; t.bank = 0; t.dealer = null; t.phase = t.phase === "over" ? "over" : "idle"; t.seq++;
+    take = t.bank; t.bank = 0; t.dealer = null; t.auto = undefined; t.phase = t.phase === "over" ? "over" : "idle"; t.seq++;
     await pay(c, uid, take);
     return take;
   }
@@ -229,7 +230,7 @@ export const bjDealer: Action = {
   async run(c, a) {
     const room = text(a.room, ROOM_RE, "room");
     const fid = text(a.fid, ID_RE, "table");
-    const op = text(a.op, /^(sit|leave|open|deal|reveal|draw|settle)$/, "click");
+    const op = text(a.op, /^(sit|leave|open|deal|reveal|draw|settle|auto)$/, "click");
     if (op === "sit") {
       const pos = await requireInRoom(c, room);
       await requireMayDeal(c, room);
@@ -251,6 +252,7 @@ export const bjDealer: Action = {
       if (w.s.blood < bank) fail("You don't have that much blood.");
       w.s.blood -= bank;
       L.t.dealer = { uid: c.uid, name: nameOf(w), ...(figureOf(w) ? { figure: figureOf(w) } : {}) };
+      L.t.auto = undefined;
       L.t.bank = bank; L.t.phase = "idle"; L.t.dealerAt = c.now; L.t.seq++;
       save(c, L);
       c.extra[`bjSeat/${c.uid}`] = { room, fid, dealer: true };
@@ -273,8 +275,12 @@ export const bjDealer: Action = {
     else if (op === "reveal") err = reveal(t, L.ctx);
     else if (op === "draw") err = dealerDraw(t, L.ctx);
     else if (op === "settle") err = settle(t, c.now);
+    else if (op === "auto") { // the auto-deal switch: the table plays the dealer's clicks itself (see bjTick), until it is switched off
+      if (!BJ_AUTO_OPEN && !isEmulator(c.env)) fail("Unknown action.");
+      t.auto = a.on === true ? true : undefined; t.seq++;
+    }
     if (err) fail(err);
-    t.dealerAt = c.now;
+    if (op !== "auto") t.dealerAt = c.now;
     await payOut(c, L);
     save(c, L);
     return {};

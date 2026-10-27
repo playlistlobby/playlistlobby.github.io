@@ -4638,6 +4638,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.fillStyle = halo;
         g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
         g.restore();
+        if (red && hitsOpen.length && bloodImg.complete && bloodImg.naturalWidth) { // a little blood drop floats over the wanted board while there is a hit up (everybody sees when one is possible)
+          const w = 13 * scale * (hot ? 1.2 : 1), hgt = w * 1.375;
+          g.save();
+          g.imageSmoothingEnabled = false;
+          g.shadowColor = "rgba(255,60,50,0.8)"; g.shadowBlur = (4 + 4 * pulse) * scale;
+          g.drawImage(bloodImg, cx - w / 2, b.y0 - hgt - 4 * scale + Math.sin(now / 380) * 3 * scale, w, hgt);
+          g.restore();
+        }
       }
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);

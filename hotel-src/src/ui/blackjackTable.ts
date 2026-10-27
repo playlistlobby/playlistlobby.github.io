@@ -4,7 +4,7 @@ import { BLOOD_ICON } from "../items";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
 import { bjAct, bjBet, bjDealer, bjLeave, bjSit, bjTick, watchBjHole, watchBjTable } from "../blackjack";
-import { BJ_BET_WINDOW_MS, BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS, bjSeatOfUid, bjValue, bjStakes, canSettle, handsToBeat, isBlackjack } from "../shared/blackjack";
+import { BJ_AUTO_OPEN, BJ_BET_WINDOW_MS, bjDueAt, BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS, bjSeatOfUid, bjValue, bjStakes, canSettle, handsToBeat, isBlackjack } from "../shared/blackjack";
 import type { BjSeat, BjTable } from "../shared/blackjack";
 import { cardBackUrl, cardUrl, chipsFor, chipUrl } from "./pokerCards";
 import type { Ctx } from "../main";
@@ -208,6 +208,15 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     const stakes = bjStakes(tb);
     const row = (...kids: HTMLElement[]): HTMLElement => h("div", { class: "pk-row main" }, ...kids);
     let info = "", body: HTMLElement;
+    const autoOn = !!tb.auto;
+    const autoBtn = BJ_AUTO_OPEN || import.meta.env.MODE === "emulator"
+      ? h("button", { class: `pk-btn ${autoOn ? "call" : "check"}`, disabled: busy, title: "The table opens rounds, deals, turns the card, draws and pays by itself", onclick: () => void run(async () => { await bjDealer(me, roomId, fid, "auto", undefined, !autoOn); playSfx("select", 0.4); }) }, autoOn ? "Auto-deal: ON (tap to stop)" : "Auto-deal")
+      : null;
+    if (autoOn) {
+      const wait = tb.phase === "betting" ? Math.ceil((tb.dealerAt + BJ_BET_WINDOW_MS - serverNow()) / 1000) : 0;
+      info = tb.phase === "betting" ? (stakes > 0 ? (wait > 0 ? `Auto-deal: dealing in ${wait}s…` : "Auto-deal: dealing…") : "Auto-deal: waiting for the first bet…") : tb.phase === "idle" ? "Auto-deal: the next round opens in a moment." : "Auto-deal is on: the table runs itself.";
+      return h("div", {}, h("div", { class: "pk-info" }, info, h("div", { class: "pk-sub" }, `Your bank: ${blood(tb.bank)}`)), row(autoBtn!));
+    }
     switch (tb.phase) {
       case "idle": case "over":
         info = tb.phase === "over" ? "Round over. Open the next one when you are ready." : "Open a round and the players can bet.";
@@ -227,7 +236,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
         else { info = `You have ${total}: you must draw.`; body = row(click("draw", "Draw a card", "raise")); }
       }
     }
-    return h("div", {}, h("div", { class: "pk-info" }, info, h("div", { class: "pk-sub" }, `Your bank: ${blood(tb.bank)}`)), body);
+    return h("div", {}, h("div", { class: "pk-info" }, info, h("div", { class: "pk-sub" }, `Your bank: ${blood(tb.bank)}`)), body, ...(autoBtn ? [row(autoBtn)] : []));
   }
 
   function tickBars(): void {
@@ -242,11 +251,10 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     tickBars();
     const now = serverNow();
     if (t.phase === "betting" && now < t.dealerAt + BJ_BET_WINDOW_MS + 1100) renderActions(); // (the Deal button counts down)
-    const due = (t.phase === "players" && t.turn >= 0 && now > t.turnAt + BJ_TURN_MS + 500)
-      || (t.phase === "over" && now > t.nextAt + 400)
-      || ((t.phase === "betting" || t.phase === "dealer") && now > t.dealerAt + 45_000 + 500)
+    const at = bjDueAt(t);
+    const due = (at !== null && now > at + 450)
       || (imAt() && Date.now() - lastTick > 8000 && (t.seats.some((s) => s?.gone !== undefined)));
-    if (due && Date.now() - lastTick > 1500) { lastTick = Date.now(); void bjTick(me, roomId, fid).catch(() => undefined); }
+    if (due && Date.now() - lastTick > (t.auto ? 800 : 1500)) { lastTick = Date.now(); void bjTick(me, roomId, fid).catch(() => undefined); }
   }, 300);
 
   function onTable(next: BjTable | null): void {

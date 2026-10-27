@@ -13,8 +13,8 @@ export const bjBet = (p: Profile, room: string, fid: string, amount: number): Pr
 export const bjAct = (p: Profile, room: string, fid: string, move: "hit" | "stand" | "double"): Promise<unknown> => call(p, "bjAct", { room, fid, move });
 /** stands up (a player), or stops dealing and takes the bank (the dealer). Without a table it stands you up from wherever the server has you (after a refresh). */
 export const bjLeave = (p: Profile, room?: string, fid?: string): Promise<{ take?: number }> => call(p, "bjLeave", room && fid ? { room, fid } : {});
-export type DealerClick = "sit" | "leave" | "open" | "deal" | "reveal" | "draw" | "settle";
-export const bjDealer = (p: Profile, room: string, fid: string, op: DealerClick, bank?: number): Promise<unknown> => call(p, "bjDealer", { room, fid, op, ...(bank !== undefined ? { bank } : {}) });
+export type DealerClick = "sit" | "leave" | "open" | "deal" | "reveal" | "draw" | "settle" | "auto";
+export const bjDealer = (p: Profile, room: string, fid: string, op: DealerClick, bank?: number, on?: boolean): Promise<unknown> => call(p, "bjDealer", { room, fid, op, ...(bank !== undefined ? { bank } : {}), ...(on !== undefined ? { on } : {}) });
 export const bjTick = (p: Profile, room: string, fid: string): Promise<unknown> => call(p, "bjTick", { room, fid });
 
 export function watchBjTable(room: string, fid: string, cb: (t: BjTable | null) => void): () => void {
