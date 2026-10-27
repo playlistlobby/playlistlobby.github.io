@@ -137,6 +137,14 @@ export const modRename: Action = {
       if (typeof meta.name === "string" && meta.name === `${old}'s room`.slice(0, 28)) c.extra[`roomsMeta/${room}/name`] = `${name}'s room`.slice(0, 28);
     }
     if ((await c.db.get(`flappyBoard/${uid}`)) !== null) c.extra[`flappyBoard/${uid}/name`] = name;
+    // wherever they stand right now and what their hideout says about its owner (their open game reloads with the new name: see watchOwnName)
+    const pres = await c.db.get<{ room?: string }>(`presence/${uid}`);
+    if (pres) {
+      c.extra[`presence/${uid}/name`] = name;
+      if (typeof pres.room === "string" && /^[A-Za-z0-9_-]{1,60}$/.test(pres.room) && (await c.db.get(`rooms/${pres.room}/players/${uid}`)) !== null) c.extra[`rooms/${pres.room}/players/${uid}/name`] = name;
+    }
+    if ((await c.db.get(`roomsMeta/h_${uid}`)) !== null) c.extra[`roomsMeta/h_${uid}/ownerName`] = name;
+    if ((await c.db.get(`hideoutList/${uid}`)) !== null) c.extra[`hideoutList/${uid}/ownerName`] = name;
     await note(c, "rename", uid, name, `was ${old}`);
     return { ok: true, name };
   },

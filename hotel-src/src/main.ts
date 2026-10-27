@@ -10,7 +10,7 @@ import { checkRaffleAtLogin } from "./raffle";
 import { startUpdateCheck } from "./updateCheck";
 import { startMaintenanceWatch } from "./maintenance";
 import { loadRole, watchMute } from "./roles";
-import { watchBroadcast, watchKick, watchNotices } from "./notices";
+import { watchBroadcast, watchKick, watchNotices, watchOwnName } from "./notices";
 import { startPetLook } from "./pets";
 import { startUnusual } from "./unusual";
 import { mountModPage } from "./ui/modPage";
@@ -225,6 +225,7 @@ async function showHotel(user: User): Promise<void> {
   // (the "you are being watched" camera intro, src/watched.ts, is not shown to anybody any more)
   const stopNotices = watchNotices(p); // a warning or a message from a moderator
   const stopKick = watchKick(p, () => void doLogout()); // a moderator threw you out
+  const stopName = watchOwnName(p, (name) => { toast(`Your name is ${name} now. The page reloads.`); window.setTimeout(() => window.location.reload(), 1600); }); // an admin renamed you
   const stopBroadcast = watchBroadcast(); // somebody used the loudspeaker
   const stopPetLook = startPetLook(p.uid); // the pet that walks with you (rooms tell everybody)
   const stopUnusual = startUnusual(p.uid); // the unusual you wear
@@ -336,6 +337,7 @@ async function showHotel(user: User): Promise<void> {
     stopMute();
     stopNotices();
     stopKick();
+    stopName();
     stopBroadcast();
     stopPetLook();
     stopUnusual();

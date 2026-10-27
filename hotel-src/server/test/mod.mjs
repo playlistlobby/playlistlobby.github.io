@@ -299,7 +299,11 @@ console.log("--- making accounts (the server writes the profile, and limits how 
   const rn = await fresh(`t_rn_${R}`, { blood: 0, ...OLD }); await act(rn, "sync");
   await owner("PUT", `usernames/t_rn_${R}`, rn.uid); await owner("PUT", `profiles/${rn.uid}`, { name: `t_rn_${R}`, figure: "x" });
   bad("a mod can't rename", await act(mod, "modRename", { uid: rn.uid, name: `t_rnn_${R}` }));
+  await owner("PUT", `presence/${rn.uid}`, { name: `t_rn_${R}`, room: "lobby", seen: Date.now() });
+  await owner("PUT", `rooms/lobby/players/${rn.uid}`, { name: `t_rn_${R}`, figure: "x", x: 5, y: 5, dir: 2 });
   ok("the admin renames", await act(adm, "modRename", { uid: rn.uid, name: `t_RN2_${R}` }));
+  check("their presence and the room show the new name at once", (await owner("GET", `presence/${rn.uid}/name`)) === `t_RN2_${R}` && (await owner("GET", `rooms/lobby/players/${rn.uid}/name`)) === `t_RN2_${R}`);
+  await owner("DELETE", `rooms/lobby/players/${rn.uid}`); await owner("DELETE", `presence/${rn.uid}`);
   check("the name is changed everywhere", (await owner("GET", `users/${rn.uid}/name`)) === `t_RN2_${R}` && (await owner("GET", `profiles/${rn.uid}/name`)) === `t_RN2_${R}` && (await owner("GET", `usernames/t_rn2_${R}`)) === rn.uid && (await owner("GET", `usernames/t_rn_${R}`)) === null);
   const login = await fetch(`${AUTH}:signInWithPassword?key=x`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: `t_rn2_${R}@users.bobba.invalid`, password: "secret1", returnSecureToken: true }) }).then((r) => r.json());
   check("and the player logs in with the new name", !!login.idToken && login.localId === rn.uid, JSON.stringify(login).slice(0, 100));

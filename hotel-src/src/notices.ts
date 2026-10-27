@@ -86,3 +86,14 @@ export function watchKick(p: Profile, logout: () => void): () => void {
     window.setTimeout(logout, 30_000);
   }, () => undefined);
 }
+
+/** The admin changed this player's name while they are playing: their open game still has the old one (and would write it back into the room), so it reloads with the new name. */
+export function watchOwnName(p: Profile, onChanged: (name: string) => void): () => void {
+  let first = true;
+  return onValue(ref(db, `users/${p.uid}/name`), (s) => {
+    const name = s.val();
+    if (typeof name !== "string") return;
+    if (first) { first = false; if (name === p.name) return; }
+    if (name !== p.name) onChanged(name);
+  }, () => undefined);
+}
