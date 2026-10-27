@@ -6,9 +6,10 @@ import { Ctx, fail } from "../ctx";
 import { findSlot } from "../../../src/shared/items";
 import { takeQtyFrom } from "../../../src/shared/economy";
 import { isHideoutId } from "../../../src/shared/hideout";
-import { FAIR_GAME_UIDS, ROULETTE_CHAIRS, HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_ONLINE_FRESH_MS, HIT_ONLINE_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
+import { FAIR_GAME_UIDS, ROULETTE_CHAIRS, HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_ONLINE_FRESH_MS, HIT_ONLINE_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, liveHits, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
 import { bloodPile } from "./floor";
 import { roleOf } from "./mod";
+import { clearWanted } from "./bounty";
 
 const ROOM_RE = /^[A-Za-z0-9_-]{1,60}$/;
 
@@ -26,6 +27,16 @@ async function atRoulette(c: Ctx, room: string, target: string, theirs: { x?: nu
   return game?.a?.uid === target || game?.b?.uid === target;
 }
 
+/** everybody who is protected from hits: moderators and the admin, except the two in FAIR_GAME_UIDS (the same list the hitman site uses) */
+export async function guardedUids(c: Ctx): Promise<Set<string>> {
+  const roles = (await c.db.get<Record<string, string>>("roles")) ?? {};
+  const guarded = new Set<string>(Object.entries(roles).filter(([, r]) => r === "admin" || r === "mod").map(([u]) => u));
+  const first = await c.db.get<string>("usernames/adminsidia"); // (the first admin is known by the name of the account)
+  if (first) guarded.add(first);
+  for (const f of FAIR_GAME_UIDS) guarded.delete(f);
+  return guarded;
+}
+
 /**
  * The hitman site's player list: with no search, the players who are online now; with one (2 letters or more of the name, anywhere in it), the players whose name has it.
  * The protected ones (moderators, the admin) are left out, so nobody picks somebody the server would refuse.
@@ -33,12 +44,8 @@ async function atRoulette(c: Ctx, room: string, target: string, theirs: { x?: nu
 export const hitSearch: Action = {
   async run(c, a) {
     const q = String(a.q ?? "").trim().toLowerCase();
-    const fair = new Set<string>(FAIR_GAME_UIDS);
-    const roles = (await c.db.get<Record<string, string>>("roles")) ?? {};
-    const guarded = new Set<string>(Object.entries(roles).filter(([, r]) => r === "admin" || r === "mod").map(([u]) => u));
-    const first = await c.db.get<string>("usernames/adminsidia"); // (the first admin is known by the name of the account)
-    if (first) guarded.add(first);
-    const okUid = (u: string): boolean => u !== c.uid && (fair.has(u) || !guarded.has(u));
+    const guarded = await guardedUids(c);
+    const okUid = (u: string): boolean => u !== c.uid && !guarded.has(u);
     let uids: string[];
     if (q === "") {
       const pres = (await c.db.get<Record<string, { seen?: number }>>("presence")) ?? {};
@@ -114,7 +121,7 @@ export const gunShoot: Action = {
     if (!name) fail("They aren't a player.");
     if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't shoot someone who plays on your device.");
     if (await isProtected(c, target)) fail("The gun jams. That one is protected.");
-    const hits = parseHits(await c.db.get("hits")).filter((h) => h.target === target);
+    const hits = liveHits(parseHits(await c.db.get("hits")), c.now).filter((h) => h.target === target);
     if (!hits.length) fail("Nobody has put a bounty on them (any more): the gun won't fire."); // (only somebody with blood on their head can be shot; the gun is kept)
     const w = await c.user();
     const want = a.slot ?? findSlot(w.s.inventory, "gun");
@@ -131,6 +138,7 @@ export const gunShoot: Action = {
       got = hit.amount;
       w.s.blood += got;
       c.extra[`hits/${hit.id}`] = null;
+      if (hit.bagmand) await clearWanted(c, target); // (a claimed bagmand hit: the rooms they stand in close again)
     }
     const shooterName = String(w.raw?.name ?? "someone").slice(0, 16);
     c.note = hit ? `shot ${name}: bounty ${got}` : `shot ${name}`;

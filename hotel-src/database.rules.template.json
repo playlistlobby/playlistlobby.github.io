@@ -73,6 +73,14 @@
     "bagmand": {
       ".read": "@PW@"
     },
+    "wantedUsers": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "wantedRooms": {
+      ".read": "@PW@"
+    },
     "broadcast": {
       ".read": "@PW@"
     },
@@ -919,7 +927,7 @@
         ".read": "@PW@ && @IN@",
         "players": {
           "$uid": {
-            ".write": "@PW@ && auth.uid === $uid && @KNOWN@ && @IN@",
+            ".write": "@PW@ && auth.uid === $uid && @KNOWN@ && @IN@ && (!newData.exists() || !root.child('wantedUsers').child(auth.uid).child('until').exists() || root.child('wantedUsers').child(auth.uid).child('until').val() < now || root.child('wantedRooms').child($room).child('uid').val() === auth.uid)",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
             "smoke": {
               ".validate": "newData.isNumber()"

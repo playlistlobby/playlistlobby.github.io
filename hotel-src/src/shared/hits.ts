@@ -24,7 +24,9 @@ export const ROULETTE_CHAIRS: ReadonlyArray<{ x: number; y: number }> = [{ x: 0,
 /** how far away (in tiles) somebody can be shot */
 export const SHOT_RANGE = 8;
 
-export interface Hit { id: string; target: string; targetName: string; amount: number; by: string; byName: string; hideout: string; hideoutName: string; at: number }
+export interface Hit { id: string; target: string; targetName: string; amount: number; by: string; byName: string; hideout: string; hideoutName: string; at: number; /** one of bagmand's own hits (see shared/bagmand.ts) */ bagmand?: boolean; /** it goes off the board at this time if nobody claims it (bagmand's hits) */ until?: number }
+/** the hits that have not run out (a player's hit never does) */
+export const liveHits = (hits: Hit[], now: number): Hit[] => hits.filter((h) => !h.until || h.until > now);
 
 /**
  * What a shot costs the one who is hit, and how long they are dead for. With a hit on them: they drop 20 blood (100 with more than 1000, 200 with more than 5000) and are dead for two minutes.
@@ -53,7 +55,7 @@ export function parseHits(v: any): Hit[] {
   const out: Hit[] = [];
   for (const [id, h] of Object.entries<any>(v)) {
     if (!h || typeof h.target !== "string" || typeof h.amount !== "number") continue;
-    out.push({ id, target: h.target, targetName: str(h.targetName, 30), amount: h.amount, by: str(h.by), byName: str(h.byName, 30), hideout: str(h.hideout), hideoutName: str(h.hideoutName, 40), at: typeof h.at === "number" ? h.at : 0 });
+    out.push({ id, target: h.target, targetName: str(h.targetName, 30), amount: h.amount, by: str(h.by), byName: str(h.byName, 30), hideout: str(h.hideout), hideoutName: str(h.hideoutName, 40), at: typeof h.at === "number" ? h.at : 0, ...(h.bagmand === true ? { bagmand: true } : {}), ...(typeof h.until === "number" ? { until: h.until } : {}) });
   }
   return out.sort((a, b) => b.amount - a.amount || a.at - b.at);
 }

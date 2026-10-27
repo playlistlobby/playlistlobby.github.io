@@ -578,8 +578,17 @@ export const removeFurni = (id: string, fid: string) => remove(ref(db, `${furniP
 
 /** Can this player walk straight in? Mirrors the database rules so we can say no politely instead of failing.
  *  Open rooms and friends' rooms: yes. Anyone else needs to be let in (a roomInvites entry), which a knock asks for. */
+/** is a player with one of bagmand's hits standing in this room right now? Then it is open to everybody (see server/src/actions/bounty.ts). */
+export async function isWantedRoomLive(room: string): Promise<boolean> {
+  try {
+    const v = (await get(ref(db, `wantedRooms/${room}`))).val() as { until?: number } | null;
+    return !!v && typeof v.until === "number" && v.until > Date.now();
+  } catch { return false; }
+}
+
 export async function canEnter(meta: RoomMeta, uid: string, friendUids: Set<string>, trespass = false): Promise<boolean> {
   if (meta.owner === uid || meta.access === "open" || trespass) return true; // (trespass: a shroom or DMT is working)
+  if (await isWantedRoomLive(`u_${meta.owner}`)) return true; // (a wanted player is in there: nobody can hide)
   if (meta.access !== "none" && friendUids.has(meta.owner)) return true;
   const inv = await get(ref(db, `roomInvites/u_${meta.owner}/${uid}`));
   return inv.exists();

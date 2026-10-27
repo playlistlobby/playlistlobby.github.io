@@ -5,6 +5,7 @@ import { loadEmojiFont } from "./emojiFont";
 import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
 import { createProfile, loadProfile, Profile, watchEconomy } from "./db";
+import { watchMyWanted } from "./bounty";
 import { collectPaidCds } from "./payReturn";
 import { checkRaffleAtLogin } from "./raffle";
 import { startUpdateCheck } from "./updateCheck";
@@ -235,6 +236,7 @@ async function showHotel(user: User): Promise<void> {
     return showLocked("busy");
   }
   startPresence(p); // takes the seat right away
+  const stopWanted = watchMyWanted(p.uid); // (a hit of bagmand's on me: then I must say which room I walk into)
   const stopEconomy = watchEconomy(p); // what the server writes about you (a trade finishing, ...) shows up at once
   const stopPriceBook = p.isAdmin ? publishPriceBook() : () => undefined; // the admin's game publishes the clothes price list the server charges from
   const stopSeatWatch = watchSession(p.uid, () => {
@@ -333,6 +335,7 @@ async function showHotel(user: User): Promise<void> {
   offBadge = social.subscribe(() => bar?.setBadge(social.badgeCount));
   bar.setBadge(social.badgeCount);
   shellCleanup = () => {
+    stopWanted();
     stopEconomy();
     stopMute();
     stopNotices();

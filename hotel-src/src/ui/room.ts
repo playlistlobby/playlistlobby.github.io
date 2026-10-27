@@ -70,6 +70,7 @@ import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
 import {
   canEnter,
+  isWantedRoomLive,
   defFromMeta,
   FURNI_KINDS,
   INTERACTIVE_KINDS,
@@ -150,11 +151,12 @@ import { assetUrl } from "../assetUrl";
 import { drawFx } from "./fxSprites";
 import { canonFx } from "../shared/unusualFx";
 import { VAPE_COOLDOWN_MS } from "../shared/ducky";
+import { bagmandHitTick, bountyShow, wantedUntil } from "../bounty";
 import { playBang, playSfx, playThud } from "../sfx";
 import { gunShoot as gunShootCall, rocketFire as rocketFireCall, watchHits, watchRocketAt } from "../hits";
 import { ROCKET_COOLDOWN_MS, ROCKET_LINE } from "../shared/hits";
 import { BADTRIP_LINES, BADTRIP_MS, BADTRIP_RUN_MS, BADTRIP_SLEEP_MS } from "../shared/items";
-import { bountiesOf } from "../shared/hits";
+import { bountiesOf, liveHits } from "../shared/hits";
 import type { Hit } from "../shared/hits";
 import { openWantedBoard } from "./wantedBoard";
 import { openDiscordBoard } from "./discordBoard";
@@ -575,7 +577,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** every open hit (the biggest bounty per player shows over their head while you hold a gun) */
   let bounties = bountiesOf([] as Hit[]);
   let hitsOpen: Hit[] = [];
-  const stopHits = watchHits((l) => { hitsOpen = l; bounties = bountiesOf(l); });
+  const stopHits = watchHits((all) => { const l = liveHits(all, serverNow()); hitsOpen = l; bounties = bountiesOf(l); }); // (a bagmand hit that ran out is not shown)
   let wantedApi: { close(): void } | null = null;
   let noticeApi: { close(): void } | null = null;
   let shootBox: HTMLElement | null = null;
@@ -3504,6 +3506,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       unsubs.push(watchBagmand(() => { bagVisit = visitNow(); }));
       const bagTimer = window.setInterval(() => { bagVisit = visitNow(); if (bagVisit === null && bagmandApi) bagmandApi.close(); }, 1000);
       unsubs.push(() => window.clearInterval(bagTimer));
+      // while he is here somebody in the basement asks every half minute for the hit that is due (he puts out 2 to 5 in a visit: see server/src/actions/bounty.ts)
+      const hitTimer = window.setInterval(() => { if (!disposed && bagVisit !== null && !document.hidden) void bagmandHitTick(me).catch(() => undefined); }, 30_000 + Math.floor(Math.random() * 5000));
+      unsubs.push(() => window.clearInterval(hitTimer));
+      if (bagVisit !== null) void bagmandHitTick(me).catch(() => undefined);
       if (!asSixty) sixtyAfter(3400, () => {
         if (sixtyBusy || sixtyShop || (sixtyBubble && sixtyBubble.until > performance.now())) return;
         const m = awayMessage(me.uid);
@@ -3618,6 +3624,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (!ev || typeof ev.ts !== "number" || ev.ts < joinedAt - 3000) return;
         if (ev.type === "syringe") {
           syringeFx.push({ uid: ev.from, start: performance.now(), burst: false });
+          return;
+        }
+        if (ev.type === "bagmandSay" && typeof ev.text === "string") { // bagmand puts a hit out: he says it over his head and in the chat
+          const line = String(ev.text).slice(0, 140);
+          bagmanBubble = { text: line, until: performance.now() + 8000 };
+          addLine(h("div", { class: "line" }, h("b", {}, `${BAGMAN.name}: `), line), CHAT_LIFE_MS);
           return;
         }
         if (ev.type === "shot") { shotFx.push({ from: ev.from, to: ev.to, start: performance.now(), fired: false, rocket: !!ev.rocket }); return; }
@@ -4668,11 +4680,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
         g.restore();
         if (red && hitsOpen.length && bloodImg.complete && bloodImg.naturalWidth) { // a little blood drop floats over the wanted board while there is a hit up (everybody sees when one is possible)
-          const w = 13 * scale * (hot ? 1.2 : 1), hgt = w * 1.375;
+          const bag = hitsOpen.some((x) => x.bagmand); // (one of bagmand's own hits: a bigger, faster drop with a red mark)
+          const w = 13 * scale * (hot ? 1.2 : 1) * (bag ? 1.5 : 1), hgt = w * 1.375;
+          const bob = Math.sin(now / (bag ? 220 : 380)) * (bag ? 5 : 3) * scale;
           g.save();
           g.imageSmoothingEnabled = false;
-          g.shadowColor = "rgba(255,60,50,0.8)"; g.shadowBlur = (4 + 4 * pulse) * scale;
-          g.drawImage(bloodImg, cx - w / 2, b.y0 - hgt - 4 * scale + Math.sin(now / 380) * 3 * scale, w, hgt);
+          g.shadowColor = "rgba(255,60,50,0.8)"; g.shadowBlur = (4 + 4 * pulse + (bag ? 6 : 0)) * scale;
+          g.drawImage(bloodImg, cx - w / 2, b.y0 - hgt - 4 * scale + bob, w, hgt);
+          if (bag) { // the red "!" next to it
+            g.shadowBlur = 0; g.fillStyle = "#e8281e"; g.strokeStyle = "#fff"; g.lineWidth = 3 * scale;
+            g.font = `bold ${Math.round(16 * scale)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+            g.strokeText("!", cx + w * 0.85, b.y0 - hgt * 0.6 + bob); g.fillText("!", cx + w * 0.85, b.y0 - hgt * 0.6 + bob);
+          }
           g.restore();
         }
       }
@@ -5887,6 +5906,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   // ---- boot --------------------------------------------------------------------------
   async function init(): Promise<void> {
+    // a player with one of bagmand's hits on them says which room they walk into first: it is open to everybody while the hit lasts, and the database refuses their presence anywhere else
+    if (wantedUntil() > serverNow()) { try { await bountyShow(me, roomId); } catch { /* the rules decide */ } }
+    if (disposed) return;
     if (roomId === SHOP_ID) {
       applyDef(shopDef(picksToday(), raffleNow.round?.prize));
       start();
@@ -5962,7 +5984,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const trespassNow = me.shroomUntil > serverNow();
       if (isHideoutRoom) {
         if (!me.enterAnywhere && !hideoutRole({ owner: meta.owner, members: meta.members }, me.uid).member) {
-          hideoutGuest = meta.access === "open" || (await get(ref(db, `roomInvites/${roomId}/${me.uid}`)).catch(() => null))?.exists() === true; // (open to all, or the owner let me in)
+          hideoutGuest = meta.access === "open" || (await get(ref(db, `roomInvites/${roomId}/${me.uid}`)).catch(() => null))?.exists() === true || (await isWantedRoomLive(roomId)); // (open to all, or the owner let me in)
           if (!hideoutGuest) return kicked("You aren't in that hideout.");
         }
       }

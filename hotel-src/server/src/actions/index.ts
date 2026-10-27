@@ -27,6 +27,7 @@ import { rollDice } from "./dice";
 import { register } from "./signup";
 import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
 import { bagmandBuy, bagmandSell, deadlyStab } from "./bagmand";
+import { bagmandHitTick, bountyShow } from "./bounty";
 import { loudspeaker } from "./loudspeaker";
 import { petBuy, petPickup, petRelease, petStockNow } from "./pets";
 import { caseOpen, unusualRemove, unusualWear } from "./cases";
@@ -50,7 +51,7 @@ export const ACTIONS: Record<string, Action> = {
   duckyBuy, rollDice, register,
   modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick, modRename,
   raffleBuy, raffleCollect, raffleRemove, raffleTick,
-  bagmandBuy, bagmandSell, deadlyStab, loudspeaker, petBuy, petRelease, petPickup, petStockNow, caseOpen, unusualWear, unusualRemove,
+  bagmandBuy, bagmandSell, deadlyStab, bagmandHitTick, bountyShow, loudspeaker, petBuy, petRelease, petPickup, petStockNow, caseOpen, unusualWear, unusualRemove,
   hideoutBuy, hideoutUpgrade, hideoutColors, hideoutSettings, hideoutKick, hideoutLeave, hideoutMember, hideoutSearch, hideoutInvite, hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutOrder, hideoutCollect, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect,
   mine, craft,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,

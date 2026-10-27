@@ -9,8 +9,8 @@ import { BAGMAND_BUY, bagmandPays, BAGMAN_ROOM, currentVisit, DEADLY_DROP, lastV
 import { bloodPile } from "./floor";
 import { isProtected } from "./hits";
 
-/** The start of the visit that is on now (in the local emulator a test can open one by hand: bagmand/force). */
-async function openVisit(c: Ctx): Promise<number> {
+/** The start of the visit that is on now, or null (in the local emulator a test can open one by hand: bagmand/force). */
+export async function visitOrNull(c: Ctx): Promise<number | null> {
   if (isEmulator(c.env)) {
     const forced = await c.db.get<number>("bagmand/force");
     if (forced === 1) return Math.floor(c.now / VISIT_MS) * VISIT_MS; // (a test: 1 = he is always here)
@@ -21,6 +21,11 @@ async function openVisit(c: Ctx): Promise<number> {
     const stay = await c.db.get<number>("bagmand/stayUntil");
     if (typeof stay === "number" && c.now < stay) start = lastVisit(c.now) + VISIT_MS; // (the time he stays on is a visit of its own with fresh stock: it starts when the last one ended)
   }
+  return start;
+}
+/** The start of the visit that is on now (the action fails when he isn't here). */
+async function openVisit(c: Ctx): Promise<number> {
+  const start = await visitOrNull(c);
   if (start === null) fail("Bagmand isn't here. He comes at 01:00, 10:00 and 15:00 for an hour.");
   return start!;
 }

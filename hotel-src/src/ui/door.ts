@@ -1,4 +1,5 @@
 import { h, toast } from "./dom";
+import { isWantedRoom, watchWantedRooms } from "../bounty";
 import { headBoxFor } from "./head";
 import { social } from "../social";
 import { Access, LOBBY_ID, normAccess, ownRoomId, RoomMeta, watchAllRooms } from "../rooms";
@@ -107,7 +108,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
       };
       return all.map((r) => ({ r, s: score(r) })).filter((x) => x.s >= 0).sort((a, b) => a.s - b.s || rank(a.r, b.r)).map((x) => x.r);
     }
-    const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
+    const visible = tripping() ? all : all.filter((r) => r.friend || r.access === "open" || isWantedRoom(r.roomId) || (r.access === "knock" && r.online)); // on a shroom every room is on the list, online or not
     return visible.sort(rank);
   }
 
@@ -115,6 +116,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
   const tripping = (): boolean => me.isAdmin || me.enterAnywhere || me.shroomUntil > serverNow(); // (the admin can walk into anybody's room, always)
 
   function actionFor(r: Row): HTMLElement {
+    if (isWantedRoom(r.roomId) && !(r.friend || r.access === "open")) return h("button", { class: "btn small primary", title: "Somebody with a bounty on them is in there: nobody can hide", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Walk in");
     if (tripping() && !(r.friend || r.access === "open")) return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Walk in");
     if (r.access === "none") return h("span", { class: "door-actions" }, h("button", { class: "btn small", disabled: true }, "Closed"));
     if (r.friend || r.access === "open") return h("button", { class: "btn small primary", onclick: (e: Event) => { if (chosen(e)) enter(r.roomId, `${r.ownerName}'s room`); } }, "Visit");
@@ -270,6 +272,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     offRooms();
     offBoard();
     offSocial();
+    offWanted();
     el.remove();
     onClose();
   }
@@ -281,6 +284,7 @@ export function openDoor(host: HTMLElement, ctx: Ctx, currentRoom: string, onClo
     refreshSoon();
   }, () => undefined);
   const offSocial = social.subscribe(() => refreshSoon());
+  const offWanted = watchWantedRooms(() => refreshSoon());
   render();
   return { close };
 }

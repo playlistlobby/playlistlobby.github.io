@@ -13383,5 +13383,75 @@
   "en": "Every other sound: clicks, doors, stabs, the gun, the games",
   "da": "Alle andre lyde: klik, døre, stik, pistolen, spillene",
   "where": "src/ui/topbar.ts"
+ },
+ "N2122": {
+  "en": "🕴 Bagmand's hit · {rest} left",
+  "da": "🕴 Bagmands hit · {rest} tilbage",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2123": {
+  "en": "📍 Last seen in {spot}",
+  "da": "📍 Sidst set i {spot}",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2124": {
+  "en": "somewhere out of sight",
+  "da": "et sted uden for syne",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2125": {
+  "en": "browsing the menus",
+  "da": "i menuerne",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2126": {
+  "en": "the basement",
+  "da": "kælderen",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2127": {
+  "en": "the shop",
+  "da": "butikken",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2128": {
+  "en": "the introduction",
+  "da": "introen",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2129": {
+  "en": "the hideout \"{hname}\"",
+  "da": "skjulestedet \"{hname}\"",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2130": {
+  "en": "a hideout",
+  "da": "et skjulested",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2131": {
+  "en": "{oname}'s room",
+  "da": "{oname}s værelse",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2132": {
+  "en": "somebody's room",
+  "da": "nogens værelse",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2133": {
+  "en": "a room",
+  "da": "et værelse",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N2134": {
+  "en": "There's {amount} blood on {name}'s head. Whoever shoots them gets it.",
+  "da": "Der er {amount} blod på {name}s hoved. Den der skyder dem får det.",
+  "where": "server/src/actions/bounty.ts"
+ },
+ "N2135": {
+  "en": "Somebody with a bounty on them is in there: nobody can hide",
+  "da": "Nogen med en dusør på hovedet er derinde: ingen kan gemme sig",
+  "where": "src/ui/door.ts"
  }
 }

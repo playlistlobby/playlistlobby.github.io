@@ -7,7 +7,8 @@ import { skipTime } from "../skipTime";
 import {
   addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabWaitAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
-import { parseHits, HIT_ONLINE_FRESH_MS } from "../../../src/shared/hits";
+import { liveHits, parseHits, HIT_ONLINE_FRESH_MS } from "../../../src/shared/hits";
+import { clearWanted } from "./bounty";
 import { BADTRIP_CHANCE, combine, DRUG_USE, fentanylDeathCost, findSlot, growMsOf, isLaced, PSYCHEDELICS, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
 import type { UseDef } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
@@ -143,12 +144,13 @@ async function fentDeath(c: import("../ctx").Ctx, s: { blood: number }, laced?: 
   // dying of a laced thing somebody handed you while there is a bounty on you: the one who handed it over is paid it, if they are online (if not, the bounty stays up)
   let paid: { to: string; amount: number } | null = null;
   if (laced && giver && giver !== c.uid) {
-    const hit = parseHits(await c.db.get("hits")).filter((h) => h.target === c.uid)[0]; // (the biggest, like a shot)
+    const hit = liveHits(parseHits(await c.db.get("hits")), c.now).filter((h) => h.target === c.uid)[0]; // (the biggest, like a shot)
     const seen = hit ? await c.db.get<number>(`presence/${giver}/seen`) : null;
     if (hit && typeof seen === "number" && c.now - seen < HIT_ONLINE_FRESH_MS) {
       const gw = await c.user(giver);
       gw.s.blood += hit.amount;
       c.extra[`hits/${hit.id}`] = null;
+      if (hit.bagmand) await clearWanted(c, c.uid);
       paid = { to: giver, amount: hit.amount };
       c.note += ` (the ${hit.amount} bounty went to the one who gave it)`;
     }

@@ -5,6 +5,7 @@ import { sortListings } from "../shared/hideout";
 import type { HideoutListing } from "../shared/hideout";
 import type { MyHideout } from "../hideout";
 import { isHideoutId, LOBBY_ID, watchAllRooms } from "../rooms";
+import { isWantedRoom, watchWantedRooms } from "../bounty";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 
@@ -60,7 +61,7 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
         h("div", { class: "door-row-main" },
           h("div", { class: "door-row-name" }, `${o.listing.boostUntil > now ? "🔥 " : ""}${o.listing.name}`),
           h("div", { class: "hint" }, `${yours ? "Yours" : o.listing.ownerName} · ${o.listing.members} member${o.listing.members === 1 ? "" : "s"}${insideOf(o.owner) ? ` · 👥 ${insideOf(o.owner)} inside` : ""}${n ? ` · ★ ${n}` : ""}${o.listing.desc ? ` · ${o.listing.desc}` : ""}`)),
-        o.listing.open || me.enterAnywhere // (the staff walk into any hideout, closed or not, like into any room)
+        o.listing.open || me.enterAnywhere || isWantedRoom(`h_${o.owner}`) // (the staff walk into any hideout; so does everybody into one a wanted player is in)
           ? h("button", { class: "btn small primary", onclick: () => { playSfx("select", 0.5); close(); ctx.navigate("room", { roomId: `h_${o.owner}`, from: LOBBY_ID }); } }, "Enter")
           : knocking?.owner === o.owner
           ? (knocking.state === "waiting" ? h("span", { class: "hint" }, "Knocking…") : h("span", { class: "hint" }, knocking.state === "declined" ? "Sent away" : "Nobody answered"))
@@ -100,7 +101,8 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
   }
   const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; render(); }), ...(me.enterAnywhere ? [watchAllRooms((all) => { everyHideout = Object.entries(all).filter(([id, m]) => isHideoutId(id) && m?.owner).map(([id, m]) => ({ owner: id.slice(2), name: String(m.name ?? "Hideout"), ownerName: String(m.ownerName ?? "?"), members: Object.keys((m as { members?: object }).members ?? {}).length + 1 })); render(); })] : []), watchHideoutList((l) => { list = l; render(); }), watchMyHideouts(me.uid, (l) => { mine = l; render(); }), watchHideoutInvites(me.uid, (l) => { invites = l; render(); })];
   const offSocial = social.subscribe(() => render()); // (who is inside changes all the time)
+  const offWanted = watchWantedRooms(() => render());
   render();
-  function close(): void { if (closed) return; closed = true; offSocial(); window.clearTimeout(knockTimer); stopKnock?.(); if (knocking?.state === "waiting") void social.cancelHideoutKnock(knocking.owner); stops.forEach((s) => s()); el.remove(); onClose(); }
+  function close(): void { if (closed) return; closed = true; offSocial(); offWanted(); window.clearTimeout(knockTimer); stopKnock?.(); if (knocking?.state === "waiting") void social.cancelHideoutKnock(knocking.owner); stops.forEach((s) => s()); el.remove(); onClose(); }
   return { close };
 }

@@ -90,3 +90,37 @@ export const RUSH_SPEED = 10;
 export const RUSH_SPIN = 3;
 /** how many players one loudpack can kill, and what each victim drops */
 export const DEADLY_DROP = 10;
+
+// ---- bagmand's own bounties -----------------------------------------------------------------------------------------------------------------------
+// While he is in the basement he puts 2 to 5 hits of 300-500 blood on players who carry more than 1000, each one on somebody else, at times spread over his visit (never in the first 5 minutes
+// or the last 10). A hit is on the wanted board (with where the target is) and anybody with a gun can claim it. While it lasts the target can't hide: any room they stand in is open to everybody.
+//   hits/<id>             { ..., by: "bagmand", bagmand: true, until }   the same node as the players' hits
+//   wantedUsers/<uid>     { until, hit, room? }                          who has a bagmand hit on them now, and the room they stand in (readable by the target only)
+//   wantedRooms/<room>    { uid, until }                                 a room a wanted player stands in: open to everybody (readable by everybody; the rules let anybody in)
+//   bagmandHits/<visit>   { placed, targets: { <uid>: true }, retryAt? } how far the visit's plan has got
+export const BAGMAND_HIT_MIN = 300;
+export const BAGMAND_HIT_MAX = 500;
+/** only players with more than this are picked */
+export const BAGMAND_HIT_BLOOD = 1000;
+/** the first hit comes 5 minutes after he arrives, the last one at least 10 minutes before he leaves */
+export const BAGMAND_HIT_FIRST_MS = 5 * 60_000;
+export const BAGMAND_HIT_LAST_MS = 10 * 60_000;
+/** a hit lasts this long if nobody claims it */
+export const BAGMAND_HIT_TTL_MS = 60 * 60_000;
+/** a slot of the plan that nobody was around to use is dropped after this (no pile of hits at once) */
+export const BAGMAND_HIT_LATE_MS = 5 * 60_000;
+const mix = (a: number, b: number): number => {
+  let x = (a ^ Math.imul(b + 1, 0x9e3779b1)) >>> 0;
+  x = Math.imul(x ^ (x >>> 15), 0x85ebca6b) >>> 0;
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0;
+};
+/** when this visit's hits are put out (ms, ascending): 2 to 5 of them, spread over the minutes from 5 after he arrives to 10 before he leaves (the same for everybody: it comes from the visit's start) */
+export function bagmandHitPlan(start: number): number[] {
+  const seed = Math.floor(start / 60_000);
+  const n = 2 + (mix(seed, 1) % 4);
+  const w0 = start + BAGMAND_HIT_FIRST_MS, w1 = start + VISIT_MS - BAGMAND_HIT_LAST_MS;
+  const slot = (w1 - w0) / n;
+  return Array.from({ length: n }, (_, k) => Math.round(w0 + (k + 0.5) * slot + ((mix(seed, 10 + k) % 1000) / 1000 - 0.5) * 0.6 * slot));
+}
+/** the line he says in the chat when he puts a hit out is made in server/src/actions/bounty.ts */
