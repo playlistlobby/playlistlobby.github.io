@@ -12518,5 +12518,550 @@
   "en": "Wanted board",
   "da": "Eftersøgt-tavle",
   "where": "src/rooms.ts"
+ },
+ "N1973": {
+  "en": "{left} left. New ones at 10:00 every morning.",
+  "da": "{left} tilbage. Nye kl. 10:00 hver morgen.",
+  "where": "src/ui/vendingShop.ts:35"
+ },
+ "N1974": {
+  "en": "Sold out. New ones at 10:00 every morning.",
+  "da": "Udsolgt. Nye kl. 10:00 hver morgen.",
+  "where": "src/ui/vendingShop.ts:35"
+ },
+ "N1975": {
+  "en": "{whose}'s piece: you can move it or put it in the box.",
+  "da": "{whose}s ting: du kan flytte den eller lægge den i kassen.",
+  "where": "src/ui/furnish.ts:86"
+ },
+ "N1976": {
+  "en": "Tap a free spot to put it there.",
+  "da": "Tryk på et frit sted for at sætte den der.",
+  "where": "src/ui/furnish.ts:86"
+ },
+ "N1977": {
+  "en": "🎒 Take to pocket",
+  "da": "🎒 Tag med i lommen",
+  "where": "src/ui/furnish.ts:89"
+ },
+ "N1978": {
+  "en": "📦 Put in box",
+  "da": "📦 Læg i kassen",
+  "where": "src/ui/furnish.ts:90"
+ },
+ "N1979": {
+  "en": "📦 Put in storage",
+  "da": "📦 Læg på lager",
+  "where": "src/ui/furnish.ts:90"
+ },
+ "N1980": {
+  "en": "Tap a piece in the room to move it or take it away.",
+  "da": "Tryk på en ting i rummet for at flytte den eller tage den væk.",
+  "where": "src/ui/furnish.ts:92"
+ },
+ "N1981": {
+  "en": "Tap a piece to move it or take it away.",
+  "da": "Tryk på en ting for at flytte den eller tage den væk.",
+  "where": "src/ui/furnish.ts:92"
+ },
+ "N1982": {
+  "en": "🎒 Pocket",
+  "da": "🎒 Lomme",
+  "where": "src/ui/furnish.ts:136"
+ },
+ "N1983": {
+  "en": "You haven't put anything down in here yet.",
+  "da": "Du har ikke sat noget herind endnu.",
+  "where": "src/ui/furnish.ts:150"
+ },
+ "N1984": {
+  "en": "You carry no furniture. Take a piece from storage or from your stuff.",
+  "da": "Du har ingen møbler på dig. Tag en ting fra lageret eller fra dine ting.",
+  "where": "src/ui/furnish.ts:151"
+ },
+ "N1985": {
+  "en": "Nothing in storage. Take a piece into storage with Put in storage.",
+  "da": "Intet på lageret. Læg en ting på lager med Læg på lager.",
+  "where": "src/ui/furnish.ts:152"
+ },
+ "N1986": {
+  "en": "The box is empty.",
+  "da": "Kassen er tom.",
+  "where": "src/ui/furnish.ts:153"
+ },
+ "N1987": {
+  "en": "Tap one to move it. 🎒 Pocket takes it back into your pocket.",
+  "da": "Tryk på en for at flytte den. 🎒 Lomme tager den tilbage i lommen.",
+  "where": "src/ui/furnish.ts:156"
+ },
+ "N1988": {
+  "en": "Tap a piece, then tap a free spot in the room.",
+  "da": "Tryk på en ting, og tryk så på et frit sted i rummet.",
+  "where": "src/ui/furnish.ts:157"
+ },
+ "N1989": {
+  "en": "Tap a piece, then a spot in the room. Free pockets: {freeSlots}",
+  "da": "Tryk på en ting, og så et sted i rummet. Frie lommer: {freeSlots}",
+  "where": "src/ui/furnish.ts:158"
+ },
+ "N1990": {
+  "en": "Shared by the hideout. Anybody who may build can place these; only the owner takes a piece out.",
+  "da": "Delt af skjulestedet. Alle der må bygge kan sætte dem op; kun ejeren tager en ting ud.",
+  "where": "src/ui/furnish.ts:159"
+ },
+ "N1991": {
+  "en": "Your stuff ({length})",
+  "da": "Dine ting ({length})",
+  "where": "src/ui/furnish.ts:163"
+ },
+ "N1992": {
+  "en": "Pocket ({length})",
+  "da": "Lomme ({length})",
+  "where": "src/ui/furnish.ts:164"
+ },
+ "N1993": {
+  "en": "With autoplant on, tapping an empty growing kit plants a seed from your pocket",
+  "da": "Med autoplant slået til planter et tryk på en tom vokseplads et frø fra din lomme",
+  "where": "src/ui/topbar.ts:55"
+ },
+ "N1994": {
+  "en": "🌱 Autoplant: on",
+  "da": "🌱 Autoplant: til",
+  "where": "src/ui/topbar.ts:57"
+ },
+ "N1995": {
+  "en": "🌱 Autoplant: off",
+  "da": "🌱 Autoplant: fra",
+  "where": "src/ui/topbar.ts:57"
+ },
+ "N1996": {
+  "en": "Take it off your favourites",
+  "da": "Fjern den fra dine favoritter",
+  "where": "src/ui/hideoutDoor.ts:65"
+ },
+ "N1997": {
+  "en": "Add it to your favourites",
+  "da": "Tilføj den til dine favoritter",
+  "where": "src/ui/hideoutDoor.ts:65"
+ },
+ "N1998": {
+  "en": "Favourite",
+  "da": "Favorit",
+  "where": "src/ui/hideoutDoor.ts:65"
+ },
+ "N1999": {
+  "en": "★ Favourites",
+  "da": "★ Favoritter",
+  "where": "src/ui/hideoutDoor.ts:75"
+ },
+ "N2000": {
+  "en": "🔥 Boosted ({length})",
+  "da": "🔥 Fremhævede ({length})",
+  "where": "src/ui/hideoutDoor.ts:80"
+ },
+ "N2001": {
+  "en": "All ({length})",
+  "da": "Alle ({length})",
+  "where": "src/ui/hideoutDoor.ts:81"
+ },
+ "N2002": {
+  "en": "No boosted hideouts right now. A hideout's owner can boost it for 6 hours.",
+  "da": "Ingen fremhævede skjulesteder lige nu. Et skjulesteds ejer kan fremhæve det i 6 timer.",
+  "where": "src/ui/hideoutDoor.ts:82"
+ },
+ "N2003": {
+  "en": "No hideouts here yet.",
+  "da": "Ingen skjulesteder her endnu.",
+  "where": "src/ui/hideoutDoor.ts:82"
+ },
+ "N2004": {
+  "en": "Tap Sit to play. Buy in {blood}-{blood}.",
+  "da": "Tryk Sit for at spille. Buy-in {blood}-{blood}.",
+  "where": "src/ui/pokerTable.ts:154"
+ },
+ "N2005": {
+  "en": "Put a bank on the table. Players bet up to {BJ_BET_MAX}.",
+  "da": "Sæt en bank på bordet. Spillerne satser op til {BJ_BET_MAX}.",
+  "where": "src/ui/blackjackTable.ts:150"
+ },
+ "N2006": {
+  "en": "Wanted",
+  "da": "Eftersøgt",
+  "where": "src/ui/wantedBoard.ts:16"
+ },
+ "N2007": {
+  "en": "{length} hits out, the biggest first",
+  "da": "{length} dusører udlovet, den største først",
+  "where": "src/ui/wantedBoard.ts:30"
+ },
+ "N2008": {
+  "en": "Type at least 2 letters.",
+  "da": "Skriv mindst 2 bogstaver.",
+  "where": "src/ui/hideoutComputer.ts:81"
+ },
+ "N2009": {
+  "en": "Nobody has a name like that.",
+  "da": "Ingen har et navn som det.",
+  "where": "src/ui/hideoutComputer.ts:83"
+ },
+ "N2010": {
+  "en": "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 3 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells two a visit) can collect it.",
+  "da": "Blodet forlader din lomme nu og sidder på deres hoved, til nogen henter det. Et skjulested kan udlove én dusør hver 3. time, og ingen får mere end 3 om dagen. Alle med en pistol (bagmand sælger to pr. besøg) kan hente den.",
+  "where": "src/ui/hideoutComputer.ts:147"
+ },
+ "N2011": {
+  "en": "Somebody put a hit on you",
+  "da": "Nogen har sat en dusør på dig",
+  "where": "src/ui/hideoutComputer.ts:148"
+ },
+ "N2012": {
+  "en": "Revenge",
+  "da": "Hævn",
+  "where": "src/ui/hideoutComputer.ts:150"
+ },
+ "N2013": {
+  "en": "Invite somebody",
+  "da": "Inviter nogen",
+  "where": "src/ui/hideoutComputer.ts:169"
+ },
+ "N2014": {
+  "en": "Build",
+  "da": "Byg",
+  "where": "src/ui/hideoutComputer.ts:176"
+ },
+ "N2015": {
+  "en": "May place and move furniture",
+  "da": "Må sætte og flytte møbler",
+  "where": "src/ui/hideoutComputer.ts:176"
+ },
+ "N2016": {
+  "en": "Pots & mixers",
+  "da": "Potter og mixere",
+  "where": "src/ui/hideoutComputer.ts:176"
+ },
+ "N2017": {
+  "en": "May use the growing kits, the mixers and the sink",
+  "da": "Må bruge voksepladerne, mixerne og vasken",
+  "where": "src/ui/hideoutComputer.ts:176"
+ },
+ "N2018": {
+  "en": "Stash",
+  "da": "Gemmeboks",
+  "where": "src/ui/hideoutComputer.ts:176"
+ },
+ "N2019": {
+  "en": "May use the shared stash",
+  "da": "Må bruge den fælles gemmeboks",
+  "where": "src/ui/hideoutComputer.ts:176"
+ },
+ "N2020": {
+  "en": "Switch things off for a member and they stay off for new members too, until you switch them on again.",
+  "da": "Slår du noget fra for et medlem, er det også slået fra for nye medlemmer, indtil du slår det til igen.",
+  "where": "src/ui/hideoutComputer.ts:178"
+ },
+ "N2021": {
+  "en": "Only the owner can invite, kick and change what members may do.",
+  "da": "Kun ejeren kan invitere, smide ud og ændre hvad medlemmer må.",
+  "where": "src/ui/hideoutComputer.ts:178"
+ },
+ "N2022": {
+  "en": "Show it first on the list for 6 hours",
+  "da": "Vis det først på listen i 6 timer",
+  "where": "src/ui/hideoutComputer.ts:203"
+ },
+ "N2023": {
+  "en": "{label}: tap to play",
+  "da": "{label}: tryk for at spille",
+  "where": "src/ui/room.ts:777"
+ },
+ "N2024": {
+  "en": "The MK2 clicks in. This mixer mixes 25% faster now, and has turned dark grey.",
+  "da": "MK2 klikker på plads. Denne mixer mixer 25% hurtigere nu, og er blevet mørkegrå.",
+  "where": "src/ui/room.ts:1736"
+ },
+ "N2025": {
+  "en": "The chip clicks in. This mixer mixes 15% faster now, and has turned green.",
+  "da": "Chippen klikker på plads. Denne mixer mixer 15% hurtigere nu, og er blevet grøn.",
+  "where": "src/ui/room.ts:1736"
+ },
+ "N2026": {
+  "en": "Autoplant is on, but you have no seeds to plant.",
+  "da": "Autoplant er slået til, men du har ingen frø at plante.",
+  "where": "src/ui/room.ts:1749"
+ },
+ "N2027": {
+  "en": "An empty growing kit. Tap a weed seed, shroom spores or a poppy seed in your pocket first, then tap the kit to plant it. (Or turn Autoplant on in the menu.)",
+  "da": "En tom vokseplads. Tryk først på et weedfrø, svampesporer eller et valmuefrø i din lomme, og tryk så på pladsen for at plante det. (Eller slå Autoplant til i menuen.)",
+  "where": "src/ui/room.ts:1750"
+ },
+ "N2028": {
+  "en": "{…} blew you up.",
+  "da": "{…} sprængte dig i luften.",
+  "where": "src/ui/room.ts:2755"
+ },
+ "N2029": {
+  "en": "Your clothes are gone and your legs will not stop.",
+  "da": "Dit tøj er væk, og dine ben vil ikke stoppe.",
+  "where": "src/ui/room.ts:2956"
+ },
+ "N2030": {
+  "en": "You blew up {name}. They are down for {secs} seconds.",
+  "da": "Du sprængte {name} i luften. De er nede i {secs} sekunder.",
+  "where": "src/ui/room.ts:4164"
+ },
+ "N2031": {
+  "en": "Fire",
+  "da": "Fyr af",
+  "where": "src/ui/room.ts:4175"
+ },
+ "N2032": {
+  "en": "Rocket launcher",
+  "da": "Raketkaster",
+  "where": "src/ui/room.ts:4179"
+ },
+ "N2033": {
+  "en": "Reloading: {…} min",
+  "da": "Lader om: {…} min",
+  "where": "src/ui/room.ts:4181"
+ },
+ "N2034": {
+  "en": "They are dead for 30 seconds.",
+  "da": "De er døde i 30 sekunder.",
+  "where": "src/ui/room.ts:4181"
+ },
+ "N2035": {
+  "en": "Once every 30 minutes.",
+  "da": "Én gang hvert 30. minut.",
+  "where": "src/ui/room.ts:4182"
+ },
+ "N2036": {
+  "en": "One bullet. It is gone after the shot.",
+  "da": "Én kugle. Den er væk efter skuddet.",
+  "where": "src/ui/room.ts:4182"
+ },
+ "N2037": {
+  "en": "Crate chair",
+  "da": "Kassestol",
+  "where": "src/shared/furniture.ts:86"
+ },
+ "N2038": {
+  "en": "Cat tree",
+  "da": "Kradsetræ",
+  "where": "src/shared/furniture.ts:89"
+ },
+ "N2039": {
+  "en": "Cefalu gate",
+  "da": "Cefalu-port",
+  "where": "src/shared/furniture.ts:90"
+ },
+ "N2040": {
+  "en": "Cefalu wall",
+  "da": "Cefalu-mur",
+  "where": "src/shared/furniture.ts:91"
+ },
+ "N2041": {
+  "en": "Gymnast group",
+  "da": "Gymnastgruppe",
+  "where": "src/shared/furniture.ts:92"
+ },
+ "N2042": {
+  "en": "Acrobat",
+  "da": "Akrobat",
+  "where": "src/shared/furniture.ts:93"
+ },
+ "N2043": {
+  "en": "Fluffby",
+  "da": "Fluffby",
+  "where": "src/shared/furniture.ts:94"
+ },
+ "N2044": {
+  "en": "Marble toilet",
+  "da": "Marmortoilet",
+  "where": "src/shared/furniture.ts:95"
+ },
+ "N2045": {
+  "en": "Toilet paper",
+  "da": "Toiletpapir",
+  "where": "src/shared/furniture.ts:96"
+ },
+ "N2046": {
+  "en": "Pumpkin dragon",
+  "da": "Græskardrage",
+  "where": "src/shared/furniture.ts:102"
+ },
+ "N2047": {
+  "en": "A plant never needs water again.",
+  "da": "En plante skal aldrig vandes igen.",
+  "where": "src/shared/hideout.ts:67"
+ },
+ "N2048": {
+  "en": "Mixes 15% faster.",
+  "da": "Mixer 15% hurtigere.",
+  "where": "src/shared/hideout.ts:68"
+ },
+ "N2049": {
+  "en": "Mixer upgrade MK2",
+  "da": "Mixer-opgradering MK2",
+  "where": "src/shared/hideout.ts:69"
+ },
+ "N2050": {
+  "en": "Mixes 25% faster.",
+  "da": "Mixer 25% hurtigere.",
+  "where": "src/shared/hideout.ts:69"
+ },
+ "N2051": {
+  "en": "Poker for five. Buy in 200-500.",
+  "da": "Poker for fem. Buy-in 200-500.",
+  "where": "src/shared/hideout.ts:70"
+ },
+ "N2052": {
+  "en": "Poker for five. Buy in 1000-2000.",
+  "da": "Poker for fem. Buy-in 1000-2000.",
+  "where": "src/shared/hideout.ts:71"
+ },
+ "N2053": {
+  "en": "Blackjack for five. A member deals.",
+  "da": "Blackjack for fem. Et medlem giver.",
+  "where": "src/shared/hideout.ts:72"
+ },
+ "N2054": {
+  "en": "Totem Eagle Crown",
+  "da": "Totemørnekrone",
+  "where": "src/shared/cases.ts:61"
+ },
+ "N2055": {
+  "en": "Untouchable Crown",
+  "da": "Urørlig krone",
+  "where": "src/shared/cases.ts:62"
+ },
+ "N2056": {
+  "en": "Snow Warrior Lion Mask",
+  "da": "Snekriger-løvemaske",
+  "where": "src/shared/cases.ts:64"
+ },
+ "N2057": {
+  "en": "Stormy Shark Head",
+  "da": "Stormfuldt hajhoved",
+  "where": "src/shared/cases.ts:65"
+ },
+ "N2058": {
+  "en": "Easter Chick Bear",
+  "da": "Påskekylling-bamse",
+  "where": "src/shared/cases.ts:67"
+ },
+ "N2059": {
+  "en": "Mystic Gold Bandana",
+  "da": "Mystisk guldbandana",
+  "where": "src/shared/cases.ts:68"
+ },
+ "N2060": {
+  "en": "Firefly Halo",
+  "da": "Ildflue-glorie",
+  "where": "src/shared/cases.ts:69"
+ },
+ "N2061": {
+  "en": "Completely Confused Frog Hat",
+  "da": "Totalt forvirret frøhat",
+  "where": "src/shared/cases.ts:70"
+ },
+ "N2062": {
+  "en": "Buzzing Watermelon",
+  "da": "Summende vandmelon",
+  "where": "src/shared/cases.ts:71"
+ },
+ "N2063": {
+  "en": "Thumbs Up Headband",
+  "da": "Tommel-op-pandebånd",
+  "where": "src/shared/cases.ts:72"
+ },
+ "N2064": {
+  "en": "Completely Confused",
+  "da": "Totalt forvirret",
+  "where": "src/shared/unusualFx.ts:6"
+ },
+ "N2065": {
+  "en": "Untouchable",
+  "da": "Urørlig",
+  "where": "src/shared/unusualFx.ts:6"
+ },
+ "N2066": {
+  "en": "Easter Chicks",
+  "da": "Påskekyllinger",
+  "where": "src/shared/unusualFx.ts:6"
+ },
+ "N2067": {
+  "en": "Fireflies",
+  "da": "Ildfluer",
+  "where": "src/shared/unusualFx.ts:6"
+ },
+ "N2068": {
+  "en": "Flies",
+  "da": "Fluer",
+  "where": "src/shared/unusualFx.ts:6"
+ },
+ "N2069": {
+  "en": "Lightning",
+  "da": "Lyn",
+  "where": "src/shared/unusualFx.ts:6"
+ },
+ "N2070": {
+  "en": "Mystic",
+  "da": "Mystisk",
+  "where": "src/shared/unusualFx.ts:7"
+ },
+ "N2071": {
+  "en": "Raincloud",
+  "da": "Regnsky",
+  "where": "src/shared/unusualFx.ts:7"
+ },
+ "N2072": {
+  "en": "Snow Warrior",
+  "da": "Snekriger",
+  "where": "src/shared/unusualFx.ts:7"
+ },
+ "N2073": {
+  "en": "Spinning Hearts",
+  "da": "Snurrende hjerter",
+  "where": "src/shared/unusualFx.ts:7"
+ },
+ "N2074": {
+  "en": "Spinning Thumbs Up",
+  "da": "Snurrende tommel op",
+  "where": "src/shared/unusualFx.ts:7"
+ },
+ "N2075": {
+  "en": "Totem Eagle",
+  "da": "Totemørn",
+  "where": "src/shared/unusualFx.ts:7"
+ },
+ "N2076": {
+  "en": "Mixer (MK2)",
+  "da": "Mixer (MK2)",
+  "where": "src/rooms.ts:107"
+ },
+ "N2077": {
+  "en": "One bullet. Tap it to hold it, then tap a player. Shoot someone with a bounty on their head and the blood is yours. Bagmand sells it.",
+  "da": "Én kugle. Tryk på den for at holde den, og tryk så på en spiller. Skyd nogen med en dusør på hovedet, og blodet er dit. Bagmand sælger den.",
+  "where": "src/items.ts:421"
+ },
+ "N2078": {
+  "en": "Tap it to hold it, then tap a player and confirm: they blow up, drop nothing and are dead for 30 seconds. Once every 30 minutes.",
+  "da": "Tryk på den for at holde den, tryk så på en spiller og bekræft: de sprænges, taber intet og er døde i 30 sekunder. Én gang hvert 30. minut.",
+  "where": "src/items.ts:428"
+ },
+ "N2079": {
+  "en": "A chip for a mixer. Tap it, then tap a mixer: it mixes 15% faster from then on (and turns green).",
+  "da": "En chip til en mixer. Tryk på den, og tryk så på en mixer: den mixer 15% hurtigere herfra (og bliver grøn).",
+  "where": "src/items.ts:470"
+ },
+ "N2080": {
+  "en": "The better chip for a mixer. Tap it, then tap a mixer: it mixes 25% faster from then on (and turns dark grey).",
+  "da": "Den bedre chip til en mixer. Tryk på den, og tryk så på en mixer: den mixer 25% hurtigere herfra (og bliver mørkegrå).",
+  "where": "src/items.ts:471"
+ },
+ "N2081": {
+  "en": "A key for a mystery box. 6ixty sells them, and so does the pay2win machine in the shop (5 for 25 kr). One key opens one box.",
+  "da": "En nøgle til en mysteriekasse. 6ixty sælger dem, og det gør pay2win-maskinen i butikken også (5 for 25 kr). Én nøgle åbner én kasse.",
+  "where": "src/items.ts:479"
  }
 }
