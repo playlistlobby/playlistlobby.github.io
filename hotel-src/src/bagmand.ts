@@ -3,10 +3,12 @@
 import { onValue, ref } from "firebase/database";
 import { db } from "./firebase";
 import { serverNow } from "./db";
-import { awayLine, BAGMAND_BUY, currentVisit, nextVisit, VISIT_MS } from "./shared/bagmand";
+import { awayLine, BAGMAND_BUY, currentVisit, lastVisit, nextVisit, VISIT_MS } from "./shared/bagmand";
 
 /** the visit start a test opened by hand (the node is only written in the local emulator and only honoured there) */
 let forced: number | null = null;
+/** an admin asked him to stay until this time (ms), past the end of his visit */
+let stayUntil: number | null = null;
 /** how many of each limited thing each player bought, per visit start (ms): visit -> item -> player -> how many */
 let sold: Record<string, Record<string, Record<string, number>>> = {};
 const listeners = new Set<() => void>();
@@ -20,6 +22,7 @@ export function watchBagmand(onChange: () => void): () => void {
     stop = onValue(ref(db, "bagmand"), (s) => {
       const v = (s.val() ?? {}) as Record<string, unknown>;
       forced = typeof v.force === "number" ? v.force : null;
+      stayUntil = typeof v.stayUntil === "number" ? v.stayUntil : null;
       sold = {};
       for (const [k, row] of Object.entries(v)) {
         if (k === "force" || !row || typeof row !== "object") continue;
@@ -40,10 +43,12 @@ export function visitNow(): number | null {
   const now = serverNow();
   if (forced === 1) return Math.floor(now / VISIT_MS) * VISIT_MS; // (a test: bagmand/force = 1 keeps him here round the clock, with fresh stock every hour)
   if (forced !== null && now >= forced && now < forced + VISIT_MS) return forced;
-  return currentVisit(now);
+  const start = currentVisit(now);
+  if (start === null && stayUntil !== null && now < stayUntil) return lastVisit(now);
+  return start;
 }
 /** when the open visit ends (ms) */
-export const visitEnd = (start: number): number => start + VISIT_MS;
+export const visitEnd = (start: number): number => (stayUntil !== null && stayUntil > start + VISIT_MS && serverNow() < stayUntil ? stayUntil : start + VISIT_MS);
 
 /** how many of a limited thing THIS player may still buy in this visit (null: no limit): the limit is per player */
 export function stockLeft(item: string, start: number, uid: string): number | null {

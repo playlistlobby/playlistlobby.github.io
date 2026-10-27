@@ -23,12 +23,12 @@ export interface CasePrize { id: string; chance: number; tier: Tier; label: stri
  */
 export const CASE_TABLE: CasePrize[] = [
   { id: "junk", chance: 35, tier: "junk", label: "Junk" },
-  { id: "furni", chance: 30.95, tier: "common", label: "Furniture" },
+  { id: "furni", chance: 31.95, tier: "common", label: "Furniture" },
   { id: "caliweed", chance: 9.5, tier: "rare", label: "Cali weed" },
   { id: "fentcn", chance: 6.5, tier: "rare", label: "芬太尼" },
   { id: "poppyseed", chance: 10, tier: "rare", label: "Poppy seed" },
   { id: "loudspeaker", chance: 0.05, tier: "rare", label: "Loudspeaker" },
-  { id: "gun", chance: 3, tier: "rare", label: "Gun" },
+  { id: "gun", chance: 2, tier: "rare", label: "Gun" },
   { id: "unusual", chance: 2.5, tier: "unusual", label: "Unusual" },
   { id: "rarefurni", chance: 1, tier: "unusual", label: "Rare furniture" },
   { id: "unusualpet", chance: 1, tier: "unusual", label: "Unusual pet" },

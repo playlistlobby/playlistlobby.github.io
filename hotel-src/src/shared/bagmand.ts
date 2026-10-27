@@ -59,6 +59,8 @@ function visitStarts(now: number): number[] {
 }
 /** the start of the visit that is on right now, or null */
 export const currentVisit = (now: number): number | null => visitStarts(now).find((s) => now >= s && now < s + VISIT_MS) ?? null;
+/** the start of the latest visit that began at or before `now` (a visit he was asked to stay on for: bagmand/stayUntil) */
+export const lastVisit = (now: number): number => [...visitStarts(now)].reverse().find((s) => s <= now) ?? now;
 /** the start of the next visit after `now` */
 export const nextVisit = (now: number): number => visitStarts(now).find((s) => s > now) ?? now + 3_600_000;
 /** "10:00" (Danish clock) */

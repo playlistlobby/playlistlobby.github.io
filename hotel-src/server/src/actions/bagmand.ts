@@ -5,7 +5,7 @@ import type { Ctx } from "../ctx";
 import { isEmulator } from "../env";
 import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
 import { findSlot } from "../../../src/shared/items";
-import { BAGMAND_BUY, bagmandPays, BAGMAN_ROOM, currentVisit, DEADLY_DROP, VISIT_MS } from "../../../src/shared/bagmand";
+import { BAGMAND_BUY, bagmandPays, BAGMAN_ROOM, currentVisit, DEADLY_DROP, lastVisit, VISIT_MS } from "../../../src/shared/bagmand";
 import { bloodPile } from "./floor";
 import { roleOf } from "./mod";
 
@@ -16,7 +16,11 @@ async function openVisit(c: Ctx): Promise<number> {
     if (forced === 1) return Math.floor(c.now / VISIT_MS) * VISIT_MS; // (a test: 1 = he is always here)
     if (typeof forced === "number" && c.now >= forced && c.now < forced + VISIT_MS) return forced;
   }
-  const start = currentVisit(c.now);
+  let start = currentVisit(c.now);
+  if (start === null) { // (an admin can ask him to stay on a while longer: bagmand/stayUntil, a time in ms; it carries on the visit that started last)
+    const stay = await c.db.get<number>("bagmand/stayUntil");
+    if (typeof stay === "number" && c.now < stay) start = lastVisit(c.now);
+  }
   if (start === null) fail("Bagmand isn't here. He comes at 01:00, 10:00 and 15:00 for an hour.");
   return start!;
 }
