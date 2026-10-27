@@ -1433,3 +1433,23 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
   .door-profile { padding-left: 6px; padding-right: 6px; }
   .hc-card .hc-tab span:last-child { font-size: 11px; }
 }
+
+/* ---- the iOS 6 gloss on the poker / blackjack / shoot buttons (the same look as the Drop button) ---- */
+.pk-btn, .shoot-row button, .pk-presets button, .pk-room {
+  border-radius: 8px; font-weight: 700; letter-spacing: 0; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 1px 1px rgba(0, 0, 0, .35); text-shadow: 0 -1px 0 rgba(0, 0, 0, .4);
+}
+.pk-btn { color: #fff; border: 1px solid #5d6470; background: linear-gradient(#b4bac4 0%, #8a919d 49%, #6d7480 51%, #8c939f 100%); }
+.pk-btn.fold, .shoot-row .yes { border-color: #8e1b1b; background: linear-gradient(#f59a9a 0%, #e04545 49%, #c62020 51%, #e04a4a 100%); }
+.pk-btn.check, .pk-btn.call { border-color: #1e6a34; background: linear-gradient(#8fe0a4 0%, #3cb85e 49%, #1f9644 51%, #3fbd62 100%); }
+.pk-btn.raise, .pk-btn.go { color: #fff; border-color: #1f3f94; text-shadow: 0 -1px 0 rgba(0, 0, 0, .4); background: linear-gradient(#78a6f4 0%, #3b78e6 49%, #1f5ad6 51%, #3f7ae6 100%); }
+.shoot-row .no { color: #2a2f36; border: 1px solid #8b9099; text-shadow: 0 1px 0 rgba(255, 255, 255, .9); background: linear-gradient(#fdfdfd 0%, #e3e5e8 49%, #cfd2d7 51%, #e0e2e6 100%); }
+.shoot-row .yes { color: #fff; }
+.pk-btn:active:not(:disabled), .shoot-row button:active { transform: none; filter: brightness(.82); }
+.pk-presets button, .pk-room { color: #fff; border: 1px solid #5d6470; background: linear-gradient(#b4bac4 0%, #8a919d 49%, #6d7480 51%, #8c939f 100%); }
+.pk-presets button:active { filter: brightness(.82); }
+.bj-chipbtn { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 1px 1px rgba(0, 0, 0, .35); }
+/* my own seat sits on the bottom edge of the felt (its tag, the little "small blind" bubble under my name, stays above the panel with the moves) */
+.pk-seat.me { top: auto !important; bottom: 8px; transform: translateX(-50%); }
+.pk-seat.me .pk-dealer { top: 60px; }
+.pk-hand-name { position: absolute; z-index: 3; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); white-space: nowrap; padding: 2px 10px; border-radius: 9px; font: 800 11.5px var(--font); color: #0a1830; background: linear-gradient(#fff6d6, #ffd75a); border: 1px solid rgba(0, 0, 0, .45); box-shadow: 0 2px 4px rgba(0, 0, 0, .5); pointer-events: none; }

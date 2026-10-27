@@ -64,12 +64,12 @@ export const HIDEOUT_ORDER_MS = 3_600_000;
 export const HIDEOUT_FAST_MS = 20 * 60_000;
 export interface HideoutShopItem { kind: string; label: string; price: number; blurb: string; etaMs: number; /** the price after this many have been bought in this hideout */ tier?: { first: number; then: number }; /** or the price of the 1st, 2nd, 3rd ... one (the last price holds for every one after) */ steps?: number[]; /** only a hideout you belong to may put it down */ hideoutOnly?: boolean }
 export const HIDEOUT_SHOP: HideoutShopItem[] = [
-  { kind: "waterer", label: "Automatic plant waterer", price: 250, etaMs: HIDEOUT_FAST_MS, blurb: "Put it on a growing kit and that plant never needs water again. 250 each." },
-  { kind: "mixerchip", label: "Mixer upgrade", price: 400, etaMs: HIDEOUT_FAST_MS, blurb: "Put it in a mixer: it mixes 15% faster, and turns green. 400 each." },
-  { kind: "mixerchip2", label: "Mixer upgrade MK2", price: 800, etaMs: HIDEOUT_FAST_MS, blurb: "Put it in a mixer: it mixes 25% faster, and turns dark grey. 800 each." },
-  { kind: "f_pokertable", label: "Poker table", price: 1000, etaMs: HIDEOUT_ORDER_MS, blurb: "Texas hold 'em for five. Buy in for 200 to 500, blinds 5/10. Anybody can sit down at it." },
-  { kind: "f_pokertablehi", label: "High stakes poker table", price: 4000, etaMs: 2 * HIDEOUT_ORDER_MS, blurb: "Texas hold 'em for five, in gold. Buy in for 1000 to 2000, blinds 20/40. Anybody can sit down at it." },
-  { kind: "f_blackjacktable", label: "Blackjack table", price: 500, steps: [500, 1000, 2000], etaMs: HIDEOUT_ORDER_MS, blurb: "Blackjack for five with a blue cloth. A member of the hideout deals, with their own bank. 500 for the first, 1000 for the second, 2000 for every one after." },
+  { kind: "waterer", label: "Automatic plant waterer", price: 250, etaMs: HIDEOUT_FAST_MS, blurb: "A plant never needs water again." },
+  { kind: "mixerchip", label: "Mixer upgrade", price: 400, etaMs: HIDEOUT_FAST_MS, blurb: "Mixes 15% faster." },
+  { kind: "mixerchip2", label: "Mixer upgrade MK2", price: 800, etaMs: HIDEOUT_FAST_MS, blurb: "Mixes 25% faster." },
+  { kind: "f_pokertable", label: "Poker table", price: 1000, etaMs: HIDEOUT_ORDER_MS, blurb: "Poker for five. Buy in 200-500." },
+  { kind: "f_pokertablehi", label: "High stakes poker table", price: 4000, etaMs: 2 * HIDEOUT_ORDER_MS, blurb: "Poker for five. Buy in 1000-2000." },
+  { kind: "f_blackjacktable", label: "Blackjack table", price: 500, steps: [500, 1000, 2000], etaMs: HIDEOUT_ORDER_MS, blurb: "Blackjack for five. A member deals." },
 ];
 /** what one of them costs when the hideout has already bought `bought` of that kind */
 export const hideoutPriceOf = (item: HideoutShopItem, bought: number): number => (item.steps?.length ? item.steps[Math.min(Math.max(0, bought), item.steps.length - 1)] : item.tier && bought >= item.tier.first ? item.tier.then : item.price);

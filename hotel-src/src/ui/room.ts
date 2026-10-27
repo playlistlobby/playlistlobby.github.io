@@ -176,6 +176,16 @@ void loadNitro("furni/xmas_c20_woodenhouse.nitro").then((n) => {
   toolIconImg.src = c.toDataURL("image/png");
 }).catch(() => undefined);
 
+/** the picture that floats over a poker table, a blackjack table or the shared stash: that piece's own inventory picture (made once it is drawn) */
+const pieceHints = new Map<string, HTMLImageElement>();
+function pieceHint(kind: string): HTMLImageElement {
+  let img = pieceHints.get(kind);
+  if (!img) { img = new Image(); pieceHints.set(kind, img); }
+  const url = furniIcon(kind === "hchest" ? "stashbox" : kind);
+  if (img.dataset.src !== url) { img.dataset.src = url; img.src = url; }
+  return img;
+}
+
 /** the picture that floats over the vending machine: the basket icon from market_c19_basket.nitro */
 const basketIconImg = new Image();
 void loadNitro("furni/market_c19_basket.nitro").then((n) => {
@@ -754,9 +764,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
-    else if (hoverObj && (FURNI_KINDS[hoverObj.kind!]?.opens === "poker" || FURNI_KINDS[hoverObj.kind!]?.opens === "blackjack")) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to sit down and play`;
-    else if (hoverObj && hoverObj.kind === "wantedboard") text = "Wanted board: who has blood on their head";
-    else if (hoverObj && hoverObj.kind === "hchest") text = "Shared stash: the whole hideout puts things in and takes them out";
+    else if (hoverObj && (FURNI_KINDS[hoverObj.kind!]?.opens === "poker" || FURNI_KINDS[hoverObj.kind!]?.opens === "blackjack")) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to play`;
+    else if (hoverObj && hoverObj.kind === "wantedboard") text = "Wanted board";
+    else if (hoverObj && hoverObj.kind === "hchest") text = "Shared stash";
     else if (hoverObj && hoverObj.kind === "bagman") text = "bagmand: poppy seeds, blue weed. He buys opium and what is mixed from it";
     else if (hoverObj && hoverObj.kind === "bed") text = mine()?.lying ? "Your bed: get up" : "Your bed: lie down";
     else if (hoverObj && (hoverObj.kind === "boombox" || hoverObj.kind === "f_boombox")) text = "Boombox: use a CD on it";
@@ -4547,7 +4557,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.restore();
       } else b = drawNitroFurni(g, f.kind, f.x, f.y, f.dir ?? 0, toScreen, scale, 1, false, pieceAnim(f, now), f.kind === "rchair" ? "back" : undefined); // (a roulette chair's backrest is drawn after the player in it: see below)
       if (lift) { g.restore(); if (b) { b.y0 -= lift * scale; b.y1 -= lift * scale; } }
-      if (b && f.kind === "ideaboard" && !furnishOn) { // the ideas board glows a little (more when you point at it), so people notice it is there
+      if (b && (f.kind === "ideaboard" || f.kind === "wantedboard") && !furnishOn) { // the ideas board glows a little (more when you point at it), so people notice it is there (the wanted board glows red)
+        const red = f.kind === "wantedboard";
         const hot = !!f.id && hoverObj?.id === f.id;
         const pulse = 0.5 + 0.5 * Math.sin(now / 450);
         const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, r = 44 * scale * (hot ? 1.3 : 1);
@@ -4555,8 +4566,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         g.globalCompositeOperation = "lighter";
         const halo = g.createRadialGradient(cx, cy, 3 * scale, cx, cy, r);
         const a = 0.14 + 0.06 * pulse + (hot ? 0.16 : 0);
-        halo.addColorStop(0, `rgba(255,214,70,${a.toFixed(2)})`);
-        halo.addColorStop(1, "rgba(255,200,40,0)");
+        halo.addColorStop(0, red ? `rgba(255,60,50,${(a + 0.06).toFixed(2)})` : `rgba(255,214,70,${a.toFixed(2)})`);
+        halo.addColorStop(1, red ? "rgba(255,50,40,0)" : "rgba(255,200,40,0)");
         g.fillStyle = halo;
         g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
         g.restore();
@@ -4598,10 +4609,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (liftUp) g.restore();
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky" || k.opens === "raffle"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "hideouts" || k.opens === "computer" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" ? ticketImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" ? ticketImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -4614,7 +4625,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.restore();
         }
         // while the hanger always shows, the click box covers it too
-        return { id: "", ...b, y0: me.seenDoor || noHint || k.opens === "sink" || k.opens === "records" || isBoom ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
+        return { id: "", ...b, y0: me.seenDoor || noHint || k.opens === "sink" || k.opens === "records" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || isBoom ? b.y0 : b.y0 - 22 * scale, depth: f.x + f.y };
       }
       return b ? { id: "", ...b, depth: f.x + f.y } : null;
     }

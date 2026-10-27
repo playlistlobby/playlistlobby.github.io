@@ -4,7 +4,7 @@ import { BLOOD_ICON } from "../items";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
 import { pokerAct, pokerLeave, pokerSit, pokerTick, watchPokerHole, watchPokerTable } from "../poker";
-import { canAct, potOf, POKER_KINDS, POKER_SEATS, POKER_TURN_MS, raiseRange, seatOfUid } from "../shared/poker";
+import { canAct, evaluate, handName, potOf, POKER_KINDS, POKER_SEATS, POKER_TURN_MS, raiseRange, seatOfUid } from "../shared/poker";
 import type { PokerKind, PokerSeat, PokerTable } from "../shared/poker";
 import { cardBackUrl, cardSlotUrl, cardUrl, chipsFor, chipUrl } from "./pokerCards";
 import type { Ctx } from "../main";
@@ -139,6 +139,8 @@ export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: stri
       last ? h("div", { class: `pk-tag ${tagClass}` }, last) : "",
       t!.dealer === i ? h("div", { class: "pk-dealer", title: "Dealer" }, "D") : "",
       winner ? h("div", { class: "pk-won" }, `+${blood(winAmt)}`) : "",
+      // what you hold right now, like on PokerStars: "Pair of Kings" (the two cards, and the board as it is turned over)
+      isMe && inHand && hole && hole.length === 2 ? h("div", { class: "pk-hand-name" }, handName(evaluate([...hole, ...t!.board]))) : "",
       "");
     return el;
   }
@@ -149,7 +151,7 @@ export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: stri
     renderNav();
     const scrollKeep = actions.scrollTop;
     felt.replaceChildren();
-    if (!t) { felt.append(h("div", { class: "pk-empty" }, h("div", { class: "pk-hint" }, `Nobody is playing yet. Tap Sit to start a table: buy in for ${blood(info.min)} to ${blood(info.max)} blood, blinds ${info.sb}/${info.bb}.`))); }
+    if (!t) { felt.append(h("div", { class: "pk-empty" }, h("div", { class: "pk-hint" }, `Tap Sit to play. Buy in ${blood(info.min)}-${blood(info.max)}.`))); }
     const base = t ? Math.max(0, mySeat()) : 0;
     const table = t;
     felt.append(h("div", { class: "pk-rail" }, h("div", { class: "pk-cloth" }, h("div", { class: "pk-logo" }, "6ix"))));

@@ -147,7 +147,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     const short = me.blood < BJ_BANK_MIN;
     return h("div", { class: "pk-buy" }, h("div", { class: "pk-buybox" },
       h("strong", {}, "Deal at this table"),
-      h("div", { class: "pk-hint" }, `You put a bank on the table: it pays the winners and takes what the players lose. Anybody can bet up to ${BJ_BET_MAX}. You can stop and take the bank any time.`),
+      h("div", { class: "pk-hint" }, `Put a bank on the table. Players bet up to ${BJ_BET_MAX}.`),
       short ? h("div", { class: "pk-warn" }, `You need ${blood(BJ_BANK_MIN - me.blood)} more blood for the smallest bank (${blood(BJ_BANK_MIN)}).`) : h("div", {}, num, slider),
       h("div", { class: "pk-row" },
         h("button", { class: "pk-btn", onclick: () => { dealing = false; render(); } }, "Cancel"),
