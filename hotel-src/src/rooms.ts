@@ -40,7 +40,7 @@ export interface FurniKind {
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
   /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
   wallArt?: { left: number; back: number };
-  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits" | "board" | "cdpress";
+  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits" | "board" | "cdpress" | "beatshop";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -113,6 +113,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   sink: { id: "sink", label: "Sink", icon: "🚰", w: 1, h: 1, height: 36, color: "#555b66", placeable: false, nitro: "furni/hygge_c25_toiletsink.nitro", rotatable: true, fixed: true, opens: "sink" },
   // the silver boombox every player room starts with: use a CD on it (6ixty sells one) and the song plays in the room
   // the same boombox as a piece you carry: take it out of the room into your pocket, put it down anywhere, trade it or sell it
+  // the BeatShop (the record box sells it): a vending machine painted purple; tap it to sell your beats or buy somebody's
+  f_beatshop: { id: "f_beatshop", label: "BeatShop", icon: "🎧", w: 1, h: 1, height: 80, color: "#6a3d8f", placeable: false, nitro: "derived:beatshop", rotatable: true, opens: "beatshop" },
   f_boombox: { id: "f_boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true },
   boombox: { id: "boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true, fixed: true },
   // the stash box the landlord sells (20 drops): a gift box that keeps what you don't want in your pockets

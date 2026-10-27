@@ -106,6 +106,29 @@
     "cdTitles": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
     },
+    "beats": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
+    },
+    "beatBuys": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $uid"
+      }
+    },
+    "beatChats": {
+      "$owner": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $owner",
+        "$thread": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && $thread.endsWith('_' + auth.uid)"
+        }
+      }
+    },
+    "beatChatMsgs": {
+      "$owner": {
+        "$thread": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && (auth.uid === $owner || $thread.endsWith('_' + auth.uid))"
+        }
+      }
+    },
     "songMeta": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
     },

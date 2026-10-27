@@ -106,6 +106,29 @@
     "cdTitles": {
       ".read": "@PW@"
     },
+    "beats": {
+      ".read": "@PW@"
+    },
+    "beatBuys": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "beatChats": {
+      "$owner": {
+        ".read": "@PW@ && auth.uid === $owner",
+        "$thread": {
+          ".read": "@PW@ && $thread.endsWith('_' + auth.uid)"
+        }
+      }
+    },
+    "beatChatMsgs": {
+      "$owner": {
+        "$thread": {
+          ".read": "@PW@ && (auth.uid === $owner || $thread.endsWith('_' + auth.uid))"
+        }
+      }
+    },
     "songMeta": {
       ".read": "@PW@"
     },
