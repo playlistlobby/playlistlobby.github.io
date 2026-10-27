@@ -1,5 +1,6 @@
 import { h, toast } from "./dom";
 import { buyInventoryItem, sellWeed } from "../db";
+import { isCdItem } from "../shared/cds";
 import { BLOOD_ICON, DISABLED_ITEMS, itemDef, ITEMS, SIXTY_STOCK } from "../items";
 import { SELL_BUNDLE, sellPrice as sellPriceOf } from "../shared/items";
 import { furniPricesNow } from "../furniShop";
@@ -28,7 +29,7 @@ export function openSixtyShop(host: HTMLElement, ctx: Ctx, onChange: () => void,
   function render(): void {
     if (closed) return;
     // his shelf: whatever the admin has switched on (Admin > Shop > 6ixty stock); the cigarette is on by default
-    const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => itemDef(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && id !== "cd" && itemEntry(id).on && (opts.mines ? id === "wood" : id !== "wood"));
+    const stock = [...SIXTY_STOCK, ...Object.keys(ITEMS).filter((id) => !SIXTY_STOCK.includes(id))].filter((id) => itemDef(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt" && !isCdItem(id) && itemEntry(id).on && (opts.mines ? id === "wood" : id !== "wood"));
     // selling: he buys weed, seeds and what the mixer makes (prices: sellPrice)
     const sellPrice = (item: string, ass?: boolean): number | null => sellPriceOf(item, ass, furniPricesNow());
     // the same thing lying in several slots is one row ("Fentanyl x3"); Sell asks how many

@@ -74,6 +74,7 @@ console.log("--- CDs: the record player in the shop, paying, the album");
   check("it costs 5 blood too", ru.state.blood === 2 && total(ru.state.inventory, "cd_roulette") === 1, String(ru.state.blood));
   bad("only one of that per player", await act(f1, "buyRecord", { item: "cd_roulette" }));
   bad("6ixty doesn't sell them", await act(f1, "buySixty", { item: "cd_lykk" }));
+  for (const cdId of ["cd", "cd_blodig", "cd_lykk", "cd_roulette", "cd_yellow", "cd_green", "cd_blue", "cd_album"]) bad(`6ixty doesn't sell ${cdId}`, await act(f1, "buySixty", { item: cdId }));
   const poor = await fresh("t_cd1p", { blood: 4 });
   await act(poor, "sync"); await stand(poor, "shop", 2, 6);
   bad("4 blood isn't enough", await act(poor, "buyRecord", { item: "cd_blodig" }));

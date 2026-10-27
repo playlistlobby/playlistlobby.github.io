@@ -5,7 +5,7 @@ import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, STASHBOX_OWNED_KEY,
 import { DISABLED_ITEMS, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPeriodStart, furniPicksToday, furniPrice, POSTER_KIND, POSTER_PRICE, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
 import { todayStartAt, vendDay, vendLeft } from "../../../src/shared/economy";
-import { BLOOD_CDS, cdOwnedKey } from "../../../src/shared/cds";
+import { BLOOD_CDS, cdOwnedKey, isCdItem } from "../../../src/shared/cds";
 import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, skinOf, skinOwnedKey, SkinPart } from "../../../src/shared/skins";
 
 /** 6ixty's shelf: his stock plus whatever else the admin switched on (never the leftovers: butts and dead cats). */
@@ -13,7 +13,7 @@ export const buySixty: Action = {
   async run(c, a) {
     const id = text(a.item, /^[a-z0-9_]{1,30}$/, "item");
     if (id === "dice") fail("He doesn't sell that."); // the dice are sold in the pay2win machine
-    if (BLOOD_CDS.includes(id)) fail("He doesn't sell that."); // the Freakme CD is sold at the record player in the shop now
+    if (isCdItem(id)) fail("He doesn't sell that."); // every CD is sold at the record player in the shop, never by 6ixty
     if (id === "wood") await requireInRoom(c, "mines"); // (he only has wood down in the mines)
     const known = SIXTY_STOCK.includes(id) || (ITEM_IDS.has(id) && !DISABLED_ITEMS.has(id) && id !== "cigbutt");
     if (!known) fail("He doesn't sell that.");
