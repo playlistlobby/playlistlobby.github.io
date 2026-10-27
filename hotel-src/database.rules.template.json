@@ -217,7 +217,7 @@
       ".read": "@MOD@"
     },
     "posterMutes": {
-      ".read": "@ADMIN@"
+      ".read": "@MOD@"
     },
     "logs": {
       ".read": "@ADMIN@",

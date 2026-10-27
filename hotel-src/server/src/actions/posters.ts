@@ -1,4 +1,4 @@
-// Admin only: the poster feed's two tools. Taking a picture off a poster (it goes back to the blank "?" poster), and muting a player
+// Admin and mods: the poster feed's two tools. Taking a picture off a poster (it goes back to the blank "?" poster), and muting a player
 // from putting pictures on posters (the mute is a flag at posterMutes/<uid>; furniPlace in toolbox.ts checks it).
 import type { Action } from "./util";
 import { text } from "./util";
@@ -10,7 +10,7 @@ const UID_RE = /^[A-Za-z0-9]{1,40}$/;
 
 export const posterAdmin: Action = {
   async run(c, a) {
-    if (!c.isAdmin) fail("Unknown action.");
+    if (!c.isAdmin && !c.isMod) fail("Unknown action.");
     const op = a.op;
     if (op === "clear") {
       const room = text(a.room, ROOM_RE, "room");

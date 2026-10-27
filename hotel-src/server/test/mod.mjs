@@ -256,6 +256,16 @@ console.log("--- blood, warnings, messages, kicks, addresses (full privileges)")
   check("and the blood ledger", (await clientRead(mod, "ledger")).status === 200);
   check("a player can't read the accounts", (await clientRead(p1, "users")).status !== 200);
   check("a mod can't write blood", refused(await clientWrite(mod, `users/${w.uid}/blood`, 99999)));
+  // the poster feed and the ban list are the mods' too
+  check("a mod reads the ban list", (await clientRead(mod, "bans")).status === 200);
+  check("and the poster mutes", (await clientRead(mod, "posterMutes")).status === 200);
+  check("a player can't read the poster mutes", (await clientRead(p1, "posterMutes")).status !== 200);
+  const pc = await act(mod, "posterAdmin", { op: "clear", room: "u_nobodyhere", id: "fnone" });
+  check("a mod gets to the poster tool (the poster just isn't there)", pc.ok === false && /isn't there/.test(pc.error ?? ""), JSON.stringify(pc));
+  bad("a player doesn't", await act(p1, "posterAdmin", { op: "clear", room: "u_nobodyhere", id: "fnone" }));
+  ok("a mod mutes somebody from posters", await act(mod, "posterAdmin", { op: "mute", uid: w.uid }));
+  check("it is written", (await owner("GET", `posterMutes/${w.uid}`)) === true);
+  ok("and lifts it", await act(mod, "posterAdmin", { op: "mute", uid: w.uid, on: false }));
   ok("the admin bans the address", await act(adm, "modIpBan", { uid: w.uid }));
   check("it is on the list", (await owner("GET", "bannedIps/203_0_113_7")) !== null);
   await sleepMs(16000);
