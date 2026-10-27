@@ -1,5 +1,9 @@
 import { h, toast } from "./dom";
-import { hideoutBoost, hideoutCollect, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings, hideoutTillCollect, watchHideoutTill } from "../hideout";
+import { hideoutBoost, hideoutCollect, hideoutFavorite, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings, hideoutTillCollect, watchHideoutFavs, watchHideoutTill } from "../hideout";
+import { mountSoundcloud, scIcon } from "./soundcloud";
+import type { ScHandle } from "./soundcloud";
+import { donateToHideout, watchDonated } from "../soundcloud";
+import { DONATE_DAILY_MAX } from "../shared/songs";
 import { BLOOD_ICON, furniIcon, itemDef, onFurniIcon } from "../items";
 import { FURNI_KINDS, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
@@ -16,14 +20,15 @@ import type { Ctx } from "../main";
 
 export interface ComputerApi { close(): void; refresh(): void }
 
-type Page = "shop" | "orders" | "members" | "hits" | "settings" | "tables";
-const PAGES: Array<{ id: Page; icon: string; label: string; owner?: boolean }> = [
+type Page = "shop" | "orders" | "members" | "hits" | "settings" | "tables" | "sound";
+const PAGES: Array<{ id: Page; icon: string; label: string; owner?: boolean; svg?: string }> = [
   { id: "shop", icon: "🛒", label: "Shop" },
   { id: "orders", icon: "📦", label: "Orders" },
   { id: "members", icon: "👥", label: "Members" },
   { id: "hits", icon: "💀", label: "Hitman" },
   { id: "settings", icon: "⚙️", label: "Settings" },
   { id: "tables", icon: "💰", label: "Tables", owner: true },
+  { id: "sound", icon: "", label: "SoundCloud", svg: "note" },
 ];
 
 /**
@@ -33,7 +38,7 @@ const PAGES: Array<{ id: Page; icon: string; label: string; owner?: boolean }> =
 export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string, getDef: () => RoomDef, onChange: () => void, onClose: () => void): ComputerApi {
   const me = ctx.profile;
   let closed = false;
-  let page: Page = "shop";
+  let page: Page = getDef().ownerUid === me.uid || !!getDef().hideout?.members?.[me.uid] ? "shop" : "sound";
   let till = { blood: 0, total: 0 };
   let results: Array<{ uid: string; name: string }> = [];
   let searchTimer = 0;
@@ -44,10 +49,16 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   let hitCool = 0;
   let openHits: Hit[] = [];
   let revenge: Revenge[] = [];
-  const stops = [watchHideoutTill(me.uid, (t) => { till = t; if (page === "tables") render(); }), watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; }), watchRevenge(me.uid, (l) => { revenge = l; })];
+  const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; if (page === "members") render(); }), watchDonated(me.uid, (n) => { donated = n; if (page === "members") render(); }), watchHideoutTill(me.uid, (t) => { till = t; if (page === "tables") render(); }), watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; }), watchRevenge(me.uid, (l) => { revenge = l; })];
   const owner = (): boolean => getDef().ownerUid === me.uid;
   /** the staff can open any hideout's computer to see who is in it (they get the Members page only, and can't change anything) */
   const staffView = (): boolean => { const d = getDef(); return me.enterAnywhere && d.ownerUid !== me.uid && !d.hideout?.members?.[me.uid]; };
+  /** somebody who is neither the owner nor a member (a guest, or staff looking in): SoundCloud and the Members page are theirs, nothing else */
+  const guestView = (): boolean => { const d = getDef(); return d.ownerUid !== me.uid && !d.hideout?.members?.[me.uid]; };
+  let sc: ScHandle | null = null; // (SoundCloud, mounted while its page is open: the page is not rebuilt every second like the others)
+  const scHost = h("div", { class: "sc-host" });
+  let favs = new Set<string>();
+  let donated = 0;
 
   const url = h("div", { class: "hc-url" });
   const body = h("div", { class: "hc-body" });
@@ -179,8 +190,17 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const taken = new Set([d.ownerUid ?? "", ...members.map(([u]) => u)]);
     const chip = (uid: string, key: "build" | "grow" | "stash", on: boolean, label: string, hint: string): HTMLElement =>
       h("button", { class: "hc-chip" + (on ? " on" : ""), disabled: busy, title: hint, onclick: () => void act(async () => { await hideoutMember(me, uid, { [key]: !on }); }) }, h("span", { class: "hc-chip-dot" }, on ? "✓" : ""), label);
+    const fav = !!d.ownerUid && favs.has(d.ownerUid);
+    const left = Math.max(0, DONATE_DAILY_MAX - donated);
+    const giveBtn = (n: number): HTMLElement => h("button", { class: "btn small", disabled: busy || n > left || n > me.blood, onclick: () => void act(async () => { const r = await donateToHideout(me, roomId, n); playSfx("coins", 0.5); return `You gave ${n} blood to ${d.ownerName ?? "the owner"}. ${r.left} left to give today.`; }) }, h("img", { src: BLOOD_ICON, alt: "", style: { width: "12px", height: "12px", marginRight: "3px" } }), String(n));
     return [
       h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Members"), h("div", { class: "hc-sub" }, `${members.length + 1} of ${HIDEOUT_MAX_MEMBERS + 1}`)),
+      ...(!isOwner ? [h("div", { class: "hc-group" },
+        h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Favourite this hideout"),
+          h("button", { class: "btn small" + (fav ? " primary" : ""), disabled: busy, onclick: () => void act(async () => { await hideoutFavorite(me, d.ownerUid!); return fav ? "It is off your favourites." : "It is a favourite now."; }) }, fav ? "Favourite" : "Add")),
+        h("div", { class: "hc-label" }, "Give blood to the owner"),
+        h("div", { class: "hc-actions" }, giveBtn(10), giveBtn(50), giveBtn(100), giveBtn(500)),
+        h("div", { class: "hc-sub" }, left > 0 ? `You can give ${left} more today (the most is ${DONATE_DAILY_MAX} a day, to all hideouts together).` : `You have given the most you can today (${DONATE_DAILY_MAX}).`))] : []),
       ...(isOwner ? [h("div", { class: "hc-group" }, h("div", { class: "hc-label" }, "Invite somebody"), ...searchUi("Search a player's name", () => taken, (r) => h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { const x = await hideoutInvite(me, { uid: r.uid }); results = results.filter((q) => q.uid !== r.uid); return `Invite sent to ${x.name}.`; }) }, "Invite")))] : []),
       h("div", { class: "hc-group" },
         h("div", { class: "hc-person" }, headBoxFor(d.ownerUid ?? ""), h("span", { class: "hc-pname" }, d.ownerName ?? "?"), h("span", { class: "hc-tag" }, "Owner")),
@@ -252,14 +272,22 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     if (closed) return;
     const isOwner = owner();
     if (page === "tables" && !isOwner) page = "shop";
-    if (staffView()) page = "members";
+    if (guestView() && page !== "sound" && page !== "members") page = "sound";
+    if (page !== "sound" && sc) { sc.dispose(); sc = null; } // (leaving SoundCloud stops the music)
+    const tabsFor = (): HTMLElement[] => PAGES.filter((p) => (guestView() ? p.id === "sound" || p.id === "members" : !p.owner || isOwner)).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.svg ? scIcon(p.svg) : p.icon), h("span", {}, p.label)));
+    if (page === "sound") { // SoundCloud stays as it is (the player is in it): it is mounted once and the 1 second refresh leaves it alone
+      url.textContent = "hideout.6ix/soundcloud";
+      if (!sc) { body.replaceChildren(scHost); sc = mountSoundcloud(scHost, { me }); } else if (body.firstChild !== scHost) body.replaceChildren(scHost);
+      tabs.replaceChildren(...tabsFor());
+      return;
+    }
     const scrolled = body.scrollTop;
     const focused = document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement) ? document.activeElement : null;
     if (focused) return; // (don't rebuild the page while somebody is typing in it)
     url.textContent = `🔒 hideout.6ix/${page}`;
     body.replaceChildren(...(page === "shop" ? shopPage() : page === "orders" ? ordersPage() : page === "members" ? membersPage() : page === "hits" ? hitsPage() : page === "settings" ? settingsPage() : tablesPage()));
     body.scrollTop = scrolled;
-    tabs.replaceChildren(...PAGES.filter((p) => staffView() ? p.id === "members" : !p.owner || isOwner).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.icon), h("span", {}, p.label))));
+    tabs.replaceChildren(...tabsFor());
   }
   render();
   const off = onFurniIcon(() => { if (page === "shop" || page === "orders") render(); });
@@ -268,7 +296,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     if (closed) return;
     closed = true;
     window.clearInterval(tick); window.clearTimeout(searchTimer); stops.forEach((f) => f());
-    off(); el.remove(); onClose();
+    off(); sc?.dispose(); sc = null; el.remove(); onClose();
   }
   return { close, refresh: render };
 }

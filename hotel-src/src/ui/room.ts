@@ -2139,7 +2139,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "ideas") openIdeas();
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
-        else if (opens === "computer") { if (!me.enterAnywhere && !hideoutCan().member) say("Only the members can use the computer.", "warn"); else if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
+        else if (opens === "computer") { if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
         else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
         else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }, tableChat); }
         else if (opens === "blackjack") { if (!bjApi) bjApi = openBlackjack(stage, ctx, roomId, f.id, () => panel.refresh(), () => { bjApi = null; }, tableChat); }

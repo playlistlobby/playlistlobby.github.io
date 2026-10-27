@@ -1525,3 +1525,76 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 /* the wanted board: bagmand's own hits stand out */
 .wb-row.wb-bag { background: rgba(255, 60, 50, .1); box-shadow: inset 3px 0 0 #e8281e; padding-left: 6px; }
 .wb-where { font-size: 11px; font-weight: 700; color: #222; }
+
+/* SoundCloud on the hideout computer (iOS 6 look, no emoji) */
+.sc-host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.sc { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.sc-body { display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+.sc-ico { display: inline-flex; width: 18px; height: 18px; vertical-align: middle; }
+.sc-ico svg { width: 100%; height: 100%; }
+.sc-seg { display: flex; border: 1px solid #6a3a10; border-radius: 6px; overflow: hidden; background: linear-gradient(#f4a259, #d9741e); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 1px 0 rgba(255, 255, 255, .6); }
+.sc-seg-btn { flex: 1; padding: 6px 2px; border: 0; border-left: 1px solid #8a4a14; font: 700 12px var(--font); white-space: nowrap; color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .4); background: transparent; cursor: pointer; }
+.sc-seg-btn:first-child { border-left: 0; }
+.sc-seg-btn.on { background: linear-gradient(#a85414, #c9691b); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .45); }
+.sc-head, .sc-profile, .sc-artistcard { padding: 10px 12px; border-radius: 10px; background: linear-gradient(#f08a2c, #c45a0a); color: #fff; display: flex; align-items: center; gap: 10px; }
+.sc-head { display: block; }
+.sc-h1 { font-size: 20px; font-weight: 800; text-shadow: 0 1px 0 rgba(0, 0, 0, .4); }
+.sc-h2 { font-size: 13px; font-weight: 800; color: var(--muted); text-transform: uppercase; padding: 8px 2px 0; }
+.sc-sub { font-size: 12px; opacity: .9; margin-top: 2px; }
+.sc-sub.dark { color: var(--muted); opacity: 1; }
+.sc-actions { display: flex; gap: 6px; }
+.sc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 12px; border: 1px solid #8e9bb4; border-radius: 6px; font: 700 13px var(--font); color: #2a3550; background: linear-gradient(#fff, #cfd6e4); cursor: pointer; box-shadow: inset 0 1px 0 #fff; }
+.sc-btn:disabled { opacity: .5; cursor: default; }
+.sc-btn.primary { color: #fff; border-color: #a14a0a; background: linear-gradient(#f4a259, #d9741e); text-shadow: 0 -1px 0 rgba(0, 0, 0, .35); }
+.sc-btn.danger { color: #fff; border-color: #7a1616; background: linear-gradient(#e86a6a, #b02a2a); text-shadow: 0 -1px 0 rgba(0, 0, 0, .35); }
+.sc-btn.green { color: #fff; border-color: #2d6a1e; background: linear-gradient(#7fd05a, #3f9a2a); text-shadow: 0 -1px 0 rgba(0, 0, 0, .35); }
+.sc-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: #fff; border: 1px solid #c4cad4; }
+.sc-row.playing { border-color: #d9741e; background: #fff6ec; }
+.sc-rank { width: 20px; text-align: center; font-weight: 800; color: var(--muted); flex: none; }
+.sc-row .head { flex: none; width: 36px; height: 36px; }
+.sc-main { flex: 1; min-width: 0; }
+.sc-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-artist { display: block; max-width: 100%; padding: 0; border: 0; background: none; font: 600 12px var(--font); color: #b4581a; text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-meta { font-size: 11px; color: var(--muted); }
+.sc-line { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.sc-votes { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+.sc-vote-btn { width: 24px; height: 18px; padding: 0; border: 1px solid #aeb5c3; border-radius: 4px; background: linear-gradient(#fff, #dde2ec); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.sc-vote-btn:disabled { opacity: .4; cursor: default; }
+.sc-tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
+.sc-vote-btn.up .sc-tri { border-bottom: 7px solid #7a8396; }
+.sc-vote-btn.down .sc-tri { border-top: 7px solid #7a8396; }
+.sc-vote-btn.up.on { background: linear-gradient(#7fd05a, #3f9a2a); border-color: #2d6a1e; }
+.sc-vote-btn.up.on .sc-tri { border-bottom-color: #fff; }
+.sc-vote-btn.down.on { background: linear-gradient(#e86a6a, #b02a2a); border-color: #7a1616; }
+.sc-vote-btn.down.on .sc-tri { border-top-color: #fff; }
+.sc-n { font-size: 12px; font-weight: 800; min-width: 18px; }
+.sc-n.up { color: #2f7a1e; }
+.sc-n.down { color: #a02a2a; }
+.sc-play { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #a14a0a; color: #fff; background: linear-gradient(#f4a259, #d9741e); cursor: pointer; flex: none; padding: 0; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5); }
+.sc-play.on { background: linear-gradient(#a85414, #c9691b); }
+.sc-play .sc-ico { width: 16px; height: 16px; }
+.sc-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 14px 8px; }
+.sc-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 8px; border: 1px solid #6a3a10; border-radius: 5px; font: 700 12px var(--font); color: #fff; background: linear-gradient(#f4a259, #d9741e); cursor: pointer; }
+.sc-back-tri { border-right: 6px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+.sc-artistcard .head { width: 48px; height: 48px; flex: none; }
+.sc-profile .head { width: 48px; height: 48px; flex: none; }
+.sc-upload .sc-filerow { display: flex; align-items: center; gap: 8px; }
+.sc-file { display: none; }
+.sc-prog { height: 8px; border-radius: 4px; background: #d8dce3; overflow: hidden; }
+.sc-prog i { display: block; height: 100%; background: linear-gradient(#f4a259, #d9741e); }
+.sc-mine { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+.sc-mine .sc-btn { align-self: flex-end; padding: 3px 10px; font-size: 12px; }
+.sc-now { position: sticky; bottom: 0; margin-top: auto; padding: 6px 10px 8px; background: linear-gradient(#5a5f68, #23262b); border-top: 1px solid #000; color: #fff; border-radius: 10px 10px 0 0; }
+.sc-now[hidden] { display: none; }
+.sc-now-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
+.sc-now-text { min-width: 0; flex: 1 1 100%; display: flex; flex-direction: column; }
+.sc-now-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.sc-now-text small { color: #c9ccd3; font-size: 11px; }
+.sc-ctrl { display: flex; gap: 6px; flex: 1 1 100%; justify-content: center; }
+.sc-cbtn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #000; color: #dfe3ea; background: linear-gradient(#7b8089, #3a3e45); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+.sc-cbtn.big { width: 38px; }
+.sc-cbtn.on { color: #ffb066; background: linear-gradient(#2a2d33, #4a4f58); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .6); }
+.sc-cbtn .sc-ico { width: 15px; height: 15px; }
+.sc-seek { height: 8px; margin-top: 6px; border-radius: 4px; background: #111; border: 1px solid #000; overflow: hidden; cursor: pointer; }
+.sc-seek i { display: block; height: 100%; background: linear-gradient(#f4a259, #d9741e); }
+.sc-times { display: flex; justify-content: space-between; font-size: 10px; color: #b5b9c2; margin-top: 2px; }

@@ -13453,5 +13453,375 @@
   "en": "Somebody with a bounty on them is in there: nobody can hide",
   "da": "Nogen med en dusør på hovedet er derinde: ingen kan gemme sig",
   "where": "src/ui/door.ts"
+ },
+ "N2136": {
+  "en": "Artist",
+  "da": "Kunstner",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2137": {
+  "en": "Vote up",
+  "da": "Stem op",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2138": {
+  "en": "Vote down",
+  "da": "Stem ned",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2139": {
+  "en": "You can't vote on your own song",
+  "da": "Du kan ikke stemme på din egen sang",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2140": {
+  "en": "Play {title}",
+  "da": "Afspil {title}",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2141": {
+  "en": "Play {label}",
+  "da": "Afspil {label}",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2142": {
+  "en": "Shuffle",
+  "da": "Bland",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2143": {
+  "en": "Charts",
+  "da": "Hitlisten",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2144": {
+  "en": "The {CHARTS_SIZE} best rated songs. Every hour the worst quarter of all songs is taken off{…}.",
+  "da": "De {CHARTS_SIZE} bedst bedømte sange. Hver time fjernes den dårligste fjerdedel af alle sange{…}.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2145": {
+  "en": "(next clean-up in {mins} min)",
+  "da": " (næste oprydning om {mins} min)",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2146": {
+  "en": "No songs yet. Upload the first one on your profile.",
+  "da": "Ingen sange endnu. Upload den første på din profil.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2147": {
+  "en": "All music",
+  "da": "Al musik",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2148": {
+  "en": "Songs: {length}. Artists: {size}. Newest first. Tap a name to see an artist.",
+  "da": "Sange: {length}. Kunstnere: {size}. Nyeste først. Tryk på et navn for at se kunstneren.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2149": {
+  "en": "Nothing here yet.",
+  "da": "Der er ikke noget her endnu.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2150": {
+  "en": "Songs: {length}, best rated first",
+  "da": "Sange: {length}, bedst bedømte først",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2151": {
+  "en": "This artist has no songs on SoundCloud right now.",
+  "da": "Denne kunstner har ingen sange på SoundCloud lige nu.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2152": {
+  "en": "Choose a song file",
+  "da": "Vælg en sangfil",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2153": {
+  "en": "Song title",
+  "da": "Sangens titel",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2154": {
+  "en": "Your song is on SoundCloud.",
+  "da": "Din sang er på SoundCloud.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2155": {
+  "en": "The upload failed.",
+  "da": "Uploaden mislykkedes.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2156": {
+  "en": "Uploading",
+  "da": "Uploader",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2157": {
+  "en": "Upload",
+  "da": "Upload",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2158": {
+  "en": "{length} of {SONG_SLOTS} songs on SoundCloud",
+  "da": "{length} af {SONG_SLOTS} sange på SoundCloud",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2159": {
+  "en": "Upload a song",
+  "da": "Upload en sang",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2160": {
+  "en": "A song is an mp3, wav, ogg or m4a up to 4 MB and 3 minutes. It gets votes from everybody, and the worst rated ones are taken off every hour.",
+  "da": "En sang er en mp3, wav, ogg eller m4a på op til 4 MB og 3 minutter. Alle kan stemme på den, og de dårligst bedømte fjernes hver time.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2161": {
+  "en": "You have {SONG_SLOTS} songs up. Take one off to upload another.",
+  "da": "Du har {SONG_SLOTS} sange oppe. Tag en af for at uploade en ny.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2162": {
+  "en": "Another file",
+  "da": "En anden fil",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2163": {
+  "en": "Choose a file",
+  "da": "Vælg en fil",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2164": {
+  "en": "No file chosen",
+  "da": "Ingen fil valgt",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2165": {
+  "en": "Your songs",
+  "da": "Dine sange",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2166": {
+  "en": "Take \"{title}\" off SoundCloud? Its votes are lost.",
+  "da": "Tag \"{title}\" af SoundCloud? Stemmerne går tabt.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2167": {
+  "en": "Taken off.",
+  "da": "Taget af.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2168": {
+  "en": "Take off",
+  "da": "Tag af",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2169": {
+  "en": "You haven't uploaded anything yet.",
+  "da": "Du har ikke uploadet noget endnu.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2170": {
+  "en": "Owned beats",
+  "da": "Købte beats",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2171": {
+  "en": "Beats you buy from a BeatShop show up here with a download button.",
+  "da": "Beats du køber i en BeatShop kommer op her med en download-knap.",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2172": {
+  "en": "Position",
+  "da": "Position",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2173": {
+  "en": "Loading",
+  "da": "Henter",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2174": {
+  "en": "Previous",
+  "da": "Forrige",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2175": {
+  "en": "Pause",
+  "da": "Pause",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2176": {
+  "en": "Loop this song",
+  "da": "Gentag denne sang",
+  "where": "src/ui/soundcloud.ts"
+ },
+ "N2177": {
+  "en": "That file is {…} MB. A song can be 4 MB at most.",
+  "da": "Den fil er {…} MB. En sang må højst være 4 MB.",
+  "where": "src/soundcloud.ts"
+ },
+ "N2178": {
+  "en": "That file can't be played. Use an mp3, wav, ogg or m4a.",
+  "da": "Den fil kan ikke afspilles. Brug en mp3, wav, ogg eller m4a.",
+  "where": "src/soundcloud.ts"
+ },
+ "N2179": {
+  "en": "That song is {…}:{…}. It has to be between 10 seconds and 3 minutes.",
+  "da": "Den sang er {…}:{…}. Den skal være mellem 10 sekunder og 3 minutter.",
+  "where": "src/soundcloud.ts"
+ },
+ "N2180": {
+  "en": "Couldn't play that.",
+  "da": "Kunne ikke afspille den.",
+  "where": "src/soundcloud.ts"
+ },
+ "N2181": {
+  "en": "Couldn't read the file.",
+  "da": "Kunne ikke læse filen.",
+  "where": "src/audio.ts"
+ },
+ "N2182": {
+  "en": "That sound isn't available.",
+  "da": "Den lyd er ikke tilgængelig.",
+  "where": "src/audio.ts"
+ },
+ "N2183": {
+  "en": "Part of that file is missing.",
+  "da": "Der mangler en del af den fil.",
+  "where": "src/audio.ts"
+ },
+ "N2184": {
+  "en": "SoundCloud",
+  "da": "SoundCloud",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2185": {
+  "en": "You gave {n} blood to {…}. {left} left to give today.",
+  "da": "Du gav {n} blod til {…}. {left} tilbage at give i dag.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2186": {
+  "en": "Favourite this hideout",
+  "da": "Gør dette skjul til favorit",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2187": {
+  "en": "It is off your favourites.",
+  "da": "Det er fjernet fra dine favoritter.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2188": {
+  "en": "It is a favourite now.",
+  "da": "Det er en favorit nu.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2189": {
+  "en": "Give blood to the owner",
+  "da": "Giv blod til ejeren",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2190": {
+  "en": "You can give {left} more today (the most is {DONATE_DAILY_MAX} a day, to all hideouts together).",
+  "da": "Du kan give {left} mere i dag (højst {DONATE_DAILY_MAX} om dagen, til alle skjul tilsammen).",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2191": {
+  "en": "You have given the most you can today ({DONATE_DAILY_MAX}).",
+  "da": "Du har givet det mest du kan i dag ({DONATE_DAILY_MAX}).",
+  "where": "server/src/actions/hideout.ts"
+ },
+ "N2192": {
+  "en": "You can give {…} more today.",
+  "da": "Du kan give {…} mere i dag.",
+  "where": "server/src/actions/hideout.ts"
+ },
+ "N2193": {
+  "en": "You need {…} more blood.",
+  "da": "Du mangler {…} blod.",
+  "where": "server/src/actions/hideout.ts"
+ },
+ "N2194": {
+  "en": "Give the song a title.",
+  "da": "Giv sangen en titel.",
+  "where": "server/src/actions/songs.ts"
+ },
+ "N2195": {
+  "en": "You can have {SONGS_PER_PLAYER} songs on SoundCloud at a time. Take one off first.",
+  "da": "Du kan have {SONGS_PER_PLAYER} sange på SoundCloud ad gangen. Tag en af først.",
+  "where": "server/src/actions/songs.ts"
+ },
+ "N2196": {
+  "en": "SoundCloud is full. The worst songs are taken off every hour: try again later.",
+  "da": "SoundCloud er fuld. De dårligste sange fjernes hver time: prøv igen senere.",
+  "where": "server/src/actions/songs.ts"
+ },
+ "N2197": {
+  "en": "That song isn't yours.",
+  "da": "Den sang er ikke din.",
+  "where": "server/src/actions/songs.ts"
+ },
+ "N2198": {
+  "en": "That song is on SoundCloud already.",
+  "da": "Den sang er allerede på SoundCloud.",
+  "where": "server/src/actions/songs.ts"
+ },
+ "N2199": {
+  "en": "That song isn't there any more.",
+  "da": "Den sang er der ikke mere.",
+  "where": "server/src/actions/songs.ts"
+ },
+ "N2200": {
+  "en": "You can't vote on your own song.",
+  "da": "Du kan ikke stemme på din egen sang.",
+  "where": "server/src/actions/songs.ts"
+ },
+ "N2201": {
+  "en": "That song isn't there.",
+  "da": "Den sang er der ikke.",
+  "where": "server/src/actions/songs.ts"
+ },
+ "N2202": {
+  "en": "That isn't a sound file (mp3, wav, ogg or m4a).",
+  "da": "Det er ikke en lydfil (mp3, wav, ogg eller m4a).",
+  "where": "server/src/actions/audio.ts"
+ },
+ "N2203": {
+  "en": "That file is too big.",
+  "da": "Den fil er for stor.",
+  "where": "server/src/actions/audio.ts"
+ },
+ "N2204": {
+  "en": "You have uploads going already. Wait for them to finish.",
+  "da": "Du har allerede uploads i gang. Vent til de er færdige.",
+  "where": "server/src/actions/audio.ts"
+ },
+ "N2205": {
+  "en": "That upload isn't yours.",
+  "da": "Den upload er ikke din.",
+  "where": "server/src/actions/audio.ts"
+ },
+ "N2206": {
+  "en": "That upload is done already.",
+  "da": "Den upload er allerede færdig.",
+  "where": "server/src/actions/audio.ts"
+ },
+ "N2207": {
+  "en": "The upload didn't arrive in full. Try again.",
+  "da": "Uploaden nåede ikke helt frem. Prøv igen.",
+  "where": "server/src/actions/audio.ts"
+ },
+ "N2208": {
+  "en": "That file isn't what it said it was.",
+  "da": "Den fil er ikke det den udgav sig for.",
+  "where": "server/src/actions/audio.ts"
+ },
+ "N2209": {
+  "en": "That isn't a sound file.",
+  "da": "Det er ikke en lydfil.",
+  "where": "server/src/actions/audio.ts"
  }
 }
