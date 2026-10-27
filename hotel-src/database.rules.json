@@ -81,6 +81,41 @@
     "wantedRooms": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
     },
+    "audioMeta": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
+    },
+    "audio": {
+      "$id": {
+        "$i": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && root.child('audioMeta').child($id).child('status').val() === 'ready' && (root.child('audioMeta').child($id).child('kind').val() === 'song' || root.child('audioMeta').child($id).child('kind').val() === 'preview' || root.child('audioMeta').child($id).child('public').val() === true || root.child('audioMeta').child($id).child('readers').child(auth.uid).exists())",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && $i.matches(/^([0-9]|1[0-9])$/) && root.child('audioMeta').child($id).child('owner').val() === auth.uid && root.child('audioMeta').child($id).child('status').val() === 'uploading' && newData.isString() && newData.val().length <= 700000"
+        }
+      }
+    },
+    "audioUploads": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $uid"
+      }
+    },
+    "songs": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
+    },
+    "songArchive": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
+    },
+    "songMeta": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
+    },
+    "myVotes": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $uid"
+      }
+    },
+    "donations": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now)) && auth.uid === $uid"
+      }
+    },
     "broadcast": {
       ".read": "auth != null && auth.token.firebase.sign_in_provider === 'password' && (!root.child('bans').child(auth.uid).exists() || (root.child('bans').child(auth.uid).child('until').exists() && root.child('bans').child(auth.uid).child('until').val() < now))"
     },

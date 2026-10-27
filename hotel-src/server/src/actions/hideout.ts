@@ -1,5 +1,6 @@
 // Hideouts (see src/shared/hideout.ts): buying one, the owner's tools (size, colours, name, locking builds, members), invites, the shared box, and the
 // computer's orders. Everything about a hideout is written here (the browsers only read roomsMeta/h_<owner>); the furnishing itself is in toolbox.ts.
+import { DONATE_DAILY_MAX } from "../../../src/shared/songs";
 import { Action, ID_RE, int, requireHideoutMember, requireInRoom, requireWorkRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, lighterHex, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
@@ -487,5 +488,33 @@ export const hideoutTillCollect: Action = {
     c.extra[`hideoutTill/${c.uid}/blood`] = 0;
     c.note = `table earnings ${n}`;
     return { got: n };
+  },
+};
+
+/**
+ * Anybody can give blood to the hideout they are standing in, from the Members page of its computer (on SoundCloud, "thanks for the music"): it goes to the owner's table earnings
+ * (hideoutTill, collected on the Tables page). A player can give at most DONATE_DAILY_MAX a day in all (donations/<uid> = { day, n }).
+ */
+export const hideoutDonate: Action = {
+  locks: (c, a) => [`till:${String(a?.room ?? "").slice(2)}`],
+  async run(c, a) {
+    const room = text(a.room, /^h_[A-Za-z0-9]{1,40}$/, "room");
+    await requireInRoom(c, room);
+    const owner = room.slice(2);
+    if (!(await c.db.get(`roomsMeta/${room}/owner`))) fail("That hideout doesn't exist.");
+    if (owner === c.uid) fail("That is your own hideout.");
+    const amount = int(a.amount, 1, DONATE_DAILY_MAX, "amount");
+    const day = Math.floor(c.now / 86_400_000);
+    const rec = await c.db.get<{ day?: number; n?: number }>(`donations/${c.uid}`);
+    const given = rec?.day === day ? Number(rec.n) || 0 : 0;
+    if (given + amount > DONATE_DAILY_MAX) fail(given >= DONATE_DAILY_MAX ? `You have given the most you can today (${DONATE_DAILY_MAX}).` : `You can give ${DONATE_DAILY_MAX - given} more today.`);
+    const w = await c.user();
+    if (w.s.blood < amount) fail(`You need ${amount - w.s.blood} more blood.`);
+    w.s.blood -= amount;
+    const cur = await c.db.get<{ blood?: number; total?: number }>(`hideoutTill/${owner}`);
+    c.extra[`hideoutTill/${owner}`] = { blood: (Number(cur?.blood) || 0) + amount, total: (Number(cur?.total) || 0) + amount };
+    c.extra[`donations/${c.uid}`] = { day, n: given + amount };
+    c.note = `donated ${amount} to a hideout`;
+    return { given: given + amount, left: DONATE_DAILY_MAX - given - amount };
   },
 };

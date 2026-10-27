@@ -29,10 +29,11 @@ import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
 import { bagmandBuy, bagmandSell, deadlyStab } from "./bagmand";
 import { bagmandHitTick, bountyShow } from "./bounty";
 import { roomSweep } from "./sweep";
+import { songBegin, songDelete, songFinish, songSweep, songVote } from "./songs";
 import { loudspeaker } from "./loudspeaker";
 import { petBuy, petPickup, petRelease, petStockNow } from "./pets";
 import { caseOpen, unusualRemove, unusualWear } from "./cases";
-import { hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutBuy, hideoutCollect, hideoutColors, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings, hideoutUpgrade, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect } from "./hideout";
+import { hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutBuy, hideoutCollect, hideoutColors, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings, hideoutUpgrade, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect, hideoutDonate } from "./hideout";
 
 /** Every thing the browser may ask for. Anything not listed here cannot be done: the browser can't write economy data itself. */
 export const ACTIONS: Record<string, Action> = {
@@ -52,8 +53,8 @@ export const ACTIONS: Record<string, Action> = {
   duckyBuy, rollDice, register,
   modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick, modRename,
   raffleBuy, raffleCollect, raffleRemove, raffleTick,
-  bagmandBuy, bagmandSell, deadlyStab, bagmandHitTick, bountyShow, roomSweep, loudspeaker, petBuy, petRelease, petPickup, petStockNow, caseOpen, unusualWear, unusualRemove,
-  hideoutBuy, hideoutUpgrade, hideoutColors, hideoutSettings, hideoutKick, hideoutLeave, hideoutMember, hideoutSearch, hideoutInvite, hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutOrder, hideoutCollect, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect,
+  bagmandBuy, bagmandSell, deadlyStab, bagmandHitTick, bountyShow, roomSweep, songBegin, songFinish, songVote, songDelete, songSweep, loudspeaker, petBuy, petRelease, petPickup, petStockNow, caseOpen, unusualWear, unusualRemove,
+  hideoutBuy, hideoutUpgrade, hideoutColors, hideoutSettings, hideoutKick, hideoutLeave, hideoutMember, hideoutSearch, hideoutInvite, hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutOrder, hideoutCollect, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect, hideoutDonate,
   mine, craft,
   debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };
