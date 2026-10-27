@@ -1,5 +1,5 @@
 import { assetUrl } from "./assetUrl";
-import { onSfxMuteChange, sfxMuted } from "./sfx";
+import { musicMuted, onMusicMuteChange } from "./sfx";
 
 /**
  * The basement's background sound: Half-Life 2 "Citadel" ambience, looping at a low volume.
@@ -42,7 +42,7 @@ function makeLoop(file: string, target: number, fadeInMs: number, fadeOutMs: num
   const tryStart = (): void => {
     if (document.hidden) return;
     const a = ensure();
-    a.muted = sfxMuted(); // (`muted` works on iPhones where the volume can't be set)
+    a.muted = musicMuted(); // (`muted` works on iPhones where the volume can't be set)
     if (!canFade) level = target; // no fades on this device: it is simply on
     void a.play().then(() => { blocked = false; }, () => { blocked = true; });
   };
@@ -55,21 +55,21 @@ function makeLoop(file: string, target: number, fadeInMs: number, fadeOutMs: num
   // the app is hidden / closed: stop at once. Back again: start again if the room still wants it.
   const onVisibility = (): void => {
     if (document.hidden) { if (audio && !audio.paused) audio.pause(); if (timer) { window.clearInterval(timer); timer = 0; } return; }
-    if (wanted && !sfxMuted()) { tryStart(); if (!timer && canFade) timer = window.setInterval(tick, 100); }
+    if (wanted && !musicMuted()) { tryStart(); if (!timer && canFade) timer = window.setInterval(tick, 100); }
   };
   document.addEventListener("visibilitychange", onVisibility);
-  // the Sounds switch in the menu: silent at once (phones included), and back when it is switched on again
-  onSfxMuteChange(() => {
-    if (audio) audio.muted = sfxMuted();
-    if (!sfxMuted() && wanted) { if (audio && audio.paused) tryStart(); if (canFade && !timer) timer = window.setInterval(tick, 100); }
+  // the Music switch in the menu: silent at once (phones included), and back when it is switched on again
+  onMusicMuteChange(() => {
+    if (audio) audio.muted = musicMuted();
+    if (!musicMuted() && wanted) { if (audio && audio.paused) tryStart(); if (canFade && !timer) timer = window.setInterval(tick, 100); }
   });
   window.addEventListener("pagehide", stopNow);
 
   const tick = (): void => {
     const a = audio;
     if (!a) return;
-    a.muted = sfxMuted();
-    const goal = wanted && !sfxMuted() ? target : 0;
+    a.muted = musicMuted();
+    const goal = wanted && !musicMuted() ? target : 0;
     const step = target / ((wanted ? fadeInMs : fadeOutMs) / 100);
     level = level < goal ? Math.min(goal, level + step) : Math.max(goal, level - step);
     if (canFade) a.volume = level;

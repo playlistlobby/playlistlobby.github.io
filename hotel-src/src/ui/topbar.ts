@@ -1,5 +1,5 @@
 import { h } from "./dom";
-import { sfxMuted, setSfxMuted } from "../sfx";
+import { musicMuted, setMusicMuted, sfxMuted, setSfxMuted } from "../sfx";
 import { autoplantOn, setAutoplant } from "../settings";
 import { BLOOD_ICON } from "../items";
 import { FLAG_SVG, Lang, LANG, setLang } from "../lang";
@@ -48,10 +48,14 @@ export function topBar(o: TopBarOpts): TopBarApi {
     if (menu) return closeMenu();
     menu = h("div", { class: "nav-pop", role: "menu" },
       ...(o.isAdmin ? [h("button", { class: "nav-pop-item", onclick: () => { closeMenu(); o.onNav("admin"); } }, "🛠 Admin")] : []),
-      h("button", { class: "nav-pop-item", onclick: (ev: Event) => {
+      h("button", { class: "nav-pop-item", title: "The background sound, the shop jingle, the jukebox and the CDs", onclick: (ev: Event) => {
+        setMusicMuted(!musicMuted());
+        (ev.currentTarget as HTMLElement).textContent = musicMuted() ? "🔇 Music: off" : "🎵 Music: on";
+      } }, musicMuted() ? "🔇 Music: off" : "🎵 Music: on"),
+      h("button", { class: "nav-pop-item", title: "Every other sound: clicks, doors, stabs, the gun, the games", onclick: (ev: Event) => {
         setSfxMuted(!sfxMuted());
-        (ev.currentTarget as HTMLElement).textContent = sfxMuted() ? "🔇 Sounds: off" : "🔊 Sounds: on";
-      } }, sfxMuted() ? "🔇 Sounds: off" : "🔊 Sounds: on"),
+        (ev.currentTarget as HTMLElement).textContent = sfxMuted() ? "🔇 Sound effects: off" : "🔊 Sound effects: on";
+      } }, sfxMuted() ? "🔇 Sound effects: off" : "🔊 Sound effects: on"),
       h("button", { class: "nav-pop-item", title: "With autoplant on, tapping an empty growing kit plants a seed from your pocket", onclick: (ev: Event) => {
         setAutoplant(!autoplantOn());
         (ev.currentTarget as HTMLElement).textContent = autoplantOn() ? "🌱 Autoplant: on" : "🌱 Autoplant: off";

@@ -1,4 +1,5 @@
 import { assetUrl } from "./assetUrl";
+import { musicMuted, onMusicMuteChange } from "./sfx";
 
 // Tracks players can stream once they own the jukebox pass. Drop more mp3s into public/music/ and list them here.
 export interface Track {
@@ -23,6 +24,8 @@ class MusicPlayer {
   constructor() {
     this.audio.preload = "none";
     this.audio.volume = 0.6;
+    this.audio.muted = musicMuted(); // (the Music switch in the menu)
+    onMusicMuteChange(() => { this.audio.muted = musicMuted(); });
     for (const ev of ["play", "pause", "timeupdate", "loadedmetadata", "ended", "error", "volumechange"]) {
       this.audio.addEventListener(ev, () => {
         if (ev === "ended") this.next();

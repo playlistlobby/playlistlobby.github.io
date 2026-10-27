@@ -13353,5 +13353,35 @@
   "en": "Hex colour",
   "da": "Hex-farve",
   "where": "src/ui/editor.ts"
+ },
+ "N2116": {
+  "en": "🔇 Music: off",
+  "da": "🔇 Musik: fra",
+  "where": "src/ui/topbar.ts"
+ },
+ "N2117": {
+  "en": "🎵 Music: on",
+  "da": "🎵 Musik: til",
+  "where": "src/ui/topbar.ts"
+ },
+ "N2118": {
+  "en": "🔇 Sound effects: off",
+  "da": "🔇 Lydeffekter: fra",
+  "where": "src/ui/topbar.ts"
+ },
+ "N2119": {
+  "en": "🔊 Sound effects: on",
+  "da": "🔊 Lydeffekter: til",
+  "where": "src/ui/topbar.ts"
+ },
+ "N2120": {
+  "en": "The background sound, the shop jingle, the jukebox and the CDs",
+  "da": "Baggrundslyden, butikkens jingle, jukeboksen og cd'erne",
+  "where": "src/ui/topbar.ts"
+ },
+ "N2121": {
+  "en": "Every other sound: clicks, doors, stabs, the gun, the games",
+  "da": "Alle andre lyde: klik, døre, stik, pistolen, spillene",
+  "where": "src/ui/topbar.ts"
  }
 }

@@ -20,17 +20,35 @@ const FILES = {
 } as const;
 export type Sfx = keyof typeof FILES;
 
+// Two switches in the menu: the sound effects (everything that is not music) and the music (the background loops, the shop jingle, the jukebox and the CDs).
 const KEY = "6ix-sfx-muted";
+const MUSIC_KEY = "6ix-music-muted";
 let muted = false;
-try { muted = localStorage.getItem(KEY) === "1"; } catch { /* private mode: sounds just stay on */ }
+let musicOff = false;
+try {
+  muted = localStorage.getItem(KEY) === "1";
+  const m = localStorage.getItem(MUSIC_KEY);
+  musicOff = m === null ? muted : m === "1"; // (one switch used to do both: somebody who had everything off keeps the music off too)
+} catch { /* private mode: sounds just stay on */ }
 
 const cache = new Map<Sfx, HTMLAudioElement>();
 
+/** are the sound effects off? */
 export const sfxMuted = (): boolean => muted;
+/** is the music off (the background loops, the shop jingle, the jukebox and the CDs)? */
+export const musicMuted = (): boolean => musicOff;
 
 const muteListeners = new Set<() => void>();
-/** Called when the Sounds switch is flipped (the background music and the CD player follow it at once). */
+/** Called when the sound effects switch is flipped. */
 export const onSfxMuteChange = (fn: () => void): void => { muteListeners.add(fn); };
+const musicListeners = new Set<() => void>();
+/** Called when the music switch is flipped (the background loops, the jukebox and the CD player follow it at once). */
+export const onMusicMuteChange = (fn: () => void): void => { musicListeners.add(fn); };
+export function setMusicMuted(m: boolean): void {
+  musicOff = m;
+  musicListeners.forEach((l) => l());
+  try { localStorage.setItem(MUSIC_KEY, m ? "1" : "0"); } catch { /* ignore */ }
+}
 
 export function setSfxMuted(m: boolean): void {
   muted = m;
