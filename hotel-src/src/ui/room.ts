@@ -661,6 +661,25 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // the chat on the picture shows 3 lines, and more while you're typing (the keyboard is open)
   input.addEventListener("focus", () => log.classList.add("open"));
   input.addEventListener("blur", () => log.classList.remove("open"));
+  // on a computer the mouse wheel over the chat scrolls back through it (the chat is drawn over the room, so it can't take clicks: it only wakes up for the wheel, and goes back to the last lines when the mouse leaves)
+  stage.addEventListener("wheel", (e) => {
+    if (log.childElementCount === 0 || (e as WheelEvent).ctrlKey) return;
+    const r = log.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top - 4 && e.clientY <= r.bottom + 4;
+    if (!inside && !log.classList.contains("scroll")) return;
+    if (!log.classList.contains("scroll")) log.classList.add("scroll");
+    const rr = log.getBoundingClientRect();
+    if (e.clientX < rr.left || e.clientX > rr.right || e.clientY < rr.top || e.clientY > rr.bottom) { leaveChatScroll(); return; }
+    e.preventDefault();
+    log.scrollTop += (e as WheelEvent).deltaY;
+  }, { passive: false });
+  const leaveChatScroll = (): void => { log.classList.remove("scroll"); log.scrollTop = log.scrollHeight; };
+  log.addEventListener("mouseleave", leaveChatScroll);
+  stage.addEventListener("mousemove", (e) => {
+    if (!log.classList.contains("scroll")) return;
+    const r = log.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) leaveChatScroll();
+  });
   const g = canvas.getContext("2d")!;
 
   // Every chat line disappears 15 minutes after it was said; the swept-out messages are also deleted from the database.
@@ -675,11 +694,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   };
   const releaseRoomChat = setRoomChat(tableChat); // (the trade window talks through the room you are in)
   function addLine(el: HTMLElement, lifeMs: number, msg?: ReturnType<typeof ref>): void {
+    const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
     log.append(el);
     tableLineListeners.forEach((l) => l(el.cloneNode(true) as HTMLElement));
     lines.push({ el, exp: Date.now() + lifeMs, msg });
     while (log.children.length > 60) log.firstElementChild?.remove();
-    log.scrollTop = log.scrollHeight;
+    if (atBottom || !log.classList.contains("scroll")) log.scrollTop = log.scrollHeight; // (somebody reading back is not pulled down by a new line)
   }
   function sweepChat(): void {
     const now = Date.now();

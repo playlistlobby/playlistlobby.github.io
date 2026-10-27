@@ -1480,3 +1480,9 @@ html.kb .tc-log { max-height: 34px; }
 .trade-win .tc-box { position: sticky; bottom: -10px; margin: 10px -12px -10px; border-radius: 0 0 14px 14px; z-index: 2; }
 html.kb .trade-overlay { inset: auto; left: 0; right: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100dvh); padding: 0; }
 html.kb .trade-win { max-height: 100%; border-radius: 0; }
+
+/* scrolling back through the chat with the mouse wheel (a computer): the log wakes up over its own lines, shows everything and can be scrolled */
+.chat-log.scroll { pointer-events: auto; overflow-y: auto; max-height: 62%; padding: 6px 8px; border-radius: 8px; background: rgba(8, 12, 24, .62); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .45) transparent; justify-content: flex-start; }
+.chat-log.scroll:not(.open) .line:not(:nth-last-child(-n+3)), .chat-log.scroll.open .line:not(:nth-last-child(-n+10)) { display: block; }
+.chat-log.scroll::-webkit-scrollbar { width: 6px; }
+.chat-log.scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .45); border-radius: 3px; }
