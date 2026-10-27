@@ -239,7 +239,7 @@ export interface RoomDef {
 export interface HideoutInfo {
   level: number;
   lock: boolean;
-  members: Record<string, { name: string; build: boolean }>;
+  members: Record<string, { name: string; build: boolean; grow: boolean; stash: boolean }>;
   /** the shared box: piece owner -> kind -> how many */
   box: Record<string, Record<string, number>>;
   orders: Record<string, { kind: string; by: string; doneAt: number }>;
@@ -455,7 +455,7 @@ export interface RoomMeta {
   desc?: string;
   listed?: boolean;
   boostUntil?: number;
-  members?: Record<string, { name?: string; build?: boolean }>;
+  members?: Record<string, { name?: string; build?: boolean; grow?: boolean; stash?: boolean }>;
   box?: Record<string, Record<string, number>>;
   orders?: Record<string, { kind?: string; by?: string; doneAt?: number }>;
   bought?: Record<string, number>;
@@ -499,7 +499,7 @@ function hideoutDef(id: string, meta: RoomMeta): RoomDef {
   const level = typeof meta.level === "number" ? meta.level : levelOfSize(w);
   const rug: RugRect | null = theme.rug ? { x0: Math.floor((w - 6) / 2), y0: Math.floor((h - 6) / 2), w: 6, h: 6 } : null;
   const members: HideoutInfo["members"] = {};
-  for (const [uid, m] of Object.entries(meta.members ?? {})) members[uid] = { name: String(m?.name ?? "?"), build: m?.build !== false };
+  for (const [uid, m] of Object.entries(meta.members ?? {})) members[uid] = { name: String(m?.name ?? "?"), build: m?.build !== false, grow: m?.grow !== false, stash: m?.stash !== false };
   const orders: HideoutInfo["orders"] = {};
   for (const [oid, o] of Object.entries(meta.orders ?? {})) if (o && typeof o.kind === "string" && typeof o.by === "string") orders[oid] = { kind: o.kind, by: o.by, doneAt: Number(o.doneAt) || 0 };
   return { id, name: meta.name, ownerUid: meta.owner, ownerName: meta.ownerName, access: "none", w, h, theme, rug, furni, doorX: DOOR_X, doorTo: LOBBY_ID, hideout: { bought: Object.fromEntries(Object.entries(meta.bought ?? {}).filter(([, n]) => Number.isFinite(Number(n))).map(([k, n]) => [k, Number(n)])), level, lock: meta.lock === true, desc: String(meta.desc ?? ""), listed: meta.listed !== false, boostUntil: Number(meta.boostUntil) || 0, open: meta.access === "open", members, box: meta.box ?? {}, orders, cap: HIDEOUT_MAX_FURNI[Math.min(level, HIDEOUT_MAX_FURNI.length - 1)] } };

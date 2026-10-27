@@ -6,7 +6,7 @@ import { addToInv, MAX_FURNI, STASH_PIECES, STASHBOX_OWNED_KEY, STORAGE_MAX_ITEM
 import { isFurniItem, STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
 import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
-import { HIDEOUT_MAX_FURNI, HIDEOUT_ONLY, isHideoutId, levelOfSize } from "../../../src/shared/hideout";
+import { HIDEOUT_MAX_FURNI, HIDEOUT_MAX_KITS, HIDEOUT_ONLY, isHideoutId, levelOfSize } from "../../../src/shared/hideout";
 
 const isPiece = async (c: Ctx, key: string): Promise<boolean> => !!SHIPPED_DIMS[key] || !!(await c.furniMeta())[key];
 const KEY_RE = /^[a-z0-9_]{1,30}$/;
@@ -199,6 +199,7 @@ export const furniPlace: Action = {
       if (!fits(dims!, int(a.x, 0, 24, "spot"), int(a.y, 0, 24, "spot"), dir, size)) fail("That doesn't fit in the room.");
       if (w.s.storage[kind] > 1) w.s.storage[kind] -= 1; else delete w.s.storage[kind];
     }
+    if (hideout && kind === "f_planter" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_planter").length >= HIDEOUT_MAX_KITS) fail(`A hideout fits ${HIDEOUT_MAX_KITS} growing kits.`);
     // a poster only hangs on a wall, and carries the picture chosen when it is hung (it stays on it; a poster taken down goes back blank)
     let img: string | undefined;
     if (kind === POSTER_KIND) {
@@ -278,6 +279,16 @@ export const furniStore: Action = {
     if (typeof row.plantedAt === "number") fail("Harvest the plant first.");
     if (row.mixJob) fail("Collect what's in the mixer first.");
     if (row.kind === "f_boombox") await boomboxFree(c, room);
+    if (a.to === "pocket") { // straight into your pocket (only a piece that is yours: in your own room everything is)
+      if (hideout && row.by !== c.uid && !c.isAdmin) fail("That isn't yours to take.");
+      if (!(await c.validItem())(row.kind)) fail("That can't be carried.");
+      const w2 = await c.user();
+      const next = addToInv(w2.s.inventory, { item: row.kind, qty: 1 });
+      if (!next) fail("Your pockets are full.");
+      w2.s.inventory = next!;
+      c.extra[`roomsMeta/${room}/furni/${id}`] = null;
+      return {};
+    }
     if (hideout) { // a hideout's piece goes back into the shared box, still its owner's
       const by = typeof row.by === "string" ? row.by : c.uid;
       const inBox = (await c.db.get<number>(`roomsMeta/${room}/box/${by}/${row.kind}`)) ?? 0;

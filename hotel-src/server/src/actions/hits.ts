@@ -42,6 +42,9 @@ export const hitPlace: Action = {
     const id = `h${c.now.toString(36)}${Math.random().toString(36).slice(2, 5)}`;
     c.extra[`hits/${id}`] = { target, targetName: name.slice(0, 30), amount, by: c.uid, byName: String(w.raw?.name ?? "?").slice(0, 30), hideout: owner, hideoutName: String(meta?.name ?? "A hideout").slice(0, 40), at: c.now };
     c.extra[`hitCool/${owner}`] = c.now;
+    c.extra[`hitRevenge/${target}/${id}`] = { by: c.uid, byName: String(w.raw?.name ?? "?").slice(0, 30), hideoutName: String(meta?.name ?? "A hideout").slice(0, 40), amount, at: c.now };
+    const mine = (await c.db.get<Record<string, { by?: string }>>(`hitRevenge/${c.uid}`)) ?? {}; // (a hit on somebody who put one on you: the revenge is done)
+    for (const [rid, r] of Object.entries(mine)) if (r?.by === target) c.extra[`hitRevenge/${c.uid}/${rid}`] = null;
     const keep = Object.fromEntries(Object.entries(log).filter(([, t]) => typeof t === "number" && c.now - t < HIT_PERSON_WINDOW_MS));
     c.extra[`hitLog/${target}`] = { ...keep, [id]: c.now };
     c.note = `hit on ${name}`;

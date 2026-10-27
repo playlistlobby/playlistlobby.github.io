@@ -19,3 +19,12 @@ export function watchHits(cb: (hits: Hit[]) => void): () => void {
 export function watchHitCool(owner: string, cb: (at: number) => void): () => void {
   return onValue(ref(db, `hitCool/${owner}`), (s) => cb(typeof s.val() === "number" ? s.val() : 0), () => cb(0));
 }
+
+export interface Revenge { id: string; by: string; byName: string; hideoutName: string; amount: number; at: number }
+/** the people who put a hit on you (newest first): the hitman site offers a revenge button for each */
+export function watchRevenge(uid: string, cb: (list: Revenge[]) => void): () => void {
+  return onValue(ref(db, `hitRevenge/${uid}`), (s) => {
+    const v = (s.val() ?? {}) as Record<string, { by?: string; byName?: string; hideoutName?: string; amount?: number; at?: number }>;
+    cb(Object.entries(v).filter(([, r]) => typeof r?.by === "string").map(([id, r]) => ({ id, by: r.by!, byName: String(r.byName ?? "?"), hideoutName: String(r.hideoutName ?? ""), amount: Number(r.amount) || 0, at: Number(r.at) || 0 })).sort((a, b) => b.at - a.at));
+  }, () => cb([]));
+}

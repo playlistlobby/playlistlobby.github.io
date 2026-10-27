@@ -38,16 +38,16 @@ export async function roomSize(c: Ctx, roomId: string): Promise<{ w: number; h: 
   return fail("Unknown room.");
 }
 
-export interface HideoutMetaRow { owner?: string; ownerName?: string; name?: string; w?: number; h?: number; level?: number; lock?: boolean; members?: Record<string, { name?: string; build?: boolean; at?: number }> }
+export interface HideoutMetaRow { owner?: string; ownerName?: string; name?: string; w?: number; h?: number; level?: number; lock?: boolean; members?: Record<string, { name?: string; build?: boolean; grow?: boolean; stash?: boolean; at?: number }> }
 /** A hideout's record and what the caller may do in it (the owner and the members get in; the admin does everything). */
-export async function hideoutAccess(c: Ctx, room: string): Promise<{ meta: HideoutMetaRow; owner: boolean; member: boolean; canBuild: boolean }> {
+export async function hideoutAccess(c: Ctx, room: string): Promise<{ meta: HideoutMetaRow; owner: boolean; member: boolean; canBuild: boolean; canGrow: boolean; canStash: boolean }> {
   if (!isHideoutId(room)) return fail("That isn't a hideout.");
   const meta = await c.db.get<HideoutMetaRow>(`roomsMeta/${room}`);
   if (!meta || !meta.owner) return fail("That hideout doesn't exist.");
   return { meta, ...hideoutRole(meta, c.uid, c.isAdmin) };
 }
 /** The caller is a member of that hideout (they don't have to be standing in it). */
-export async function requireHideoutMember(c: Ctx, room: string): Promise<{ meta: HideoutMetaRow; owner: boolean; canBuild: boolean }> {
+export async function requireHideoutMember(c: Ctx, room: string): Promise<{ meta: HideoutMetaRow; owner: boolean; canBuild: boolean; canGrow: boolean; canStash: boolean }> {
   const h = await hideoutAccess(c, room);
   if (!h.member) fail("You aren't in that hideout.");
   return h;
@@ -59,7 +59,8 @@ export async function requireHideoutMember(c: Ctx, room: string): Promise<{ meta
 export async function requireWorkRoom(c: Ctx, want?: unknown): Promise<string> {
   if (want === undefined || want === `u_${c.uid}`) return requireOwnRoom(c);
   const room = text(want, /^h_[A-Za-z0-9]{1,40}$/, "room");
-  await requireHideoutMember(c, room);
+  const h = await requireHideoutMember(c, room);
+  if (!h.canGrow) fail("The owner has turned off the pots, the mixers and the sink for you.");
   await requireInRoom(c, room);
   return room;
 }

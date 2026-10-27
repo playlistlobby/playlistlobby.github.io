@@ -155,6 +155,13 @@ export async function storeFromRoom(p: Profile, roomId: string, f: PlacedFurni):
   await call(p, "furniStore", { room: roomId, id: f.id });
 }
 
+/** Takes a piece of yours out of the room straight into your pocket. */
+export async function pocketFromRoom(p: Profile, roomId: string, f: PlacedFurni): Promise<void> {
+  if (isFixedPiece(f.id)) throw new Error("That one stays in the room.");
+  if (f.plant) throw new Error("Harvest the plant first.");
+  await call(p, "furniStore", { room: roomId, id: f.id, to: "pocket" });
+}
+
 /** Puts what you carry into the toolbox: a piece of furniture, or `qty` of an item (a whole stack of cigarettes, say). */
 export async function storeFromInventory(p: Profile, slot: number, qty = 1): Promise<void> {
   const s = p.inventory[slot];

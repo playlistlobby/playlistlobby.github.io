@@ -5,7 +5,9 @@ import type { HideoutLandlordPanel } from "./hideoutLandlord";
 import { BLOOD_ICON, furniIcon, itemDef, onFurniIcon } from "../items";
 import { FURNI_KINDS, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
-import { hitPlace, watchHitCool, watchHits } from "../hits";
+import { hitPlace, watchHitCool, watchHits, watchRevenge } from "../hits";
+import type { Revenge } from "../hits";
+import { headBoxFor } from "./head";
 import { HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_MIN } from "../shared/hits";
 import type { Hit } from "../shared/hits";
 import { hideoutPriceOf, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
@@ -43,7 +45,8 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   let hitAmount = 500;
   let hitCool = 0;
   let openHits: Hit[] = [];
-  const stops = [watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; })];
+  let revenge: Revenge[] = [];
+  const stops = [watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; }), watchRevenge(me.uid, (l) => { revenge = l; })];
   const owner = (): boolean => getDef().ownerUid === me.uid;
 
   const url = h("div", { class: "hc-url" });
@@ -67,6 +70,29 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   const picOf = (kind: string): string => (kind.startsWith("f_") ? furniIcon(kind) : itemDef(kind)?.icon ?? "");
   const etaOf = (kind: string): number => HIDEOUT_SHOP.find((i) => i.kind === kind)?.etaMs ?? HIDEOUT_ORDER_MS;
   const minText = (ms: number): string => (ms >= 3_600_000 ? `${Math.round(ms / 3_600_000)} hour${ms >= 7_200_000 ? "s" : ""}` : `${Math.round(ms / 60000)} minutes`);
+
+  /** a search box for players: type a part of a name ("mem" finds hbmem); the answers come as you type, each with a button of your own */
+  function searchUi(placeholder: string, exclude: () => Set<string>, button: (r: { uid: string; name: string }) => HTMLElement): HTMLElement[] {
+    const input = h("input", { class: "hc-input", type: "search", placeholder, value: searchQ, autocomplete: "off", autocapitalize: "none", spellcheck: false }) as HTMLInputElement;
+    const box = h("div", { class: "hc-results" });
+    let state: "idle" | "short" | "searching" | "done" = searchQ.trim().length >= 2 ? "done" : "idle";
+    const paint = (): void => {
+      const rows = results.filter((r) => !exclude().has(r.uid));
+      box.replaceChildren(...(state === "short" ? [h("div", { class: "hc-hint" }, "Type at least 2 letters.")]
+        : state === "searching" ? [h("div", { class: "hc-hint" }, "Searching…")]
+        : state === "done" && !rows.length && searchQ.trim().length >= 2 ? [h("div", { class: "hc-hint" }, "Nobody has a name like that.")]
+        : rows.map((r) => h("div", { class: "hc-person" }, headBoxFor(r.uid), h("span", { class: "hc-pname" }, r.name), button(r)))));
+    };
+    const run = (): void => {
+      const q = searchQ.trim();
+      if (q.length < 2) { results = []; state = q.length ? "short" : "idle"; paint(); return; }
+      state = "searching"; paint();
+      void hideoutSearch(me, q).then((r) => { if (q === searchQ.trim()) { results = r.players; state = "done"; paint(); } }, () => { state = "done"; paint(); });
+    };
+    input.addEventListener("input", () => { searchQ = input.value; window.clearTimeout(searchTimer); searchTimer = window.setTimeout(run, 180); });
+    if (searchQ.trim().length >= 2 && !results.length) run(); else paint();
+    return [input, box];
+  }
 
   function shopPage(): HTMLElement[] {
     const mineWaiting = Object.values(getDef().hideout?.orders ?? {}).filter((o) => o.by === me.uid).length;
@@ -106,36 +132,25 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   function hitsPage(): HTMLElement[] {
     const left = hitCool + HIT_HIDEOUT_COOLDOWN_MS - serverNow();
     const waiting = left > 0;
-    const input = h("input", { class: "hc-input", type: "search", placeholder: "Search a player's name", value: searchQ, autocomplete: "off", autocapitalize: "none" }) as HTMLInputElement;
-    input.addEventListener("input", () => {
-      searchQ = input.value;
-      window.clearTimeout(searchTimer);
-      if (searchQ.trim().length < 2) { results = []; paintResults(); return; }
-      searchTimer = window.setTimeout(() => { void hideoutSearch(me, searchQ).then((r) => { results = r.players; paintResults(); }, () => undefined); }, 300);
-    });
-    const resultsBox = h("div", { class: "hc-results" });
-    const paintResults = (): void => {
-      resultsBox.replaceChildren(...results.filter((r) => r.uid !== me.uid).map((r) => h("div", { class: "hc-person" },
-        h("span", { class: "hc-pname" }, r.name),
-        h("button", { class: "btn small primary", onclick: () => { hitTarget = r; results = []; searchQ = ""; render(); } }, "Pick"))));
-    };
-    paintResults();
     const slider = h("input", { type: "range", class: "hc-slider", min: String(HIT_MIN), max: String(HIT_MAX), step: "50", value: String(hitAmount) }) as HTMLInputElement;
     const big = h("div", { class: "ht-amt" }, h("img", { src: BLOOD_ICON, alt: "" }), hitAmount.toLocaleString("en-US"));
     slider.addEventListener("input", () => { hitAmount = Number(slider.value); big.replaceChildren(h("img", { src: BLOOD_ICON, alt: "" }), hitAmount.toLocaleString("en-US")); });
     const mins = Math.ceil(left / 60000);
     const cant = !hitTarget || busy || waiting || me.blood < hitAmount;
-    const form = h("div", { class: "ht-form" },
+    const form = h("div", { class: "ht-form", id: "ht-form" },
       waiting ? h("div", { class: "ht-warn" }, `Your hideout has put a hit out already. The next one can go out in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`) : "",
-      hitTarget ? h("div", { class: "ht-target" }, h("span", {}, "The target"), h("strong", {}, hitTarget.name), h("button", { class: "btn small", onclick: () => { hitTarget = null; render(); } }, "Change")) : h("div", { class: "hc-group" }, input, resultsBox),
+      hitTarget ? h("div", { class: "ht-target" }, headBoxFor(hitTarget.uid), h("div", { class: "ht-tn" }, h("span", {}, "The target"), h("strong", {}, hitTarget.name)), h("button", { class: "btn small", onclick: () => { hitTarget = null; render(); } }, "Change"))
+        : h("div", { class: "hc-group" }, ...searchUi("Search a player's name", () => new Set([me.uid]), (r) => h("button", { class: "btn small primary", onclick: () => { hitTarget = r; results = []; searchQ = ""; render(); } }, "Pick"))),
       h("div", { class: "ht-bounty" }, h("span", {}, `The bounty (${HIT_MIN} to ${HIT_MAX})`), big, slider),
       h("button", { class: "ht-go", disabled: cant, onclick: () => void act(async () => { const t = hitTarget!; await hitPlace(me, roomId, t.uid, hitAmount); hitTarget = null; return `The hit on ${t.name} is out: ${hitAmount} blood.`; }) },
         hitTarget ? `Put out a hit on ${hitTarget.name}` : "Pick somebody first"),
-      h("div", { class: "hc-foot" }, `The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 3 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells one a visit) can collect it.`));
-    const per = new Map<string, { name: string; amount: number }>();
-    for (const x of openHits) { const c = per.get(x.target); if (!c || x.amount > c.amount) per.set(x.target, { name: x.targetName, amount: x.amount }); }
+      h("div", { class: "hc-foot" }, "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 3 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells two a visit) can collect it."));
+    const revengeBox = revenge.length ? [h("div", { class: "ht-open ht-revenge" }, h("div", { class: "ht-open-t" }, "Somebody put a hit on you"),
+      ...revenge.slice(0, 6).map((r) => h("div", { class: "ht-row ht-rv" }, headBoxFor(r.by), h("div", { class: "ht-who" }, h("span", { class: "ht-n" }, r.byName), h("span", { class: "ht-by" }, `${r.hideoutName ? r.hideoutName + " · " : ""}${r.amount.toLocaleString("en-US")} on your head`)),
+        h("button", { class: "ht-rev", onclick: () => { hitTarget = { uid: r.by, name: r.byName }; results = []; searchQ = ""; render(); document.getElementById("ht-form")?.scrollIntoView({ block: "center" }); } }, "Revenge"))))] : [];
     return [
       h("div", { class: "hc-hero ht-hero" }, h("div", { class: "hc-h1" }, "THE HITMAN"), h("div", { class: "hc-sub" }, "Put blood on a head. Somebody will come for it.")),
+      ...revengeBox,
       form,
       h("div", { class: "ht-open" }, h("div", { class: "ht-open-t" }, `Open hits (${openHits.length})`),
         ...(openHits.length ? openHits.map((x) => h("div", { class: "ht-row" }, h("span", { class: "ht-n" }, x.targetName), h("span", { class: "ht-by" }, x.hideoutName), h("span", { class: "ht-a" }, h("img", { src: BLOOD_ICON, alt: "" }), x.amount.toLocaleString("en-US")))) : [h("div", { class: "hc-empty" }, "Nobody has a price on their head right now.")])),
@@ -146,34 +161,21 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const d = getDef();
     const isOwner = owner();
     const members = Object.entries(d.hideout?.members ?? {});
-    const input = h("input", { class: "hc-input", type: "search", placeholder: "Search a player's name to invite", value: searchQ, autocomplete: "off", autocapitalize: "none" }) as HTMLInputElement;
-    input.addEventListener("input", () => {
-      searchQ = input.value;
-      window.clearTimeout(searchTimer);
-      if (searchQ.trim().length < 2) { results = []; paintResults(); return; }
-      searchTimer = window.setTimeout(() => { void hideoutSearch(me, searchQ).then((r) => { results = r.players; paintResults(); }, () => undefined); }, 300);
-    });
-    const resultsBox = h("div", { class: "hc-results" });
-    const paintResults = (): void => {
-      const taken = new Set([d.ownerUid, ...members.map(([u]) => u)]);
-      resultsBox.replaceChildren(...results.filter((r) => !taken.has(r.uid)).map((r) => h("div", { class: "hc-person" },
-        h("span", { class: "hc-pname" }, r.name),
-        h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { const x = await hideoutInvite(me, { uid: r.uid }); results = results.filter((q) => q.uid !== r.uid); return `Invite sent to ${x.name}.`; }) }, "Invite"))));
-    };
-    paintResults();
+    const taken = new Set([d.ownerUid ?? "", ...members.map(([u]) => u)]);
+    const chip = (uid: string, key: "build" | "grow" | "stash", on: boolean, label: string, hint: string): HTMLElement =>
+      h("button", { class: "hc-chip" + (on ? " on" : ""), disabled: busy, title: hint, onclick: () => void act(async () => { await hideoutMember(me, uid, { [key]: !on }); }) }, h("span", { class: "hc-chip-dot" }, on ? "✓" : ""), label);
     return [
       h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Members"), h("div", { class: "hc-sub" }, `${members.length + 1} of ${HIDEOUT_MAX_MEMBERS + 1}`)),
-      ...(isOwner ? [h("div", { class: "hc-group" }, input, resultsBox)] : []),
+      ...(isOwner ? [h("div", { class: "hc-group" }, h("div", { class: "hc-label" }, "Invite somebody"), ...searchUi("Search a player's name", () => taken, (r) => h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { const x = await hideoutInvite(me, { uid: r.uid }); results = results.filter((q) => q.uid !== r.uid); return `Invite sent to ${x.name}.`; }) }, "Invite")))] : []),
       h("div", { class: "hc-group" },
-        h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, d.ownerName ?? "?"), h("span", { class: "hc-tag" }, "Owner")),
-        ...members.map(([uid, m]) => h("div", { class: "hc-person" },
-          h("span", { class: "hc-pname" }, m.name),
+        h("div", { class: "hc-person" }, headBoxFor(d.ownerUid ?? ""), h("span", { class: "hc-pname" }, d.ownerName ?? "?"), h("span", { class: "hc-tag" }, "Owner")),
+        ...members.map(([uid, m]) => h("div", { class: "hc-member" },
+          h("div", { class: "hc-person" }, headBoxFor(uid), h("span", { class: "hc-pname" }, m.name),
+            isOwner ? h("button", { class: "btn small danger", disabled: busy, onclick: () => { if (window.confirm(`Kick ${m.name}? Their furniture goes back to their own storage.`)) void act(async () => { await hideoutKick(me, uid); return `${m.name} is out.`; }); } }, "Kick") : ""),
           isOwner
-            ? h("span", { class: "hc-actions" },
-              h("button", { class: "btn small" + (m.build ? " primary" : ""), disabled: busy, title: "May this member place and move furniture?", onclick: () => void act(async () => { await hideoutMember(me, uid, !m.build); }) }, m.build ? "🔨 Builds" : "🚫 No building"),
-              h("button", { class: "btn small danger", disabled: busy, onclick: () => { if (window.confirm(`Kick ${m.name}? Their furniture goes back to their own storage.`)) void act(async () => { await hideoutKick(me, uid); return `${m.name} is out.`; }); } }, "Kick"))
-            : h("span", { class: "hc-tag" }, m.build ? "Builds" : "No building")))),
-      ...(isOwner ? [] : [h("div", { class: "hc-foot" }, "Only the owner can invite and kick.")]),
+            ? h("div", { class: "hc-perms" }, chip(uid, "build", m.build, "Build", "May place and move furniture"), chip(uid, "grow", m.grow, "Pots & mixers", "May use the growing kits, the mixers and the sink"), chip(uid, "stash", m.stash, "Stash", "May use the shared stash"))
+            : h("div", { class: "hc-perms" }, ...[[m.build, "Build"], [m.grow, "Pots & mixers"], [m.stash, "Stash"]].map(([on, label]) => h("span", { class: "hc-tag" + (on ? "" : " off") }, `${on ? "✓" : "✗"} ${label}`)))))),
+      ...(isOwner ? [h("div", { class: "hc-foot" }, "Switch things off for a member and they stay off for new members too, until you switch them on again.")] : [h("div", { class: "hc-foot" }, "Only the owner can invite, kick and change what members may do.")]),
     ];
   }
 
@@ -198,7 +200,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
           h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Anyone can enter (no knocking)"),
             h("button", { class: "btn small" + (d.hideout?.open ? " primary" : ""), disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { open: !d.hideout?.open }); return d.hideout?.open ? "Visitors have to knock now." : "Anyone can walk in now."; }) }, d.hideout?.open ? "🚪 Open to all" : "✊ Knock first")),
           ...(d.hideout?.listed ? [
-            h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, boosted ? `Shown first for ${Math.max(1, Math.ceil(((d.hideout?.boostUntil ?? 0) - Date.now()) / 60000))} more min` : "Show it first on the list for an hour"),
+            h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, boosted ? `Shown first for ${Math.max(1, Math.ceil(((d.hideout?.boostUntil ?? 0) - Date.now()) / 60000))} more min` : "Show it first on the list for 6 hours"),
               h("button", { class: "btn small primary", disabled: busy || me.blood < HIDEOUT_BOOST_PRICE, onclick: () => void act(async () => { await hideoutBoost(me); return "Boosted: it is shown first for a while."; }) }, `🔥 Boost (${HIDEOUT_BOOST_PRICE} drops)`)),
           ] : [])),
         h("div", { class: "hc-group" },

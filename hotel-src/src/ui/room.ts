@@ -129,7 +129,7 @@ import { MixerApi, openMixer } from "./mixer";
 import { LandlordApi, openLandlord } from "./landlord";
 import { consumeItem } from "../db";
 import { FurnishApi, mountFurnishUi } from "./furnish";
-import { canTurn, defaultDir, isFixedPiece, nextDir, turnedWallSpot, wallSpot, movePiece, placeFromCatalog, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
+import { pocketFromRoom, canTurn, defaultDir, isFixedPiece, nextDir, turnedWallSpot, wallSpot, movePiece, placeFromCatalog, placeFromInventory, placeFromStorage, placedCount, Spot, storeFromInventory, storeFromRoom, takeFromStorage, whyNot } from "../furnishing";
 import { Box, drawNitroSprites, drawFurniBase, drawRoomDoor, ensureDoorArt, drawNitroFurni, ensureFurniSprites, ensureTextures, iso, Pt, renderRoomShell, shade, TILE_H, TILE_W } from "../roomRender";
 import { fetchProfile, setPresenceRoom, social } from "../social";
 import { openArcade } from "../arcade/arcade";
@@ -1291,6 +1291,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       turn: fzTurn,
       ...(adminLobbyEdit || adminOwnEdit ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter").sort((a, b) => FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}),
       store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (/^lobby\d+$/.test(f.id) ? Promise.reject(new Error("That one is built into the basement: move it instead.")) : isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one can't be removed.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
+      pocket: () => { const f = fzPiece(); if (f) void pocketFromRoom(me, def.id, f).then(() => { fzSel = null; refreshFz(); playSfx("select", 0.4); }, (err) => say((err as Error).message, "warn")); },
+      select: (id) => { fzSel = id; fzPlacing = null; refreshFz(); },
+      mine: () => def.furni.filter((f) => !isFixedPiece(f.id) && (!isHideoutRoom || f.by === me.uid)),
       startPlacing: (source, kind, slot, owner) => { fzPlacing = { kind, source, slot, owner }; fzDir = defaultDir(kind); fzSel = null; if (source === "inv" && slot !== undefined) { selectedSlot = slot; panel.setSelected(slot); } else if (selectedSlot !== null) clearSelection(); refreshFz(); },
       cancelPlacing: () => { fzPlacing = null; clearSelection(); refreshFz(); },
       storeFromInventory: (slot, qty) => void storeFromInventory(me, slot, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),

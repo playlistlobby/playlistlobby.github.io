@@ -20,7 +20,14 @@ export interface FurnishHost {
   catalog?(): string[];
   done(): void;
   turn(): void;
+  /** put the selected piece away: into storage (your own room) or into the shared box (a hideout) */
   store(): void;
+  /** take the selected piece straight into your pocket (only your own pieces) */
+  pocket(): void;
+  /** select a placed piece (to move it, turn it or take it away) */
+  select(id: string): void;
+  /** the placed pieces you may take into your pocket: yours */
+  mine(): PlacedFurni[];
   startPlacing(source: "inv" | "storage" | "catalog" | "box", kind: string, slot?: number, owner?: string): void;
   cancelPlacing(): void;
   storeFromInventory(slot: number, qty?: number): void;
@@ -47,7 +54,7 @@ export interface FurnishApi {
  * Moving a piece is done by dragging it in the room; nothing needs a right-click.
  */
 export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
-  let tab: "storage" | "inventory" | "box" = "storage";
+  let tab: "mine" | "storage" | "inventory" | "box" = "mine";
   let search = "";
   const top = h("div", { class: "fz-top" });
   const bar = h("div", { class: "fz-bar" });
@@ -71,12 +78,18 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
         h("button", { class: "btn small", onclick: () => fh.cancelPlacing() }, "Cancel"));
     } else if (sel) {
       const k = FURNI_KINDS[sel.kind];
+      const hid0 = fh.hideout;
+      const mineSel = fh.mine().some((m) => m.id === sel.id);
+      const whose = hid0 && !mineSel && typeof sel.by === "string" ? hid0.names()[sel.by] ?? "somebody" : null;
+      const fixed = isFixedPiece(sel.id) && sel.id !== "boombox";
       bar.replaceChildren(
-        h("div", { class: "fz-sel" }, h("b", {}, k?.label ?? sel.kind), h("span", { class: "hint" }, coarse() ? "In your hand: tap a free spot to put it down." : "Drag it to move it.")),
-        ...(canTurn(sel) ? [h("button", { class: "btn small", onclick: () => fh.turn() }, "⟳ Turn")] : []),
-        ...(isFixedPiece(sel.id) && sel.id !== "boombox" ? [] : [h("button", { class: "btn small", onclick: () => fh.store() }, fh.catalog ? "🗑 Remove" : "📦 Store")]));
+        h("div", { class: "fz-sel" }, h("b", {}, k?.label ?? sel.kind), h("span", { class: "hint" }, whose ? `${whose}'s piece: you can move it or put it in the box.` : coarse() ? "Tap a free spot to put it there." : "Drag it to move it.")),
+        h("div", { class: "fz-actions" },
+          ...(canTurn(sel) ? [h("button", { class: "btn small", onclick: () => fh.turn() }, "⟳ Turn")] : []),
+          ...(fixed || fh.catalog || !mineSel ? [] : [h("button", { class: "btn small primary", onclick: () => fh.pocket() }, "🎒 Take to pocket")]),
+          ...(fixed && !fh.catalog ? [] : [h("button", { class: "btn small", onclick: () => fh.store() }, fh.catalog ? "🗑 Remove" : hid0 ? "📦 Put in box" : "📦 Put in storage")])));
     } else {
-      bar.replaceChildren(h("div", { class: "fz-sel hint" }, fh.hideout?.note() ?? (coarse() ? "Tap a piece in the room to pick it up, then tap where it goes. Tap a piece below to put it down." : "Tap a piece to select it, then drag it. Tap a piece below to put it down.")));
+      bar.replaceChildren(h("div", { class: "fz-sel hint" }, fh.hideout?.note() ?? (coarse() ? "Tap a piece in the room to move it or take it away." : "Tap a piece to move it or take it away.")));
     }
 
     tray.style.display = placing ? "none" : ""; // while you're choosing where to put a piece down, the tray steps out of the way so the whole room shows
@@ -115,7 +128,15 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
     const hid = fh.hideout;
     // the shared box of a hideout: everybody who may build places from it; only the owner of a piece takes it out again
     const boxed = hid ? Object.entries(hid.box()).flatMap(([owner, kinds]) => Object.entries(kinds).filter(([k, n]) => n > 0 && FURNI_KINDS[k]).map(([kind, n]) => ({ owner, kind, n }))) : [];
-    const cells = tab === "box" && hid
+    const placedMine = fh.mine().filter((f) => FURNI_KINDS[f.kind]);
+    // "your stuff": the pieces of yours that stand in this room: tap one to move it, or take it into your pocket
+    const mineCell = (f: PlacedFurni) => h("div", { class: "fz-cell" + (sel?.id === f.id ? " on" : ""), title: FURNI_KINDS[f.kind].label },
+      h("button", { class: "fz-pick", onclick: () => fh.select(f.id) }, h("img", { src: furniIcon(f.kind), alt: FURNI_KINDS[f.kind].label, draggable: false })),
+      h("div", { class: "fz-name" }, FURNI_KINDS[f.kind].label),
+      h("button", { class: "btn small fz-mini", onclick: () => { fh.select(f.id); fh.pocket(); } }, "🎒 Pocket"));
+    const cells = tab === "mine"
+      ? placedMine.map(mineCell)
+      : tab === "box" && hid
       ? boxed.map(({ owner, kind, n }) => cell(kind, n, () => fh.startPlacing("box", kind, undefined, owner), owner === p.uid ? { label: "Take", run: () => hid.boxTake(kind, 1) } : null, undefined, owner === p.uid ? "yours" : (hid.names()[owner] ?? "")))
       : tab === "storage"
       ? stored.map(([kind, n]) => isFurnitureKey(kind)
@@ -124,13 +145,27 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
       : carried.map(({ s, slot }) => isFurnitureKey(s.item) && /^[fx]_/.test(s.item)
         ? cell(s.item, 1, () => fh.startPlacing("inv", s.item, slot), { label: "Store", run: () => fh.storeFromInventory(slot) }, hid && s.item !== "f_boombox" ? { label: "→ Box", run: () => hid.boxStore(s.item, 1, slot) } : undefined)
         : thingCell(s.ass ? `ass_${s.item}` : s.item, s.qty, [{ label: "Store", run: () => fh.storeFromInventory(slot) }, ...(s.qty > 1 ? [{ label: "All", run: () => fh.storeFromInventory(slot, s.qty) }] : [])]));
+    const tabBtn = (id: typeof tab, label: string) => h("button", { class: "tab" + (tab === id ? " on" : ""), onclick: () => { tab = id; render(); } }, label);
+    const empty: Record<typeof tab, string> = {
+      mine: "You haven't put anything down in here yet.",
+      inventory: "You carry no furniture. Take a piece from storage or from your stuff.",
+      storage: "Nothing in storage. Take a piece into storage with Put in storage.",
+      box: "The box is empty.",
+    };
+    const help: Record<typeof tab, string> = {
+      mine: "Tap one to move it. 🎒 Pocket takes it back into your pocket.",
+      inventory: "Tap a piece, then tap a free spot in the room.",
+      storage: `Tap a piece, then a spot in the room. Free pockets: ${freeSlots(p)}`,
+      box: "Shared by the hideout. Anybody who may build can place these; only the owner takes a piece out.",
+    };
     tray.replaceChildren(
       h("div", { class: "fz-tabs" },
-        h("button", { class: "tab" + (tab === "storage" ? " on" : ""), onclick: () => { tab = "storage"; render(); } }, `Storage (${stored.reduce((a, [, n]) => a + n, 0)})`),
-        h("button", { class: "tab" + (tab === "inventory" ? " on" : ""), onclick: () => { tab = "inventory"; render(); } }, `Carrying (${carried.length})`),
-        ...(hid ? [h("button", { class: "tab" + (tab === "box" ? " on" : ""), onclick: () => { tab = "box"; render(); } }, `Box (${boxed.reduce((a, b) => a + b.n, 0)})`)] : []),
-        h("span", { class: "hint" }, tab === "box" ? "Shared by everybody in the hideout. Each piece is still its owner's." : tab === "storage" ? `Free pockets: ${freeSlots(p)}` : "Store furniture here. Things like seeds and weed go in a stash box (the landlord sells them).")),
-      h("div", { class: "fz-list" }, ...(cells.length ? cells : [h("div", { class: "hint" }, tab === "box" ? "The box is empty. Put pieces in it with → Box from your storage or the Carrying tab." : tab === "storage" ? "Nothing in storage. Pick a piece up with Store, or put furniture you carry into storage from the Carrying tab." : "You aren't carrying anything you can store. Furniture comes from the shop (the yellow door in the basement).")])));
+        tabBtn("mine", `Your stuff (${placedMine.length})`),
+        tabBtn("inventory", `Pocket (${carried.length})`),
+        tabBtn("storage", `Storage (${stored.reduce((a, [, n]) => a + n, 0)})`),
+        ...(hid ? [tabBtn("box", `Box (${boxed.reduce((a, b) => a + b.n, 0)})`)] : [])),
+      h("div", { class: "hint fz-help" }, help[tab]),
+      h("div", { class: "fz-list" }, ...(cells.length ? cells : [h("div", { class: "hint" }, empty[tab])])));
     void storedCount;
   }
   render();

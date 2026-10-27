@@ -15,7 +15,7 @@ export const hideoutInvite = (p: Profile, who: { name?: string; uid?: string }):
 export const hideoutAnswer = (p: Profile, owner: string, accept: boolean): Promise<{ joined: boolean; room?: string }> => call(p, "hideoutAnswer", { owner, accept });
 export const hideoutLeave = (p: Profile, owner: string): Promise<unknown> => call(p, "hideoutLeave", { owner });
 export const hideoutKick = (p: Profile, uid: string): Promise<unknown> => call(p, "hideoutKick", { uid });
-export const hideoutMember = (p: Profile, uid: string, build: boolean): Promise<unknown> => call(p, "hideoutMember", { uid, build });
+export const hideoutMember = (p: Profile, uid: string, perms: { build?: boolean; grow?: boolean; stash?: boolean }): Promise<unknown> => call(p, "hideoutMember", { uid, ...perms });
 export const hideoutSearch = (p: Profile, q: string): Promise<{ players: Array<{ uid: string; name: string }> }> => call(p, "hideoutSearch", { q });
 export const hideoutBoxStore = (p: Profile, room: string, kind: string, qty = 1, from?: { slot: number }): Promise<unknown> => call(p, "hideoutBoxStore", { room, kind, qty, ...(from ? { source: "inv", slot: from.slot } : {}) });
 export const hideoutBoxTake = (p: Profile, room: string, kind: string, qty = 1, to: "storage" | "inv" = "storage"): Promise<unknown> => call(p, "hideoutBoxTake", { room, kind, qty, to });

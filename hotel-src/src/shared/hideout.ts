@@ -21,6 +21,8 @@ export const HIDEOUT_SIZES = [14, 17, 20];
 /** how many pieces fit in a hideout, by level */
 export const HIDEOUT_MAX_FURNI = [120, 160, 220];
 export const HIDEOUT_MAX_MEMBERS = 7;
+/** how many growing kits fit in a hideout (there is no limit on mixers) */
+export const HIDEOUT_MAX_KITS = 40;
 /** changing the floor, walls or rug costs 15 times what it costs in a player room, per part */
 export const HIDEOUT_RECOLOR_PRICE = RECOLOR_PRICE * 15;
 export const HIDEOUT_NAME_MAX = 28;
@@ -80,13 +82,23 @@ export interface HideoutMember { name: string; build: boolean; at: number }
 export interface HideoutOrder { kind: string; by: string; doneAt: number }
 
 /** What a player may do in a hideout. The owner always builds; a member builds when the owner allows it and builds are not locked for everybody. */
-export interface HideoutMeta { owner?: string; lock?: boolean; members?: Record<string, { build?: boolean }> }
-export function hideoutRole(meta: HideoutMeta | null | undefined, uid: string, isAdmin = false): { owner: boolean; member: boolean; canBuild: boolean } {
-  if (!meta) return { owner: false, member: false, canBuild: false };
+export interface HideoutPerms { build?: boolean; grow?: boolean; stash?: boolean }
+export interface HideoutMeta { owner?: string; lock?: boolean; members?: Record<string, HideoutPerms> }
+/** the three things the owner can switch on and off for every member: building, using the pots and the mixers (and the sink), and using the shared stash. All on to begin with. */
+export function hideoutRole(meta: HideoutMeta | null | undefined, uid: string, isAdmin = false): { owner: boolean; member: boolean; canBuild: boolean; canGrow: boolean; canStash: boolean } {
+  if (!meta) return { owner: false, member: false, canBuild: false, canGrow: false, canStash: false };
   const owner = meta.owner === uid;
   const member = owner || !!meta.members?.[uid];
-  const canBuild = isAdmin || owner || (member && meta.members?.[uid]?.build !== false && !meta.lock);
-  return { owner, member: member || isAdmin, canBuild };
+  const m = meta.members?.[uid];
+  const canBuild = isAdmin || owner || (member && m?.build !== false && !meta.lock);
+  const canGrow = isAdmin || owner || (member && m?.grow !== false);
+  const canStash = isAdmin || owner || (member && m?.stash !== false);
+  return { owner, member: member || isAdmin, canBuild, canGrow, canStash };
+}
+/** what a new member starts with: everything on, except what the owner has switched off for some of the members (that stays off for the next one who joins) */
+export function memberDefaults(members: Record<string, HideoutPerms> | undefined): Required<HideoutPerms> {
+  const list = Object.values(members ?? {});
+  return { build: !list.some((m) => m?.build === false), grow: !list.some((m) => m?.grow === false), stash: !list.some((m) => m?.stash === false) };
 }
 
 /** the level a hideout of this width is at (0..2) */

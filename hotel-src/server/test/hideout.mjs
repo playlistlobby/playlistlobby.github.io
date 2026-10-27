@@ -269,6 +269,49 @@ ok("al takes the last one", await act(al, "hideoutChestTake", { room: HR(boss), 
 check("the stash row is gone", (await owner("GET", `hideoutChests/${boss.uid}/weed`)) === null);
 bad("nothing to take", await act(al, "hideoutChestTake", { room: HR(boss), key: "weed", qty: 1 }));
 
+console.log("--- what members may do, taking your own pieces to your pocket, the kit cap");
+await giveName(al); await giveName(bo);
+const sr = await act(boss, "hideoutSearch", { q: "hd_b" });
+check("a part of a name is enough: hd_b finds t_hd_bo (and boss)", sr.ok && sr.data.players.some((p) => p.name === "t_hd_bo"), JSON.stringify(sr.data));
+const sr2 = await act(boss, "hideoutSearch", { q: "t_hd_bo" });
+check("the names that start with it come first", sr2.ok && sr2.data.players[0].name.startsWith("t_hd_bo"));
+ok("the owner switches pots and mixers off for bo", await act(boss, "hideoutMember", { uid: bo.uid, grow: false }));
+check("bo's flag is saved, build stays on", (await owner("GET", `roomsMeta/${HR(boss)}/members/${bo.uid}/grow`)) === false && (await owner("GET", `roomsMeta/${HR(boss)}/members/${bo.uid}/build`) !== false));
+bad("bo can't water any more", await act(bo, "water", { room: HR(boss), fid: kit, slot: 0 }));
+bad("nor use the sink", await act(bo, "fillCan", { room: HR(boss), slot: 0 }));
+bad("a member can't change it", await act(al, "hideoutMember", { uid: bo.uid, grow: true }));
+bad("nothing to change", await act(boss, "hideoutMember", { uid: bo.uid }));
+ok("the owner switches the stash off for al", await act(boss, "hideoutMember", { uid: al.uid, stash: false }));
+bad("al can't put in the stash", await act(al, "hideoutChestPut", { room: HR(boss), slot: 0, qty: 1 }));
+const nw = await fresh("t_hd_new", { blood: 100 });
+await act(nw, "sync"); await giveName(nw);
+ok("a new player is invited", await act(boss, "hideoutInvite", { uid: nw.uid }));
+ok("and joins", await act(nw, "hideoutAnswer", { owner: boss.uid, accept: true }));
+const nm = await owner("GET", `roomsMeta/${HR(boss)}/members/${nw.uid}`);
+check("what was switched off for some is off for the new one (pots and stash), building is on", nm.grow === false && nm.stash === false && nm.build === true, JSON.stringify(nm));
+check("the owner switches them back on for bo and al", (await act(boss, "hideoutMember", { uid: bo.uid, grow: true })).ok && (await act(boss, "hideoutMember", { uid: al.uid, stash: true })).ok);
+ok("kick the new one again", await act(boss, "hideoutKick", { uid: nw.uid }));
+// taking your own piece straight to your pocket
+await owner("PUT", `users/${boss.uid}/inventory/20`, { item: "f_rareblock", qty: 1 });
+await stand(boss, HR(boss), 5, 5);
+ok("boss puts a block down", await act(boss, "furniPlace", { room: HR(boss), source: "inv", slot: 20, x: 3, y: 12 }));
+const blockId = (await rowsOf(boss)).find(([, r]) => r.kind === "f_rareblock" && r.x === 3 && r.y === 12)?.[0];
+bad("bo can't pocket the boss's piece", await act(bo, "furniStore", { room: HR(boss), id: blockId, to: "pocket" }));
+const pk = await act(boss, "furniStore", { room: HR(boss), id: blockId, to: "pocket" });
+ok("the boss takes it straight to the pocket", pk);
+check("it is in the pocket, not in the box", total(pk.state.inventory, "f_rareblock") >= 1 && !(await owner("GET", `roomsMeta/${HR(boss)}/furni/${blockId}`)));
+await owner("PUT", `users/${boss.uid}/inventory`, inv(...Array.from({ length: 28 }, () => ({ item: "weedseed", qty: 1 }))));
+await owner("PUT", `roomsMeta/${HR(boss)}/furni/blk2`, { kind: "f_rareblock", x: 2, y: 12, dir: 0, by: boss.uid });
+bad("full pockets: it stays", await act(boss, "furniStore", { room: HR(boss), id: "blk2", to: "pocket" }));
+await owner("DELETE", `roomsMeta/${HR(boss)}/furni/blk2`);
+// 40 growing kits at most
+const kitsNow = (await rowsOf(boss)).filter(([, r]) => r.kind === "f_planter").length;
+for (let i = 0; i < 40 - kitsNow; i++) await owner("PUT", `roomsMeta/${HR(boss)}/furni/capk${i}`, { kind: "f_planter", x: i % 13, y: 13 - Math.floor(i / 13), dir: 0, by: boss.uid });
+await owner("PUT", `users/${boss.uid}/inventory`, inv({ item: "f_planter", qty: 1 }));
+bad("the 41st growing kit doesn't fit", await act(boss, "furniPlace", { room: HR(boss), source: "inv", slot: 0, x: 0, y: 0 }));
+for (let i = 0; i < 40 - kitsNow; i++) await owner("DELETE", `roomsMeta/${HR(boss)}/furni/capk${i}`);
+await owner("PUT", `users/${boss.uid}/inventory`, inv({ item: "f_planter", qty: 1 }, { item: "weedseed", qty: 2 }));
+
 console.log("--- leaving and being kicked");
 await stand(al, HR(boss), 6, 6);
 const alRows = (await rowsOf(boss)).filter(([, r]) => r.by === al.uid).length;

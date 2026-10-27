@@ -7,7 +7,7 @@ import { isFurniItem, NO_DROP } from "../../../src/shared/items";
 import { SHIPPED_DIMS } from "../../../src/shared/furniture";
 import {
   HIDEOUT_BOOST_MS, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HideoutListing, HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
-  HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize, hideoutPriceOf, HIDEOUT_CHEST_MAX_QTY, HIDEOUT_CHEST_SLOTS,
+  HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize, hideoutPriceOf, HIDEOUT_CHEST_MAX_QTY, HIDEOUT_CHEST_SLOTS, memberDefaults, type HideoutPerms,
 } from "../../../src/shared/hideout";
 
 const UID_RE = /^[A-Za-z0-9]{10,40}$/;
@@ -201,17 +201,19 @@ export const hideoutMember: Action = {
     const { room } = await ownHideout(c);
     const uid = text(a.uid, UID_RE, "player");
     if (!(await c.db.get(`roomsMeta/${room}/members/${uid}`))) fail("They aren't in your hideout.");
-    c.extra[`roomsMeta/${room}/members/${uid}/build`] = !!a.build;
+    let any = false;
+    for (const k of ["build", "grow", "stash"] as const) if (typeof a[k] === "boolean") { c.extra[`roomsMeta/${room}/members/${uid}/${k}`] = a[k]; any = true; }
+    if (!any) fail("Nothing to change.");
     return {};
   },
 };
 
-/** Find players to invite by the start of their name. */
+/** Find players by a part of their name (the ones that start with it first). */
 export const hideoutSearch: Action = {
   async run(c, a) {
     const q = text(String(a.q ?? "").trim().toLowerCase(), /^[a-z0-9_.-]{2,20}$/, "name");
     const all = (await c.db.get<Record<string, string>>("usernames")) ?? {};
-    const hits = Object.entries(all).filter(([n, uid]) => n.startsWith(q) && uid !== c.uid).sort((x, y) => x[0].length - y[0].length || x[0].localeCompare(y[0])).slice(0, 8);
+    const hits = Object.entries(all).filter(([n, uid]) => n.includes(q) && uid !== c.uid).sort((x, y) => Number(y[0].startsWith(q)) - Number(x[0].startsWith(q)) || x[0].length - y[0].length || x[0].localeCompare(y[0])).slice(0, 8); // (the start of a name first, then names with it in the middle: "mem" finds hbmem)
     const out: Array<{ uid: string; name: string }> = [];
     for (const [n, uid] of hits) out.push({ uid, name: (await c.db.get<string>(`profiles/${uid}/name`)) ?? n });
     return { players: out };
@@ -250,7 +252,8 @@ export const hideoutAnswer: Action = {
     const meta = await c.db.get<{ owner?: string; name?: string; members?: Record<string, unknown> }>(`roomsMeta/${room}`);
     if (!meta?.owner) fail("That hideout doesn't exist any more.");
     if (Object.keys(meta!.members ?? {}).length >= HIDEOUT_MAX_MEMBERS) fail("That hideout is full.");
-    c.extra[`roomsMeta/${room}/members/${c.uid}`] = { name: await nameOf(c, c.uid), build: true, at: c.now };
+    const start = memberDefaults(meta!.members as Record<string, HideoutPerms> | undefined); // (what the owner has turned off for some stays off for a new one)
+    c.extra[`roomsMeta/${room}/members/${c.uid}`] = { name: await nameOf(c, c.uid), build: start.build, grow: start.grow, stash: start.stash, at: c.now };
     c.extra[`hideouts/${c.uid}/${owner}`] = { name: String(meta!.name ?? inv!.roomName ?? "hideout").slice(0, HIDEOUT_NAME_MAX), role: "member" };
     publishListing(c, owner, meta as Record<string, any>, { membersDelta: 1 });
     return { joined: true, room };
@@ -359,7 +362,8 @@ export const hideoutChestPut: Action = {
   locks: (c, a) => roomLock(c, a),
   async run(c, a) {
     const room = hideoutRoom(a);
-    await requireHideoutMember(c, room);
+    const who = await requireHideoutMember(c, room);
+    if (!who.canStash) fail("The owner has turned off the shared stash for you.");
     await requireInRoom(c, room);
     const owner = room.slice(2);
     const w = await c.user();
@@ -388,7 +392,8 @@ export const hideoutChestTake: Action = {
   locks: (c, a) => roomLock(c, a),
   async run(c, a) {
     const room = hideoutRoom(a);
-    await requireHideoutMember(c, room);
+    const who = await requireHideoutMember(c, room);
+    if (!who.canStash) fail("The owner has turned off the shared stash for you.");
     await requireInRoom(c, room);
     const owner = room.slice(2);
     const key = text(a.key, /^[a-z0-9_]{1,60}$/, "thing");
