@@ -79,6 +79,24 @@ console.log("--- the hitman site's list of players");
   bad("one letter is too short", await act(host, "hitSearch", { q: "t" }));
 }
 
+console.log("--- guns and rocket launchers can be traded (but not dropped or given away)");
+{
+  const tradeWith = async (a, b, item) => {
+    const id = `tr${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    await owner("PUT", `users/${a.uid}/inventory`, inv({ item, qty: 1 }));
+    await owner("PUT", `users/${b.uid}/inventory`, {});
+    await owner("PUT", `trades/${id}`, { a: a.uid, b: b.uid, status: "open", names: { [a.uid]: a.name, [b.uid]: b.name }, ready: { [a.uid]: true, [b.uid]: true }, confirm: { [a.uid]: true, [b.uid]: true }, offer: { [a.uid]: { blood: 0, items: { 0: { item, qty: 1 } } }, [b.uid]: { blood: 0, items: {} } } });
+    return act(a, "tradeFinish", { id });
+  };
+  for (const item of ["gun", "rocket"]) {
+    const r = await tradeWith(mid, small, item);
+    ok(`a ${item} can be traded`, r);
+    check(`and the other one has it now`, JSON.stringify((await owner("GET", `users/${small.uid}/inventory`)) ?? "").includes(item));
+  }
+  const k = await tradeWith(mid, small, "knife");
+  bad("a knife still can not", k);
+}
+
 console.log("--- putting a hit on somebody");
 const place = (u, target, amount, room = HR) => act(u, "hitPlace", { room, target: target.uid, amount });
 bad("only a member of the hideout", await place(stranger, rich, 500));
