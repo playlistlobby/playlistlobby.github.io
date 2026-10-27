@@ -301,7 +301,10 @@ console.log("--- making accounts (the server writes the profile, and limits how 
   bad("a mod can't rename", await act(mod, "modRename", { uid: rn.uid, name: `t_rnn_${R}` }));
   await owner("PUT", `presence/${rn.uid}`, { name: `t_rn_${R}`, room: "lobby", seen: Date.now() });
   await owner("PUT", `rooms/lobby/players/${rn.uid}`, { name: `t_rn_${R}`, figure: "x", x: 5, y: 5, dir: 2 });
+  await owner("PUT", `roomsMeta/u_${rn.uid}`, { owner: rn.uid, ownerName: `t_rn_${R}`, name: `t_rn_${R}s værelse`, w: 8, h: 8 });
   ok("the admin renames", await act(adm, "modRename", { uid: rn.uid, name: `t_RN2_${R}` }));
+  check("the room's Danish name follows the player", (await owner("GET", `roomsMeta/u_${rn.uid}/name`)) === `t_RN2_${R}s værelse`.slice(0, 28), String(await owner("GET", `roomsMeta/u_${rn.uid}/name`)));
+  await owner("DELETE", `roomsMeta/u_${rn.uid}`);
   check("their presence and the room show the new name at once", (await owner("GET", `presence/${rn.uid}/name`)) === `t_RN2_${R}` && (await owner("GET", `rooms/lobby/players/${rn.uid}/name`)) === `t_RN2_${R}`);
   await owner("DELETE", `rooms/lobby/players/${rn.uid}`); await owner("DELETE", `presence/${rn.uid}`);
   check("the name is changed everywhere", (await owner("GET", `users/${rn.uid}/name`)) === `t_RN2_${R}` && (await owner("GET", `profiles/${rn.uid}/name`)) === `t_RN2_${R}` && (await owner("GET", `usernames/t_rn2_${R}`)) === rn.uid && (await owner("GET", `usernames/t_rn_${R}`)) === null);

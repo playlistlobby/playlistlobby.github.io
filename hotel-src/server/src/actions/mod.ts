@@ -134,7 +134,10 @@ export const modRename: Action = {
     const meta = await c.db.get<{ name?: string }>(`roomsMeta/${room}`);
     if (meta) {
       c.extra[`roomsMeta/${room}/ownerName`] = name;
-      if (typeof meta.name === "string" && meta.name === `${old}'s room`.slice(0, 28)) c.extra[`roomsMeta/${room}/name`] = `${name}'s room`.slice(0, 28);
+      // the room's own name ("Danjoo's room", or in the Danish game "Danjoos værelse") follows the player; a name they chose themselves stays
+      for (const [was, now] of [[`${old}'s room`, `${name}'s room`], [`${old}s værelse`, `${name}s værelse`]]) {
+        if (typeof meta.name === "string" && meta.name === was.slice(0, 28)) c.extra[`roomsMeta/${room}/name`] = now.slice(0, 28);
+      }
     }
     if ((await c.db.get(`flappyBoard/${uid}`)) !== null) c.extra[`flappyBoard/${uid}/name`] = name;
     // wherever they stand right now and what their hideout says about its owner (their open game reloads with the new name: see watchOwnName)
