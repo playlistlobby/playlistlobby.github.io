@@ -42,7 +42,7 @@ const clientWrite = (u, path, v) => fetch(`${DB}/${path}.json?ns=${NS}&auth=${u.
 
 console.log("--- setting up a hideout with a blackjack table");
 const host = await fresh("t_bj_host", { blood: 100 });
-const dealer = await fresh("t_bj_dealer", { blood: 6000 });
+const dealer = await fresh("t_bj_dealer", { blood: 20000 });
 const a = await fresh("t_bj_a", { blood: 3000 });
 const b = await fresh("t_bj_b", { blood: 3000 });
 const nobody = await fresh("t_bj_nobody", { blood: 6000 });
@@ -60,7 +60,7 @@ const tbl = () => owner("GET", `blackjack/${KEY}`);
 const seats = (t) => Object.entries(t?.seats ?? {}).map(([k, s]) => ({ i: Number(k.slice(1)), ...s }));
 const worth = async () => { let n = 0; for (const u of all) n += await bloodOf(u); const t = await tbl(); return n + (t ? t.bank + (t.phase === "over" ? 0 : seats(t).reduce((m, s) => m + s.bet, 0)) : 0); };
 const START = await worth();
-check("18000 blood in play", START === 18000, String(START));
+check("32000 blood in play", START === 32000, String(START));
 const sit = (u, seat) => act(u, "bjSit", { room: ROOM, fid: "bt1", seat });
 const bet = (u, amount) => act(u, "bjBet", { room: ROOM, fid: "bt1", amount });
 const move = (u, m) => act(u, "bjAct", { room: ROOM, fid: "bt1", move: m });
@@ -71,15 +71,15 @@ const tick = (u) => act(u, "bjTick", { room: ROOM, fid: "bt1" });
 console.log("--- the dealer sits down");
 bad("not at a sofa", await act(dealer, "bjDealer", { room: ROOM, fid: "sofa1", op: "sit", bank: 1000 }));
 bad("only a member of the hideout deals", await act(nobody, "bjDealer", { room: ROOM, fid: "bt1", op: "sit", bank: 1000 }));
-bad("the bank is at least 20", await d("sit", { bank: 19 }));
-bad("and at most 500", await d("sit", { bank: 501 }));
-ok("a member sits down as dealer with 500", await d("sit", { bank: 500 }));
-check("their blood is 5500", (await bloodOf(dealer)) === 5500);
+bad("the bank is at least 100", await d("sit", { bank: 99 }));
+bad("and no more than they have", await d("sit", { bank: 20001 }));
+ok("a member sits down as dealer with 5000", await d("sit", { bank: 5000 }));
+check("their blood is 15000", (await bloodOf(dealer)) === 15000);
 let t = await tbl();
-check("a table with a dealer and 500 in the bank, nothing going on", t.dealer.uid === dealer.uid && t.bank === 500 && t.phase === "idle", JSON.stringify(t));
+check("a table with a dealer and 5000 in the bank, nothing going on", t.dealer.uid === dealer.uid && t.bank === 5000 && t.phase === "idle", JSON.stringify(t));
 bad("one dealer only", await act(host, "bjDealer", { room: ROOM, fid: "bt1", op: "sit", bank: 500 }));
 check("the dealer's pointer is saved", (await owner("GET", `bjSeat/${dealer.uid}`))?.dealer === true);
-check("the table is public", (await readAs(a, `blackjack/${KEY}`)).body?.bank === 500);
+check("the table is public", (await readAs(a, `blackjack/${KEY}`)).body?.bank === 5000);
 check("and nobody can write it", refused(await clientWrite(a, `blackjack/${KEY}/bank`, 99999)));
 
 console.log("--- the players sit and bet");
@@ -91,8 +91,8 @@ bad("a seat is taken", await sit(nobody, 2));
 bad("a player can't sit twice", await sit(a, 3));
 ok("the dealer opens a round", await d("open"));
 bad("not twice", await d("open"));
-bad("bets are 10 to 250", await bet(a, 5));
-bad("and no more", await bet(a, 251));
+bad("a bet is at least 10", await bet(a, 5));
+bad("and at most a fiftieth of the bank (100 at 5000)", await bet(a, 101));
 ok("a bets 100", await bet(a, 100));
 check("a's blood is 2900", (await bloodOf(a)) === 2900);
 bad("one bet only", await bet(a, 50));
@@ -159,7 +159,7 @@ for (let r = 0; r < 6; r++) {
   await bet(a, 20 + r * 10); await bet(b, 30);
   ok("deal", await dealNow());
   t = await tbl();
-  if (t.phase === "players") await playRound();
+  if (t.phase === "players" || t.phase === "dealer") await playRound(); // ("dealer": everybody was dealt a blackjack, so nobody has a turn)
   t = await tbl();
   check("blood is conserved", (await worth()) === START, String(await worth()));
   if (t.phase === "over") check(`the commission is right in round ${r + 2}`, feeRight(t), JSON.stringify(seats(t)).slice(0, 300));
@@ -191,14 +191,14 @@ console.log("--- a player who is gone, a dealer who leaves");
 await owner("PATCH", `blackjack/${KEY}`, { nextAt: Date.now() - 1 });
 await tick(a);
 ok("open", await d("open"));
-ok("a bets", await bet(a, 100));
+ok("a bets", await bet(a, 90)); // (the table limit follows the bank, which has moved a little)
 const aBefore = await bloodOf(a);
 ok("b leaves before the cards: nothing was bet", await act(b, "bjLeave", { room: ROOM, fid: "bt1" }));
 check("b's seat is free", !seats(await tbl()).some((s) => s.uid === b.uid));
 ok("a leaves with a bet in betting: the bet comes back", await act(a, "bjLeave", { room: ROOM, fid: "bt1" }));
-check("a has it back", (await bloodOf(a)) === aBefore + 100);
+check("a has it back", (await bloodOf(a)) === aBefore + 90);
 check("a and b sit again", (await sit(a, 0)).ok && (await sit(b, 1)).ok);
-await bet(a, 100); await bet(b, 60);
+await bet(a, 90); await bet(b, 60);
 ok("deal", await dealNow());
 t = await tbl();
 if (t.phase === "players") {
@@ -217,7 +217,7 @@ if (t.phase === "players") {
 { const tt = await tbl(); if (tt?.dealer) { console.log("   (the deal gave a blackjack: the dealer leaves here instead)"); await owner("PATCH", `blackjack/${KEY}`, { nextAt: Date.now() - 1 }); await tick(a); await d("leave"); } }
 
 console.log("--- gone from the room, and the table picked up");
-ok("the dealer sits again", await d("sit", { bank: 500 }));
+ok("the dealer sits again", await d("sit", { bank: 5000 }));
 await owner("DELETE", `rooms/${ROOM}/players/${a.uid}`);
 ok("a tick notices a is gone", await tick(b));
 const aSeat = seats(await tbl()).find((s) => s.uid === a.uid);
@@ -233,17 +233,17 @@ check("no table, no pointers, blood in the pockets", (await tbl()) === null && (
 console.log("--- a refresh");
 await owner("PUT", `roomsMeta/${ROOM}/furni/bt1`, { kind: "f_blackjacktable", x: 5, y: 5, dir: 2 });
 await stand(dealer, ROOM, 6, 6);
-ok("the dealer sits", await d("sit", { bank: 400 }));
+ok("the dealer sits", await d("sit", { bank: 4000 }));
 const before = await bloodOf(dealer);
 ok("a log in elsewhere stands them up (no table named)", await act(dealer, "bjLeave"));
-check("they have the 400 back", (await bloodOf(dealer)) === before + 400 && (await tbl()) === null);
+check("they have the 4000 back", (await bloodOf(dealer)) === before + 4000 && (await tbl()) === null);
 check("blood is conserved", (await worth()) === START, String(await worth()));
 
 console.log("--- the dealer's 3% commission on a win");
 {
   const snap = new Map(); for (const u of all) snap.set(u.uid, await bloodOf(u));
   for (const u of [dealer, a]) await stand(u, ROOM, 6, 6);
-  ok("the dealer sits (bank 500)", await d("sit", { bank: 500 }));
+  ok("the dealer sits (bank 5000)", await d("sit", { bank: 5000 }));
   ok("a sits", await sit(a, 0));
   await owner("PUT", `users/${a.uid}/blood`, 1000);
   // a stands on 20 (K Q) with 100 on the table; the dealer turned 17 (K 7): a wins
@@ -252,7 +252,7 @@ console.log("--- the dealer's 3% commission on a win");
   const tw = await tbl();
   check("a wins 97 net: 200 back less 3 commission", seats(tw)[0].result === "win" && seats(tw)[0].back === 197 && seats(tw)[0].fee === 3, JSON.stringify(seats(tw)[0]));
   check("a's blood is 1197", (await bloodOf(a)) === 1197);
-  check("the bank is 403 (500 + 100 - 197)", tw.bank === 403, String(tw.bank));
+  check("the bank is 4903 (5000 + 100 - 197)", tw.bank === 4903, String(tw.bank));
   // a blackjack on 100 pays 150 less 3% of 150 = 5 (4.5 rounds up): 245 back
   await owner("PATCH", `blackjack/${KEY}`, { phase: "dealer", dealerCards: [24, 5], hole: false, revealed: true, dealerAt: Date.now(), "seats/s0/bet": 100, "seats/s0/cards": [12, 11], "seats/s0/state": "bj", "seats/s0/result": null, "seats/s0/back": null, "seats/s0/fee": null });
   await owner("PUT", `users/${a.uid}/blood`, 1000);
@@ -268,12 +268,12 @@ console.log("--- the dealer's 3% commission on a win");
 console.log("--- auto-deal: the dealer's switch (the table plays the dealer's clicks itself)");
 {
   for (const u of [dealer, a, b]) await stand(u, ROOM, 6, 6);
-  ok("the dealer sits", await d("sit", { bank: 500 }));
+  ok("the dealer sits", await d("sit", { bank: 5000 }));
   ok("a sits", await sit(a, 0));
   ok("b sits", await sit(b, 2));
   bad("a player can't switch it on", await act(a, "bjDealer", { room: ROOM, fid: "bt1", op: "auto", on: true }));
   ok("the dealer switches it on", await d("auto", { on: true }));
-  check("it is written on the table", (await tbl()).auto === true);
+  check("it is written on the table, for 15 minutes", (await tbl()).auto === true && (await tbl()).autoUntil > Date.now() + 14 * 60_000 && (await tbl()).autoUntil < Date.now() + 16 * 60_000, JSON.stringify((await tbl()).autoUntil));
   const back = (ms) => owner("PATCH", `blackjack/${KEY}`, { dealerAt: Date.now() - ms });
   await tick(a);
   check("a round does not open before the pause", (await tbl()).phase === "idle");
@@ -304,6 +304,15 @@ console.log("--- auto-deal: the dealer's switch (the table plays the dealer's cl
   await back(3000);
   ok("and the next round opens by itself", await tick(a));
   check("a new round is open", (await tbl()).phase === "betting" && (await tbl()).round === r1 + 1);
+  // a dealer who walked away: the 15 minutes run out and no new round opens (a round already going plays itself out)
+  await owner("PATCH", `blackjack/${KEY}`, { phase: "idle", dealerAt: Date.now() - 5000, autoUntil: Date.now() - 1000 });
+  await tick(a);
+  check("auto-deal that has run out opens no new round", (await tbl()).phase === "idle" && (await tbl()).auto === true, (await tbl()).phase);
+  ok("the dealer presses keep going", await d("auto", { on: true }));
+  check("another 15 minutes", (await tbl()).autoUntil > Date.now() + 14 * 60_000);
+  await owner("PATCH", `blackjack/${KEY}`, { dealerAt: Date.now() - 5000 });
+  ok("and the next round opens", await tick(a));
+  check("a round is open", (await tbl()).phase === "betting");
   ok("the dealer switches it off", await d("auto", { on: false }));
   check("it is off", (await tbl()).auto !== true);
   await back(3000); await tick(a);
@@ -313,6 +322,40 @@ console.log("--- auto-deal: the dealer's switch (the table plays the dealer's cl
   check("the table is empty of dealer and auto, blood is conserved", ((await tbl())?.dealer ?? null) === null && (await tbl())?.auto !== true && (await worth()) === START, String(await worth()));
   await act(a, "bjLeave"); await act(b, "bjLeave");
   for (const p of ["blackjack", "bjHole", "bjDeck"]) await owner("DELETE", `${p}/${KEY}`);
+}
+
+console.log("--- the table limit is a fiftieth of the dealer's bank (10 to 250), and the bank can be any amount");
+{
+  for (const u of [dealer, a]) await stand(u, ROOM, 6, 6);
+  for (const u of all) await owner("DELETE", `bjSeat/${u.uid}`);
+  await owner("PUT", `users/${a.uid}/blood`, 3000);
+  ok("a dealer with a bank of 1234 (any amount)", await d("sit", { bank: 1234 }));
+  ok("a sits", await sit(a, 0));
+  ok("open", await d("open"));
+  bad("1234 / 50 = 24: a bet of 25 is too much", await bet(a, 25));
+  ok("24 is fine", await bet(a, 24));
+  await d("leave");
+  for (const p of ["blackjack", "bjHole", "bjDeck"]) await owner("DELETE", `${p}/${KEY}`);
+  await owner("PUT", `users/${dealer.uid}/blood`, 20000); await owner("PUT", `users/${a.uid}/blood`, 3000);
+  for (const u of all) await owner("DELETE", `bjSeat/${u.uid}`);
+  ok("a bank of 100: the limit is the minimum bet, 10", await d("sit", { bank: 100 }));
+  ok("a sits again", await sit(a, 0));
+  ok("open again", await d("open"));
+  bad("11 is too much against a bank of 100", await bet(a, 11));
+  ok("10 is fine", await bet(a, 10));
+  await d("leave");
+  for (const p of ["blackjack", "bjHole", "bjDeck"]) await owner("DELETE", `${p}/${KEY}`);
+  for (const u of all) await owner("DELETE", `bjSeat/${u.uid}`);
+  await owner("PUT", `users/${dealer.uid}/blood`, 20000); await owner("PUT", `users/${a.uid}/blood`, 3000);
+  ok("a big bank: 15000", await d("sit", { bank: 15000 }));
+  ok("a sits for the third time", await sit(a, 0));
+  ok("open for the third time", await d("open"));
+  bad("the limit never goes over 250", await bet(a, 251));
+  ok("250 is fine at a big bank", await bet(a, 250));
+  await d("leave"); await act(a, "bjLeave");
+  for (const p of ["blackjack", "bjHole", "bjDeck"]) await owner("DELETE", `${p}/${KEY}`);
+  for (const u of all) { await owner("DELETE", `bjSeat/${u.uid}`); }
+  await owner("PUT", `users/${dealer.uid}/blood`, 20000); await owner("PUT", `users/${a.uid}/blood`, 3000);
 }
 
 console.log("--- ordering blackjack tables from the computer: 500, 1000, 2000, 2000");

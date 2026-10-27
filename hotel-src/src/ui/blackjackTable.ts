@@ -4,7 +4,7 @@ import { BLOOD_ICON } from "../items";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
 import { bjAct, bjBet, bjDealer, bjLeave, bjSit, bjTick, watchBjHole, watchBjTable } from "../blackjack";
-import { BJ_AUTO_OPEN, BJ_BET_WINDOW_MS, BJ_COMMISSION_PCT, bjDueAt, BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS, bjSeatOfUid, bjValue, bjStakes, canSettle, handsToBeat, isBlackjack } from "../shared/blackjack";
+import { BJ_AUTO_OPEN, BJ_AUTO_RUN_MS, bjMaxBet, BJ_BET_WINDOW_MS, BJ_COMMISSION_PCT, bjDueAt, BJ_BANK_MAX, BJ_BANK_MIN, BJ_BET_MAX, BJ_BET_MIN, BJ_SEATS, BJ_TURN_MS, bjSeatOfUid, bjValue, bjStakes, canSettle, handsToBeat, isBlackjack } from "../shared/blackjack";
 import type { BjSeat, BjTable } from "../shared/blackjack";
 import { cardBackUrl, cardUrl, chipsFor, chipUrl } from "./pokerCards";
 import type { Ctx } from "../main";
@@ -36,7 +36,9 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
   let bet = 0; // the bet being built from chips
   let lastTick = 0;
   let leaveArmed = 0;
+  let lastSecond = 0;
 
+  const titleSub = h("span", {}, `Bets ${BJ_BET_MIN}-${BJ_BET_MAX} · Blackjack pays 3 to 2`);
   const felt = h("div", { class: "pk-felt bj-felt" });
   const actions = h("div", { class: "pk-actions" });
   const bloodEl = h("span", { class: "pk-blood" });
@@ -47,7 +49,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
   const chatBox = chat ? mountTableChat(chat) : null;
   const win = h("div", { class: "pk-window bj", role: "dialog", "aria-label": "Blackjack" },
     h("div", { class: "pk-nav" }, leaveBtn,
-      h("div", { class: "pk-title" }, h("strong", {}, "Blackjack"), h("span", {}, `Bets ${BJ_BET_MIN}-${BJ_BET_MAX} · Blackjack pays 3 to 2`)),
+      h("div", { class: "pk-title" }, h("strong", {}, "Blackjack"), titleSub),
       peekBtn, h("div", { class: "pk-pocket" }, h("img", { src: BLOOD_ICON, alt: "" }), bloodEl)),
     felt, chatBox?.el ?? "", actions);
   const overlay = h("div", { class: "pk-overlay" }, win, backBtn);
@@ -136,6 +138,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     if (closed) return;
     bloodEl.textContent = blood(me.blood);
     renderNav();
+    titleSub.textContent = t?.dealer ? `Bets ${BJ_BET_MIN}-${bjMaxBet(t.bank)} · Blackjack pays 3 to 2` : `Bets ${BJ_BET_MIN}-${BJ_BET_MAX} (a fiftieth of the dealer's bank) · Blackjack pays 3 to 2`;
     felt.replaceChildren(h("div", { class: "pk-rail" }, h("div", { class: "pk-cloth" }, h("div", { class: "pk-logo bj-logo" }, "BLACKJACK"))));
     felt.append(h("div", { class: "bj-arc" }, `Blackjack pays 3 to 2 · Dealer stands on 17 · Dealer takes ${BJ_COMMISSION_PCT}% of wins`));
     felt.append(dealerEl());
@@ -148,24 +151,32 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
 
   function bankPanel(): HTMLElement {
     const top = Math.min(BJ_BANK_MAX, me.blood);
-    const slider = h("input", { type: "range", class: "pk-slider", min: String(BJ_BANK_MIN), max: String(Math.max(BJ_BANK_MIN, top)), step: "10", value: String(Math.min(bank, Math.max(BJ_BANK_MIN, top))) }) as HTMLInputElement;
-    const num = h("div", { class: "pk-bignum" }, h("img", { src: BLOOD_ICON, alt: "" }), blood(bank));
-    slider.addEventListener("input", () => { bank = Number(slider.value); num.replaceChildren(h("img", { src: BLOOD_ICON, alt: "" }), blood(bank)); });
     const short = me.blood < BJ_BANK_MIN;
+    const clamp = (n: number): number => Math.min(top, Math.max(BJ_BANK_MIN, Math.round(n) || BJ_BANK_MIN));
+    bank = clamp(bank);
+    const input = h("input", { type: "number", class: "pk-bank-in", min: String(BJ_BANK_MIN), max: String(top), step: "100", value: String(bank), "aria-label": "Your bank", style: { width: "9em", font: "inherit", fontSize: "20px", textAlign: "center" } }) as HTMLInputElement;
+    const limit = h("div", { class: "pk-hint" }, "");
+    const sync = (): void => { limit.textContent = `The table limit is a fiftieth of your bank: players can bet up to ${blood(bjMaxBet(bank))}.`; };
+    input.addEventListener("input", () => { const n = Number(input.value); if (Number.isFinite(n) && n > 0) { bank = Math.min(top, Math.max(1, Math.round(n))); sync(); } });
+    input.addEventListener("change", () => { bank = clamp(Number(input.value)); input.value = String(bank); sync(); });
+    sync();
+    const preset = (label: string, v: number): HTMLElement => h("button", { disabled: v > top || v < BJ_BANK_MIN, onclick: () => { bank = clamp(v); input.value = String(bank); sync(); } }, label);
     return h("div", { class: "pk-buy" }, h("div", { class: "pk-buybox" },
       h("strong", {}, "Deal at this table"),
-      h("div", { class: "pk-hint" }, `Put a bank on the table. Players bet up to ${BJ_BET_MAX}.`),
-      short ? h("div", { class: "pk-warn" }, `You need ${blood(BJ_BANK_MIN - me.blood)} more blood for the smallest bank (${blood(BJ_BANK_MIN)}).`) : h("div", {}, num, slider),
+      h("div", { class: "pk-hint" }, "Put a bank of your own blood on the table: it pays the winners and takes the losses, and you take what is left when you stop."),
+      short ? h("div", { class: "pk-warn" }, `You need ${blood(BJ_BANK_MIN - me.blood)} more blood for the smallest bank (${blood(BJ_BANK_MIN)}).`)
+        : h("div", {}, h("div", { class: "pk-bignum" }, h("img", { src: BLOOD_ICON, alt: "" }), input), limit,
+          h("div", { class: "pk-presets" }, preset("100", 100), preset("500", 500), preset("1,000", 1000), preset("2,500", 2500), preset("5,000", 5000), preset("10,000", 10000), h("button", { onclick: () => { bank = top; input.value = String(bank); sync(); } }, "All"))),
       h("div", { class: "pk-row" },
         h("button", { class: "pk-btn", onclick: () => { dealing = false; render(); } }, "Cancel"),
-        h("button", { class: "pk-btn go", disabled: short || busy, onclick: () => { dealing = false; void run(async () => { await bjDealer(me, roomId, fid, "sit", Math.min(top, Math.max(BJ_BANK_MIN, bank))); playSfx("coins", 0.5); }); } }, "Start dealing"))));
+        h("button", { class: "pk-btn go", disabled: short || busy, onclick: () => { dealing = false; void run(async () => { await bjDealer(me, roomId, fid, "sit", clamp(bank)); playSfx("coins", 0.5); }); } }, "Start dealing"))));
   }
 
   function renderActions(): void {
     actions.replaceChildren();
     if (!t || (!imAt())) {
       actions.append(h("div", { class: "pk-info" }, t?.dealer ? "Tap an empty seat to sit down and play." : "There's no dealer yet.",
-        !t?.dealer ? h("div", { class: "pk-row", style: { marginTop: "8px" } }, h("button", { class: "pk-btn raise", onclick: () => { dealing = true; bank = Math.min(BJ_BANK_MAX, Math.max(BJ_BANK_MIN, Math.min(me.blood, 250))); render(); } }, "Deal at this table")) : "",
+        !t?.dealer ? h("div", { class: "pk-row", style: { marginTop: "8px" } }, h("button", { class: "pk-btn raise", onclick: () => { dealing = true; bank = Math.min(me.blood, Math.max(BJ_BANK_MIN, 1000)); render(); } }, "Deal at this table")) : "",
         t?.dealer ? h("div", { class: "pk-sub" }, `The dealer's bank: ${blood(t.bank)}`) : h("div", { class: "pk-sub" }, "Members of the hideout can deal.")));
       return;
     }
@@ -173,11 +184,11 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     const seat = mySeat();
     const s = t.seats[seat]!;
     if (t.phase === "betting" && s.bet === 0) {
-      const room = Math.min(BJ_BET_MAX, me.blood);
+      const room = Math.min(bjMaxBet(t.bank), me.blood); // (the table limit: a fiftieth of the dealer's bank)
       bet = Math.min(bet, room);
       const big = h("div", { class: "pk-bignum" }, h("img", { src: BLOOD_ICON, alt: "" }), bet ? blood(bet) : "Your bet");
       actions.append(h("div", { class: "pk-raise" },
-        h("div", { class: "pk-rtop" }, h("span", {}, `In your pocket: ${blood(me.blood)}`), big),
+        h("div", { class: "pk-rtop" }, h("span", {}, `In your pocket: ${blood(me.blood)} · table limit ${blood(bjMaxBet(t.bank))}`), big),
         h("div", { class: "pk-presets" }, ...BET_CHIPS.map((v) => h("button", { class: "bj-chipbtn", disabled: bet + v > room, onclick: () => { bet = Math.min(room, bet + v); render(); } }, h("img", { src: chipUrl(v), alt: "" }), `+${v}`))),
         h("div", { class: "pk-row" },
           h("button", { class: "pk-btn", disabled: bet === 0, onclick: () => { bet = 0; render(); } }, "Clear"),
@@ -208,14 +219,20 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     const stakes = bjStakes(tb);
     const row = (...kids: HTMLElement[]): HTMLElement => h("div", { class: "pk-row main" }, ...kids);
     let info = "", body: HTMLElement;
-    const autoOn = !!tb.auto;
+    const nowT = serverNow();
+    const autoLive = !!tb.auto && (tb.autoUntil ?? 0) > nowT; // (it opens new rounds while this lasts)
+    const autoOn = !!tb.auto && (autoLive || (tb.phase !== "idle" && tb.phase !== "over")); // (a round that was started still plays itself out)
     const autoBtn = BJ_AUTO_OPEN || import.meta.env.MODE === "emulator"
-      ? h("button", { class: `pk-btn ${autoOn ? "call" : "check"}`, disabled: busy, title: "The table opens rounds, deals, turns the card, draws and pays by itself", onclick: () => void run(async () => { await bjDealer(me, roomId, fid, "auto", undefined, !autoOn); playSfx("select", 0.4); }) }, autoOn ? "Auto-deal: ON (tap to stop)" : "Auto-deal")
+      ? h("button", { class: `pk-btn ${autoOn ? "call" : "check"}`, disabled: busy, title: "The table opens rounds, deals, turns the card, draws and pays by itself, for 15 minutes at a time", onclick: () => void run(async () => { await bjDealer(me, roomId, fid, "auto", undefined, !autoOn); playSfx("select", 0.4); }) }, autoOn ? "Auto-deal: ON (tap to stop)" : tb.auto ? "Resume auto-deal (15 min)" : "Auto-deal")
       : null;
+    const keepBtn = autoLive ? h("button", { class: "pk-btn raise", disabled: busy, title: "Auto-deal pauses by itself after 15 minutes: press this to keep it going", onclick: () => void run(async () => { await bjDealer(me, roomId, fid, "auto", undefined, true); playSfx("select", 0.4); }) }, "Keep going (+15 min)") : null;
+    const left = Math.max(0, Math.ceil(((tb.autoUntil ?? 0) - nowT) / 1000));
+    const leftText = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
     if (autoOn) {
       const wait = tb.phase === "betting" ? Math.ceil((tb.dealerAt + BJ_BET_WINDOW_MS - serverNow()) / 1000) : 0;
       info = tb.phase === "betting" ? (stakes > 0 ? (wait > 0 ? `Auto-deal: dealing in ${wait}s…` : "Auto-deal: dealing…") : "Auto-deal: waiting for the first bet…") : tb.phase === "idle" ? "Auto-deal: the next round opens in a moment." : "Auto-deal is on: the table runs itself.";
-      return h("div", {}, h("div", { class: "pk-info" }, info, h("div", { class: "pk-sub" }, `Your bank: ${blood(tb.bank)}`)), row(autoBtn!));
+      if (!autoLive) info = "Auto-deal has paused after this round. Press resume to keep going.";
+      return h("div", {}, h("div", { class: "pk-info" }, info, h("div", { class: "pk-sub" }, `Your bank: ${blood(tb.bank)}${autoLive ? ` · pauses in ${leftText} unless you keep it going` : ""}`)), row(...(keepBtn ? [keepBtn] : []), autoBtn!));
     }
     switch (tb.phase) {
       case "idle": case "over":
@@ -251,6 +268,7 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
     tickBars();
     const now = serverNow();
     if (t.phase === "betting" && now < t.dealerAt + BJ_BET_WINDOW_MS + 1100) renderActions(); // (the Deal button counts down)
+    else if (iDeal() && t.auto && Math.floor(now / 1000) !== lastSecond) { lastSecond = Math.floor(now / 1000); renderActions(); } // (the auto-deal countdown)
     const at = bjDueAt(t);
     const due = (at !== null && now > at + 450)
       || (imAt() && Date.now() - lastTick > 8000 && (t.seats.some((s) => s?.gone !== undefined)));

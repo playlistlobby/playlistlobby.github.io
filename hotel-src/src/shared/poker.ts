@@ -11,10 +11,10 @@ export const POKER_KINDS: Record<PokerKind, PokerKindInfo> = {
   hi: { label: "High stakes poker table", min: 500, max: 2000, sb: 20, bb: 40, rakeCap: 15 },
 };
 /**
- * What the table pays whoever owns the room it stands in (the owner of the hideout, or of the player room): a fee of 2% of every buy-in, charged ON TOP of the buy-in
+ * What the table pays whoever owns the room it stands in (the owner of the hideout, or of the player room): a fee of 1% of every buy-in, charged ON TOP of the buy-in
  * (the stack and the pot are not touched), and 1% of every pot that saw a flop (no flop, no drop), at most `rakeCap` a pot. Blood only moves from the players to the owner.
  */
-export const POKER_FEE_PCT = 2;
+export const POKER_FEE_PCT = 1;
 export const POKER_RAKE_PCT = 1;
 /** the buy-in fee for a buy-in (at least 1 blood) */
 export const pokerFee = (buy: number): number => Math.max(1, Math.ceil((buy * POKER_FEE_PCT) / 100));

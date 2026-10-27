@@ -6,8 +6,17 @@
 export const BJ_SEATS = 5;
 export const BJ_BET_MIN = 10;
 export const BJ_BET_MAX = 250;
-export const BJ_BANK_MIN = 20;
-export const BJ_BANK_MAX = 500;
+/** the dealer chooses any bank from 100 up (as much blood as they have: the big number is only a sanity limit) */
+export const BJ_BANK_MIN = 100;
+export const BJ_BANK_MAX = 1_000_000;
+/**
+ * What one seat may bet is a fiftieth of the dealer's bank, never under 10 and never over 250 (the bank is the table limit: a dealer with 5,000 takes bets up to 100,
+ * one with 12,500 up to 250). It follows the bank as it goes up and down, so a bad run makes the limit smaller and a bank can not be wiped out in a few hands.
+ */
+export const BJ_BANK_BET_DIV = 50;
+export const bjMaxBet = (bank: number): number => Math.min(BJ_BET_MAX, Math.max(BJ_BET_MIN, Math.floor(bank / BJ_BANK_BET_DIV)));
+/** auto-deal keeps opening rounds for this long, then pauses until the dealer says to keep going (a dealer who walked away does not earn from an empty chair) */
+export const BJ_AUTO_RUN_MS = 15 * 60_000;
 /** a player has this long to hit or stand */
 export const BJ_TURN_MS = 25_000;
 /** the result stays on the table this long */
@@ -87,8 +96,9 @@ export interface BjTable {
   round: number;
   seq: number;
   lastAct?: { seat: number; act: string; at: number };
-  /** the dealer has switched auto-deal on: the table plays the dealer's clicks by itself (see bjTick) */
+  /** the dealer has switched auto-deal on: the table plays the dealer's clicks by itself (see bjTick), and opens new rounds until `autoUntil` (the dealer can keep it going) */
   auto?: boolean;
+  autoUntil?: number;
 }
 
 export const newBjTable = (): BjTable => ({ dealer: null, bank: 0, seats: new Array<BjSeat | null>(BJ_SEATS).fill(null), phase: "idle", dealerCards: [], hole: false, revealed: false, turn: -1, turnAt: 0, dealerAt: 0, nextAt: 0, round: 0, seq: 0 });
@@ -122,7 +132,8 @@ export function placeBet(t: BjTable, seat: number, amount: number, now: number):
   const s = t.seats[seat];
   if (t.phase !== "betting" || !s) return "Betting isn't open.";
   if (s.bet > 0) return "You have bet already.";
-  if (!Number.isInteger(amount) || amount < BJ_BET_MIN || amount > BJ_BET_MAX) return `Bet from ${BJ_BET_MIN} to ${BJ_BET_MAX}.`;
+  const most = bjMaxBet(t.bank);
+  if (!Number.isInteger(amount) || amount < BJ_BET_MIN || amount > most) return `Bet from ${BJ_BET_MIN} to ${most}.`;
   if (!bankCovers(t, bjStakes(t) + amount)) return "The dealer's bank can't cover that bet.";
   s.bet = amount; s.state = "bet"; say(t, seat, `Bet ${amount}`, now); t.seq++;
   if (t.auto) t.dealerAt = Math.max(t.dealerAt, now - BJ_BET_WINDOW_MS + BJ_AUTO_BET_GAP_MS); // (auto-deal: a late bet still leaves the others a few seconds)
@@ -242,7 +253,7 @@ export function bjDueAt(t: BjTable): number | null {
   if (t.phase === "betting") return bjSeatsIn(t, (s) => s.bet > 0).length ? t.dealerAt + (t.auto ? BJ_BET_WINDOW_MS : BJ_DEALER_IDLE_MS) : null;
   if (t.phase === "dealer") return t.dealerAt + (t.auto ? BJ_AUTO_STEP_MS : BJ_DEALER_IDLE_MS);
   if (t.phase === "over") return t.nextAt;
-  if (t.phase === "idle" && t.auto && t.dealer && t.seats.some((s) => s && !s.left)) return t.dealerAt + BJ_AUTO_STEP_MS;
+  if (t.phase === "idle" && t.auto && t.dealer && t.seats.some((s) => s && !s.left)) { const at = t.dealerAt + BJ_AUTO_STEP_MS; return at < (t.autoUntil ?? 0) ? at : null; }
   return null;
 }
 
@@ -263,7 +274,7 @@ export function bjTick(t: BjTable, ctx: BjCtx): boolean {
       t.dealerCards = []; t.hole = false; t.revealed = false;
       t.phase = "idle"; t.nextAt = 0; t.dealerAt = ctx.now; t.seq++; changed = true; continue;
     }
-    if (t.phase === "idle" && t.auto && t.dealer && t.seats.some((s) => s && !s.left) && ctx.now >= t.dealerAt + BJ_AUTO_STEP_MS) { openRound(t, ctx.now); changed = true; continue; } // (auto-deal: the next round opens by itself while somebody sits)
+    if (t.phase === "idle" && t.auto && t.dealer && t.seats.some((s) => s && !s.left) && ctx.now >= t.dealerAt + BJ_AUTO_STEP_MS && ctx.now < (t.autoUntil ?? 0)) { openRound(t, ctx.now); changed = true; continue; } // (auto-deal: the next round opens by itself while somebody sits)
     break;
   }
   return changed;
@@ -278,7 +289,7 @@ export function bjToDb(t: BjTable): Record<string, unknown> {
   t.seats.forEach((s, i) => { if (s) seats[`s${i}`] = { ...s, cards: s.cards }; });
   return {
     ...(t.dealer ? { dealer: t.dealer } : {}), bank: t.bank, seats, phase: t.phase, dealerCards: t.dealerCards, hole: t.hole, revealed: t.revealed, turn: t.turn, turnAt: t.turnAt,
-    dealerAt: t.dealerAt, nextAt: t.nextAt, round: t.round, seq: t.seq, ...(t.lastAct ? { lastAct: t.lastAct } : {}), ...(t.auto ? { auto: true } : {}),
+    dealerAt: t.dealerAt, nextAt: t.nextAt, round: t.round, seq: t.seq, ...(t.lastAct ? { lastAct: t.lastAct } : {}), ...(t.auto ? { auto: true, autoUntil: t.autoUntil ?? 0 } : {}),
   };
 }
 
@@ -301,7 +312,7 @@ export function parseBj(v: any): BjTable | null {
   t.phase = (["idle", "betting", "players", "dealer", "over"] as const).find((x) => x === v.phase) ?? "idle";
   t.dealerCards = cardsOf(v.dealerCards); t.hole = v.hole === true; t.revealed = v.revealed === true;
   t.turn = num(v.turn, -1); t.turnAt = num(v.turnAt); t.dealerAt = num(v.dealerAt); t.nextAt = num(v.nextAt); t.round = num(v.round); t.seq = num(v.seq);
-  if (v.auto === true) t.auto = true;
+  if (v.auto === true) { t.auto = true; t.autoUntil = num(v.autoUntil); }
   if (v.lastAct && typeof v.lastAct.act === "string") t.lastAct = { seat: num(v.lastAct.seat, -1), act: v.lastAct.act, at: num(v.lastAct.at) };
   return t;
 }

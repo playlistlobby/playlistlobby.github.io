@@ -8,7 +8,7 @@ import type { Revenge } from "../hits";
 import { headBoxFor } from "./head";
 import { HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_MIN } from "../shared/hits";
 import type { Hit } from "../shared/hits";
-import { hideoutPriceOf, HIDEOUT_AD_MAX, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
+import { hideoutPriceOf, HIDEOUT_AD_MAX, HIDEOUT_AD_PRICE, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
 import { countdownText } from "../shared/raffle";
 import { serverNow } from "../db";
 import { playSfx } from "../sfx";
@@ -198,7 +198,10 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const placed = d.furni.filter((f) => !["toolbox", "computer", "sink", "boombox"].includes(f.id)).length;
     const name = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_NAME_MAX), value: d.name }) as HTMLInputElement;
     const desc = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_DESC_MAX), placeholder: "A line about your hideout", value: d.hideout?.desc ?? "" }) as HTMLInputElement;
-    const ad = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_AD_MAX), placeholder: "What the landlord shouts about it", value: d.hideout?.ad ?? "" }) as HTMLInputElement;
+    const ad = h("input", { class: "hc-input", type: "text", maxlength: String(HIDEOUT_AD_MAX), placeholder: "What the landlord shouts about it (optional)", value: d.hideout?.ad ?? "" }) as HTMLInputElement;
+    const adPrice = (): number => HIDEOUT_BOOST_PRICE + (ad.value.trim() ? HIDEOUT_AD_PRICE : 0);
+    const adBtn = h("button", { class: "btn small primary", disabled: busy || me.blood < HIDEOUT_BOOST_PRICE, onclick: () => void act(async () => { const r = await hideoutBoost(me, ad.value); return r.price > HIDEOUT_BOOST_PRICE ? "Advertised: it is shown first for an hour, and the landlord will shout your message." : "Advertised: it is shown first for an hour."; }) }, `🔥 Advertise 1 hour (${HIDEOUT_BOOST_PRICE} drops)`);
+    ad.addEventListener("input", () => { adBtn.textContent = `🔥 Advertise 1 hour (${adPrice()} drops)`; });
     const boosted = (d.hideout?.boostUntil ?? 0) > Date.now();
     return [
       h("div", { class: "hc-hero" }, h("div", { class: "hc-h1" }, "Settings"), h("div", { class: "hc-sub" }, `${d.w} × ${d.h} · ${placed}/${d.hideout?.cap ?? "?"} pieces`)),
@@ -214,10 +217,9 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
           h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Anyone can enter (no knocking)"),
             h("button", { class: "btn small" + (d.hideout?.open ? " primary" : ""), disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { open: !d.hideout?.open }); return d.hideout?.open ? "Visitors have to knock now." : "Anyone can walk in now."; }) }, d.hideout?.open ? "🚪 Open to all" : "✊ Knock first")),
           ...(d.hideout?.listed ? [
-            h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, boosted ? `Shown first for ${Math.max(1, Math.ceil(((d.hideout?.boostUntil ?? 0) - Date.now()) / 60000))} more min` : "Show it first on the list for 6 hours"),
-              h("button", { class: "btn small primary", disabled: busy || me.blood < HIDEOUT_BOOST_PRICE, onclick: () => void act(async () => { await hideoutBoost(me); return "Boosted: it is shown first for a while."; }) }, `🔥 Boost (${HIDEOUT_BOOST_PRICE} drops)`)),
-            h("div", { class: "hc-label" }, "The landlord outside shouts this every 2 to 5 minutes while it is boosted"), ad,
-            h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { await hideoutSettings(me, { ad: ad.value }); return ad.value.trim() ? "Saved. The landlord will shout it while the boost lasts." : "The landlord has nothing to shout now."; }) }, "Save the message"),
+            h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, boosted ? `Shown first for ${Math.max(1, Math.ceil(((d.hideout?.boostUntil ?? 0) - Date.now()) / 60000))} more min` : "Show it first on the list for an hour")),
+            h("div", { class: "hc-label" }, `A message the landlord outside shouts every 2 to 5 minutes while it is advertised (+${HIDEOUT_AD_PRICE} drops)`), ad,
+            adBtn,
           ] : [])),
         h("div", { class: "hc-group" },
           h("div", { class: "hc-person" }, h("span", { class: "hc-pname" }, "Lock building for everybody"),
@@ -239,7 +241,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
         h("div", { class: "hc-person" }, h("img", { src: BLOOD_ICON, alt: "", style: { width: "20px", height: "20px" } }), h("span", { class: "hc-pname" }, "Waiting for you"), h("span", { class: "hc-tag" }, waiting)),
         h("button", { class: "btn primary", disabled: busy || till.blood <= 0, onclick: () => void act(async () => { const r = await hideoutTillCollect(me); playSfx("coins", 0.5); return `You collected ${r.got} blood.`; }) }, till.blood > 0 ? `Collect ${waiting}` : "Nothing to collect yet"),
         h("div", { class: "hc-sub" }, `Earned so far: ${earned}`)),
-      h("div", { class: "hc-foot" }, "Your poker tables pay you a 2% fee on every buy-in (on top, so the players' stacks are not touched) and 1% of every pot that sees a flop. It all waits here until you collect it."),
+      h("div", { class: "hc-foot" }, "Your poker tables pay you a 1% fee on every buy-in (on top, so the players' stacks are not touched) and 1% of every pot that sees a flop. It all waits here until you collect it."),
       h("div", { class: "hc-foot" }, "A blackjack dealer keeps a 3% commission on wins in their own bank, and takes it when they stop dealing."),
     ];
   }

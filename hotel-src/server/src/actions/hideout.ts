@@ -6,7 +6,7 @@ import { addToInv, lighterHex, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../
 import { isFurniItem, NO_DROP } from "../../../src/shared/items";
 import { SHIPPED_DIMS } from "../../../src/shared/furniture";
 import {
-  HIDEOUT_AD_MAX, HIDEOUT_BOOST_MS, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HideoutListing, HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
+  HIDEOUT_AD_MAX, HIDEOUT_AD_PRICE, HIDEOUT_BOOST_MAX_AHEAD_MS, HIDEOUT_BOOST_MS, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HideoutListing, HIDEOUT_FIXED_POS, HIDEOUT_MAX_MEMBERS, HIDEOUT_NAME_MAX, HIDEOUT_ORDER_MS, HIDEOUT_PRICE, HIDEOUT_RECOLOR_PRICE, HIDEOUT_SHOP, HIDEOUT_SIZES,
   HIDEOUT_THEME, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize, hideoutPriceOf, HIDEOUT_CHEST_MAX_QTY, HIDEOUT_CHEST_SLOTS, memberDefaults, type HideoutPerms, HIDEOUT_MAX_FAVS,
 } from "../../../src/shared/hideout";
 
@@ -122,12 +122,7 @@ export const hideoutSettings: Action = {
       c.extra[`roomsMeta/${room}/desc`] = desc || null;
       over.desc = desc;
     }
-    if (a.ad !== undefined) { // the message the landlord calls out while the hideout is boosted
-      const ad = String(a.ad ?? "").replace(/\s+/g, " ").trim().slice(0, HIDEOUT_AD_MAX);
-      if (/[\u0000-\u001f\u007f]/.test(ad)) fail("Bad message.");
-      c.extra[`roomsMeta/${room}/ad`] = ad || null;
-      over.ad = ad;
-    }
+    if (a.ad !== undefined) fail("The message is bought together with the advertising."); // (it is part of hideoutBoost now)
     if (a.open !== undefined) { c.extra[`roomsMeta/${room}/access`] = a.open ? "open" : "none"; over.open = !!a.open; } // (anybody can walk in, or only members and the guests the owner lets in)
     if (a.listed !== undefined) { c.extra[`roomsMeta/${room}/listed`] = a.listed ? null : false; over.listed = !!a.listed; }
     if (a.name !== undefined) {
@@ -144,20 +139,28 @@ export const hideoutSettings: Action = {
   },
 };
 
-/** The owner pays 50 drops to be shown first on the list at the hideout door for an hour (boosts add up). */
+/**
+ * Advertising: the owner pays 50 drops to be shown first on the list at the hideout door for an hour (hours add up, up to 6 ahead), and 50 more if the landlord
+ * outside is to shout a message about it every 2 to 5 minutes (`ad`, at most 80 letters; without one the landlord says nothing).
+ */
 export const hideoutBoost: Action = {
   locks: (c) => [`room:${hideoutRoomId(c.uid)}`],
-  async run(c) {
+  async run(c, a) {
     const { room, meta } = await ownHideout(c);
     await requireInRoom(c, room);
     if (meta.listed === false) fail("Put the hideout on the list first.");
+    const ad = String(a?.ad ?? "").replace(/\s+/g, " ").trim().slice(0, HIDEOUT_AD_MAX);
+    if (/[\u0000-\u001f\u007f]/.test(ad)) fail("Bad message.");
+    const price = HIDEOUT_BOOST_PRICE + (ad ? HIDEOUT_AD_PRICE : 0);
     const w = await c.user();
-    if (w.s.blood < HIDEOUT_BOOST_PRICE) fail(`You need ${HIDEOUT_BOOST_PRICE - w.s.blood} more drops`);
-    w.s.blood -= HIDEOUT_BOOST_PRICE;
-    const boostUntil = Math.min(Math.max(c.now, Number(meta.boostUntil) || 0) + HIDEOUT_BOOST_MS, c.now + 24 * HIDEOUT_BOOST_MS);
+    if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
+    w.s.blood -= price;
+    const boostUntil = Math.min(Math.max(c.now, Number(meta.boostUntil) || 0) + HIDEOUT_BOOST_MS, c.now + HIDEOUT_BOOST_MAX_AHEAD_MS);
     c.extra[`roomsMeta/${room}/boostUntil`] = boostUntil;
-    publishListing(c, c.uid, meta, { boostUntil });
-    return { boostUntil, price: HIDEOUT_BOOST_PRICE };
+    c.extra[`roomsMeta/${room}/ad`] = ad || null; // (the message that is paid for now, or none)
+    publishListing(c, c.uid, meta, { boostUntil, ad });
+    c.note = ad ? "advertising with a message" : "advertising";
+    return { boostUntil, price };
   },
 };
 

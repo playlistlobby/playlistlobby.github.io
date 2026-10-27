@@ -72,7 +72,7 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
       rows.push(h("div", { class: "door-tabs" },
         h("button", { class: "door-tab" + (active === "boosted" ? " on" : ""), onclick: () => { tab = "boosted"; render(); } }, `🔥 Boosted (${boosted.length})`),
         h("button", { class: "door-tab" + (active === "all" ? " on" : ""), onclick: () => { tab = "all"; render(); } }, `All (${plain.length})`)));
-      rows.push(...(shownRows.length ? shownRows.map(rowFor) : [h("div", { class: "hint pad" }, active === "boosted" ? "No boosted hideouts right now. A hideout's owner can boost it for 6 hours." : "No hideouts here yet.")]));
+      rows.push(...(shownRows.length ? shownRows.map(rowFor) : [h("div", { class: "hint pad" }, active === "boosted" ? "No boosted hideouts right now. A hideout's owner can advertise it for an hour." : "No hideouts here yet.")]));
     }
     body.replaceChildren(...rows);
   }

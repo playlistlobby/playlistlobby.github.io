@@ -9,7 +9,7 @@
 import { Action, cheb, ID_RE, int, requireHideoutMember, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import {
-  bankCovers, bjSeatOfUid, bjStakes, bjTick, bjToDb, BJ_AUTO_OPEN, BJ_BANK_MAX, BJ_BANK_MIN, BJ_GONE_MS, BJ_SEATS, dealerDraw, deal, newBjTable, openRound, parseBj, placeBet, playerMove, reveal, settle, voidRound,
+  bankCovers, bjSeatOfUid, bjStakes, bjTick, bjToDb, BJ_AUTO_OPEN, BJ_AUTO_RUN_MS, BJ_BANK_MAX, BJ_BANK_MIN, BJ_GONE_MS, BJ_SEATS, dealerDraw, deal, newBjTable, openRound, parseBj, placeBet, playerMove, reveal, settle, voidRound,
   type BjCtx, type BjTable,
 } from "../../../src/shared/blackjack";
 import { isHideoutId } from "../../../src/shared/hideout";
@@ -189,7 +189,7 @@ async function leaveTable(c: Ctx, L: Loaded, uid: string): Promise<number> {
       const back = voidRound(t);
       for (const [i, amt] of Object.entries(back)) { const s = t.seats[Number(i)]; if (s) await pay(c, s.uid, amt); }
     }
-    take = t.bank; t.bank = 0; t.dealer = null; t.auto = undefined; t.phase = t.phase === "over" ? "over" : "idle"; t.seq++;
+    take = t.bank; t.bank = 0; t.dealer = null; t.auto = undefined; t.autoUntil = undefined; t.phase = t.phase === "over" ? "over" : "idle"; t.seq++;
     await pay(c, uid, take);
     return take;
   }
@@ -252,7 +252,7 @@ export const bjDealer: Action = {
       if (w.s.blood < bank) fail("You don't have that much blood.");
       w.s.blood -= bank;
       L.t.dealer = { uid: c.uid, name: nameOf(w), ...(figureOf(w) ? { figure: figureOf(w) } : {}) };
-      L.t.auto = undefined;
+      L.t.auto = undefined; L.t.autoUntil = undefined;
       L.t.bank = bank; L.t.phase = "idle"; L.t.dealerAt = c.now; L.t.seq++;
       save(c, L);
       c.extra[`bjSeat/${c.uid}`] = { room, fid, dealer: true };
@@ -277,7 +277,9 @@ export const bjDealer: Action = {
     else if (op === "settle") err = settle(t, c.now);
     else if (op === "auto") { // the auto-deal switch: the table plays the dealer's clicks itself (see bjTick), until it is switched off
       if (!BJ_AUTO_OPEN && !isEmulator(c.env)) fail("Unknown action.");
-      t.auto = a.on === true ? true : undefined; t.seq++;
+      t.auto = a.on === true ? true : undefined;
+      t.autoUntil = a.on === true ? c.now + BJ_AUTO_RUN_MS : undefined; // (switching it on, or pressing "keep going", runs it for another 15 minutes)
+      t.seq++;
     }
     if (err) fail(err);
     if (op !== "auto") t.dealerAt = c.now;

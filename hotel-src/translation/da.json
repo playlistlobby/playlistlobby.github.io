@@ -13253,5 +13253,50 @@
   "en": "A pink CD: lemonade - Dip Dip, from the record box in the shop. Use it on a boombox. It comes back when it's done.",
   "da": "En pink cd: lemonade - Dip Dip, fra pladekassen i butikken. Brug den på en boombox. Den kommer tilbage, når den er færdig.",
   "where": "src/items.ts"
+ },
+ "N2096": {
+  "en": "A hideout's owner can advertise it for an hour.",
+  "da": "Et skjulesteds ejer kan advertise det i en time.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2097": {
+  "en": "Your poker tables pay you a 1% fee on every buy-in (on top, so the players' stacks are not touched) and 1% of every pot that sees a flop. It all waits here until you collect it.",
+  "da": "Dine pokerborde giver dig et gebyr på 1% af hver buy-in (oven i, så spillernes stakke ikke røres) og 1% af hver pot der når flop. Det hele venter her, til du henter det.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2098": {
+  "en": "A message the landlord outside shouts every 2 to 5 minutes while it is advertised (+{HIDEOUT_AD_PRICE} drops)",
+  "da": "En besked udlejeren udenfor råber hvert 2. til 5. minut, mens det er advertised (+{HIDEOUT_AD_PRICE} blod)",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2099": {
+  "en": "What the landlord shouts about it (optional)",
+  "da": "Hvad udlejeren råber om det (valgfrit)",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2100": {
+  "en": "🔥 Advertise 1 hour ({HIDEOUT_BOOST_PRICE} drops)",
+  "da": "🔥 Advertise 1 time ({HIDEOUT_BOOST_PRICE} blod)",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2101": {
+  "en": "🔥 Advertise 1 hour ({adPrice} drops)",
+  "da": "🔥 Advertise 1 time ({adPrice} blod)",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2102": {
+  "en": "Advertised: it is shown first for an hour, and the landlord will shout your message.",
+  "da": "Advertised: det vises først i en time, og udlejeren råber din besked.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2103": {
+  "en": "Advertised: it is shown first for an hour.",
+  "da": "Advertised: det vises først i en time.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2104": {
+  "en": "The message is bought together with the advertising.",
+  "da": "Beskeden købes sammen med reklamen.",
+  "where": "src/ui/hideoutComputer.ts"
  }
 }

@@ -86,8 +86,8 @@ bad("300 is the most here", await sit(a, host, "pt1", 0, 301));
 bad("the high table wants 500", await sit(a, host, "pt2", 0, 499));
 bad("there are five seats", await sit(a, host, "pt1", 5, 300));
 ok("a sits and buys in for 300", await sit(a, host, "pt1", 0, 300));
-check("a's blood is 2694 (300 buy-in + 6 table fee)", (await bloodOf(a)) === 2694);
-check("the owner got the 6 fee", (await bloodOf(host)) === 106);
+check("a's blood is 2697 (300 buy-in + 3 table fee)", (await bloodOf(a)) === 2697);
+check("the owner got the 3 fee", (await bloodOf(host)) === 103);
 let t = await tbl(host, "pt1");
 check("a is at the table with 300, no hand yet", t && t.phase === "idle" && seatsOf(t).length === 1 && seatsOf(t)[0].stack === 300 && seatsOf(t)[0].uid === a.uid, JSON.stringify(t));
 check("a points at the table", (await owner("GET", `pokerSeat/${a.uid}`))?.fid === "pt1");
@@ -241,18 +241,18 @@ ok("a logs in again somewhere else and is stood up (no table named)", await act(
 check("a has the 1200 back", (await bloodOf(a)) === mid + 1200 && (await owner("GET", `pokerSeat/${a.uid}`)) === null && (await tbl(host, "pt2")) === null);
 check("blood is conserved", (await worth()) === START, String(await worth()));
 
-console.log("--- the owner's cut: a 2% table fee on top of the buy-in, 1% of pots that saw a flop (at most 5 here)");
+console.log("--- the owner's cut: a 1% table fee on top of the buy-in, 1% of pots that saw a flop (at most 5 here)");
 {
   await owner("PUT", `roomsMeta/${ROOM(host)}/furni/pt3`, { kind: "f_pokertable", x: 3, y: 9, dir: 2 });
   await owner("DELETE", `poker/${KEY(host, "pt3")}`); await owner("DELETE", `pokerDeck/${KEY(host, "pt3")}`); await owner("DELETE", `pokerHole/${KEY(host, "pt3")}`);
   for (const u of [a, b, c]) { await leave(u, host, "pt1"); await leave(u, host, "pt2"); await owner("DELETE", `pokerSeat/${u.uid}`); await stand(u, ROOM(host), 4, 9); await owner("PUT", `users/${u.uid}/blood`, 3000); }
   await stand(host, ROOM(host), 4, 10);
   const h0 = await bloodOf(host);
-  ok("a buys in for 100: fee 2", await sit(a, host, "pt3", 0, 100));
-  check("a paid 102 and has 100 on the table", (await bloodOf(a)) === 2898 && seatsOf(await tbl(host, "pt3"))[0].stack === 100);
-  check("the owner got 2", (await bloodOf(host)) === h0 + 2);
+  ok("a buys in for 100: fee 1", await sit(a, host, "pt3", 0, 100));
+  check("a paid 101 and has 100 on the table", (await bloodOf(a)) === 2899 && seatsOf(await tbl(host, "pt3"))[0].stack === 100);
+  check("the owner got 1", (await bloodOf(host)) === h0 + 1);
   ok("b buys in for 25: the fee is at least 1", await sit(b, host, "pt3", 3, 25));
-  check("the owner got 1 more", (await bloodOf(host)) === h0 + 3, String((await bloodOf(host)) - h0));
+  check("the owner got 1 more (25 still pays at least 1)", (await bloodOf(host)) === h0 + 2, String((await bloodOf(host)) - h0));
   await owner("PUT", `users/${host.uid}/blood`, 500);
   ok("the owner buys in at their own table", await sit(host, host, "pt3", 1, 100));
   check("and pays no fee", (await bloodOf(host)) === 400);
@@ -263,14 +263,14 @@ console.log("--- the owner's cut: a 2% table fee on top of the buy-in, 1% of pot
   const W0 = await worth();
   ok("a sits (300)", await sit(a, host, "pt3", 0, 300));
   ok("b sits (300)", await sit(b, host, "pt3", 3, 300));
-  check("the two fees of 6 went to the owner", (await bloodOf(host)) === 112, String(await bloodOf(host)));
+  check("the two fees of 3 went to the owner", (await bloodOf(host)) === 106, String(await bloodOf(host)));
   await sleep(3700);
   ok("a tick starts the hand", await tick(b, host, "pt3"));
   let t3 = await tbl(host, "pt3");
   const folder = turnUser(t3, heads);
   ok("the first to act folds before the flop", await move(folder, host, "pt3", "fold"));
   t3 = await tbl(host, "pt3");
-  check("no flop, no rake: the owner got nothing", t3.phase === "over" && (await bloodOf(host)) === 112, `${t3.phase} ${await bloodOf(host)}`);
+  check("no flop, no rake: the owner got nothing", t3.phase === "over" && (await bloodOf(host)) === 106, `${t3.phase} ${await bloodOf(host)}`);
   await owner("PATCH", `poker/${KEY(host, "pt3")}`, { nextAt: Date.now() - 1 });
   await tick(a, host, "pt3"); await tick(a, host, "pt3");
   t3 = await tbl(host, "pt3");
@@ -281,7 +281,7 @@ console.log("--- the owner's cut: a 2% table fee on top of the buy-in, 1% of pot
     t3 = await tbl(host, "pt3");
   }
   check("everybody all in: a showdown", t3.phase === "over" && !t3.over?.uncontested, JSON.stringify(t3.over)?.slice(0, 120));
-  check("the owner got 1% of the 600 pot, capped at 5", (await bloodOf(host)) === 117, String(await bloodOf(host)));
+  check("the owner got 1% of the 600 pot, capped at 5", (await bloodOf(host)) === 111, String(await bloodOf(host)));
   check("the players share the pot less the 5", seatsOf(t3).reduce((n, s) => n + s.stack, 0) === stacksBefore - 5, `${seatsOf(t3).reduce((n, s) => n + s.stack, 0)} vs ${stacksBefore}`);
   check("blood is conserved in all (the owner included)", (await worth()) + (await chipsOn("pt3")) === W0, `${(await worth()) + (await chipsOn("pt3"))} vs ${W0}`);
   await leave(a, host, "pt3"); await leave(b, host, "pt3");
@@ -303,7 +303,7 @@ console.log("--- in a hideout the owner's earnings wait on the computer until th
   ok("b buys in for 300", await hsit(b, 3, 300));
   check("the owner's pocket is untouched (the fees wait)", (await bloodOf(host)) === 3000, String(await bloodOf(host)));
   let till = await owner("GET", `hideoutTill/${host.uid}`);
-  check("12 in the till (two fees of 6)", till?.blood === 12 && till?.total === 12, JSON.stringify(till));
+  check("6 in the till (two fees of 3)", till?.blood === 6 && till?.total === 6, JSON.stringify(till));
   check("only the owner reads the till", (await readAs(host, `hideoutTill/${host.uid}`)).status === 200 && refused(await clientWrite(host, `hideoutTill/${host.uid}/blood`, 99999)) && (await readAs(a, `hideoutTill/${host.uid}`)).status !== 200);
   await sleep(3700);
   ok("a tick starts the hand", await htick(b));
@@ -314,11 +314,11 @@ console.log("--- in a hideout the owner's earnings wait on the computer until th
     th = await owner("GET", `poker/${HK}`);
   }
   till = await owner("GET", `hideoutTill/${host.uid}`);
-  check("the pot cut (5) joined the fees: 17 waiting", th.phase === "over" && till?.blood === 17 && till?.total === 17, `${th.phase} ${JSON.stringify(till)}`);
+  check("the pot cut (5) joined the fees: 11 waiting", th.phase === "over" && till?.blood === 11 && till?.total === 11, `${th.phase} ${JSON.stringify(till)}`);
   check("still nothing in the owner's pocket", (await bloodOf(host)) === 3000);
   bad("a player can't collect it", await act(a, "hideoutTillCollect"));
   ok("the owner collects", await act(host, "hideoutTillCollect"));
-  check("3017 in the pocket and the till is empty, the lifetime total stays", (await bloodOf(host)) === 3017 && (await owner("GET", `hideoutTill/${host.uid}/blood`)) === 0 && (await owner("GET", `hideoutTill/${host.uid}/total`)) === 17);
+  check("3011 in the pocket and the till is empty, the lifetime total stays", (await bloodOf(host)) === 3011 && (await owner("GET", `hideoutTill/${host.uid}/blood`)) === 0 && (await owner("GET", `hideoutTill/${host.uid}/total`)) === 11);
   bad("nothing left to collect", await act(host, "hideoutTillCollect"));
   await act(a, "pokerLeave", { room: H, fid: "pt9" }); await act(b, "pokerLeave", { room: H, fid: "pt9" });
   await owner("DELETE", `roomsMeta/${H}`); await owner("DELETE", `hideoutTill/${host.uid}`);
