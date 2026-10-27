@@ -27,6 +27,7 @@ import { DropConfirmApi, openDropConfirm } from "./dropConfirm";
 import { BAGMAN, HIDEOUT_LANDLORD, LANDLORD, PET_MERCHANT, LEGEND, SIXTY, SIXTY_LINES, sixtyCheckIn, sixtyLook, watchSixtyLook } from "../npc";
 import { openBagmandShop, BagmandShopApi } from "./bagmandShop";
 import { openCdPress } from "./cdPress";
+import { openBeatShop } from "./beatShop";
 import { openHideoutComputer, ComputerApi } from "./hideoutComputer";
 import { openHideoutLandlord } from "./hideoutLandlord";
 import { openHideoutDoor } from "./hideoutDoor";
@@ -570,6 +571,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let bagmandApi: BagmandShopApi | null = null;
   let computerApi: ComputerApi | null = null;
   let cdPressApi: { close(): void } | null = null;
+  let beatShopApi: { close(): void } | null = null;
   let petShopApi: { close(): void } | null = null;
   let chestApi: { close(): void; refresh(): void } | null = null;
   /** the poker window (it stands you up when it closes); if the server still has you sitting at a table after a refresh, you are stood up here and get your blood back */
@@ -817,6 +819,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "cdpress") text = "CD printer: press a song onto a CD";
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "beatshop") text = "BeatShop: listen to beats and buy them";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind!]?.opens === "poker" || FURNI_KINDS[hoverObj.kind!]?.opens === "blackjack")) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to play`;
     else if (hoverObj && hoverObj.kind === "wantedboard") text = "Wanted board";
     else if (hoverObj && hoverObj.kind === "discordboard") text = "Notice board";
@@ -1130,7 +1134,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || FURNI_KINDS[obj.kind!]?.opens === "cdpress" || FURNI_KINDS[obj.kind!]?.opens === "beatshop" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
@@ -1205,6 +1209,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "pmerchant") opts.push({ label: "Browse pets", target: PET_MERCHANT.name, action: () => startPetMerchant() });
     if (obj?.kind === "hcomputer") opts.push({ label: "Use", target: "Computer", action: () => startBag(obj.id) });
     if (obj && (FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack")) opts.push({ label: "Play", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
+    if (obj && FURNI_KINDS[obj.kind!]?.opens === "cdpress") opts.push({ label: "Press a CD", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
+    if (obj && FURNI_KINDS[obj.kind!]?.opens === "beatshop") opts.push({ label: "Open", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
     if (obj?.kind === "hchest") opts.push({ label: "Open", target: "Shared stash", action: () => startBag(obj.id) });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
     if (obj?.kind === "hlandlord") opts.push({ label: "Talk", target: HIDEOUT_LANDLORD.name, action: () => startHideoutLandlord() });
@@ -1737,6 +1743,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     bagmandApi?.close();
     computerApi?.close();
     cdPressApi?.close();
+    beatShopApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
@@ -2143,6 +2150,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "ideas") openIdeas();
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
         else if (opens === "computer") { if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
+        else if (opens === "beatshop") { const bo = f.by ?? def.ownerUid; if (bo && !beatShopApi) beatShopApi = openBeatShop(stage, ctx, bo, bo === def.ownerUid ? def.ownerName ?? "" : "", () => { beatShopApi = null; }); }
         else if (opens === "cdpress") { if (!cdPressApi) cdPressApi = openCdPress(stage, ctx, roomId, () => def, () => panel.refresh(), () => { cdPressApi = null; }); }
         else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
         else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }, tableChat); }
@@ -5354,7 +5362,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -6073,6 +6081,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     bagmandApi?.close();
     computerApi?.close();
     cdPressApi?.close();
+    beatShopApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();

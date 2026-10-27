@@ -14078,5 +14078,385 @@
   "en": "That CD is scratched: the song is gone.",
   "da": "Den CD er ridset: sangen er væk.",
   "where": "server/src/actions/cd.ts"
+ },
+ "N2261": {
+  "en": "{…} min",
+  "da": "{…} min",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2262": {
+  "en": "BeatShop",
+  "da": "BeatShop",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2263": {
+  "en": "Your BeatShop",
+  "da": "Din BeatShop",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2264": {
+  "en": "{ownerName}'s BeatShop",
+  "da": "{ownerName}s BeatShop",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2265": {
+  "en": "{length} of {BEATS_MAX} beats on sale",
+  "da": "{length} af {BEATS_MAX} beats til salg",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2266": {
+  "en": "Beats on sale: {length}",
+  "da": "Beats til salg: {length}",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2267": {
+  "en": "Take \"{title}\" off sale?",
+  "da": "Tag \"{title}\" af salg?",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2268": {
+  "en": "The beat is saved.",
+  "da": "Beatet er gemt.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2269": {
+  "en": "Download",
+  "da": "Download",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2270": {
+  "en": "Bought",
+  "da": "Købt",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2271": {
+  "en": "Chat",
+  "da": "Chat",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2272": {
+  "en": "Whole beat",
+  "da": "Hele beatet",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2273": {
+  "en": "Preview {fmtDur}",
+  "da": "Smagsprøve {fmtDur}",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2274": {
+  "en": "Sold {sold}",
+  "da": "Solgt {sold}",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2275": {
+  "en": "New messages",
+  "da": "Nye beskeder",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2276": {
+  "en": "You have no beats on sale. Add one.",
+  "da": "Du har ingen beats til salg. Tilføj et.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2277": {
+  "en": "There are no beats here yet.",
+  "da": "Der er ingen beats her endnu.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2278": {
+  "en": "Choose a beat",
+  "da": "Vælg et beat",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2279": {
+  "en": "Beat title",
+  "da": "Beatets titel",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2280": {
+  "en": "Where the preview starts",
+  "da": "Hvor smagsprøven starter",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2281": {
+  "en": "Starts at {fmtDur}",
+  "da": "Starter ved {fmtDur}",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2282": {
+  "en": "The price has to be between {BEAT_PRICE_MIN} and {BEAT_PRICE_MAX}.",
+  "da": "Prisen skal være mellem {BEAT_PRICE_MIN} og {BEAT_PRICE_MAX}.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2283": {
+  "en": "Your beat is on sale.",
+  "da": "Dit beat er til salg.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2284": {
+  "en": "Put it on sale",
+  "da": "Sæt det til salg",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2285": {
+  "en": "Add a beat",
+  "da": "Tilføj et beat",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2286": {
+  "en": "An mp3, wav, ogg or m4a up to 10 MB and 10 minutes.",
+  "da": "En mp3, wav, ogg eller m4a på op til 10 MB og 10 minutter.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2287": {
+  "en": "You have {BEATS_MAX} beats on sale. Take one off to add another.",
+  "da": "Du har {BEATS_MAX} beats til salg. Tag et af for at tilføje et nyt.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2288": {
+  "en": "Price in blood",
+  "da": "Pris i blod",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2289": {
+  "en": "What people can listen to",
+  "da": "Hvad folk kan lytte til",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2290": {
+  "en": "A preview you pick. The rest is for buyers.",
+  "da": "En smagsprøve du vælger. Resten er til købere.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2291": {
+  "en": "The whole beat",
+  "da": "Hele beatet",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2292": {
+  "en": "Everybody can hear all of it.",
+  "da": "Alle kan høre det hele.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2293": {
+  "en": "You:",
+  "da": "Dig:",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2294": {
+  "en": "No messages yet. A chat starts when somebody buys one of your beats.",
+  "da": "Ingen beskeder endnu. En chat starter når nogen køber et af dine beats.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2295": {
+  "en": "Play the rap",
+  "da": "Afspil rappen",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2296": {
+  "en": "Rap {fmtDur}",
+  "da": "Rap {fmtDur}",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2297": {
+  "en": "Choose your rap",
+  "da": "Vælg din rap",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2298": {
+  "en": "Write a message",
+  "da": "Skriv en besked",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2299": {
+  "en": "Sending",
+  "da": "Sender",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2300": {
+  "en": "That didn't send.",
+  "da": "Den blev ikke sendt.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2301": {
+  "en": "Upload your rap on this beat",
+  "da": "Upload din rap på dette beat",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2302": {
+  "en": "An mp3, wav, ogg or m4a, up to 3 MB and a minute. Tap to choose.",
+  "da": "En mp3, wav, ogg eller m4a på op til 3 MB og et minut. Tryk for at vælge.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2303": {
+  "en": "Say something to the seller, or send your rap.",
+  "da": "Sig noget til sælgeren, eller send din rap.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2304": {
+  "en": "Another rap",
+  "da": "En anden rap",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2305": {
+  "en": "Add a rap",
+  "da": "Tilføj en rap",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2306": {
+  "en": "Rap: {…} - {fmtDur}",
+  "da": "Rap: {…} - {fmtDur}",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2307": {
+  "en": "My beats",
+  "da": "Mine beats",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2308": {
+  "en": "Are you sure?",
+  "da": "Er du sikker?",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2309": {
+  "en": "Buy \"{title}\" from {ownerName} for {price} blood? You get the whole beat to keep.",
+  "da": "Køb \"{title}\" af {ownerName} for {price} blod? Du får hele beatet at beholde.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2310": {
+  "en": "It's yours. Tap Download.",
+  "da": "Det er dit. Tryk Download.",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2311": {
+  "en": "Buy for",
+  "da": "Køb for",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2312": {
+  "en": "That file is {…} MB. A beat can be 10 MB at most.",
+  "da": "Den fil er {…} MB. Et beat må højst være 10 MB.",
+  "where": "src/beats.ts"
+ },
+ "N2313": {
+  "en": "A beat has to be between 10 seconds and 10 minutes.",
+  "da": "Et beat skal være mellem 10 sekunder og 10 minutter.",
+  "where": "src/beats.ts"
+ },
+ "N2314": {
+  "en": "That file is {…} MB. A rap can be 3 MB at most.",
+  "da": "Den fil er {…} MB. En rap må højst være 3 MB.",
+  "where": "src/beats.ts"
+ },
+ "N2315": {
+  "en": "A rap has to be between 2 and 60 seconds.",
+  "da": "En rap skal være mellem 2 og 60 sekunder.",
+  "where": "src/beats.ts"
+ },
+ "N2316": {
+  "en": "You have one already.",
+  "da": "Du har en allerede.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N2317": {
+  "en": "The BeatShop is in your pocket. Put it in your room and sell your beats.",
+  "da": "BeatShoppen er i din lomme. Sæt den i dit værelse og sælg dine beats.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N2318": {
+  "en": "A machine to sell your beats in. Put it in your room. One per player.",
+  "da": "En automat at sælge dine beats i. Sæt den i dit værelse. Én pr. spiller.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N2319": {
+  "en": "CD printer: press a song onto a CD",
+  "da": "CD-printer: pres en sang på en CD",
+  "where": "src/ui/room.ts"
+ },
+ "N2320": {
+  "en": "BeatShop: listen to beats and buy them",
+  "da": "BeatShop: lyt til beats og køb dem",
+  "where": "src/ui/room.ts"
+ },
+ "N2321": {
+  "en": "You have a BeatShop already. There's one for each player.",
+  "da": "Du har allerede en BeatShop. Der er én til hver spiller.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2322": {
+  "en": "You need a BeatShop to sell beats.",
+  "da": "Du skal have en BeatShop for at sælge beats.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2323": {
+  "en": "Give the beat a title.",
+  "da": "Giv beatet en titel.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2324": {
+  "en": "You can have {BEATS_MAX} beats on sale. Take one off first.",
+  "da": "Du kan have {BEATS_MAX} beats til salg. Tag et af først.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2325": {
+  "en": "That beat isn't yours.",
+  "da": "Det beat er ikke dit.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2326": {
+  "en": "That beat is on sale already.",
+  "da": "Det beat er allerede til salg.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2327": {
+  "en": "That beat isn't there.",
+  "da": "Det beat er der ikke.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2328": {
+  "en": "That's your own beat.",
+  "da": "Det er dit eget beat.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2329": {
+  "en": "That beat isn't on sale any more.",
+  "da": "Det beat er ikke til salg mere.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2330": {
+  "en": "You have that beat already.",
+  "da": "Du har allerede det beat.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2331": {
+  "en": "That chat isn't there.",
+  "da": "Den chat er der ikke.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2332": {
+  "en": "A chat starts when somebody buys the beat.",
+  "da": "En chat starter når nogen køber beatet.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2333": {
+  "en": "Write something or send a rap.",
+  "da": "Skriv noget eller send en rap.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2334": {
+  "en": "This chat is full ({CHAT_MSGS_MAX} messages).",
+  "da": "Denne chat er fuld ({CHAT_MSGS_MAX} beskeder).",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2335": {
+  "en": "That recording isn't for this chat.",
+  "da": "Den optagelse hører ikke til denne chat.",
+  "where": "server/src/actions/beats.ts"
+ },
+ "N2336": {
+  "en": "Audio reply",
+  "da": "Lydsvar",
+  "where": "server/src/actions/beats.ts"
  }
 }

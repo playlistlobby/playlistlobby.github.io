@@ -2,6 +2,8 @@ import { onValue, ref } from "firebase/database";
 import { db } from "../firebase";
 import { h, toast } from "./dom";
 import { headBoxFor } from "./head";
+import { downloadBeat, watchOwnedBeats } from "../beats";
+import type { OwnedBeat } from "../shared/beats";
 import { checkSongFile, deleteSong, scPlayer, SONG_SLOTS, sweepSongs, uploadSong, voteSong, watchMyVotes, watchSongs } from "../soundcloud";
 import type { Profile } from "../db";
 import { serverNow } from "../db";
@@ -187,10 +189,12 @@ export function mountSoundcloud(host: HTMLElement, o: ScOptions): ScHandle {
       ...(ownedBeats().length ? ownedBeats() : [empty("Beats you buy from a BeatShop show up here with a download button.")]),
     ];
   }
-  /** the beats this player bought (the BeatShop fills this in) */
-  let owned: HTMLElement[] = [];
-  const ownedBeats = (): HTMLElement[] => owned;
-  (window as unknown as { __scOwned?: (e: HTMLElement[]) => void }).__scOwned = (e) => { owned = e; };
+  /** the beats this player bought from BeatShops: they stay here for good, with a download button */
+  let ownedList: OwnedBeat[] = [];
+  const ownedBeats = (): HTMLElement[] => ownedList.map((b) => h("div", { class: "sc-row" },
+    headBoxFor(b.owner),
+    h("div", { class: "sc-main" }, h("div", { class: "sc-title" }, b.title), h("div", { class: "sc-line" }, h("span", { class: "sc-meta" }, b.ownerName), h("span", { class: "sc-meta" }, fmtDur(b.durMs)))),
+    h("button", { class: "sc-btn green", type: "button", onclick: () => void downloadBeat(b).then(() => toast("The beat is saved."), (e) => toast((e as Error).message || "That didn't work.", "err")) }, "Download")));
 
   // ---- the whole page -----------------------------------------------------------------------------------------------------------------------
   function seg(): HTMLElement {
@@ -228,6 +232,7 @@ export function mountSoundcloud(host: HTMLElement, o: ScOptions): ScHandle {
   const stops = [
     watchSongs((l) => { songs = l; render(); }),
     watchMyVotes(me.uid, (v) => { votes = v; render(); }),
+    watchOwnedBeats(me.uid, (l) => { ownedList = l; if (tab === "profile") render(); }),
     onValue(ref(db, "songMeta/lastSweep"), (s) => { lastSweep = Number(s.val()) || 0; if (tab === "charts") render(); }, () => undefined),
   ];
   if (o.speaker) stops.push(watchCdPlayer(o.speaker.roomId, (st) => { spk = isScState(st) && st && !cdEnded(st) ? st : null; cdBusy = !!st && !isScState(st) && !cdEnded(st); render(); }));

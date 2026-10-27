@@ -1,9 +1,11 @@
 import { h, toast } from "./dom";
 import { buyRecordCd } from "../db";
+import { buyBeatShop } from "../beats";
 import { startPayment } from "../api";
-import { BLOOD_ICON, itemDef } from "../items";
+import { BLOOD_ICON, furniIcon, itemDef } from "../items";
 import { itemEntry, onShopConfig } from "../shopConfig";
 import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE } from "../shared/cds";
+import { BEATSHOP_OWNED_KEY, BEATSHOP_PRICE } from "../shared/beats";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
@@ -96,6 +98,26 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
           }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${price}`);
       return row(itemDef(id)!.icon, label, "One song, for blood. One per player.", btn);
     };
+    // the BeatShop machine: a vending machine to sell beats in (one per player)
+    const haveShop = !!me.owned[BEATSHOP_OWNED_KEY];
+    const shopBtn = haveShop
+      ? h("button", { class: "btn small", disabled: true, title: "You have one already." }, "Owned")
+      : h("button", {
+          class: "btn small primary",
+          disabled: me.blood < BEATSHOP_PRICE,
+          title: me.blood < BEATSHOP_PRICE ? `You need ${BEATSHOP_PRICE - me.blood} more drops` : "",
+          onclick: async () => {
+            try {
+              await buyBeatShop(me);
+              ctx.refreshHeader();
+              logAction(me, "buy", `bought the BeatShop for ${BEATSHOP_PRICE}`);
+              playSfx("coins", 0.5);
+              toast("The BeatShop is in your pocket. Put it in your room and sell your beats.");
+              onChange();
+              render();
+            } catch (err) { toast((err as Error).message, "err"); }
+          },
+        }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${BEATSHOP_PRICE}`);
     body.replaceChildren(
       row(freak.icon, "Freakme", "One song, for blood. One per player.", freakBtn),
       bloodCd("cd_blodig", "kravle-blodig oktober"),
@@ -103,6 +125,7 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
       bloodCd("cd_roulette", "yungxware - russisk roulette"),
       bloodCd("cd_dipdip", "lemonade - Dip Dip"),
       row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "en af tre sange fra blodig oktober leaked, du for aldrig den samme cd igen", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
+      row(furniIcon("f_beatshop"), "BeatShop", "A machine to sell your beats in. Put it in your room. One per player.", shopBtn),
       h("div", { class: "hint" }, "Real money is paid on a payment page, and you come back to the game afterwards."));
   }
   render();
