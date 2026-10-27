@@ -19,6 +19,9 @@ interface Acct {
 }
 type Entry = LedgerEntry & { uid: string };
 
+/** the staff and insiders: their blood comes from /giveblud, not from playing, so the overview leaves them out unless you switch them on (every admin and mod counts too) */
+const INSIDERS = new Set(["6ixty", "idontdothose", "lesliecph", "knoglemarv", "adminsidia", "emoney6", "emil"]);
+
 const num = (v: unknown): number => Number(v) || 0;
 const fmt = (n: number): string => Math.round(n).toLocaleString();
 const when = (ts: number): string => new Date(ts).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -48,7 +51,10 @@ function parseAcct(uid: string, v: any): Acct {
  * `readOnly` (the chat mods): only the numbers, no banning, no backups, no rollback.
  */
 export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): () => void {
-  let accts: Acct[] = [];
+  let everyone: Acct[] = [];
+  let accts: Acct[] = []; // (what is shown: everyone, or everyone but the staff and insiders)
+  let staffIds = new Set<string>();
+  let showStaff = false;
   let index: BackupIndexEntry[] = [];
   let bans = new Set<string>();
   let log: RollbackLogEntry[] = [];
@@ -64,16 +70,27 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): 
   const top = h("div", {});
   const accountsHost = h("div", {});
   const lower = h("div", {});
-  el.append(top, h("h3", {}, "Accounts"), h("div", { class: "admin-bar" }, search), accountsHost, lower);
+  const staffBox = h("input", { type: "checkbox", onchange: () => { showStaff = staffBox.checked; applyView(); drawTop(); drawAccounts(); drawLower(); } }) as HTMLInputElement;
+  const staffLabel = h("span", {});
+  el.append(h("label", { class: "hint", style: { display: "flex", gap: "8px", alignItems: "center", margin: "0 0 8px" } }, staffBox, staffLabel), top, h("h3", {}, "Accounts"), h("div", { class: "admin-bar" }, search), accountsHost, lower);
 
-  const names = (): Map<string, string> => new Map(accts.map((a) => [a.uid, a.name]));
+  const isInsider = (a: { uid: string; name: string }): boolean => staffIds.has(a.uid) || INSIDERS.has(a.name.toLowerCase());
+  function applyView(): void {
+    accts = showStaff ? everyone : everyone.filter((a) => !isInsider(a));
+    staffLabel.textContent = `Include staff and insiders (${everyone.length - everyone.filter((a) => !isInsider(a)).length} accounts: their blood comes from /giveblud)`;
+  }
+  const feedView = (): Entry[] => (showStaff ? feed : feed.filter((e) => !staffIds.has(e.uid) && !INSIDERS.has((everyone.find((a) => a.uid === e.uid)?.name ?? "").toLowerCase())));
+  const names = (): Map<string, string> => new Map(everyone.map((a) => [a.uid, a.name]));
   const nameOf = (uid: string): string => names().get(uid) ?? uid.slice(0, 6);
   const total = (): number => accts.reduce((a, x) => a + x.blood, 0);
+  const everybody = (): number => everyone.reduce((a, x) => a + x.blood, 0); // (the backups count everybody, so they are compared with everybody)
 
   async function loadUsers(): Promise<void> {
     const snap = await get(ref(db, "users"));
     const raw = (snap.val() ?? {}) as Record<string, any>;
-    accts = Object.entries(raw).map(([uid, v]) => parseAcct(uid, v)).sort((a, b) => b.blood - a.blood);
+    everyone = Object.entries(raw).map(([uid, v]) => parseAcct(uid, v)).sort((a, b) => b.blood - a.blood);
+    try { staffIds = new Set(Object.keys((await get(ref(db, "roles"))).val() ?? {})); } catch { /* the name list still applies */ }
+    applyView();
   }
   async function loadLedger(buckets: number): Promise<Entry[]> {
     const snap = await get(query(ref(db, "ledger"), orderByKey(), limitToLast(buckets)));
@@ -101,7 +118,7 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): 
   // ---- the numbers at the top ---------------------------------------------------------------------------
   function bars(): HTMLElement {
     const pts = [...index].sort((a, b) => a.at - b.at).map((b) => ({ at: b.at, v: b.totalBlood }));
-    pts.push({ at: Date.now(), v: total() });
+    pts.push({ at: Date.now(), v: everyone.reduce((a, x) => a + x.blood, 0) });
     const max = Math.max(1, ...pts.map((p) => p.v));
     const W = 600, H = 110, gap = 3, bw = Math.max(3, (W - gap * pts.length) / pts.length);
     const NS = "http://www.w3.org/2000/svg";
@@ -126,7 +143,7 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): 
     };
     label(0, "start", `${when(pts[0].at)} · ${fmt(pts[0].v)}`);
     label(W, "end", `now · ${fmt(pts[pts.length - 1].v)}`);
-    return h("div", { class: "panel", style: { padding: "10px 12px" } }, h("div", { class: "hint" }, "Blood in circulation at each backup (grey) and now (red). A sudden jump is worth a look."), svg);
+    return h("div", { class: "panel", style: { padding: "10px 12px" } }, h("div", { class: "hint" }, "Blood in circulation at each backup (grey) and now (red), everybody counted, staff too. A sudden jump is worth a look."), svg);
   }
 
   function sources(): HTMLElement {
@@ -147,7 +164,7 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): 
     };
     return h("div", {},
       h("h3", {}, "Where blood comes from, and where it goes"),
-      h("div", { class: "hint" }, `Counted since tracking started. Tracked: ${fmt(tracked)} now in circulation from tracked changes. The other ${fmt(total() - tracked)} was already there before tracking started.`),
+      h("div", { class: "hint" }, `Counted since tracking started. Tracked: ${fmt(tracked)} now in circulation from tracked changes. The other ${fmt(total() - tracked)} was already there before tracking started.${showStaff ? "" : " Staff and insiders are left out."}`),
       h("div", { style: { display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "8px" } }, table("Earned", earned, "#2f9e5a"), table("Spent or given away", spent, "#b3182b")));
   }
 
@@ -213,7 +230,7 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): 
   async function openRollback(ts: number): Promise<void> {
     let then: Record<string, number> = {};
     try { then = ((await get(ref(db, `backupBlood/${ts}`))).val() ?? {}) as Record<string, number>; } catch { /* the list is just empty */ }
-    const gains = accts.map((a) => ({ uid: a.uid, name: a.name, delta: a.blood - num(then[a.uid]) })).filter((g) => g.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 10);
+    const gains = everyone.map((a) => ({ uid: a.uid, name: a.name, delta: a.blood - num(then[a.uid]) })).filter((g) => g.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 10);
     rb = { ts, gains, ban: new Set(), typed: "" };
     drawLower();
   }
@@ -247,7 +264,7 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): 
   function drawLower(): void {
     if (closed) return;
     const list = [...index].sort((a, b) => b.at - a.at);
-    const recent = feed.slice(0, 60);
+    const recent = feedView().slice(0, 60);
     if (readOnly) {
       lower.replaceChildren(h("h3", {}, "Latest blood changes"), latest(recent));
       return;
@@ -264,7 +281,7 @@ export function mountAdminEconomy(el: HTMLElement, ctx: Ctx, readOnly = false): 
           h("td", {}, h("span", { class: "pill" }, b.kind === "pre-rollback" ? "safety" : b.kind), b.note ? h("div", { class: "hint" }, b.note) : null),
           h("td", {}, fmt(b.accounts)),
           h("td", {}, fmt(b.totalBlood)),
-          h("td", { class: "hint" }, `${total() - b.totalBlood >= 0 ? "+" : ""}${fmt(total() - b.totalBlood)}`),
+          h("td", { class: "hint" }, `${everybody() - b.totalBlood >= 0 ? "+" : ""}${fmt(everybody() - b.totalBlood)}`),
           h("td", {}, h("button", { class: "btn small", disabled: busy, onclick: () => void openRollback(b.at) }, "Roll back…")))) : [h("tr", {}, h("td", { colSpan: 6, class: "hint" }, "No backups yet. The server makes the first one within about 20 minutes of someone playing, or press Back up now."))])))),
       ...(log.length ? [h("h3", {}, "Rollbacks so far"), ...log.map((l) => h("div", { class: "hint" }, `${when(l.at)}: back to ${when(l.to)} · ${fmt(l.users)} accounts, ${fmt(l.rooms)} rooms${l.banned.length ? ` · banned ${l.banned.map(nameOf).join(", ")}` : ""} · safety backup ${when(l.safety)}`))] : []),
       h("h3", {}, "Latest blood changes"),
