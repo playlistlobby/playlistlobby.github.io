@@ -198,7 +198,7 @@ export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: stri
 
   function buyPanel(): HTMLElement {
     const max = Math.min(info.max, me.blood);
-    const slider = h("input", { type: "range", min: String(info.min), max: String(Math.max(info.min, max)), step: String(Math.max(1, info.min >= 1000 ? 50 : 10)), value: String(Math.min(buyIn, Math.max(info.min, max))), class: "pk-slider" }) as HTMLInputElement;
+    const slider = h("input", { type: "range", min: String(info.min), max: String(Math.max(info.min, max)), step: String(Math.max(1, info.min >= 500 ? 50 : 10)), value: String(Math.min(buyIn, Math.max(info.min, max))), class: "pk-slider" }) as HTMLInputElement;
     const num = h("div", { class: "pk-bignum" }, h("img", { src: BLOOD_ICON, alt: "" }), blood(buyIn));
     slider.addEventListener("input", () => { buyIn = Number(slider.value); num.replaceChildren(h("img", { src: BLOOD_ICON, alt: "" }), blood(buyIn)); });
     const short = me.blood < info.min;

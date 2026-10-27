@@ -41,14 +41,18 @@ export function openBlackjack(host: HTMLElement, ctx: Ctx, roomId: string, fid: 
   const actions = h("div", { class: "pk-actions" });
   const bloodEl = h("span", { class: "pk-blood" });
   const leaveBtn = h("button", { class: "pk-leave", onclick: () => void leave() }, "Close");
+  let peeking = false; // the window is slid out of the way so you can look at the room
+  const peekBtn = h("button", { class: "pk-room", title: "Look at the room", onclick: () => setPeek(!peeking) }, "Room");
+  const backBtn = h("button", { class: "pk-back", onclick: () => setPeek(false) }, "Back to the table");
   const chatBox = chat ? mountTableChat(chat) : null;
   const win = h("div", { class: "pk-window bj", role: "dialog", "aria-label": "Blackjack" },
     h("div", { class: "pk-nav" }, leaveBtn,
       h("div", { class: "pk-title" }, h("strong", {}, "Blackjack"), h("span", {}, `Bets ${BJ_BET_MIN}-${BJ_BET_MAX} · Blackjack pays 3 to 2`)),
-      h("div", { class: "pk-pocket" }, h("img", { src: BLOOD_ICON, alt: "" }), bloodEl)),
+      peekBtn, h("div", { class: "pk-pocket" }, h("img", { src: BLOOD_ICON, alt: "" }), bloodEl)),
     felt, chatBox?.el ?? "", actions);
-  const overlay = h("div", { class: "pk-overlay" }, win);
+  const overlay = h("div", { class: "pk-overlay" }, win, backBtn);
   (host.ownerDocument.body ?? host).append(overlay);
+  function setPeek(on: boolean): void { peeking = on; overlay.classList.toggle("peek", on); }
 
   const iDeal = (): boolean => !!t?.dealer && t.dealer.uid === me.uid;
   const mySeat = (): number => (t ? bjSeatOfUid(t, me.uid) : -1);

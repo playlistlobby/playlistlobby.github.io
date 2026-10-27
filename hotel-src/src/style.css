@@ -1228,7 +1228,7 @@ body.greenscreen .side-host, body.greenscreen .room-title, body.greenscreen .onl
 .pk-hint { color: #a9c4b4; font-size: 12.5px; line-height: 1.4; }
 .pk-middle { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: 78%; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
 .pk-board { display: flex; gap: 3px; justify-content: center; }
-.pk-card { width: 45px; height: 69px; image-rendering: pixelated; flex: none; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .45)); }
+.pk-card { width: 45px; height: 69px; image-rendering: auto; flex: none; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .45)); }
 .pk-board .pk-card { width: 42px; height: 64px; }
 .pk-card.slot { filter: none; opacity: .6; }
 .pk-card.deal { animation: pk-deal .42s cubic-bezier(.2, .8, .3, 1) both; }

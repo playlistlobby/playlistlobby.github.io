@@ -19,6 +19,8 @@ export const FAIR_GAME_UIDS: readonly string[] = ["QDcmwHxm7BbRcJ0AgKNX53pyArv2"
 export const HIT_ONLINE_MAX = 40;
 /** a player is online when their presence was seen this recently (ms) */
 export const HIT_ONLINE_FRESH_MS = 3 * 60_000;
+/** the two chairs at the roulette table in the basement: whoever sits there (or plays) can not be shot */
+export const ROULETTE_CHAIRS: ReadonlyArray<{ x: number; y: number }> = [{ x: 0, y: 15 }, { x: 0, y: 18 }];
 /** how far away (in tiles) somebody can be shot */
 export const SHOT_RANGE = 8;
 

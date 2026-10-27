@@ -72,8 +72,8 @@ export const HIDEOUT_SHOP: HideoutShopItem[] = [
   { kind: "waterer", label: "Automatic plant waterer", price: 250, etaMs: HIDEOUT_FAST_MS, blurb: "A plant never needs water again." },
   { kind: "mixerchip", label: "Mixer upgrade", price: 400, etaMs: HIDEOUT_FAST_MS, blurb: "Mixes 15% faster." },
   { kind: "mixerchip2", label: "Mixer upgrade MK2", price: 800, etaMs: HIDEOUT_FAST_MS, blurb: "Mixes 25% faster." },
-  { kind: "f_pokertable", label: "Poker table", price: 1000, etaMs: HIDEOUT_ORDER_MS, blurb: "Poker for five. Buy in 200-500." },
-  { kind: "f_pokertablehi", label: "High stakes poker table", price: 4000, etaMs: 2 * HIDEOUT_ORDER_MS, blurb: "Poker for five. Buy in 1000-2000." },
+  { kind: "f_pokertable", label: "Poker table", price: 1000, etaMs: HIDEOUT_ORDER_MS, blurb: "Poker for five. Buy in 25-300." },
+  { kind: "f_pokertablehi", label: "High stakes poker table", price: 4000, etaMs: 2 * HIDEOUT_ORDER_MS, blurb: "Poker for five. Buy in 500-2000." },
   { kind: "f_blackjacktable", label: "Blackjack table", price: 500, steps: [500, 1000, 2000], etaMs: HIDEOUT_ORDER_MS, blurb: "Blackjack for five. A member deals." },
 ];
 /** what one of them costs when the hideout has already bought `bought` of that kind */

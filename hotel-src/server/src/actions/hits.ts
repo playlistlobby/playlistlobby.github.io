@@ -6,7 +6,7 @@ import { Ctx, fail } from "../ctx";
 import { findSlot } from "../../../src/shared/items";
 import { takeQtyFrom } from "../../../src/shared/economy";
 import { isHideoutId } from "../../../src/shared/hideout";
-import { FAIR_GAME_UIDS, HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_ONLINE_FRESH_MS, HIT_ONLINE_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
+import { FAIR_GAME_UIDS, ROULETTE_CHAIRS, HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_ONLINE_FRESH_MS, HIT_ONLINE_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
 import { bloodPile } from "./floor";
 import { roleOf } from "./mod";
 
@@ -16,6 +16,14 @@ const ROOM_RE = /^[A-Za-z0-9_-]{1,60}$/;
 export async function isProtected(c: Ctx, uid: string): Promise<boolean> {
   if (FAIR_GAME_UIDS.includes(uid)) return false;
   return !!(await roleOf(c, uid));
+}
+
+/** somebody sitting at the roulette table (in a chair, or in a game) can not be shot or rocketed */
+async function atRoulette(c: Ctx, room: string, target: string, theirs: { x?: number; y?: number; sit?: boolean }): Promise<boolean> {
+  if (room !== "lobby") return false;
+  if (theirs.sit === true && ROULETTE_CHAIRS.some((ch) => ch.x === theirs.x && ch.y === theirs.y)) return true;
+  const game = await c.db.get<{ a?: { uid?: string }; b?: { uid?: string } }>("rooms/lobby/roulette");
+  return game?.a?.uid === target || game?.b?.uid === target;
 }
 
 /**
@@ -98,8 +106,9 @@ export const gunShoot: Action = {
     if (target === c.uid) fail("You can't shoot yourself.");
     const room = text(a.room, ROOM_RE, "room");
     const me = await requireInRoom(c, room);
-    const theirs = await c.db.get<{ x?: number; y?: number }>(`rooms/${room}/players/${target}`);
+    const theirs = await c.db.get<{ x?: number; y?: number; sit?: boolean }>(`rooms/${room}/players/${target}`);
     if (!theirs) fail("They've left the room.");
+    if (await atRoulette(c, room, target, theirs!)) fail("They are at the roulette table: you can't shoot them there.");
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > SHOT_RANGE) fail("They're too far away.");
     const name = String((await c.db.get<string>(`profiles/${target}/name`)) ?? "");
     if (!name) fail("They aren't a player.");
@@ -148,8 +157,9 @@ export const rocketFire: Action = {
       const mins = Math.ceil((ROCKET_COOLDOWN_MS - (c.now - last)) / 60000);
       fail(`Reloading: ${mins} more minute${mins === 1 ? "" : "s"}.`);
     }
-    const theirs = await c.db.get<{ x?: number; y?: number }>(`rooms/${room}/players/${target}`);
+    const theirs = await c.db.get<{ x?: number; y?: number; sit?: boolean }>(`rooms/${room}/players/${target}`);
     if (!theirs) fail("They've left the room.");
+    if (await atRoulette(c, room, target, theirs!)) fail("They are at the roulette table: you can't shoot them there.");
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > SHOT_RANGE) fail("They're too far away.");
     const name = String((await c.db.get<string>(`profiles/${target}/name`)) ?? "");
     if (!name) fail("They aren't a player.");

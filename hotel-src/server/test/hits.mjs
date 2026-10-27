@@ -136,6 +136,16 @@ await stand(guard, "lobby", 5, 6);
 bad("an admin is protected", await shoot(guard));
 await owner("DELETE", `rooms/lobby/players/${guard.uid}`);
 bad("somebody who isn't here", await shoot(stranger));
+{ // somebody in a chair at the roulette table can not be shot (and neither can a player in a game)
+  await owner("PUT", `rooms/lobby/players/${rich.uid}`, { name: rich.name, figure: "x", x: 0, y: 15, dir: 4, sit: true });
+  const r1 = await shoot(rich);
+  check("not in the roulette chair", r1.ok === false && /roulette/i.test(r1.error ?? ""), JSON.stringify(r1));
+  await stand(rich, "lobby", 5, 5);
+  await owner("PUT", "rooms/lobby/roulette", { status: "playing", stake: 50, a: { uid: rich.uid, name: rich.name, seat: 0 }, b: { uid: "someoneelse", name: "x", seat: 1 }, at: Date.now(), shots: 0, seq: 1 });
+  const r2 = await shoot(rich);
+  check("nor in a roulette game", r2.ok === false && /roulette/i.test(r2.error ?? ""), JSON.stringify(r2));
+  await owner("DELETE", "rooms/lobby/roulette");
+}
 await stand(small, "lobby", 5, 20);
 bad("too far away", await shoot(small));
 await stand(small, "lobby", 5, 6);

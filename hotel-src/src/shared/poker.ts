@@ -5,10 +5,10 @@
 export const POKER_SEATS = 5;
 export type PokerKind = "std" | "hi";
 export interface PokerKindInfo { label: string; min: number; max: number; sb: number; bb: number }
-/** the two tables: the normal one (buy in for 200 to 500, blinds 5/10: 20 to 50 big blinds) and the high stakes one (1000 to 2000, blinds 20/40: 25 to 50 big blinds) */
+/** the two tables: the normal one (buy in for 25 to 300, blinds 5/10: 2.5 to 30 big blinds) and the high stakes one (500 to 2000, blinds 20/40: 12.5 to 50 big blinds) */
 export const POKER_KINDS: Record<PokerKind, PokerKindInfo> = {
-  std: { label: "Poker table", min: 200, max: 500, sb: 5, bb: 10 },
-  hi: { label: "High stakes poker table", min: 1000, max: 2000, sb: 20, bb: 40 },
+  std: { label: "Poker table", min: 25, max: 300, sb: 5, bb: 10 },
+  hi: { label: "High stakes poker table", min: 500, max: 2000, sb: 20, bb: 40 },
 };
 /** the furniture piece (kind id) that is a poker table, and which one */
 export const pokerKindOf = (furniKind: string | undefined): PokerKind | null => (furniKind === "f_pokertable" ? "std" : furniKind === "f_pokertablehi" ? "hi" : null);

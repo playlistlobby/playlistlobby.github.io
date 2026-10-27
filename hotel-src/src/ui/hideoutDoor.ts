@@ -46,18 +46,19 @@ export function openHideoutDoor(host: HTMLElement, ctx: Ctx, onClose: () => void
     const now = Date.now();
     // an account that may enter any hideout also gets the ones that are not on the list (open to it: it just walks in), in the same list with the same tabs
     const unlisted = me.enterAnywhere ? everyHideout.filter((x) => x.owner !== me.uid && !list.some((l) => l.owner === x.owner)).map((x) => ({ owner: x.owner, listing: { name: x.name, desc: "not on the list", ownerName: x.ownerName, members: x.members, boostUntil: 0, open: true } as HideoutListing })) : [];
-    const others = [...list, ...unlisted].filter((l) => l.owner !== me.uid && !mine.some((m) => m.owner === l.owner));
+    const others = [...list, ...unlisted].filter((l) => l.owner === me.uid || !mine.some((m) => m.owner === l.owner)); // (your own listed hideout is in the tabs too, so you can see that it is boosted)
     const boosted = sortListings(others.filter((l) => l.listing.boostUntil > now), now);
     const plain = sortListings(others.filter((l) => !(l.listing.boostUntil > now)), now);
     const favRows = sortListings(others.filter((l) => favs.has(l.owner)), now);
     const rowFor = (o: { owner: string; listing: HideoutListing }): HTMLElement => {
       const fav = favs.has(o.owner);
       const n = o.listing.favs ?? 0;
+      const yours = o.owner === me.uid;
       return h("div", { class: "door-row" },
-        h("button", { class: "btn small door-star" + (fav ? " on" : ""), title: fav ? "Take it off your favourites" : "Add it to your favourites", "aria-label": "Favourite", onclick: () => void hideoutFavorite(me, o.owner).catch((e) => toast((e as Error).message, "err")) }, fav ? "★" : "☆"),
+        yours ? "" : h("button", { class: "btn small door-star" + (fav ? " on" : ""), title: fav ? "Take it off your favourites" : "Add it to your favourites", "aria-label": "Favourite", onclick: () => void hideoutFavorite(me, o.owner).catch((e) => toast((e as Error).message, "err")) }, fav ? "★" : "☆"),
         h("div", { class: "door-row-main" },
           h("div", { class: "door-row-name" }, `${o.listing.boostUntil > now ? "🔥 " : ""}${o.listing.name}`),
-          h("div", { class: "hint" }, `${o.listing.ownerName} · ${o.listing.members} member${o.listing.members === 1 ? "" : "s"}${n ? ` · ★ ${n}` : ""}${o.listing.desc ? ` · ${o.listing.desc}` : ""}`)),
+          h("div", { class: "hint" }, `${yours ? "Yours" : o.listing.ownerName} · ${o.listing.members} member${o.listing.members === 1 ? "" : "s"}${n ? ` · ★ ${n}` : ""}${o.listing.desc ? ` · ${o.listing.desc}` : ""}`)),
         o.listing.open
           ? h("button", { class: "btn small primary", onclick: () => { playSfx("select", 0.5); close(); ctx.navigate("room", { roomId: `h_${o.owner}`, from: LOBBY_ID }); } }, "Enter")
           : knocking?.owner === o.owner
