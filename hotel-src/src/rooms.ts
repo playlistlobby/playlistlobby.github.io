@@ -104,6 +104,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   sprinkler: { id: "sprinkler", label: "Automatic waterer", icon: "💦", w: 1, h: 1, height: 36, color: "#9fd4ff", placeable: false, nitro: "furni/sprinkler.nitro", rotatable: true, flat: true },
   // the hideout's shared stash: a chest every member can put things in and take things out of
   hchest: { id: "hchest", label: "Shared stash", icon: "🧰", w: 1, h: 1, height: 36, color: "#8a6a3a", placeable: false, nitro: "furni/stashbox.nitro", rotatable: true, fixed: true, opens: "chest" },
+  f_mixer_up2: { id: "f_mixer_up2", label: "Mixer (MK2)", icon: "🧪", w: 1, h: 1, height: 46, color: "#3a3d44", placeable: false, nitro: "derived:mixer_up2", rotatable: true, opens: "mixer" },
   f_mixer_up: { id: "f_mixer_up", label: "Mixer (upgraded)", icon: "🧪", w: 1, h: 1, height: 46, color: "#4f8a5a", placeable: false, nitro: "derived:mixer_up", rotatable: true, opens: "mixer" },
   f_mixer: { id: "f_mixer", label: "Mixer", icon: "🧪", w: 1, h: 1, height: 46, color: "#6b6b7a", placeable: false, nitro: "furni/f_mixer.nitro", rotatable: true, opens: "mixer" },
   // the vending machine in the shop room
@@ -198,7 +199,7 @@ export interface PlacedFurni {
   /** a growing kit with a seed in it (server times, ms): planted, last watered, and whether it ever ran dry */
   plant?: { at: number; water: number; neglect: boolean; /** what grows in it: weed (nothing) or shrooms */ crop?: string; /** an automatic waterer sits on the pot: it never needs water */ auto?: boolean };
   /** the pot has an automatic waterer, the mixer an upgrade chip (set by the server) */
-  auto?: boolean; up?: boolean;
+  auto?: boolean; up?: number;
   /** which look or animation a multi-state piece is in (its animation number); empty = the piece's default */
   st?: number;
   /** a mixer with a batch in it (server times, ms): when it is done and how long it takes */
@@ -460,7 +461,7 @@ export interface RoomMeta {
   bought?: Record<string, number>;
   computer?: { x: number; y: number; dir?: number };
   theme?: Partial<RoomTheme>;
-  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string; auto?: boolean; up?: boolean; img?: string; mixJob?: { doneAt?: number; ms?: number; item?: string }; st?: number }>;
+  furni?: Record<string, { kind: string; x: number; y: number; dir?: number; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string; auto?: boolean; up?: boolean | number; img?: string; mixJob?: { doneAt?: number; ms?: number; item?: string }; st?: number }>;
   /** where the owner moved the fixed pieces to (the bed can't be turned, so only its x/y count) */
   bed?: { x: number; y: number; dir?: number };
   bag?: { x: number; y: number; dir?: number };
@@ -489,7 +490,7 @@ function hideoutDef(id: string, meta: RoomMeta): RoomDef {
   const theme: RoomTheme = { ...GRIME_THEME, ...(oldDefault ? {} : stored) };
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
-    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof (f as any).by === "string" ? { by: (f as any).by as string } : {}), ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}), ...(f.auto ? { auto: true } : {}) } } : {}), ...(f.auto ? { auto: true } : {}), ...(f.up ? { up: true } : {}) }));
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof (f as any).by === "string" ? { by: (f as any).by as string } : {}), ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}), ...(f.auto ? { auto: true } : {}) } } : {}), ...(f.auto ? { auto: true } : {}), ...(f.up ? { up: f.up === 2 ? 2 : 1 } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
   const toolbox = at(meta.toolbox, { x: 6, y: 0, dir: 2 }), sink = at(meta.sink, { x: 0, y: 7, dir: 2 }), boombox = at(meta.boombox, { x: 0, y: 3, dir: 2 }), computer = at(meta.computer, { x: 4, y: 0, dir: 2 }), chest = at(meta.chest, { x: 8, y: 0, dir: 2 });
   furni.unshift({ id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, { id: COMPUTER_ID, kind: "hcomputer", x: computer.x, y: computer.y, dir: computer.dir }, { id: SINK_ID, kind: "sink", x: sink.x, y: sink.y, dir: sink.dir }, { id: CHEST_ID, kind: "hchest", x: chest.x, y: chest.y, dir: chest.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]));
@@ -510,7 +511,7 @@ export function defFromMeta(id: string, meta: RoomMeta): RoomDef {
   // furniture of kinds that no longer exist (the old test cubes) is ignored; the bed is always there
   const furni: PlacedFurni[] = Object.entries(meta.furni ?? {})
     .filter(([, f]) => FURNI_KINDS[f.kind] && !FURNI_KINDS[f.kind].fixed)
-    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}), ...(f.auto ? { auto: true } : {}) } } : {}), ...(f.auto ? { auto: true } : {}), ...(f.up ? { up: true } : {}) }));
+    .map(([fid, f]) => ({ id: fid, kind: f.kind, x: f.x, y: f.y, dir: f.dir, ...(typeof f.img === "string" ? { img: f.img } : {}), ...(typeof f.st === "number" ? { st: f.st } : {}), ...(typeof f.mixJob?.doneAt === "number" ? { mix: { doneAt: f.mixJob.doneAt, ms: Number(f.mixJob.ms) || 600_000, ...(typeof f.mixJob.item === "string" ? { item: f.mixJob.item } : {}) } } : {}), ...(typeof f.plantedAt === "number" ? { plant: { at: f.plantedAt, water: typeof f.wateredAt === "number" ? f.wateredAt : f.plantedAt, neglect: !!f.neglect, ...(f.crop ? { crop: f.crop } : {}), ...(f.auto ? { auto: true } : {}) } } : {}), ...(f.auto ? { auto: true } : {}), ...(f.up ? { up: f.up === 2 ? 2 : 1 } : {}) }));
   const at = (m: { x: number; y: number; dir?: number } | undefined, d: { x: number; y: number; dir: number }) => (m && Number.isFinite(m.x) && Number.isFinite(m.y) ? { x: m.x, y: m.y, dir: m.dir ?? d.dir } : d);
   const bed = at(meta.bed, BED), bag = at(meta.bag, BAG), toolbox = at(meta.toolbox, TOOLBOX), sink = at(meta.sink, SINK), boombox = at(meta.boombox, BOOMBOX);
   furni.unshift({ id: BED_ID, kind: skinKind("bed", meta.skins?.bed), x: bed.x, y: bed.y, dir: BED.dir }, { id: BAG_ID, kind: skinKind("bag", meta.skins?.bag), x: bag.x, y: bag.y, dir: bag.dir }, { id: TOOLBOX_ID, kind: "toolbox", x: toolbox.x, y: toolbox.y, dir: toolbox.dir }, ...(meta.boombox?.gone ? [] : [{ id: BOOMBOX_ID, kind: "boombox", x: boombox.x, y: boombox.y, dir: boombox.dir }]), ...(meta.stashbox && Number.isFinite(meta.stashbox.x) && Number.isFinite(meta.stashbox.y) ? [{ id: STASH_ID, kind: "stashbox", x: meta.stashbox.x, y: meta.stashbox.y, dir: meta.stashbox.dir ?? 2 }] : []));

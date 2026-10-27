@@ -1703,11 +1703,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         playSfx("select", 0.4);
         return say("You fill the watering can.");
       }
-      if (f.kind === "f_mixer" && held?.item === "mixerchip") {
+      if (f.kind === "f_mixer" && (held?.item === "mixerchip" || held?.item === "mixerchip2")) {
         if (!isHome) return say("That's not your mixer.", "warn");
+        const mk2 = held.item === "mixerchip2";
         await attachUpgrade(me, roomId, f.id, slot!);
         panel.refresh(); playSfx("select", 0.4);
-        return say("The chip clicks in. This mixer mixes 25% faster now, and has turned green.");
+        return say(mk2 ? "The MK2 clicks in. This mixer mixes 25% faster now, and has turned dark grey." : "The chip clicks in. This mixer mixes 15% faster now, and has turned green.");
       }
       if (!k?.plant) return;
       if (!isHome) return say("That's not your plant.", "warn");
@@ -4013,11 +4014,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   /** A growing kit: an empty pot; once planted the plant is revealed from the bottom up as it grows, with a growth bar and a water bar over it. */
   /** A mixer with a batch in it: it shakes a little while it works and shows a progress bar like the growing kit, then "ready!" until you collect. */
-  function drawMixing(f: { id?: string; kind: string; x: number; y: number; dir?: number; up?: boolean; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
+  function drawMixing(f: { id?: string; kind: string; x: number; y: number; dir?: number; up?: number; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
     const mix = f.mix!;
     const left = mix.doneAt - serverNow();
     const done = left <= 0;
-    const speed = f.up ? 1.6 : 1; // (a mixer with a chip works faster: it shakes faster too)
+    const speed = f.up === 2 ? 1.7 : f.up ? 1.35 : 1; // (an upgraded mixer works faster: it shakes faster too)
     const shake = done ? 0 : Math.sin((now * speed) / 40) * 0.7 * scale;
     g.save();
     g.translate(shake, done ? 0 : Math.sin((now * speed) / 53) * 0.3 * scale);
@@ -4511,8 +4512,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return { id: "", ...b, y0: hot ? b.y0 - 40 * scale : b.y0, depth: f.x + f.y };
   }
 
-  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number; auto?: boolean; up?: boolean; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
-    if (f.up && f.kind === "f_mixer") f = { ...f, kind: "f_mixer_up" }; // (a mixer with a chip is drawn green)
+  function drawFurni(f: { id?: string; kind: string; x: number; y: number; dir?: number; st?: number; auto?: boolean; up?: number; plant?: { at: number; water: number; neglect: boolean; crop?: string }; mix?: { doneAt: number; ms: number } }, now: number): Hitbox | null {
+    if (f.up && f.kind === "f_mixer") f = { ...f, kind: f.up === 2 ? "f_mixer_up2" : "f_mixer_up" }; // (an upgraded mixer is drawn green, the MK2 dark grey)
     const k = FURNI_KINDS[f.kind];
     if (k.opens === "mixer" && f.mix) return drawMixing(f, now);
     if (k.plant) {

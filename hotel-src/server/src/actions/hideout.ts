@@ -414,7 +414,7 @@ export const attachUpgrade: Action = {
     const room = await requireWorkRoom(c, a.room);
     const id = text(a.fid, ID_RE, "piece");
     const path = `roomsMeta/${room}/furni/${id}`;
-    const row = await c.db.get<{ kind?: string; auto?: boolean; up?: boolean }>(path);
+    const row = await c.db.get<{ kind?: string; auto?: boolean; up?: boolean | number }>(path);
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     const item = w.s.inventory[slot]?.item;
@@ -422,10 +422,12 @@ export const attachUpgrade: Action = {
       if (row?.kind !== "f_planter") fail("An automatic waterer goes on a growing kit.");
       if (row!.auto) fail("There's a waterer on it already.");
       c.extra[`${path}/auto`] = true;
-    } else if (item === "mixerchip") {
+    } else if (item === "mixerchip" || item === "mixerchip2") {
       if (row?.kind !== "f_mixer") fail("The chip goes in a mixer.");
-      if (row!.up) fail("That mixer has a chip already.");
-      c.extra[`${path}/up`] = true;
+      const level = item === "mixerchip2" ? 2 : 1;
+      const have = row!.up === 2 ? 2 : row!.up ? 1 : 0;
+      if (have >= level) fail(have === 2 ? "That mixer has the MK2 already." : "That mixer has an upgrade already.");
+      c.extra[`${path}/up`] = level; // (the MK2 goes over the first upgrade: that one is lost)
     } else fail("That doesn't go on anything.");
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1);
     c.note = String(item);

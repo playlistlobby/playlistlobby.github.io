@@ -4,9 +4,9 @@ import { Action, ID_RE, int, requireWorkRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, MIX_MS, takeOneFrom } from "../../../src/shared/economy";
 import { mixRecipe } from "../../../src/shared/items";
-import { MIXER_UP_FACTOR } from "../../../src/shared/hideout";
+import { mixerFactor } from "../../../src/shared/hideout";
 
-interface MixerRow { kind?: string; up?: boolean; mixJob?: { item: string; qty: number; doneAt: number; ms?: number } }
+interface MixerRow { kind?: string; up?: boolean | number; mixJob?: { item: string; qty: number; doneAt: number; ms?: number } }
 async function mixer(c: Ctx, fid: unknown, want?: unknown): Promise<{ path: string; row: MixerRow }> {
   const room = await requireWorkRoom(c, want); // (your own room, or a hideout you are in: every member may use its mixers)
   const id = text(fid, ID_RE, "mixer");
@@ -32,7 +32,7 @@ export const mix: Action = {
     next = takeOneFrom(next, ib);
     if (r!.back) { const withBack = addToInv(next, r!.back); if (!withBack) fail("Your inventory is full."); next = withBack!; } // (the emptied can: its old slot is free)
     w.s.inventory = next;
-    const ms = Math.round((r!.ms ?? MIX_MS) * (row.up ? MIXER_UP_FACTOR : 1)); // 10 to 30 minutes: the dearer the result, the longer (a mixer with a chip: 25% faster)
+    const ms = Math.round((r!.ms ?? MIX_MS) * mixerFactor(row.up)); // 10 to 30 minutes: the dearer the result, the longer (the upgrade: 15% faster, the MK2: 25%)
     c.extra[`${path}/mixJob`] = { item: r!.give.item, qty: r!.give.qty, doneAt: c.now + ms, ms };
     return { note: `The mixer starts up. It needs ${Math.round(ms / 60_000)} minutes.`, doneAt: c.now + ms };
   },

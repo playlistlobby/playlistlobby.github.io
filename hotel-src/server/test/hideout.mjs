@@ -221,7 +221,7 @@ ok("the waterer goes on the pot", await act(bo, "attachUpgrade", { room: HR(boss
 check("the pot is automatic", (await owner("GET", `roomsMeta/${HR(boss)}/furni/${kit}/auto`)) === true);
 bad("not twice", await act(bo, "attachUpgrade", { room: HR(boss), fid: kit, slot: slotOf(await state(bo), "waterer") }));
 ok("the chip goes in the mixer", await act(bo, "attachUpgrade", { room: HR(boss), fid: mx, slot: slotOf(await state(bo), "mixerchip") }));
-check("the mixer is upgraded", (await owner("GET", `roomsMeta/${HR(boss)}/furni/${mx}/up`)) === true);
+check("the mixer is upgraded", (await owner("GET", `roomsMeta/${HR(boss)}/furni/${mx}/up`)) === 1);
 bad("not twice", await act(bo, "attachUpgrade", { room: HR(boss), fid: mx, slot: slotOf(await state(bo), "mixerchip") }));
 await owner("PUT", `users/${bo.uid}/inventory/21`, { item: "weedseed", qty: 1 });
 ok("plant in the automatic pot", await act(bo, "plant", { room: HR(boss), fid: kit, slot: slotOf(await state(bo), "weedseed") }));
@@ -233,7 +233,17 @@ check("it is not ass", total(hv2.state.inventory, "weed") >= 1 && !hv2.state.inv
 const st2 = await state(bo);
 ok("a mix in the upgraded mixer", await act(bo, "mix", { room: HR(boss), fid: mx, a: slotOf(st2, "weed"), b: slotOf(st2, "cigarette") }));
 const job = await owner("GET", `roomsMeta/${HR(boss)}/furni/${mx}/mixJob`);
-check("25% faster: 7.5 to 22.5 minutes", job && job.doneAt - Date.now() <= 22.6 * 60_000 && job.doneAt - Date.now() >= 7 * 60_000, JSON.stringify(job));
+check("the first upgrade: 15% faster (8.5 to 25.5 minutes)", job && job.doneAt - Date.now() <= 25.6 * 60_000 && job.doneAt - Date.now() >= 8 * 60_000, JSON.stringify(job));
+await owner("PUT", `users/${bo.uid}/inventory/22`, { item: "mixerchip2", qty: 2 });
+ok("the MK2 goes over it", await act(bo, "attachUpgrade", { room: HR(boss), fid: mx, slot: 22 }));
+check("the mixer is level 2", (await owner("GET", `roomsMeta/${HR(boss)}/furni/${mx}/up`)) === 2);
+bad("not twice", await act(bo, "attachUpgrade", { room: HR(boss), fid: mx, slot: 22 }));
+await owner("DELETE", `roomsMeta/${HR(boss)}/furni/${mx}/mixJob`);
+await owner("PUT", `users/${bo.uid}/inventory/23`, { item: "weed", qty: 1 }); await owner("PUT", `users/${bo.uid}/inventory/24`, { item: "cigarette", qty: 1 });
+const st3 = await state(bo);
+ok("a mix in the MK2 mixer", await act(bo, "mix", { room: HR(boss), fid: mx, a: slotOf(st3, "weed"), b: slotOf(st3, "cigarette") }));
+const job2 = await owner("GET", `roomsMeta/${HR(boss)}/furni/${mx}/mixJob`);
+check("25% faster (7.5 to 22.5 minutes)", job2 && job2.doneAt - Date.now() <= 22.6 * 60_000 && job2.doneAt - Date.now() >= 7 * 60_000, JSON.stringify(job2));
 
 console.log("--- the sink: basement and hideouts, not player rooms");
 await owner("PUT", `users/${boss.uid}/inventory/22`, { item: "wateringcan", qty: 1 });

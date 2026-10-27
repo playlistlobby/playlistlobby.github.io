@@ -459,7 +459,8 @@ export function furniIcon(kind: string): string {
 
 // the things the hideout computer sells (see shared/hideout.ts): put on a growing kit / a mixer
 ITEMS.waterer = { id: "waterer", name: "Automatic plant waterer", examine: "A sprinkler. Tap it, then tap a growing kit: that plant never needs water again.", icon: assetUrl("items/waterer.png"), useOnObject: "f_planter" };
-ITEMS.mixerchip = { id: "mixerchip", name: "Mixer upgrade chip", examine: "A chip for a mixer. Tap it, then tap a mixer: it mixes 25% faster from then on (and turns green).", icon: assetUrl("items/mixerchip.png"), useOnObject: "f_mixer" };
+ITEMS.mixerchip = { id: "mixerchip", name: "Mixer upgrade", examine: "A chip for a mixer. Tap it, then tap a mixer: it mixes 15% faster from then on (and turns green).", icon: assetUrl("items/mixerchip.png"), useOnObject: "f_mixer" };
+ITEMS.mixerchip2 = { id: "mixerchip2", name: "Mixer upgrade MK2", examine: "The better chip for a mixer. Tap it, then tap a mixer: it mixes 25% faster from then on (and turns dark grey).", icon: assetUrl("items/mixerchip2.png"), useOnObject: "f_mixer" };
 
 // the knife skin from the mystery boxes: it stands in for the plain knife in the pocket (the plain one is hidden while you have it), works exactly like it,
 // and can be traded, given or stored: the plain knife is still there afterwards
