@@ -3372,6 +3372,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (me.chemUntil > serverNow()) mineP.chem = me.chemUntil;
     if (burning) { mineP.smoke = burning; mineP.smokeKind = SMOKABLE[burningItem!.item].kind; }
     void onDisconnect(myRef).remove();
+    if (frozen) { // as 6ixty (or the landlord) you are locked facing the way he faces: nothing you do in the room (a shot, a tap, a gesture) turns you
+      const lockedDir = startDir;
+      const pin = window.setInterval(() => {
+        const mp = mine();
+        if (disposed || !mp || mp.dir === lockedDir) return;
+        mp.dir = lockedDir;
+        update(myRef, { dir: lockedDir }).catch(() => undefined);
+      }, 250);
+      unsubs.push(() => window.clearInterval(pin));
+    }
     set(myRef, { name: shownName, figure: shownFigure(), ...(me.nameColor ? { nc: me.nameColor } : {}), x: sleepingIn ? headTile().x : spawn.x, y: sleepingIn ? headTile().y : spawn.y, dir: startDir, ts: serverTimestamp(), ...(sleepingIn ? { bed: true } : {}), ...(burning ? { smoke: burning, smokeKind: SMOKABLE[burningItem!.item].kind } : {}), ...(mineP.fast ? { fast: mineP.fast, fastMult: me.speedMult } : {}), ...(mineP.cup ? { cup: mineP.cup } : {}), ...(mineP.spin ? { spin: mineP.spin } : {}), ...(mineP.chem ? { chem: mineP.chem } : {}), ...(asSixty ? { sixty: true } : {}) }).catch(() => kicked("You can't be in that room."));
     { const un0 = unusualNow(); if (un0) { mineP.un = un0; void update(myRef, { un: un0 }).catch(() => undefined); } }
     unsubs.push(onMyUnusual((id) => { const mp = mine(); if (mp) mp.un = id ?? undefined; if (started) void update(myRef, { un: id ?? null }).catch(() => undefined); }));
