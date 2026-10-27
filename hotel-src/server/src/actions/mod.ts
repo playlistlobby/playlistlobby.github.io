@@ -72,6 +72,16 @@ export const modMute: Action = {
 /** may the caller ban for good? (the admin, and a mod who was given perks/<uid>/banForever) */
 const mayBanForever = async (c: Ctx): Promise<boolean> => c.isAdmin || (await c.db.get(`perks/${c.uid}/banForever`)) === true;
 
+/** Takes somebody out of the room they stand in right away (everybody sees them leave), and tells their browser to log out (a kick row: see watchKick in src/notices.ts). */
+async function throwOut(c: Ctx, uid: string, reason: string): Promise<void> {
+  const room = await c.db.get<string>(`presence/${uid}/room`);
+  if (typeof room === "string" && /^[A-Za-z0-9_-]{1,60}$/.test(room)) {
+    c.extra[`rooms/${room}/players/${uid}`] = null;
+    c.extra[`presence/${uid}/room`] = null;
+  }
+  c.extra[`kicks/${uid}`] = { at: c.now, by: c.uid, ...(reason ? { reason } : {}) };
+}
+
 /** one ban (a mod: 30 minutes; the admin, or a mod with the banForever perk: for good unless `minutes`), used by modBan and modBanMany */
 async function banOne(c: Ctx, uid: string, a: { minutes?: unknown; reason?: unknown }): Promise<{ until?: number }> {
   const name = await mayAct(c, uid);
@@ -79,6 +89,7 @@ async function banOne(c: Ctx, uid: string, a: { minutes?: unknown; reason?: unkn
   const until = minutes ? c.now + minutes * 60000 : undefined;
   c.extra[`bans/${uid}`] = { at: c.now, by: c.uid, ...(until ? { until } : {}), ...(reasonOf(a) ? { reason: reasonOf(a) } : {}) };
   await note(c, "ban", uid, name, `${minutes ? minutes + " min" : "for good"}${reasonOf(a) ? ": " + reasonOf(a) : ""}`);
+  await throwOut(c, uid, reasonOf(a)); // (a ban takes them out of the room at once, not only the next time they do something)
   return { until };
 }
 
@@ -209,7 +220,7 @@ export const modKick: Action = {
     needMod(c);
     const uid = text(a.uid, UID_RE, "player");
     const name = await mayAct(c, uid);
-    c.extra[`kicks/${uid}`] = { at: c.now, by: c.uid, ...(reasonOf(a) ? { reason: reasonOf(a) } : {}) };
+    await throwOut(c, uid, reasonOf(a));
     await note(c, "kick", uid, name, reasonOf(a));
     return { ok: true };
   },
