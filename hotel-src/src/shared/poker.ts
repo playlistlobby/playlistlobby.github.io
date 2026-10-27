@@ -221,7 +221,7 @@ export function nextStreet(t: PokerTable, ctx: PokerCtx): void {
   t.street = (t.street + 1) as 1 | 2 | 3;
   const n = t.street === 1 ? 3 : 1;
   for (let k = 0; k < n; k++) t.board.push(ctx.deck.pop()!);
-  for (const s of t.seats) if (s) { s.bet = 0; s.acted = false; if (s.last && !s.last.startsWith("All")) s.last = undefined; }
+  for (const s of t.seats) if (s) { s.bet = 0; s.acted = false; if (s.last && !s.allin) s.last = undefined; }
   t.bet = 0; t.minRaise = POKER_KINDS[t.kind].bb; t.seq++;
   const actors = t.seats.filter((s): s is PokerSeat => canAct(s));
   if (actors.length < 2) { t.turn = -1; t.nextAt = ctx.now + POKER_RUNOUT_MS; return; } // everybody is (nearly) all in: the cards come by themselves

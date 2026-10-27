@@ -11753,5 +11753,770 @@
   "en": "Every hideout",
   "da": "Alle skjulesteder",
   "where": "src/ui/hideoutDoor.ts"
+ },
+ "N1820": {
+  "en": "Hitman",
+  "da": "Lejemorder",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1821": {
+  "en": "Hideout shop",
+  "da": "Skjulestedets butik",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1822": {
+  "en": "What you order arrives later: collect it under Orders.",
+  "da": "Det du bestiller kommer senere: hent det under Ordrer.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1823": {
+  "en": "Arrives in {minText}{…}",
+  "da": "Kommer om {minText}{…}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1824": {
+  "en": "· {w} × {h} tiles",
+  "da": "· {w} × {h} felter",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1825": {
+  "en": "{label} ordered. It arrives in {minText}.",
+  "da": "{label} bestilt. Den kommer om {minText}.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1826": {
+  "en": "Only the one who ordered something can collect it.",
+  "da": "Kun den, der bestilte noget, kan hente det.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1827": {
+  "en": "Search a player's name",
+  "da": "Søg efter en spillers navn",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1828": {
+  "en": "Pick",
+  "da": "Vælg",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1829": {
+  "en": "Your hideout has put a hit out already. The next one can go out in {…}.",
+  "da": "Dit skjulested har allerede sat en dusør ud. Den næste kan sættes ud om {…}.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1830": {
+  "en": "The target",
+  "da": "Målet",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1831": {
+  "en": "The bounty ({HIT_MIN} to {HIT_MAX})",
+  "da": "Dusøren ({HIT_MIN} til {HIT_MAX})",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1832": {
+  "en": "The hit on {name} is out: {hitAmount} blood.",
+  "da": "Dusøren på {name} er sat ud: {hitAmount} blod.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1833": {
+  "en": "Put out a hit on {name}",
+  "da": "Sæt en dusør ud på {name}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1834": {
+  "en": "Pick somebody first",
+  "da": "Vælg først en",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1835": {
+  "en": "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 12 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells one a visit) can collect it.",
+  "da": "Blodet forlader din lomme nu og sidder på deres hoved, indtil nogen henter det. Et skjulested sætter én dusør ud hver 12. time, og ingen får mere end 3 om dagen. Alle med en pistol (Bagmand sælger én pr. besøg) kan hente den.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1836": {
+  "en": "THE HITMAN",
+  "da": "LEJEMORDEREN",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1837": {
+  "en": "Put blood on a head. Somebody will come for it.",
+  "da": "Sæt blod på et hoved. Nogen kommer efter det.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1838": {
+  "en": "Open hits ({length})",
+  "da": "Åbne dusører ({length})",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1839": {
+  "en": "Nobody has a price on their head right now.",
+  "da": "Ingen har en pris på hovedet lige nu.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N1840": {
+  "en": "Shared stash",
+  "da": "Fælles gemmested",
+  "where": "src/ui/hideoutChest.ts"
+ },
+ "N1841": {
+  "en": "🧰 Shared stash",
+  "da": "🧰 Fælles gemmested",
+  "where": "src/ui/hideoutChest.ts"
+ },
+ "N1842": {
+  "en": "Everybody in the hideout can put things in and take things out. {length}/{HIDEOUT_CHEST_SLOTS} kinds. Furniture goes in the box in the toolbox.",
+  "da": "Alle i skjulestedet kan lægge ting i og tage ting ud. {length}/{HIDEOUT_CHEST_SLOTS} slags. Møbler kommer i kassen i værktøjskassen.",
+  "where": "src/ui/hideoutChest.ts"
+ },
+ "N1843": {
+  "en": "In the stash",
+  "da": "I gemmestedet",
+  "where": "src/ui/hideoutChest.ts"
+ },
+ "N1844": {
+  "en": "Take 1",
+  "da": "Tag 1",
+  "where": "src/ui/hideoutChest.ts"
+ },
+ "N1845": {
+  "en": "Nothing in the stash yet.",
+  "da": "Intet i gemmestedet endnu.",
+  "where": "src/ui/hideoutChest.ts"
+ },
+ "N1846": {
+  "en": "Put 1",
+  "da": "Læg 1",
+  "where": "src/ui/hideoutChest.ts"
+ },
+ "N1847": {
+  "en": "Nothing in your pocket that fits.",
+  "da": "Intet i din lomme, der passer.",
+  "where": "src/ui/hideoutChest.ts"
+ },
+ "N1848": {
+  "en": "The turn",
+  "da": "Turn",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1849": {
+  "en": "Leave",
+  "da": "Forlad",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1850": {
+  "en": "Look at the room",
+  "da": "Se rummet",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1851": {
+  "en": "Back to the table",
+  "da": "Tilbage til bordet",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1852": {
+  "en": "High stakes",
+  "da": "Høje indsatser",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1853": {
+  "en": "Fold and leave?",
+  "da": "Fold og forlad?",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1854": {
+  "en": "Leave table",
+  "da": "Forlad bordet",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1855": {
+  "en": "Left",
+  "da": "Gået",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1856": {
+  "en": "Nobody is playing yet. Tap Sit to start a table: buy in for {blood} to {blood} blood, blinds {sb}/{bb}.",
+  "da": "Ingen spiller endnu. Tryk Sæt dig for at starte et bord: køb ind for {blood} til {blood} blod, blinds {sb}/{bb}.",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1857": {
+  "en": "wins {blood}",
+  "da": "vinder {blood}",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1858": {
+  "en": "· everybody else folded",
+  "da": "· alle andre foldede",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1859": {
+  "en": "You're out of blood",
+  "da": "Du er løbet tør for blod",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1860": {
+  "en": "You put the gun to your head. Buy in again to get back in.",
+  "da": "Du satte pistolen mod dit hoved. Køb ind igen for at komme med igen.",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1861": {
+  "en": "Waiting for a second player",
+  "da": "Venter på en anden spiller",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1862": {
+  "en": "Starting soon…",
+  "da": "Starter snart…",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1863": {
+  "en": "{…} · Hand {hand}",
+  "da": "{…} · Hånd {hand}",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1864": {
+  "en": "Sit down · seat {…}",
+  "da": "Sæt dig · plads {…}",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1865": {
+  "en": "Blinds {sb}/{bb}. You can stand up any time and take what is in front of you.",
+  "da": "Blinds {sb}/{bb}. Du kan rejse dig når som helst og tage det, du har foran dig.",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1866": {
+  "en": "You need {blood} more blood for the smallest buy-in ({blood}).",
+  "da": "Du mangler {blood} blod til det mindste buy-in ({blood}).",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1867": {
+  "en": "Tap an empty seat to sit down. Buy-in {blood}-{blood} blood.",
+  "da": "Tryk på en tom plads for at sætte dig. Buy-in {blood}-{blood} blod.",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1868": {
+  "en": "You have {blood}: the smallest buy-in is {blood}.",
+  "da": "Du har {blood}: det mindste buy-in er {blood}.",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1869": {
+  "en": "You folded. Watching the hand…",
+  "da": "Du foldede. Ser hånden…",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1870": {
+  "en": "You'll be dealt in on the next hand.",
+  "da": "Du bliver delt ind i næste hånd.",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1871": {
+  "en": "You're all in. Good luck.",
+  "da": "Du er all in. Held og lykke.",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1872": {
+  "en": "Waiting for {nameOfSeat}…",
+  "da": "Venter på {nameOfSeat}…",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1873": {
+  "en": "The cards are coming…",
+  "da": "Kortene kommer…",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1874": {
+  "en": "Next hand in a moment…",
+  "da": "Næste hånd om et øjeblik…",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1875": {
+  "en": "Waiting for another player to sit down.",
+  "da": "Venter på at en anden spiller sætter sig.",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1876": {
+  "en": "The next hand starts in a moment…",
+  "da": "Næste hånd starter om et øjeblik…",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1877": {
+  "en": "In front of you: {blood}",
+  "da": "Foran dig: {blood}",
+  "where": "src/ui/pokerTable.ts"
+ },
+ "N1878": {
+  "en": "Bets {BJ_BET_MIN}-{BJ_BET_MAX} · Blackjack pays 3 to 2",
+  "da": "Indsats {BJ_BET_MIN}-{BJ_BET_MAX} · Blackjack betaler 3 til 2",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1879": {
+  "en": "Call off the round?",
+  "da": "Afbryd runden?",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1880": {
+  "en": "Leave and forfeit?",
+  "da": "Forlad og opgiv?",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1881": {
+  "en": "Stop dealing",
+  "da": "Stop med at dele",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1882": {
+  "en": "Win +{blood}",
+  "da": "Vind +{blood}",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1883": {
+  "en": "Lose -{blood}",
+  "da": "Tab -{blood}",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1884": {
+  "en": "Bet in",
+  "da": "Indsats lagt",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1885": {
+  "en": "Doubled",
+  "da": "Doblet",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1886": {
+  "en": "No dealer at this table",
+  "da": "Ingen dealer ved bordet",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1887": {
+  "en": "Waiting for a dealer",
+  "da": "Venter på en dealer",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1888": {
+  "en": "{name} will open a round",
+  "da": "{name} åbner en runde",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1889": {
+  "en": "Place your bets",
+  "da": "Læg dine indsatser",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1890": {
+  "en": "{…}'s turn",
+  "da": "{…}s tur",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1891": {
+  "en": "The dealer plays",
+  "da": "Dealeren spiller",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1892": {
+  "en": "The dealer turns the card",
+  "da": "Dealeren vender kortet",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1893": {
+  "en": "Round over",
+  "da": "Runden er slut",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1894": {
+  "en": "Blackjack pays 3 to 2 · Dealer stands on 17",
+  "da": "Blackjack betaler 3 til 2 · Dealeren stopper på 17",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1895": {
+  "en": "Deal at this table",
+  "da": "Del ved dette bord",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1896": {
+  "en": "You put a bank on the table: it pays the winners and takes what the players lose. Anybody can bet up to {BJ_BET_MAX}. You can stop and take the bank any time.",
+  "da": "Du lægger en bank på bordet: den betaler vinderne og tager det, spillerne taber. Alle kan satse op til {BJ_BET_MAX}. Du kan stoppe og tage banken når som helst.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1897": {
+  "en": "You need {blood} more blood for the smallest bank ({blood}).",
+  "da": "Du mangler {blood} blod til den mindste bank ({blood}).",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1898": {
+  "en": "Start dealing",
+  "da": "Begynd at dele",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1899": {
+  "en": "Tap an empty seat to sit down and play.",
+  "da": "Tryk på en tom plads for at sætte dig og spille.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1900": {
+  "en": "There's no dealer yet.",
+  "da": "Der er ingen dealer endnu.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1901": {
+  "en": "The dealer's bank: {blood}",
+  "da": "Dealerens bank: {blood}",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1902": {
+  "en": "Members of the hideout can deal.",
+  "da": "Medlemmer af skjulestedet kan dele.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1903": {
+  "en": "Your bet",
+  "da": "Din indsats",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1904": {
+  "en": "In your pocket: {blood}",
+  "da": "I din lomme: {blood}",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1905": {
+  "en": "Bet (at least {BJ_BET_MIN})",
+  "da": "Sats (mindst {BJ_BET_MIN})",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1906": {
+  "en": "Double {blood}",
+  "da": "Doblér {blood}",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1907": {
+  "en": "Bet is in. Waiting for the dealer to deal…",
+  "da": "Indsatsen er lagt. Venter på at dealeren deler…",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1908": {
+  "en": "You sit this round out.",
+  "da": "Du sidder denne runde over.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1909": {
+  "en": "Waiting for {…}…",
+  "da": "Venter på {…}…",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1910": {
+  "en": "Blackjack! The dealer will pay you 3 to 2.",
+  "da": "Blackjack! Dealeren betaler dig 3 til 2.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1911": {
+  "en": "You stand. Waiting…",
+  "da": "Du står. Venter…",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1912": {
+  "en": "The dealer plays…",
+  "da": "Dealeren spiller…",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1913": {
+  "en": "You win {blood}!",
+  "da": "Du vinder {blood}!",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1914": {
+  "en": "Blackjack! You win {blood}!",
+  "da": "Blackjack! Du vinder {blood}!",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1915": {
+  "en": "Push: you get your bet back.",
+  "da": "Uafgjort: du får din indsats tilbage.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1916": {
+  "en": "You lose this one.",
+  "da": "Du taber den her.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1917": {
+  "en": "Round over.",
+  "da": "Runden er slut.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1918": {
+  "en": "{…} will open the next round.",
+  "da": "{…} åbner næste runde.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1919": {
+  "en": "The dealer",
+  "da": "Dealeren",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1920": {
+  "en": "Round over. Open the next one when you are ready.",
+  "da": "Runden er slut. Åbn den næste, når du er klar.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1921": {
+  "en": "Open a round and the players can bet.",
+  "da": "Åbn en runde, så kan spillerne satse.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1922": {
+  "en": "Open a round",
+  "da": "Åbn en runde",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1923": {
+  "en": "{blood} is bet. Deal when everybody has bet.",
+  "da": "{blood} er satset. Del, når alle har satset.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1924": {
+  "en": "Waiting for bets…",
+  "da": "Venter på indsatser…",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1925": {
+  "en": "Deal the cards",
+  "da": "Del kortene",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1926": {
+  "en": "Waiting for {…} to hit or stand…",
+  "da": "Venter på at {…} tager et kort eller står…",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1927": {
+  "en": "Everybody has played. Turn your hidden card.",
+  "da": "Alle har spillet. Vend dit skjulte kort.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1928": {
+  "en": "Turn the hidden card",
+  "da": "Vend det skjulte kort",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1929": {
+  "en": "You have {total}: you stand. Pay the table.",
+  "da": "Du har {total}: du står. Betal bordet.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1930": {
+  "en": "Nobody is left to beat. Pay the table.",
+  "da": "Ingen er tilbage at slå. Betal bordet.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1931": {
+  "en": "Pay out",
+  "da": "Udbetal",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1932": {
+  "en": "You have {total}: you must draw.",
+  "da": "Du har {total}: du skal tage et kort.",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1933": {
+  "en": "Draw a card",
+  "da": "Træk et kort",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1934": {
+  "en": "Your bank: {blood}",
+  "da": "Din bank: {blood}",
+  "where": "src/ui/blackjackTable.ts"
+ },
+ "N1935": {
+  "en": "Wanted board: who has blood on their head",
+  "da": "Eftersøgt-tavlen: hvem har blod på hovedet",
+  "where": "src/ui/room.ts"
+ },
+ "N1936": {
+  "en": "Shared stash: the whole hideout puts things in and takes them out",
+  "da": "Fælles gemmested: hele skjulestedet lægger ting i og tager ting ud",
+  "where": "src/ui/room.ts"
+ },
+ "N1937": {
+  "en": "You can't shoot that.",
+  "da": "Det kan du ikke skyde.",
+  "where": "src/ui/room.ts"
+ },
+ "N1938": {
+  "en": "That's not your mixer.",
+  "da": "Det er ikke din mixer.",
+  "where": "src/ui/room.ts"
+ },
+ "N1939": {
+  "en": "The chip clicks in. This mixer mixes 25% faster now, and has turned green.",
+  "da": "Chippen klikker på plads. Den her mixer mixer 25% hurtigere nu og er blevet grøn.",
+  "where": "src/ui/room.ts"
+ },
+ "N1940": {
+  "en": "There's a waterer on that pot already.",
+  "da": "Der sidder allerede en vander på den potte.",
+  "where": "src/ui/room.ts"
+ },
+ "N1941": {
+  "en": "The sprinkler clicks onto the pot. This plant never needs water again.",
+  "da": "Vanderen klikker fast på potten. Den her plante får aldrig brug for vand igen.",
+  "where": "src/ui/room.ts"
+ },
+ "N1942": {
+  "en": "Only the members can use the stash.",
+  "da": "Kun medlemmerne kan bruge gemmestedet.",
+  "where": "src/ui/room.ts"
+ },
+ "N1943": {
+  "en": "{…} shot you.",
+  "da": "{…} skød dig.",
+  "where": "src/ui/room.ts"
+ },
+ "N1944": {
+  "en": "WANTED",
+  "da": "EFTERSØGT",
+  "where": "src/ui/room.ts"
+ },
+ "N1945": {
+  "en": "You shot {name} and collected the {bounty} on their head.",
+  "da": "Du skød {name} og hentede de {bounty} på hovedet.",
+  "where": "src/ui/room.ts"
+ },
+ "N1946": {
+  "en": "You shot {name}. Nothing on their head: they are down for {secs} seconds.",
+  "da": "Du skød {name}. Intet på hovedet: de er nede i {secs} sekunder.",
+  "where": "src/ui/room.ts"
+ },
+ "N1947": {
+  "en": "The gun jams.",
+  "da": "Pistolen klikker.",
+  "where": "src/ui/room.ts"
+ },
+ "N1948": {
+  "en": "Shoot",
+  "da": "Skyd",
+  "where": "src/ui/room.ts"
+ },
+ "N1949": {
+  "en": "({count} hits)",
+  "da": "({count} dusører)",
+  "where": "src/ui/room.ts"
+ },
+ "N1950": {
+  "en": "The gun has one bullet. It is gone after the shot.",
+  "da": "Pistolen har én kugle. Den er væk efter skuddet.",
+  "where": "src/ui/room.ts"
+ },
+ "N1951": {
+  "en": "Nothing on their head. They only go down for 10 seconds.",
+  "da": "Intet på hovedet. De er kun nede i 10 sekunder.",
+  "where": "src/ui/room.ts"
+ },
+ "N1952": {
+  "en": "Dead or alive. Mostly dead. Whoever shoots them with a gun gets the blood.",
+  "da": "Død eller levende. Mest død. Den, der skyder dem med en pistol, får blodet.",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N1953": {
+  "en": "Nobody is wanted. For now.",
+  "da": "Ingen er eftersøgt. Indtil videre.",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N1954": {
+  "en": "{…} hits out, the biggest first",
+  "da": "{…} dusører ude, den største først",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N1955": {
+  "en": "put out by {…}",
+  "da": "sat ud af {…}",
+  "where": "src/ui/wantedBoard.ts"
+ },
+ "N1956": {
+  "en": "Poker table",
+  "da": "Pokerbord",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1957": {
+  "en": "High stakes poker table",
+  "da": "Pokerbord med høje indsatser",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1958": {
+  "en": "Blackjack table",
+  "da": "Blackjackbord",
+  "where": "src/shared/furniture.ts"
+ },
+ "N1959": {
+  "en": "Gun",
+  "da": "Pistol",
+  "where": "src/items.ts"
+ },
+ "N1960": {
+  "en": "Automatic plant waterer",
+  "da": "Automatisk plantevander",
+  "where": "src/shared/hideout.ts"
+ },
+ "N1961": {
+  "en": "Mixer upgrade chip",
+  "da": "Mixer-opgraderingschip",
+  "where": "src/shared/hideout.ts"
+ },
+ "N1962": {
+  "en": "Put it on a growing kit and that plant never needs water again. 100 each for the first 5, then 200.",
+  "da": "Sæt den på en dyrkningskasse, og planten får aldrig brug for vand igen. 100 stykket for de første 5, derefter 200.",
+  "where": "src/shared/hideout.ts"
+ },
+ "N1963": {
+  "en": "Put it in a mixer: it mixes 25% faster, and turns green. 200 for the first, 300 for every one after.",
+  "da": "Sæt den i en mixer: den mixer 25% hurtigere og bliver grøn. 200 for den første, 300 for hver efter.",
+  "where": "src/shared/hideout.ts"
+ },
+ "N1964": {
+  "en": "Texas hold 'em for five. Buy in for 200 to 500, blinds 5/10. Anybody can sit down at it.",
+  "da": "Texas hold'em for fem. Køb ind for 200 til 500, blinds 5/10. Alle kan sætte sig ved det.",
+  "where": "src/shared/hideout.ts"
+ },
+ "N1965": {
+  "en": "Texas hold 'em for five, in gold. Buy in for 1000 to 2000, blinds 20/40. Anybody can sit down at it.",
+  "da": "Texas hold'em for fem, i guld. Køb ind for 1000 til 2000, blinds 20/40. Alle kan sætte sig ved det.",
+  "where": "src/shared/hideout.ts"
+ },
+ "N1966": {
+  "en": "Blackjack for five with a blue cloth. A member of the hideout deals, with their own bank. 500 for the first, 1000 for the second, 2000 for every one after.",
+  "da": "Blackjack for fem med blå dug. Et medlem af skjulestedet deler med sin egen bank. 500 for det første, 1000 for det andet, 2000 for hvert efter.",
+  "where": "src/shared/hideout.ts"
+ },
+ "N1967": {
+  "en": "A revolver with one bullet. Tap it to hold it: the bounties on people's heads show over them. Tap a player and confirm to shoot (only the name you picked): a bounty is yours, and they drop blood and are dead for a minute. Without a bounty they are dead for 10 seconds. It shoots once and is gone. Bagmand sells one a visit, and the bins and the boxes give them now and then.",
+  "da": "En revolver med én kugle. Tryk på den for at holde den: dusørerne på folks hoveder vises over dem. Tryk på en spiller og bekræft for at skyde (kun det navn, du valgte): en dusør er din, og de taber blod og er døde i et minut. Uden dusør er de døde i 10 sekunder. Den skyder én gang og er væk. Bagmand sælger én pr. besøg, og skraldespandene og kasserne giver dem nu og da.",
+  "where": "src/items.ts"
+ },
+ "N1968": {
+  "en": "A sprinkler. Tap it, then tap a growing kit: that plant never needs water again.",
+  "da": "En vander. Tryk på den og så på en dyrkningskasse: den plante får aldrig brug for vand igen.",
+  "where": "src/items.ts"
+ },
+ "N1969": {
+  "en": "A chip for a mixer. Tap it, then tap a mixer: it mixes 25% faster from then on (and turns green).",
+  "da": "En chip til en mixer. Tryk på den og så på en mixer: den mixer 25% hurtigere fra da af (og bliver grøn).",
+  "where": "src/items.ts"
+ },
+ "N1970": {
+  "en": "Automatic waterer",
+  "da": "Automatisk vander",
+  "where": "src/rooms.ts"
+ },
+ "N1971": {
+  "en": "Mixer (upgraded)",
+  "da": "Mixer (opgraderet)",
+  "where": "src/rooms.ts"
+ },
+ "N1972": {
+  "en": "Wanted board",
+  "da": "Eftersøgt-tavle",
+  "where": "src/rooms.ts"
  }
 }

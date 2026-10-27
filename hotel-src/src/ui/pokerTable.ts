@@ -128,7 +128,7 @@ export function openPoker(host: HTMLElement, ctx: Ctx, roomId: string, fid: stri
     }
     const timer = h("div", { class: "pk-timer" }, h("i", {}));
     const last = s.bust ? "BUST" : s.allin && inHand ? "All in" : s.folded ? (s.left ? "Left" : "Fold") : s.last && t!.phase !== "idle" ? s.last : "";
-    const tagClass = s.bust ? "bust" : /^(Raise|Bet|All)/.test(last) ? "raise" : /^Call/.test(last) ? "call" : /^Check/.test(last) ? "check" : /^(Fold|Left)/.test(last) ? "fold" : /blind/i.test(last) ? "blind" : "";
+    const tagClass = s.bust ? "bust" : s.folded ? "fold" : s.allin && inHand ? "raise" : /^(Raise|Bet|All)/.test(last) ? "raise" : /^Call/.test(last) ? "call" : /^Check/.test(last) ? "check" : /^(Fold|Left)/.test(last) ? "fold" : /blind/i.test(last) ? "blind" : "";
     const el = h("div", { class: `pk-seat p${place}${isMe ? " me" : ""}${turn ? " turn" : ""}${s.folded ? " folded" : ""}${winner ? " win" : ""}${s.bust ? " bust" : ""}${s.gone ? " gone" : ""}`, "data-seat": String(i), style: pos },
       h("div", { class: "pk-hand" }, ...cards),
       h("div", { class: "pk-plate" },
