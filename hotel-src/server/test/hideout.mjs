@@ -311,6 +311,12 @@ for (let i = 0; i < 40 - kitsNow; i++) await owner("PUT", `roomsMeta/${HR(boss)}
 await owner("PUT", `users/${boss.uid}/inventory`, inv({ item: "f_planter", qty: 1 }));
 bad("the 41st growing kit doesn't fit", await act(boss, "furniPlace", { room: HR(boss), source: "inv", slot: 0, x: 0, y: 0 }));
 for (let i = 0; i < 40 - kitsNow; i++) await owner("DELETE", `roomsMeta/${HR(boss)}/furni/capk${i}`);
+// 40 mixers at most
+const mixNow = (await rowsOf(boss)).filter(([, r]) => r.kind === "f_mixer").length;
+for (let i = 0; i < 40 - mixNow; i++) await owner("PUT", `roomsMeta/${HR(boss)}/furni/capm${i}`, { kind: "f_mixer", x: i % 13, y: 13 - Math.floor(i / 13), dir: 0, by: boss.uid });
+await owner("PUT", `users/${boss.uid}/inventory`, inv({ item: "f_mixer", qty: 1 }));
+bad("the 41st mixer doesn't fit", await act(boss, "furniPlace", { room: HR(boss), source: "inv", slot: 0, x: 0, y: 0 }));
+for (let i = 0; i < 40 - mixNow; i++) await owner("DELETE", `roomsMeta/${HR(boss)}/furni/capm${i}`);
 await owner("PUT", `users/${boss.uid}/inventory`, inv({ item: "f_planter", qty: 1 }, { item: "weedseed", qty: 2 }));
 
 console.log("--- leaving and being kicked");

@@ -21,8 +21,9 @@ export const HIDEOUT_SIZES = [14, 17, 20];
 /** how many pieces fit in a hideout, by level */
 export const HIDEOUT_MAX_FURNI = [120, 160, 220];
 export const HIDEOUT_MAX_MEMBERS = 7;
-/** how many growing kits fit in a hideout (there is no limit on mixers) */
+/** how many growing kits fit in a hideout, and how many mixers */
 export const HIDEOUT_MAX_KITS = 40;
+export const HIDEOUT_MAX_MIXERS = 40;
 /** changing the floor, walls or rug costs 15 times what it costs in a player room, per part */
 export const HIDEOUT_RECOLOR_PRICE = RECOLOR_PRICE * 15;
 export const HIDEOUT_NAME_MAX = 28;

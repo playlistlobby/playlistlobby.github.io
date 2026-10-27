@@ -6,7 +6,7 @@ import { addToInv, MAX_FURNI, STASH_PIECES, STASHBOX_OWNED_KEY, STORAGE_MAX_ITEM
 import { isFurniItem, STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
 import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
-import { HIDEOUT_MAX_FURNI, HIDEOUT_MAX_KITS, HIDEOUT_ONLY, isHideoutId, levelOfSize } from "../../../src/shared/hideout";
+import { HIDEOUT_MAX_FURNI, HIDEOUT_MAX_KITS, HIDEOUT_MAX_MIXERS, HIDEOUT_ONLY, isHideoutId, levelOfSize } from "../../../src/shared/hideout";
 
 const isPiece = async (c: Ctx, key: string): Promise<boolean> => !!SHIPPED_DIMS[key] || !!(await c.furniMeta())[key];
 const KEY_RE = /^[a-z0-9_]{1,30}$/;
@@ -200,6 +200,7 @@ export const furniPlace: Action = {
       if (w.s.storage[kind] > 1) w.s.storage[kind] -= 1; else delete w.s.storage[kind];
     }
     if (hideout && kind === "f_planter" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_planter").length >= HIDEOUT_MAX_KITS) fail(`A hideout fits ${HIDEOUT_MAX_KITS} growing kits.`);
+    if (hideout && kind === "f_mixer" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_mixer").length >= HIDEOUT_MAX_MIXERS) fail(`A hideout fits ${HIDEOUT_MAX_MIXERS} mixers.`);
     // a poster only hangs on a wall, and carries the picture chosen when it is hung (it stays on it; a poster taken down goes back blank)
     let img: string | undefined;
     if (kind === POSTER_KIND) {
