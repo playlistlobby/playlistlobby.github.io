@@ -1,4 +1,4 @@
-// Hit and gun tests: putting a hit on somebody from a hideout (500-1500, once per 2 hours per hideout, 3 a day per person), the gun (bagmand sells two a visit), and shooting:
+// Hit and gun tests: putting a hit on somebody from a hideout (500-1500, once per 2 hours per hideout, 3 a day per person), the gun (bagmand sells one a visit), and shooting:
 // a bounty is claimed, the one who is shot drops blood and is dead for two minutes, the gun is always spent
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: node test/hits.mjs (server/)
 const DB = "http://127.0.0.1:9000";
@@ -209,8 +209,7 @@ const buy = await act(stranger, "bagmandBuy", { item: "gun", qty: 1 });
 if (!buy.ok && /here|stand|near|far/i.test(buy.error ?? "")) console.log("   (bagmand: " + buy.error + ")");
 check("bagmand sells a gun for 250", buy.ok && (await bloodOf(stranger)) === 750, JSON.stringify(buy).slice(0, 200));
 check("and it is in their pocket", buy.ok && hasItem((await act(stranger, "sync")).state, "gun"));
-if (buy.ok) ok("a second gun is allowed", await act(stranger, "bagmandBuy", { item: "gun", qty: 1 }));
-if (buy.ok) bad("only two per player per visit", await act(stranger, "bagmandBuy", { item: "gun", qty: 1 }));
+if (buy.ok) bad("only one per player per visit", await act(stranger, "bagmandBuy", { item: "gun", qty: 1 }));
 await owner("DELETE", "bagmand/force");
 await owner("PUT", `users/${stranger.uid}/inventory`, {});
 await owner("DELETE", `rooms/lobby/players/${stranger.uid}`);

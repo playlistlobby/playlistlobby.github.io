@@ -12705,8 +12705,8 @@
   "where": "src/ui/hideoutComputer.ts:83"
  },
  "N2010": {
-  "en": "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 2 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells two a visit) can collect it.",
-  "da": "Blodet forlader din lomme nu og sidder på deres hoved, til nogen henter det. Et skjulested kan udlove én dusør hver 2. time, og ingen får mere end 3 om dagen. Alle med en pistol (bagmand sælger to pr. besøg) kan hente den.",
+  "en": "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 2 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells one a visit) can collect it.",
+  "da": "Blodet forlader din lomme nu og sidder på deres hoved, til nogen henter det. Et skjulested kan udlove én dusør hver 2. time, og ingen får mere end 3 om dagen. Alle med en pistol (bagmand sælger én pr. besøg) kan hente den.",
   "where": "src/ui/hideoutComputer.ts:147"
  },
  "N2011": {

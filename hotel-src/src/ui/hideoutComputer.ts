@@ -159,7 +159,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
       h("div", { class: "ht-bounty" }, h("span", {}, `The bounty (${HIT_MIN} to ${HIT_MAX})`), big, slider),
       h("button", { class: "ht-go", disabled: cant, onclick: () => void act(async () => { const t = hitTarget!; await hitPlace(me, roomId, t.uid, hitAmount); hitTarget = null; return `The hit on ${t.name} is out: ${hitAmount} blood.`; }) },
         hitTarget ? `Put out a hit on ${hitTarget.name}` : "Pick somebody first"),
-      h("div", { class: "hc-foot" }, "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 2 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells two a visit) can collect it."));
+      h("div", { class: "hc-foot" }, "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 2 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells one a visit) can collect it."));
     const revengeBox = revenge.length ? [h("div", { class: "ht-open ht-revenge" }, h("div", { class: "ht-open-t" }, "Somebody put a hit on you"),
       ...revenge.slice(0, 6).map((r) => h("div", { class: "ht-row ht-rv" }, headBoxFor(r.by), h("div", { class: "ht-who" }, h("span", { class: "ht-n" }, r.byName), h("span", { class: "ht-by" }, `${r.hideoutName ? r.hideoutName + " · " : ""}${r.amount.toLocaleString("en-US")} on your head`)),
         h("button", { class: "ht-rev", onclick: () => { hitTarget = { uid: r.by, name: r.byName }; results = []; searchQ = ""; render(); document.getElementById("ht-form")?.scrollIntoView({ block: "center" }); } }, "Revenge"))))] : [];
