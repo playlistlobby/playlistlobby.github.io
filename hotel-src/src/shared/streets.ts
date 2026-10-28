@@ -86,8 +86,9 @@ export function seeded(seed: number): () => number {
 /** what they ask for. `unit` is what 6ixty pays for one (see sellPrice), `mult` what the street pays on top of that */
 export interface Want { item: string; qty: number; mult: number }
 /** the drugs people have most of (the cheap, common ones), and the ones that are rarer */
-export const COMMON_WANTS = ["weed", "joint", "blunt", "mix", "midweed", "superpill", "hash", "shroom"] as const;
-export const RARE_WANTS = ["thca", "codeine", "joint_mid", "blunt_mid", "joint_thca", "joint_hash", "chudmix", "dmt", "lsd", "trollmix"] as const;
+// (what is made the most: weed, fentanyl (the superpill), THCA, shrooms and bagmands natryger, twice each in the list; then a few of the rolled things)
+export const COMMON_WANTS = ["weed", "weed", "superpill", "superpill", "thca", "thca", "shroom", "shroom", "natryger", "natryger", "joint", "blunt", "mix"] as const;
+export const RARE_WANTS = ["hash", "midweed", "codeine", "joint_mid", "blunt_mid", "joint_thca", "joint_hash", "chudmix", "dmt", "lsd", "trollmix"] as const;
 /**
  * What the rich customers ask for: every drug there is, the common ones most often (the number is how often, out of the total).
  * They pay 3 times what the others do, and they are the only ones who buy the cali weed and the 芬太尼.
@@ -96,7 +97,7 @@ export const RICH_WANTS: ReadonlyArray<readonly [string, number]> = [
   ["weed", 12], ["joint", 10], ["blunt", 8], ["mix", 8], ["midweed", 7], ["hash", 7], ["shroom", 7], ["superpill", 6],
   ["thca", 5], ["codeine", 4], ["ketamine", 5], ["percs", 5], ["heroin", 4], ["opium", 3], ["lsd", 4], ["dmt", 4], ["twocb", 4],
   ["joint_mid", 4], ["blunt_mid", 3], ["joint_thca", 3], ["joint_hash", 3], ["chudmix", 3], ["trollmix", 3],
-  ["caliweed", 3], ["fentcn", 3], ["pinkweed", 2], ["brownweed", 2], ["natryger", 2], ["loudpack", 1],
+  ["caliweed", 180], ["fentcn", 180], ["pinkweed", 2], ["brownweed", 2], ["natryger", 150], ["loudpack", 1], // (three out of four rich customers want the 芬太尼, the cali weed or the natryger)
   ["joint_cali", 2], ["blunt_cali", 1], ["joint_pink", 1], ["blunt_pink", 1], ["joint_brown", 1], ["blunt_brown", 1], ["joint_nat", 1], ["blunt_nat", 1], ["joint_loud", 1], ["blunt_loud", 1],
 ];
 /** how many of the customers are rich (a hat, maybe a pet, 3x the price, any drug) */
@@ -146,9 +147,12 @@ const BAGMAND_SELL_HINT: Record<string, number> = { heroin: 160, ketamine: 170, 
 /** The customer number k that turned up at `at`: always the same one for the same k, so every browser and the server agree on who they are and what they ask for. */
 /** six in ten customers ask for double (decided by its own seed, so nothing else about a customer moves) */
 const BIG_ORDER_CHANCE = 0.6;
+const NATRYGER_BULK_CHANCE = 0.33;
 export function customerAt(k: number, at = 0): Customer {
   const c = customerBase(k, at);
-  if (seeded(k * 104729 + 7)() < BIG_ORDER_CHANCE) c.want = { ...c.want, qty: c.want.qty * 2 };
+  const bulk = c.kind === "rich" && c.want.item === "natryger" && seeded(k * 15485863 + 3)(); // (a third of the rich ones who want natryger want 10 to 20 of it)
+  if (typeof bulk === "number" && bulk < NATRYGER_BULK_CHANCE) c.want = { ...c.want, qty: 10 + Math.floor((bulk / NATRYGER_BULK_CHANCE) * 11) };
+  else if (seeded(k * 104729 + 7)() < BIG_ORDER_CHANCE) c.want = { ...c.want, qty: c.want.qty * 2 };
   return c;
 }
 function customerBase(k: number, at: number): Customer {
