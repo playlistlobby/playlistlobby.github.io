@@ -15713,5 +15713,25 @@
   "en": "You have no gun.",
   "da": "Du har ingen pistol.",
   "where": "server/src/actions/streets.ts"
+ },
+ "N2588": {
+  "en": "The elevator runs from 17 to 18 and from 20 to 21 today. It starts in {fmtWhen}.",
+  "da": "Elevatoren kører fra 17 til 18 og fra 20 til 21 i dag. Den starter om {fmtWhen}.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2589": {
+  "en": "The elevator runs every day from 20 to 21. It starts in {fmtWhen}.",
+  "da": "Elevatoren kører hver dag fra 20 til 21. Den starter om {fmtWhen}.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2590": {
+  "en": "{left} of {TICKET_STOCK} left for this run. One for each player.",
+  "da": "{left} af {TICKET_STOCK} tilbage til denne tur. En til hver spiller.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2591": {
+  "en": "The tickets for this run are sold out. There are new ones for the next run.",
+  "da": "Billetterne til denne tur er udsolgt. Der kommer nye til næste tur.",
+  "where": "server/src/actions/streets.ts"
  }
 }

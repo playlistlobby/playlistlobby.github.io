@@ -21,7 +21,7 @@ import {
 } from "../../../src/shared/streets";
 
 /** the streets are only for the staff and the emulator until the admin switches them on (config/streetsOpen, Admin > Streets) */
-const openFor = async (c: Ctx): Promise<boolean> => isEmulator(c.env) || c.isAdmin || c.isMod || (await c.db.get<boolean>("config/streetsOpen")) === true;
+const openFor = async (_c: Ctx): Promise<boolean> => true; // (the streets are open for everybody now: no switch to press)
 const forceUntil = async (c: Ctx): Promise<number> => Number(await c.db.get<number>("config/streetsForce")) || 0;
 
 export const ticketBuy: Action = {
@@ -31,15 +31,15 @@ export const ticketBuy: Action = {
     await requireInRoom(c, "lobby");
     const w = await c.user();
     if (holdsTicket(w.s.inventory)) fail("You have a ticket already. There is one for each player.");
-    const day = danishDayKey(c.now);
-    const sold = Number(await c.db.get<number>(`streetTickets/${day}/sold`)) || 0;
-    if (sold >= TICKET_STOCK) fail("The tickets are sold out for today. There are new ones tomorrow.");
+    const win = elevatorRuns(c.now, await forceUntil(c)).windowKey; // (50 tickets for each run: the one that is on, or the next)
+    const sold = Number(await c.db.get<number>(`streetTickets/${win}/sold`)) || 0;
+    if (sold >= TICKET_STOCK) fail("The tickets for this run are sold out. There are new ones for the next run.");
     if (w.s.blood < TICKET_PRICE) fail(`You need ${TICKET_PRICE - w.s.blood} more blood.`);
     const next = addToInv(w.s.inventory, { item: TICKET_ITEM, qty: 1 });
     if (!next) fail("Your inventory is full.");
     w.s.inventory = next!;
     w.s.blood -= TICKET_PRICE;
-    c.extra[`streetTickets/${day}/sold`] = sold + 1;
+    c.extra[`streetTickets/${win}/sold`] = sold + 1;
     return { price: TICKET_PRICE, left: TICKET_STOCK - sold - 1 };
   },
 };

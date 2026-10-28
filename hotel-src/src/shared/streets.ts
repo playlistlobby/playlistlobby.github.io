@@ -28,21 +28,37 @@ export function danishParts(now: number): { y: number; m: number; d: number; h: 
   return { y: o.year, m: o.month, d: o.day, h: o.hour % 24, mi: o.minute, s: o.second };
 }
 export const danishDayKey = (now: number): string => { const p = danishParts(now); return `${p.y}${String(p.m).padStart(2, "0")}${String(p.d).padStart(2, "0")}`; };
-/** is the elevator running, and until when? (`forceUntil` is the admin's test switch: the elevator runs until then whatever the clock says) */
-export function elevatorRuns(now: number, forceUntil = 0): { open: boolean; endsAt: number; nextAt: number } {
-  if (forceUntil > now) return { open: true, endsAt: forceUntil, nextAt: now };
+/** the days that have an extra run besides the usual one at 20 (Danish day key -> the hours it starts) */
+export const EXTRA_RUNS: Record<string, number[]> = { "20261028": [17] };
+/** the hours the elevator starts on the Danish day of `now` (each run is EVENT_HOURS long) */
+export const runHoursOn = (now: number): number[] => [...(EXTRA_RUNS[danishDayKey(now)] ?? []), EVENT_HOUR].sort((x, y) => x - y);
+const pad2 = (n: number): string => String(n).padStart(2, "0");
+/**
+ * Is the elevator running, and until when? Every day from 20 to 21 (and on the days in EXTRA_RUNS at the extra hours too). `windowKey` names the run that is on now, or the next one:
+ * the tickets for sale are counted for it (50 for each run). `forceUntil` is the admin's test switch: the elevator runs until then whatever the clock says.
+ */
+export function elevatorRuns(now: number, forceUntil = 0): { open: boolean; endsAt: number; nextAt: number; windowKey: string } {
+  if (forceUntil > now) return { open: true, endsAt: forceUntil, nextAt: now, windowKey: `f${forceUntil}` };
   const p = danishParts(now);
-  const into = (p.h - EVENT_HOUR) * 3600 + p.mi * 60 + p.s;
-  if (into >= 0 && into < EVENT_HOURS * 3600) return { open: true, endsAt: now + (EVENT_HOURS * 3600 - into) * 1000, nextAt: now };
-  const wait = into < 0 ? -into : 24 * 3600 - into;
-  return { open: false, endsAt: 0, nextAt: now + wait * 1000 };
+  const day = danishDayKey(now);
+  const sec = p.h * 3600 + p.mi * 60 + p.s;
+  const hours = runHoursOn(now);
+  for (const h of hours) {
+    const start = h * 3600, end = start + EVENT_HOURS * 3600;
+    if (sec >= start && sec < end) return { open: true, endsAt: now + (end - sec) * 1000, nextAt: now, windowKey: `${day}${pad2(h)}` };
+  }
+  const later = hours.find((h) => h * 3600 > sec);
+  if (later !== undefined) return { open: false, endsAt: 0, nextAt: now + (later * 3600 - sec) * 1000, windowKey: `${day}${pad2(later)}` };
+  const tomorrow = now + 24 * 3600 * 1000;
+  const first = runHoursOn(tomorrow)[0];
+  return { open: false, endsAt: 0, nextAt: now + (24 * 3600 - sec + first * 3600) * 1000, windowKey: `${danishDayKey(tomorrow)}${pad2(first)}` };
 }
 export const fmtWhen = (ms: number): string => { const m = Math.max(1, Math.round(ms / 60000)); return m >= 90 ? `${Math.round(m / 60)} hours` : `${m} min`; };
 
 // ---- the ticket --------------------------------------------------------------------------------------------------------
 export const TICKET_ITEM = "elevator_ticket";
 export const TICKET_PRICE = 50;
-/** tickets on sale per day (the stock fills up again every day) */
+/** tickets on sale for each run of the elevator (the stock fills up again for the next run) */
 export const TICKET_STOCK = 50;
 export const holdsTicket = (inv: ReadonlyArray<{ item: string } | null>): boolean => inv.some((s) => s?.item === TICKET_ITEM);
 

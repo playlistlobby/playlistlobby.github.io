@@ -27,8 +27,9 @@ export function mountAdminStreets(el: HTMLElement, ctx: Ctx): () => void {
   stops.push(onValue(ref(db, "config/streetsOpen"), (s) => {
     streetsOpen = s.val() === true;
     openBtn.textContent = streetsOpen ? "Hide the streets from players" : "Open the streets for players";
+    openBtn.classList.add("hidden"); // (the streets are open for everybody now: this switch changes nothing)
     openBtn.classList.toggle("danger", streetsOpen);
-    openState.textContent = streetsOpen ? "ON: the elevator stands in the basement, everybody can buy a ticket and ride it (20:00 to 21:00 Danish time)." : "OFF: there is no elevator for players. The staff can test with /test1 (a pass for 2 hours to the arrival room).";
+    openState.textContent = "The streets are always open: the elevator stands in the basement and runs by the clock (every day 20:00 to 21:00 Danish time; the extra runs are in EXTRA_RUNS in shared/streets.ts).";
   }, () => undefined));
   const test = (minutes: number) => () => void call(ctx.profile, "streetsTest", { minutes }).then(() => toast(minutes ? `The elevator runs for ${minutes} minutes.` : "The test switch is off."), (err) => toast((err as Error).message || "That didn't work.", "err"));
 

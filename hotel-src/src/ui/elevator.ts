@@ -5,7 +5,7 @@ import { h, toast } from "./dom";
 import { itemDef, BLOOD_ICON } from "../items";
 import { findSlot } from "../shared/items";
 import { playSfx } from "../sfx";
-import { danishDayKey, elevatorRuns, fmtWhen, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK } from "../shared/streets";
+import { elevatorRuns, fmtWhen, runHoursOn, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK } from "../shared/streets";
 import type { Ctx } from "../main";
 
 export interface ElevatorApi { close(): void }
@@ -27,9 +27,17 @@ export function openElevator(host: HTMLElement, ctx: Ctx, where: "lobby" | "arri
     body);
   host.append(el);
 
-  const day = danishDayKey(serverNow());
+  let soldFor = "";
+  const watchSold = (): void => { // the tickets are counted for each run of the elevator (the one that is on, or the next)
+    const key = elevatorRuns(serverNow(), force).windowKey;
+    if (key === soldFor) return;
+    soldFor = key; sold = 0;
+    soldOff();
+    soldOff = onValue(ref(db, `streetTickets/${key}/sold`), (s) => { sold = Number(s.val()) || 0; render(); }, () => undefined);
+  };
+  let soldOff: () => void = () => undefined;
   const stops = [
-    onValue(ref(db, `streetTickets/${day}/sold`), (s) => { sold = Number(s.val()) || 0; render(); }, () => undefined),
+    () => soldOff(),
     onValue(ref(db, "config/streetsForce"), (s) => { force = Number(s.val()) || 0; render(); }, () => undefined),
     onValue(ref(db, `streetPass/${me.uid}`), (s) => { pass = Number(s.val()) || 0; render(); }, () => undefined),
   ];
@@ -44,6 +52,7 @@ export function openElevator(host: HTMLElement, ctx: Ctx, where: "lobby" | "arri
 
   function render(): void {
     if (closed) return;
+    watchSold();
     const now = serverNow();
     const run = elevatorRuns(now, force);
     if (where === "arrival") {
@@ -60,10 +69,10 @@ export function openElevator(host: HTMLElement, ctx: Ctx, where: "lobby" | "arri
     const price = h("span", { class: "el-price" }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${TICKET_PRICE}`);
     body.replaceChildren(
       ...(run.open ? [] : [h("div", { class: "hint el-desc" }, "A risky chance to sell to new customers")]), // (before 20: what the elevator is for)
-      h("div", { class: "el-time" + (run.open ? " open" : "") }, run.open ? `The elevator is running. It stops in ${fmtWhen(run.endsAt - now)}.` : `The elevator runs from 20 to 21. It starts in ${fmtWhen(run.nextAt - now)}.`),
+      h("div", { class: "el-time" + (run.open ? " open" : "") }, run.open ? `The elevator is running. It stops in ${fmtWhen(run.endsAt - now)}.` : (runHoursOn(now).length > 1 ? `The elevator runs from 17 to 18 and from 20 to 21 today. It starts in ${fmtWhen(run.nextAt - now)}.` : `The elevator runs every day from 20 to 21. It starts in ${fmtWhen(run.nextAt - now)}.`)),
       h("div", { class: "sixty-row" },
         ticket ? h("img", { src: ticket.icon, alt: "", class: "sixty-ico" }) : null,
-        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, "Elevator ticket"), h("div", { class: "hint" }, have ? "You have a ticket. It is used up when you ride." : `${left} of ${TICKET_STOCK} left today. One for each player.`)),
+        h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, "Elevator ticket"), h("div", { class: "hint" }, have ? "You have a ticket. It is used up when you ride." : `${left} of ${TICKET_STOCK} left for this run. One for each player.`)),
         have
           ? h("button", { class: "btn small", disabled: true }, "Yours")
           : h("button", { class: "btn small primary", disabled: busy || left <= 0 || me.blood < TICKET_PRICE, title: left <= 0 ? "Sold out for today" : me.blood < TICKET_PRICE ? `You need ${TICKET_PRICE - me.blood} more drops` : "", onclick: () => void go(async () => { await call(me, "ticketBuy"); ctx.refreshHeader(); playSfx("coins", 0.5); toast("The ticket is in your pocket."); }) }, left <= 0 ? "Sold out" : price)),

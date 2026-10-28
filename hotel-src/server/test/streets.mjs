@@ -59,7 +59,8 @@ const clientWrite = (u, path, v) => fetch(`${DB}/${path}.json?ns=${NS}&auth=${u.
 const refused = (r) => r.status === 401 || r.status === 403;
 
 const day = S.danishDayKey(Date.now());
-await owner("DELETE", `streetTickets/${day}`);
+const curWin = async () => S.elevatorRuns(Date.now(), Number(await owner("GET", "config/streetsForce")) || 0).windowKey; // (the run the tickets are counted for: the one that is on, or the next)
+await owner("DELETE", `streetTickets/${await curWin()}`);
 await owner("DELETE", "config/streetsForce");
 for (const p of ["streetFilled", "streetLastHit", "rooms/streets/hits", "streets/furni"]) await owner("DELETE", p);
 
@@ -89,20 +90,27 @@ console.log("--- the clock");
 const t0 = Date.now();
 check("20:00 Danish time is open for an hour", S.elevatorRuns(Date.UTC(2026, 0, 15, 19, 30)).open && !S.elevatorRuns(Date.UTC(2026, 0, 15, 21, 30)).open && S.elevatorRuns(Date.UTC(2026, 0, 15, 19, 30)).endsAt > Date.UTC(2026, 0, 15, 19, 30));
 check("and in summer time too (UTC+2)", S.elevatorRuns(Date.UTC(2026, 6, 15, 18, 30)).open && !S.elevatorRuns(Date.UTC(2026, 6, 15, 19, 30)).open);
+// today (28 October 2026, Danish winter time UTC+1) the elevator runs 17-18 as well as 20-21; every other day only 20-21
+check("28 October: open 17:30 Danish time (16:30 UTC)", S.elevatorRuns(Date.UTC(2026, 9, 28, 16, 30)).open);
+check("28 October: closed 18:30, open again 20:30", !S.elevatorRuns(Date.UTC(2026, 9, 28, 17, 30)).open && S.elevatorRuns(Date.UTC(2026, 9, 28, 19, 30)).open);
+check("29 October: only 20-21 (17:30 is closed)", !S.elevatorRuns(Date.UTC(2026, 9, 29, 16, 30)).open && S.elevatorRuns(Date.UTC(2026, 9, 29, 19, 30)).open);
+check("each run has its own ticket stock (its window key)", S.elevatorRuns(Date.UTC(2026, 9, 28, 16, 30)).windowKey === "2026102817" && S.elevatorRuns(Date.UTC(2026, 9, 28, 17, 30)).windowKey === "2026102820" && S.elevatorRuns(Date.UTC(2026, 9, 28, 21, 30)).windowKey === "2026102920", [16, 17, 21].map((h) => S.elevatorRuns(Date.UTC(2026, 9, 28, h, 30)).windowKey).join());
+check("the next run is announced (at 15:00 on the 28th it starts in 2 hours)", Math.round((S.elevatorRuns(Date.UTC(2026, 9, 28, 14, 0)).nextAt - Date.UTC(2026, 9, 28, 14, 0)) / 3600000) === 2);
 check("the admin's switch overrides the clock", S.elevatorRuns(Date.UTC(2026, 0, 15, 5, 0), Date.UTC(2026, 0, 15, 5, 30)).open);
 
 console.log("--- the ticket");
 bad("not outside the basement", await act(a, "ticketBuy"));
 for (const u of [admin, a, b, c, poor]) await stand(u, "lobby", 3, 3);
 bad("blood is needed", await act(poor, "ticketBuy"));
+await owner("DELETE", `streetTickets/${await curWin()}`);
 const tb = await act(a, "ticketBuy");
 ok("buy the ticket for 50", tb);
 check("50 blood, one ticket", (await bloodOf(a)) === 950 && have(await state(a), "elevator_ticket") === 1 && tb.data.left === 49, JSON.stringify(tb.data));
 bad("one per player", await act(a, "ticketBuy"));
-check("the stock counts", (await owner("GET", `streetTickets/${day}/sold`)) === 1);
-await owner("PUT", `streetTickets/${day}/sold`, 50);
-bad("sold out for today", await act(c, "ticketBuy"));
-await owner("PUT", `streetTickets/${day}/sold`, 1);
+check("the stock counts (for this run)", (await owner("GET", `streetTickets/${await curWin()}/sold`)) === 1);
+await owner("PUT", `streetTickets/${await curWin()}/sold`, 50);
+bad("sold out for this run", await act(c, "ticketBuy"));
+await owner("PUT", `streetTickets/${await curWin()}/sold`, 1);
 
 console.log("--- one ticket at a time");
 await owner("PUT", "rooms/lobby/drops/3_3", { item: "elevator_ticket", qty: 1, x: 3, y: 3, by: "someone", at: Date.now() });
