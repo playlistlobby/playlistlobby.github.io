@@ -14488,5 +14488,480 @@
   "en": "Delivered",
   "da": "Leveret",
   "where": "src/ui/messenger.ts"
+ },
+ "N2343": {
+  "en": "The elevator stopped running. You ride down.",
+  "da": "Elevatoren er stoppet. Du kører ned.",
+  "where": "src/streets.ts"
+ },
+ "N2344": {
+  "en": "You started a fight",
+  "da": "Du startede en kamp",
+  "where": "src/streets.ts"
+ },
+ "N2345": {
+  "en": "SKULL",
+  "da": "DØDNING",
+  "where": "src/streets.ts"
+ },
+ "N2346": {
+  "en": "You have no bandage.",
+  "da": "Du har ikke noget bandage.",
+  "where": "src/streets.ts"
+ },
+ "N2347": {
+  "en": "Bandage",
+  "da": "Bandage",
+  "where": "src/streets.ts"
+ },
+ "N2348": {
+  "en": "In a fight: you can't leave",
+  "da": "I en kamp: du kan ikke gå",
+  "where": "src/streets.ts"
+ },
+ "N2349": {
+  "en": "Nobody can touch you for a moment",
+  "da": "Ingen kan røre dig et øjeblik",
+  "where": "src/streets.ts"
+ },
+ "N2350": {
+  "en": "The elevator stops in {…} min",
+  "da": "Elevatoren stopper om {…} min",
+  "where": "src/streets.ts"
+ },
+ "N2351": {
+  "en": "You were killed{…}. You wake up in your room.",
+  "da": "Du blev dræbt{…}. Du vågner op på dit værelse.",
+  "where": "src/streets.ts"
+ },
+ "N2352": {
+  "en": "by {…}",
+  "da": "af {…}",
+  "where": "src/streets.ts"
+ },
+ "N2353": {
+  "en": "You need a knife to fight.",
+  "da": "Du skal have en kniv for at slås.",
+  "where": "src/streets.ts"
+ },
+ "N2354": {
+  "en": "You go for {…}.",
+  "da": "Du går efter {…}.",
+  "where": "src/streets.ts"
+ },
+ "N2355": {
+  "en": "They've gone.",
+  "da": "De er væk.",
+  "where": "src/streets.ts"
+ },
+ "N2356": {
+  "en": "You use a bandage: +{healed} hit points.",
+  "da": "Du bruger en bandage: +{healed} helbred.",
+  "where": "src/streets.ts"
+ },
+ "N2357": {
+  "en": "{…} pay{…} {pay} blood. It's a pleasure.",
+  "da": "{…} betaler {pay} blod. Det var en fornøjelse.",
+  "where": "src/streets.ts"
+ },
+ "N2358": {
+  "en": "The driver",
+  "da": "Chaufføren",
+  "where": "src/streets.ts"
+ },
+ "N2359": {
+  "en": "Give them {qty}",
+  "da": "Giv dem {qty}",
+  "where": "src/streets.ts"
+ },
+ "N2360": {
+  "en": "You have {have}",
+  "da": "Du har {have}",
+  "where": "src/streets.ts"
+ },
+ "N2361": {
+  "en": "A car pulls over",
+  "da": "En bil holder ind",
+  "where": "src/streets.ts"
+ },
+ "N2362": {
+  "en": "A customer",
+  "da": "En kunde",
+  "where": "src/streets.ts"
+ },
+ "N2363": {
+  "en": "Pays {pay} blood{…}",
+  "da": "Betaler {pay} blod{…}",
+  "where": "src/streets.ts"
+ },
+ "N2364": {
+  "en": "(a big order)",
+  "da": "(en stor ordre)",
+  "where": "src/streets.ts"
+ },
+ "N2365": {
+  "en": "Not now",
+  "da": "Ikke nu",
+  "where": "src/streets.ts"
+ },
+ "N2366": {
+  "en": "You walk over.",
+  "da": "Du går derhen.",
+  "where": "src/streets.ts"
+ },
+ "N2367": {
+  "en": "{…}: wants {qty} x {…}",
+  "da": "{…}: vil have {qty} x {…}",
+  "where": "src/streets.ts"
+ },
+ "N2368": {
+  "en": "Car",
+  "da": "Bil",
+  "where": "src/streets.ts"
+ },
+ "N2369": {
+  "en": "Customer",
+  "da": "Kunde",
+  "where": "src/streets.ts"
+ },
+ "N2370": {
+  "en": "Elevator",
+  "da": "Elevator",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2371": {
+  "en": "This elevator goes back down to the basement. You can't ride it in a fight.",
+  "da": "Denne elevator kører ned til kælderen igen. Du kan ikke tage den midt i en kamp.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2372": {
+  "en": "Ride down",
+  "da": "Kør ned",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2373": {
+  "en": "The elevator is running. It stops in {fmtWhen}.",
+  "da": "Elevatoren kører. Den stopper om {fmtWhen}.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2374": {
+  "en": "The elevator runs from 20 to 21. It starts in {fmtWhen}.",
+  "da": "Elevatoren kører fra 20 til 21. Den starter om {fmtWhen}.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2375": {
+  "en": "Elevator ticket",
+  "da": "Elevatorbillet",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2376": {
+  "en": "You have a ticket. It is used up when you ride.",
+  "da": "Du har en billet. Den bliver brugt, når du kører.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2377": {
+  "en": "{left} of {TICKET_STOCK} left today. One for each player.",
+  "da": "{left} af {TICKET_STOCK} tilbage i dag. En til hver spiller.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2378": {
+  "en": "Sold out for today",
+  "da": "Udsolgt for i dag",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2379": {
+  "en": "The ticket is in your pocket.",
+  "da": "Billetten ligger i din lomme.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2380": {
+  "en": "Not running",
+  "da": "Kører ikke",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2381": {
+  "en": "Ride up (you have a pass)",
+  "da": "Kør op (du har adgang)",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2382": {
+  "en": "Ride up",
+  "da": "Kør op",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2383": {
+  "en": "You need a ticket",
+  "da": "Du skal have en billet",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2384": {
+  "en": "A ticket you didn't use stays yours for the next day.",
+  "da": "En billet du ikke brugte, er stadig din næste dag.",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2385": {
+  "en": "Trash can",
+  "da": "Skraldespand",
+  "where": "src/rooms.ts"
+ },
+ "N2386": {
+  "en": "Street lamp",
+  "da": "Gadelampe",
+  "where": "src/rooms.ts"
+ },
+ "N2387": {
+  "en": "Lamp post",
+  "da": "Lygtepæl",
+  "where": "src/rooms.ts"
+ },
+ "N2388": {
+  "en": "Fire hydrant",
+  "da": "Brandhane",
+  "where": "src/rooms.ts"
+ },
+ "N2389": {
+  "en": "Bench",
+  "da": "Bænk",
+  "where": "src/rooms.ts"
+ },
+ "N2390": {
+  "en": "Road block",
+  "da": "Vejspærring",
+  "where": "src/rooms.ts"
+ },
+ "N2391": {
+  "en": "Road signs",
+  "da": "Vejskilte",
+  "where": "src/rooms.ts"
+ },
+ "N2392": {
+  "en": "Road works sign",
+  "da": "Vejarbejdsskilt",
+  "where": "src/rooms.ts"
+ },
+ "N2393": {
+  "en": "Manhole",
+  "da": "Kloakdæksel",
+  "where": "src/rooms.ts"
+ },
+ "N2394": {
+  "en": "Graffiti",
+  "da": "Graffiti",
+  "where": "src/rooms.ts"
+ },
+ "N2395": {
+  "en": "Taxi",
+  "da": "Taxa",
+  "where": "src/rooms.ts"
+ },
+ "N2396": {
+  "en": "Pickup",
+  "da": "Pickup",
+  "where": "src/rooms.ts"
+ },
+ "N2397": {
+  "en": "Old car",
+  "da": "Gammel bil",
+  "where": "src/rooms.ts"
+ },
+ "N2398": {
+  "en": "Black car",
+  "da": "Sort bil",
+  "where": "src/rooms.ts"
+ },
+ "N2399": {
+  "en": "Arrival",
+  "da": "Ankomst",
+  "where": "src/rooms.ts"
+ },
+ "N2400": {
+  "en": "The streets",
+  "da": "Gaderne",
+  "where": "src/rooms.ts"
+ },
+ "N2401": {
+  "en": "A red ticket for the elevator in the basement. It runs from 20 to 21 every day. The ticket is used up when you ride it. You can only hold one.",
+  "da": "En rød billet til elevatoren i kælderen. Den kører fra 20 til 21 hver dag. Billetten bliver brugt, når du kører. Du kan kun have en.",
+  "where": "src/items.ts"
+ },
+ "N2402": {
+  "en": "Heals 3 hit points in a fight on the streets. You can use it again after 6 seconds.",
+  "da": "Heler 3 helbred i en kamp på gaden. Du kan bruge den igen efter 6 sekunder.",
+  "where": "src/items.ts"
+ },
+ "N2403": {
+  "en": "A bandage is for a fight on the streets.",
+  "da": "En bandage er til en kamp på gaden.",
+  "where": "src/ui/room.ts"
+ },
+ "N2404": {
+  "en": "Elevator: back to the basement",
+  "da": "Elevator: tilbage til kælderen",
+  "where": "src/ui/room.ts"
+ },
+ "N2405": {
+  "en": "Elevator: runs from 20 to 21",
+  "da": "Elevator: kører fra 20 til 21",
+  "where": "src/ui/room.ts"
+ },
+ "N2406": {
+  "en": "Trash can: search it",
+  "da": "Skraldespand: søg i den",
+  "where": "src/ui/room.ts"
+ },
+ "N2407": {
+  "en": "Door: back inside",
+  "da": "Dør: tilbage ind",
+  "where": "src/ui/room.ts"
+ },
+ "N2408": {
+  "en": "Door: to the streets",
+  "da": "Dør: til gaderne",
+  "where": "src/ui/room.ts"
+ },
+ "N2409": {
+  "en": "Fight",
+  "da": "Slås",
+  "where": "src/ui/room.ts"
+ },
+ "N2410": {
+  "en": "Serve",
+  "da": "Betjen",
+  "where": "src/ui/room.ts"
+ },
+ "N2411": {
+  "en": "You search the bin and find {…}.",
+  "da": "Du roder i skraldespanden og finder {…}.",
+  "where": "src/ui/room.ts"
+ },
+ "N2412": {
+  "en": "There's nothing in it.",
+  "da": "Der er ikke noget i den.",
+  "where": "src/ui/room.ts"
+ },
+ "N2413": {
+  "en": "You are in a fight. You can't leave.",
+  "da": "Du er i en kamp. Du kan ikke gå.",
+  "where": "src/ui/room.ts"
+ },
+ "N2414": {
+  "en": "{m} min",
+  "da": "{m} min",
+  "where": "src/shared/streets.ts"
+ },
+ "N2415": {
+  "en": "Heal",
+  "da": "Hel",
+  "where": "src/ui/sidepanel.ts"
+ },
+ "N2416": {
+  "en": "The elevator is out of order.",
+  "da": "Elevatoren er ude af drift.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2417": {
+  "en": "You have a ticket already. There is one for each player.",
+  "da": "Du har allerede en billet. Der er en til hver spiller.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2418": {
+  "en": "The tickets are sold out for today. There are new ones tomorrow.",
+  "da": "Billetterne er udsolgt for i dag. Der kommer nye i morgen.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2419": {
+  "en": "The elevator runs from 20 to 21. It starts again in {fmtWhen}.",
+  "da": "Elevatoren kører fra 20 til 21. Den starter igen om {fmtWhen}.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2420": {
+  "en": "You need a ticket for the elevator.",
+  "da": "Du skal have en billet til elevatoren.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2421": {
+  "en": "rode the elevator",
+  "da": "tog elevatoren",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2422": {
+  "en": "You are in a fight. You can't leave now.",
+  "da": "Du er i en kamp. Du kan ikke gå nu.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2423": {
+  "en": "That bin was searched a moment ago. Try again in {…}m.",
+  "da": "Den skraldespand blev søgt igennem lige før. Prøv igen om {…}m.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2424": {
+  "en": "Somebody else got there first.",
+  "da": "En anden nåede det først.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2425": {
+  "en": "You haven't got enough of that.",
+  "da": "Du har ikke nok af det.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2426": {
+  "en": "street order {qty} {item} for {pay}",
+  "da": "gadeordre {qty} {item} for {pay}",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2427": {
+  "en": "You can't fight yourself.",
+  "da": "Du kan ikke slås med dig selv.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2428": {
+  "en": "They've left the street.",
+  "da": "De har forladt gaden.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2429": {
+  "en": "You can't fight someone who plays on your device.",
+  "da": "Du kan ikke slås med en, der spiller på din enhed.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2430": {
+  "en": "They just arrived. Give them a moment.",
+  "da": "De er lige kommet. Giv dem et øjeblik.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2431": {
+  "en": "Your arm is still swinging.",
+  "da": "Din arm svinger stadig.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2432": {
+  "en": "hit {dmg}",
+  "da": "ramte {dmg}",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2433": {
+  "en": "missed",
+  "da": "missede",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2434": {
+  "en": "(killed)",
+  "da": "(dræbt)",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2435": {
+  "en": "That isn't a bandage.",
+  "da": "Det er ikke en bandage.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2436": {
+  "en": "You can't use another bandage yet.",
+  "da": "Du kan ikke bruge en bandage til endnu.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2437": {
+  "en": "You aren't hurt.",
+  "da": "Du er ikke såret.",
+  "where": "server/src/actions/streets.ts"
  }
 }

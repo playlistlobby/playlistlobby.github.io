@@ -1791,3 +1791,27 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .cdp-owner { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .2); }
 .cdp-row { display: flex; align-items: center; gap: 6px; }
 .cdp-num { min-width: 60px; text-align: center; font-weight: 800; }
+/* the streets: the elevator window, the order box, and the hit points at the top */
+.el { width: 260px; }
+.el-body { display: flex; flex-direction: column; gap: 8px; }
+.el-time { padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, .35); color: #ffb4a8; font-size: 12px; font-weight: 700; }
+.el-time.open { color: #b8f5a0; }
+.el-price { display: inline-flex; align-items: center; gap: 2px; font-weight: 800; }
+.st-hud { position: absolute; left: 8px; top: 38px; z-index: 4; display: flex; flex-direction: column; gap: 4px; pointer-events: none; max-width: 190px; }
+.st-hud > * { pointer-events: auto; }
+.st-hp { display: flex; align-items: center; gap: 6px; }
+.st-hp-bar { position: relative; width: 120px; height: 16px; overflow: hidden; border: 1px solid #000; border-radius: 8px; background: linear-gradient(#5a1010, #3a0808); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .7), 0 1px 0 rgba(255, 255, 255, .25); }
+.st-hp-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(#8de06a 0%, #4fae2c 50%, #3b9a1f 100%); transition: width .25s; }
+.st-hp-bar i.low { background: linear-gradient(#f2a0a0, #c93a3a); }
+.st-hp-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 11px var(--font); color: #fff; text-shadow: 0 1px 1px #000; }
+.st-skull { padding: 1px 6px; border-radius: 8px; background: #b01818; color: #fff; font: 800 10px var(--font); }
+.st-status { padding: 2px 8px; border-radius: 8px; background: rgba(0, 0, 0, .55); color: #e8e8e8; font-size: 11px; width: fit-content; }
+.st-status:empty { display: none; }
+.st-status.red { background: rgba(150, 20, 20, .8); }
+.st-band { align-self: flex-start; padding: 3px 12px; border: 1px solid #2b6d19; border-radius: 5px; font: 700 12px var(--font); color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .5); background: linear-gradient(#a8de80 0%, #6cc24a 49%, #4fae2c 50%, #3b9a1f 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); cursor: pointer; }
+.st-order { width: 250px; top: auto; bottom: 70px; right: 50%; transform: translateX(50%); }
+.st-order-row { display: flex; align-items: center; gap: 10px; }
+.st-order-ico { width: 36px; height: 36px; image-rendering: pixelated; }
+.st-order-want { font-weight: 800; font-size: 15px; }
+.stage.horror.street { background: radial-gradient(ellipse 80% 70% at 50% 40%, #232d48 0%, #101626 55%, #05070d 100%); }
+.stage.horror.street::before { display: none; }

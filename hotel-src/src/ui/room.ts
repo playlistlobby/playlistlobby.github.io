@@ -28,6 +28,11 @@ import { BAGMAN, HIDEOUT_LANDLORD, LANDLORD, PET_MERCHANT, LEGEND, SIXTY, SIXTY_
 import { openBagmandShop, BagmandShopApi } from "./bagmandShop";
 import { openCdPress } from "./cdPress";
 import { openBeatShop } from "./beatShop";
+import { openElevator } from "./elevator";
+import { mountStreets } from "../streets";
+import type { StreetsApi } from "../streets";
+import { ARRIVAL_ELEVATOR, arrivalDef, ARRIVAL_ID, streetsDef, STREETS_ID } from "../rooms";
+import { isStreetsRoom } from "../shared/streets";
 import { openHideoutComputer, ComputerApi } from "./hideoutComputer";
 import { openHideoutLandlord } from "./hideoutLandlord";
 import { openHideoutDoor } from "./hideoutDoor";
@@ -572,6 +577,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let computerApi: ComputerApi | null = null;
   let cdPressApi: { close(): void } | null = null;
   let beatShopApi: { close(): void } | null = null;
+  let elevatorApi: { close(): void } | null = null;
+  /** the streets: the customers, the cars, the fights (null in every other room) */
+  let streetsApi: StreetsApi | null = null;
+  let fightWalking = false;
   let petShopApi: { close(): void } | null = null;
   let chestApi: { close(): void; refresh(): void } | null = null;
   /** the poker window (it stands you up when it closes); if the server still has you sitting at a table after a refresh, you are stood up here and get your blood back */
@@ -610,6 +619,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let landlordLast: HTMLCanvasElement | undefined;
   const isShop = roomId === SHOP_ID;
   const isMines = roomId === MINES_ID;
+  const isArrival = roomId === ARRIVAL_ID;
+  const isStreets = roomId === STREETS_ID;
   let mixerApi: MixerApi | null = null;
   // the furnishing menu (toolbox): your room without you in it, pieces to drag around, storage
   let furnishOn = false;
@@ -753,7 +764,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return false;
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "vape") void usePuff(slot); else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "vape") void usePuff(slot); else if (what === "heal") { if (streetsApi) void streetsApi.heal(slot); else say("A bandage is for a fight on the streets.", "warn"); } else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
     onCombine: (a, b) => { void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
@@ -820,6 +831,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "cdpress") text = "CD printer: press a song onto a CD";
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "elevator") text = isArrival ? "Elevator: back to the basement" : "Elevator: runs from 20 to 21";
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "streetbin") text = "Trash can: search it";
+    else if (hoverObj && hoverObj.kind === "scustomer" && streetsApi) text = streetsApi.hoverText(hoverObj.id) ?? "";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "beatshop") text = "BeatShop: listen to beats and buy them";
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind!]?.opens === "poker" || FURNI_KINDS[hoverObj.kind!]?.opens === "blackjack")) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to play`;
     else if (hoverObj && hoverObj.kind === "wantedboard") text = "Wanted board";
@@ -850,7 +864,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && FURNI_KINDS[hoverObj.kind ?? ""]?.plant) { const pf = def.furni.find((x) => x.id === hoverObj!.id); text = pf?.plant ? `Growing kit · ${Math.round(plantProgress(pf.plant) * 100)}% · water ${Math.round(plantWater(pf.plant) * 100)}%` : "Growing kit (empty): plant a seed"; }
     else if (hoverObj && hoverObj.kind) text = FURNI_KINDS[hoverObj.kind].label;
     else if (hoverExtra >= 0 && def.extraDoors?.[hoverExtra]) text = `Door: ${def.extraDoors[hoverExtra].label}`;
-    else if (hoverDoor) text = isOwnRoom ? "Door: to the basement" : isTut ? "Door: locked" : def.doorTo ? "Door: back to the basement" : "Door: rooms";
+    else if (hoverDoor) text = isOwnRoom ? "Door: to the basement" : isTut ? "Door: locked" : isStreets ? "Door: back inside" : isArrival ? "Door: to the streets" : def.doorTo ? "Door: back to the basement" : "Door: rooms";
     actionHint.textContent = text;
     actionHint.classList.toggle("hidden", !text);
     canvas.style.cursor = item || tool ? "crosshair" : "pointer";
@@ -945,7 +959,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       floorOrigin = again.origin;
     });
     roomTitle.textContent = def.ownerName ? `${def.name} · by ${def.ownerName}` : def.name;
-    stage.classList.toggle("horror", def.theme.style === "grime");
+    stage.classList.toggle("horror", def.theme.style === "grime" || def.theme.style === "street");
+    stage.classList.toggle("street", def.theme.style === "street");
     defListeners.forEach((l) => l());
   }
 
@@ -1111,7 +1126,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (item?.useOnPlayer === "stab" && obj && !target && obj.kind === "mrock") { startMine(obj.id); return; } // the knife on a rock: mine it
     if (item?.useOnPlayer === "stab") {
-      if (target && target.uid !== me.uid) startStab(target.uid);
+      if (target && target.uid !== me.uid) { if (isStreets && streetsApi) streetsApi.fight(target.uid); else startStab(target.uid); }
       else if (target) say("You can't stab yourself.", "warn");
       else {
         // OSRS: clicking the floor with an item selected cancels it and walks
@@ -1134,7 +1149,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || FURNI_KINDS[obj.kind!]?.opens === "cdpress" || FURNI_KINDS[obj.kind!]?.opens === "beatshop" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || FURNI_KINDS[obj.kind!]?.opens === "cdpress" || FURNI_KINDS[obj.kind!]?.opens === "beatshop" || FURNI_KINDS[obj.kind!]?.opens === "elevator" || FURNI_KINDS[obj.kind!]?.opens === "streetbin" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
@@ -1148,6 +1163,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (obj.kind === "bed") bedAction();
       else if (obj.kind === "dumpster") startDumpster(obj.id);
       else if (roulette && ROULETTE_KINDS.has(obj.kind!)) roulette.click(obj.id);
+      else if (obj.kind === "scustomer" && streetsApi) streetsApi.click(obj.id);
       else if (FURNI_KINDS[obj.kind!]?.seat) sitAt(obj.id, t);
       else startArcade(obj.id);
       return;
@@ -1165,6 +1181,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (target?.npc && target.uid !== me.uid) {
       opts.push({ label: "Talk", target: isShop ? LANDLORD.name : SIXTY.name, action: () => (isShop ? startLandlord() : startSixty()) });
     } else if (target && target.uid !== me.uid) {
+      if (isStreets && streetsApi && hasKnife && !target.npc && !target.sleeper) opts.push({ label: "Fight", target: target.name, danger: true, action: () => streetsApi?.fight(target.uid) });
       // (stabbing isn't in this menu: pick the knife and tap the player)
       if (target.uid !== LEGEND.id && social.isOnline(target.uid) && !target.sleeper) opts.push({ label: "Invite to trade", target: target.name, action: () => void social.inviteToTrade(target.uid).then(() => say(`You ask ${target.name} to trade. They have to accept.`), () => say("Couldn't send that trade invite.", "warn")) });
       // their name opens their profile: friend, message, visit, gift... (no profile for the introduction's stand-in)
@@ -1210,6 +1227,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "hcomputer") opts.push({ label: "Use", target: "Computer", action: () => startBag(obj.id) });
     if (obj && (FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack")) opts.push({ label: "Play", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
     if (obj && FURNI_KINDS[obj.kind!]?.opens === "cdpress") opts.push({ label: "Press a CD", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
+    if (obj && FURNI_KINDS[obj.kind!]?.opens === "elevator") opts.push({ label: "Use", target: "Elevator", action: () => startBag(obj.id) });
+    if (obj && FURNI_KINDS[obj.kind!]?.opens === "streetbin") opts.push({ label: "Search", target: "Trash can", action: () => startBag(obj.id) });
+    if (obj?.kind === "scustomer" && streetsApi && !target) opts.push({ label: "Serve", target: streetsApi.hoverText(obj.id)?.split(":")[0] ?? "Customer", action: () => streetsApi?.click(obj.id) });
     if (obj && FURNI_KINDS[obj.kind!]?.opens === "beatshop") opts.push({ label: "Open", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
     if (obj?.kind === "hchest") opts.push({ label: "Open", target: "Shared stash", action: () => startBag(obj.id) });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
@@ -1617,6 +1637,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const mine = (): Player | undefined => players.get(me.uid);
 
   function walkTo(dest: Pt, force = false): void {
+    if (!fightWalking) streetsApi?.stopFight(); // (walking somewhere yourself ends a fight you were chasing)
     const p = mine();
     if (badTripRun && !force) return; // (you run where the trip takes you)
     if (!p || frozen || faintUntil) return; // 6ixty doesn't walk, and nobody walks while out cold
@@ -1744,6 +1765,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     computerApi?.close();
     cdPressApi?.close();
     beatShopApi?.close();
+    elevatorApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
@@ -1895,6 +1917,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     void pickUpPet(me).then(() => { panel.refresh(); say("You picked your pet up."); }, (err) => say((err as Error).message || "It won't come.", "warn"));
   }
 
+  /** a blue bin on the street: more than a basement bin gives, and it can be searched again sooner */
+  async function searchStreetBin(fid: string): Promise<void> {
+    try {
+      const r = await call<{ items: string[] }>(me, "streetBin", { can: fid });
+      panel.refresh();
+      say(`You search the bin and find ${r.items.map((i) => itemDef(i)?.name ?? i).join(", ")}.`);
+      playSfx("give", 0.4);
+    } catch (err) { say((err as Error).message || "There's nothing in it.", "warn"); }
+  }
+
   function startBag(fid: string): void {
     closeToolWindows();
     clearSelection();
@@ -1997,11 +2029,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         update(ref(db, `rooms/${roomId}/players/${me.uid}`), { dir: p.dir }).catch(() => undefined);
         if (to) {
           // one of the extra doors (the yellow one to the shop)
+          if (streetsApi?.inFight()) return say("You are in a fight. You can't leave.", "warn");
           playSfx("doorOpen", 0.6);
           logAction(me, "visit", `went to the ${to.label.toLowerCase()}`);
           ctx.navigate("room", { roomId: to.to, from: roomId });
         } else if (isOwnRoom || def.doorTo) {
           // arrived at your own room's door (down to the basement) or the shop's door (back to the basement)
+          if (streetsApi?.inFight()) return say("You are in a fight. You can't leave.", "warn");
           playSfx("doorOpen", 0.6);
           if (isOwnRoom && !me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); }
           logAction(me, "visit", "went to the basement");
@@ -2151,6 +2185,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
         else if (opens === "computer") { if (!computerApi) computerApi = openHideoutComputer(stage, ctx, roomId, () => def, () => panel.refresh(), () => { computerApi = null; }); }
         else if (opens === "beatshop") { const bo = f.by ?? def.ownerUid; if (bo && !beatShopApi) beatShopApi = openBeatShop(stage, ctx, bo, bo === def.ownerUid ? def.ownerName ?? "" : "", () => { beatShopApi = null; }); }
+        else if (opens === "elevator") { if (!elevatorApi) elevatorApi = openElevator(stage, ctx, isArrival || isStreets ? "arrival" : "lobby", (ride) => { if (ride === "up") ctx.navigate("room", { roomId: ARRIVAL_ID, from: LOBBY_ID }); else if (ride === "down") ctx.navigate("room", { roomId: LOBBY_ID, from: ARRIVAL_ID }); }, () => { elevatorApi = null; }); }
+        else if (opens === "streetbin") void searchStreetBin(f.id);
         else if (opens === "cdpress") { if (!cdPressApi) cdPressApi = openCdPress(stage, ctx, roomId, () => def, () => panel.refresh(), () => { cdPressApi = null; }); }
         else if (opens === "chest") { if (!me.isAdmin && !hideoutCan().member) say("Only the members can use the stash.", "warn"); else if (!chestApi) chestApi = openHideoutChest(stage, ctx, roomId, () => panel.refresh(), () => { chestApi = null; }); }
         else if (opens === "poker") { const pk = pokerKindOf(f.kind); if (pk && !pokerApi) pokerApi = openPoker(stage, ctx, roomId, f.id, pk, () => panel.refresh(), () => { pokerApi = null; }, tableChat); }
@@ -3269,7 +3305,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : { x: back ? back.x : def.doorX, y: 1 };
+    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -4737,8 +4773,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const hotSink = k.opens === "sink" && ((!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id)); // pointed at or tapped: the sink always shows its water drop
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
-      const redGlow = isBoom || k.opens === "records"; // so does the record player in the shop
-      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "sink" || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle")) {
+      const redGlow = isBoom || k.opens === "records" || k.opens === "elevator"; // so does the record player in the shop
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "sink" || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : k.opens === "raffle" ? def.furni.find((x) => x.kind === "raffletable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
@@ -4771,10 +4807,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (liftUp) g.restore();
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky" || k.opens === "raffle"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" ? ticketImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" || k.opens === "elevator" ? ticketImg : k.opens === "streetbin" ? basketIconImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -5262,7 +5298,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // until you've opened the door once, it flashes to show you where to go
     const flashing = isOwnRoom && !me.seenDoor && !introUntil && started;
     const glow = Math.max(hoverDoor ? 1 : 0, flashing ? 0.55 + 0.45 * Math.sin(performance.now() / 280) : 0);
-    if (!greenScreen) doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime");
+    if (!greenScreen) doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime" || def.theme.style === "street");
     const doorHint = roomId === LOBBY_ID && lighterStage(me) === "door"; // the lighter job: the shop's door flashes until you have been through it
     extraDoorBoxes = greenScreen ? [] : (def.extraDoors ?? []).map((d, i) => {
       const flash = doorHint && d.to === SHOP_ID;
@@ -5362,7 +5398,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "elevator" || FURNI_KINDS[f.kind].opens === "streetbin" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -5484,6 +5520,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         },
       });
     }
+
+    if (streetsApi) streetsApi.draw({ g, list, objs, bubbles, now, scale, toScreen, iso, tileHeight: TILE_H, hoverId: hoverObj?.id ?? null });
 
     const landlordHere = isShop && [...players.values()].some((q) => q.npc); // the admin is standing there as the landlord: no second one
     if (isShop && !landlordHere) {
@@ -5928,6 +5966,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (dr && now - dr.start > DICE_SHOW_MS) diceRolls.delete(p.uid);
       const dieOn = !!dr && now - dr.start <= DICE_SHOW_MS;
       if (dieOn) bubbles.push(() => drawDie(feet.x, feet.y - (FEET_Y + 4) * scale, dr!.n, now - dr!.start));
+      if (streetsApi) { const hy = feet.y - (FEET_Y + 4) * scale; const pu = p.uid; bubbles.push(() => streetsApi?.drawPlayer(g, pu, feet.x, hy, scale, now)); }
       if (p.bubble && p.bubble.until > now) {
         const left = p.bubble.until - now;
         const b = p.bubble;
@@ -5968,6 +6007,25 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (isMines) {
       applyDef(minesDef());
       start();
+      return;
+    }
+    if (isArrival) {
+      applyDef(arrivalDef());
+      start();
+      return;
+    }
+    if (isStreets) {
+      applyDef(streetsDef());
+      start();
+      void mountStreets({
+        me, stage, say,
+        tileOf: (uid) => { const p = players.get(uid); return p ? currentTile(p) : null; },
+        nameOf: (uid) => players.get(uid)?.name ?? "somebody",
+        walkTo: (t) => { fightWalking = true; try { walkTo(t); } finally { fightWalking = false; } },
+        goHome: () => ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", force: true }),
+        goDown: () => ctx.navigate("room", { roomId: LOBBY_ID, from: ARRIVAL_ID, force: true }),
+        refreshPocket: () => panel.refresh(),
+      }).then((api) => { if (disposed) api.dispose(); else streetsApi = api; });
       return;
     }
     if (isTut) {
@@ -6082,6 +6140,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     computerApi?.close();
     cdPressApi?.close();
     beatShopApi?.close();
+    elevatorApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
@@ -6099,6 +6158,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     stopBjSeat();
     pokerFx.dispose();
     roulette?.dispose();
+    streetsApi?.dispose(); elevatorApi?.close();
     pillCleanup?.();
     furnishUi?.dispose();
     closeCdPopup();

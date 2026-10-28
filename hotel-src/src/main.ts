@@ -366,6 +366,8 @@ async function showHotel(user: User): Promise<void> {
     return mountEditor(body, ctx, mode);
   }
 
+  // (testing in the emulator: window.__go("streets") jumps to a room)
+  if (import.meta.env.MODE === "emulator") (window as unknown as { __go?: (roomId: string, o?: NavOpts) => void }).__go = (roomId, o) => go("room", { roomId, force: true, ...o });
   function go(view: View, opts: NavOpts = {}): void {
     if ((view === "admin" || view === "npc") && !p.isAdmin) view = "room";
     if (view === "mod" && !p.isMod) view = "room";
