@@ -1138,6 +1138,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     // nothing selected: a tap does what the menu would offer (one option -> it happens, several -> you choose)
     if (!selectedDef()) {
+      if (isStreets && target && target.uid === me.uid) return; // (on the street a tap on yourself does nothing: no profile / walk menu in the middle of a fight)
       // on the street a tap on another player is a fight (the menu is still there on a right click)
       if (isStreets && streetsApi && target && target.uid !== me.uid && !target.npc && !target.sleeper && target.uid !== LEGEND.id) { streetsApi.fight(target.uid); return; }
       const options = contextOptions(m.x, m.y, true);
@@ -1229,6 +1230,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** What you can do with whatever is at canvas position (mx, my). `forTap` leaves out the owner's "Pick up" (that belongs to the furnishing menu). */
   function contextOptions(mx: number, my: number, forTap = false): Array<{ label: string; target?: string; danger?: boolean; action: () => void }> {
     const target = playerAt(mx, my);
+    if (isStreets && target && target.uid === me.uid) return []; // (no menu when you click yourself on the street)
     const tile = tileAt(mx, my);
     const item = selectedDef();
     const hasKnife = findSlot(me.inventory, "knife") >= 0;
