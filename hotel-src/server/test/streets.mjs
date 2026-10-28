@@ -288,6 +288,27 @@ bad("no deadly stab on the street", await act(a, "deadlyStab", { target: b.uid, 
 await owner("DELETE", `rooms/streets/players/${a.uid}`);
 const off = await act(a, "consume", { slot: 1 });
 check("off the street the pill still kills (the rule is for the street only)", off.ok === true && off.data.kind === "fentdeath", JSON.stringify(off).slice(0, 160));
+console.log("--- bandages: 5 at most on you, as many as you like in the stash, 5% from the basement bins");
+const E = await load("../../src/shared/economy.ts", "economy.mjs");
+let pocket = Array.from({ length: 28 }, () => null);
+for (let i = 0; i < 5; i++) pocket = E.addToInv(pocket, { item: "bandage", qty: 1 });
+check("five bandages fit", E.bandagesCarried(pocket) === 5);
+check("a sixth doesn't", E.addToInv(pocket, { item: "bandage", qty: 1 }) === null);
+check("other things still do", E.addToInv(pocket, { item: "weed", qty: 1 }) !== null);
+const drops = Object.fromEntries(E.DUMPSTER_DROPS.map((d) => [d.item, d.chance]));
+check("the bins give a bandage 5% of the time", drops.bandage === 5);
+check("the seeds and the spores are where they were (39.5% and 22%)", drops.weedseed === 39.5 && drops.shroomspore === 22);
+check("and the table still adds up to 100", Math.abs(E.DUMPSTER_DROPS.reduce((n, d) => n + d.chance, 0) - 100) < 1e-9);
+await stand(a, "arrival", 5, 2);
+await owner("PUT", `users/${a.uid}/inventory`, Object.fromEntries(Array.from({ length: 5 }, (_, i) => [i, { item: "bandage", qty: 1 }])));
+await owner("PUT", `users/${a.uid}/stash`, { bandage: 40 });
+ok("a bandage goes in a stash that already has 40", await act(a, "stashStore", { slot: 0, qty: 1 }));
+check("41 in the stash", (await owner("GET", `users/${a.uid}/stash/bandage`)) === 41);
+bad("taking out two while carrying four is refused (that would be six)", await act(a, "stashTake", { key: "bandage", qty: 2 }));
+ok("one is fine now there are four on you", await act(a, "stashTake", { key: "bandage", qty: 1 }));
+bad("but not past five", await act(a, "stashTake", { key: "bandage", qty: 1 }));
+await owner("DELETE", `rooms/arrival/players/${a.uid}`);
+
 console.log("--- closing the game in a fight");
 const rowOf = (u) => ({ name: u.name, figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", x: 4, y: 4, dir: 2, ts: Date.now() - 60_000, off: Date.now() });
 await owner("DELETE", `presence/${b.uid}`);

@@ -11,7 +11,7 @@
 import { Action, cheb, ID_RE, int, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { isEmulator } from "../env";
-import { addToInv, DUMPSTER_DROPS, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, bandageCapFull, DUMPSTER_DROPS, takeQtyFrom } from "../../../src/shared/economy";
 import { streetUnit } from "../../../src/shared/darkweb";
 import { findSlot, NO_DROP } from "../../../src/shared/items";
 import type { InvItem } from "../../../src/shared/items";
@@ -99,7 +99,8 @@ export const streetBin: Action = {
     const picks = plain ? 1 : 2 + (Math.random() < 0.3 ? 1 : 0) + (c.now < w.s.leanUntil ? 2 : 0);
     const items: string[] = [];
     for (let i = 0; i < picks; i++) {
-      const item = plain ? pickPlain() : pick();
+      let item = plain ? pickPlain() : pick();
+      if (item === PVP.healItem && bandageCapFull(w.s.inventory)) item = "cigbutt"; // (you carry 5 bandages already)
       const next = addToInv(w.s.inventory, { item, qty: 1 });
       if (!next) { if (!items.length) fail("Your inventory is full"); break; }
       w.s.inventory = next;

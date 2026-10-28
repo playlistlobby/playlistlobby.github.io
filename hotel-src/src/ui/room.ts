@@ -2312,6 +2312,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const notes: NoteFx[] = [];
   let lastNote = 0;
   const cdPlaying = () => !!cdState && !cdEnded(cdState);
+  /** the room's music is actually sounding (a paused CD is not): then the basement's hum keeps quiet */
+  const musicOn = () => cdPlaying() && !cdState!.pausedAt;
 
   const cdUi = {
     title: h("div", { class: "cd-title" }),
@@ -2515,6 +2517,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     cdAudio.sync(state);
     refreshCdPopup();
     jukeboxApi?.refresh();
+    if (isBasement && active) setAmbience(!musicOn()); // (the hum gives way to the music at once)
     // my CD comes home when it finishes, is ejected, or if I was away while it finished
     void reconcileCd(me, roomId, state).then((returned) => {
       if (!returned) return;
@@ -3639,7 +3642,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const stopPocketWatch = (): void => undefined; void stopPocketWatch;
     const dropSweep = window.setInterval(() => sweepExpired(roomId, drops.values()), 5000);
     unsubs.push(() => window.clearInterval(dropSweep));
-    if (isBasement) setAmbience(true); if (roomId === SHOP_ID) setShopMusic(true); // the basement hums: the sound fades in as you arrive
+    if (isBasement) setAmbience(!musicOn()); if (roomId === SHOP_ID) setShopMusic(true); // the basement hums: the sound fades in as you arrive (but not over the jukebox's music)
+    if (isBasement) { // the hum and a CD never play together: it fades out when the room's CD starts and comes back when it has finished (the CD ends by the clock, so this looks every second)
+      const ambienceWatch = window.setInterval(() => { if (active) setAmbience(!musicOn()); }, 1000);
+      unsubs.push(() => window.clearInterval(ambienceWatch));
+    }
     if (isBasement || asSixty) {
       // 6ixty's look (the admin can change it); as 6ixty you wear it too
       unsubs.push(watchSixtyLook((l) => {
@@ -6327,7 +6334,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     dispose,
     show() {
       active = true;
-      if (isBasement) setAmbience(true); if (roomId === SHOP_ID) setShopMusic(true);
+      if (isBasement) setAmbience(!musicOn()); if (roomId === SHOP_ID) setShopMusic(true);
       panel.refresh();
       layout();
       ctx.refreshHeader();

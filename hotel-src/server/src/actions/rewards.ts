@@ -5,7 +5,7 @@ import { fail } from "../ctx";
 import { isEmulator } from "../env";
 import { skipTime } from "../skipTime";
 import {
-  addToInv, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabWaitAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, bandageCapFull, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabWaitAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { liveHits, parseHits, HIT_ONLINE_FRESH_MS } from "../../../src/shared/hits";
 import { clearWanted } from "./bounty";
@@ -122,7 +122,8 @@ export const dumpster: Action = {
     const picks = c.now < w.s.leanUntil ? 2 : 1;
     const items: string[] = [];
     for (let i = 0; i < picks; i++) {
-      const item = pick();
+      let item = pick();
+      if (item === "bandage" && bandageCapFull(w.s.inventory)) item = "cigbutt"; // (you carry 5 bandages already: the can gives its filler instead)
       const next = addToInv(w.s.inventory, { item, qty: 1 });
       if (!next) { if (items.length === 0) fail("Your inventory is full"); break; }
       w.s.inventory = next;

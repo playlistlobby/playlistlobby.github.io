@@ -13,7 +13,7 @@ export const STARTER_ITEMS: string[] = [];
 export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
   // percentages (they add up to 100): a quarter cigarette butts, then seeds and spores (2 seeds to 1 spore) in what is left, a little weed and lean, and now and then a lighter
-  { item: "cigbutt", chance: 22, label: "cigarette butt" },
+  { item: "cigbutt", chance: 19, label: "cigarette butt" },
   { item: "weedseed", chance: 39.5, label: "weed seed" },
   { item: "shroomspore", chance: 22, label: "shroom spores" },
   { item: "weed", chance: 6, label: "weed" },
@@ -21,7 +21,7 @@ export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string
   { item: "codeine", chance: 2, label: "lean" },
   { item: "lighter", chance: 1, label: "lighter" },
   { item: "gun", chance: 0.5, label: "gun" },
-  { item: "bandage", chance: 2, label: "bandage" },
+  { item: "bandage", chance: 5, label: "bandage" }, // (5%: taken from the butts, so the seeds and spores stay where they were)
 ];
 /** the super pill: 4x walking speed for a minute */
 export const SUPERPILL_MS = 60_000;
@@ -269,7 +269,13 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
 // ---- inventory helpers -------------------------------------------------------------------------------------------------
 
 /** A copy of the inventory with something put in it (stacking where the item stacks); null if there's no room. */
+/** you can carry this many bandages at a time (the stash box takes as many as you like) */
+export const BANDAGE_MAX = 5;
+export const bandagesCarried = (inv: Inventory): number => inv.reduce((n, s) => n + (s && s.item === "bandage" ? s.qty : 0), 0);
+export const bandageCapFull = (inv: Inventory): boolean => bandagesCarried(inv) >= BANDAGE_MAX;
+
 export function addToInv(inv: Inventory, give: InvItem): Inventory | null {
+  if (give.item === "bandage" && bandagesCarried(inv) + give.qty > BANDAGE_MAX) return null; // (5 at most in your pockets)
   if (give.item === TICKET_ITEM && inv.some((s) => s?.item === TICKET_ITEM)) return null; // (one elevator ticket per player: a second one can't be picked up or traded for)
   const out: Inventory = inv.map((s) => (s ? { ...s } : null));
   if (STACKABLE.has(give.item) && !give.lit) {

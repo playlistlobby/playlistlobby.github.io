@@ -3,7 +3,7 @@ import { Action, cheb, ID_RE, int, requireInRoom, text } from "./util";
 import { fail } from "../ctx";
 import type { Ctx } from "../ctx";
 import { isEmulator } from "../env";
-import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, BANDAGE_MAX, bandagesCarried, takeQtyFrom } from "../../../src/shared/economy";
 import { findSlot, STACKABLE } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 import { BAGMAND_BUY, bagmandPays, BAGMAN_ROOM, currentVisit, DEADLY_DROP, lastVisit, VISIT_MS } from "../../../src/shared/bagmand";
@@ -49,6 +49,7 @@ export const bagmandBuy: Action = {
       if (qty > left) fail(left === 1 ? "There is only 1 left." : `There are only ${left} left.`);
     }
     const w = await c.user();
+    if (item === "bandage" && bandagesCarried(w.s.inventory) + qty > BANDAGE_MAX) fail(`You can only carry ${BANDAGE_MAX} bandages.`);
     const cost = def.price * qty;
     if (w.s.blood < cost) fail(`You need ${cost - w.s.blood} more drops`);
     let next: Inventory | null = w.s.inventory;
