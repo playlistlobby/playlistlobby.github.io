@@ -170,8 +170,9 @@ async function removeMember(c: Ctx, room: string, uid: string): Promise<{ pieces
   const w = await c.user(uid);
   let pieces = 0;
   const give = (kind: string, n: number) => { w.s.storage[kind] = (w.s.storage[kind] ?? 0) + n; pieces += n; };
-  const rows = (await c.db.get<Record<string, { kind?: string; by?: string }>>(`roomsMeta/${room}/furni`)) ?? {};
-  for (const [id, row] of Object.entries(rows)) if (row?.by === uid && row.kind) { give(row.kind, 1); c.extra[`roomsMeta/${room}/furni/${id}`] = null; }
+  const rows = (await c.db.get<Record<string, { kind?: string; by?: string; auto?: boolean; up?: number | boolean }>>(`roomsMeta/${room}/furni`)) ?? {};
+  for (const [id, row] of Object.entries(rows)) if (row?.by === uid && row.kind) { // (a pot with its waterer and an upgraded mixer go home as the combined piece)
+    give(row.kind === "f_planter" && row.auto ? "f_planter_auto" : row.kind === "f_mixer" && row.up ? (row.up === 2 ? "f_mixer_up2" : "f_mixer_up") : row.kind, 1); c.extra[`roomsMeta/${room}/furni/${id}`] = null; }
   const box = (await c.db.get<Record<string, number>>(`roomsMeta/${room}/box/${uid}`)) ?? {};
   for (const [kind, n] of Object.entries(box)) if (n > 0) give(kind, n);
   c.extra[`roomsMeta/${room}/box/${uid}`] = null;

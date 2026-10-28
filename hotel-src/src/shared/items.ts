@@ -202,7 +202,7 @@ export const BADTRIP_LINES: readonly string[] = [
   "Der worms i min dih der worms i min idek broasdokfpælkj",
 ];
 /** Items that pile up in one slot (everything else gets a slot of its own). */
-export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco", "iron", "wood", "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn", "mysterycase", "casekey"]);
+export const STACKABLE: ReadonlySet<string> = new Set(["cigarette", "jointpaper", "bluntwrap", "weedseed", "weed", "mix", "midweed", "thca", "researchchem", "pill", "kodimagnyl", "shroomspore", "shroom", "weakshroom", "hash", "hashmix", "chudmix", "trollmix", "superpill", "dmt", "lsd", "cigbutt", "tobacco", "iron", "wood", "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn", "mysterycase", "casekey", "wateringcan", "wateringcan_full"]);
 /** Weed grows for 10 minutes, shrooms for 25. The water bar runs dry after 5: water it once, any time while it grows (even before the bar is empty), or the harvest turns out poor. */
 export const GROW_MS = 10 * 60_000;
 export const GROW_MS_SHROOM = 25 * 60_000;
