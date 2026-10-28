@@ -4,7 +4,8 @@ import { fail } from "../ctx";
 import type { Ctx } from "../ctx";
 import { isEmulator } from "../env";
 import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
-import { findSlot } from "../../../src/shared/items";
+import { findSlot, STACKABLE } from "../../../src/shared/items";
+import type { Inventory } from "../../../src/shared/items";
 import { BAGMAND_BUY, bagmandPays, BAGMAN_ROOM, currentVisit, DEADLY_DROP, lastVisit, VISIT_MS } from "../../../src/shared/bagmand";
 import { bloodPile } from "./floor";
 import { isProtected } from "./hits";
@@ -50,8 +51,11 @@ export const bagmandBuy: Action = {
     const w = await c.user();
     const cost = def.price * qty;
     if (w.s.blood < cost) fail(`You need ${cost - w.s.blood} more drops`);
-    const next = addToInv(w.s.inventory, { item, qty });
-    if (!next) fail("Your inventory is full");
+    let next: Inventory | null = w.s.inventory;
+    for (const part of STACKABLE.has(item) ? [qty] : Array.from({ length: qty }, () => 1)) { // (what doesn't stack, like the bandage, takes a slot each)
+      next = next && addToInv(next, { item, qty: part });
+      if (!next) fail("Your inventory is full");
+    }
     w.s.inventory = next!;
     w.s.blood -= cost;
     if (def.stock !== null) c.extra[`bagmand/${start}/sold/${item}/${c.uid}`] = sold + qty;

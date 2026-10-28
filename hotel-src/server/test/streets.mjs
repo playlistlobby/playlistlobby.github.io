@@ -240,6 +240,7 @@ for (let i = 0; i < 25 && !died; i++) {
 check("a hit that lands kills somebody on 1 hit point", died);
 const dead = await owner("GET", `streetCombat/${b.uid}`);
 check("the dead one is back on full hit points, marked dead, and untouchable for a while", dead.hp === 10 && dead.deaths === 1 && dead.deadBy === a.uid && dead.protectUntil > Date.now(), JSON.stringify(dead));
+check("killing the one who hit you does not lift your own 10 seconds (you still can't leave), but you are free to fight somebody else", (await owner("GET", `streetCombat/${a.uid}/combatUntil`)) > Date.now() + 5000 && (await owner("GET", `streetCombat/${a.uid}/foe`)) === null);
 check("the killer is credited", (await owner("GET", `streetCombat/${a.uid}/kills`)) === 1);
 check("everything in the pocket is lost on death, except the knife", (await state(b)).inventory.filter((x) => x).map((x) => x.item).join() === "knife", JSON.stringify((await state(b)).inventory));
 check("every swing is a stab for everybody in the room to see", Object.values((await owner("GET", "rooms/streets/events")) ?? {}).some((e) => e.type === "stab" && e.fight && e.from === a.uid && e.to === b.uid));

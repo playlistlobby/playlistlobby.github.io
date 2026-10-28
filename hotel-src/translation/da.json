@@ -14530,8 +14530,8 @@
   "where": "src/streets.ts"
  },
  "N2351": {
-  "en": "You were killed{…}. You lost everything you carried except your knife. You wake up in your room.",
-  "da": "Du blev dræbt{…}. Du mistede alt, du bar på, undtagen din kniv. Du vågner op på dit værelse.",
+  "en": "You were killed{…}. You lost everything you carried except your knife.",
+  "da": "Du blev dræbt{…}. Du mistede alt, du bar på, undtagen din kniv.",
   "where": "src/streets.ts"
  },
  "N2352": {
@@ -15403,5 +15403,20 @@
   "en": "You are in a fight already.",
   "da": "Du er allerede i en kamp.",
   "where": "server/src/actions/streets.ts"
+ },
+ "N2526": {
+  "en": "You're dead",
+  "da": "Du er død",
+  "where": "src/streets.ts"
+ },
+ "N2527": {
+  "en": "You wake up in your room in ",
+  "da": "Du vågner op på dit værelse om ",
+  "where": "src/streets.ts"
+ },
+ "N2528": {
+  "en": " s",
+  "da": " sek.",
+  "where": "src/streets.ts"
  }
 }

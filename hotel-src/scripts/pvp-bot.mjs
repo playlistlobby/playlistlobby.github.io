@@ -41,7 +41,8 @@ if (!testerUid) throw new Error("no tester account called " + TESTER + " (log in
     const spot = list.findIndex((s) => !s);
     if (spot >= 0) list[spot] = { item, qty }; else list.push({ item, qty });
   };
-  put("knife", 1); put("bandage", 20);
+  put("knife", 1);
+  for (let i = 0; i < 8; i++) { const spot = list.findIndex((s) => !s); if (spot >= 0) list[spot] = { item: "bandage", qty: 1 }; else if (list.length < 28) list.push({ item: "bandage", qty: 1 }); } // (bandages do not stack: a slot each)
   await owner("PUT", `users/${testerUid}/inventory`, list);
   await owner("PUT", `streetPass/${testerUid}`, Date.now() + hours * 3_600_000);
 }
@@ -57,7 +58,11 @@ for (const [i, b] of bots.entries()) {
   await owner("PUT", `usernames/${b.name}`, b.uid);
   await owner("DELETE", `streetCombat/${b.uid}`); await owner("DELETE", `streetSwing/${b.uid}`);
 }
-function kit() { return { 0: { item: weapon, qty: 1 }, 1: { item: "bandage", qty: 12 } }; }
+// the pocket of a bot: the weapon, four bandages (a slot each: they do not stack), and some drugs
+function kit() {
+  const items = [{ item: weapon, qty: 1 }, ...Array.from({ length: 4 }, () => ({ item: "bandage", qty: 1 })), { item: "weed", qty: 12 }, { item: "joint", qty: 1 }, { item: "joint", qty: 1 }, { item: "ketamine", qty: 3 }, { item: "percs", qty: 5 }, { item: "twocb", qty: 2 }, { item: "heroin", qty: 2 }, { item: "caliweed", qty: 4 }, { item: "lsd", qty: 3 }];
+  return Object.fromEntries(items.map((it, i) => [i, it]));
+}
 console.log(`sparring bots on the street for ${hours} h (${weapon}${aggro ? ", aggressive" : ""}). Go up in the elevator (or /test1) and click one of them: spar_sam, spar_tess. Ctrl-C to stop.`);
 
 const t0 = Date.now();
@@ -92,7 +97,11 @@ while (Date.now() - t0 < hours * 3_600_000) {
     const dist = Math.max(Math.abs(fr.x - b.x), Math.abs(fr.y - b.y));
     if (dist > 1) { b.x += dx; b.y += dy; await owner("PATCH", `rooms/streets/players/${b.uid}`, { x: b.x, y: b.y, dir: dx > 0 ? 2 : 6, ts: now }); continue; }
     const hp = Math.min(10, (cb.hp ?? 10) + Math.floor(Math.max(0, now - (cb.at ?? now)) / 20_000));
-    if (hp <= 3) { const r = await act(b, "streetHeal", { slot: 1 }); if (r.ok) { console.log(b.name, "uses a bandage"); continue; } }
+    if (hp <= 3) { // a bandage takes the place of a swing
+      let healed = false;
+      for (const slot of [1, 2, 3, 4]) { if ((await act(b, "streetHeal", { slot })).ok) { healed = true; console.log(b.name, "uses a bandage"); break; } }
+      if (healed) continue;
+    }
     const r = await act(b, "streetHit", { target: foe });
     if (r.ok) console.log(b.name, r.data.dmg ? `hits for ${r.data.dmg}` : "misses", r.data.died ? "and kills them" : `(they have ${r.data.left} left)`);
   }

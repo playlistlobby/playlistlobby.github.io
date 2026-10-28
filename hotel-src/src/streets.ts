@@ -1,6 +1,6 @@
 // The streets in the browser (rules and numbers: src/shared/streets.ts, the server: server/src/actions/streets.ts): the customers and their orders, the cars, the fights and the
 // hit points, the little panel at the top, and the elevator's pass running out. room.ts calls into this for the street room only.
-import { onValue, orderByKey, limitToLast, query, ref } from "firebase/database";
+import { onValue, orderByKey, limitToLast, query, ref, update } from "firebase/database";
 import { db } from "./firebase";
 import { call, serverNow } from "./db";
 import type { Profile } from "./db";
@@ -153,7 +153,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       const v = (s.val() ?? {}) as Record<string, StreetCombat & { deadAt?: number; deadBy?: string }>;
       combat = new Map(Object.entries(v));
       const mine = v[me.uid];
-      if (mine?.deadAt && mine.deadAt > lastDead && serverNow() - mine.deadAt < 15_000) { lastDead = mine.deadAt; died(mine.deadBy); }
+      if (mine?.deadAt && mine.deadAt > lastDead && serverNow() - mine.deadAt < 15_000) { lastDead = mine.deadAt; died(mine.deadBy, mine.deadAt); }
       paintHud();
     }, () => undefined),
     onValue(query(ref(db, "streetFilled"), orderByKey(), limitToLast(60)), (s) => {
@@ -209,10 +209,30 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const hudTimer = window.setInterval(paintHud, 1000);
   paintHud();
 
-  function died(by?: string): void {
+  /** how long the "you're dead" screen stays before you wake up in your room */
+  const DEAD_MS = 15_000;
+  let deadBox: HTMLElement | null = null;
+  let deadTimer = 0;
+  function died(by: string | undefined, at: number): void {
     stopFight();
-    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You lost everything you carried except your knife. You wake up in your room.`, "warn");
-    window.setTimeout(() => { if (!disposed) o.goHome(); }, 1800);
+    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You lost everything you carried except your knife.`, "warn");
+    update(ref(db, `rooms/streets/players/${me.uid}`), { lay: true, sit: null }).catch(() => undefined); // (everybody sees you on the ground)
+    deadBox?.remove();
+    const secs = h("b", { class: "st-dead-secs" }, "");
+    deadBox = h("div", { class: "st-dead" }, h("div", { class: "st-dead-card" }, h("div", { class: "st-dead-title" }, "You're dead"), h("div", { class: "st-dead-sub" }, "You wake up in your room in ", secs, " s")));
+    o.stage.append(deadBox);
+    const paint = (): void => {
+      const left = Math.max(0, DEAD_MS - (serverNow() - at));
+      secs.textContent = String(Math.ceil(left / 1000));
+      if (left > 0 || disposed) return;
+      window.clearInterval(deadTimer); deadTimer = 0;
+      deadBox?.remove(); deadBox = null;
+      update(ref(db, `rooms/streets/players/${me.uid}`), { lay: null }).catch(() => undefined);
+      o.goHome();
+    };
+    window.clearInterval(deadTimer);
+    deadTimer = window.setInterval(paint, 250);
+    paint();
   }
 
   // ---- fighting: click a player, you walk up to them and keep swinging (like RuneScape) until one of you is gone ----
@@ -434,6 +454,8 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     fighting: (uid) => (combat.get(uid)?.combatUntil ?? 0) > serverNow(),
     dispose() {
       disposed = true;
+      window.clearInterval(deadTimer);
+      deadBox?.remove();
       setLeaveLock(null);
       stopFight();
       window.clearInterval(approach);

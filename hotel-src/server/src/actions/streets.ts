@@ -191,7 +191,7 @@ export const streetHit: Action = {
       died = true;
       mine.kills += 1;
       c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
-      mine.combatUntil = 0; mine.foe = undefined;
+      mine.foe = undefined; // (the fight is over, but the 10 seconds where you can't leave still run: killing the one who hit you does not lift them)
       // everything they carry is gone (the pocket is wiped; blood and what they wear stay), except the knife: it is the one thing a player must always have
       const v = await c.user(target);
       v.s.inventory = v.s.inventory.map((it) => (it && it.item === "knife" ? it : null));
