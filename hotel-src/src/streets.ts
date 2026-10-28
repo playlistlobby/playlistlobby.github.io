@@ -167,9 +167,6 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
         hits.set(by, r.at);
         if (!first && serverNow() - r.at < 4000) {
           splats.push({ to: r.to, dmg: Number(r.dmg) || 0, at: performance.now() });
-          if (r.to === me.uid) {
-            if (!r.dead && !fightTarget && bestWeapon(me.inventory)) fight(by); // (somebody hit you: you hit back, as in RuneScape)
-          }
         }
       }
     }, () => undefined),
@@ -236,15 +233,17 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     paint();
   }
 
-  // ---- fighting: click a player, you walk up to them and keep swinging (like RuneScape) until one of you is gone ----
+  // ---- fighting: click a player and you walk up to them and swing once; a number over their head counts down to your next swing (nobody hits back by themselves) ----
   const inFight = (): boolean => (combat.get(me.uid)?.combatUntil ?? 0) > serverNow();
   setLeaveLock(inFight);
+  /** when your knife (and the gun) can be used again, and who you last attacked: the number over their head counts down to it */
+  let knifeReadyAt = 0, gunReadyAt = 0;
+  let lastTarget: { uid: string; weapon: "knife" | "gun" } | null = null;
   function stopFight(): void { fightTarget = null; window.clearInterval(fightTimer); fightTimer = 0; }
   function fight(uid: string): void {
     if (!bestWeapon(me.inventory)) return o.say("You need a knife to fight.", "warn");
     stopFight();
     fightTarget = uid;
-    o.say(`You go for ${o.nameOf(uid)}.`);
     fightTimer = window.setInterval(() => void tick(), 350);
     void tick();
   }
@@ -255,21 +254,29 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     if (!theirs) { stopFight(); return o.say("They've gone.", "warn"); }
     if (!mine) return;
     const d = Math.max(Math.abs(mine.x - theirs.x), Math.abs(mine.y - theirs.y));
-    if (d > PVP.reach) { o.walkTo(theirs); return; } // (they ran: follow them, and swing as soon as they are within reach again)
+    if (d > PVP.reach) { o.walkTo(theirs); return; } // (they ran: follow them, and swing as soon as they are within reach)
+    if (serverNow() < knifeReadyAt) return; // (the arm is still swinging: the swing comes the moment it is ready)
     swinging = true;
     try {
       const r = await call<{ died?: boolean; looted?: number; spilled?: number }>(me, "streetHit", { target: uid });
+      knifeReadyAt = serverNow() + PVP.swingMs;
+      lastTarget = { uid, weapon: "knife" };
+      stopFight(); // (one click, one swing)
       if (r.died) { o.refreshPocket(); o.say(`You killed ${o.nameOf(uid)}.${r.looted ? ` You took ${r.looted} ${r.looted === 1 ? "thing" : "things"} from them.` : ""}${r.spilled ? " What didn't fit in your pocket lies on the floor." : ""}`); }
     } catch (err) {
       const m = (err as Error).message || "";
-      if (/arm is still swinging/i.test(m)) { /* wait for the next tick */ }
+      if (/arm is still swinging/i.test(m)) { knifeReadyAt = serverNow() + 400; /* a moment more */ }
       else { stopFight(); o.say(m || "That didn't work.", "warn"); }
     }
     swinging = false;
   }
   async function shoot(uid: string, slot: number): Promise<void> {
+    const wait = gunReadyAt - serverNow();
+    if (wait > 0) return o.say(`Reloading: ${Math.ceil(wait / 1000)} more seconds.`, "warn");
     try {
       const r = await call<{ dmg: number; died?: boolean; looted?: number; spilled?: number }>(me, "streetShoot", { target: uid, slot });
+      gunReadyAt = serverNow() + PVP.gunCooldownMs;
+      lastTarget = { uid, weapon: "gun" };
       o.refreshPocket();
       o.say(r.dmg ? `Bang! You hit ${o.nameOf(uid)} for ${r.dmg}.` : `Bang! You miss ${o.nameOf(uid)}.`);
       if (r.died) o.say(`You killed ${o.nameOf(uid)}.${r.looted ? ` You took ${r.looted} ${r.looted === 1 ? "thing" : "things"} from them.` : ""}${r.spilled ? " What didn't fit in your pocket lies on the floor." : ""}`);
@@ -280,6 +287,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       const r = await call<{ healed: number }>(me, "streetHeal", { slot });
       o.refreshPocket();
       playSfx("give", 0.4);
+      knifeReadyAt = Math.max(knifeReadyAt, serverNow() + PVP.swingMs); // (eating takes the place of a swing)
       o.say(`You use a bandage: +${r.healed} hit points.`);
     } catch (err) { o.say((err as Error).message || "That didn't work.", "warn"); }
   }
@@ -341,6 +349,21 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     const now = serverNow();
     const { g, scale } = f;
     boxes = new Map();
+    // over the door: how long until you may leave (10 seconds after the last blow, and a new blow starts it again)
+    const leaveIn = (combat.get(me.uid)?.combatUntil ?? 0) - now;
+    if (leaveIn > 0) {
+      const d = f.iso(2, 0); // (the door is in the back wall at tile 2: see streetsDef)
+      const at = f.toScreen({ x: d.x, y: d.y + f.tileHeight / 2 });
+      f.list.push({ depth: 10_000, draw: () => {
+        const sc = Math.max(1, f.scale), x = at.x, y = at.y - 118 * f.scale;
+        g.save();
+        g.fillStyle = "rgba(150,20,20,.92)"; g.strokeStyle = "#fff"; g.lineWidth = Math.max(1.5, 1.5 * sc);
+        g.beginPath(); g.arc(x, y, 13 * sc, 0, Math.PI * 2); g.fill(); g.stroke();
+        g.fillStyle = "#fff"; g.font = `bold ${Math.round(15 * sc)}px Verdana, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+        g.fillText(String(Math.ceil(leaveIn / 1000)), x, y + 1);
+        g.restore();
+      } });
+    }
     // the customers (the ones that were filled walk off, or drive off, before they disappear)
     for (const [k, row] of customers) {
       const c = customerAt(k, row.at);
@@ -408,6 +431,18 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       g.restore();
     }
     while (splats.length && now - splats[0].at > 1400) splats.shift();
+    // the number over the head of the one you last attacked: how long until you can attack again
+    if (lastTarget && lastTarget.uid === uid) {
+      const remain = (lastTarget.weapon === "gun" ? gunReadyAt : knifeReadyAt) - t;
+      if (remain > 0) {
+        const text = remain >= 10_000 ? String(Math.ceil(remain / 1000)) : (remain / 1000).toFixed(1);
+        g.save();
+        g.font = `bold ${Math.round(13 * s)}px Verdana, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+        g.lineWidth = 3 * s; g.strokeStyle = "rgba(0,0,0,.85)"; g.strokeText(text, cx, headY - 20 * s);
+        g.fillStyle = lastTarget.weapon === "gun" ? "#ffd54a" : "#ffffff"; g.fillText(text, cx, headY - 20 * s);
+        g.restore();
+      }
+    }
   }
 
   const api: StreetsApi = {

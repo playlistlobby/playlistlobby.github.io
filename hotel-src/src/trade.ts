@@ -7,7 +7,7 @@ import { addToInv, call } from "./db";
 import type { Profile } from "./db";
 import type { Inventory } from "./items";
 import { NO_DROP } from "./shared/items";
-import { tradeBloodLeft } from "./shared/economy";
+import { carryMsg, overCarry, tradeBloodLeft } from "./shared/economy";
 
 export interface TradeItem { item: string; qty: number; ass?: boolean }
 export interface TradeOffer { blood: number; items: Record<string, TradeItem> }
@@ -114,7 +114,10 @@ export const cancelTrade = (t: Trade): Promise<void> => update(ref(db), { [`${tr
 
 // ---- will it fit? -----------------------------------------------------------------------------------------------
 /** Would your pocket have room for what the other player offers, once your own offer has left it? */
-export function canReceive(p: Profile, t: Trade): boolean {
+export const canReceive = (p: Profile, t: Trade): boolean => receiveProblem(p, t) === null;
+
+/** Why not (null = it fits): too many of something you may only carry a few of (5 bandages, 2 guns), or simply no free slots. */
+export function receiveProblem(p: Profile, t: Trade): { carry: string } | { full: true } | null {
   const mine = t.offer[p.uid] ?? emptyOffer();
   let inv: Inventory = p.inventory.map((s) => (s ? { ...s } : null));
   for (const [k, it] of Object.entries(mine.items)) {
@@ -124,10 +127,10 @@ export function canReceive(p: Profile, t: Trade): boolean {
   }
   for (const it of Object.values(t.offer[otherOf(t, p.uid)]?.items ?? {})) {
     const next = addToInv(inv, { item: it.item, qty: it.qty, ...(it.ass ? { ass: true } : {}) });
-    if (!next) return false;
+    if (!next) return overCarry(inv, it.item, it.qty) ? { carry: carryMsg(it.item) } : { full: true };
     inv = next;
   }
-  return true;
+  return null;
 }
 
 /** Both have confirmed: ask the server to swap everything. (Either side may ask; the second ask changes nothing.) */

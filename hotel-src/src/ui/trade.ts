@@ -2,11 +2,12 @@ import { h, toast } from "./dom";
 import { social, TradeInvite } from "../social";
 import { BLOOD_ICON, INV_SIZE, itemDef } from "../items";
 import {
-  canReceive, cancelTrade, createTrade, emptyOffer, finishTrade, forgetTrade, freeQty, offerAdd, offerBlood, offerRemove,
+  canReceive, cancelTrade, receiveProblem, createTrade, emptyOffer, finishTrade, forgetTrade, freeQty, offerAdd, offerBlood, offerRemove,
   otherOf, setConfirm, setReady, Trade, TradeItem, TradeOffer, tradable, unlock, watchTrade, writeOffer,
 } from "../trade";
 import { TRADE_BLOOD_CAP, tradeBloodLeft } from "../shared/economy";
 import { logAction } from "../logger";
+import { trServer } from "../daRuntime";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 import { mountTableChat } from "./tableChat";
@@ -135,7 +136,7 @@ function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
           bloodChip(spare, editable && spare > 0 ? () => void save(offerBlood(me, mine, step(spare))) : undefined),
           ...pocket)),
       ...(left < TRADE_BLOOD_CAP ? [h("div", { class: "hint" }, `You can trade ${left} more blood in the next 24 hours (the limit is ${TRADE_BLOOD_CAP}).`)] : []),
-      ...(locked && !myConfirm && !fits ? [h("div", { class: "hint warn" }, "Not enough room in your pocket for what you'd get. Free up some slots (or ask them to offer less).")] : []),
+      ...(locked && !myConfirm && !fits ? [h("div", { class: "hint warn" }, (() => { const pr = receiveProblem(me, t); return pr && "carry" in pr ? trServer(pr.carry) + " " + "Use some of them, or ask them to offer fewer." : "Not enough room in your pocket for what you'd get. Free up some slots (or ask them to offer less)."; })())] : []),
       ...(note ? [h("div", { class: "hint warn" }, note)] : []),
       h("div", { class: "trade-actions" }, ...buttons));
   }
@@ -146,7 +147,8 @@ function openTradeWindow(ctx: Ctx, id: string, onGone: () => void): () => void {
   }
   async function doConfirm(): Promise<void> {
     if (!t) return;
-    if (!canReceive(me, t)) { note = "Make room in your pocket first."; return render(); }
+    const problem = receiveProblem(me, t);
+    if (problem) { note = "carry" in problem ? trServer(problem.carry) : "Make room in your pocket first."; return render(); }
     try { await setConfirm(me, t, true); } catch { toast("Couldn't confirm.", "err"); }
   }
   async function doCancel(closeToo = false): Promise<void> {

@@ -15733,5 +15733,10 @@
   "en": "The tickets for this run are sold out. There are new ones for the next run.",
   "da": "Billetterne til denne tur er udsolgt. Der kommer nye til næste tur.",
   "where": "server/src/actions/streets.ts"
+ },
+ "N2592": {
+  "en": "Use some of them, or ask them to offer fewer.",
+  "da": "Brug nogle af dem, eller bed dem tilbyde færre.",
+  "where": "src/ui/trade.ts"
  }
 }
