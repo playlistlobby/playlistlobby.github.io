@@ -15523,5 +15523,15 @@
   "en": "Remote bank",
   "da": "Fjernbank",
   "where": "src/rooms.ts"
+ },
+ "N2550": {
+  "en": "Go to the streets?",
+  "da": "Gå ud på gaden?",
+  "where": "src/ui/room.ts"
+ },
+ "N2551": {
+  "en": "It is dangerous out there. Other players can attack you, and if you die you lose everything you carry (except your knife) and 25 blood.",
+  "da": "Det er farligt derude. Andre spillere kan angribe dig, og hvis du dør, mister du alt, du bærer på (undtagen din kniv), og 25 blod.",
+  "where": "src/ui/room.ts"
  }
 }

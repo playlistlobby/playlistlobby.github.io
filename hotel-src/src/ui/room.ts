@@ -128,6 +128,7 @@ import { openVending, VendingApi } from "./vendingShop";
 import { openRecordShop, RecordShopApi } from "./recordShop";
 import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
+import { openConfirmBox } from "./confirmBox";
 import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { DuckyShopApi, openDuckyShop } from "./duckyShop";
 import { openRaffleShop, RaffleShopApi } from "./raffleShop";
@@ -2088,6 +2089,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         } else if (isOwnRoom || def.doorTo) {
           // arrived at your own room's door (down to the basement) or the shop's door (back to the basement)
           if (streetsApi?.inFight()) return say("You are in a fight. You can't leave.", "warn");
+          if (roomId === ARRIVAL_ID && def.doorTo === STREETS_ID) { // the door to the streets asks first: it is not safe out there
+            openConfirmBox(stage, "Go to the streets?", ["It is dangerous out there. Other players can attack you, and if you die you lose everything you carry (except your knife) and 25 blood.", "Are you sure?"], (yes) => {
+              if (!yes || disposed) return;
+              playSfx("doorOpen", 0.6);
+              logAction(me, "visit", "went to the streets");
+              ctx.navigate("room", { roomId: STREETS_ID, from: roomId });
+            });
+            return;
+          }
           playSfx("doorOpen", 0.6);
           if (isOwnRoom && !me.seenDoor) { me.seenDoor = true; void update(ref(db, `users/${me.uid}`), { seenDoor: true }).catch(() => undefined); }
           logAction(me, "visit", "went to the basement");
