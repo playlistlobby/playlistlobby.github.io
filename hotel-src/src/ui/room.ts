@@ -2335,7 +2335,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         cdUi.vol,
         h("button", { class: "btn small", title: "Louder", onclick: () => step(0.1) }, "+"),
         cdUi.mute),
-      h("div", { class: "hint" }, "Volume is just for you. Other players keep their own."),
+      h("div", { class: "hint" }, "Everyone in the room hears the same music. Only the volume is your own."),
       h("div", { class: "cd-row" }, cdUi.prev, cdUi.pause, cdUi.next, cdUi.restart, cdUi.loop, cdUi.eject));
     stage.append(el);
     cdPopup = { el, timer: window.setInterval(refreshCdPopup, 500) };

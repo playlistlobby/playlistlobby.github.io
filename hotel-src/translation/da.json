@@ -4215,8 +4215,8 @@
   "where": "src/ui/room.ts:1544"
  },
  "T0844": {
-  "en": "Volume is just for you. Other players keep their own.",
-  "da": "Lyden er kun for dig. Andre spillere har deres egen.",
+  "en": "Everyone in the room hears the same music. Only the volume is your own.",
+  "da": "Alle i rummet hører den samme musik. Kun lydstyrken er din egen.",
   "where": "src/ui/room.ts:1545"
  },
  "T0845": {
