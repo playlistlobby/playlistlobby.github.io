@@ -76,6 +76,7 @@ import { voteSong } from "../soundcloud";
 import { loadWalkman, openWalkmanMenu } from "../walkman";
 import { openIpod } from "./ipod";
 import { onStreetsFlag } from "../streetsFlag";
+import { trServer } from "../daRuntime";
 import { albumList, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
@@ -3784,7 +3785,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           return;
         }
         if (ev.type === "bagmandSay" && typeof ev.text === "string") { // bagmand puts a hit out: he says it over his head and in the chat
-          const line = String(ev.text).slice(0, 140);
+          const line = trServer(String(ev.text).slice(0, 140)); // (the server wrote it in English: the Danish game shows it in Danish)
           bagmanBubble = { text: line, until: performance.now() + 8000 };
           addLine(h("div", { class: "line" }, h("b", {}, `${BAGMAN.name}: `), line), CHAT_LIFE_MS);
           return;
