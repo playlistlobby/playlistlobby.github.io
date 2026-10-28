@@ -15743,5 +15743,35 @@
   "en": "Use the Bandage button at the top left of the street.",
   "da": "Brug Bandage-knappen øverst til venstre på gaden.",
   "where": "src/ui/sidepanel.ts"
+ },
+ "N2594": {
+  "en": "You were killed by {…}.",
+  "da": "Du blev dræbt af {…}.",
+  "where": "src/streets.ts"
+ },
+ "N2595": {
+  "en": "You were killed.",
+  "da": "Du blev dræbt.",
+  "where": "src/streets.ts"
+ },
+ "N2596": {
+  "en": "Take off your unusual",
+  "da": "Tag din unusual af",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2597": {
+  "en": "Pick up your pet",
+  "da": "Saml dit kæledyr op",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2598": {
+  "en": "You are dead.",
+  "da": "Du er død.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2599": {
+  "en": "The elevator is shut for you. Try again in {…} seconds.",
+  "da": "Elevatoren er lukket for dig. Prøv igen om {…} sekunder.",
+  "where": "server/src/actions/streets.ts"
  }
 }

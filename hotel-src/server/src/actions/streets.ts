@@ -49,6 +49,8 @@ export const elevatorUp: Action = {
   async run(c) {
     if (!(await openFor(c))) fail("The elevator is out of order.");
     await requireInRoom(c, "lobby");
+    const cool = Number(await c.db.get<number>(`elevatorCool/${c.uid}`)) || 0; // (somebody who was just killed on the street waits 30 seconds)
+    if (cool > c.now) fail(`The elevator is shut for you. Try again in ${Math.ceil((cool - c.now) / 1000)} seconds.`);
     const run = elevatorRuns(c.now, await forceUntil(c));
     if (!run.open) fail(`The elevator runs from 20 to 21. It starts again in ${fmtWhen(run.nextAt - c.now)}.`);
     const pass = Number(await c.db.get<number>(`streetPass/${c.uid}`)) || 0;
@@ -179,6 +181,11 @@ export const streetFill: Action = {
 };
 
 // ---- the fights ---------------------------------------------------------------------------------------------------------
+/** somebody who has just been killed is out of the street: no more swings, shots or bandages from a body that is on its way home */
+async function refuseIfDead(c: Ctx): Promise<void> {
+  const cb = await c.db.get<{ deadAt?: number }>(`streetCombat/${c.uid}`);
+  if (cb && Number(cb.deadAt) > 0 && c.now - Number(cb.deadAt) < PVP.deathCoolMs) fail("You are dead.");
+}
 const fresh = (c: Ctx): StreetCombat => ({ hp: PVP.maxHp, at: c.now, combatUntil: 0, healAt: 0, protectUntil: c.now + PVP.spawnProtectMs, kills: 0, deaths: 0 });
 async function combatOf(c: Ctx, uid: string): Promise<StreetCombat> {
   const raw = await c.db.get<Partial<StreetCombat>>(`streetCombat/${uid}`);
@@ -204,6 +211,7 @@ export const streetHit: Action = {
     const target = text(a.target, ID_RE, "target");
     if (target === c.uid) fail("You can't fight yourself.");
     const me = await requireInRoom(c, STREETS_ID);
+    await refuseIfDead(c);
     const theirs = await c.db.get<{ x?: number; y?: number; sleeper?: boolean }>(`rooms/${STREETS_ID}/players/${target}`);
     if (!theirs) fail("They've left the street.");
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > PVP.reach + 1) fail("They're too far away."); // (one tile, and a step of slack for the lag)
@@ -239,6 +247,7 @@ export const streetShoot: Action = {
     const target = text(a.target, ID_RE, "target");
     if (target === c.uid) fail("You can't shoot yourself.");
     const me = await requireInRoom(c, STREETS_ID);
+    await refuseIfDead(c);
     const theirs = await c.db.get<{ x?: number; y?: number }>(`rooms/${STREETS_ID}/players/${target}`);
     if (!theirs) fail("They've left the street.");
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > PVP.gunRange) fail("They're too far away.");
@@ -273,7 +282,8 @@ async function applyStrike(c: Ctx, w: Awaited<ReturnType<Ctx["user"]>>, target: 
     if (left <= 0) {
       died = true;
       mine.kills += 1;
-      c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
+      c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid, deadByName: String(w.raw.name ?? "someone").slice(0, 16) };
+      c.extra[`elevatorCool/${target}`] = c.now + PVP.deathCoolMs; // (sent home at once by their browser; the elevator is shut for them for 30 seconds)
       mine.foe = undefined; // (the fight is over, but the 10 seconds where you can't leave still run: killing the one who hit you does not lift them)
       // the killer takes what the dead one carried (the knife stays: it is the one thing a player must always have, and so does everything else that can't be dropped); what doesn't fit in the killer's pocket lies on the floor where they died, along with 25 blood
       const v = await c.user(target);
@@ -289,6 +299,8 @@ async function applyStrike(c: Ctx, w: Awaited<ReturnType<Ctx["user"]>>, target: 
       const dead = String(v.raw.name ?? "someone");
       await floorPiles(c, STREETS_ID, where, [...(lost > 0 ? [{ item: "blood", qty: lost }] : []), ...spill.map((it) => ({ item: it.item, qty: it.qty, ...(it.ass ? { ass: true } : {}) }))], target, dead);
       looted = loot.length - spill.length; spilled = spill.length;
+      // the others see the body for a few seconds (a "body" event: the browsers draw a figure lying on the ground)
+      c.extra[`rooms/${STREETS_ID}/events/b${target.slice(0, 8)}${c.now.toString(36)}`] = { type: "body", uid: target, name: dead.slice(0, 16), figure: String(v.raw.figure ?? "").slice(0, 200), x: where?.x ?? 0, y: where?.y ?? 0, dir: Number((theirs as { dir?: number }).dir) || 2, ts: c.now };
       // somebody who closed the game in the fight is not standing there any more once they are dead
       const pr = await c.db.get<{ room?: string } | null>(`presence/${target}`);
       if (!pr || pr.room !== STREETS_ID) c.extra[`rooms/${STREETS_ID}/players/${target}`] = null;
@@ -303,6 +315,7 @@ async function applyStrike(c: Ctx, w: Awaited<ReturnType<Ctx["user"]>>, target: 
 export const streetHeal: Action = {
   async run(c, a) {
     await requireInRoom(c, STREETS_ID);
+    await refuseIfDead(c);
     const slot = int(a.slot, 0, 27, "slot");
     const w = await c.user();
     const it = w.s.inventory[slot];

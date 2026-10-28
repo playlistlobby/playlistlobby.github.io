@@ -6,6 +6,9 @@ import { STASH_PIECES } from "../shared/economy";
 import { isFurniItem } from "../shared/items";
 import { FURNI_KINDS } from "../rooms";
 import { playSfx } from "../sfx";
+import { onMyUnusual, removeUnusual, unusualNow } from "../unusual";
+import { onMyPetLook, petLookNow } from "../pets";
+import { pickUpPet } from "../petActions";
 import type { Ctx } from "../main";
 
 export interface StashApi {
@@ -45,6 +48,9 @@ export function openStashBox(host: HTMLElement, ctx: Ctx, onChange: () => void, 
       return b;
     }));
   const count = h("span", { class: "stash-count" }, "");
+  // what you wear and what walks with you: take it off here (it goes into your pocket, ready to put in the box)
+  const wear = h("div", { class: "stash-wear" });
+  const offWear = [onMyUnusual(() => render()), onMyPetLook(() => render())];
   const inside = h("div", { class: "stash-grid" });
   const carried = h("div", { class: "stash-grid" });
   const insideHead = h("div", { class: "stash-pane-head" });
@@ -52,6 +58,7 @@ export function openStashBox(host: HTMLElement, ctx: Ctx, onChange: () => void, 
   const el = h("div", { class: "stash-win", role: "dialog", "aria-label": "Storage" },
     h("div", { class: "stash-head" }, h("strong", {}, "🎁 Storage"), count, h("button", { class: "btn small", type: "button", "aria-label": "Close", onclick: () => close() }, "✕")),
     h("div", { class: "stash-bar" }, search, amounts),
+    wear,
     h("div", { class: "stash-panes" },
       h("section", { class: "stash-pane" }, insideHead, inside),
       h("section", { class: "stash-pane" }, carriedHead, carried)),
@@ -84,6 +91,10 @@ export function openStashBox(host: HTMLElement, ctx: Ctx, onChange: () => void, 
       .map((s, slot) => ({ s, slot }))
       .filter((e): e is { s: NonNullable<typeof e.s>; slot: number } => !!e.s && isStorable(e.s) && (isFurniItem(e.s.item) ? STASH_PIECES.has(e.s.item) : !!itemDef(e.s.item)));
     count.textContent = `${total} in the box`;
+    wear.replaceChildren(
+      ...(unusualNow() ? [h("button", { class: "btn small", type: "button", disabled: busy, onclick: () => void run(() => removeUnusual(me).then(() => undefined)) }, "Take off your unusual")] : []),
+      ...(petLookNow() ? [h("button", { class: "btn small", type: "button", disabled: busy, onclick: () => void run(() => pickUpPet(me).then(() => undefined)) }, "Pick up your pet")] : []));
+    wear.classList.toggle("hidden", !wear.childElementCount);
     insideHead.replaceChildren(h("strong", {}, "In the box"), h("span", { class: "hint" }, `${stored.length} kinds · ${total} things`));
     carriedHead.replaceChildren(h("strong", {}, "In your pockets"), h("span", { class: "hint" }, `${freeSlots(me)} free slots`));
     const shownIn = stored.filter(([key]) => matches(nameOf(key)));
@@ -100,6 +111,7 @@ export function openStashBox(host: HTMLElement, ctx: Ctx, onChange: () => void, 
   function close(): void {
     if (closed) return;
     closed = true;
+    offWear.forEach((f) => f());
     el.remove();
     onClose();
   }

@@ -1,6 +1,6 @@
 // The streets in the browser (rules and numbers: src/shared/streets.ts, the server: server/src/actions/streets.ts): the customers and their orders, the cars, the fights and the
 // hit points, the little panel at the top, and the elevator's pass running out. room.ts calls into this for the street room only.
-import { onValue, orderByKey, limitToLast, query, ref, update } from "firebase/database";
+import { onChildAdded, onValue, orderByChild, orderByKey, limitToLast, query, ref } from "firebase/database";
 import { db } from "./firebase";
 import { call, serverNow } from "./db";
 import type { Profile } from "./db";
@@ -18,7 +18,7 @@ import { findSlot } from "./shared/items";
 import { h, toast } from "./ui/dom";
 import { setLeaveLock } from "./leaveLock";
 import { playSfx } from "./sfx";
-import { bestWeapon, customerAt, RICH_PETS, STREET_TICK_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
+import { STREET_RETURN_KEY, bestWeapon, customerAt, RICH_PETS, STREET_TICK_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
 import type { Customer, StreetCombat } from "./shared/streets";
 
 const FEET_Y = 94;
@@ -133,6 +133,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const me = o.me;
   let combat = new Map<string, StreetCombat & { deadAt?: number; deadBy?: string }>();
   let filled = new Map<number, number>(); // customer number -> when it was filled
+  const bodies = new Map<string, { name: string; figure: string; x: number; y: number; dir: number; ts: number }>(); // somebody who was just killed: their body lies there for a few seconds
   let customers = new Map<number, { at: number; until: number }>(); // the customers the server has let turn up: number -> when they came and when they leave
   const hits = new Map<string, number>(); // attacker -> the time of the last hit we have shown
   const splats: Array<{ to: string; dmg: number; at: number }> = [];
@@ -149,7 +150,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       const v = (s.val() ?? {}) as Record<string, StreetCombat & { deadAt?: number; deadBy?: string }>;
       combat = new Map(Object.entries(v));
       const mine = v[me.uid];
-      if (mine?.deadAt && mine.deadAt > lastDead && serverNow() - mine.deadAt < 15_000) { lastDead = mine.deadAt; died(mine.deadBy, mine.deadAt); }
+      if (mine?.deadAt && mine.deadAt > lastDead && serverNow() - mine.deadAt < 15_000) { lastDead = mine.deadAt; died(mine.deadBy, (mine as { deadByName?: string }).deadByName); }
       paintHud();
     }, () => undefined),
     onValue(query(ref(db, "streetFilled"), orderByKey(), limitToLast(60)), (s) => {
@@ -159,6 +160,11 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     onValue(query(ref(db, "streetCust"), orderByKey(), limitToLast(60)), (s) => {
       const v = (s.val() ?? {}) as Record<string, { at?: number; until?: number }>;
       customers = new Map(Object.entries(v).map(([k, r]) => [Number(k), { at: Number(r?.at) || 0, until: Number(r?.until) || 0 }]));
+    }, () => undefined),
+    onChildAdded(query(ref(db, "rooms/streets/events"), orderByChild("ts"), limitToLast(10)), (s) => {
+      const e = s.val() as { type?: string; uid?: string; name?: string; figure?: string; x?: number; y?: number; dir?: number; ts?: number } | null;
+      if (!e || e.type !== "body" || typeof e.ts !== "number" || typeof e.uid !== "string" || e.uid === me.uid) return;
+      if (serverNow() - e.ts < PVP.bodyMs) bodies.set(e.uid, { name: String(e.name ?? ""), figure: String(e.figure ?? ""), x: Number(e.x) || 0, y: Number(e.y) || 0, dir: Number(e.dir) || 2, ts: e.ts });
     }, () => undefined),
     onValue(ref(db, "rooms/streets/hits"), (s) => {
       const v = (s.val() ?? {}) as Record<string, { to?: string; dmg?: number; at?: number; dead?: boolean }>;
@@ -182,6 +188,10 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   }, 2000);
 
   void call(me, "streetEnter").catch(() => undefined);
+  // the browser remembers you are here, so that a refresh puts you right back on the street (it is cleared when you leave)
+  const markStreet = (): void => { try { localStorage.setItem(STREET_RETURN_KEY, String(Date.now())); } catch { /* private mode */ } };
+  markStreet();
+  const streetMark = window.setInterval(markStreet, 20_000);
   // customers turn up while players are on the street (the server counts: 2 a minute for each player, 18 at most); every browser here asks now and then
   const customerTick = window.setInterval(() => { if (!disposed && !document.hidden) void call(me, "streetTick").catch(() => undefined); }, STREET_TICK_MS);
   window.setTimeout(() => { if (!disposed) void call(me, "streetTick").catch(() => undefined); }, 1500);
@@ -209,30 +219,13 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const hudTimer = window.setInterval(paintHud, 1000);
   paintHud();
 
-  /** how long the "you're dead" screen stays before you wake up in your room */
-  const DEAD_MS = 15_000;
-  let deadBox: HTMLElement | null = null;
-  let deadTimer = 0;
-  function died(by: string | undefined, at: number): void {
+  /** you are killed: straight to your room (the elevator is shut for you for 30 seconds; the others see your body for 5) */
+  function died(by: string | undefined, byName?: string): void {
     stopFight();
-    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You lost what you carried (not your knife) and 25 blood.`, "warn");
-    update(ref(db, `rooms/streets/players/${me.uid}`), { lay: true, sit: null }).catch(() => undefined); // (everybody sees you on the ground)
-    deadBox?.remove();
-    const secs = h("b", { class: "st-dead-secs" }, "");
-    deadBox = h("div", { class: "st-dead" }, h("div", { class: "st-dead-card" }, h("div", { class: "st-dead-title" }, "You're dead"), h("div", { class: "st-dead-sub" }, "You wake up in your room in ", secs, " s")));
-    o.stage.append(deadBox);
-    const paint = (): void => {
-      const left = Math.max(0, DEAD_MS - (serverNow() - at));
-      secs.textContent = String(Math.ceil(left / 1000));
-      if (left > 0 || disposed) return;
-      window.clearInterval(deadTimer); deadTimer = 0;
-      deadBox?.remove(); deadBox = null;
-      update(ref(db, `rooms/streets/players/${me.uid}`), { lay: null }).catch(() => undefined);
-      o.goHome();
-    };
-    window.clearInterval(deadTimer);
-    deadTimer = window.setInterval(paint, 250);
-    paint();
+    const who = byName || (by ? o.nameOf(by) : "");
+    toast(who ? `You were killed by ${who}.` : "You were killed.", "err");
+    o.say(`You were killed${who ? ` by ${who}` : ""}. You lost what you carried (not your knife) and 25 blood.`, "warn");
+    o.goHome();
   }
 
   // ---- fighting: click a player and you walk up to them and swing once; a number over their head counts down to your next swing (nobody hits back by themselves) ----
@@ -377,6 +370,24 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
         g.restore();
       } });
     }
+    // the bodies of the ones who were just killed (on the ground for 5 seconds)
+    for (const [uid, b] of bodies) {
+      const age = now - b.ts;
+      if (age > PVP.bodyMs) { bodies.delete(uid); continue; }
+      const opts = { figure: b.figure, dir: b.dir, headDir: b.dir, actions: ["lay"], gesture: "std", frame: 0 };
+      let img = getCached(opts);
+      if (!img) void renderAvatar(opts);
+      const w0 = f.iso(b.x, b.y);
+      const feet = f.toScreen({ x: w0.x, y: w0.y + f.tileHeight / 2 });
+      f.list.push({ depth: b.x + b.y + 0.4, draw: () => {
+        if (!img) img = getCached(opts);
+        if (!img) return;
+        g.save();
+        g.globalAlpha = age > PVP.bodyMs - 1000 ? Math.max(0, (PVP.bodyMs - age) / 1000) : 1;
+        g.drawImage(img, feet.x - (32 + padOf(img).x) * f.scale, feet.y - (FEET_Y + padOf(img).y) * f.scale, img.width * f.scale, img.height * f.scale);
+        g.restore();
+      } });
+    }
     // the customers (the ones that were filled walk off, or drive off, before they disappear)
     for (const [k, row] of customers) {
       const c = customerAt(k, row.at);
@@ -489,9 +500,9 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     fighting: (uid) => (combat.get(uid)?.combatUntil ?? 0) > serverNow(),
     dispose() {
       disposed = true;
-      window.clearInterval(deadTimer);
       window.clearInterval(customerTick);
-      deadBox?.remove();
+      window.clearInterval(streetMark);
+      try { localStorage.removeItem(STREET_RETURN_KEY); } catch { /* private mode */ }
       setLeaveLock(null);
       stopFight();
       window.clearInterval(approach);

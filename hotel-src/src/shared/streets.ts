@@ -67,6 +67,9 @@ export const holdsTicket = (inv: ReadonlyArray<{ item: string } | null>): boolea
 export const CUSTOMERS_PER_PLAYER_PER_MIN = 0.6;
 export const CUSTOMER_CAP = 15;
 export const CUSTOMER_STAY_MS = 7 * 60_000;
+/** the browser remembers that you are on the street (a time stamp, kept fresh while you are there): a refresh puts you right back instead of in your room */
+export const STREET_RETURN_KEY = "6ix-on-street";
+export const STREET_RETURN_MS = 90_000;
 /** how often the browsers on the street ask the server to let customers turn up */
 export const STREET_TICK_MS = 10_000;
 export function seeded(seed: number): () => number {
@@ -126,11 +129,14 @@ export const STREET_SIDEWALK_ROWS = [2, 9];
 export const ROAD_ROWS = { first: 3, last: 8, lanes: [4, 7], curbs: [3, 8] };
 
 /** a free sidewalk tile for a customer to stand on (not on a lamp or a tree) */
-function spot(r: () => number): { x: number; y: number } {
-  let y = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)];
-  let x = 3 + Math.floor(r() * (STREETS_W - 6));
-  for (let tries = 0; tries < 30 && !isFreeTile(x, y); tries++) { y = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)]; x = 3 + Math.floor(r() * (STREETS_W - 6)); }
-  return { x, y };
+function spot(r: () => number, rich = false): { x: number; y: number } {
+  // the rich customers stand on the front sidewalk (the bottom of the screen), in the half that is furthest from the door
+  const rows = rich ? [9, 10] : STREET_SIDEWALK_ROWS;
+  const lo = rich ? Math.floor(STREETS_W / 2) : 3, span = rich ? STREETS_W - 4 - lo : STREETS_W - 6;
+  const pick = (): { x: number; y: number } => ({ x: lo + Math.floor(r() * span), y: rows[Math.floor(r() * rows.length)] });
+  let p = pick();
+  for (let tries = 0; tries < 30 && !isFreeTile(p.x, p.y); tries++) p = pick();
+  return p;
 }
 /** the drugs worth 150 or more to the bagmand: a rich customer asks for fewer of them */
 const BAGMAND_SELL_HINT: Record<string, number> = { heroin: 160, ketamine: 170, percs: 160, twocb: 180, caliweed: 255, fentcn: 330, pinkweed: 155, loudpack: 295, natryger: 200 };
@@ -143,7 +149,7 @@ export function customerAt(k: number, at = 0): Customer {
     const item = richWant(r());
     const dear = (BAGMAND_SELL_HINT[item] ?? 0) >= 150;
     const want: Want = { item, qty: dear ? 1 + Math.floor(r() * 2) : 1 + Math.floor(r() * 3), mult: BIG_MULT };
-    const { x, y } = spot(r);
+    const { x, y } = spot(r, true);
     return { k, kind: "rich", at, until: at + CUSTOMER_STAY_MS, want, x, y, from: r() < 0.5 ? -1 : 1, look: Math.floor(r() * 100000) };
   }
   const roll = r();
@@ -174,6 +180,9 @@ export const PVP = {
   gunMaxDmg: 5,
   gunCooldownMs: 30_000,
   gunRange: 6,
+  /** after a death you are sent home at once: you are out of the street, and the elevator is shut for you, this long; the others see your body for bodyMs */
+  deathCoolMs: 30_000,
+  bodyMs: 5_000,
   /** the bandage heals this much and can be used again after this long */
   healItem: "bandage",
   healHp: 3,

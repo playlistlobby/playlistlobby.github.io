@@ -1942,3 +1942,5 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .jb-slider::-moz-range-track { height: 8px; border-radius: 4px; border: 1px solid #7d828c; background: linear-gradient(#9aa0ab, #c9ced6); }
 .jb-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #5d6470; background: linear-gradient(#fafafa, #bfc4cc); }
 .jb-mute { flex: none; width: 34px; height: 28px; border-radius: 5px; border: 1px solid #3c5578; cursor: pointer; background: linear-gradient(#a9bbd5 0%, #86a0c6 49%, #7792ba 51%, #8aa3c8 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); font-size: 15px; }
+.stash-wear { display: flex; gap: 8px; flex-wrap: wrap; }
+.stash-wear.hidden { display: none; }

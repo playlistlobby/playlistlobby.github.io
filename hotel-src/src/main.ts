@@ -1,5 +1,5 @@
 import { onAuthStateChanged, User } from "firebase/auth";
-import { ref, remove, update } from "firebase/database";
+import { get, ref, remove, update } from "firebase/database";
 import { SIXTY, watchSixtyLook } from "./npc";
 import { loadEmojiFont } from "./emojiFont";
 import { auth, db, firebaseReady, useEmulator } from "./firebase";
@@ -38,7 +38,8 @@ import { startStreetsFlag } from "./streetsFlag";
 import { watchTeleport } from "./notices";
 import { watchIdle } from "./idle";
 import { player } from "./music";
-import { fetchMeta, LOBBY_ID, ownRoomId, tutRoomId } from "./rooms";
+import { fetchMeta, LOBBY_ID, ownRoomId, STREETS_ID, tutRoomId } from "./rooms";
+import { STREET_RETURN_KEY, STREET_RETURN_MS } from "./shared/streets";
 import { logAction } from "./logger";
 import { watchShopConfig } from "./shopConfig";
 import { loadBundledDesigns, loadShopDesigns, loadStarterDesigns, watchDesigns } from "./designs";
@@ -325,8 +326,17 @@ async function showHotel(user: User): Promise<void> {
       if (m && (m.name !== "6ixty's room" || m.ownerName !== SIXTY.name)) void update(ref(db, `roomsMeta/${ownRoomId(p.uid)}`), { name: "6ixty's room", ownerName: SIXTY.name }).catch(() => undefined);
     }).catch(() => undefined);
   }
-  social.start(p);
   social.armInviteCleanup();
+  // refreshing the page on the street does not get you out of it: if you were there (and your elevator pass still holds), you are back on the street (read before the presence below says where you are now)
+  let backToStreets = false;
+  try {
+    const stamp = Number(localStorage.getItem(STREET_RETURN_KEY)) || 0;
+    if (stamp && Date.now() - stamp < STREET_RETURN_MS && p.tutorial >= 4) {
+      const pass = await get(ref(db, `streetPass/${p.uid}`));
+      backToStreets = Number(pass.val()) > Date.now() || p.isAdmin;
+    }
+  } catch { /* no street then */ }
+  social.start(p);
   startPresence(p);
   // a crashed or reloaded earlier visit can leave a ghost of you standing in a room; clear those before walking in
   for (const room of [LOBBY_ID, ownRoomId(p.uid), tutRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
@@ -427,7 +437,8 @@ async function showHotel(user: User): Promise<void> {
   }
 
   // Everyone starts in their own room, standing at the door.
-  go("room", { roomId: ownRoomId(p.uid), arrival: "bed", intro });
+  if (backToStreets) go("room", { roomId: STREETS_ID, from: LOBBY_ID });
+  else go("room", { roomId: ownRoomId(p.uid), arrival: "bed", intro });
 }
 
 // ---- boot ----------------------------------------------------------------------
