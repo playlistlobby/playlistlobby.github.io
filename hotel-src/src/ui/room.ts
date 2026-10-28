@@ -824,6 +824,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     landlordBtn.classList.toggle("hidden", !(adminOwnEdit && !furnishOn));
     decorateBtn.classList.toggle("hidden", !(((me.decorator && !isOwnRoom && roomId.startsWith("u_")) || adminLobbyEdit) && !furnishOn));
   }
+  /** the name of whoever owns a BeatShop that stands in somebody else's room (looked up the first time you point at it) */
+  const beatOwnerNames = new Map<string, string>();
   function updateHint(): void {
     syncCarryTurn();
     const item = selectedDef();
@@ -844,7 +846,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "elevator") text = isArrival ? "Elevator: back to the basement" : "Elevator: runs from 20 to 21";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "streetbin") text = "Trash can: search it";
     else if (hoverObj && hoverObj.kind === "scustomer" && streetsApi) text = streetsApi.hoverText(hoverObj.id) ?? "";
-    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "beatshop") { const bf = def.furni.find((q) => q.id === hoverObj!.id); const bo = bf?.by ?? def.ownerUid; const bn = bo && bo === def.ownerUid ? def.ownerName : ""; text = bn ? `${bn}'s BeatShop: listen to beats and buy them` : "BeatShop: listen to beats and buy them"; }
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "beatshop") { const bf = def.furni.find((q) => q.id === hoverObj!.id); const bo = bf?.by ?? def.ownerUid; const bn = (bo && bo === def.ownerUid ? def.ownerName : bo ? beatOwnerNames.get(bo) : "") ?? ""; if (bo && !bn && !beatOwnerNames.has(bo)) { beatOwnerNames.set(bo, ""); void fetchProfile(bo).then((pp) => { if (pp?.name) { beatOwnerNames.set(bo, pp.name); updateHint(); } }, () => undefined); } text = bn ? `${bn}'s BeatShop: listen to beats and buy them` : "BeatShop: listen to beats and buy them"; }
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind!]?.opens === "poker" || FURNI_KINDS[hoverObj.kind!]?.opens === "blackjack")) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to play`;
     else if (hoverObj && hoverObj.kind === "wantedboard") text = "Wanted board";
     else if (hoverObj && hoverObj.kind === "discordboard") text = "Notice board";
