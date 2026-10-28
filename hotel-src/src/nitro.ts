@@ -310,7 +310,8 @@ function vis64(json: NitroJson): Vis64 {
 /** How long one animation tick lasts (a frame stays up for frameRepeat ticks). */
 const TICK_MS = 83;
 /** Which look or animation a piece is in (its state number) and how long it has been in it. */
-export interface AnimState { state: number; t: number }
+/** `still`: stand on one picture of the state instead of playing it (a tree that has grown): the number of that picture, or true for the last one */
+export interface AnimState { state: number; t: number; still?: boolean | number }
 
 /** The state numbers a piece can be in (animation numbers below 100 are states; the higher ones are one-off effects). */
 export function nitroStates(n: NitroFurni): number[] {
@@ -320,7 +321,7 @@ export function nitroStates(n: NitroFurni): number[] {
 export const isAnimated = (n: NitroFurni): boolean => nitroStates(n).length > 0;
 
 /** The picture number a layer shows at this moment (null = it has no picture in this state: its default one). */
-function frameOf(a: AnimLayer | undefined, t: number): number | null {
+function frameOf(a: AnimLayer | undefined, t: number, still?: boolean | number): number | null {
   const seqs = a?.frameSequences;
   if (!seqs) return null;
   const ids: number[] = [];
@@ -330,6 +331,8 @@ function frameOf(a: AnimLayer | undefined, t: number): number | null {
   }
   if (!ids.length) return null;
   if (ids.length === 1) return ids[0];
+  if (typeof still === "number") return ids.includes(still) ? still : ids[ids.length - 1];
+  if (still) return ids[ids.length - 1];
   const tick = Math.floor(Math.max(0, t) / (TICK_MS * Math.max(1, a!.frameRepeat ?? 1)));
   const loops = a!.loopCount;
   if (loops === 0) return ids[tick % ids.length]; // plays for ever
@@ -389,7 +392,7 @@ export function spritesFor(n: NitroFurni, dir: number, anim?: AnimState): Sprite
   for (const layer of n.layers) {
     const idx = layer.charCodeAt(0) - 97;
     let want: number | null;
-    if (anim) want = animLayers ? frameOf(animLayers[String(idx)], anim.t) : null;
+    if (anim) want = animLayers ? frameOf(animLayers[String(idx)], anim.t, anim.still) : null;
     else want = fixed && layer in fixed ? fixed[layer] : null;
     if (want !== null && !n.json.assets[`${n.name}_64_${layer}_${d}_${want}`]) continue; // this layer has nothing to show in that state (the open doors)
     const key = `${n.name}_64_${layer}_${d}_${want ?? 0}`;

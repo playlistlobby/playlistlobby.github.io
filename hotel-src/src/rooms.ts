@@ -48,6 +48,8 @@ export interface FurniKind {
   small?: boolean;
   states?: number[];
   defaultState?: number;
+  /** a multi-state piece that stands on one picture of its state instead of playing it (the street plants: they are grown): that picture's number, or true for the last one */
+  still?: boolean | number;
   /** a poster: a frame on the wall with a picture inside (the picture is stored on the placed piece as `img`) */
   poster?: boolean;
   /** you can sit on it (every tile of its footprint is a seat); it faces the way the piece faces */
@@ -116,9 +118,9 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   st_tree_apple: { id: "st_tree_apple", label: "Apple tree", icon: "🌳", w: 1, h: 1, height: 110, color: "#4a7", placeable: false, nitro: "furni/st_tree_apple.nitro", rotatable: true, fixed: true, states: [6], defaultState: 6 },
   st_tree_orange: { id: "st_tree_orange", label: "Orange tree", icon: "🌳", w: 1, h: 1, height: 110, color: "#4a7", placeable: false, nitro: "furni/st_tree_orange.nitro", rotatable: true, fixed: true, states: [6], defaultState: 6 },
   st_tree_pear: { id: "st_tree_pear", label: "Pear tree", icon: "🌳", w: 1, h: 1, height: 110, color: "#4a7", placeable: false, nitro: "furni/st_tree_pearg.nitro", rotatable: true, fixed: true, states: [4], defaultState: 4 },
-  st_tree_blossom: { id: "st_tree_blossom", label: "Blossom tree", icon: "🌳", w: 1, h: 1, height: 110, color: "#4a7", placeable: false, nitro: "furni/st_tree_peach.nitro", rotatable: true, fixed: true, states: [1], defaultState: 1 },
+  st_tree_blossom: { id: "st_tree_blossom", label: "Blossom tree", icon: "🌳", w: 1, h: 1, height: 110, color: "#4a7", placeable: false, nitro: "furni/st_tree_peach.nitro", rotatable: true, fixed: true, states: [1], defaultState: 1, still: 4 },
   st_planttree: { id: "st_planttree", label: "Tree in a planter", icon: "🌳", w: 1, h: 1, height: 90, color: "#4a7", placeable: false, nitro: "furni/st_plant_office.nitro", rotatable: true, fixed: true },
-  st_planter: { id: "st_planter", label: "Planter", icon: "🌳", w: 1, h: 1, height: 28, color: "#4a7", placeable: false, nitro: "furni/st_potbush.nitro", rotatable: true, fixed: true, states: [1], defaultState: 1 },
+  st_planter: { id: "st_planter", label: "Planter", icon: "🌳", w: 1, h: 1, height: 28, color: "#4a7", placeable: false, nitro: "furni/st_potbush.nitro", rotatable: true, fixed: true, states: [1], defaultState: 1, still: true },
   st_stall1: { id: "st_stall1", label: "Market stall", icon: "🌳", w: 2, h: 1, height: 70, color: "#4a7", placeable: false, nitro: "furni/st_stall1.nitro", rotatable: true, fixed: true },
   st_stall2: { id: "st_stall2", label: "Market stall", icon: "🌳", w: 2, h: 1, height: 70, color: "#4a7", placeable: false, nitro: "furni/st_stall2.nitro", rotatable: true, fixed: true },
   st_stall3: { id: "st_stall3", label: "Market stall", icon: "🌳", w: 2, h: 1, height: 70, color: "#4a7", placeable: false, nitro: "furni/st_stall3.nitro", rotatable: true, fixed: true },

@@ -1,5 +1,6 @@
 import { Ctx, fail } from "../ctx";
 import { hideoutRole, isHideoutId } from "../../../src/shared/hideout";
+import { STREETS_H, STREETS_W } from "../../../src/shared/streets";
 
 export interface Action {
   run(c: Ctx, args: any): Promise<unknown>;
@@ -26,7 +27,7 @@ export async function roomSize(c: Ctx, roomId: string): Promise<{ w: number; h: 
   if (roomId === "shop") return { w: 15, h: 15 };
   if (roomId === "mines") return { w: 14, h: 14 };
   if (roomId === "arrival") return { w: 11, h: 11 };
-  if (roomId === "streets") return { w: 25, h: 12 };
+  if (roomId === "streets") return { w: STREETS_W, h: STREETS_H };
   if (/^u_[A-Za-z0-9]{1,40}$/.test(roomId)) {
     const m = await c.db.get<{ w?: number; h?: number }>(`roomsMeta/${roomId}`);
     const side = (n: unknown) => (typeof n === "number" && n >= 8 && n <= 14 ? Math.floor(n) : 8);

@@ -178,6 +178,20 @@ check("they gave exactly what was asked", have(await state(a), walker.want.item)
 bad("a customer can only be filled once", await act(a, "streetFill", { k: walker.k }));
 check("it is marked as filled for everybody to see", !!(await owner("GET", `streetFilled/${walker.k}`)));
 
+console.log("--- RuneScape Classic's numbers");
+check("a machete hits harder than a knife", S.maxHitOf("machete") > S.maxHitOf("knife") && S.maxHitOf("knife") >= 1, `${S.maxHitOf("knife")} ${S.maxHitOf("machete")}`);
+check("a machete lands more swings", S.hitChanceOf("machete") > S.hitChanceOf("knife"));
+check("the machete is the best weapon in a pocket", S.bestWeapon([null, { item: "knife" }, { item: "machete" }]) === "machete" && S.bestWeapon([{ item: "bandage" }]) === null);
+for (const w of ["knife", "machete"]) {
+  let landed = 0, top = 0, sum = 0;
+  const N = 40000;
+  for (let i = 0; i < N; i++) { const r = S.swingRoll(w); if (r.landed) landed++; sum += r.dmg; top = Math.max(top, r.dmg); }
+  check(`${w}: the swings that land match the formula (${(S.hitChanceOf(w) * 100).toFixed(1)}%)`, Math.abs(landed / N - S.hitChanceOf(w)) < 0.015, String(landed / N));
+  check(`${w}: it never hits harder than ${S.maxHitOf(w)} and does reach it`, top === S.maxHitOf(w), String(top));
+  check(`${w}: a fight lasts a while (${(sum / N).toFixed(2)} a swing, ${S.PVP.maxHp} hit points)`, sum / N > 0.4 && sum / N < 2.2, String(sum / N));
+}
+check("a fixed roll is a fixed result (the rolls are RuneScape's two random numbers)", (() => { const seq = [0.9, 0.1, 0.5]; let i = 0; const r = S.swingRoll("knife", () => seq[i++]); return r.landed && r.dmg === Math.floor(0.5 * (S.maxHitOf("knife") + 1)); })());
+
 console.log("--- the knife fights");
 await stand(a, "streets", 5, 5); await stand(b, "streets", 6, 5); await stand(c, "streets", 12, 9);
 await owner("PUT", `streetPass/${b.uid}`, Date.now() + 3_600_000); await owner("PUT", `streetPass/${c.uid}`, Date.now() + 3_600_000);
@@ -191,10 +205,17 @@ bad("not somebody far away", await act(a, "streetHit", { target: c.uid }));
 bad("not with an empty hand", await act(c, "streetHit", { target: b.uid }));
 let hit = await act(a, "streetHit", { target: b.uid });
 ok("a swing of the knife", hit);
-check("it did 0 to 3 damage", hit.data.dmg >= 0 && hit.data.dmg <= 3, JSON.stringify(hit.data));
+check("it did 0 up to the knife's hardest hit", hit.data.dmg >= 0 && hit.data.dmg <= S.maxHitOf("knife"), JSON.stringify(hit.data));
 check("both are in a fight and the one who started it is skulled", (await owner("GET", `streetCombat/${b.uid}/combatUntil`)) > Date.now() && (await owner("GET", `streetCombat/${a.uid}/skullUntil`)) > Date.now());
 check("everybody can see it (a number over the head)", (await owner("GET", `rooms/streets/hits/${a.uid}`))?.to === b.uid);
 bad("you can't swing again at once", await act(a, "streetHit", { target: b.uid }));
+check("the fight remembers who is fighting whom", (await owner("GET", `streetCombat/${a.uid}/foe`)) === b.uid && (await owner("GET", `streetCombat/${b.uid}/foe`)) === a.uid);
+await owner("PUT", `users/${c.uid}/inventory`, { 0: { item: "knife", qty: 1 } }); await stand(c, "streets", 6, 6);
+await owner("PUT", `streetCombat/${c.uid}`, { hp: 10, at: Date.now(), combatUntil: 0, skullUntil: 0, healAt: 0, protectUntil: 0, kills: 0, deaths: 0 });
+bad("a third player can't join a fight (one at a time)", await act(c, "streetHit", { target: b.uid }));
+await owner("DELETE", `streetSwing/${a.uid}`);
+bad("and the one in a fight can't turn on somebody else", await act(a, "streetHit", { target: c.uid }));
+await stand(c, "streets", 12, 9); await owner("DELETE", `streetSwing/${a.uid}`);
 bad("nobody leaves a fight", await act(b, "elevatorDown"));
 await owner("PATCH", `streetCombat/${b.uid}`, { combatUntil: 0 }); await owner("PATCH", `streetCombat/${a.uid}`, { combatUntil: 0 });
 ok("out of a fight you can leave", await act(b, "elevatorDown"));
@@ -204,6 +225,7 @@ await owner("PUT", `users/${b.uid}/inventory/3`, { item: "bandage", qty: 2 });
 const heal = await act(b, "streetHeal", { slot: 3 });
 ok("a bandage heals 3", heal);
 check("4 -> 7", heal.data.hp === 7 && heal.data.healed === 3, JSON.stringify(heal.data));
+check("eating takes the place of a swing", Math.abs((Number(await owner("GET", `streetSwing/${b.uid}`)) || 0) - Date.now()) < 5000);
 bad("and not again at once", await act(b, "streetHeal", { slot: 3 }));
 await owner("PATCH", `streetCombat/${b.uid}`, { healAt: 0, hp: 10, at: Date.now() });
 bad("not when you are not hurt", await act(b, "streetHeal", { slot: 3 }));

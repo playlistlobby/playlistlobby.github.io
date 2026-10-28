@@ -14,7 +14,7 @@ import { itemDef } from "./items";
 import { findSlot, sellPrice } from "./shared/items";
 import { h, toast } from "./ui/dom";
 import { playSfx } from "./sfx";
-import { CAR_STAY_MS, customerAt, customersAt, CUSTOMER_EVERY_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
+import { bestWeapon, CAR_STAY_MS, customerAt, customersAt, CUSTOMER_EVERY_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
 import type { Customer, StreetCombat } from "./shared/streets";
 
 const FEET_Y = 94;
@@ -63,7 +63,7 @@ export interface StreetsApi {
 
 // ---- the cars ----------------------------------------------------------------------------------------------------------------------------------
 /** the cars that drive by (and the ones that stop for a customer): the kind (see rooms.ts). The street is one way, east (down to the right): the art only has views that look toward you. */
-const CARS = ["st_car_retro", "st_car_retro_red", "st_car_retro_yellow", "st_car_retro_pink", "st_car_retro_blue", "st_car_retro_orange", "st_car_retro_green", "st_car_mafia"] as const;
+const CARS = ["st_car_retro", "st_car_retro_red", "st_car_retro_yellow", "st_car_retro_pink", "st_car_retro_blue", "st_car_retro_orange", "st_car_retro_green"] as const; // (the black mafia car is left out: it is six loose parts and the side that faces us was never drawn)
 const CAR_DIR = 2;
 const AMBIENT_EVERY_MS = 15_000;
 const AMBIENT_LIFE_MS = 26_000;
@@ -114,7 +114,7 @@ function figureOf(look: number): string {
   }
   return f;
 }
-const WALK_SPEED = 1.5; // tiles a second
+const WALK_SPEED = 2.2; // tiles a second (the street is long)
 function walkerPlace(c: Customer, now: number, filledAt: number | null): { x: number; y: number; moving: boolean; dir: number } | null {
   const startX = c.from === -1 ? -1.5 : STREETS_W + 0.5;
   const step = c.from === -1 ? 1 : -1;
@@ -164,7 +164,13 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
         if ((hits.get(by) ?? 0) >= r.at) continue;
         const first = !hits.size && serverNow() - r.at > 3000; // (what happened before we came in is not shown)
         hits.set(by, r.at);
-        if (!first && serverNow() - r.at < 4000) { splats.push({ to: r.to, dmg: Number(r.dmg) || 0, at: performance.now() }); if (r.to === me.uid) playSfx("stab", 0.4); }
+        if (!first && serverNow() - r.at < 4000) {
+          splats.push({ to: r.to, dmg: Number(r.dmg) || 0, at: performance.now() });
+          if (r.to === me.uid) {
+            playSfx("stab", 0.4);
+            if (!r.dead && !fightTarget && bestWeapon(me.inventory)) fight(by); // (somebody hit you: you hit back, as in RuneScape)
+          }
+        }
       }
     }, () => undefined),
   ];
@@ -213,7 +219,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const inFight = (): boolean => (combat.get(me.uid)?.combatUntil ?? 0) > serverNow();
   function stopFight(): void { fightTarget = null; window.clearInterval(fightTimer); fightTimer = 0; }
   function fight(uid: string): void {
-    if (findSlot(me.inventory, "knife") < 0 && findSlot(me.inventory, "machete") < 0) return o.say("You need a knife to fight.", "warn");
+    if (!bestWeapon(me.inventory)) return o.say("You need a knife to fight.", "warn");
     stopFight();
     fightTarget = uid;
     o.say(`You go for ${o.nameOf(uid)}.`);

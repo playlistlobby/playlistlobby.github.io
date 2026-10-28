@@ -1008,8 +1008,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let scale = 1;
   let offX = 0;
   let offY = 0;
-  /** on a phone the picture is zoomed in on you and follows you around (the whole room doesn't fit big enough to see anything) */
+  /** on a phone (and in a very long room, like the streets) the picture is zoomed in on you and follows you around (the whole room doesn't fit big enough to see anything) */
   let followMe = false;
+  /** the camera jumps to you at once (after a layout), instead of sliding */
+  let snapCam = true;
   const PHONE_ZOOM = 1.45;
   function layout(): void {
     const dpr = window.devicePixelRatio || 1;
@@ -1022,8 +1024,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const fit = Math.min(w / floor.width, hh / (floor.height + 70));
     scale = fit >= 1 ? Math.floor(fit * 2) / 2 : fit; // half-steps keep pixel art crisp
     scale = Math.max(0.4, Math.min(scale, 2));
-    followMe = w < 560;
-    if (followMe) scale = Math.max(0.5, Math.min(Math.floor(fit * PHONE_ZOOM * 4) / 4, 2.5)); // a little closer
+    followMe = w < 560 || def.w >= 36;
+    if (w < 560 && def.w < 36) scale = Math.max(0.5, Math.min(Math.floor(fit * PHONE_ZOOM * 4) / 4, 2.5)); // a little closer
+    else if (def.w >= 36) scale = w < 560 ? 0.9 : Math.min(1.5, Math.max(1, Math.floor((w / 800) * 4) / 4)); // (a street fifty tiles long is looked at a stretch at a time)
+    snapCam = true;
     offX = Math.round((w - floor.width * scale) / 2 + floorOrigin.x * scale);
     offY = Math.round((hh - floor.height * scale) / 2 + floorOrigin.y * scale + 24);
   }
@@ -4742,7 +4746,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const id = f.id ?? f.kind;
     let c = animClock.get(id);
     if (!c || c.st !== st) { c = { st, at: now }; animClock.set(id, c); }
-    return { state: st, t: now - c.at };
+    return { state: st, t: now - c.at, ...(k.still ? { still: k.still } : {}) };
   }
   /** the table top a small piece stands on (if its tile is under one) */
   function tableUnder(f: { id?: string; kind: string; x: number; y: number }): PlacedFurni | undefined {
@@ -5367,8 +5371,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         let nx = offX + (sw / 2 - f.x), ny = offY + (sh * 0.56 - f.y);
         nx = Math.max(sw * 0.7 - floor.width * scale + floorOrigin.x * scale, Math.min(sw * 0.3 + floorOrigin.x * scale, nx));
         ny = Math.max(sh * 0.7 - floor.height * scale + floorOrigin.y * scale, Math.min(sh * 0.3 + floorOrigin.y * scale, ny));
-        offX += (nx - offX) * 0.14;
-        offY += (ny - offY) * 0.14;
+        const ease = snapCam ? 1 : 0.14;
+        snapCam = false;
+        offX += (nx - offX) * ease;
+        offY += (ny - offY) * ease;
       }
     }
     const dpr = window.devicePixelRatio || 1;

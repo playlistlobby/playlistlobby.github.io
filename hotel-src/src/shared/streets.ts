@@ -13,7 +13,7 @@ export const STREETS_ID = "streets";
 export const isStreetsRoom = (id: string): boolean => id === ARRIVAL_ID || id === STREETS_ID;
 /** the arrival room is as big as a medium player room; the streets are 25 tiles down to the right and 12 down to the left */
 export const ARRIVAL_SIZE = 11;
-export const STREETS_W = 25;
+export const STREETS_W = 50;
 export const STREETS_H = 12;
 
 // ---- when the elevator runs ------------------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ export function customerAt(k: number): Customer {
     const want: Want = rare
       ? { item: RARE_WANTS[Math.floor(r() * RARE_WANTS.length)], qty: 1 + Math.floor(r() * 3), mult: BIG_MULT }
       : { item, qty: 7 + Math.floor(r() * 4), mult: BIG_MULT };
-    return { k, kind: "car", at, until: at + CAR_STAY_MS, want, x: 5 + Math.floor(r() * 14), y: lane === 0 ? ROAD_ROWS.curbs[0] : ROAD_ROWS.curbs[1], from: -1, look: Math.floor(r() * 1000) }; // (the street is one way: every car drives east, down to the right, because the car art only has the two views that look toward you)
+    return { k, kind: "car", at, until: at + CAR_STAY_MS, want, x: 5 + Math.floor(r() * (STREETS_W - 11)), y: lane === 0 ? ROAD_ROWS.curbs[0] : ROAD_ROWS.curbs[1], from: -1, look: Math.floor(r() * 1000) }; // (the street is one way: every car drives east, down to the right, because the car art only has the two views that look toward you)
   }
   const roll = r();
   let want: Want;
@@ -110,8 +110,8 @@ export function customerAt(k: number): Customer {
   else if (roll < 0.86) want = { item: COMMON_WANTS[Math.floor(r() * COMMON_WANTS.length)], qty: 3 + Math.floor(r() * 2), mult: WALK_MULT }; // 3 or 4 of it
   else want = { item: RARE_WANTS[Math.floor(r() * RARE_WANTS.length)], qty: 1 + Math.floor(r() * 2), mult: WALK_MULT }; // a little of something rare
   let row = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)];
-  let wx = 3 + Math.floor(r() * 19);
-  for (let tries = 0; tries < 30 && !isFreeTile(wx, row); tries++) { row = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)]; wx = 3 + Math.floor(r() * 19); } // (not on a lamp or a tree)
+  let wx = 3 + Math.floor(r() * (STREETS_W - 6));
+  for (let tries = 0; tries < 30 && !isFreeTile(wx, row); tries++) { row = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)]; wx = 3 + Math.floor(r() * (STREETS_W - 6)); } // (not on a lamp or a tree)
   return { k, kind: "walker", at, until: at + CUSTOMER_STAY_MS, want, x: wx, y: row, from: r() < 0.5 ? -1 : 1, look: Math.floor(r() * 100000) };
 }
 /** the customers that are on the street at this moment (before the filled ones are taken away) */
@@ -127,15 +127,12 @@ export function customersAt(now: number): Customer[] {
 /** what a filled order pays: unit price x qty x mult, rounded up (`unit` = what 6ixty pays for one) */
 export const orderPay = (unit: number, w: Want): number => Math.ceil(unit * w.qty * w.mult);
 
-// ---- the knife fights (RuneScape's rules for bare-fist risk fights, for now only with knives) -----------------------------
+// ---- the knife fights (RuneScape Classic's rules for a player fight: a roll to hit, a roll for how hard, one fight at a time) -----------------------------
 export const PVP = {
   maxHp: 10,
-  /** the hardest a knife can hit, and the chance a swing lands */
-  maxHit: 3,
-  hitChance: 0.7,
-  /** how long you have to wait between two swings (4 game ticks of 0.6 s) */
+  /** how long you have to wait between two swings (4 game ticks of 0.6 s): a bandage uses up a swing too */
   swingMs: 2400,
-  /** after a hit, the two of you are in a fight for this long: no riding the elevator, no walking out of the room */
+  /** after a swing, the two of you are locked in a fight for this long (nobody else can join it): no riding the elevator, no walking out of the room */
   combatMs: 10_000,
   /** the one who starts a fight is skulled for this long (a mark for the risk rules to come) */
   skullMs: 20_000,
@@ -152,15 +149,46 @@ export const PVP = {
   /** what happens to what you carry when you die: the whole pocket is lost */
   loseOnDeath: true,
 } as const;
-export interface StreetCombat { hp: number; at: number; combatUntil: number; skullUntil: number; healAt: number; protectUntil: number; kills: number; deaths: number }
+/** `foe` is who you are locked in a fight with while `combatUntil` lasts */
+export interface StreetCombat { hp: number; at: number; combatUntil: number; skullUntil: number; healAt: number; protectUntil: number; kills: number; deaths: number; foe?: string }
+
+/**
+ * RuneScape Classic's numbers. Everybody fights at the same levels (nobody trains anything here), so what separates two players is the weapon and the luck of the rolls.
+ *   to hit:   a roll up to (attack + 8) x (weapon aim + 64) for you, up to (defense + 8) x (armour + 64) for them: you land the swing when yours is higher
+ *   how hard: a landed swing does 0 to max, where max = (strength + 8) x (weapon power + 64) / 640, rounded
+ */
+export const COMBAT_LEVELS = { attack: 20, strength: 20, defense: 20 } as const;
+/** no armour on the street (yet) */
+export const ARMOUR_BONUS = 0;
+export const WEAPONS: Record<string, { aim: number; power: number }> = { knife: { aim: 6, power: 10 }, machete: { aim: 10, power: 28 } };
+/** the weapon in a pocket that fights best (a machete over a knife), or null */
+export function bestWeapon(inv: Array<{ item: string } | null | undefined>): string | null {
+  let best: string | null = null;
+  for (const it of inv) if (it && WEAPONS[it.item] && (!best || WEAPONS[it.item].power > WEAPONS[best].power)) best = it.item;
+  return best;
+}
+const attackRoll = (weapon: string): number => (COMBAT_LEVELS.attack + 8) * (WEAPONS[weapon].aim + 64);
+const defenseRoll = (): number => (COMBAT_LEVELS.defense + 8) * (ARMOUR_BONUS + 64);
+/** the hardest a landed swing with this weapon can hit */
+export const maxHitOf = (weapon: string): number => Math.floor(0.5 + ((COMBAT_LEVELS.strength + 8) * (WEAPONS[weapon].power + 64)) / 640);
+/** the chance that a swing with this weapon lands (two rolls from 0 up to the attack and the defence number: the chance that the first is the higher) */
+export function hitChanceOf(weapon: string): number {
+  const a = attackRoll(weapon), d = defenseRoll();
+  return a >= d ? 1 - d / (2 * a) : a / (2 * d);
+}
+/** one swing: does it land, and how many hit points it takes (a landed swing can still do 0: the same splash as a miss) */
+export function swingRoll(weapon: string, rng: () => number = Math.random): { landed: boolean; dmg: number } {
+  const landed = rng() * attackRoll(weapon) > rng() * defenseRoll();
+  return { landed, dmg: landed ? Math.floor(rng() * (maxHitOf(weapon) + 1)) : 0 };
+}
 /** hit points now, with the ones that have come back since `at` */
 export function hpNow(c: Pick<StreetCombat, "hp" | "at">, now: number): number {
   return Math.min(PVP.maxHp, c.hp + Math.floor(Math.max(0, now - c.at) / PVP.regenMs));
 }
 
-/** Everything that stands on the street: [id, kind, x, y, dir] (x runs down to the right, y down to the left; the road is rows 3-8, the sidewalks 0-2 at the back and 9-11 in front) */
-export const STREET_PIECES: Array<[string, string, number, number, number]> = [
-  // the back sidewalk, against the shops: bins and cans, a dumpster, three market stalls, lamps and trees along the curb
+/** Everything that stands on the street: [id, kind, x, y, dir] (x runs down to the right, y down to the left; the road is rows 3-8, the sidewalks 0-2 at the back and 9-11 in front). Drawn for 25 tiles first, then spread over the (twice as long) street: two tiles apart where they stood one tile apart */
+const BASE_PIECES: Array<[string, string, number, number, number]> = [
+  // the back sidewalk: bins and cans, a dumpster, three market stalls, lamps and trees along the curb
   ["s_can1", "st_can", 5, 1, 4], ["s_bin1", "st_bin", 6, 1, 4], ["s_stall1", "st_stall1", 8, 1, 4], ["s_dump1", "st_dumpster", 11, 1, 4], ["s_can2", "st_can", 14, 1, 4],
   ["s_stall2", "st_stall2", 16, 1, 4], ["s_bin2", "st_bin", 19, 1, 4], ["s_stall3", "st_stall3", 21, 1, 4],
   ["s_lamp1", "st_lamp", 6, 2, 4], ["s_lamp2", "st_lamp", 14, 2, 4], ["s_lamp3", "st_lamp", 22, 2, 4],
@@ -175,6 +203,15 @@ export const STREET_PIECES: Array<[string, string, number, number, number]> = [
   ["s_ft1", "st_tree_pear", 1, 11, 4], ["s_pl1", "st_planter", 3, 11, 2], ["s_pt1", "st_planttree", 6, 11, 0], ["s_pl2", "st_planter", 9, 11, 2], ["s_ft2", "st_tree_apple", 13, 11, 4],
   ["s_pl3", "st_planter", 16, 11, 2], ["s_pt2", "st_planttree", 19, 11, 0], ["s_pl4", "st_planter", 21, 11, 2], ["s_ft3", "st_tree_blossom", 24, 11, 4],
 ];
+/** where a piece of the 25 tile street stands in the 50 tile one (the first tiles stay: the door and where you arrive) */
+const spreadX = (x: number): number => (x <= 2 ? x : x * 2 - 2);
+export const STREET_PIECES: Array<[string, string, number, number, number]> = [
+  ...BASE_PIECES.map(([id, kind, x, y, dir]): [string, string, number, number, number] => [id, kind, spreadX(x), y, dir]),
+  // the second half of the street: the second crossing with its traffic light, more lamps, a phone box and a bench by the shops
+  ["s_traf2", "st_traffic", 38, 9, 2], ["s_lampf4", "st_lamppost", 34, 9, 2], ["s_lampf5", "st_lamppost", 45, 9, 2], ["s_lamp4", "st_lamp", 36, 2, 4], ["s_lamp5", "st_lamp", 47, 2, 4],
+];
+/** the zebra crossings: where each one starts (tiles along the street; each is about 2 wide) */
+export const CROSSINGS = [20.1, 40.1];
 /** how many tiles each piece covers (a piece turned to face 2 or 6 swaps them): the customers don't stand where something is */
 const PIECE_TILES: Record<string, [number, number]> = { st_stall1: [2, 1], st_stall2: [2, 1], st_stall3: [2, 1], st_dumpster: [2, 1], st_bench: [2, 1], st_cafetable: [2, 2] };
 const BLOCKED = new Set<string>();

@@ -15393,5 +15393,15 @@
   "en": "There is no player with that name.",
   "da": "Der er ingen spiller med det navn.",
   "where": "server/src/actions/streets.ts"
+ },
+ "N2524": {
+  "en": "They are in a fight already.",
+  "da": "De er allerede i en kamp.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2525": {
+  "en": "You are in a fight already.",
+  "da": "Du er allerede i en kamp.",
+  "where": "server/src/actions/streets.ts"
  }
 }

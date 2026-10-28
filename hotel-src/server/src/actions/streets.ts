@@ -5,8 +5,8 @@
 //   streetBin    {can}         search one of the blue bins on the street: more than a basement bin gives, and it can be searched again sooner
 //   streetFill   {k}           give a customer what it asked for (k = the customer's number, see customerAt)
 //   streetEnter                you walk onto the street: your hit points are looked up and you are untouchable for a few seconds
-//   streetHit    {target}      a swing of your knife at somebody standing next to you (RuneScape's rules for a risk fight)
-//   streetHeal   {slot}        use a bandage: +3 hit points, once every 6 seconds
+//   streetHit    {target}      a swing of your knife (or machete) at somebody standing next to you: RuneScape Classic's rules (a roll to hit, a roll for how hard, one fight at a time)
+//   streetHeal   {slot}        use a bandage: +3 hit points, and it takes the place of a swing (once every 6 seconds)
 //   streetsTest  {minutes}     the admin's switch: the elevator runs for that many minutes from now whatever the clock says (0 turns it off)
 import { Action, cheb, ID_RE, int, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
@@ -14,7 +14,7 @@ import { isEmulator } from "../env";
 import { addToInv, DUMPSTER_DROPS, takeQtyFrom } from "../../../src/shared/economy";
 import { findSlot, sellPrice } from "../../../src/shared/items";
 import {
-  ARRIVAL_ID, customerAt, customersAt, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, orderPay, PVP, STREET_PIECES, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
+  ARRIVAL_ID, bestWeapon, customerAt, customersAt, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, orderPay, PVP, STREET_PIECES, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, swingRoll, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
 } from "../../../src/shared/streets";
 
 /** the streets are only for the staff and the emulator until the admin switches them on (config/streetsOpen, Admin > Streets) */
@@ -169,11 +169,15 @@ export const streetHit: Action = {
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > PVP.reach + 1) fail("They're too far away."); // (one tile, and a step of slack for the lag)
     if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't fight someone who plays on your device.");
     const w = await c.user();
-    if (findSlot(w.s.inventory, "knife") < 0 && findSlot(w.s.inventory, "machete") < 0) fail("You need a knife for that.");
+    const weapon = bestWeapon(w.s.inventory);
+    if (!weapon) fail("You need a knife for that.");
     const mine = await combatOf(c, c.uid);
     const their = await combatOf(c, target);
     if (Number(mine.protectUntil) > c.now) mine.protectUntil = 0; // (your own protection ends when you swing)
     if (their.protectUntil > c.now) fail("They just arrived. Give them a moment.");
+    // one fight at a time: while two are locked in a fight nobody else can hit either of them, and neither can walk off and hit somebody else
+    if (their.combatUntil > c.now && their.foe && their.foe !== c.uid) fail("They are in a fight already.");
+    if (mine.combatUntil > c.now && mine.foe && mine.foe !== target) fail("You are in a fight already.");
     const last = Number(await c.db.get<number>(`streetSwing/${c.uid}`)) || 0;
     if (c.now - last < PVP.swingMs) fail("Your arm is still swinging.");
     c.extra[`streetSwing/${c.uid}`] = c.now;
@@ -181,18 +185,17 @@ export const streetHit: Action = {
     const theyHitMe = Number((await c.db.get<number>(`streetLastHit/${target}/${c.uid}`)) ?? 0) > c.now - PVP.combatMs;
     if (!theyHitMe) mine.skullUntil = c.now + PVP.skullMs;
     const hpT = hpNow(their, c.now);
-    const landed = Math.random() < PVP.hitChance;
-    const dmg = landed ? 1 + Math.floor(Math.random() * PVP.maxHit) : 0; // (a swing that misses is a splash: 0)
+    const { dmg } = swingRoll(weapon!); // (a swing that misses is a splash: 0)
     const left = Math.max(0, hpT - dmg);
-    mine.combatUntil = c.now + PVP.combatMs;
-    their.combatUntil = c.now + PVP.combatMs;
+    mine.combatUntil = c.now + PVP.combatMs; mine.foe = target;
+    their.combatUntil = c.now + PVP.combatMs; their.foe = c.uid;
     c.extra[`streetLastHit/${c.uid}/${target}`] = c.now;
     let died = false;
     if (left <= 0) {
       died = true;
       mine.kills += 1;
-      c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, skullUntil: 0, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
-      mine.combatUntil = 0;
+      c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, skullUntil: 0, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
+      mine.combatUntil = 0; mine.foe = undefined;
       // everything they carry is gone (the pocket is wiped; blood and what they wear stay)
       const v = await c.user(target);
       v.s.inventory = v.s.inventory.map(() => null);
@@ -200,7 +203,7 @@ export const streetHit: Action = {
       const pr = await c.db.get<{ room?: string } | null>(`presence/${target}`);
       if (!pr || pr.room !== STREETS_ID) c.extra[`rooms/${STREETS_ID}/players/${target}`] = null;
     } else c.extra[`streetCombat/${target}`] = { ...their, hp: left, at: c.now };
-    c.extra[`streetCombat/${c.uid}`] = { ...mine, hp: hpNow(mine, c.now), at: c.now };
+    c.extra[`streetCombat/${c.uid}`] = { ...mine, hp: hpNow(mine, c.now), at: c.now, foe: mine.foe ?? null };
     // what everybody in the room sees: a number over the head (and the dead one is sent home by their own browser)
     c.extra[`rooms/${STREETS_ID}/hits/${c.uid}`] = { to: target, dmg, at: c.now, ...(died ? { dead: true } : {}) };
     c.note = `${dmg ? `hit ${dmg}` : "missed"}${died ? " (killed)" : ""}`;
@@ -222,6 +225,7 @@ export const streetHeal: Action = {
     const now = Math.min(PVP.maxHp, hp + PVP.healHp);
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1);
     c.extra[`streetCombat/${c.uid}`] = { ...cb, hp: now, at: c.now, healAt: c.now };
+    c.extra[`streetSwing/${c.uid}`] = c.now; // (eating takes the place of a swing, as in RuneScape: you give the other one a free round)
     return { hp: now, healed: now - hp };
   },
 };
