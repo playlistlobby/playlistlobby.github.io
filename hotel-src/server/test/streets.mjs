@@ -200,7 +200,7 @@ await owner("DELETE", `rooms/streets/players/${b.uid}`);
 const all = [...Array(6000)].map((_, i) => S.customerAt(i));
 const rich = all.filter((x) => x.kind === "rich");
 check("there are no cars any more", !all.some((x) => x.kind === "car"));
-check("about one customer in five is rich", rich.length / all.length > 0.15 && rich.length / all.length < 0.25, String(rich.length / all.length));
+check("about four customers in ten are rich", rich.length / all.length > 0.35 && rich.length / all.length < 0.45, String(rich.length / all.length));
 check("rich customers pay 3 times and stand on a sidewalk", rich.every((x) => x.want.mult === 3 && S.STREET_SIDEWALK_ROWS.includes(x.y)));
 const asked = new Map();
 for (const x of rich) asked.set(x.want.item, (asked.get(x.want.item) ?? 0) + 1);

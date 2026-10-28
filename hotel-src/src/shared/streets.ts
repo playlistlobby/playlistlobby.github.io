@@ -94,6 +94,8 @@ export const RICH_WANTS: ReadonlyArray<readonly [string, number]> = [
   ["caliweed", 3], ["fentcn", 3], ["pinkweed", 2], ["brownweed", 2], ["natryger", 2], ["loudpack", 1],
   ["joint_cali", 2], ["blunt_cali", 1], ["joint_pink", 1], ["blunt_pink", 1], ["joint_brown", 1], ["blunt_brown", 1], ["joint_nat", 1], ["blunt_nat", 1], ["joint_loud", 1], ["blunt_loud", 1],
 ];
+/** how many of the customers are rich (a hat, maybe a pet, 3x the price, any drug) */
+export const RICH_CHANCE = 0.4;
 const RICH_TOTAL = RICH_WANTS.reduce((n, [, w]) => n + w, 0);
 export function richWant(roll: number): string {
   let left = roll * RICH_TOTAL;
@@ -136,7 +138,7 @@ const BAGMAND_SELL_HINT: Record<string, number> = { heroin: 160, ketamine: 170, 
 /** The customer number k that turned up at `at`: always the same one for the same k, so every browser and the server agree on who they are and what they ask for. */
 export function customerAt(k: number, at = 0): Customer {
   const r = seeded(k * 7919 + 13);
-  const rich = r() < 0.2;
+  const rich = r() < RICH_CHANCE; // (every one that was rich before still is)
   if (rich) { // a rich customer: a hat and maybe a pet, a little of any drug, and 3 times the price
     const item = richWant(r());
     const dear = (BAGMAND_SELL_HINT[item] ?? 0) >= 150;
