@@ -239,10 +239,13 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   /** when your knife (and the gun) can be used again, and who you last attacked: the number over their head counts down to it */
   let knifeReadyAt = 0, gunReadyAt = 0;
   let lastTarget: { uid: string; weapon: "knife" | "gun" } | null = null;
+  let fightWeapon: "knife" | "gun" = "knife";
+  let fightSlot = -1;
   function stopFight(): void { fightTarget = null; window.clearInterval(fightTimer); fightTimer = 0; }
   function fight(uid: string): void {
     if (!bestWeapon(me.inventory)) return o.say("You need a knife to fight.", "warn");
     stopFight();
+    fightWeapon = "knife";
     fightTarget = uid;
     fightTimer = window.setInterval(() => void tick(), 350);
     void tick();
@@ -254,7 +257,8 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     if (!theirs) { stopFight(); return o.say("They've gone.", "warn"); }
     if (!mine) return;
     const d = Math.max(Math.abs(mine.x - theirs.x), Math.abs(mine.y - theirs.y));
-    if (d > PVP.reach) { o.walkTo(theirs); return; } // (they ran: follow them, and swing as soon as they are within reach)
+    if (d > (fightWeapon === "gun" ? PVP.gunRange - 1 : PVP.reach)) { o.walkTo(theirs); return; } // (too far: walk up (a gun needs less of a walk), and follow them if they run)
+    if (fightWeapon === "gun") { stopFight(); await fireGun(uid, fightSlot); return; }
     if (serverNow() < knifeReadyAt) return; // (the arm is still swinging: the swing comes the moment it is ready)
     swinging = true;
     try {
@@ -270,9 +274,16 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     }
     swinging = false;
   }
-  async function shoot(uid: string, slot: number): Promise<void> {
+  /** a click with the gun selected: you walk into range if you have to, then fire once */
+  function shoot(uid: string, slot: number): Promise<void> {
     const wait = gunReadyAt - serverNow();
-    if (wait > 0) return o.say(`Reloading: ${Math.ceil(wait / 1000)} more seconds.`, "warn");
+    if (wait > 0) { o.say(`Reloading: ${Math.ceil(wait / 1000)} more seconds.`, "warn"); return Promise.resolve(); }
+    stopFight();
+    fightWeapon = "gun"; fightSlot = slot; fightTarget = uid;
+    fightTimer = window.setInterval(() => void tick(), 350);
+    return tick();
+  }
+  async function fireGun(uid: string, slot: number): Promise<void> {
     try {
       const r = await call<{ dmg: number; died?: boolean; looted?: number; spilled?: number }>(me, "streetShoot", { target: uid, slot });
       gunReadyAt = serverNow() + PVP.gunCooldownMs;

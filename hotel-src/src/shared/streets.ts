@@ -190,7 +190,7 @@ export interface StreetCombat { hp: number; at: number; combatUntil: number; hea
  *   to hit:   a roll up to (attack + 8) x (weapon aim + 64) for you, up to (defense + 8) x (armour + 64) for them: you land the swing when yours is higher
  *   how hard: a landed swing does 0 to max, where max = (strength + 8) x (weapon power + 64) / 640, rounded
  */
-export const COMBAT_LEVELS = { attack: 20, strength: 40, defense: 20 } as const;
+export const COMBAT_LEVELS = { attack: 30, strength: 40, defense: 20 } as const;
 /** no armour on the street (yet) */
 export const ARMOUR_BONUS = 0;
 export const WEAPONS: Record<string, { aim: number; power: number }> = { knife: { aim: 6, power: 10 }, machete: { aim: 10, power: 28 } };
