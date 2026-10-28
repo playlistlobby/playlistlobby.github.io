@@ -18,7 +18,7 @@ export const BAGMAND_BUY: Record<string, { price: number; stock: number | null; 
   natryger: { price: 25, stock: null, label: "Bagmands natryger" },
   syringe: { price: 20, stock: null, label: "Syringe" },
   bandage: { price: 10, stock: 3, label: "Bandage" }, // (heals 3 hit points in a fight on the streets; 3 a visit for each player)
-  casekey: { price: 400, stock: null, label: "Box key" }, // (opens a mystery box; a hit gives one 1 time in 10)
+  casekey: { price: 400, stock: 4, label: "Box key" }, // (opens a mystery box; a hit gives one 1 time in 10; 4 a visit for each player)
   ipod: { price: 500, stock: 1, label: "iPod" }, // SoundCloud and your BeatShop from anywhere (one per player per visit; it can be dropped and traded)
   gun: { price: 250, stock: 1, label: "Gun" }, // (one use: it shoots once and is gone; one per player per visit)
 };
