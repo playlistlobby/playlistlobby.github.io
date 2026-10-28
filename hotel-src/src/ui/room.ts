@@ -211,7 +211,7 @@ const pieceHints = new Map<string, HTMLImageElement>();
 function pieceHint(kind: string): HTMLImageElement {
   let img = pieceHints.get(kind);
   if (!img) { img = new Image(); pieceHints.set(kind, img); }
-  const url = furniIcon(kind === "hchest" ? "stashbox" : kind);
+  const url = furniIcon(kind === "hchest" || kind === "silo" ? "stashbox" : kind);
   if (img.dataset.src !== url) { img.dataset.src = url; img.src = url; }
   return img;
 }
@@ -4876,7 +4876,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
       const redGlow = isBoom || k.opens === "records" || k.opens === "elevator"; // so does the record player in the shop
-      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "sink" || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin")) {
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "sink" || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "stash" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : k.opens === "raffle" ? def.furni.find((x) => x.kind === "raffletable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
@@ -4908,11 +4908,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }
         if (liftUp) g.restore();
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
-        const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky" || k.opens === "raffle"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? hot : k.opens === "records" || k.opens === "beatshop" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" || k.opens === "elevator" ? ticketImg : k.opens === "streetbin" ? basketIconImg : k.opens === "records" || k.opens === "beatshop" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
+        const noHint = k.opens === "mixer" || k.opens === "ducky" || k.opens === "raffle"; // the mixer glows like the rest, but has no little icon floating over it
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? hot : k.opens === "records" || k.opens === "beatshop" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" || k.opens === "elevator" ? ticketImg : k.opens === "streetbin" ? basketIconImg : k.opens === "records" || k.opens === "beatshop" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "beatshop" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "beatshop" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
