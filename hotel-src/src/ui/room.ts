@@ -283,15 +283,15 @@ function noteSprite(glyph: string): HTMLCanvasElement {
   const x = c.getContext("2d", { willReadFrequently: true })!;
   x.textAlign = "center";
   x.textBaseline = "middle";
-  x.font = 'bold 11px "Segoe UI Symbol", "Apple Symbols", sans-serif';
-  x.lineWidth = 2.4;
+  x.font = '10px "Segoe UI Symbol", "Apple Symbols", sans-serif';
+  x.lineWidth = 1.5;
   x.strokeStyle = "rgba(20,20,30,1)";
   x.strokeText(glyph, 6.5, 7);
   x.fillStyle = "#fff";
   x.fillText(glyph, 6.5, 7);
   const img = x.getImageData(0, 0, 13, 13);
   for (let i = 0; i < img.data.length; i += 4) { // (no soft edges: every pixel is either there or not)
-    img.data[i + 3] = img.data[i + 3] > 110 ? 255 : 0;
+    img.data[i + 3] = img.data[i + 3] > 90 ? 255 : 0;
     if (img.data[i + 3] && img.data[i] > 140 && img.data[i + 1] > 140) { img.data[i] = img.data[i + 1] = img.data[i + 2] = 255; } // (the light ones are plain white)
     else if (img.data[i + 3]) { img.data[i] = 24; img.data[i + 1] = 24; img.data[i + 2] = 34; }
   }
@@ -5171,7 +5171,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const y = base.y - (k.height + 8) * scale - age * 0.045 * scale;
         g.globalAlpha = f < 0.15 ? f / 0.15 : Math.max(0, 1 - (f - 0.55) / 0.45);
         const spr = noteSprite(n.glyph);
-        const size = spr.width * (2.1 + 0.4 * Math.sin(n.phase)) * Math.max(1, scale);
+        const size = spr.width * (1.45 + 0.25 * Math.sin(n.phase)) * Math.max(1, scale);
         g.drawImage(spr, Math.round(x - size / 2), Math.round(y - size / 2), size, size);
       }
       g.restore();
