@@ -5443,8 +5443,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (roulette) { const sh = roulette.shake(now); if (sh.x || sh.y) g.translate(sh.x, sh.y); } // the shot shakes the picture a moment
     { const sh = pokerFx.shake(now); if (sh.x || sh.y) g.translate(sh.x, sh.y); }
     g.imageSmoothingEnabled = scale < 1;
-    g.clearRect(0, 0, canvas.width, canvas.height);
-    if (greenScreen) { g.fillStyle = "#00ff00"; g.fillRect(0, 0, canvas.width, canvas.height); } // chroma green instead of the floor and the walls
+    // (the picture is cleared in screen units: the bitmap is `dpr` times bigger, so with the browser zoomed out (dpr below 1) clearing canvas.width units left the right and bottom edge
+    // uncleared, and everything drawn there piled up into dark bands and brighter corners)
+    const clearW = canvas.width / dpr + 60, clearH = canvas.height / dpr + 60;
+    g.clearRect(-30, -30, clearW, clearH);
+    if (greenScreen) { g.fillStyle = "#00ff00"; g.fillRect(-30, -30, clearW, clearH); } // chroma green instead of the floor and the walls
     else { // the floor and walls picture: only the part that is on the screen (a very long room like the street is a huge picture, and drawing all of it, scaled, with most of it off the screen showed black banding in the corners in Chrome)
       const dx = offX - floorOrigin.x * scale, dy = offY - floorOrigin.y * scale;
       const vw = canvas.width / dpr, vh = canvas.height / dpr;
