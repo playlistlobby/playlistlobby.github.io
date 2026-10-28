@@ -1815,3 +1815,9 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .st-order-want { font-weight: 800; font-size: 15px; }
 .stage.horror.street { background: radial-gradient(ellipse 80% 70% at 50% 40%, #232d48 0%, #101626 55%, #05070d 100%); }
 .stage.horror.street::before { display: none; }
+
+/* admin: the streets tab (the room layout builder) */
+.as-board { display: grid; gap: 1px; background: #000; width: max-content; max-width: 100%; margin: 8px 0; touch-action: none; user-select: none; }
+.as-cell { cursor: crosshair; }
+.as-out { width: 100%; font-family: monospace; font-size: 11px; box-sizing: border-box; }
+.as-num { width: 64px !important; }

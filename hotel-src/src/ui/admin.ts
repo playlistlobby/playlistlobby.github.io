@@ -11,11 +11,12 @@ import { mountAdminShop } from "./adminShop";
 import { mountAdminPosters } from "./adminPosters";
 import { mountAdminEconomy } from "./adminEconomy";
 import { mountStudioHub } from "./studioHub";
+import { mountAdminStreets } from "./adminStreets";
 import type { Ctx } from "../main";
 
-type Tab = "players" | "messages" | "activity" | "economy" | "posters" | "shop" | "studio" | "settings";
+type Tab = "players" | "messages" | "activity" | "economy" | "posters" | "shop" | "studio" | "streets" | "settings";
 const TAB_LABELS: Array<[Tab, string]> = [
-  ["players", "Players"], ["messages", "Messages"], ["activity", "Activity"], ["economy", "Economy"], ["posters", "Posters"], ["shop", "Shop"], ["studio", "Studio"], ["settings", "Settings"],
+  ["players", "Players"], ["messages", "Messages"], ["activity", "Activity"], ["economy", "Economy"], ["posters", "Posters"], ["shop", "Shop"], ["studio", "Studio"], ["streets", "Streets"], ["settings", "Settings"],
 ];
 
 const fmt = (ts: number) => new Date(ts).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -66,7 +67,7 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
     tab = next;
     body.replaceChildren();
     tabsEl.replaceChildren(...TAB_LABELS.map(([id, label]) => h("button", { class: "tab" + (id === tab ? " on" : ""), onclick: () => show(id) }, label)));
-    const run = { players: accounts, messages, activity: actions, economy: (el: HTMLElement) => mountAdminEconomy(el, ctx), posters: (el: HTMLElement) => mountAdminPosters(el, ctx), shop: (el: HTMLElement) => mountAdminShop(el, ctx), studio: (el: HTMLElement) => mountStudioHub(el, ctx), settings }[tab];
+    const run = { players: accounts, messages, activity: actions, economy: (el: HTMLElement) => mountAdminEconomy(el, ctx), posters: (el: HTMLElement) => mountAdminPosters(el, ctx), shop: (el: HTMLElement) => mountAdminShop(el, ctx), studio: (el: HTMLElement) => mountStudioHub(el, ctx), streets: (el: HTMLElement) => mountAdminStreets(el, ctx), settings }[tab];
     void Promise.resolve(run(body)).then((d) => { if (tab === next) dispose = d ?? null; else d?.(); });
   }
 
