@@ -8,6 +8,8 @@ import type { InvItem } from "./items";
 
 /** the hours (Danish time) a visit starts, and how long it lasts */
 export const VISIT_HOURS = [1, 10, 15];
+/** extra visits on single days (Danish date YYYYMMDD -> hours): 28 Oct 2026 he also comes at 23 */
+export const EXTRA_VISITS: Record<string, number[]> = { "20261028": [23] };
 export const VISIT_MS = 3_600_000;
 /** the room he stands in: the basement, by the roulette table (where on the floor: see BAGMAN in src/npc.ts) */
 export const BAGMAN_ROOM = "lobby";
@@ -53,7 +55,9 @@ function visitStarts(now: number): number[] {
   const local = new Date(now + copenhagenOffset(now)); // (its UTC fields read as the Danish clock)
   const out: number[] = [];
   for (let day = -1; day <= 2; day++) {
-    for (const hour of VISIT_HOURS) {
+    const d = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + day));
+    const key = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
+    for (const hour of [...VISIT_HOURS, ...(EXTRA_VISITS[key] ?? [])]) {
       const naive = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + day, hour);
       out.push(naive - copenhagenOffset(naive - copenhagenOffset(naive)));
     }
