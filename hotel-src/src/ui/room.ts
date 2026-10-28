@@ -5908,7 +5908,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             pokerFx.drawFloor(g, p.uid, { x: feet.x + lunge.x, y: feet.y + lunge.y + lift }, now);
             const unusual = p.un ? unusualOf(p.un) : undefined;
             if (unusual) drawFx(g, unusual.effect, true, feet.x + lunge.x, feet.y + lunge.y + lift, scale, p.dir, now); // (an unusual: the part of its effect that goes behind)
-            if (vapeOn) drawFx(g, "raincloud", true, feet.x + lunge.x, feet.y + lunge.y + lift, scale, p.dir, now);
             if (glowing) { g.save(); g.shadowColor = `rgba(255,214,90,${(0.75 + 0.25 * pulse).toFixed(2)})`; g.shadowBlur = (10 + 18 * pulse) * scale; }
             else if (chemOn) { g.save(); g.shadowColor = `hsla(${Math.floor(now / 2.5) % 360},100%,60%,0.95)`; g.shadowBlur = (14 + 14 * Math.abs(Math.sin(now / 90))) * scale; }
             else if (aura) { g.save(); g.shadowColor = aura.glow; g.shadowBlur = aura.blur; }
@@ -5917,7 +5916,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
             if (aura) drawAuraParticles(aura, feet.x + lunge.x, feet.y + lunge.y + lift, now);
             if (unusual) drawFx(g, unusual.effect, false, feet.x + lunge.x, feet.y + lunge.y + lift, scale, p.dir, now); // (and the part in front)
             if (vapeOn) {
-              drawFx(g, "raincloud", false, feet.x + lunge.x, feet.y + lunge.y + lift, scale, p.dir, now);
               for (let i = 0; i < 6; i++) { // vapour rolls off the head: soft blue-white puffs
                 const t = (now / 1800 + i / 6) % 1;
                 const px = feet.x + lunge.x + Math.sin(t * 7 + i * 1.9) * (8 + t * 16) * scale;
