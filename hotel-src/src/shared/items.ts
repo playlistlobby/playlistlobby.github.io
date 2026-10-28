@@ -31,6 +31,8 @@ export const ITEM_ID_LIST = [
   // bagmand (a visiting vendor, see shared/bagmand.ts): poppy seeds grow into opium, which is mixed into the heavy stuff; his own blue weed and the special weeds you roll from them
   "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",
   "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",
+  // the streets (see shared/streets.ts): the elevator ticket (one per player), and the bandage that heals 3 hit points in a knife fight
+  "elevator_ticket", "bandage",
   // the loudspeaker: a message on every screen for 10 seconds, once every 6 hours (see shared/loudspeaker.ts)
   "loudspeaker",
   // the puff-bar: a vape you puff once a minute (Ducky machine for 20 kr, or from a mystery box): see VAPE_* in shared/ducky.ts
@@ -88,7 +90,7 @@ export const findSlot = (inv: Inventory, item: string): number => inv.findIndex(
 export const findSlotAny = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item);
 
 /** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
-export const SIXTY_STOCK = ["cigarette", "pill", "kodimagnyl"];
+export const SIXTY_STOCK = ["cigarette", "pill", "kodimagnyl", "bandage"];
 export const DEFAULT_ITEM_PRICE = 5;
 /** Default shop entry for items that start on sale (everything else starts off). */
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
@@ -101,6 +103,7 @@ export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cd_dipdip: { on: true, price: 5 }, // lemonade - Dip Dip, the same shop and rules
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
   wood: { on: true, price: WOOD_PRICE }, // sold by 6ixty in the mines (see buySixty)
+  bandage: { on: true, price: 12 }, // sold by 6ixty: heals 3 hit points in the streets (a test item)
   kodimagnyl: { on: true, price: 4 }, // sold by 6ixty (the growing kit moved to the vending machine)
   // sold in the shop room's vending machine (not by 6ixty): the admin can still change these prices
   lighter: { on: false, price: 2 },
@@ -305,7 +308,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife), every CD, the dice and the starter sofa everybody is given. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
-  "f_mixer", "f_planter", "f_boombox", "f_beatshop", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
+  "f_mixer", "f_planter", "f_boombox", "f_beatshop", "elevator_ticket", "bandage", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
   "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip", "pickaxe", "machete", "dice", "f_sofa",
   "puffbar", "loudspeaker", "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "mixerchip2", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
   // bagmand only buys his own things back (see shared/bagmand.ts)

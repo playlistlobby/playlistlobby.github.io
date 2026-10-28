@@ -178,6 +178,17 @@ export function loadNitro(path: string): Promise<NitroFurni | null> {
         }
         g.putImageData(img, 0, 0);
       }) : Promise.reject(new Error("no table art"))))
+      : path === "derived:st_bin_blue" // the street's trash cans: the grey bin painted blue
+      ? loadNitro("furni/st_urban_bin.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          const k = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+          d[i] = Math.round(10 + 70 * k * k); d[i + 1] = Math.round(30 + 140 * k); d[i + 2] = Math.min(255, Math.round(70 + 215 * k));
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no bin art"))))
       : path === "derived:beatshop" // the BeatShop: the vending machine painted purple
       ? loadNitro("furni/olympics_r16_vendingmchn.nitro").then((n) => (n ? derive(n, (g, w, h) => {
         const img = g.getImageData(0, 0, w, h);

@@ -1,5 +1,6 @@
 // The economy's numbers and pure helpers, shared by the browser (to show things) and the server (to decide them).
 // Nothing here may import the browser or Firebase.
+import { TICKET_ITEM } from "./streets";
 import { emptyInventory, findSlotAny, growMsOf, InvItem, Inventory, INV_SIZE, parseInventoryWith, SMOKABLE, SMOKE_MS, STACKABLE, START_BLOOD, WATER_MS } from "./items";
 
 export const DAY_MS = 86_400_000;
@@ -268,6 +269,7 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
 
 /** A copy of the inventory with something put in it (stacking where the item stacks); null if there's no room. */
 export function addToInv(inv: Inventory, give: InvItem): Inventory | null {
+  if (give.item === TICKET_ITEM && inv.some((s) => s?.item === TICKET_ITEM)) return null; // (one elevator ticket per player: a second one can't be picked up or traded for)
   const out: Inventory = inv.map((s) => (s ? { ...s } : null));
   if (STACKABLE.has(give.item) && !give.lit) {
     const t = out.findIndex((s) => s && s.item === give.item && !s.lit && !s.inPlayer && !!s.ass === !!give.ass && s.giver === give.giver && s.qty + give.qty <= 999);

@@ -195,6 +195,7 @@ export interface Shell {
 }
 
 export function renderRoomShell(def: RoomDef): Shell {
+  if (def.theme.style === "street") return renderStreetShell(def);
   const W = def.w;
   const H = def.h;
   const t = def.theme;
@@ -334,6 +335,168 @@ export function renderRoomShell(def: RoomDef): Shell {
     x.fillRect(minX, minY, maxX - minX, maxY - minY);
     x.restore();
   }
+  return { canvas: c, origin: { x: -minX, y: -minY } };
+}
+
+// ---- the street at night (theme.style "street"): drawn procedurally, nothing to download ----------------------------------------------------------
+const hash = (n: number): (() => number) => {
+  let a = (n ^ 0x51ed270b) | 0;
+  return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+};
+
+/** Road rows 3-8, sidewalks 0-2 (against the buildings) and 9-11 (in front). The streets room is always 12 tiles from the back wall to the front. */
+function renderStreetShell(def: RoomDef): Shell {
+  const W = def.w, H = def.h;
+  const minX = -H * (TILE_W / 2) - 8, maxX = W * (TILE_W / 2) + 8;
+  const minY = -WALL_H - 8, maxY = (W + H) * (TILE_H / 2) + 20;
+  const c = document.createElement("canvas");
+  c.width = maxX - minX; c.height = maxY - minY;
+  const x = c.getContext("2d")!;
+  x.translate(-minX, -minY);
+  const o = iso(0, 0), bl = iso(0, H), br = iso(W, 0), bot = iso(W, H);
+  const path = (pts: Pt[]) => { x.beginPath(); pts.forEach((p, i) => (i ? x.lineTo(p.x, p.y) : x.moveTo(p.x, p.y))); x.closePath(); };
+  const poly = (pts: Pt[], fill: string, stroke?: string) => { path(pts); x.fillStyle = fill; x.fill(); if (stroke) { x.strokeStyle = stroke; x.lineWidth = 1; x.stroke(); } };
+  const quad = (tx: number, ty: number, w = 1, h = 1): Pt[] => [iso(tx, ty), iso(tx + w, ty), iso(tx + w, ty + h), iso(tx, ty + h)];
+  const rightWall = [o, br, { x: br.x, y: br.y - WALL_H }, { x: o.x, y: o.y - WALL_H }];
+  const leftWall = [o, bl, { x: bl.x, y: bl.y - WALL_H }, { x: o.x, y: o.y - WALL_H }];
+
+  // ---- the walls: brick buildings (drawn in "wall space": u along the wall, v up it) ----
+  const facade = (side: 1 | -1, tiles: number, seed: number): void => {
+    const r = hash(seed);
+    x.save();
+    path(side === 1 ? rightWall : leftWall); x.clip();
+    x.transform(side, 0.5, 0, -1, o.x, o.y); // (u, v) -> screen: u runs along the wall, v goes up
+    const L = tiles * (TILE_W / 2);
+    x.fillStyle = "#2a2124"; x.fillRect(0, 0, L, WALL_H);
+    // bricks
+    for (let v = 0, row = 0; v < WALL_H; v += 6, row++) {
+      for (let u = -(row % 2) * 9; u < L; u += 18) {
+        const t = r();
+        x.fillStyle = `rgb(${Math.round(52 + t * 26)},${Math.round(34 + t * 14)},${Math.round(34 + t * 12)})`;
+        x.fillRect(u + 0.5, v + 0.5, 17, 5);
+      }
+    }
+    // a lit shop-front band at the bottom, roller shutters and a few windows above it
+    for (let ti = 0; ti < tiles; ti++) {
+      const u0 = ti * (TILE_W / 2);
+      const kind = hash(seed + ti * 31)();
+      if (side === 1 && ti >= 1 && ti <= 3) continue; // (the door back to the arrival room stands here)
+      if (kind < 0.18 && side === 1) { // a roller shutter
+        x.fillStyle = "#3a3d42"; x.fillRect(u0 + 3, 0, 26, 62);
+        x.strokeStyle = "rgba(0,0,0,.45)"; x.lineWidth = 1;
+        for (let v = 4; v < 62; v += 5) { x.beginPath(); x.moveTo(u0 + 3, v); x.lineTo(u0 + 29, v); x.stroke(); }
+        x.fillStyle = "rgba(255,255,255,.07)"; x.fillRect(u0 + 3, 0, 26, 3);
+      }
+      if (ti % 2 === 0 || side === -1) { // a window
+        const lit = hash(seed + ti * 17)() < 0.4;
+        const wx = u0 + 6, wy = side === 1 ? 74 : 62, ww = 20, wh = 28;
+        x.fillStyle = "#15121a"; x.fillRect(wx - 2, wy - 2, ww + 4, wh + 4);
+        const gl = x.createLinearGradient(0, wy, 0, wy + wh);
+        if (lit) { gl.addColorStop(0, "#ffd27a"); gl.addColorStop(1, "#c9722a"); } else { gl.addColorStop(0, "#1c2740"); gl.addColorStop(1, "#0b0f1c"); }
+        x.fillStyle = gl; x.fillRect(wx, wy, ww, wh);
+        x.fillStyle = "rgba(0,0,0,.55)"; x.fillRect(wx + ww / 2 - 1, wy, 2, wh); x.fillRect(wx, wy + wh / 2 - 1, ww, 2);
+        if (lit) { x.fillStyle = "rgba(255,190,90,.18)"; x.fillRect(wx - 4, wy - 4, ww + 8, wh + 8); }
+      }
+    }
+    // the roofline and the grime running down
+    x.fillStyle = "#3a2e31"; x.fillRect(0, WALL_H - 9, L, 9);
+    x.fillStyle = "rgba(0,0,0,.35)"; x.fillRect(0, WALL_H - 11, L, 2);
+    for (let i = 0; i < tiles * 3; i++) {
+      const gx = r() * L, gh = 20 + r() * 50;
+      const g = x.createLinearGradient(0, WALL_H - 10, 0, WALL_H - 10 - gh);
+      g.addColorStop(0, "rgba(0,0,0,.45)"); g.addColorStop(1, "rgba(0,0,0,0)");
+      x.fillStyle = g; x.fillRect(gx, WALL_H - 10 - gh, 3 + r() * 5, gh);
+    }
+    const dark = x.createLinearGradient(0, 0, 0, 22);
+    dark.addColorStop(0, "rgba(0,0,0,.6)"); dark.addColorStop(1, "rgba(0,0,0,0)");
+    x.fillStyle = dark; x.fillRect(0, 0, L, 22);
+    x.restore();
+  };
+  facade(1, W, 11);
+  facade(-1, H, 23);
+  poly(leftWall, "rgba(0,0,0,0.22)");
+
+  // ---- the floor ----
+  poly([bl, bot, { x: bot.x, y: bot.y + 8 }, { x: bl.x, y: bl.y + 8 }], "#15171b");
+  poly([br, bot, { x: bot.x, y: bot.y + 8 }, { x: br.x, y: br.y + 8 }], "#0f1013");
+  const r = hash(77);
+  for (let ty = 0; ty < H; ty++) {
+    const road = ty >= 3 && ty <= 8;
+    for (let tx = 0; tx < W; tx++) {
+      const odd = (tx + ty) % 2;
+      const t = r();
+      let fill: string;
+      if (road) fill = `rgb(${Math.round(28 + t * 8 + odd * 2)},${Math.round(30 + t * 8 + odd * 2)},${Math.round(36 + t * 9 + odd * 2)})`;
+      else fill = `rgb(${Math.round(72 + t * 12 + odd * 5)},${Math.round(76 + t * 12 + odd * 5)},${Math.round(86 + t * 12 + odd * 5)})`;
+      poly(quad(tx, ty), fill, road ? "rgba(0,0,0,0.10)" : "rgba(10,12,16,0.35)"); // (the sidewalk slabs have joints, the road barely any)
+    }
+  }
+  // the curbs: a lighter lip along the edge of each sidewalk, and the gutter in the road beside it
+  x.lineJoin = "round";
+  const stroke = (a: Pt, b: Pt, col: string, w: number, dash?: number[]) => { x.save(); x.strokeStyle = col; x.lineWidth = w; if (dash) x.setLineDash(dash); x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y); x.stroke(); x.restore(); };
+  stroke(iso(0, 3), iso(W, 3), "rgba(200,205,215,.55)", 3);
+  stroke(iso(0, 9), iso(W, 9), "rgba(200,205,215,.55)", 3);
+  stroke(iso(0, 3.12), iso(W, 3.12), "rgba(0,0,0,.5)", 3);
+  stroke(iso(0, 8.88), iso(W, 8.88), "rgba(0,0,0,.5)", 3);
+  // the lines in the road: a double yellow line down the middle, white edge lines
+  stroke(iso(0, 5.92), iso(W, 5.92), "#c9a227", 2); stroke(iso(0, 6.08), iso(W, 6.08), "#c9a227", 2);
+  stroke(iso(0, 3.45), iso(W, 3.45), "rgba(235,235,235,.5)", 2, [14, 12]);
+  stroke(iso(0, 8.55), iso(W, 8.55), "rgba(235,235,235,.5)", 2, [14, 12]);
+  // a zebra crossing
+  for (let ty = 3.2; ty < 8.8; ty += 0.55) poly([iso(11.1, ty), iso(12.9, ty), iso(12.9, ty + 0.3), iso(11.1, ty + 0.3)], "rgba(225,225,225,.62)");
+  // cracks and patches in the asphalt, wet puddles that catch the light
+  x.save();
+  for (let i = 0; i < 26; i++) {
+    const p = iso(1 + r() * (W - 2), 3.3 + r() * 5.4);
+    x.strokeStyle = `rgba(0,0,0,${0.35 + r() * 0.3})`; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(p.x, p.y);
+    let cx = p.x, cy = p.y;
+    for (let s = 0; s < 6; s++) { cx += (r() - 0.45) * 12; cy += (r() - 0.5) * 5; x.lineTo(cx, cy); }
+    x.stroke();
+  }
+  for (let i = 0; i < 9; i++) {
+    const p = iso(1 + r() * (W - 2), 3.4 + r() * 5.2);
+    const rw = 22 + r() * 34;
+    const g = x.createRadialGradient(p.x, p.y, 0, p.x, p.y, rw);
+    g.addColorStop(0, "rgba(120,150,210,.35)"); g.addColorStop(0.7, "rgba(60,80,130,.2)"); g.addColorStop(1, "rgba(60,80,130,0)");
+    x.fillStyle = g; x.beginPath(); x.ellipse(p.x, p.y, rw, rw / 2, 0, 0, Math.PI * 2); x.fill();
+  }
+  x.restore();
+  // blood and stains on the sidewalk
+  for (let i = 0; i < 6; i++) {
+    const p = iso(1 + r() * (W - 2), (r() < 0.5 ? 0.5 : 9.5) + r() * 1.8);
+    const rw = 8 + r() * 14;
+    const g = x.createRadialGradient(p.x, p.y, 0, p.x, p.y, rw);
+    g.addColorStop(0, "rgba(90,12,14,.5)"); g.addColorStop(1, "rgba(90,12,14,0)");
+    x.fillStyle = g; x.beginPath(); x.ellipse(p.x, p.y, rw, rw / 2, 0, 0, Math.PI * 2); x.fill();
+  }
+  // the light of the street lamps: a warm pool on the ground under each one, and a faint glow up on the wall
+  x.save();
+  path([iso(0, 0), iso(W, 0), iso(W, H), iso(0, H)]); x.clip();
+  x.globalCompositeOperation = "lighter";
+  for (const f of def.furni) {
+    if (f.kind !== "st_lamp" && f.kind !== "st_lamppost") continue;
+    const p = iso(f.x + 0.5, f.y + (f.y < 5 ? 1.8 : -0.8));
+    const rw = f.kind === "st_lamp" ? 150 : 120;
+    const g = x.createRadialGradient(p.x, p.y, 4, p.x, p.y, rw);
+    g.addColorStop(0, "rgba(255,196,110,.34)"); g.addColorStop(0.5, "rgba(255,170,80,.14)"); g.addColorStop(1, "rgba(255,160,70,0)");
+    x.fillStyle = g; x.beginPath(); x.ellipse(p.x, p.y, rw, rw / 2, 0, 0, Math.PI * 2); x.fill();
+  }
+  x.restore();
+  // night: everything under a cold blue, darker toward the far ends of the street
+  x.save();
+  path([iso(0, 0), iso(W, 0), iso(W, H), iso(0, H)]); x.clip();
+  x.globalCompositeOperation = "multiply";
+  const mid = iso(W / 2, H / 2);
+  const night = x.createRadialGradient(mid.x, mid.y, 40, mid.x, mid.y, Math.max(W, H) * TILE_W * 0.5);
+  night.addColorStop(0, "rgba(150,165,215,1)"); night.addColorStop(1, "rgba(60,70,110,1)");
+  x.fillStyle = night; x.fillRect(minX, minY, maxX - minX, maxY - minY);
+  x.restore();
+  x.save();
+  x.globalCompositeOperation = "multiply";
+  path(rightWall); x.fillStyle = "rgba(95,105,150,1)"; x.fill();
+  path(leftWall); x.fillStyle = "rgba(75,85,125,1)"; x.fill();
+  x.restore();
   return { canvas: c, origin: { x: -minX, y: -minY } };
 }
 

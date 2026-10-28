@@ -18,7 +18,7 @@ export interface RoomTheme {
   floorTex?: string;
   wallTex?: string;
   /** "grime": dirty concrete drawn procedurally (stains, cracks, rust, puddles), and a dark moody stage */
-  style?: "grime";
+  style?: "grime" | "street";
 }
 
 export interface FurniKind {
@@ -40,7 +40,7 @@ export interface FurniKind {
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
   /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
   wallArt?: { left: number; back: number };
-  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits" | "board" | "cdpress" | "beatshop";
+  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits" | "board" | "cdpress" | "beatshop" | "elevator" | "streetbin";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -74,6 +74,7 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
 import { RAFFLE_PRIZE_ID } from "./shared/raffle";
 import { MINES_H, MINES_ID, MINES_OPEN, MINES_PIECES, MINES_W } from "./shared/mines";
+import { ARRIVAL_ID, ARRIVAL_SIZE, isStreetsRoom, STREET_PIECES, STREETS_H, STREETS_ID, STREETS_OPEN, STREETS_W } from "./shared/streets";
 import { HIDEOUT_MAX_FURNI, hideoutRoomId, isHideoutId, levelOfSize } from "./shared/hideout";
 export { hideoutRoomId, isHideoutId };
 export { MINES_ID };
@@ -107,6 +108,26 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   f_mixer_up2: { id: "f_mixer_up2", label: "Mixer (MK2)", icon: "🧪", w: 1, h: 1, height: 46, color: "#3a3d44", placeable: false, nitro: "derived:mixer_up2", rotatable: true, opens: "mixer" },
   f_mixer_up: { id: "f_mixer_up", label: "Mixer (upgraded)", icon: "🧪", w: 1, h: 1, height: 46, color: "#4f8a5a", placeable: false, nitro: "derived:mixer_up", rotatable: true, opens: "mixer" },
   f_mixer: { id: "f_mixer", label: "Mixer", icon: "🧪", w: 1, h: 1, height: 46, color: "#6b6b7a", placeable: false, nitro: "furni/f_mixer.nitro", rotatable: true, opens: "mixer" },
+  // the streets (see shared/streets.ts): the elevator in the basement (and in the arrival room, to go back), and the things on the street. The art is from HabboAssets (public/furni/st_*.nitro).
+  elevator: { id: "elevator", label: "Elevator", icon: "🛗", w: 1, h: 1, height: 96, color: "#7a1c1c", placeable: false, nitro: "furni/elevator.nitro", rotatable: true, fixed: true, opens: "elevator" },
+  st_bin: { id: "st_bin", label: "Trash can", icon: "🗑️", w: 1, h: 1, height: 40, color: "#2f5fa8", placeable: false, nitro: "derived:st_bin_blue", rotatable: true, fixed: true, opens: "streetbin" },
+  st_lamp: { id: "st_lamp", label: "Street lamp", icon: "💡", w: 1, h: 1, height: 120, color: "#555", placeable: false, nitro: "furni/st_urban_lamp.nitro", rotatable: true, fixed: true },
+  st_lamppost: { id: "st_lamppost", label: "Lamp post", icon: "💡", w: 1, h: 1, height: 110, color: "#555", placeable: false, nitro: "furni/st_es_lmppst.nitro", rotatable: true, fixed: true },
+  st_hydrant: { id: "st_hydrant", label: "Fire hydrant", icon: "🧯", w: 1, h: 1, height: 36, color: "#a22", placeable: false, nitro: "furni/st_urban_wpost.nitro", rotatable: true, fixed: true },
+  st_bench: { id: "st_bench", label: "Bench", icon: "🪑", w: 2, h: 1, height: 36, color: "#666", placeable: false, nitro: "furni/st_urban_bench.nitro", rotatable: true, fixed: true },
+  st_blocker: { id: "st_blocker", label: "Road block", icon: "🚧", w: 1, h: 1, height: 36, color: "#cc8", placeable: false, nitro: "furni/st_urban_blocker.nitro", rotatable: true, fixed: true },
+  st_dumpster: { id: "st_dumpster", label: "Dumpster", icon: "🗑️", w: 2, h: 1, height: 44, color: "#2d4d34", placeable: false, nitro: "furni/st_vwave_c21_dumpster.nitro", rotatable: true, fixed: true },
+  st_signs: { id: "st_signs", label: "Road signs", icon: "🚸", w: 1, h: 1, height: 70, color: "#cc3", placeable: false, nitro: "furni/st_bump_signs.nitro", rotatable: true, fixed: true },
+  st_roadsign: { id: "st_roadsign", label: "Road works sign", icon: "🚧", w: 1, h: 1, height: 60, color: "#c33", placeable: false, nitro: "furni/st_nyc_c23_roaditem2.nitro", rotatable: true, fixed: true },
+  st_manhole: { id: "st_manhole", label: "Manhole", icon: "⚫", w: 1, h: 1, height: 3, color: "#222", placeable: false, nitro: "furni/st_nyc_c23_manhole.nitro", rotatable: true, fixed: true, flat: true },
+  st_tag1: { id: "st_tag1", label: "Graffiti", icon: "🎨", w: 2, h: 1, height: 60, color: "#c4a", placeable: false, nitro: "furni/st_sb_tag1.nitro", rotatable: true, fixed: true, flat: true, wall: true, wallArt: { left: 2, back: 4 } },
+  st_tag2: { id: "st_tag2", label: "Graffiti", icon: "🎨", w: 2, h: 1, height: 60, color: "#4c8", placeable: false, nitro: "furni/st_sb_tag2.nitro", rotatable: true, fixed: true, flat: true, wall: true, wallArt: { left: 2, back: 4 } },
+  st_tag3: { id: "st_tag3", label: "Graffiti", icon: "🎨", w: 2, h: 1, height: 60, color: "#ea4", placeable: false, nitro: "furni/st_sb_tag3.nitro", rotatable: true, fixed: true, flat: true, wall: true, wallArt: { left: 2, back: 4 } },
+  // the cars that drive down the street (drawn by src/streets.ts, never placed in a room)
+  st_car_taxi: { id: "st_car_taxi", label: "Taxi", icon: "🚕", w: 1, h: 1, height: 40, color: "#e8b020", placeable: false, nitro: "furni/st_mini_c24_taxi.nitro", rotatable: true, fixed: true },
+  st_car_pickup: { id: "st_car_pickup", label: "Pickup", icon: "🛻", w: 1, h: 1, height: 40, color: "#b22", placeable: false, nitro: "furni/st_nft_h22_xmas22pickup.nitro", rotatable: true, fixed: true },
+  st_car_retro: { id: "st_car_retro", label: "Old car", icon: "🚗", w: 2, h: 1, height: 50, color: "#6ab", placeable: false, nitro: "furni/st_hween_c25_retrocar2.nitro", rotatable: true, fixed: true },
+  st_car_mafia: { id: "st_car_mafia", label: "Black car", icon: "🚘", w: 2, h: 4, height: 50, color: "#222", placeable: false, nitro: "furni/st_mafia_c26_car.nitro", rotatable: true, fixed: true },
   // the vending machine in the shop room
   vending: { id: "vending", label: "Vending machine", icon: "🥤", w: 1, h: 1, height: 80, color: "#6b5a48", placeable: false, nitro: "furni/olympics_r16_vendingmchn.nitro", rotatable: true, fixed: true, opens: "vending" },
   // the sink in every player room (like the bed: always there, movable, never removable): fills the watering can
@@ -306,7 +327,7 @@ export const MAX_FURNI = 40;
 export const LOBBY_ID = "lobby";
 export const SHOP_ID = "shop";
 /** rooms with no owner that everyone shares (the basement and the shop) */
-export const isPublicRoom = (id: string) => id === LOBBY_ID || id === SHOP_ID || id === MINES_ID || isTutRoom(id);
+export const isPublicRoom = (id: string) => id === LOBBY_ID || id === SHOP_ID || id === MINES_ID || isStreetsRoom(id) || isTutRoom(id);
 /** The private copy of the basement a brand-new player walks through the introduction in (nobody else can come in, the body bag is not there). */
 export const tutRoomId = (uid: string) => `tut_${uid}`;
 export const isTutRoom = (id: string) => id.startsWith("tut_");
@@ -337,11 +358,14 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby14", kind: "wantedboard", x: 0, y: 20, dir: 2 },
   // the blue notice board (the Discord): the admin writes on it, and moves it where he wants it
   { id: "lobby15", kind: "discordboard", x: 0, y: 2, dir: 2 },
+  // the elevator to the streets (the admin moves it where he wants it, like the rest)
+  { id: "lobby16", kind: "elevator", x: 0, y: 12, dir: 2 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
 export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
-  const builtin = LOBBY_BUILTIN.map((b) => { const o = extras.find((e) => e.id === b.id); return o && Number.isFinite(o.x) && Number.isFinite(o.y) ? { ...b, x: o.x, y: o.y, dir: o.dir ?? 0 } : b; });
+  const streetsOn = STREETS_OPEN || import.meta.env.MODE === "emulator"; // (the elevator only stands there once the streets are open)
+  const builtin = LOBBY_BUILTIN.filter((b) => b.id !== "lobby16" || streetsOn).map((b) => { const o = extras.find((e) => e.id === b.id); return o && Number.isFinite(o.x) && Number.isFinite(o.y) ? { ...b, x: o.x, y: o.y, dir: o.dir ?? 0 } : b; });
   return {
     id: LOBBY_ID,
     name: "Basement",
@@ -380,6 +404,26 @@ export function minesDef(): RoomDef {
     theme: { ...MINES_THEME }, rug: null, furni: MINES_PIECES.map((p) => ({ id: p.id, kind: p.kind, x: p.x, y: p.y, dir: p.dir })), doorX: DOOR_X, doorTo: LOBBY_ID,
   };
 }
+
+// ---- the streets (see shared/streets.ts) ------------------------------------------------------------------------------
+/** The arrival room: the size of a medium player room, an ordinary look until the admin sends a texture. The elevator back is on the back wall, the door to the streets beside it. */
+export const ARRIVAL_ELEVATOR = { x: 2, y: 0, dir: 4 };
+export function arrivalDef(): RoomDef {
+  return {
+    id: ARRIVAL_ID, name: "Arrival", ownerUid: null, ownerName: null, access: "open", w: ARRIVAL_SIZE, h: ARRIVAL_SIZE,
+    theme: { ...DEFAULT_THEME }, rug: null, furni: [{ id: "arrival_elevator", kind: "elevator", x: ARRIVAL_ELEVATOR.x, y: ARRIVAL_ELEVATOR.y, dir: ARRIVAL_ELEVATOR.dir }],
+    doorX: 8, doorTo: STREETS_ID,
+  };
+}
+/** Night: dark blue-black asphalt, the buildings along the back wall. (The look is drawn by renderRoomShell: sidewalks, curbs, a yellow line, lit windows.) */
+export const STREETS_THEME: RoomTheme = { floorA: "#2a2d33", floorB: "#2f3238", wall: "#2a2326", rug: false, rugColor: "#000000", style: "street" };
+export function streetsDef(): RoomDef {
+  return {
+    id: STREETS_ID, name: "The streets", ownerUid: null, ownerName: null, access: "open", w: STREETS_W, h: STREETS_H,
+    theme: { ...STREETS_THEME }, rug: null, furni: STREET_PIECES.map(([id, kind, x, y, dir]) => ({ id, kind, x, y, dir })), doorX: 2, doorTo: ARRIVAL_ID,
+  };
+}
+export { ARRIVAL_ID, STREETS_ID, STREETS_OPEN };
 
 /** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
 export function shopDef(picks: string[], raffleKind?: string): RoomDef {

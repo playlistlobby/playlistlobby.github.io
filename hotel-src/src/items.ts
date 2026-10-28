@@ -26,7 +26,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear" | "pet" | "vape";
+  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear" | "pet" | "vape" | "heal";
   /** select it, then click a piece of furniture of this kind (the sink, the growing kit) */
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
@@ -539,6 +539,10 @@ const bagmandSmokes: Array<[string, string, string]> = [
   ["blunt_loud", "Loudpack blunt", "A blunt of loudpack. Click it to light up (you need a lighter). Sparkles, double speed for a minute, and 2 deadly stabs: someone you stab dies, drops 10 blood and is sent home."],
 ];
 for (const [id, name, examine] of bagmandSmokes) ITEMS[id] = { id, name, examine, icon: assetUrl(`items/${id}.svg`), useSelf: "smoke" };
+
+// the streets (see shared/streets.ts)
+ITEMS.elevator_ticket = { id: "elevator_ticket", name: "Elevator ticket", examine: "A red ticket for the elevator in the basement. It runs from 20 to 21 every day. The ticket is used up when you ride it. You can only hold one.", icon: assetUrl("ui/ticket.png"), droppable: true };
+ITEMS.bandage = { id: "bandage", name: "Bandage", examine: "Heals 3 hit points in a fight on the streets. You can use it again after 6 seconds.", icon: assetUrl("items/bandage.svg"), useSelf: "heal" };
 
 /** The definition of any inventory item: the fixed ones above, or a piece of furniture. */
 let petIconWatch = false;

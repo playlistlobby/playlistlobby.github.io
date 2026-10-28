@@ -109,6 +109,20 @@
     "beats": {
       ".read": "@PW@"
     },
+    "streetPass": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
+    "streetCombat": {
+      ".read": "@PW@"
+    },
+    "streetTickets": {
+      ".read": "@PW@"
+    },
+    "streetFilled": {
+      ".read": "@PW@"
+    },
     "beatBuys": {
       "$uid": {
         ".read": "@PW@ && auth.uid === $uid"
@@ -988,7 +1002,7 @@
         ".read": "@PW@ && @IN@",
         "players": {
           "$uid": {
-            ".write": "@PW@ && auth.uid === $uid && @KNOWN@ && @IN@ && (!newData.exists() || !root.child('wantedUsers').child(auth.uid).child('until').exists() || root.child('wantedUsers').child(auth.uid).child('until').val() < now || root.child('wantedRooms').child($room).child('uid').val() === auth.uid)",
+            ".write": "@PW@ && auth.uid === $uid && @KNOWN@ && @IN@ && (!newData.exists() || ($room !== 'arrival' && $room !== 'streets') || @ADMIN@ || root.child('streetPass').child(auth.uid).val() > now) && (!newData.exists() || !root.child('wantedUsers').child(auth.uid).child('until').exists() || root.child('wantedUsers').child(auth.uid).child('until').val() < now || root.child('wantedRooms').child($room).child('uid').val() === auth.uid)",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
             "smoke": {
               ".validate": "newData.isNumber()"
