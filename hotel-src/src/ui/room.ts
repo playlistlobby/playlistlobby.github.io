@@ -893,6 +893,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && (hoverObj.kind === "recordplayer" || hoverObj.kind === "vinyltable")) text = "Record player: CDs";
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
+    else if (hoverObj && hoverObj.kind === "silo") text = "Remote bank: your stash box";
     else if (hoverObj && hoverObj.kind === "ideaboard") text = "Ideas board: post pictures and ideas";
     else if (hoverObj && hoverObj.kind === "ducky") text = "pay2win: things for real money";
     else if (hoverObj && (hoverObj.kind === "gacha" || hoverObj.kind === "raffletable")) text = "Raffle: win the rare piece";
@@ -1197,7 +1198,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || FURNI_KINDS[obj.kind!]?.opens === "cdpress" || FURNI_KINDS[obj.kind!]?.opens === "beatshop" || FURNI_KINDS[obj.kind!]?.opens === "elevator" || FURNI_KINDS[obj.kind!]?.opens === "streetbin" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "silo" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || FURNI_KINDS[obj.kind!]?.opens === "cdpress" || FURNI_KINDS[obj.kind!]?.opens === "beatshop" || FURNI_KINDS[obj.kind!]?.opens === "elevator" || FURNI_KINDS[obj.kind!]?.opens === "streetbin" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
@@ -1260,6 +1261,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "sink" || (obj && FURNI_KINDS[obj.kind!]?.plant)) opts.push({ label: obj.kind === "sink" ? "Use" : "Tend", target: FURNI_KINDS[obj.kind!].label, action: () => startUse(obj.id, null) });
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
+    if (obj?.kind === "silo") opts.push({ label: "Open", target: "Remote bank", action: () => startBag(obj.id) });
     if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
     if (obj?.kind === "wantedboard") opts.push({ label: "Open", target: "Wanted board", action: () => startBag(obj.id) });
     if (obj?.kind === "discordboard") opts.push({ label: "Open", target: "Notice board", action: () => startBag(obj.id) });
@@ -5498,7 +5500,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "elevator" || FURNI_KINDS[f.kind].opens === "streetbin" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "elevator" || FURNI_KINDS[f.kind].opens === "stash" || FURNI_KINDS[f.kind].opens === "streetbin" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -6207,6 +6209,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       applyDef(defFromMeta(roomId, meta));
       start();
+      if (isOwnRoom && !meta.stashbox) { // a room from before the stash box came with every room: the server puts one against a wall (once you are standing in it)
+        const ensure = (n: number): void => { void call(me, "stashEnsure", {}).catch(() => { if (n < 4 && !disposed) window.setTimeout(() => ensure(n + 1), 1500); }); };
+        window.setTimeout(() => { if (!disposed) ensure(0); }, 1200);
+      }
       unsubs.push(watchMeta(roomId, (m) => {
         if (!m) return kicked("This room was deleted.");
         applyDef(defFromMeta(roomId, m));

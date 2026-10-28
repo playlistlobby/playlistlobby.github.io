@@ -162,6 +162,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   f_boombox: { id: "f_boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true },
   boombox: { id: "boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true, fixed: true },
   // the stash box the landlord sells (20 drops): a gift box that keeps what you don't want in your pockets
+  // the remote bank in the arrival room (a safe, painted red): it opens your stash box from there
+  silo: { id: "silo", label: "Remote bank", icon: "🏦", w: 1, h: 1, height: 64, color: "#b02a1a", placeable: false, fixed: true, opens: "stash", nitro: "derived:silo_red", rotatable: true },
   stashbox: { id: "stashbox", label: "Stash box", icon: "🎁", w: 1, h: 1, height: 36, color: "#8a5fd0", placeable: false, fixed: true, opens: "stash", nitro: "furni/stashbox.nitro", rotatable: true },
   // the toolbox in every player room (Habbo's toolbox): click it and the furnishing menu opens
   // the hideout's computer: a red laptop (the shop's laptop, painted); tap it for the hideout's website
@@ -431,10 +433,12 @@ export function minesDef(): RoomDef {
 // ---- the streets (see shared/streets.ts) ------------------------------------------------------------------------------
 /** The arrival room: the size of a medium player room, an ordinary look until the admin sends a texture. The elevator back is on the back wall, the door to the streets beside it. */
 export const ARRIVAL_ELEVATOR = { x: 2, y: 0, dir: 4 };
+/** the remote bank stands on the back wall between the elevator and the door to the streets */
+export const ARRIVAL_BANK = { x: 5, y: 0, dir: 4 };
 export function arrivalDef(): RoomDef {
   return {
     id: ARRIVAL_ID, name: "Arrival", ownerUid: null, ownerName: null, access: "open", w: ARRIVAL_SIZE, h: ARRIVAL_SIZE,
-    theme: { ...DEFAULT_THEME }, rug: null, furni: [{ id: "arrival_elevator", kind: "elevator", x: ARRIVAL_ELEVATOR.x, y: ARRIVAL_ELEVATOR.y, dir: ARRIVAL_ELEVATOR.dir }],
+    theme: { ...DEFAULT_THEME }, rug: null, furni: [{ id: "arrival_elevator", kind: "elevator", x: ARRIVAL_ELEVATOR.x, y: ARRIVAL_ELEVATOR.y, dir: ARRIVAL_ELEVATOR.dir }, { id: "arrival_bank", kind: "silo", x: ARRIVAL_BANK.x, y: ARRIVAL_BANK.y, dir: ARRIVAL_BANK.dir }],
     doorX: 8, doorTo: STREETS_ID,
   };
 }

@@ -208,6 +208,20 @@ export function loadNitro(path: string): Promise<NitroFurni | null> {
         }
         g.putImageData(img, 0, 0);
       }) : Promise.reject(new Error("no car art"))))
+      : path === "derived:silo_red" // the remote bank: the grey safe painted red (the wooden top, the dials and the outlines stay)
+      ? loadNitro("furni/st_safe_silo.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
+          const l = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+          if (mx - mn > 38 || l < 0.3) continue; // (only the grey paint: the brown top and the dark lines are left)
+          const k = Math.min(1, l * 1.05);
+          d[i] = Math.min(255, Math.round(80 + 175 * k)); d[i + 1] = Math.round(14 + 52 * k * k); d[i + 2] = Math.round(10 + 40 * k * k);
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no safe art"))))
       : path === "derived:phonebox_red" // the phone box in classic red: the white parts of the box go red, the glass and the shading stay
       ? loadNitro("furni/st_phonebox.nitro").then((n) => (n ? derive(n, (g, w, h) => {
         const img = g.getImageData(0, 0, w, h);

@@ -1864,3 +1864,29 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .dw-clock { text-align: center; padding: 6px 8px; border-radius: 8px; background: #2a1d1d; color: #ffb3b3; font-weight: 700; }
 .dw-clock.closed { background: #222; color: #aaa; }
 .dw-share { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 8px; background: #101010; border: 1px solid #333; }
+/* the storage window (the stash box and the remote bank): big, two panes, tiles */
+.stash-win { position: absolute; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(780px, calc(100% - 16px)); height: min(580px, calc(100% - 16px)); box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; color: #fff; border-radius: 12px; border: 1px solid #c8d0e0; background: linear-gradient(#1a2b66, #0a1440); box-shadow: 0 10px 34px rgba(0, 0, 0, .6); }
+.stash-head { display: flex; align-items: center; gap: 10px; font-size: 17px; }
+.stash-head strong { flex: 0 0 auto; }
+.stash-count { flex: 1; color: #b6c2e0; font-size: 12px; }
+.stash-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.stash-search { flex: 1; min-width: 120px; padding: 6px 10px; border-radius: 8px; border: 1px solid #5a6aa0; background: rgba(0, 0, 0, .35); color: #fff; font: 14px var(--font); }
+.stash-amounts { display: flex; gap: 4px; }
+.stash-chip { padding: 5px 12px; border-radius: 14px; border: 1px solid #5a6aa0; background: rgba(255, 255, 255, .08); color: #dfe6ff; font: 700 12px var(--font); cursor: pointer; }
+.stash-chip.on { background: #ffe27a; color: #2a2200; border-color: #ffe27a; }
+.stash-panes { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stash-pane { min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 10px; background: rgba(0, 0, 0, .28); border: 1px solid rgba(255, 255, 255, .12); }
+.stash-pane-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: #ffe27a; }
+.stash-grid { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); grid-auto-rows: 84px; gap: 6px; align-content: start; }
+.stash-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; padding: 6px 2px 2px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .07); color: #fff; cursor: pointer; font: 11px var(--font); }
+.stash-tile:hover:not(:disabled) { background: rgba(255, 226, 122, .2); border-color: #ffe27a; }
+.stash-tile:disabled { opacity: .6; cursor: default; }
+.stash-ico { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; }
+.stash-qty { position: absolute; top: 3px; right: 4px; padding: 0 5px; border-radius: 8px; background: #000a; color: #ffe27a; font: 800 11px var(--font); }
+.stash-name { width: 100%; text-align: center; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.stash-empty { grid-column: 1 / -1; color: #b6c2e0; font-size: 12px; padding: 12px 4px; }
+.stash-foot { font-size: 11px; }
+@media (max-width: 560px) {
+  .stash-panes { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .stash-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); grid-auto-rows: 78px; }
+}

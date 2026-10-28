@@ -463,9 +463,9 @@ export async function banAccount(p: Profile, uid: string, on: boolean, reason?: 
   await call(p, "banPlayer", { uid, on, ...(reason ? { reason } : {}) });
 }
 
-/** The landlord's stash box (20 drops, once). It then stands in your room. */
-export async function buyStashbox(p: Profile): Promise<number> {
-  return Number((await call<{ price?: number }>(p, "buyStashbox", {})).price) || 0;
+/** Every room has a stash box: if yours has none yet (a room from before), the server puts one against a wall. */
+export async function stashEnsure(p: Profile): Promise<void> {
+  await call(p, "stashEnsure", {});
 }
 /** Puts `qty` of what is in a pocket slot into the stash box. */
 export async function stashPut(p: Profile, slot: number, qty = 1): Promise<void> {

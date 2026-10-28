@@ -2,7 +2,7 @@
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
 import { Action, hideoutAccess, ID_RE, int, requireHideoutMember, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
-import { addToInv, MAX_FURNI, STASH_PIECES, STASHBOX_OWNED_KEY, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, MAX_FURNI, STASH_PIECES, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { isFurniItem, STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
 import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
@@ -69,7 +69,7 @@ export const storeItem: Action = {
     const key = it!.ass ? `ass_${it!.item}` : it!.item;
     if (!KEY_RE.test(key)) fail("That can't be stored.");
     // the toolbox is for furniture only now: seeds, weed, pills and the like go in the stash box (which the landlord sells)
-    if (!(await isPiece(c, key))) fail("The toolbox only takes furniture. Things like seeds, weed and pills go in a stash box: the landlord sells them.");
+    if (!(await isPiece(c, key))) fail("The toolbox only takes furniture. Things like seeds, weed and pills go in your stash box.");
     const have = w.s.storage[key] ?? 0;
     if (have + take > STORAGE_MAX_PIECES) fail("Storage is full of those.");
     w.s.inventory = takeQtyFrom(w.s.inventory, slot, take);
@@ -104,12 +104,17 @@ export const takeItem: Action = {
   },
 };
 
-/** Puts what you carry into the stash box (you need to own one): any thing, and pots and mixers; the rest of the furniture stays toolbox only. Ass weed is kept apart as "ass_<item>". */
+/** Your stash box is in your own room, and the remote bank in the arrival room opens the same one: you can reach it from either. */
+async function requireStashAccess(c: Ctx): Promise<void> {
+  if (await c.db.get(`rooms/arrival/players/${c.uid}`)) return;
+  await requireOwnRoom(c);
+}
+
+/** Puts what you carry into the stash box (everybody has one): any thing, and pots and mixers; the rest of the furniture stays toolbox only. Ass weed is kept apart as "ass_<item>". */
 export const stashStore: Action = {
   async run(c, a) {
-    await requireOwnRoom(c);
+    await requireStashAccess(c);
     const w = await c.user();
-    if (!w.s.owned[STASHBOX_OWNED_KEY]) fail("You haven't got a stash box. The landlord sells them.");
     const slot = int(a.slot, 0, 27, "slot");
     const it = w.s.inventory[slot];
     if (!it) fail("You aren't carrying that.");
@@ -132,7 +137,7 @@ export const stashStore: Action = {
 /** Takes things back out of the stash box (stackable items share a slot, everything else needs one slot each). */
 export const stashTake: Action = {
   async run(c, a) {
-    await requireOwnRoom(c);
+    await requireStashAccess(c);
     const w = await c.user();
     const key = text(a.key, KEY_RE, "item");
     const have = w.s.stash[key] ?? 0;

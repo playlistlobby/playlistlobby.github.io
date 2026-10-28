@@ -57,6 +57,6 @@ const LABELS: Record<string, string> = {
   buyRoomUpgrade: "Room upgrades",
   roomColors: "Room colours",
   roomSkins: "Bed and wardrobe looks",
-  buyStashbox: "Stash box",
+  stashEnsure: "Stash box",
 };
 export const sourceLabel = (src: string): string => LABELS[src] ?? src;

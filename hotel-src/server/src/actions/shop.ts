@@ -1,7 +1,7 @@
 // Buying from 6ixty, the vending machine and the shop room's daily pieces. The server decides what is on sale and for how much.
 import { Action, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
-import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, STASHBOX_OWNED_KEY, STASHBOX_PRICE, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, takeQtyFrom } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, findSlot, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPeriodStart, furniPicksToday, furniPrice, POSTER_KIND, POSTER_PRICE, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
 import { todayStartAt, vendDay, vendLeft } from "../../../src/shared/economy";
@@ -236,16 +236,14 @@ export const roomSkins: Action = {
   },
 };
 
-/** The landlord's stash box: 20 drops, bought once. It then stands in your room (against a wall, where nothing else is) and keeps your things out of your pockets. */
-export const buyStashbox: Action = {
+/** The stash box stands in every room (free, and it can't be picked up, like the wardrobe): the first time you are in your room without one, it is put against a wall where nothing else is. */
+export const stashEnsure: Action = {
   async run(c) {
-    await requireLandlord(c);
     const room = `u_${c.uid}`;
+    await requireInRoom(c, room);
     const meta = await c.db.get<any>(`roomsMeta/${room}`);
     if (!meta?.owner) fail("You haven't got a room yet.");
-    const w = await c.user();
-    if (w.s.owned[STASHBOX_OWNED_KEY] || meta.stashbox) fail("You already have a stash box.");
-    if (w.s.blood < STASHBOX_PRICE) fail(`You need ${STASHBOX_PRICE - w.s.blood} more drops`);
+    if (meta.stashbox) return { placed: false };
     const size = await roomSize(c, room);
     const taken = new Set<string>();
     const cover = (x: number, y: number, cw: number, ch: number): void => { for (let i = 0; i < cw; i++) for (let j = 0; j < ch; j++) taken.add(`${x + i},${y + j}`); };
@@ -264,10 +262,8 @@ export const buyStashbox: Action = {
     }
     const spot = nearestWallSpot(size, taken, { w: 1, h: 1 }, { x: 2, y: 0 });
     if (!spot) fail("There's no space in your room for it. Make some room first.");
-    w.s.blood -= STASHBOX_PRICE;
-    w.s.owned[STASHBOX_OWNED_KEY] = true;
     c.extra[`roomsMeta/${room}/stashbox`] = { x: spot!.x, y: spot!.y, dir: spot!.dir === 2 ? 2 : 4 };
-    return { price: STASHBOX_PRICE };
+    return { placed: true };
   },
 };
 

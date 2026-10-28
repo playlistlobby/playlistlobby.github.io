@@ -7325,8 +7325,8 @@
   "where": "src/ui/editor.ts:165"
  },
  "N354": {
-  "en": "Store furniture here. Things like seeds and weed go in a stash box (the landlord sells them).",
-  "da": "Gem møbler her. Ting som frø og weed kommer i en gemmeboks (udlejeren sælger dem).",
+  "en": "Store furniture here. Things like seeds and weed go in your stash box.",
+  "da": "Gem møbler her. Ting som frø og weed kommer i din opbevaringskasse.",
   "where": "src/ui/furnish.ts:96"
  },
  "N355": {
@@ -7895,8 +7895,8 @@
   "where": "server/src/actions/toolbox.ts:28"
  },
  "N468": {
-  "en": "The toolbox only takes furniture. Things like seeds, weed and pills go in a stash box: the landlord sells them.",
-  "da": "Værktøjskassen tager kun møbler. Ting som frø, weed og piller kommer i en gemmeboks: udlejeren sælger dem.",
+  "en": "The toolbox only takes furniture. Things like seeds, weed and pills go in your stash box.",
+  "da": "Værktøjskassen tager kun møbler. Ting som frø, weed og piller kommer i din opbevaringskasse.",
   "where": "server/src/actions/toolbox.ts:49"
  },
  "N469": {
@@ -15448,5 +15448,80 @@
   "en": " What didn't fit in your pocket lies on the floor.",
   "da": " Det, der ikke var plads til i din lomme, ligger på gulvet.",
   "where": "src/streets.ts"
+ },
+ "N2535": {
+  "en": "Storage",
+  "da": "Opbevaring",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2536": {
+  "en": "Search…",
+  "da": "Søg…",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2537": {
+  "en": "{…} in the box",
+  "da": "{…} i kassen",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2538": {
+  "en": "In the box",
+  "da": "I kassen",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2539": {
+  "en": "{…} kinds · {…} things",
+  "da": "{…} slags · {…} ting",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2540": {
+  "en": "In your pockets",
+  "da": "I dine lommer",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2541": {
+  "en": "{…} free slots",
+  "da": "{…} ledige pladser",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2542": {
+  "en": "Tap a thing to move it across. Pots and mixers fit here too; other furniture goes in the toolbox.",
+  "da": "Tryk på en ting for at flytte den over. Potter og mixere kan også være her; andre møbler går i værktøjskassen.",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2543": {
+  "en": "Nothing matches.",
+  "da": "Intet passer.",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2544": {
+  "en": "The box is empty. Tap something in your pockets to put it in.",
+  "da": "Kassen er tom. Tryk på noget i dine lommer for at lægge det i.",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2545": {
+  "en": "Nothing in your pockets that fits.",
+  "da": "Der er intet i dine lommer, der passer.",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2546": {
+  "en": "{…} · take {…}",
+  "da": "{…} · tag {…}",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2547": {
+  "en": "{…} · put in {…}",
+  "da": "{…} · læg {…} i",
+  "where": "src/ui/stashbox.ts"
+ },
+ "N2548": {
+  "en": "Remote bank: your stash box",
+  "da": "Fjernbank: din opbevaringskasse",
+  "where": "src/ui/room.ts"
+ },
+ "N2549": {
+  "en": "Remote bank",
+  "da": "Fjernbank",
+  "where": "src/rooms.ts"
  }
 }

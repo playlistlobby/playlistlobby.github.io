@@ -1,6 +1,6 @@
 import type { Action } from "./util";
 import { buyClothes, setLook, sync } from "./account";
-import { buyStashbox, buyFurni, buyPoster, buyRecord, buyWalkman, buyRoomUpgrade, roomColors, roomSkins, buySixty, buyVending, sellWeed } from "./shop";
+import { stashEnsure, buyFurni, buyPoster, buyRecord, buyWalkman, buyRoomUpgrade, roomColors, roomSkins, buySixty, buyVending, sellWeed } from "./shop";
 import { claimPurchases } from "./pay";
 import { eat, sixty, usePill } from "./quest";
 import { combineItems, consume, dumpster, fillCan, finishSmoke, flappy, harvest, light, plant, stab, syringe, vapePuff, water } from "./rewards";
@@ -47,7 +47,7 @@ export const ACTIONS: Record<string, Action> = {
   sixty, usePill, eat, darkwebGive, darkwebCollect, streetsStaffTest,
   consume, stab, syringe, vapePuff, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
   drop, pickup, fentDrop,
-  store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,
+  store: storeItem, take: takeItem, stashStore, stashTake, stashEnsure, furniPlace, furniMove, furniStore, furniState,
   tradeFinish, flappyStart, flappyScore, flappyRemove,
   cdInsert, cdReturn, cdControl, speakerConnect, speakerControl, cdPress, cdPressPrice, ticketBuy, elevatorUp, elevatorDown, streetBin, streetFill, streetEnter, streetHit, streetHeal, streetsTest, buyBeatShop, beatBegin, beatFinish, beatRemove, beatBuy, beatReplyBegin, beatChatSend, beatChatRead, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
