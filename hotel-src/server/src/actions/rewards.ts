@@ -4,6 +4,7 @@ import { Action, cheb, ID_RE, int, onTheStreet, requireInRoom, requireWorkRoom, 
 import { fail } from "../ctx";
 import { isEmulator } from "../env";
 import { skipTime } from "../skipTime";
+import { floorPiles } from "./floor";
 import {
   addToInv, bandageCapFull, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabWaitAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
@@ -105,7 +106,7 @@ export const dumpster: Action = {
     const can = text(a.can, /^[A-Za-z0-9_-]{1,30}$/, "can");
     const room = text(a.room, /^[A-Za-z0-9_-]{1,60}$/, "room");
     if (room !== "lobby" && room !== `tut_${c.uid}`) fail("There's no bin here.");
-    await requireInRoom(c, room);
+    const stand = await requireInRoom(c, room);
     const extras = (await c.db.get<Record<string, { kind?: string }>>("lobby/furni")) ?? {};
     if (can !== "lobby2" && can !== "lobby3" && can !== "lobby5" && extras[can]?.kind !== "dumpster") fail("That isn't a bin.");
     const w = await c.user();
@@ -121,16 +122,18 @@ export const dumpster: Action = {
     // the lean: twice as much from every search
     const picks = c.now < w.s.leanUntil ? 2 : 1;
     const items: string[] = [];
+    const dropped: string[] = [];
     for (let i = 0; i < picks; i++) {
-      let item = pick();
-      if (item === "bandage" && bandageCapFull(w.s.inventory)) item = "cigbutt"; // (you carry 5 bandages already: the can gives its filler instead)
+      const item = pick();
+      if (item === "bandage" && bandageCapFull(w.s.inventory)) { dropped.push(item); items.push(item); continue; } // (you carry 5 bandages already: it falls on the floor)
       const next = addToInv(w.s.inventory, { item, qty: 1 });
       if (!next) { if (items.length === 0) fail("Your inventory is full"); break; }
       w.s.inventory = next;
       items.push(item);
     }
     w.s.dumpsters[can] = c.now;
-    return { item: items[0], items };
+    if (dropped.length) await floorPiles(c, room, stand, dropped.map((item) => ({ item, qty: 1 })), c.uid, String(w.raw.name ?? "someone"));
+    return { item: items[0], items, dropped };
   },
 };
 

@@ -272,6 +272,8 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
 /** you can carry this many bandages at a time (the stash box takes as many as you like) */
 export const BANDAGE_MAX = 5;
 export const bandagesCarried = (inv: Inventory): number => inv.reduce((n, s) => n + (s && s.item === "bandage" ? s.qty : 0), 0);
+/** what the server says when a bandage would go over the limit */
+export const BANDAGE_LIMIT_MSG = `You can only carry ${BANDAGE_MAX} bandages at a time.`;
 export const bandageCapFull = (inv: Inventory): boolean => bandagesCarried(inv) >= BANDAGE_MAX;
 
 export function addToInv(inv: Inventory, give: InvItem): Inventory | null {

@@ -2,7 +2,7 @@
 import { Action, cheb, int, isPublicRoom, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
 import { isLaced, NO_DROP } from "../../../src/shared/items";
-import { addToInv, BULK_AT, DROP_LIFE_BULK_MS, DROP_LIFE_MS, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, BANDAGE_LIMIT_MSG, BANDAGE_MAX, bandagesCarried, BULK_AT, DROP_LIFE_BULK_MS, DROP_LIFE_MS, takeQtyFrom } from "../../../src/shared/economy";
 
 interface DropRow { item: string; qty: number; ass?: boolean; x: number; y: number; by: string; byName?: string; at?: number; exp?: number }
 const ROOM_RE = /^[A-Za-z0-9_-]{1,60}$/;
@@ -105,6 +105,7 @@ export const pickup: Action = {
       c.extra[path] = null;
       return { item: "blood", qty: n };
     }
+    if (d.item === "bandage" && bandagesCarried(w.s.inventory) + Math.max(1, Number(d.qty) || 1) > BANDAGE_MAX) fail(BANDAGE_LIMIT_MSG);
     const next = addToInv(w.s.inventory, { item: d.item, qty: Math.max(1, Number(d.qty) || 1), ...(d.ass ? { ass: true } : {}), ...(isLaced(d.item) && typeof d.by === "string" && /^[A-Za-z0-9]{1,40}$/.test(d.by) && d.by !== c.uid ? { giver: d.by } : {}) }); // (a laced thing remembers who dropped it)
     if (!next) fail("Your inventory is full.");
     w.s.inventory = next!;

@@ -1946,7 +1946,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       playSfx("select", 0.4);
       await new Promise((r) => window.setTimeout(r, 900));
       if (disposed) return;
-      const foundAll = await searchDumpster(me, canId, roomId);
+      const res = await searchDumpster(me, canId, roomId);
+      const onFloor = res.dropped.length; // (a bandage with 5 already on you: it falls on the floor)
+      const kept = [...res.items];
+      for (const d of res.dropped) { const i = kept.indexOf(d); if (i >= 0) kept.splice(i, 1); }
+      if (!kept.length) { panel.refresh(); playSfx("give", 0.6); say("You find a bandage, but you already carry 5: it falls on the floor."); logAction(me, "room", "searched a garbage can and found a bandage (dropped)"); return; }
+      const foundAll = kept;
       const found = foundAll[0];
       panel.refresh();
       playSfx("give", 0.6);
@@ -1957,6 +1962,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         window.setTimeout(() => { if (!disposed) giftPop(`+1 ${itemDef(extra)?.name ?? extra}`, itemImg(extra)); }, 600 * (i + 1));
         say(`The lean pays off: you find a ${itemDef(extra)?.name ?? extra} as well.`);
       });
+      if (onFloor) say("You find a bandage, but you already carry 5: it falls on the floor.");
       logAction(me, "room", `searched a garbage can and found a ${found}`);
     } catch (err) {
       say((err as Error).message || "You find nothing but rot.", "warn");
@@ -1978,9 +1984,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** a blue bin on the street: more than a basement bin gives, and it can be searched again sooner */
   async function searchStreetBin(fid: string): Promise<void> {
     try {
-      const r = await call<{ items: string[] }>(me, "streetBin", { can: fid });
+      const r = await call<{ items: string[]; dropped?: string[] }>(me, "streetBin", { can: fid });
       panel.refresh();
-      say(`You search the bin and find ${r.items.map((i) => itemDef(i)?.name ?? i).join(", ")}.`);
+      const kept = [...r.items];
+      for (const d of r.dropped ?? []) { const i = kept.indexOf(d); if (i >= 0) kept.splice(i, 1); }
+      if (kept.length) say(`You search the bin and find ${kept.map((i) => itemDef(i)?.name ?? i).join(", ")}.`);
+      if (r.dropped?.length) say("You find a bandage, but you already carry 5: it falls on the floor.");
       playSfx("give", 0.4);
     } catch (err) { say((err as Error).message || "There's nothing in it.", "warn"); }
   }

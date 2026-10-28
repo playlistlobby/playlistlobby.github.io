@@ -308,6 +308,24 @@ bad("taking out two while carrying four is refused (that would be six)", await a
 ok("one is fine now there are four on you", await act(a, "stashTake", { key: "bandage", qty: 1 }));
 bad("but not past five", await act(a, "stashTake", { key: "bandage", qty: 1 }));
 await owner("DELETE", `rooms/arrival/players/${a.uid}`);
+// a bin with 5 bandages on you: the bandage lands on the floor, and every other way of getting one says why not
+await stand(a, "streets", 5, 5);
+await owner("DELETE", "rooms/streets/drops");
+await owner("PUT", `users/${a.uid}/inventory`, Object.fromEntries(Array.from({ length: 5 }, (_, i) => [i, { item: "bandage", qty: 1 }])));
+let droppedOne = null;
+for (let i = 0; i < 120 && !droppedOne; i++) {
+  await owner("DELETE", `users/${a.uid}/dumpsters`);
+  const r = await act(a, "streetBin", { can: "s_can2" });
+  if (r.ok && r.data.dropped?.length) droppedOne = r;
+}
+check("a bin that gives a bandage to somebody with 5 puts it on the floor", !!droppedOne && Object.values((await owner("GET", "rooms/streets/drops")) ?? {}).some((d) => d.item === "bandage"), JSON.stringify(droppedOne));
+check("and the pocket still has 5", have(await state(a), "bandage") === 5);
+const pile = Object.entries((await owner("GET", "rooms/streets/drops")) ?? {}).find(([, d]) => d.item === "bandage");
+const picked = await act(a, "pickup", { room: "streets", key: pile?.[0] });
+check("picking it up says you can only carry 5", picked.ok === false && picked.error === E.BANDAGE_LIMIT_MSG, JSON.stringify(picked).slice(0, 200));
+await owner("PUT", `users/${a.uid}/blood`, 1000);
+await owner("DELETE", `rooms/streets/players/${a.uid}`);
+await owner("DELETE", "rooms/streets/drops");
 
 console.log("--- closing the game in a fight");
 const rowOf = (u) => ({ name: u.name, figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", x: 4, y: 4, dir: 2, ts: Date.now() - 60_000, off: Date.now() });

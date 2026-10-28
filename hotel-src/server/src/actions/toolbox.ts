@@ -2,7 +2,7 @@
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
 import { Action, hideoutAccess, ID_RE, int, requireHideoutMember, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
-import { addToInv, BANDAGE_MAX, bandagesCarried, MAX_FURNI, STASH_PIECES, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, BANDAGE_LIMIT_MSG, BANDAGE_MAX, bandagesCarried, MAX_FURNI, STASH_PIECES, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { isFurniItem, STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
 import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
@@ -145,7 +145,7 @@ export const stashTake: Action = {
     const take = Math.min(int(a.qty ?? 1, 1, 9999, "amount"), have);
     const ass = key.startsWith("ass_");
     const item = ass ? key.slice(4) : key;
-    if (item === "bandage" && bandagesCarried(w.s.inventory) + take > BANDAGE_MAX) fail(`You can only carry ${BANDAGE_MAX} bandages.`);
+    if (item === "bandage" && bandagesCarried(w.s.inventory) + take > BANDAGE_MAX) fail(BANDAGE_LIMIT_MSG);
     if (!(await c.validItem())(item)) fail("That doesn't exist any more.");
     let inv = w.s.inventory;
     const parts = STACKABLE.has(item) ? [take] : Array.from({ length: take }, () => 1);

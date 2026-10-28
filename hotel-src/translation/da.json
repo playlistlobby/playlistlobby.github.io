@@ -15653,5 +15653,20 @@
   "en": "Now playing: {…}",
   "da": "Spiller nu: {…}",
   "where": "src/ui/jukebox.ts"
+ },
+ "N2576": {
+  "en": "You can only carry 5 bandages at a time.",
+  "da": "du kan kun have 5 bandager på dig af gangen",
+  "where": "server/src/actions/economy.ts"
+ },
+ "N2577": {
+  "en": "{…} can only carry 5 bandages at a time.",
+  "da": "{…} kan kun have 5 bandager på sig af gangen",
+  "where": "server/src/actions/trade.ts"
+ },
+ "N2578": {
+  "en": "You find a bandage, but you already carry 5: it falls on the floor.",
+  "da": "Du finder en bandage, men du har allerede 5 på dig: den falder på gulvet.",
+  "where": "src/ui/room.ts"
  }
 }

@@ -83,7 +83,7 @@ const CAN_BANDAGE = 0.1;
 export const streetBin: Action = {
   async run(c, a) {
     const can = text(a.can, /^[A-Za-z0-9_-]{1,30}$/, "can");
-    await requireInRoom(c, STREETS_ID);
+    const stand = await requireInRoom(c, STREETS_ID);
     const piece = STREET_PIECES.find(([id, kind]) => id === can && (kind === "st_bin" || kind === "st_can"));
     if (!piece) fail("That isn't a bin.");
     const plain = piece![1] === "st_can"; // the plain can: always 1 thing, the lean does nothing to it, and it has a better chance of a bandage
@@ -98,16 +98,18 @@ export const streetBin: Action = {
     const pickPlain = (): string => { if (Math.random() < CAN_BANDAGE) return PVP.healItem; const t = others.reduce((n, d) => n + d.chance, 0); let r = Math.random() * t; for (const d of others) { if (r < d.chance) return d.item; r -= d.chance; } return others[0].item; };
     const picks = plain ? 1 : 2 + (Math.random() < 0.3 ? 1 : 0) + (c.now < w.s.leanUntil ? 2 : 0);
     const items: string[] = [];
+    const dropped: string[] = [];
     for (let i = 0; i < picks; i++) {
-      let item = plain ? pickPlain() : pick();
-      if (item === PVP.healItem && bandageCapFull(w.s.inventory)) item = "cigbutt"; // (you carry 5 bandages already)
+      const item = plain ? pickPlain() : pick();
+      if (item === PVP.healItem && bandageCapFull(w.s.inventory)) { dropped.push(item); items.push(item); continue; } // (you carry 5 bandages already: it falls on the floor)
       const next = addToInv(w.s.inventory, { item, qty: 1 });
       if (!next) { if (!items.length) fail("Your inventory is full"); break; }
       w.s.inventory = next;
       items.push(item);
     }
     w.s.dumpsters[key] = c.now;
-    return { item: items[0], items };
+    if (dropped.length) await floorPiles(c, STREETS_ID, stand, dropped.map((item) => ({ item, qty: 1 })), c.uid, String(w.raw.name ?? "someone"));
+    return { item: items[0], items, dropped };
   },
 };
 

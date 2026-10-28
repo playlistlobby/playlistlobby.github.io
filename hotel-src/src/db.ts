@@ -364,9 +364,9 @@ export const sixtyJobReward = (p: Profile): Promise<unknown> => call(p, "sixty",
 export const swallowPill = (p: Profile, slot: number): Promise<unknown> => call(p, "usePill", { slot });
 export const eatItem = (p: Profile, slot: number): Promise<unknown> => call(p, "eat", { slot });
 /** Rummages through a garbage can. Resolves with the item that came out. */
-export async function searchDumpster(p: Profile, canId: string, roomId: string): Promise<string[]> {
-  const r = await call<{ item?: string; items?: string[] }>(p, "dumpster", { can: canId, room: roomId });
-  return r.items && r.items.length ? r.items.map(String) : [String(r.item)];
+export async function searchDumpster(p: Profile, canId: string, roomId: string): Promise<{ items: string[]; dropped: string[] }> {
+  const r = await call<{ item?: string; items?: string[]; dropped?: string[] }>(p, "dumpster", { can: canId, room: roomId });
+  return { items: r.items && r.items.length ? r.items.map(String) : [String(r.item)], dropped: (r.dropped ?? []).map(String) };
 }
 /** Taps a piece with several looks or animations: the server sends it on to its next one. */
 export const useFurniState = (p: Profile, room: string, id: string): Promise<{ st?: number }> => call(p, "furniState", { room, id });
