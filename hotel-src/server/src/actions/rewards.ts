@@ -1,6 +1,6 @@
 // Things that pay blood or change what you carry: stabbing, the syringe, Flappy Bird, cats, bins, smoking, rolling, watering, growing.
 import { VAPE_BLOOD_MULT, VAPE_COOLDOWN_MS, VAPE_ITEM, VAPE_MS, VAPE_SPEED } from "../../../src/shared/ducky";
-import { Action, cheb, ID_RE, int, requireInRoom, requireWorkRoom, text } from "./util";
+import { Action, cheb, ID_RE, int, onTheStreet, requireInRoom, requireWorkRoom, text } from "./util";
 import { fail } from "../ctx";
 import { isEmulator } from "../env";
 import { skipTime } from "../skipTime";
@@ -188,11 +188,13 @@ export const consume: Action = {
     const slot = int(a.slot, 0, 27, "slot");
     const it = s.inventory[slot];
     if (!it || it.inPlayer || it.lit) fail("You aren't carrying that.");
+    const street = await onTheStreet(c);
+    if (street && (it!.item === "superpill" || isLaced(it!.item))) fail("You can't do that on the street."); // (nobody dies of a drug to get out of a fight)
     if (it!.item === "superpill" || isLaced(it!.item)) { // fentanyl on its own kills, and so does anything that was laced with it
       s.inventory = takeOneFrom(s.inventory, slot);
       return await fentDeath(c, s, isLaced(it!.item) ? it!.item : undefined, it!.giver);
     }
-    const badtrip = PSYCHEDELICS.has(it!.item) && ((isEmulator(c.env) && a.badtrip === true) || Math.random() < BADTRIP_CHANCE); // (one time in ten: the browser plays it out)
+    const badtrip = !street && PSYCHEDELICS.has(it!.item) && ((isEmulator(c.env) && a.badtrip === true) || Math.random() < BADTRIP_CHANCE); // (one time in ten: the browser plays it out)
     if (it!.item === "shroom" || it!.item === "weakshroom") { // a weak shroom works the same, it just can't be mixed
       s.inventory = takeOneFrom(s.inventory, slot);
       s.shroomUntil = c.now + SHROOM_MS; // any room is open to you (the database rules look at this too)
@@ -237,6 +239,7 @@ export const light: Action = {
     const slot = int(a.slot, 0, 27, "slot");
     const it = s.inventory[slot];
     if (!it || !SMOKABLE[it.item] || it.lit) fail("That can't be lit.");
+    if (isLaced(it!.item) && (await onTheStreet(c))) fail("You can't do that on the street.");
     if (isLaced(it!.item)) { s.inventory = takeOneFrom(s.inventory, slot); return await fentDeath(c, s, it!.item, it!.giver); }
     if (findSlot(s.inventory, "lighter") < 0) fail("You need a lighter for that. The vending machine in the shop sells them.");
     if (s.inventory.some((x) => x && SMOKABLE[x.item] && x.lit && c.now - x.lit < smokeMsOf(x.item))) fail("You're already smoking one.");

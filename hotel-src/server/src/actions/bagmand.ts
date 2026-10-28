@@ -95,6 +95,7 @@ export const deadlyStab: Action = {
     if (target === c.uid) fail("You can't stab yourself.");
     const room = text(a.room, /^[A-Za-z0-9_-]{1,60}$/, "room");
     const me = await requireInRoom(c, room);
+    if (room === "streets") fail("You can't do that on the street."); // (the fights there have their own rules)
     const theirs = await c.db.get<{ x?: number; y?: number }>(`rooms/${room}/players/${target}`);
     if (!theirs) fail("They've left the room.");
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > 3) fail("They're too far away.");

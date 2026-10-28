@@ -15418,5 +15418,35 @@
   "en": " s",
   "da": " sek.",
   "where": "src/streets.ts"
+ },
+ "N2529": {
+  "en": "You can't do that on the street.",
+  "da": "Det kan du ikke gøre på gaden.",
+  "where": "server/src/actions/rewards.ts"
+ },
+ "N2530": {
+  "en": "You killed {…}.{…}{…}",
+  "da": "Du dræbte {…}.{…}{…}",
+  "where": "src/streets.ts"
+ },
+ "N2531": {
+  "en": " You took {…} {…} from them.",
+  "da": " Du tog {…} {…} fra dem.",
+  "where": "src/streets.ts"
+ },
+ "N2532": {
+  "en": "thing",
+  "da": "ting",
+  "where": "src/streets.ts"
+ },
+ "N2533": {
+  "en": "things",
+  "da": "ting",
+  "where": "src/streets.ts"
+ },
+ "N2534": {
+  "en": " What didn't fit in your pocket lies on the floor.",
+  "da": " Det, der ikke var plads til i din lomme, ligger på gulvet.",
+  "where": "src/streets.ts"
  }
 }

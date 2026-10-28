@@ -83,4 +83,9 @@ export async function requireOwnRoom(c: Ctx): Promise<string> {
   return id;
 }
 
+/** Is the caller standing on the street right now (where the fights are)? What kills you, or gets you out of a fight, is not allowed there. */
+export async function onTheStreet(c: Ctx): Promise<boolean> {
+  return !!(await c.db.get(`rooms/streets/players/${c.uid}`));
+}
+
 export const cheb = (a: { x: number; y: number }, b: { x: number; y: number }): number => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));

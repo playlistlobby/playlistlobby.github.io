@@ -309,6 +309,8 @@ const itemImg = (id: string): HTMLImageElement => {
 };
 
 const STEP_MS = 480;
+/** nobody runs faster than this on the street, whatever they took (no outrunning a fight) */
+const STREET_MAX_SPEED = 2;
 const BUBBLE_MS = 6500;
 /** the dice: how long the die tumbles, and how long the number stays over the head */
 const DICE_TUMBLE_MS = 900, DICE_SHOW_MS = 6500;
@@ -1666,7 +1668,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** how long one step takes: half as long while thc-a / research chemical is in you */
-  const stepOf = (p: Player): number => (p.slowUntil && performance.now() < p.slowUntil ? STEP_MS * 5 : p.fast && serverNow() < p.fast ? STEP_MS / (p.fastMult ?? 2) : STEP_MS);
+  const stepOf = (p: Player): number => (p.slowUntil && performance.now() < p.slowUntil ? STEP_MS * 5 : p.fast && serverNow() < p.fast ? STEP_MS / (isStreets ? Math.min(p.fastMult ?? 2, STREET_MAX_SPEED) : (p.fastMult ?? 2)) : STEP_MS);
   const isMoving = (p: Player, now: number) => now - p.stepStart < stepOf(p) && (p.from.x !== p.to.x || p.from.y !== p.to.y);
 
   function currentTile(p: Player): Pt {
