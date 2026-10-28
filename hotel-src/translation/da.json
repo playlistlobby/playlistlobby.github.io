@@ -15038,5 +15038,100 @@
   "en": "Downvote this song",
   "da": "Giv denne sang en ned-stemme",
   "where": "src/ui/room.ts"
+ },
+ "N2453": {
+  "en": "You haven't got a walkman.",
+  "da": "Du har ikke en walkman.",
+  "where": "src/walkman.ts"
+ },
+ "N2454": {
+  "en": "There is a CD in your walkman already.",
+  "da": "Der er allerede en cd i din walkman.",
+  "where": "src/walkman.ts"
+ },
+ "N2455": {
+  "en": "Walkman",
+  "da": "Walkman",
+  "where": "src/walkman.ts"
+ },
+ "N2456": {
+  "en": "Nothing in it. Put a CD in and it plays wherever you go (only you hear it).",
+  "da": "Der er ikke noget i den. Put en cd i, så spiller den, hvor du end går (kun du kan høre den).",
+  "where": "src/walkman.ts"
+ },
+ "N2457": {
+  "en": "Put in: {…}",
+  "da": "Put i: {…}",
+  "where": "src/walkman.ts"
+ },
+ "N2458": {
+  "en": "You have no CD on you.",
+  "da": "Du har ingen cd på dig.",
+  "where": "src/walkman.ts"
+ },
+ "N2459": {
+  "en": "Take the CD out",
+  "da": "Tag cd'en ud",
+  "where": "src/walkman.ts"
+ },
+ "N2460": {
+  "en": "OG Community EP",
+  "da": "OG Community EP",
+  "where": "src/items.ts"
+ },
+ "N2461": {
+  "en": "A CD with four songs by players: kravle, leolegit, yungxware and lemonade. Use it on a boombox, or put it in a walkman. It plays song after song and comes back when it's done.",
+  "da": "En cd med fire sange af spillere: kravle, leolegit, yungxware og lemonade. Brug den på en boombox, eller put den i en walkman. Den spiller sang efter sang og kommer tilbage, når den er færdig.",
+  "where": "src/items.ts"
+ },
+ "N2462": {
+  "en": "A portable CD player. Put a CD in it (tap the walkman, or use a CD on it) and the music plays wherever you go. Only you can hear it. One CD at a time.",
+  "da": "En bærbar cd-afspiller. Put en cd i den (tryk på walkmanen, eller brug en cd på den), og musikken spiller, hvor du end går. Kun du kan høre den. En cd ad gangen.",
+  "where": "src/items.ts"
+ },
+ "N2463": {
+  "en": "The walkman is in your pocket. Tap it to put a CD in.",
+  "da": "Walkmanen ligger i din lomme. Tryk på den for at putte en cd i.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N2464": {
+  "en": "A portable CD player: music wherever you go, only you hear it. One CD at a time.",
+  "da": "En bærbar cd-afspiller: musik, hvor du end går, kun du kan høre den. En cd ad gangen.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N2465": {
+  "en": "The CD is in your walkman.",
+  "da": "Cd'en er i din walkman.",
+  "where": "src/ui/room.ts"
+ },
+ "N2466": {
+  "en": "{bn}'s BeatShop: listen to beats and buy them",
+  "da": "{bn}s BeatShop: lyt til beats og køb dem",
+  "where": "src/ui/room.ts"
+ },
+ "N2467": {
+  "en": "You need your walkman for that.",
+  "da": "Du skal have din walkman til det.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N2468": {
+  "en": "A CD of yours is playing already.",
+  "da": "En af dine cd'er spiller allerede.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N2469": {
+  "en": "Your walkman is playing: take the CD out of it first.",
+  "da": "Din walkman spiller: tag cd'en ud af den først.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N2470": {
+  "en": "You have a walkman already.",
+  "da": "Du har allerede en walkman.",
+  "where": "server/src/actions/shop.ts"
+ },
+ "N2471": {
+  "en": "Listen",
+  "da": "Lyt",
+  "where": "src/ui/sidepanel.ts"
  }
 }

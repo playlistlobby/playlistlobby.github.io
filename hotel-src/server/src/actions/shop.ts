@@ -2,7 +2,7 @@
 import { Action, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, STASHBOX_OWNED_KEY, STASHBOX_PRICE, takeQtyFrom } from "../../../src/shared/economy";
-import { DISABLED_ITEMS, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
+import { DISABLED_ITEMS, findSlot, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPeriodStart, furniPicksToday, furniPrice, POSTER_KIND, POSTER_PRICE, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
 import { todayStartAt, vendDay, vendLeft } from "../../../src/shared/economy";
 import { BLOOD_CDS, cdOwnedKey, isCdItem } from "../../../src/shared/cds";
@@ -46,6 +46,23 @@ export const buyRecord: Action = {
     w.s.blood -= price;
     w.s.owned[key] = true;
     return { price };
+  },
+};
+
+/** The record player's walkman: a portable CD player for blood (one in your pocket at a time). */
+export const buyWalkman: Action = {
+  async run(c) {
+    await requireInRoom(c, "shop");
+    const w = await c.user();
+    if (findSlot(w.s.inventory, "walkman") >= 0) fail("You have a walkman already.");
+    const entry = await c.itemEntry("walkman");
+    if (!entry.on) fail("It's sold out.");
+    if (w.s.blood < entry.price) fail(`You need ${entry.price - w.s.blood} more drops`);
+    const next = addToInv(w.s.inventory, { item: "walkman", qty: 1 });
+    if (!next) fail("Your inventory is full");
+    w.s.inventory = next!;
+    w.s.blood -= entry.price;
+    return { price: entry.price };
   },
 };
 

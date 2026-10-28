@@ -4,7 +4,7 @@ import { call, serverNow } from "./db";
 import type { Profile } from "./db";
 import { assetUrl } from "./assetUrl";
 import { musicMuted, onMusicMuteChange } from "./sfx";
-import { ALBUM_TRACKS, CD_ITEMS, isCdItem, parsePressedCd } from "./shared/cds";
+import { albumList, CD_ITEMS, isCdItem, parsePressedCd } from "./shared/cds";
 import { pressedTitle } from "./cdTitles";
 import { audioUrl } from "./audio";
 
@@ -32,12 +32,13 @@ export const CD_TRACKS: Record<string, CdTrack> = {
   "blod-ud-af-naesen": { id: "blod-ud-af-naesen", title: "Blod ud af næsen", artist: "Sonne, Em, Hxllxw", url: assetUrl("music/album-blod-ud-af-naesen.mp3") },
 };
 /** the song of the full album at this place (it plays song after song) */
-export const albumCdTrack = (index: number): CdTrack => {
-  const t = ALBUM_TRACKS[Math.max(0, Math.min(ALBUM_TRACKS.length - 1, index))];
-  return { id: t.id, title: t.title, artist: t.by, url: assetUrl(`music/album-${t.id}.mp3`) };
+export const albumCdTrack = (index: number, album?: string): CdTrack => {
+  const list = albumList(album);
+  const t = list[Math.max(0, Math.min(list.length - 1, index))];
+  return { id: t.id, title: t.title, artist: t.by, url: assetUrl(`music/${t.file ?? `album-${t.id}.mp3`}`) };
 };
 /** what is playing right now: the CD's one song, or the song the album is on */
-export const trackOfState = (s: { track: string; index?: number }): CdTrack | null => (s.track === "album" ? albumCdTrack(s.index ?? 0) : CD_TRACKS[s.track] ?? null);
+export const trackOfState = (s: { track: string; index?: number; album?: string }): CdTrack | null => (s.track === "album" ? albumCdTrack(s.index ?? 0, s.album) : CD_TRACKS[s.track] ?? null);
 export const DEFAULT_CD_TRACK = "freakme";
 
 /** What's in the player right now. Lives at rooms/<room>/cdplayer so everyone in the room hears the same thing. */
@@ -56,6 +57,8 @@ export interface CdState {
   pausedAt?: number;
   /** the full album: which song it is on (SoundCloud on the speaker: the place in the queue) */
   index?: number;
+  /** which album (see albumList in shared/cds.ts): nothing = the full album, "ogep" = the community EP */
+  album?: string;
   /** SoundCloud on the speaker (track "sc"): the queue (song ids), whether one song loops, and the song that is on now */
   ids?: string[];
   loop?: boolean;
@@ -77,7 +80,7 @@ export const ALBUM_GRACE_MS = 15_000;
 export const cdEnded = (s: CdState): boolean => {
   if (s.track === "sc") return false;
   if (s.pausedAt) return serverNow() - s.pausedAt > PAUSE_MAX_MS;
-  const more = s.track === "album" && (s.index ?? 0) < ALBUM_TRACKS.length - 1;
+  const more = s.track === "album" && (s.index ?? 0) < albumList(s.album).length - 1;
   return serverNow() >= s.endsAt + (more ? ALBUM_GRACE_MS : 0);
 };
 /** how far into the song it is right now, ms (it stands still while paused) */
@@ -105,16 +108,16 @@ export async function insertCd(me: Profile, slot: number, roomId: string): Promi
     return { by: me.uid, byName: me.name, track: "pressed", title: pressedTitle(pressed.song) ?? "CD", startedAt, endsAt, durationMs: endsAt - startedAt };
   }
   const def = CD_ITEMS[me.inventory[slot]?.item ?? ""] ?? CD_ITEMS.cd;
-  const track = def.track === "album" ? albumCdTrack(0) : CD_TRACKS[def.track] ?? CD_TRACKS[DEFAULT_CD_TRACK];
+  const track = def.track === "album" ? albumCdTrack(0, def.album) : CD_TRACKS[def.track] ?? CD_TRACKS[DEFAULT_CD_TRACK];
   const duration = await trackDurationMs(track);
   const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, room: roomId, durationMs: Math.round(duration) });
-  return { by: me.uid, byName: me.name, track: def.track, title: track.title, startedAt: Number(r.startedAt) || serverNow(), endsAt: Number(r.endsAt) || Math.round(serverNow() + duration), durationMs: Math.round(duration), ...(def.track === "album" ? { index: 0 } : {}) };
+  return { by: me.uid, byName: me.name, track: def.track, title: track.title, startedAt: Number(r.startedAt) || serverNow(), endsAt: Number(r.endsAt) || Math.round(serverNow() + duration), durationMs: Math.round(duration), ...(def.track === "album" ? { index: 0, ...(def.album ? { album: def.album } : {}) } : {}) };
 }
 
 /** Full album: next song, the song before, or (when a song has finished) the album moving on by itself. Measures the new song's length first. */
-export async function albumStep(me: Profile, roomId: string, op: "next" | "prev" | "advance", from: number): Promise<void> {
-  const to = op === "prev" ? Math.max(0, from - 1) : Math.min(ALBUM_TRACKS.length - 1, from + 1);
-  const duration = await trackDurationMs(albumCdTrack(to));
+export async function albumStep(me: Profile, roomId: string, op: "next" | "prev" | "advance", from: number, album?: string): Promise<void> {
+  const to = op === "prev" ? Math.max(0, from - 1) : Math.min(albumList(album).length - 1, from + 1);
+  const duration = await trackDurationMs(albumCdTrack(to, album));
   await call(me, "cdControl", { room: roomId, op, from, durationMs: Math.round(duration) });
 }
 
@@ -143,6 +146,7 @@ export async function reconcileCd(me: Profile, roomId: string, state: CdState | 
   const loaned = me.inventory.find((s) => isCdItem(s?.item) && s?.inPlayer);
   if (!loaned) return false;
   const where = typeof loaned.inPlayer === "string" ? loaned.inPlayer : "lobby";
+  if (where === "walk") return false; // (the walkman looks after its own CD: src/walkman.ts)
   let st = state;
   if (where !== roomId) st = await get(cdRef(where)).then((snap) => (snap.exists() ? (snap.val() as CdState) : null), () => null);
   if (st && st.by === me.uid && !cdEnded(st)) return false;

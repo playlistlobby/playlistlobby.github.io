@@ -15,7 +15,7 @@ export const ITEM_ID_LIST = [
   // shrooms (grown from spores found in the bins) let you into any room; a shroom pressed into a pill is DMT
   "shroomspore", "shroom", "weakshroom", "dmt",
   // the mystery CDs (yellow, green, blue) and the full album (red), bought with real money from the record player in the shop
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_ogep", "cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip",
   // hash (ass weed + kodimagnyl), hash mix (hash + cigarette) and the hash joint (hash mix + joint paper)
   "hash", "hashmix", "joint_hash",
   // chud mix (shroom + weed, rolled like weed): the chud joint and chud blunt
@@ -38,7 +38,7 @@ export const ITEM_ID_LIST = [
   // the puff-bar: a vape you puff once a minute (Ducky machine for 20 kr, or from a mystery box): see VAPE_* in shared/ducky.ts
   "puffbar",
   // mystery boxes and keys (see shared/cases.ts), and the unusuals the boxes give: a hat with particle effects, worn from the pocket
-  "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "mixerchip2", "gun", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
+  "mysterycase", "casekey", "walkman", "knife_tt", "waterer", "mixerchip", "mixerchip2", "gun", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
 ] as const;
 export type ItemId = (typeof ITEM_ID_LIST)[number];
 export const ITEM_IDS: ReadonlySet<string> = new Set(ITEM_ID_LIST);
@@ -96,7 +96,9 @@ export const DEFAULT_ITEM_PRICE = 5;
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cigarette: { on: true, price: 2 },
   pill: { on: true, price: 3 },
+  walkman: { on: true, price: 100 }, // a portable CD player (the record shop sells it)
   casekey: { on: true, price: 300 }, // a key for a mystery box (6ixty sells them; the Ducky machine sells 5 for 30 kr, or 1 for 10 kr)
+  cd_ogep: { on: true, price: 20 }, // the OG community EP (the four player songs on one CD): the record player sells it, one per player
   cd_blodig: { on: true, price: 5 }, // the Blodig oktober CD, sold at the record player in the shop: one per player (see buyRecord)
   cd_lykk: { on: true, price: 5 }, // leolegit - blodoktober (prod. Lykk), the same shop and rules
   cd_roulette: { on: true, price: 5 }, // yungxware - russisk roulette, the same shop and rules
@@ -309,8 +311,8 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife), every CD, the dice and the starter sofa everybody is given. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
   "f_mixer", "f_planter", "f_boombox", "f_beatshop", "elevator_ticket", "bandage", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
-  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip", "pickaxe", "machete", "dice", "f_sofa",
-  "puffbar", "loudspeaker", "mysterycase", "casekey", "knife_tt", "waterer", "mixerchip", "mixerchip2", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
+  "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_ogep", "cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip", "pickaxe", "machete", "dice", "f_sofa",
+  "puffbar", "loudspeaker", "mysterycase", "casekey", "walkman", "knife_tt", "waterer", "mixerchip", "mixerchip2", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
   // bagmand only buys his own things back (see shared/bagmand.ts)
   "poppyseed", "opium", "heroin", "ketamine", "percs", "twocb", "caliweed", "pinkweed", "brownweed", "natryger", "loudpack", "fentcn",
   "joint_cali", "blunt_cali", "joint_pink", "blunt_pink", "joint_brown", "blunt_brown", "joint_nat", "blunt_nat", "joint_loud", "blunt_loud",

@@ -56,34 +56,18 @@ console.log("--- CDs: the record player in the shop, paying, the album");
   check("it costs 2 blood and is a CD", fr.state.blood === 7 && total(fr.state.inventory, "cd") === 1, String(fr.state.blood));
   bad("only one per player", await act(f1, "buyRecord"));
   bad("6ixty doesn't sell it any more", await act(f1, "buySixty", { item: "cd" }));
-  // the Blodig oktober CD: 5 blood at the record player, once, a second CD apart from Freakme
-  const bo = await act(f1, "buyRecord", { item: "cd_blodig" });
-  ok("buy the kravle-blodig oktober CD", bo);
-  check("it costs 5 blood (7 - 5 = 2) and is a CD", bo.state.blood === 2 && total(bo.state.inventory, "cd_blodig") === 1, String(bo.state.blood));
-  bad("only one of those per player", await act(f1, "buyRecord", { item: "cd_blodig" }));
-  bad("not a CD that isn't sold for blood", await act(f1, "buyRecord", { item: "cd_album" }));
-  bad("6ixty doesn't sell it", await act(f1, "buySixty", { item: "cd_blodig" }));
-  // the two players' songs: 5 blood each at the same record player, one of each per player
-  await owner("PUT", `users/${f1.uid}/blood`, 12);
-  const ly = await act(f1, "buyRecord", { item: "cd_lykk" });
-  ok("buy leolegit - blodoktober", ly);
-  check("it costs 5 blood and is a CD", ly.state.blood === 7 && total(ly.state.inventory, "cd_lykk") === 1, String(ly.state.blood));
-  bad("only one of it per player", await act(f1, "buyRecord", { item: "cd_lykk" }));
-  const ru = await act(f1, "buyRecord", { item: "cd_roulette" });
-  ok("buy yungxware - russisk roulette", ru);
-  check("it costs 5 blood too", ru.state.blood === 2 && total(ru.state.inventory, "cd_roulette") === 1, String(ru.state.blood));
-  bad("only one of that per player", await act(f1, "buyRecord", { item: "cd_roulette" }));
-  await owner("PUT", `users/${f1.uid}/blood`, 12);
-  const dd = await act(f1, "buyRecord", { item: "cd_dipdip" });
-  ok("buy lemonade - Dip Dip", dd);
-  check("it costs 5 blood and is a CD", dd.state.blood === 7 && total(dd.state.inventory, "cd_dipdip") === 1, String(dd.state.blood));
-  bad("only one of it per player", await act(f1, "buyRecord", { item: "cd_dipdip" }));
-  bad("6ixty doesn't sell it", await act(f1, "buySixty", { item: "cd_dipdip" }));
-  bad("6ixty doesn't sell them", await act(f1, "buySixty", { item: "cd_lykk" }));
-  for (const cdId of ["cd", "cd_blodig", "cd_lykk", "cd_roulette", "cd_yellow", "cd_green", "cd_blue", "cd_album"]) bad(`6ixty doesn't sell ${cdId}`, await act(f1, "buySixty", { item: cdId }));
+  // the single player CDs are gone from the record player: their songs are on the OG community EP (20 blood, once)
+  for (const old of ["cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip"]) bad(`${old} is not sold for blood any more`, await act(f1, "buyRecord", { item: old }));
+  await owner("PUT", `users/${f1.uid}/blood`, 27);
+  const ep = await act(f1, "buyRecord", { item: "cd_ogep" });
+  ok("buy the OG community EP", ep);
+  check("it costs 20 blood (27 - 20 = 7) and is a CD", ep.state.blood === 7 && total(ep.state.inventory, "cd_ogep") === 1, String(ep.state.blood));
+  bad("only one of those per player", await act(f1, "buyRecord", { item: "cd_ogep" }));
+  bad("6ixty doesn't sell it", await act(f1, "buySixty", { item: "cd_ogep" }));
+  for (const cdId of ["cd", "cd_ogep", "cd_blodig", "cd_lykk", "cd_roulette", "cd_yellow", "cd_green", "cd_blue", "cd_album"]) bad(`6ixty doesn't sell ${cdId}`, await act(f1, "buySixty", { item: cdId }));
   const poor = await fresh("t_cd1p", { blood: 4 });
   await act(poor, "sync"); await stand(poor, "shop", 2, 6);
-  bad("4 blood isn't enough", await act(poor, "buyRecord", { item: "cd_blodig" }));
+  bad("4 blood isn't enough", await act(poor, "buyRecord", { item: "cd_ogep" }));
   // real money: three mystery CDs, never the same colour twice
   const m = await fresh("t_cd2");
   await act(m, "sync");

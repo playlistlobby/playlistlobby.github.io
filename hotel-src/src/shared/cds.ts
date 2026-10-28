@@ -1,7 +1,7 @@
 // The CDs: the one 6ixty sells (Freakme), the three mystery CDs (yellow, green, blue: one song each) and the full album (red).
 // Pure data: the browser and the server both use it.
 
-export interface AlbumTrack { id: string; title: string; by: string }
+export interface AlbumTrack { id: string; title: string; by: string; /** the mp3 in public/music when it is not album-<id>.mp3 */ file?: string }
 /** The full album, in playing order. The mp3 of a track is public/music/album-<id>.mp3 */
 export const ALBUM_TRACKS: AlbumTrack[] = [
   { id: "02-11-pa-en-blodig-sondag", title: "02!11 på en blodig søndag", by: "Em" },
@@ -16,17 +16,27 @@ export const ALBUM_TRACKS: AlbumTrack[] = [
   { id: "sidste-sommer", title: "Sidste Sommer", by: "Em" },
   { id: "ahmingud", title: "Åhmingud", by: "Em" },
 ];
+/** The OG community EP: the four player songs that used to be sold as single CDs. */
+export const OGEP_TRACKS: AlbumTrack[] = [
+  { id: "kravle-blodig-oktober", title: "kravle - blodig oktober", by: "kravle", file: "cd-blodigoktober.mp3" },
+  { id: "leolegit-blodoktober", title: "leolegit - blodoktober", by: "leolegit (prod. Lykk)", file: "cd-leolegit-blodoktober.mp3" },
+  { id: "yungxware-russisk-roulette", title: "yungxware - russisk roulette", by: "yungxware", file: "cd-yungxware-russisk-roulette.mp3" },
+  { id: "lemonade-dip-dip", title: "lemonade - Dip Dip", by: "lemonade", file: "cd-lemonade-dip-dip.mp3" },
+];
+/** the songs of the album a CD or a state plays (state.album: "ogep" = the EP, nothing = the full album) */
+export const albumList = (album?: string): AlbumTrack[] => (album === "ogep" ? OGEP_TRACKS : ALBUM_TRACKS);
 export const albumTrack = (id: string): AlbumTrack | undefined => ALBUM_TRACKS.find((t) => t.id === id);
 export const albumIndexOf = (id: string): number => ALBUM_TRACKS.findIndex((t) => t.id === id);
 
 /** What each CD item plays: the id of the track (or "album") and its name. */
-export interface CdDef { track: string; title: string }
+export interface CdDef { track: string; title: string; /** an album CD: which one (see albumList) */ album?: string }
 export const CD_ITEMS: Record<string, CdDef> = {
   cd: { track: "freakme", title: "Freakme" },
   cd_yellow: { track: "ahmingud", title: "Åhmingud" },
   cd_green: { track: "blodig-oktober", title: "Blodig oktober" },
   cd_blue: { track: "blod-ud-af-naesen", title: "Blod ud af næsen" },
   cd_album: { track: "album", title: "Full album" },
+  cd_ogep: { track: "album", album: "ogep", title: "OG Community EP" },
   // the record box in the shop sells these two for blood, one of each per player (see buyRecord)
   cd_blodig: { track: "blodig-oktober-cd", title: "kravle-blodig oktober" },
   // two songs by players, also from the record box for blood (one of each per player)
@@ -35,7 +45,7 @@ export const CD_ITEMS: Record<string, CdDef> = {
   cd_dipdip: { track: "lemonade-dip-dip", title: "lemonade - Dip Dip" },
 };
 /** the CDs the record box sells for blood (the id is the item) */
-export const BLOOD_CDS: string[] = ["cd", "cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip"];
+export const BLOOD_CDS: string[] = ["cd", "cd_ogep"];
 export const CD_ITEM_IDS: string[] = Object.keys(CD_ITEMS);
 export const isCdItem = (item: string | undefined): boolean => !!item && (Object.prototype.hasOwnProperty.call(CD_ITEMS, item) || parsePressedCd(item) !== null);
 /** the three mystery CDs: a buy gives one you haven't got, and after three buys there are none left */

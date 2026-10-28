@@ -996,6 +996,11 @@
         }
       }
     },
+    "walkman": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
     "rooms": {
       ".read": "@ADMIN@",
       "$room": {

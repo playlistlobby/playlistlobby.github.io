@@ -73,7 +73,8 @@ import { NEW_ACCOUNT_CHAT_MS } from "../shared/mod";
 import { showDeathScreen } from "./deathScreen";
 import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, isScState, reconcileCd, speakerOp, watchCdPlayer } from "../cdplayer";
 import { voteSong } from "../soundcloud";
-import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
+import { loadWalkman, openWalkmanMenu } from "../walkman";
+import { albumList, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
 import {
@@ -579,6 +580,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let cdPressApi: { close(): void } | null = null;
   let beatShopApi: { close(): void } | null = null;
   let elevatorApi: { close(): void } | null = null;
+  let walkmanApi: { close(): void } | null = null;
   /** the streets: the customers, the cars, the fights (null in every other room) */
   let streetsApi: StreetsApi | null = null;
   let fightWalking = false;
@@ -765,9 +767,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return false;
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "vape") void usePuff(slot); else if (what === "heal") { if (streetsApi) void streetsApi.heal(slot); else say("A bandage is for a fight on the streets.", "warn"); } else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "vape") void usePuff(slot); else if (what === "walkman") { if (walkmanApi) walkmanApi.close(); else walkmanApi = openWalkmanMenu(stage, me, () => { walkmanApi = null; }); } else if (what === "heal") { if (streetsApi) void streetsApi.heal(slot); else say("A bandage is for a fight on the streets.", "warn"); } else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
-    onCombine: (a, b) => { void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
+    onCombine: (a, b) => {
+      // a CD used on the walkman (either way round) goes into it
+      const wk = me.inventory[a]?.item === "walkman" ? a : me.inventory[b]?.item === "walkman" ? b : -1;
+      const cdSlot = wk === a ? b : a;
+      if (wk >= 0 && isCdItem(me.inventory[cdSlot]?.item)) { void loadWalkman(me, cdSlot).then(() => { panel.refresh(); say("The CD is in your walkman."); }, (err) => say((err as Error).message || "That didn't work.", "warn")); return; }
+      void combineSlots(me, a, b).then((r) => { panel.refresh(); say(isLaced(r.gave) ? `Du har lacede "${itemDef(unlaced(r.gave))?.name ?? r.gave}" med fentanyl. Monster.` : r.note); }, (err) => say((err as Error).message, "warn")); },
     roomTab: isPublicRoom(roomId) && !me.isAdmin ? undefined : {
       icon: assetUrl("osrs/tab_room.png"),
       title: "Room",
@@ -835,7 +842,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "elevator") text = isArrival ? "Elevator: back to the basement" : "Elevator: runs from 20 to 21";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "streetbin") text = "Trash can: search it";
     else if (hoverObj && hoverObj.kind === "scustomer" && streetsApi) text = streetsApi.hoverText(hoverObj.id) ?? "";
-    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "beatshop") text = "BeatShop: listen to beats and buy them";
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "beatshop") { const bf = def.furni.find((q) => q.id === hoverObj!.id); const bo = bf?.by ?? def.ownerUid; const bn = bo && bo === def.ownerUid ? def.ownerName : ""; text = bn ? `${bn}'s BeatShop: listen to beats and buy them` : "BeatShop: listen to beats and buy them"; }
     else if (hoverObj && (FURNI_KINDS[hoverObj.kind!]?.opens === "poker" || FURNI_KINDS[hoverObj.kind!]?.opens === "blackjack")) text = `${FURNI_KINDS[hoverObj.kind!].label}: tap to play`;
     else if (hoverObj && hoverObj.kind === "wantedboard") text = "Wanted board";
     else if (hoverObj && hoverObj.kind === "discordboard") text = "Notice board";
@@ -1767,6 +1774,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     cdPressApi?.close();
     beatShopApi?.close();
     elevatorApi?.close();
+    walkmanApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
@@ -2294,7 +2302,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const s = cdState;
     if (s && isScState(s)) return speakerRun(op, { from: s.index ?? 0 });
     if (!s || s.track !== "album") return;
-    try { await albumStep(me, roomId, op, s.index ?? 0); } catch (err) { say((err as Error).message || "That didn't work.", "warn"); }
+    try { await albumStep(me, roomId, op, s.index ?? 0, s.album); } catch (err) { say((err as Error).message || "That didn't work.", "warn"); }
   }
   /** the buttons in the player's window (for whoever put the CD in, and the owner of the room) */
   /** SoundCloud on the speaker: its buttons (members: pause, skip; the one who connected it and the owner: loop, disconnect) */
@@ -2309,7 +2317,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function refreshCdPopup(): void {
     if (!cdPopup) return;
     const s = cdState && !cdEnded(cdState) ? cdState : null;
-    cdUi.title.textContent = s ? `♪ ${s.title}${s.track === "album" ? ` (${(s.index ?? 0) + 1}/${ALBUM_TRACKS.length})` : ""}` : "Nothing playing";
+    cdUi.title.textContent = s ? `♪ ${s.title}${s.track === "album" ? ` (${(s.index ?? 0) + 1}/${albumList(s.album).length})` : ""}` : "Nothing playing";
     cdUi.status.textContent = s ? (isScState(s) ? `SoundCloud, connected by ${s.byName}${s.loop ? " (this song on loop)" : ""}` : `Put in by ${s.byName}`) : "Use a CD from your inventory on the player.";
     const total = s ? (s.durationMs ?? s.endsAt - s.startedAt) : 0;
     const pos = s ? Math.min(total, cdPositionMs(s)) : 0;
@@ -2326,7 +2334,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     cdUi.pause.classList.toggle("hidden", !mayControl);
     const isAlbum = !!s && s.track === "album";
     cdUi.prev.classList.toggle("hidden", !(mayControl && (isAlbum || sc)));
-    cdUi.next.classList.toggle("hidden", !(mayControl && (sc || (isAlbum && (s!.index ?? 0) < ALBUM_TRACKS.length - 1))));
+    cdUi.next.classList.toggle("hidden", !(mayControl && (sc || (isAlbum && (s!.index ?? 0) < albumList(s!.album).length - 1))));
     cdUi.restart.classList.toggle("hidden", !mayControl || sc);
     cdUi.loop.classList.toggle("hidden", !boss);
     cdUi.loop.classList.toggle("primary", !!s?.loop);
@@ -2446,9 +2454,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   function tickCd(): void {
     // the full album: when a song has finished somebody's browser moves it on (the first one wins, the others see the new song and do nothing)
     const cs = cdState;
-    if (cs && cs.track === "album" && !cs.pausedAt && (cs.index ?? 0) < ALBUM_TRACKS.length - 1 && serverNow() >= cs.endsAt - 400 && !cdEnded(cs) && !albumAdvancing) {
+    if (cs && cs.track === "album" && !cs.pausedAt && (cs.index ?? 0) < albumList(cs.album).length - 1 && serverNow() >= cs.endsAt - 400 && !cdEnded(cs) && !albumAdvancing) {
       albumAdvancing = true;
-      void albumStep(me, roomId, "advance", cs.index ?? 0).catch(() => undefined).finally(() => setTimeout(() => { albumAdvancing = false; }, 2500));
+      void albumStep(me, roomId, "advance", cs.index ?? 0, cs.album).catch(() => undefined).finally(() => setTimeout(() => { albumAdvancing = false; }, 2500));
     }
     // SoundCloud on the speaker: when a song has ended somebody's browser asks the server to move on (it catches up over every song that ended and skips the ones taken off)
     if (cs && isScState(cs) && isHideoutRoom && !cs.pausedAt && serverNow() >= cs.endsAt - 400 && !scAdvancing) {
@@ -4849,10 +4857,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (liftUp) g.restore();
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const noHint = k.opens === "mixer" || k.opens === "stash" || k.opens === "ducky" || k.opens === "raffle"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? hot : k.opens === "records" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" || k.opens === "elevator" ? ticketImg : k.opens === "streetbin" ? basketIconImg : k.opens === "records" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? hot : k.opens === "records" || k.opens === "beatshop" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" || k.opens === "elevator" ? ticketImg : k.opens === "streetbin" ? basketIconImg : k.opens === "records" || k.opens === "beatshop" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "beatshop" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -6181,6 +6189,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     cdPressApi?.close();
     beatShopApi?.close();
     elevatorApi?.close();
+    walkmanApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();

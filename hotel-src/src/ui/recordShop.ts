@@ -1,5 +1,5 @@
 import { h, toast } from "./dom";
-import { buyRecordCd } from "../db";
+import { buyRecordCd, buyWalkman } from "../db";
 import { buyBeatShop } from "../beats";
 import { startPayment } from "../api";
 import { BLOOD_ICON, furniIcon, itemDef } from "../items";
@@ -118,13 +118,32 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
             } catch (err) { toast((err as Error).message, "err"); }
           },
         }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${BEATSHOP_PRICE}`);
+    // the walkman: a portable CD player (one in the pocket at a time)
+    const haveWalk = me.inventory.some((x) => x?.item === "walkman");
+    const walkPrice = 100;
+    const walkBtn = haveWalk
+      ? h("button", { class: "btn small", disabled: true, title: "You have one already." }, "Owned")
+      : h("button", {
+          class: "btn small primary",
+          disabled: me.blood < walkPrice,
+          title: me.blood < walkPrice ? `You need ${walkPrice - me.blood} more drops` : "",
+          onclick: async () => {
+            try {
+              await buyWalkman(me);
+              ctx.refreshHeader();
+              logAction(me, "buy", `bought a walkman for ${walkPrice}`);
+              playSfx("coins", 0.5);
+              toast("The walkman is in your pocket. Tap it to put a CD in.");
+              onChange();
+              render();
+            } catch (err) { toast((err as Error).message, "err"); }
+          },
+        }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${walkPrice}`);
     body.replaceChildren(
       row(freak.icon, "Freakme", "One song, for blood. One per player.", freakBtn),
-      bloodCd("cd_blodig", "kravle-blodig oktober"),
-      bloodCd("cd_lykk", "leolegit - blodoktober"),
-      bloodCd("cd_roulette", "yungxware - russisk roulette"),
-      bloodCd("cd_dipdip", "lemonade - Dip Dip"),
+      bloodCd("cd_ogep", "OG Community EP"),
       row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "en af tre sange fra blodig oktober leaked, du for aldrig den samme cd igen", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
+      row(itemDef("walkman")!.icon, "Walkman", "A portable CD player: music wherever you go, only you hear it. One CD at a time.", walkBtn),
       row(furniIcon("f_beatshop"), "BeatShop", "A machine to sell your beats in. Put it in your room. One per player.", shopBtn),
       h("div", { class: "hint" }, "Real money is paid on a payment page, and you come back to the game afterwards."));
   }
