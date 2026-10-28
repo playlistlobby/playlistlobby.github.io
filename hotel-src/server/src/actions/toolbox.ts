@@ -214,6 +214,8 @@ export const furniPlace: Action = {
       if (!fits(dims!, int(a.x, 0, 24, "spot"), int(a.y, 0, 24, "spot"), dir, size)) fail("That doesn't fit in the room.");
       if (w.s.storage[kind] > 1) w.s.storage[kind] -= 1; else delete w.s.storage[kind];
     }
+    const autoPot = kind === "f_planter_auto"; // (a kit with its waterer: down in the room it is a kit marked `auto`)
+    if (autoPot) kind = "f_planter";
     if (hideout && kind === "f_planter" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_planter").length >= HIDEOUT_MAX_KITS) fail(`A hideout fits ${HIDEOUT_MAX_KITS} growing kits.`);
     if (hideout && kind === "f_mixer" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_mixer").length >= HIDEOUT_MAX_MIXERS) fail(`A hideout fits ${HIDEOUT_MAX_MIXERS} mixers.`);
     // a poster only hangs on a wall, and carries the picture chosen when it is hung (it stays on it; a poster taken down goes back blank)
@@ -227,7 +229,7 @@ export const furniPlace: Action = {
       }
     } else if (a.img !== undefined) fail("Only a poster carries a picture.");
     if (HIDEOUT_ONLY.has(kind) && !hideout) fail("That piece only fits in a hideout.");
-    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : hideout ? { by: boxOwner ?? c.uid } : {}) };
+    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, ...(autoPot ? { auto: true } : {}), x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : hideout ? { by: boxOwner ?? c.uid } : {}) };
     return {};
   },
 };
@@ -289,17 +291,18 @@ export const furniStore: Action = {
       c.extra[`roomsMeta/${room}/boombox`] = { gone: true };
       return {};
     }
-    const row = await c.db.get<{ kind?: string; plantedAt?: number; mixJob?: unknown; by?: string }>(`roomsMeta/${room}/furni/${id}`);
+    const row = await c.db.get<{ kind?: string; plantedAt?: number; mixJob?: unknown; by?: string; auto?: boolean }>(`roomsMeta/${room}/furni/${id}`);
     if (!row?.kind) return fail("That piece isn't in your room.");
     if (foreign && row.by !== c.uid && !c.isAdmin) fail("That isn't yours to take.");
+    const piece = row.kind === "f_planter" && row.auto ? "f_planter_auto" : row.kind; // (the waterer goes into the pot: they are carried as one piece)
     if (typeof row.plantedAt === "number") fail("Harvest the plant first.");
     if (row.mixJob) fail("Collect what's in the mixer first.");
     if (row.kind === "f_boombox") await boomboxFree(c, room);
     if (a.to === "pocket") { // straight into your pocket (only a piece that is yours: in your own room everything is)
       if (hideout && row.by !== c.uid && !c.isAdmin) fail("That isn't yours to take.");
-      if (!(await c.validItem())(row.kind)) fail("That can't be carried.");
+      if (!(await c.validItem())(piece)) fail("That can't be carried.");
       const w2 = await c.user();
-      const next = addToInv(w2.s.inventory, { item: row.kind, qty: 1 });
+      const next = addToInv(w2.s.inventory, { item: piece, qty: 1 });
       if (!next) fail("Your pockets are full.");
       w2.s.inventory = next!;
       c.extra[`roomsMeta/${room}/furni/${id}`] = null;
@@ -307,16 +310,16 @@ export const furniStore: Action = {
     }
     if (hideout) { // a hideout's piece goes back into the shared box, still its owner's
       const by = typeof row.by === "string" ? row.by : c.uid;
-      const inBox = (await c.db.get<number>(`roomsMeta/${room}/box/${by}/${row.kind}`)) ?? 0;
+      const inBox = (await c.db.get<number>(`roomsMeta/${room}/box/${by}/${piece}`)) ?? 0;
       if (inBox >= STORAGE_MAX_PIECES) fail("The box is full of those.");
-      c.extra[`roomsMeta/${room}/box/${by}/${row.kind}`] = inBox + 1;
+      c.extra[`roomsMeta/${room}/box/${by}/${piece}`] = inBox + 1;
       c.extra[`roomsMeta/${room}/furni/${id}`] = null;
       return {};
     }
     const w = await c.user();
-    const have = w.s.storage[row.kind] ?? 0;
+    const have = w.s.storage[piece] ?? 0;
     if (have >= STORAGE_MAX_PIECES) fail("Storage is full of those.");
-    w.s.storage[row.kind] = have + 1;
+    w.s.storage[piece] = have + 1;
     c.extra[`roomsMeta/${room}/furni/${id}`] = null;
     return {};
   },

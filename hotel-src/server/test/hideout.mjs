@@ -231,6 +231,13 @@ await owner("PATCH", `roomsMeta/${HR(boss)}/furni/${kit}`, { plantedAt: Date.now
 const hv2 = await act(bo, "harvest", { room: HR(boss), fid: kit });
 ok("harvests a proper weed (not ass)", hv2);
 check("it is not ass", total(hv2.state.inventory, "weed") >= 1 && !hv2.state.inventory.some((x) => x && x.item === "weed" && x.ass), JSON.stringify(hv2.state.inventory.filter(Boolean).map((x) => x.item + (x.ass ? "*" : ""))));
+console.log("--- the waterer stays with the pot when it is moved");
+ok("the pot goes into the box", await act(bo, "furniStore", { room: HR(boss), id: kit }));
+check("the box holds a pot with a waterer, not a plain pot", (await owner("GET", `roomsMeta/${HR(boss)}/box/${boss.uid}/f_planter_auto`)) === 1 && !(await owner("GET", `roomsMeta/${HR(boss)}/box/${boss.uid}/f_planter`)));
+const pa = await act(bo, "furniPlace", { room: HR(boss), source: "box", owner: boss.uid, kind: "f_planter_auto", x: 9, y: 9 });
+ok("and puts it down again", pa);
+const paRow = Object.values((await owner("GET", `roomsMeta/${HR(boss)}/furni`)) ?? {}).find((r) => r && r.kind === "f_planter" && r.x === 9 && r.y === 9);
+check("it is a pot with its waterer", paRow && paRow.auto === true, JSON.stringify(paRow));
 const st2 = await state(bo);
 ok("a mix in the upgraded mixer", await act(bo, "mix", { room: HR(boss), fid: mx, a: slotOf(st2, "weed"), b: slotOf(st2, "cigarette") }));
 const job = await owner("GET", `roomsMeta/${HR(boss)}/furni/${mx}/mixJob`);

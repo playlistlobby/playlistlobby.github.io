@@ -102,6 +102,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   ...shopKinds(),
   ...skinKinds(),
   // the growing kit (sold in the shop room's vending machine): an empty pot until you plant a seed in it
+  f_planter_auto: { id: "f_planter_auto", label: "Growing kit with waterer", icon: "🪴", w: 1, h: 1, height: 36, color: "#d8d8d8", placeable: false, nitro: "furni/f_flowerpot.nitro", rotatable: true, plant: true }, // (only ever carried or stored: put down, it is a growing kit with `auto`)
   f_planter: { id: "f_planter", label: "Growing kit", icon: "🪴", w: 1, h: 1, height: 36, color: "#d8d8d8", placeable: false, nitro: "furni/f_flowerpot.nitro", rotatable: true, plant: true },
   // the mixer (sold by the vending machine): put it down in your room, tap it, and mix two things into something new
   // the automatic plant waterer: it sits on a growing kit (drawn over the pot, never placed on its own)

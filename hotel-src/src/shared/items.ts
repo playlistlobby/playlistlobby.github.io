@@ -82,7 +82,7 @@ export function parseInventoryWith(raw: unknown, valid: (id: string) => boolean)
 }
 
 /** Things that can never be put on the floor, given or traded (the knife stays with you). */
-export const NO_DROP: ReadonlySet<string> = new Set(["loudspeaker", "knife", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter", "f_beatshop"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
+export const NO_DROP: ReadonlySet<string> = new Set(["loudspeaker", "knife", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter", "f_planter_auto", "f_beatshop"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
 
 /** First slot holding `item`. Items that are loaned out (inPlayer) don't count as available. */
 export const findSlot = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item && !s.inPlayer);
@@ -310,7 +310,7 @@ export const SELL_BUNDLE: Record<string, number> = { cigbutt: 2, cigarette: 2, p
 
 /** What he will never buy: the tools of the trade (the mixer, the growing kit, rolling paper, the watering cans and the knife), every CD, the dice and the starter sofa everybody is given. */
 export const NEVER_BOUGHT: ReadonlySet<string> = new Set([
-  "f_mixer", "f_planter", "f_boombox", "f_beatshop", "elevator_ticket", "bandage", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
+  "f_mixer", "f_planter", "f_planter_auto", "f_boombox", "f_beatshop", "elevator_ticket", "bandage", "jointpaper", "bluntwrap", "wateringcan", "wateringcan_full", "knife",
   "cd", "cd_yellow", "cd_green", "cd_blue", "cd_album", "cd_ogep", "cd_blodig", "cd_lykk", "cd_roulette", "cd_dipdip", "pickaxe", "machete", "dice", "f_sofa",
   "puffbar", "loudspeaker", "mysterycase", "casekey", "walkman", "ipod", "knife_tt", "waterer", "mixerchip", "mixerchip2", "rocket", "unusual_flame", "unusual_star", "unusual_heart", "unusual_snow", "unusual_bubble", "unusual_bolt", "unusual_rainbow", "unusual_ember", "unusual_galaxy", "unusual_sakura", "unusual_toxic", "unusual_sparks",
   // bagmand only buys his own things back (see shared/bagmand.ts)
