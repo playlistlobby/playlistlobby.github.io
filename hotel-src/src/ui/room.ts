@@ -5935,7 +5935,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (img) img = pokerFx.imageFor(p.uid, img, opts, now); // (and the one who shot themselves after going bust at poker)
       if (img && p.ghost) img = dimmed(img); // (a player who dropped out of a roulette game: a little darker)
       const feet = feetOf(p, now);
-      if (streetsApi && p.uid !== me.uid && !p.npc && !p.sleeper) { // on the street every other player stands on a red tile: they can be fought
+      if (streetsApi && p.uid !== me.uid && !p.npc && !p.sleeper && (hoverPlayer?.uid === p.uid || streetsApi.target() === p.uid)) { // on the street the player under the pointer (or the one you are fighting) stands on a red tile
         const tw = (TILE_W / 2) * scale, th = (TILE_H / 2) * scale, pulse = 0.5 + 0.5 * Math.sin(now / 350);
         list.push({ depth: -0.4, draw: () => {
           g.beginPath(); g.moveTo(feet.x, feet.y - th); g.lineTo(feet.x + tw, feet.y); g.lineTo(feet.x, feet.y + th); g.lineTo(feet.x - tw, feet.y); g.closePath();

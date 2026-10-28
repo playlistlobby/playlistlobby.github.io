@@ -56,6 +56,8 @@ export interface StreetsApi {
   fight(uid: string): void;
   stopFight(): void;
   inFight(): boolean;
+  /** who you are going for right now (the one you clicked) */
+  target(): string | null;
   /** somebody is in a fight right now (used to keep the body of a player who closed the game in it) */
   fighting(uid: string): boolean;
   heal(slot: number): Promise<void>;
@@ -428,6 +430,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       return c ? `${c.kind === "car" ? "Car" : "Customer"}: wants ${c.want.qty} x ${itemDef(c.want.item)?.name ?? c.want.item}` : null;
     },
     drawPlayer, fight, stopFight, inFight, heal,
+    target: () => fightTarget,
     fighting: (uid) => (combat.get(uid)?.combatUntil ?? 0) > serverNow(),
     dispose() {
       disposed = true;
