@@ -12,10 +12,10 @@ export const DW_MULT = 1.5;
 /** the orders have to be shipped before this hour (Danish time) every day */
 export const DW_DEADLINE_HOUR = 21;
 export const DW_ORDERS: DwOrder[] = [
-  // fentanyl, cali weed blunts and 2cb (the drug made of opium and a shroom): about 2,100 blood in all
-  { id: "a", title: "The big shipment", lines: [{ item: "fentcn", qty: 3 }, { item: "blunt_cali", qty: 1 }, { item: "twocb", qty: 1 }] },
-  // 25 chud blunts: 750
-  { id: "b", title: "The chud order", lines: [{ item: "blunt_chud", qty: 25 }] },
+  // fentanyl, cali weed blunts and 2cb (the drug made of opium and a shroom): about 2,700 blood in all
+  { id: "a", title: "The big shipment", lines: [{ item: "fentcn", qty: 3 }, { item: "blunt_cali", qty: 1 }, { item: "twocb", qty: 3 }] },
+  // 25 chud blunts and a ketamine: 750 + 255
+  { id: "b", title: "The chud order", lines: [{ item: "blunt_chud", qty: 25 }, { item: "ketamine", qty: 1 }] },
 ];
 /**
  * What an item is worth before the dark web adds its half: what 6ixty pays for it; for the things only bagmand buys (the opium drugs) what bagmand pays; a blunt rolled from

@@ -54,14 +54,14 @@ const have = (st, item) => st.inventory.reduce((n, s) => n + (s && s.item === it
 console.log("--- the orders");
 const A = D.DW_ORDERS[0], B = D.DW_ORDERS[1];
 check("two orders", D.DW_ORDERS.length === 2);
-check("order 1: 3 fentanyl, 1 cali blunt, 1 2cb (about 2k)", A.lines.find((l) => l.item === "fentcn")?.qty === 3 && A.lines.find((l) => l.item === "blunt_cali")?.qty === 1 && A.lines.find((l) => l.item === "twocb")?.qty === 1 && D.dwTotal(A) > 1800 && D.dwTotal(A) < 2400, String(D.dwTotal(A)));
-check("order 2: 25 chud blunts", B.lines.length === 1 && B.lines[0].item === "blunt_chud" && B.lines[0].qty === 25);
-check("every item pays 1.5 x what it is worth (6ixty's price; bagmand's for the opium drugs)", D.dwUnitPay("blunt_chud") === 30 && D.dwUnitPay("fentcn") === 495 && D.dwUnitPay("twocb") === 270 && D.dwUnitPay("blunt_cali") === 386 && D.dwTotal(B) === 750, [D.dwUnitPay("blunt_chud"), D.dwUnitPay("fentcn"), D.dwUnitPay("twocb"), D.dwUnitPay("blunt_cali")].join());
+check("order 1: 3 fentanyl, 1 cali blunt, 3 2cb (about 2.7k)", A.lines.find((l) => l.item === "fentcn")?.qty === 3 && A.lines.find((l) => l.item === "blunt_cali")?.qty === 1 && A.lines.find((l) => l.item === "twocb")?.qty === 3 && D.dwTotal(A) > 2500 && D.dwTotal(A) < 2900, String(D.dwTotal(A)));
+check("order 2: 25 chud blunts and 1 ketamine", B.lines.length === 2 && B.lines[0].item === "blunt_chud" && B.lines[0].qty === 25 && B.lines[1].item === "ketamine" && B.lines[1].qty === 1);
+check("every item pays 1.5 x what it is worth (6ixty's price; bagmand's for the opium drugs)", D.dwUnitPay("blunt_chud") === 30 && D.dwUnitPay("fentcn") === 495 && D.dwUnitPay("twocb") === 270 && D.dwUnitPay("blunt_cali") === 386 && D.dwUnitPay("ketamine") === 255 && D.dwTotal(B) === 1005, [D.dwUnitPay("blunt_chud"), D.dwUnitPay("fentcn"), D.dwUnitPay("twocb"), D.dwUnitPay("blunt_cali")].join());
 check("the chud blunt is 6ixty's price x 1.5", D.dwUnitPay("blunt_chud") === Math.ceil(I.sellPrice("blunt_chud") * 1.5) && I.sellPrice("blunt_chud") === 20);
 check("open until 21:00 Danish time (20:00 UTC in winter), closed after", D.dwOpen(Date.UTC(2026, 0, 15, 19, 59)).open && !D.dwOpen(Date.UTC(2026, 0, 15, 20, 0)).open && D.dwOpen(Date.UTC(2026, 6, 15, 18, 59)).open && !D.dwOpen(Date.UTC(2026, 6, 15, 19, 0)).open);
 
 const boss = await fresh("t_dw_boss", { blood: 0, inventory: inv({ item: "blunt_chud", qty: 20 }, { item: "twocb", qty: 2 }) });
-const mate = await fresh("t_dw_mate", { inventory: inv({ item: "fentcn", qty: 8 }, { item: "blunt_chud", qty: 9 }) });
+const mate = await fresh("t_dw_mate", { inventory: inv({ item: "fentcn", qty: 8 }, { item: "blunt_chud", qty: 9 }, { item: "ketamine", qty: 2 }) });
 const out = await fresh("t_dw_out", { inventory: inv({ item: "blunt_chud", qty: 5 }) });
 const ROOM = `h_${boss.uid}`;
 await owner("PUT", `roomsMeta/${ROOM}`, { owner: boss.uid, ownerName: "boss", name: "test", access: "none", w: 14, h: 14, level: 0, lock: false, members: { [mate.uid]: { name: "mate", build: false, grow: true, stash: false } } });
@@ -82,16 +82,19 @@ check("paid 20 x 30 (1.5 x 20) at once", (await state(boss)).blood === 600 && ha
 const g2 = await act(mate, "darkwebGive", { room: ROOM, order: "b", item: "blunt_chud", qty: 9 });
 ok("a member helps (only 5 are still needed)", g2);
 check("so only 5 are taken and paid 150", g2.data.gave === 5 && have(await state(mate), "blunt_chud") === 4 && (await state(mate)).blood === 150, JSON.stringify(g2.data));
-check("the order is done", g2.data.done === true);
-bad("and filled for the day", await act(mate, "darkwebGive", { room: ROOM, order: "b", item: "blunt_chud", qty: 1 }));
+check("the blunts are in but the ketamine is still missing: not done", g2.data.done === false);
+bad("the blunts part is filled", await act(mate, "darkwebGive", { room: ROOM, order: "b", item: "blunt_chud", qty: 1 }));
+const gk = await act(mate, "darkwebGive", { room: ROOM, order: "b", item: "ketamine", qty: 2 });
+check("one ketamine (of the 2 he has) finishes it, paid 255", gk.ok && gk.data.gave === 1 && gk.data.pay === 255 && gk.data.done === true, JSON.stringify(gk));
+bad("and it is filled for the day", await act(boss, "darkwebGive", { room: ROOM, order: "b", item: "ketamine", qty: 1 }));
 const prog = await owner("GET", `darkweb/${boss.uid}/${S.danishDayKey(Date.now())}/b`);
-check("the hideout's progress is shared", prog.got.blunt_chud === 25 && prog.by[boss.uid] === 20 && prog.by[mate.uid] === 5 && prog.done === true, JSON.stringify(prog));
+check("the hideout's progress is shared", prog.got.blunt_chud === 25 && prog.got.ketamine === 1 && prog.by[boss.uid] === 20 && prog.by[mate.uid] === 6 && prog.done === true, JSON.stringify(prog));
 const g3 = await act(mate, "darkwebGive", { room: ROOM, order: "a", item: "fentcn", qty: 99 });
 ok("the first order takes the fentanyl too", g3);
-check("only 3 are needed: 3 taken and paid 3 x 495", g3.data.gave === 3 && have(await state(mate), "fentcn") === 5 && (await state(mate)).blood === 150 + 1485, JSON.stringify(g3.data));
+check("only 3 are needed: 3 taken and paid 3 x 495", g3.data.gave === 3 && have(await state(mate), "fentcn") === 5 && (await state(mate)).blood === 150 + 255 + 1485, JSON.stringify(g3.data));
 bad("the fentanyl part is filled", await act(mate, "darkwebGive", { room: ROOM, order: "a", item: "fentcn", qty: 1 }));
 const g4 = await act(boss, "darkwebGive", { room: ROOM, order: "a", item: "twocb", qty: 2 });
-check("the owner's 2 2cb are cut to the 1 needed (paid 270), the order is not done yet", g4.ok && g4.data.gave === 1 && g4.data.pay === 270 && !g4.data.done, JSON.stringify(g4));
+check("the owner hands in 2 of the 3 2cb needed (paid 2 x 270), the order is not done yet", g4.ok && g4.data.gave === 2 && g4.data.pay === 540 && !g4.data.done, JSON.stringify(g4));
 const wr = await fetch(`${DB}/darkweb/${boss.uid}.json?ns=${NS}&auth=${out.token}`, { method: "PUT", body: "{}" });
 check("players can't write the progress themselves", wr.status === 401 || wr.status === 403, String(wr.status));
 
