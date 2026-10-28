@@ -5445,7 +5445,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.imageSmoothingEnabled = scale < 1;
     g.clearRect(0, 0, canvas.width, canvas.height);
     if (greenScreen) { g.fillStyle = "#00ff00"; g.fillRect(0, 0, canvas.width, canvas.height); } // chroma green instead of the floor and the walls
-    else g.drawImage(floor, offX - floorOrigin.x * scale, offY - floorOrigin.y * scale, floor.width * scale, floor.height * scale);
+    else { // the floor and walls picture: only the part that is on the screen (a very long room like the street is a huge picture, and drawing all of it, scaled, with most of it off the screen showed black banding in the corners in Chrome)
+      const dx = offX - floorOrigin.x * scale, dy = offY - floorOrigin.y * scale;
+      const vw = canvas.width / dpr, vh = canvas.height / dpr;
+      const sx = Math.max(0, Math.floor(-dx / scale) - 1), sy = Math.max(0, Math.floor(-dy / scale) - 1);
+      const ex = Math.min(floor.width, Math.ceil((vw - dx) / scale) + 1), ey = Math.min(floor.height, Math.ceil((vh - dy) / scale) + 1);
+      if (ex > sx && ey > sy) g.drawImage(floor, sx, sy, ex - sx, ey - sy, dx + sx * scale, dy + sy * scale, (ex - sx) * scale, (ey - sy) * scale);
+    }
     if (introUntil && performance.now() >= introUntil) {
       // eyes open: get out of bed and stand next to it
       const mp = mine();
