@@ -7,11 +7,14 @@ import { DONATE_DAILY_MAX } from "../shared/songs";
 import { BLOOD_ICON, furniIcon, itemDef, onFurniIcon } from "../items";
 import { FURNI_KINDS, isCdKind, LOBBY_ID } from "../rooms";
 import type { RoomDef } from "../rooms";
-import { hitPlace, hitSearch, watchHitCool, watchHits, watchRevenge } from "../hits";
-import type { Revenge } from "../hits";
+import { hitSearch } from "../hits";
 import { headBoxFor } from "./head";
-import { HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_MIN } from "../shared/hits";
-import type { Hit } from "../shared/hits";
+import { call } from "../db";
+import { onValue, ref } from "firebase/database";
+import { db } from "../firebase";
+import { danishDayKey } from "../shared/streets";
+import { DW_ORDERS, dwFilled, dwLeft, dwUnitPay } from "../shared/darkweb";
+import type { DwProgress } from "../shared/darkweb";
 import { hideoutPriceOf, HIDEOUT_AD_MAX, HIDEOUT_AD_PRICE, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
 import { countdownText } from "../shared/raffle";
 import { serverNow } from "../db";
@@ -20,11 +23,11 @@ import type { Ctx } from "../main";
 
 export interface ComputerApi { close(): void; refresh(): void }
 
-type Page = "shop" | "members" | "hits" | "tables" | "sound"; // (the Shop page also holds the orders, the Members page also holds the settings)
+type Page = "shop" | "members" | "darkweb" | "tables" | "sound"; // (the Shop page also holds the orders, the Members page also holds the settings)
 const PAGES: Array<{ id: Page; icon: string; label: string; owner?: boolean; svg?: string }> = [
   { id: "shop", icon: "🛒", label: "Shop" },
   { id: "members", icon: "👥", label: "Members" },
-  { id: "hits", icon: "💀", label: "Hitman" },
+  { id: "darkweb", icon: "🕸️", label: "Dark web" },
   { id: "tables", icon: "💰", label: "Tables", owner: true },
   { id: "sound", icon: "", label: "SoundCloud", svg: "note" },
 ];
@@ -42,12 +45,8 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   let searchTimer = 0;
   let searchQ = "";
   let busy = false;
-  let hitTarget: { uid: string; name: string } | null = null;
-  let hitAmount = 500;
-  let hitCool = 0;
-  let openHits: Hit[] = [];
-  let revenge: Revenge[] = [];
-  const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; if (page === "members") render(); }), watchDonated(me.uid, (n) => { donated = n; if (page === "members") render(); }), watchHideoutTill(me.uid, (t) => { till = t; if (page === "tables") render(); }), watchHitCool(roomId.slice(2), (at) => { hitCool = at; }), watchHits((l) => { openHits = l; }), watchRevenge(me.uid, (l) => { revenge = l; })];
+  let dw: Record<string, DwProgress> = {}; // the hideout's progress on today's dark web orders
+  const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; if (page === "members") render(); }), watchDonated(me.uid, (n) => { donated = n; if (page === "members") render(); }), watchHideoutTill(me.uid, (t) => { till = t; if (page === "tables") render(); }), onValue(ref(db, `darkweb/${roomId.slice(2)}/${danishDayKey(serverNow())}`), (s) => { dw = (s.val() as Record<string, DwProgress> | null) ?? {}; if (page === "darkweb") render(); }, () => undefined)];
   const owner = (): boolean => getDef().ownerUid === me.uid;
   /** the staff can open any hideout's computer to see who is in it (they get the Members page only, and can't change anything) */
   const staffView = (): boolean => { const d = getDef(); return me.enterAnywhere && d.ownerUid !== me.uid && !d.hideout?.members?.[me.uid]; };
@@ -153,31 +152,35 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   }
 
   /** the hitman site: black and white. Put blood on somebody's head; whoever shoots them with a gun gets it. */
-  function hitsPage(): HTMLElement[] {
-    const left = hitCool + HIT_HIDEOUT_COOLDOWN_MS - serverNow();
-    const waiting = left > 0;
-    const slider = h("input", { type: "range", class: "hc-slider", min: String(HIT_MIN), max: String(HIT_MAX), step: "50", value: String(hitAmount) }) as HTMLInputElement;
-    const big = h("div", { class: "ht-amt" }, h("img", { src: BLOOD_ICON, alt: "" }), hitAmount.toLocaleString("en-US"));
-    slider.addEventListener("input", () => { hitAmount = Number(slider.value); big.replaceChildren(h("img", { src: BLOOD_ICON, alt: "" }), hitAmount.toLocaleString("en-US")); });
-    const mins = Math.ceil(left / 60000);
-    const cant = !hitTarget || busy || waiting || me.blood < hitAmount;
-    const form = h("div", { class: "ht-form", id: "ht-form" },
-      waiting ? h("div", { class: "ht-warn" }, `Your hideout has put a hit out already. The next one can go out in ${mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`}.`) : "",
-      hitTarget ? h("div", { class: "ht-target" }, headBoxFor(hitTarget.uid), h("div", { class: "ht-tn" }, h("span", {}, "The target"), h("strong", {}, hitTarget.name)), h("button", { class: "btn small", onclick: () => { hitTarget = null; (document.activeElement as HTMLElement | null)?.blur(); render(); } }, "Change"))
-        : h("div", { class: "hc-group" }, ...searchUi("Search a player's name", () => new Set([me.uid]), (r) => h("button", { class: "btn small primary", onclick: () => { (document.activeElement as HTMLElement | null)?.blur(); hitTarget = r; results = []; searchQ = ""; render(); } }, "Pick"), true)),
-      h("div", { class: "ht-bounty" }, h("span", {}, `The bounty (${HIT_MIN} to ${HIT_MAX})`), big, slider),
-      h("button", { class: "ht-go", disabled: cant, onclick: () => void act(async () => { const t = hitTarget!; await hitPlace(me, roomId, t.uid, hitAmount); hitTarget = null; return `The hit on ${t.name} is out: ${hitAmount} blood.`; }) },
-        hitTarget ? `Put out a hit on ${hitTarget.name}` : "Pick somebody first"),
-      h("div", { class: "hc-foot" }, "The blood leaves your pocket now and sits on their head until somebody collects it. A hideout puts out one hit every 2 hours, and nobody gets more than 3 a day. Anybody with a gun (bagmand sells one a visit) can collect it."));
-    const revengeBox = revenge.length ? [h("div", { class: "ht-open ht-revenge" }, h("div", { class: "ht-open-t" }, "Somebody put a hit on you"),
-      ...revenge.slice(0, 6).map((r) => h("div", { class: "ht-row ht-rv" }, headBoxFor(r.by), h("div", { class: "ht-who" }, h("span", { class: "ht-n" }, r.byName), h("span", { class: "ht-by" }, `${r.hideoutName ? r.hideoutName + " · " : ""}${r.amount.toLocaleString("en-US")} on your head`)),
-        h("button", { class: "ht-rev", onclick: () => { hitTarget = { uid: r.by, name: r.byName }; results = []; searchQ = ""; render(); document.getElementById("ht-form")?.scrollIntoView({ block: "center" }); } }, "Revenge"))))] : [];
+  /** the dark web: today's big orders. Everybody in the hideout hands in what they have; each one is paid at once, and the bars are shared. */
+  function darkwebPage(): HTMLElement[] {
+    const names = (p: DwProgress | undefined): string => Object.keys(p?.by ?? {}).length ? `Members who have helped: ${Object.keys(p!.by!).length}` : "Nobody has handed anything in yet";
+    const card = (o: (typeof DW_ORDERS)[number]): HTMLElement => {
+      const p = dw[o.id];
+      const filled = dwFilled(o, p);
+      return h("div", { class: "dw-card" + (filled ? " done" : "") },
+        h("div", { class: "dw-title" }, h("span", {}, o.title), filled ? h("span", { class: "dw-badge" }, "Filled") : null),
+        ...o.lines.map((l) => {
+          const def = itemDef(l.item);
+          const got = Math.min(l.qty, Number(p?.got?.[l.item]) || 0);
+          const left = dwLeft(o, p, l.item);
+          const have = me.inventory.reduce((n, s) => n + (s && s.item === l.item && !s.lit && !s.inPlayer && !s.ass ? s.qty : 0), 0);
+          const give = Math.min(have, left);
+          return h("div", { class: "dw-line" },
+            def ? h("img", { src: def.icon, alt: "", class: "dw-ico" }) : null,
+            h("div", { class: "dw-main" },
+              h("div", { class: "dw-name" }, `${def?.name ?? l.item}`, h("span", { class: "dw-count" }, `${got} / ${l.qty}`)),
+              h("div", { class: "dw-bar" }, h("div", { class: "dw-fill", style: { width: `${(got / l.qty) * 100}%` } })),
+              h("div", { class: "hint" }, `Pays ${dwUnitPay(l.item)} blood each`)),
+            left <= 0 ? h("span", { class: "dw-tick" }, "✓")
+              : h("button", { class: "btn small primary", disabled: busy || give <= 0, title: have <= 0 ? "You have none on you" : "", onclick: () => void act(async () => { const r = await call<{ gave: number; pay: number; done: boolean }>(me, "darkwebGive", { room: roomId, order: o.id, item: l.item, qty: give }); playSfx("coins", 0.5); return `You handed in ${r.gave} and got ${r.pay} blood.${r.done ? " The order is filled!" : ""}`; }) }, give > 0 ? `Give ${give}` : "Give"));
+        }),
+        h("div", { class: "hint" }, names(p)));
+    };
     return [
-      h("div", { class: "hc-hero ht-hero" }, h("div", { class: "hc-h1" }, "THE HITMAN"), h("div", { class: "hc-sub" }, "Put blood on a head. Somebody will come for it.")),
-      ...revengeBox,
-      form,
-      h("div", { class: "ht-open" }, h("div", { class: "ht-open-t" }, `Open hits (${openHits.length})`),
-        ...(openHits.length ? openHits.map((x) => h("div", { class: "ht-row" }, h("span", { class: "ht-n" }, x.targetName), h("span", { class: "ht-by" }, x.hideoutName), h("span", { class: "ht-a" }, h("img", { src: BLOOD_ICON, alt: "" }), x.amount.toLocaleString("en-US")))) : [h("div", { class: "hc-empty" }, "Nobody has a price on their head right now.")])),
+      h("div", { class: "hc-hero ht-hero" }, h("div", { class: "hc-h1" }, "THE DARK WEB"), h("div", { class: "hc-sub" }, "Big orders. The whole hideout fills them together.")),
+      ...DW_ORDERS.map(card),
+      h("div", { class: "hc-foot" }, "Everybody in the hideout can hand in what they have on them. You are paid at once: one and a half times what the same thing is worth to 6ixty or bagmand. The orders start over every day."),
     ];
   }
 
@@ -284,7 +287,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const focused = document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement) ? document.activeElement : null;
     if (focused) return; // (don't rebuild the page while somebody is typing in it)
     url.textContent = `🔒 hideout.6ix/${page}`;
-    body.replaceChildren(...(page === "shop" ? [...shopPage(), ...ordersPage()] : page === "members" ? [...membersPage(), ...(guestView() ? [] : settingsPage())] : page === "hits" ? hitsPage() : tablesPage()));
+    body.replaceChildren(...(page === "shop" ? [...shopPage(), ...ordersPage()] : page === "members" ? [...membersPage(), ...(guestView() ? [] : settingsPage())] : page === "darkweb" ? darkwebPage() : tablesPage()));
     body.scrollTop = scrolled;
     tabs.replaceChildren(...tabsFor());
   }

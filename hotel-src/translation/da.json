@@ -15168,5 +15168,100 @@
   "en": "Bagmand sells these. Opens SoundCloud and your BeatShop (if you have one) from wherever you are. You can drop it and trade it.",
   "da": "Bagmand sælger dem. Åbner SoundCloud og din BeatShop (hvis du har en), uanset hvor du er. Du kan smide den og bytte den.",
   "where": "src/items.ts"
+ },
+ "N2479": {
+  "en": "Dark web",
+  "da": "Dark web",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2480": {
+  "en": "Members who have helped: {…}",
+  "da": "Medlemmer, der har hjulpet: {…}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2481": {
+  "en": "Nobody has handed anything in yet",
+  "da": "Ingen har afleveret noget endnu",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2482": {
+  "en": "Filled",
+  "da": "Fyldt",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2483": {
+  "en": "Pays {dwUnitPay} blood each",
+  "da": "Betaler {dwUnitPay} blod pr. stk.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2484": {
+  "en": "You handed in {gave} and got {pay} blood.{…}",
+  "da": "Du afleverede {gave} og fik {pay} blod.{…}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2485": {
+  "en": "The order is filled!",
+  "da": "Ordren er fyldt!",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2486": {
+  "en": "Give {give}",
+  "da": "Giv {give}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2487": {
+  "en": "Give",
+  "da": "Giv",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2488": {
+  "en": "THE DARK WEB",
+  "da": "THE DARK WEB",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2489": {
+  "en": "Big orders. The whole hideout fills them together.",
+  "da": "Store ordrer. Hele hideoutet fylder dem sammen.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2490": {
+  "en": "Everybody in the hideout can hand in what they have on them. You are paid at once: one and a half times what the same thing is worth to 6ixty or bagmand. The orders start over every day.",
+  "da": "Alle i hideoutet kan aflevere det, de har på sig. Du bliver betalt med det samme: halvanden gang hvad det samme er værd hos 6ixty eller bagmand. Ordrerne starter forfra hver dag.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2491": {
+  "en": "There is no such order.",
+  "da": "Den ordre findes ikke.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2492": {
+  "en": "That isn't in the order.",
+  "da": "Det er ikke med i ordren.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2493": {
+  "en": "That order is filled for today.",
+  "da": "Den ordre er fyldt for i dag.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2494": {
+  "en": "That part of the order is filled already.",
+  "da": "Den del af ordren er allerede fyldt.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2495": {
+  "en": "You haven't got any of that on you.",
+  "da": "Du har ikke noget af det på dig.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2496": {
+  "en": "The big shipment",
+  "da": "Den store forsendelse",
+  "where": "src/shared/darkweb.ts"
+ },
+ "N2497": {
+  "en": "The chud order",
+  "da": "Chud-ordren",
+  "where": "src/shared/darkweb.ts"
  }
 }

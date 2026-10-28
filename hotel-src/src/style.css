@@ -1838,3 +1838,20 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .ipod-app-ico svg { width: 26px; height: 26px; }
 .ipod-app-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ipod-app-text small { opacity: .8; }
+
+/* the dark web tab */
+.dw-card { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 10px; background: #1b1b1b; color: #eee; border: 1px solid #333; }
+.dw-card.done { opacity: .75; }
+.dw-title { display: flex; align-items: center; justify-content: space-between; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.dw-badge { background: #2f8f3a; color: #fff; border-radius: 99px; padding: 1px 8px; font-size: 11px; letter-spacing: 0; }
+.dw-line { display: flex; align-items: center; gap: 10px; }
+.dw-ico { width: 32px; height: 32px; image-rendering: pixelated; object-fit: contain; flex: none; }
+.dw-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.dw-name { display: flex; justify-content: space-between; font-weight: 700; }
+.dw-count { font-weight: 400; opacity: .85; }
+.dw-bar { height: 8px; border-radius: 99px; background: #000; overflow: hidden; border: 1px solid #333; }
+.dw-fill { height: 100%; background: linear-gradient(#e8484f, #a1141b); }
+.dw-tick { color: #5fd16a; font-weight: 800; font-size: 18px; }
+.dw-card .hint { color: #9a9a9a; }
+.dw-line .btn { flex: none; min-width: 64px; }
+.dw-name { gap: 6px; }
