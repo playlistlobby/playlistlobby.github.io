@@ -35,6 +35,10 @@ export const streetUnit = (item: string): number => {
   if (item.startsWith("blunt_") && SPECIAL_WEEDS[item.slice(6)] && BAGMAND_SELL[SPECIAL_WEEDS[item.slice(6)]] !== undefined) return BAGMAND_SELL[SPECIAL_WEEDS[item.slice(6)]] + 2;
   return 5;
 };
+/** a player with this much (in blood, what the shops pay for it) in their pockets glows on the street: everybody can see they are worth robbing */
+export const GLOW_WORTH = 100;
+/** what the things in a pocket are worth to the shops, in blood */
+export const pocketWorth = (inv: ReadonlyArray<{ item: string; qty: number } | null | undefined>): number => inv.reduce((n, s) => n + (s ? dwBase(s.item) * s.qty : 0), 0);
 /** what one of an item pays when it is handed in: 1.5 times its worth, rounded up */
 export const dwUnitPay = (item: string): number => Math.ceil(dwBase(item) * DW_MULT);
 /** what a whole order pays when it is filled */

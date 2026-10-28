@@ -12,7 +12,7 @@ import { Action, cheb, ID_RE, int, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { isEmulator } from "../env";
 import { addToInv, DUMPSTER_DROPS, overCarry, takeQtyFrom } from "../../../src/shared/economy";
-import { streetUnit } from "../../../src/shared/darkweb";
+import { GLOW_WORTH, pocketWorth, streetUnit } from "../../../src/shared/darkweb";
 import { findSlot, NO_DROP } from "../../../src/shared/items";
 import type { InvItem } from "../../../src/shared/items";
 import { floorPiles } from "./floor";
@@ -120,10 +120,15 @@ export const streetBin: Action = {
  * Customers turn up while there are players on the street: 0.6 a minute for each of them, 15 on the street at most, and one whose order isn't filled leaves after 7 minutes.
  * The browsers on the street ask every few seconds; whoever asks first does the counting (everything is in streetCustState, so it doesn't matter who).
  */
+/** whoever carries over 100 blood of goods glows on the street (rooms/streets/glow/<uid>, which everybody in the room can read) */
+function setGlow(c: Ctx, inv: ReadonlyArray<InvItem | null>): void {
+  c.extra[`rooms/${STREETS_ID}/glow/${c.uid}`] = pocketWorth(inv) > GLOW_WORTH ? true : null;
+}
 export const streetTick: Action = {
   locks: () => ["streettick"],
   async run(c) {
     await requireInRoom(c, STREETS_ID);
+    setGlow(c, (await c.user()).s.inventory);
     const players = (await c.db.get<Record<string, { npc?: boolean; sleeper?: boolean }>>(`rooms/${STREETS_ID}/players`)) ?? {};
     const present = Object.values(players).filter((p) => p && !p.npc && !p.sleeper).length;
     const st = (await c.db.get<{ at?: number; carry?: number; k?: number }>("streetCustState")) ?? {};
@@ -175,6 +180,7 @@ export const streetFill: Action = {
     const pay = orderPay(unit, cu!.want);
     w.s.blood += pay;
     c.extra[`streetFilled/${k}`] = { by: c.uid, at: c.now };
+    setGlow(c, inv);
     c.note = `street order ${cu!.want.qty} ${cu!.want.item} for ${pay}`;
     return { pay, item: cu!.want.item, qty: cu!.want.qty };
   },
@@ -207,6 +213,7 @@ export const streetEnter: Action = {
     const hp = hpNow(cb, c.now);
     const next: StreetCombat = { ...cb, hp, at: c.now, protectUntil: c.now + PVP.spawnProtectMs };
     c.extra[`streetCombat/${c.uid}`] = next;
+    setGlow(c, (await c.user()).s.inventory);
     return { hp, max: PVP.maxHp };
   },
 };

@@ -48,6 +48,8 @@ export interface StreetsOptions {
   goHome: () => void;
   goDown: () => void;
   refreshPocket: () => void;
+  /** a "+10 blood" that pops up over your head */
+  pop: (text: string) => void;
 }
 export interface StreetsApi {
   draw(f: StreetsFrame): void;
@@ -133,6 +135,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const me = o.me;
   let combat = new Map<string, StreetCombat & { deadAt?: number; deadBy?: string }>();
   let filled = new Map<number, number>(); // customer number -> when it was filled
+  let glowing = new Set<string>(); // players carrying over 100 blood of goods
   const bodies = new Map<string, { name: string; figure: string; x: number; y: number; dir: number; ts: number }>(); // somebody who was just killed: their body lies there for a few seconds
   let customers = new Map<number, { at: number; until: number }>(); // the customers the server has let turn up: number -> when they came and when they leave
   const hits = new Map<string, number>(); // attacker -> the time of the last hit we have shown
@@ -157,6 +160,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       const v = (s.val() ?? {}) as Record<string, { at?: number }>;
       filled = new Map(Object.entries(v).map(([k, r]) => [Number(k), Number(r?.at) || 0]));
     }, () => undefined),
+    onValue(ref(db, "rooms/streets/glow"), (s) => { glowing = new Set(Object.keys((s.val() ?? {}) as Record<string, unknown>)); }, () => undefined),
     onValue(query(ref(db, "streetCust"), orderByKey(), limitToLast(60)), (s) => {
       const v = (s.val() ?? {}) as Record<string, { at?: number; until?: number }>;
       customers = new Map(Object.entries(v).map(([k, r]) => [Number(k), { at: Number(r?.at) || 0, until: Number(r?.until) || 0 }]));
@@ -326,6 +330,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
         const r = await call<{ pay: number }>(me, "streetFill", { k: c.k });
         o.refreshPocket();
         playSfx("coins", 0.5);
+        o.pop(`+${r.pay} Blood`);
         o.say(`${c.kind === "rich" ? "The rich customer pays" : "They pay"} ${r.pay} blood. It's a pleasure.`);
         close();
       } catch (err) { toast((err as Error).message || "That didn't work.", "err"); give.removeAttribute("disabled"); }
@@ -446,6 +451,19 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     const c = combat.get(uid);
     const t = serverNow();
     const s = Math.max(1, scale);
+    if (glowing.has(uid)) { // loaded with goods (over 100 blood): a pulsing golden aura round the body and a ring on the floor
+      const pulse = 0.5 + 0.5 * Math.sin(now / 280);
+      const bx = cx, by = headY + 52 * s, fy = headY + (FEET_Y + 4) * s;
+      g.save();
+      g.globalCompositeOperation = "lighter";
+      const grad = g.createRadialGradient(bx, by, 4 * s, bx, by, 52 * s);
+      grad.addColorStop(0, `rgba(255,210,70,${0.22 + 0.12 * pulse})`); grad.addColorStop(1, "rgba(255,200,40,0)");
+      g.fillStyle = grad; g.beginPath(); g.ellipse(bx, by, 40 * s, 56 * s, 0, 0, Math.PI * 2); g.fill();
+      g.globalCompositeOperation = "source-over";
+      g.strokeStyle = `rgba(255,215,80,${0.55 + 0.35 * pulse})`; g.lineWidth = 2.5 * s;
+      g.beginPath(); g.ellipse(bx, fy, (22 + 3 * pulse) * s, (10 + 1.5 * pulse) * s, 0, 0, Math.PI * 2); g.stroke();
+      g.restore();
+    }
     const hurtOrFighting = !!c && (hpNow(c, t) < PVP.maxHp || c.combatUntil > t);
     if (c && hurtOrFighting) {
       const w = 40 * s, hh = 5 * s, x = cx - w / 2, y = headY - 4 * s;

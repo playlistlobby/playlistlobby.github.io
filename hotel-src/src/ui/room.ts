@@ -6210,6 +6210,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         goHome: () => ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", force: true }),
         goDown: () => ctx.navigate("room", { roomId: LOBBY_ID, from: ARRIVAL_ID, force: true }),
         refreshPocket: () => panel.refresh(),
+        pop: (text) => giftPop(text, bloodImg),
       }).then((api) => { if (disposed) api.dispose(); else streetsApi = api; });
       return;
     }
