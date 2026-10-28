@@ -14483,5 +14483,10 @@
   "en": "Yesterday {fmtClock}",
   "da": "I går {fmtClock}",
   "where": "src/ui/messenger.ts"
+ },
+ "N2342": {
+  "en": "Delivered",
+  "da": "Leveret",
+  "where": "src/ui/messenger.ts"
  }
 }

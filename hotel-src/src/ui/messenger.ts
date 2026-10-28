@@ -194,6 +194,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
         const lastOfRun = i === msgs.length - 1 || (msgs[i + 1].from === m.from && msgs[i + 1].ts - m.ts <= STAMP_GAP_MS) === false;
         rows.push(h("div", { class: "cw-msg" + (mine ? " mine" : "") + (lastOfRun ? " tail" : "") }, h("div", { class: "cw-bubble", title: fmtClock(m.ts) }, m.text)));
       });
+      if (msgs.length && msgs[msgs.length - 1].from === me.uid) rows.push(h("div", { class: "cw-delivered" }, "Delivered"));
       log.replaceChildren(...(rows.length === 0 ? [h("div", { class: "cw-empty" }, "Say hi!")] : rows));
       log.scrollTop = log.scrollHeight;
     };

@@ -72,7 +72,8 @@ export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, owne
   const body = h("div", { class: "sc-body bs-body" });
   const scroll = h("div", { class: "sc-scroll" }, body);
   const footer = h("div", { class: "bs-footer" });
-  const panel = h("div", { class: "bs", role: "dialog", "aria-label": "BeatShop" }, h("div", { class: "sc-nav" }, navLeft, navTitle, navRight), scroll, footer);
+  const nav = h("div", { class: "sc-nav" }, navLeft, navTitle, navRight);
+  const panel = h("div", { class: "bs", role: "dialog", "aria-label": "BeatShop" }, nav, scroll, footer);
   host.append(panel);
 
   const unreadFor = (m: ChatMeta): boolean => (mine ? m.unreadOwner : m.unreadBuyer);
@@ -214,7 +215,7 @@ export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, owne
       if ("error" in r) { toast(r.error, "err"); rapIn.value = ""; return; }
       rap = f; rapMs = r.durMs; render();
     } }) as HTMLInputElement;
-    const sendBtn = h("button", { class: "sc-btn green small bs-send", type: "button", disabled: sending || (!draft.trim() && !rap), onclick: () => void send() }, sending ? "Sending" : "Send");
+    const sendBtn = h("button", { class: "cw-send bs-send", type: "button", disabled: sending || (!draft.trim() && !rap), onclick: () => void send() }, sending ? "Sending" : "Send");
     const input = h("input", { class: "bs-input", type: "text", maxlength: "200", placeholder: "Write a message", value: draft, "aria-label": "Message", oninput: () => { draft = input.value; sendBtn.disabled = sending || (!draft.trim() && !rap); }, onkeydown: (e: KeyboardEvent) => { if (e.key === "Enter") void send(); } }) as HTMLInputElement;
     async function send(): Promise<void> {
       if (sending || (!draft.trim() && !rap)) return;
@@ -271,12 +272,15 @@ export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, owne
   }
   function render(): void {
     if (closed) return;
+    const messaging = !!open || (mine && tab === "messages"); // (the Messages part of the machine wears the blue bar of the Messages app)
+    nav.classList.toggle("blue", messaging);
     navTitle.textContent = open ? "Chat" : "BeatShop";
     navLeft.replaceChildren(...(open ? [backButton("Back", back)] : []));
     const keep = scroll.scrollTop;
     const page = open ? threadPage(open) : mine ? (tab === "beats" ? beatsPage() : tab === "add" ? addPage() : inboxPage()) : beatsPage();
     body.replaceChildren(...page);
-    scroll.classList.toggle("linen", !!open || (mine && tab === "add"));
+    scroll.classList.toggle("linen", !open && mine && tab === "add");
+    scroll.classList.toggle("stripes", !!open);
     if (!open) footer.replaceChildren(...(mine ? [tabBar()] : []));
     panel.querySelector(".bs-sheet")?.remove();
     if (confirm) panel.append(confirmSheet(confirm)); // (over the whole window)
