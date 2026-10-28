@@ -21,6 +21,8 @@ async function boomboxFree(c: Ctx, room: string): Promise<void> {
  * Which room a furnishing action is for: your own, or (for an account with the decorator power, see users/<uid>/decorator) another player's room that you
  * are standing in. In someone else's room you only place new pieces, and only move or take back the ones you put there yourself (they carry `by`).
  */
+/** the admin and the account "emil" build with every piece there is, in any room they may build in (/build) */
+export const mayBuildAnywhere = (c: Ctx): boolean => c.isAdmin || c.caller.email.toLowerCase() === "emil@users.bobba.invalid";
 async function roomFor(c: Ctx, a: Record<string, unknown>, needBuild = true): Promise<{ room: string; foreign: boolean; hideout: boolean; level: number; owner: boolean }> {
   const own = `u_${c.uid}`;
   const want = a.room === undefined ? own : text(a.room, /^[uh]_[A-Za-z0-9]{1,40}$/, "room");
@@ -33,7 +35,7 @@ async function roomFor(c: Ctx, a: Record<string, unknown>, needBuild = true): Pr
   }
   if (want === own) return { room: await requireOwnRoom(c), foreign: false, hideout: false, level: 0, owner: true }; // your own room: you have to be standing in it
   const w = await c.user();
-  if (!(c.isAdmin || w.raw.decorator === true)) fail("That isn't your room.");
+  if (!(mayBuildAnywhere(c) || w.raw.decorator === true)) fail("That isn't your room.");
   if (!(await c.db.get(`roomsMeta/${want}/owner`))) fail("That room doesn't exist.");
   await requireInRoom(c, want);
   return { room: want, foreign: true, hideout: false, level: 0, owner: false };
@@ -191,7 +193,7 @@ export const furniPlace: Action = {
       if (!fits(dims!, int(a.x, 0, 24, "spot"), int(a.y, 0, 24, "spot"), dir, size)) fail("That doesn't fit in the room.");
       w.s.inventory = takeQtyFrom(w.s.inventory, slot, 1);
     } else if (a.source === "catalog") { // the admin has every piece there is: nothing is taken from storage
-      if (!c.isAdmin) fail("Only the admin can do that.");
+      if (!mayBuildAnywhere(c)) fail("Only the admin can do that.");
       kind = text(a.kind, KEY_RE, "piece");
       const dims = await c.placeableDims(kind);
       if (!dims) fail("That can't be put down.");

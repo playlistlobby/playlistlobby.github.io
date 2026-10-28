@@ -61,6 +61,14 @@ export const debug: Action = {
   },
 };
 
+/** /build: may this account build with the whole catalogue? (the admin and "emil") */
+export const buildCheck: Action = {
+  async run(c) {
+    if (!c.isAdmin && c.caller.email.toLowerCase() !== TESTER_EMAIL) fail("Unknown command.");
+    return {};
+  },
+};
+
 /**
  * /tp <name>            you go to where that player is
  * /tp <name> me         that player comes to where you are
