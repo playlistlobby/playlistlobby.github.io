@@ -134,8 +134,6 @@ export const PVP = {
   swingMs: 1800,
   /** after a swing, the two of you are locked in a fight for this long (nobody else can join it): no riding the elevator, no walking out of the room */
   combatMs: 10_000,
-  /** the one who starts a fight is skulled for this long (a mark for the risk rules to come) */
-  skullMs: 20_000,
   /** nobody can touch you for this long after you walk in */
   spawnProtectMs: 8_000,
   /** one hit point comes back this often */
@@ -150,7 +148,7 @@ export const PVP = {
   loseOnDeath: true,
 } as const;
 /** `foe` is who you are locked in a fight with while `combatUntil` lasts */
-export interface StreetCombat { hp: number; at: number; combatUntil: number; skullUntil: number; healAt: number; protectUntil: number; kills: number; deaths: number; foe?: string }
+export interface StreetCombat { hp: number; at: number; combatUntil: number; healAt: number; protectUntil: number; kills: number; deaths: number; foe?: string }
 
 /**
  * RuneScape Classic's numbers. Everybody fights at the same levels (nobody trains anything here), so what separates two players is the weapon and the luck of the rolls.

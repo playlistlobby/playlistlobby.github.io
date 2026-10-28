@@ -139,7 +139,7 @@ export const streetFill: Action = {
 };
 
 // ---- the fights ---------------------------------------------------------------------------------------------------------
-const fresh = (c: Ctx): StreetCombat => ({ hp: PVP.maxHp, at: c.now, combatUntil: 0, skullUntil: 0, healAt: 0, protectUntil: c.now + PVP.spawnProtectMs, kills: 0, deaths: 0 });
+const fresh = (c: Ctx): StreetCombat => ({ hp: PVP.maxHp, at: c.now, combatUntil: 0, healAt: 0, protectUntil: c.now + PVP.spawnProtectMs, kills: 0, deaths: 0 });
 async function combatOf(c: Ctx, uid: string): Promise<StreetCombat> {
   const raw = await c.db.get<Partial<StreetCombat>>(`streetCombat/${uid}`);
   const base = fresh(c);
@@ -181,20 +181,16 @@ export const streetHit: Action = {
     const last = Number(await c.db.get<number>(`streetSwing/${c.uid}`)) || 0;
     if (c.now - last < PVP.swingMs) fail("Your arm is still swinging.");
     c.extra[`streetSwing/${c.uid}`] = c.now;
-    // the one who starts a fight is skulled: a mark the risk rules will use later (a fight is "started" when the other one has not hit you in the last 10 seconds)
-    const theyHitMe = Number((await c.db.get<number>(`streetLastHit/${target}/${c.uid}`)) ?? 0) > c.now - PVP.combatMs;
-    if (!theyHitMe) mine.skullUntil = c.now + PVP.skullMs;
     const hpT = hpNow(their, c.now);
     const { dmg } = swingRoll(weapon!); // (a swing that misses is a splash: 0)
     const left = Math.max(0, hpT - dmg);
     mine.combatUntil = c.now + PVP.combatMs; mine.foe = target;
     their.combatUntil = c.now + PVP.combatMs; their.foe = c.uid;
-    c.extra[`streetLastHit/${c.uid}/${target}`] = c.now;
     let died = false;
     if (left <= 0) {
       died = true;
       mine.kills += 1;
-      c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, skullUntil: 0, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
+      c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
       mine.combatUntil = 0; mine.foe = undefined;
       // everything they carry is gone (the pocket is wiped; blood and what they wear stay), except the knife: it is the one thing a player must always have
       const v = await c.user(target);

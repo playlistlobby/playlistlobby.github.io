@@ -51,7 +51,7 @@ export interface StreetsApi {
   /** a tap on something drawn here: true if it was ours */
   click(objId: string): boolean;
   hoverText(objId: string): string | null;
-  /** over the head of a player: hit points, the skull, the numbers that fly up */
+  /** over the head of a player: hit points, the numbers that fly up */
   drawPlayer(g: CanvasRenderingContext2D, uid: string, cx: number, headY: number, scale: number, now: number): void;
   fight(uid: string): void;
   stopFight(): void;
@@ -184,13 +184,12 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
 
   void call(me, "streetEnter").catch(() => undefined);
 
-  // ---- the panel at the top: hit points, the skull, the bandage, how long the elevator runs ----
+  // ---- the panel at the top: hit points, the bandage, how long the elevator runs ----
   const hpFill = h("i", {});
   const hpText = h("span", { class: "st-hp-text" }, `${PVP.maxHp}/${PVP.maxHp}`);
-  const skull = h("span", { class: "st-skull hidden", title: "You started a fight" }, "SKULL");
   const status = h("div", { class: "st-status" });
   const bandBtn = h("button", { class: "st-band", type: "button", onclick: () => { const slot = findSlot(me.inventory, PVP.healItem); if (slot < 0) return o.say("You have no bandage.", "warn"); void api.heal(slot); } }, "Bandage");
-  const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText), skull), status, bandBtn);
+  const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText)), status, bandBtn);
   o.stage.append(hud);
   function paintHud(): void {
     const c = combat.get(me.uid);
@@ -199,7 +198,6 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     hpFill.style.width = `${Math.max(0, Math.min(100, (hp / PVP.maxHp) * 100))}%`;
     hpFill.className = hp <= 3 ? "low" : "";
     hpText.textContent = `${hp}/${PVP.maxHp}`;
-    skull.classList.toggle("hidden", !(c && c.skullUntil > now));
     const fighting = !!c && c.combatUntil > now;
     const prot = !!c && c.protectUntil > now;
     status.textContent = fighting ? "In a fight: you can't leave" : prot ? "Nobody can touch you for a moment" : passUntil > now ? `The elevator stops in ${Math.max(1, Math.round((passUntil - now) / 60000))} min` : "";
@@ -386,13 +384,6 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       g.fillStyle = "rgba(0,0,0,.7)"; g.fillRect(x - 1, y - 1, w + 2, hh + 2);
       g.fillStyle = "#b02a2a"; g.fillRect(x, y, w, hh);
       g.fillStyle = "#3fae2a"; g.fillRect(x, y, (w * hpNow(c, t)) / PVP.maxHp, hh);
-      g.restore();
-    }
-    if (c && c.skullUntil > t) { // a red skull tag over the head of the one who started a fight
-      g.save(); g.fillStyle = "#d02020"; g.strokeStyle = "#fff"; g.lineWidth = 1;
-      const sx = cx, sy = headY - 18 * s;
-      g.beginPath(); g.arc(sx, sy, 6 * s, 0, Math.PI * 2); g.fill(); g.stroke();
-      g.fillStyle = "#fff"; g.fillRect(sx - 3 * s, sy - 2 * s, 2 * s, 2.5 * s); g.fillRect(sx + 1 * s, sy - 2 * s, 2 * s, 2.5 * s); g.fillRect(sx - 1 * s, sy + 2 * s, 2 * s, 2.5 * s);
       g.restore();
     }
     for (const sp of splats) {

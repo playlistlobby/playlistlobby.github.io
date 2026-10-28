@@ -1804,7 +1804,6 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .st-hp-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(#8de06a 0%, #4fae2c 50%, #3b9a1f 100%); transition: width .25s; }
 .st-hp-bar i.low { background: linear-gradient(#f2a0a0, #c93a3a); }
 .st-hp-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 11px var(--font); color: #fff; text-shadow: 0 1px 1px #000; }
-.st-skull { padding: 1px 6px; border-radius: 8px; background: #b01818; color: #fff; font: 800 10px var(--font); }
 .st-status { padding: 2px 8px; border-radius: 8px; background: rgba(0, 0, 0, .55); color: #e8e8e8; font-size: 11px; width: fit-content; }
 .st-status:empty { display: none; }
 .st-status.red { background: rgba(150, 20, 20, .8); }

@@ -1130,6 +1130,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     // nothing selected: a tap does what the menu would offer (one option -> it happens, several -> you choose)
     if (!selectedDef()) {
+      // on the street a tap on another player is a fight (the menu is still there on a right click)
+      if (isStreets && streetsApi && target && target.uid !== me.uid && !target.npc && !target.sleeper && target.uid !== LEGEND.id) { streetsApi.fight(target.uid); return; }
       const options = contextOptions(m.x, m.y, true);
       if (options.length === 1) options[0].action();
       else if (options.length > 1) showMenu(e.clientX, e.clientY, options);
@@ -5933,6 +5935,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (img) img = pokerFx.imageFor(p.uid, img, opts, now); // (and the one who shot themselves after going bust at poker)
       if (img && p.ghost) img = dimmed(img); // (a player who dropped out of a roulette game: a little darker)
       const feet = feetOf(p, now);
+      if (streetsApi && p.uid !== me.uid && !p.npc && !p.sleeper) { // on the street every other player stands on a red tile: they can be fought
+        const tw = (TILE_W / 2) * scale, th = (TILE_H / 2) * scale, pulse = 0.5 + 0.5 * Math.sin(now / 350);
+        list.push({ depth: -0.4, draw: () => {
+          g.beginPath(); g.moveTo(feet.x, feet.y - th); g.lineTo(feet.x + tw, feet.y); g.lineTo(feet.x, feet.y + th); g.lineTo(feet.x - tw, feet.y); g.closePath();
+          g.fillStyle = `rgba(220,30,30,${(0.45 + 0.15 * pulse).toFixed(2)})`; g.fill();
+          g.strokeStyle = "rgba(255,70,70,.85)"; g.lineWidth = Math.max(1, scale * 1.5); g.stroke();
+        } });
+      }
 
       // stab animation: attacker lunges toward the victim, victim flashes red
       let lunge: Pt = { x: 0, y: 0 };
