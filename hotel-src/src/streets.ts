@@ -18,7 +18,7 @@ import { findSlot } from "./shared/items";
 import { h, toast } from "./ui/dom";
 import { setLeaveLock } from "./leaveLock";
 import { playSfx } from "./sfx";
-import { STREET_RETURN_KEY, bestWeapon, customerAt, RICH_PETS, STREET_TICK_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
+import { STREET_POS_KEY, STREET_RETURN_KEY, STREET_RETURN_MS, bestWeapon, customerAt, RICH_PETS, STREET_TICK_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
 import type { Customer, StreetCombat } from "./shared/streets";
 
 const FEET_Y = 94;
@@ -187,11 +187,25 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     if (serverNow() > passUntil && !inFight()) { toast("The elevator stopped running. You ride down.", "ok"); o.goDown(); }
   }, 2000);
 
-  void call(me, "streetEnter").catch(() => undefined);
-  // the browser remembers you are here, so that a refresh puts you right back on the street (it is cleared when you leave)
-  const markStreet = (): void => { try { localStorage.setItem(STREET_RETURN_KEY, String(Date.now())); } catch { /* private mode */ } };
+  // coming back after a refresh (the browser still remembered you on the street) costs 2 hit points and 5 seconds without attacks, and gives no protection; a normal arrival is protected for a moment
+  let returned = false;
+  try { const st = Number(localStorage.getItem(STREET_RETURN_KEY)) || 0; returned = st > 0 && Date.now() - st < STREET_RETURN_MS; } catch { /* private mode */ }
+  if (returned) {
+    void call<{ hp: number; blockMs: number }>(me, "streetReturn").then((r) => {
+      knifeReadyAt = Math.max(knifeReadyAt, serverNow() + r.blockMs); gunReadyAt = Math.max(gunReadyAt, serverNow() + r.blockMs);
+      toast(`You came back hurt: -${PVP.returnDamage} hit points, and no attacks for ${Math.round(r.blockMs / 1000)} seconds.`, "err");
+    }).catch(() => undefined);
+  } else void call(me, "streetEnter").catch(() => undefined);
+  // the browser remembers you are here (and where you stand), so that a refresh puts you right back on the street (it is cleared when you leave)
+  const markStreet = (): void => {
+    try {
+      localStorage.setItem(STREET_RETURN_KEY, String(Date.now()));
+      const t = o.tileOf(me.uid);
+      if (t) localStorage.setItem(STREET_POS_KEY, JSON.stringify({ x: t.x, y: t.y }));
+    } catch { /* private mode */ }
+  };
   markStreet();
-  const streetMark = window.setInterval(markStreet, 20_000);
+  const streetMark = window.setInterval(markStreet, 2_000);
   // customers turn up while players are on the street (the server counts: 2 a minute for each player, 18 at most); every browser here asks now and then
   const customerTick = window.setInterval(() => { if (!disposed && !document.hidden) void call(me, "streetTick").catch(() => undefined); }, STREET_TICK_MS);
   window.setTimeout(() => { if (!disposed) void call(me, "streetTick").catch(() => undefined); }, 1500);

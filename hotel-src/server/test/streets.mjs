@@ -423,6 +423,21 @@ await owner("PUT", "streets/furni/s_bin2", { removed: true }); await owner("DELE
 bad("or a built-in one the admin took away", await act(a, "streetBin", { can: "s_bin2" }));
 await owner("DELETE", "streets/furni"); await owner("DELETE", `rooms/streets/players/${a.uid}`);
 
+console.log("--- a refresh on the street costs 2 hit points and 5 seconds without attacks");
+await stand(a, "streets", 5, 5); await stand(b, "streets", 6, 5);
+await owner("PUT", `users/${a.uid}/inventory`, { 0: { item: "knife", qty: 1 } });
+await owner("PUT", `streetCombat/${a.uid}`, { hp: 10, at: Date.now(), combatUntil: 0, healAt: 0, protectUntil: 0, kills: 0, deaths: 0 });
+await owner("PUT", `streetCombat/${b.uid}`, { hp: 10, at: Date.now(), combatUntil: 0, healAt: 0, protectUntil: 0, kills: 0, deaths: 0 });
+await owner("DELETE", `streetBlock/${a.uid}`); await owner("DELETE", `streetSwing/${a.uid}`);
+const ret = await act(a, "streetReturn");
+ok("coming back after a refresh", ret);
+check("2 hit points gone and no protection", ret.data.hp === 8 && (await owner("GET", `streetCombat/${a.uid}/hp`)) === 8 && !((await owner("GET", `streetCombat/${a.uid}/protectUntil`)) > Date.now()), JSON.stringify(ret.data));
+const blocked = await act(a, "streetHit", { target: b.uid });
+check("no attacking for 5 seconds", blocked.ok === false && /can't attack yet/.test(blocked.error || ""), JSON.stringify(blocked).slice(0, 160));
+await owner("PUT", `streetBlock/${a.uid}`, Date.now() - 1000);
+ok("and after them the knife works again", await act(a, "streetHit", { target: b.uid }));
+await owner("DELETE", `rooms/streets/players/${a.uid}`); await owner("DELETE", `rooms/streets/players/${b.uid}`);
+
 console.log("--- closing the game in a fight");
 const rowOf = (u) => ({ name: u.name, figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", x: 4, y: 4, dir: 2, ts: Date.now() - 60_000, off: Date.now() });
 await owner("DELETE", `presence/${b.uid}`);

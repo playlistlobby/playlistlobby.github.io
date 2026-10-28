@@ -32,7 +32,7 @@ import { openElevator } from "./elevator";
 import { mountStreets } from "../streets";
 import type { StreetsApi } from "../streets";
 import { ARRIVAL_ELEVATOR, arrivalDef, ARRIVAL_ID, streetsDef, STREETS_ID } from "../rooms";
-import { isBuiltInStreetPiece, isStreetsRoom, STREETS_DAY } from "../shared/streets";
+import { isBuiltInStreetPiece, isStreetsRoom, STREET_POS_KEY, STREET_RETURN_KEY, STREET_RETURN_MS, STREETS_DAY } from "../shared/streets";
 import { openHideoutComputer, ComputerApi } from "./hideoutComputer";
 import { openHideoutLandlord } from "./hideoutLandlord";
 import { openHideoutDoor } from "./hideoutDoor";
@@ -312,6 +312,15 @@ const itemImg = (id: string): HTMLImageElement => {
 };
 
 const STEP_MS = 480;
+/** after a refresh on the street you stand where you stood (the browser keeps the tile while you are there: see streets.ts); null on a normal arrival */
+function savedStreetSpot(): { x: number; y: number } | null {
+  try {
+    const st = Number(localStorage.getItem(STREET_RETURN_KEY)) || 0;
+    if (!st || Date.now() - st > STREET_RETURN_MS) return null;
+    const v = JSON.parse(localStorage.getItem(STREET_POS_KEY) ?? "null") as { x?: number; y?: number } | null;
+    return v && Number.isFinite(v.x) && Number.isFinite(v.y) ? { x: v.x!, y: v.y! } : null;
+  } catch { return null; }
+}
 /** nobody runs faster than this on the street, whatever they took (no outrunning a fight) */
 const STREET_MAX_SPEED = 1.25;
 const BUBBLE_MS = 6500;
@@ -3443,12 +3452,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
+    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
     tiles.sort((a, b) => Math.hypot(a.x - want.x, a.y - want.y) - Math.hypot(b.x - want.x, b.y - want.y));
     // a little variety so a crowd doesn't stack on one tile
+    if (roomId === STREETS_ID && tiles[0] && tiles[0].x === want.x && tiles[0].y === want.y && savedStreetSpot()) return tiles[0]; // (back after a refresh: exactly where you stood)
     const near = tiles.slice(0, 4);
     return near[Math.floor(Math.random() * near.length)] ?? { x: 0, y: 0 };
   }

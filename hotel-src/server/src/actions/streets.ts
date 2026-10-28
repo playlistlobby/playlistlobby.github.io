@@ -186,6 +186,12 @@ async function refuseIfDead(c: Ctx): Promise<void> {
   const cb = await c.db.get<{ deadAt?: number }>(`streetCombat/${c.uid}`);
   if (cb && Number(cb.deadAt) > 0 && c.now - Number(cb.deadAt) < PVP.deathCoolMs) fail("You are dead.");
 }
+/** a swing or a shot: not from a body, and not in the 5 seconds after you came back from a refresh */
+async function refuseIfCantAttack(c: Ctx): Promise<void> {
+  await refuseIfDead(c);
+  const until = Number(await c.db.get<number>(`streetBlock/${c.uid}`)) || 0;
+  if (until > c.now) fail(`You can't attack yet: ${Math.ceil((until - c.now) / 1000)} more seconds.`);
+}
 const fresh = (c: Ctx): StreetCombat => ({ hp: PVP.maxHp, at: c.now, combatUntil: 0, healAt: 0, protectUntil: c.now + PVP.spawnProtectMs, kills: 0, deaths: 0 });
 async function combatOf(c: Ctx, uid: string): Promise<StreetCombat> {
   const raw = await c.db.get<Partial<StreetCombat>>(`streetCombat/${uid}`);
@@ -205,13 +211,25 @@ export const streetEnter: Action = {
   },
 };
 
+/** you come back to the street after a refresh (the browser knows you were there): it costs 2 hit points and you can't attack for 5 seconds. No protection, so a refresh is no way out of a fight. */
+export const streetReturn: Action = {
+  async run(c) {
+    await requireInRoom(c, STREETS_ID);
+    const cb = await combatOf(c, c.uid);
+    const hp = Math.max(1, hpNow(cb, c.now) - PVP.returnDamage);
+    c.extra[`streetCombat/${c.uid}`] = { ...cb, hp, at: c.now };
+    c.extra[`streetBlock/${c.uid}`] = c.now + PVP.returnBlockMs;
+    return { hp, blockMs: PVP.returnBlockMs };
+  },
+};
+
 export const streetHit: Action = {
   locks: (c, a) => [`user:${String(a?.target ?? "")}`],
   async run(c, a) {
     const target = text(a.target, ID_RE, "target");
     if (target === c.uid) fail("You can't fight yourself.");
     const me = await requireInRoom(c, STREETS_ID);
-    await refuseIfDead(c);
+    await refuseIfCantAttack(c);
     const theirs = await c.db.get<{ x?: number; y?: number; sleeper?: boolean }>(`rooms/${STREETS_ID}/players/${target}`);
     if (!theirs) fail("They've left the street.");
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > PVP.reach + 1) fail("They're too far away."); // (one tile, and a step of slack for the lag)
@@ -247,7 +265,7 @@ export const streetShoot: Action = {
     const target = text(a.target, ID_RE, "target");
     if (target === c.uid) fail("You can't shoot yourself.");
     const me = await requireInRoom(c, STREETS_ID);
-    await refuseIfDead(c);
+    await refuseIfCantAttack(c);
     const theirs = await c.db.get<{ x?: number; y?: number }>(`rooms/${STREETS_ID}/players/${target}`);
     if (!theirs) fail("They've left the street.");
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > PVP.gunRange) fail("They're too far away.");

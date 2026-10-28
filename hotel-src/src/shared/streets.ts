@@ -70,6 +70,8 @@ export const CUSTOMER_STAY_MS = 7 * 60_000;
 /** the browser remembers that you are on the street (a time stamp, kept fresh while you are there): a refresh puts you right back instead of in your room */
 export const STREET_RETURN_KEY = "6ix-on-street";
 export const STREET_RETURN_MS = 90_000;
+/** where you stood (the browser keeps it while you are on the street), so a refresh puts you back on the same tile */
+export const STREET_POS_KEY = "6ix-street-pos";
 /** how often the browsers on the street ask the server to let customers turn up */
 export const STREET_TICK_MS = 10_000;
 export function seeded(seed: number): () => number {
@@ -181,6 +183,9 @@ export const PVP = {
   gunCooldownMs: 30_000,
   gunRange: 6,
   /** after a death you are sent home at once: you are out of the street, and the elevator is shut for you, this long; the others see your body for bodyMs */
+  /** coming back to the street after a refresh costs this many hit points and you may not attack for this long (no protection either: a refresh is not a way out of a fight) */
+  returnDamage: 2,
+  returnBlockMs: 5_000,
   deathCoolMs: 30_000,
   bodyMs: 5_000,
   /** the bandage heals this much and can be used again after this long */

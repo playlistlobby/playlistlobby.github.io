@@ -15773,5 +15773,15 @@
   "en": "The elevator is shut for you. Try again in {…} seconds.",
   "da": "Elevatoren er lukket for dig. Prøv igen om {…} sekunder.",
   "where": "server/src/actions/streets.ts"
+ },
+ "N2600": {
+  "en": "You came back hurt: -{…} hit points, and no attacks for {…} seconds.",
+  "da": "Du kom tilbage såret: -{…} hit points, og ingen angreb i {…} sekunder.",
+  "where": "src/streets.ts"
+ },
+ "N2601": {
+  "en": "You can't attack yet: {…} more seconds.",
+  "da": "Du kan ikke angribe endnu: {…} sekunder mere.",
+  "where": "server/src/actions/streets.ts"
  }
 }

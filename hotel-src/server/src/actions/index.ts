@@ -31,7 +31,7 @@ import { bagmandHitTick, bountyShow } from "./bounty";
 import { roomSweep } from "./sweep";
 import { speakerConnect, speakerControl } from "./speaker";
 import { cdPress, cdPressPrice } from "./cdpress";
-import { elevatorDown, elevatorUp, streetBin, streetEnter, streetFill, streetHeal, streetHit, streetShoot, streetTick, streetsTest, ticketBuy, streetsStaffTest } from "./streets";
+import { elevatorDown, elevatorUp, streetBin, streetEnter, streetFill, streetHeal, streetHit, streetShoot, streetTick, streetReturn, streetsTest, ticketBuy, streetsStaffTest } from "./streets";
 import { beatBegin, beatBuy, beatChatRead, beatChatSend, beatFinish, beatRemove, beatReplyBegin, buyBeatShop } from "./beats";
 import { songBegin, songDelete, songFinish, songSweep, songVote } from "./songs";
 import { loudspeaker } from "./loudspeaker";
@@ -49,7 +49,7 @@ export const ACTIONS: Record<string, Action> = {
   drop, pickup, fentDrop,
   store: storeItem, take: takeItem, stashStore, stashTake, stashEnsure, furniPlace, furniMove, furniStore, furniState,
   tradeFinish, flappyStart, flappyScore, flappyRemove,
-  cdInsert, cdReturn, cdControl, speakerConnect, speakerControl, cdPress, cdPressPrice, ticketBuy, elevatorUp, elevatorDown, streetBin, streetFill, streetEnter, streetHit, streetShoot, streetTick, streetHeal, streetsTest, buyBeatShop, beatBegin, beatFinish, beatRemove, beatBuy, beatReplyBegin, beatChatSend, beatChatRead, mix, mixCollect,
+  cdInsert, cdReturn, cdControl, speakerConnect, speakerControl, cdPress, cdPressPrice, ticketBuy, elevatorUp, elevatorDown, streetBin, streetFill, streetEnter, streetHit, streetShoot, streetTick, streetReturn, streetHeal, streetsTest, buyBeatShop, beatBegin, beatFinish, beatRemove, beatBuy, beatReplyBegin, beatChatSend, beatChatRead, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   pokerSit, pokerAct, pokerLeave, pokerTick,
   hitPlace, hitSearch, gunShoot, rocketFire, boardSet,
