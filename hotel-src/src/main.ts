@@ -20,6 +20,7 @@ import { publishPriceBook } from "./priceBook";
 import { avatarsReady } from "./avatarService";
 import { loadCatalog } from "./catalog";
 import { h, toast } from "./ui/dom";
+import { leaveLocked } from "./leaveLock";
 import { lockTime, statusBar } from "./ui/ios";
 import { topBar, TopBarApi } from "./ui/topbar";
 import { mountEditor } from "./ui/editor";
@@ -387,6 +388,7 @@ async function showHotel(user: User): Promise<void> {
       let target = opts.roomId ?? lastRoomId;
       // until the introduction is over, the basement is the private copy (nobody else is in it)
       if (target === LOBBY_ID && p.tutorial < 4 && !p.isAdmin) target = tutRoomId(p.uid);
+      if (roomApi && roomMounted !== target && !opts.force && leaveLocked()) { toast("You are in a fight. You can't leave yet.", "err"); return; } // (10 seconds after the last blow)
       pageCleanup?.();
       pageCleanup = null;
       pageHost.replaceChildren();

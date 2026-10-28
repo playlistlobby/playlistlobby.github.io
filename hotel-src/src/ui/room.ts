@@ -385,7 +385,7 @@ interface Player {
   sitTo?: { x: number; y: number; dir: number };
 }
 
-interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean }
+interface StabFx { from: string; to: string; start: number; impact: boolean; dropped: boolean; /** a swing in a street fight (the blood drop and the "it doesn't hurt" text are for the daily stab) */ fight?: boolean }
 /** a shot from the gun: the shooter raises it at the target, the flash, the bullet and the hit */
 interface ShotFx { from: string; to: string; start: number; fired: boolean; rocket?: boolean }
 const SHOT_MS = 900;
@@ -3796,8 +3796,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }
         if (ev.type === "shot") { shotFx.push({ from: ev.from, to: ev.to, start: performance.now(), fired: false, rocket: !!ev.rocket }); return; }
         if (ev.type !== "stab") return;
-        stabFx.push({ from: ev.from, to: ev.to, start: performance.now(), impact: false, dropped: false });
-        if (ev.to === me.uid && ev.from !== me.uid) {
+        stabFx.push({ from: ev.from, to: ev.to, start: performance.now(), impact: false, dropped: false, ...(ev.fight ? { fight: true } : {}) });
+        if (ev.to === me.uid && ev.from !== me.uid && !ev.fight) {
           say(`${players.get(ev.from)?.name ?? "Someone"} stabs you with a knife. It doesn't hurt a bit.`);
         }
       }, () => undefined));
@@ -5267,7 +5267,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       if (!fx.dropped && t >= 0.5) {
         fx.dropped = true;
-        dropFx.push({ from: fx.from, to: fx.to, start: now });
+        if (!fx.fight) dropFx.push({ from: fx.from, to: fx.to, start: now });
       }
       if (t > 1.3) stabFx.splice(i, 1);
     }

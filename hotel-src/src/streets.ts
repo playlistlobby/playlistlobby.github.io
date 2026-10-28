@@ -13,6 +13,7 @@ import { randomFigure } from "./catalog";
 import { itemDef } from "./items";
 import { findSlot, sellPrice } from "./shared/items";
 import { h, toast } from "./ui/dom";
+import { setLeaveLock } from "./leaveLock";
 import { playSfx } from "./sfx";
 import { bestWeapon, CAR_STAY_MS, customerAt, customersAt, CUSTOMER_EVERY_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
 import type { Customer, StreetCombat } from "./shared/streets";
@@ -167,7 +168,6 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
         if (!first && serverNow() - r.at < 4000) {
           splats.push({ to: r.to, dmg: Number(r.dmg) || 0, at: performance.now() });
           if (r.to === me.uid) {
-            playSfx("stab", 0.4);
             if (!r.dead && !fightTarget && bestWeapon(me.inventory)) fight(by); // (somebody hit you: you hit back, as in RuneScape)
           }
         }
@@ -211,12 +211,13 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
 
   function died(by?: string): void {
     stopFight();
-    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You lost everything you carried. You wake up in your room.`, "warn");
+    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You lost everything you carried except your knife. You wake up in your room.`, "warn");
     window.setTimeout(() => { if (!disposed) o.goHome(); }, 1800);
   }
 
   // ---- fighting: click a player, you walk up to them and keep swinging (like RuneScape) until one of you is gone ----
   const inFight = (): boolean => (combat.get(me.uid)?.combatUntil ?? 0) > serverNow();
+  setLeaveLock(inFight);
   function stopFight(): void { fightTarget = null; window.clearInterval(fightTimer); fightTimer = 0; }
   function fight(uid: string): void {
     if (!bestWeapon(me.inventory)) return o.say("You need a knife to fight.", "warn");
@@ -233,7 +234,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     if (!theirs) { stopFight(); return o.say("They've gone.", "warn"); }
     if (!mine) return;
     const d = Math.max(Math.abs(mine.x - theirs.x), Math.abs(mine.y - theirs.y));
-    if (d > PVP.reach) { if (Math.random() < 0.6) o.walkTo(theirs); return; } // (follow them)
+    if (d > PVP.reach) { o.walkTo(theirs); return; } // (they ran: follow them, and swing as soon as they are within reach again)
     swinging = true;
     try {
       await call(me, "streetHit", { target: uid });
@@ -439,6 +440,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     fighting: (uid) => (combat.get(uid)?.combatUntil ?? 0) > serverNow(),
     dispose() {
       disposed = true;
+      setLeaveLock(null);
       stopFight();
       window.clearInterval(approach);
       stops.forEach((s) => s());

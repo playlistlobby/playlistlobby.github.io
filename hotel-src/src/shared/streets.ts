@@ -130,8 +130,8 @@ export const orderPay = (unit: number, w: Want): number => Math.ceil(unit * w.qt
 // ---- the knife fights (RuneScape Classic's rules for a player fight: a roll to hit, a roll for how hard, one fight at a time) -----------------------------
 export const PVP = {
   maxHp: 10,
-  /** how long you have to wait between two swings (4 game ticks of 0.6 s): a bandage uses up a swing too */
-  swingMs: 2400,
+  /** how long you have to wait between two swings (3 game ticks of 0.6 s): a bandage uses up a swing too */
+  swingMs: 1800,
   /** after a swing, the two of you are locked in a fight for this long (nobody else can join it): no riding the elevator, no walking out of the room */
   combatMs: 10_000,
   /** the one who starts a fight is skulled for this long (a mark for the risk rules to come) */
@@ -140,8 +140,8 @@ export const PVP = {
   spawnProtectMs: 8_000,
   /** one hit point comes back this often */
   regenMs: 20_000,
-  /** you reach one tile (diagonals too) */
-  reach: 1,
+  /** you reach two tiles (diagonals too): somebody who runs is followed, and hit as soon as they are within reach */
+  reach: 2,
   /** the bandage heals this much and can be used again after this long */
   healItem: "bandage",
   healHp: 3,
@@ -157,7 +157,7 @@ export interface StreetCombat { hp: number; at: number; combatUntil: number; sku
  *   to hit:   a roll up to (attack + 8) x (weapon aim + 64) for you, up to (defense + 8) x (armour + 64) for them: you land the swing when yours is higher
  *   how hard: a landed swing does 0 to max, where max = (strength + 8) x (weapon power + 64) / 640, rounded
  */
-export const COMBAT_LEVELS = { attack: 20, strength: 20, defense: 20 } as const;
+export const COMBAT_LEVELS = { attack: 20, strength: 40, defense: 20 } as const;
 /** no armour on the street (yet) */
 export const ARMOUR_BONUS = 0;
 export const WEAPONS: Record<string, { aim: number; power: number }> = { knife: { aim: 6, power: 10 }, machete: { aim: 10, power: 28 } };

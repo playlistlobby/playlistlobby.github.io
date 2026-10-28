@@ -47,7 +47,7 @@ if (!testerUid) throw new Error("no tester account called " + TESTER + " (log in
 }
 
 const FIGURES = ["hr-115-42.hd-190-1.ch-3030-82.lg-3023-82.sh-3068-1408", "hr-3163-45.hd-180-2.ch-215-1408.lg-285-91.sh-290-62"];
-const bots = [{ name: "spar_sam", x: 8, y: 10, aggro }, { name: "spar_tess", x: 14, y: 10, aggro: false }];
+const bots = [{ name: "spar_sam", x: 4, y: 9, aggro }, { name: "spar_tess", x: 25, y: 9, aggro: false }];
 for (const [i, b] of bots.entries()) {
   Object.assign(b, await account(b.name));
   b.figure = FIGURES[i];

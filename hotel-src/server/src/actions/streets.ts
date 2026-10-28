@@ -196,15 +196,18 @@ export const streetHit: Action = {
       mine.kills += 1;
       c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, skullUntil: 0, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
       mine.combatUntil = 0; mine.foe = undefined;
-      // everything they carry is gone (the pocket is wiped; blood and what they wear stay)
+      // everything they carry is gone (the pocket is wiped; blood and what they wear stay), except the knife: it is the one thing a player must always have
       const v = await c.user(target);
-      v.s.inventory = v.s.inventory.map(() => null);
+      v.s.inventory = v.s.inventory.map((it) => (it && it.item === "knife" ? it : null));
       // somebody who closed the game in the fight is not standing there any more once they are dead
       const pr = await c.db.get<{ room?: string } | null>(`presence/${target}`);
       if (!pr || pr.room !== STREETS_ID) c.extra[`rooms/${STREETS_ID}/players/${target}`] = null;
     } else c.extra[`streetCombat/${target}`] = { ...their, hp: left, at: c.now };
     c.extra[`streetCombat/${c.uid}`] = { ...mine, hp: hpNow(mine, c.now), at: c.now, foe: mine.foe ?? null };
     // what everybody in the room sees: a number over the head (and the dead one is sent home by their own browser)
+    const stabKey = (t: number): string => `rooms/${STREETS_ID}/events/f${c.uid.slice(0, 8)}${t.toString(36)}`;
+    if (last) c.extra[stabKey(last)] = null; // (the swing before this one has been seen by now: the events don't pile up)
+    c.extra[stabKey(c.now)] = { type: "stab", from: c.uid, to: target, ts: c.now, fight: true }; // (everybody sees the stab animation, as for a normal stab)
     c.extra[`rooms/${STREETS_ID}/hits/${c.uid}`] = { to: target, dmg, at: c.now, ...(died ? { dead: true } : {}) };
     c.note = `${dmg ? `hit ${dmg}` : "missed"}${died ? " (killed)" : ""}`;
     return { dmg, left, died };

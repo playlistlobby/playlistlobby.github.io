@@ -188,7 +188,7 @@ for (const w of ["knife", "machete"]) {
   for (let i = 0; i < N; i++) { const r = S.swingRoll(w); if (r.landed) landed++; sum += r.dmg; top = Math.max(top, r.dmg); }
   check(`${w}: the swings that land match the formula (${(S.hitChanceOf(w) * 100).toFixed(1)}%)`, Math.abs(landed / N - S.hitChanceOf(w)) < 0.015, String(landed / N));
   check(`${w}: it never hits harder than ${S.maxHitOf(w)} and does reach it`, top === S.maxHitOf(w), String(top));
-  check(`${w}: a fight lasts a while (${(sum / N).toFixed(2)} a swing, ${S.PVP.maxHp} hit points)`, sum / N > 0.4 && sum / N < 2.2, String(sum / N));
+  check(`${w}: a fight lasts a while (${(sum / N).toFixed(2)} a swing, ${S.PVP.maxHp} hit points)`, sum / N > 1.0 && sum / N < 3, String(sum / N));
 }
 check("a fixed roll is a fixed result (the rolls are RuneScape's two random numbers)", (() => { const seq = [0.9, 0.1, 0.5]; let i = 0; const r = S.swingRoll("knife", () => seq[i++]); return r.landed && r.dmg === Math.floor(0.5 * (S.maxHitOf("knife") + 1)); })());
 
@@ -241,7 +241,8 @@ check("a hit that lands kills somebody on 1 hit point", died);
 const dead = await owner("GET", `streetCombat/${b.uid}`);
 check("the dead one is back on full hit points, marked dead, and untouchable for a while", dead.hp === 10 && dead.deaths === 1 && dead.deadBy === a.uid && dead.protectUntil > Date.now(), JSON.stringify(dead));
 check("the killer is credited", (await owner("GET", `streetCombat/${a.uid}/kills`)) === 1);
-check("everything in the pocket is lost on death", !(await state(b)).inventory.some((x) => x), JSON.stringify((await state(b)).inventory));
+check("everything in the pocket is lost on death, except the knife", (await state(b)).inventory.filter((x) => x).map((x) => x.item).join() === "knife", JSON.stringify((await state(b)).inventory));
+check("every swing is a stab for everybody in the room to see", Object.values((await owner("GET", "rooms/streets/events")) ?? {}).some((e) => e.type === "stab" && e.fight && e.from === a.uid && e.to === b.uid));
 
 console.log("--- closing the game in a fight");
 const rowOf = (u) => ({ name: u.name, figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", x: 4, y: 4, dir: 2, ts: Date.now() - 60_000, off: Date.now() });
