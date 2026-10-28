@@ -15378,5 +15378,20 @@
   "en": "You found a box key on them.",
   "da": "Du fandt en nøgle til en kasse på dem.",
   "where": "src/ui/room.ts"
+ },
+ "N2521": {
+  "en": "A staff member sent you to the test area.",
+  "da": "Et medlem af staben sendte dig til testområdet.",
+  "where": "src/notices.ts"
+ },
+ "N2522": {
+  "en": "{name} is on the way to the test area.",
+  "da": "{name} er på vej til testområdet.",
+  "where": "src/ui/room.ts"
+ },
+ "N2523": {
+  "en": "There is no player with that name.",
+  "da": "Der er ingen spiller med det navn.",
+  "where": "server/src/actions/streets.ts"
  }
 }

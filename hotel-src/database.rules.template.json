@@ -996,6 +996,11 @@
         }
       }
     },
+    "teleports": {
+      "$uid": {
+        ".read": "@PW@ && auth.uid === $uid"
+      }
+    },
     "darkweb": {
       ".read": "@PW@"
     },

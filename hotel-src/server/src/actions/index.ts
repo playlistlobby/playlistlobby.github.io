@@ -31,7 +31,7 @@ import { bagmandHitTick, bountyShow } from "./bounty";
 import { roomSweep } from "./sweep";
 import { speakerConnect, speakerControl } from "./speaker";
 import { cdPress, cdPressPrice } from "./cdpress";
-import { elevatorDown, elevatorUp, streetBin, streetEnter, streetFill, streetHeal, streetHit, streetsTest, ticketBuy } from "./streets";
+import { elevatorDown, elevatorUp, streetBin, streetEnter, streetFill, streetHeal, streetHit, streetsTest, ticketBuy, streetsStaffTest } from "./streets";
 import { beatBegin, beatBuy, beatChatRead, beatChatSend, beatFinish, beatRemove, beatReplyBegin, buyBeatShop } from "./beats";
 import { songBegin, songDelete, songFinish, songSweep, songVote } from "./songs";
 import { loudspeaker } from "./loudspeaker";
@@ -44,7 +44,7 @@ import { hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutBuy, hideoutColl
 export const ACTIONS: Record<string, Action> = {
   sync, setLook, buyClothes,
   buySixty, buyVending, buyRecord, buyWalkman, buyPoster, claimPurchases, buyFurni, buyRoomUpgrade, roomColors, roomSkins, sellWeed,
-  sixty, usePill, eat, darkwebGive, darkwebCollect,
+  sixty, usePill, eat, darkwebGive, darkwebCollect, streetsStaffTest,
   consume, stab, syringe, vapePuff, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
   drop, pickup, fentDrop,
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,

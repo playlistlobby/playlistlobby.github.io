@@ -33,6 +33,8 @@ import { trackKeyboard } from "./ui/keyboard";
 import { startIosEmoji } from "./ui/iosEmoji";
 import { ensureBasementArt, ensureDoorArt } from "./roomRender";
 import { startWalkman } from "./walkman";
+import { startStreetsFlag } from "./streetsFlag";
+import { watchTeleport } from "./notices";
 import { watchIdle } from "./idle";
 import { player } from "./music";
 import { fetchMeta, LOBBY_ID, ownRoomId, tutRoomId } from "./rooms";
@@ -240,6 +242,8 @@ async function showHotel(user: User): Promise<void> {
   const stopWanted = watchMyWanted(p.uid); // (a hit of bagmand's on me: then I must say which room I walk into)
   const stopEconomy = watchEconomy(p); // what the server writes about you (a trade finishing, ...) shows up at once
   const stopWalkman = startWalkman(p); // (the walkman plays in every room, until you sign out)
+  const stopStreetsFlag = startStreetsFlag(); // (is the elevator to the streets switched on?)
+  const stopTeleport = watchTeleport(p, (room) => go("room", { roomId: room, from: LOBBY_ID, force: true })); // (a staff member sent you to the test area: /test1 <name>)
   const stopPriceBook = p.isAdmin ? publishPriceBook() : () => undefined; // the admin's game publishes the clothes price list the server charges from
   const stopSeatWatch = watchSession(p.uid, () => {
     // another window took the seat in the same moment: this one stops
@@ -250,6 +254,8 @@ async function showHotel(user: User): Promise<void> {
     roomApi = null;
     releasePresence(p.uid);
     stopWalkman();
+    stopStreetsFlag();
+    stopTeleport();
     stopShop(); stopDesigns(); stopFurni();
     showLocked("taken");
   });
@@ -349,6 +355,8 @@ async function showHotel(user: User): Promise<void> {
     stopUnusual();
     stopPriceBook();
     stopWalkman();
+    stopStreetsFlag();
+    stopTeleport();
     stopSixtyLook?.();
     stopIdle();
     stopMessenger();

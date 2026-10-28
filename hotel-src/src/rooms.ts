@@ -74,7 +74,8 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
 import { RAFFLE_PRIZE_ID } from "./shared/raffle";
 import { MINES_H, MINES_ID, MINES_OPEN, MINES_PIECES, MINES_W } from "./shared/mines";
-import { ARRIVAL_ID, ARRIVAL_SIZE, isStreetsRoom, STREET_PIECES, STREETS_H, STREETS_ID, STREETS_OPEN, STREETS_W } from "./shared/streets";
+import { ARRIVAL_ID, ARRIVAL_SIZE, isStreetsRoom, STREET_PIECES, STREETS_H, STREETS_ID, STREETS_W } from "./shared/streets";
+import { streetsFlagOn } from "./streetsFlag";
 import { HIDEOUT_MAX_FURNI, hideoutRoomId, isHideoutId, levelOfSize } from "./shared/hideout";
 export { hideoutRoomId, isHideoutId };
 export { MINES_ID };
@@ -384,7 +385,7 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
 export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
-  const streetsOn = STREETS_OPEN || import.meta.env.MODE === "emulator"; // (the elevator only stands there once the streets are open)
+  const streetsOn = streetsFlagOn() || import.meta.env.MODE === "emulator"; // (the elevator only stands there once the streets are open)
   const builtin = LOBBY_BUILTIN.filter((b) => b.id !== "lobby16" || streetsOn).map((b) => { const o = extras.find((e) => e.id === b.id); return o && Number.isFinite(o.x) && Number.isFinite(o.y) ? { ...b, x: o.x, y: o.y, dir: o.dir ?? 0 } : b; });
   return {
     id: LOBBY_ID,
@@ -443,7 +444,7 @@ export function streetsDef(): RoomDef {
     theme: { ...STREETS_THEME }, rug: null, furni: STREET_PIECES.map(([id, kind, x, y, dir]) => ({ id, kind, x, y, dir })), doorX: 2, doorTo: ARRIVAL_ID,
   };
 }
-export { ARRIVAL_ID, STREETS_ID, STREETS_OPEN };
+export { ARRIVAL_ID, STREETS_ID };
 
 /** The shop: a big white room with the wardrobe on the back wall and today's four pieces standing on the floor. */
 export function shopDef(picks: string[], raffleKind?: string): RoomDef {

@@ -14,17 +14,17 @@ import { isEmulator } from "../env";
 import { addToInv, DUMPSTER_DROPS, takeQtyFrom } from "../../../src/shared/economy";
 import { findSlot, sellPrice } from "../../../src/shared/items";
 import {
-  ARRIVAL_ID, customerAt, customersAt, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, orderPay, PVP, STREET_PIECES, STREETS_ID, STREETS_OPEN, StreetCombat, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
+  ARRIVAL_ID, customerAt, customersAt, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, orderPay, PVP, STREET_PIECES, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
 } from "../../../src/shared/streets";
 
-/** the streets are only for the admin and the emulator until STREETS_OPEN is true */
-const openFor = (c: Ctx): boolean => STREETS_OPEN || isEmulator(c.env) || c.isAdmin;
+/** the streets are only for the staff and the emulator until the admin switches them on (config/streetsOpen, Admin > Streets) */
+const openFor = async (c: Ctx): Promise<boolean> => isEmulator(c.env) || c.isAdmin || c.isMod || (await c.db.get<boolean>("config/streetsOpen")) === true;
 const forceUntil = async (c: Ctx): Promise<number> => Number(await c.db.get<number>("config/streetsForce")) || 0;
 
 export const ticketBuy: Action = {
   locks: () => ["tickets"],
   async run(c) {
-    if (!openFor(c)) fail("The elevator is out of order.");
+    if (!(await openFor(c))) fail("The elevator is out of order.");
     await requireInRoom(c, "lobby");
     const w = await c.user();
     if (holdsTicket(w.s.inventory)) fail("You have a ticket already. There is one for each player.");
@@ -44,7 +44,7 @@ export const ticketBuy: Action = {
 export const elevatorUp: Action = {
   locks: () => [],
   async run(c) {
-    if (!openFor(c)) fail("The elevator is out of order.");
+    if (!(await openFor(c))) fail("The elevator is out of order.");
     await requireInRoom(c, "lobby");
     const run = elevatorRuns(c.now, await forceUntil(c));
     if (!run.open) fail(`The elevator runs from 20 to 21. It starts again in ${fmtWhen(run.nextAt - c.now)}.`);
@@ -232,5 +232,28 @@ export const streetsTest: Action = {
     const minutes = int(a.minutes, 0, 600, "minutes");
     c.extra["config/streetsForce"] = minutes > 0 ? c.now + minutes * 60_000 : null;
     return { until: minutes > 0 ? c.now + minutes * 60_000 : 0 };
+  },
+};
+
+/**
+ * /test1 (yourself) and /test1 <name> (somebody else): the staff (admin and mods) move to the arrival room, the room the elevator takes you to, and get a pass for a couple of hours,
+ * so they can test the fights and the customers while the streets are closed to players. Naming a player pulls that player in too (their browser walks them there: teleports/<uid>).
+ */
+export const streetsStaffTest: Action = {
+  async run(c, a) {
+    if (!c.isAdmin && !c.isMod) fail("Unknown command.");
+    const who = typeof a.name === "string" ? a.name.trim().toLowerCase() : "";
+    let uid = c.uid;
+    let name = "";
+    if (who) {
+      const found = await c.db.get<string>(`usernames/${text(who, /^[a-z0-9_ .-]{1,20}$/, "name")}`);
+      if (!found) fail("There is no player with that name.");
+      uid = found!;
+      name = String((await c.db.get<string>(`profiles/${uid}/name`)) ?? who).slice(0, 16);
+    }
+    c.extra[`streetPass/${uid}`] = c.now + STAFF_TEST_PASS_MS;
+    if (uid !== c.uid) c.extra[`teleports/${uid}`] = { room: ARRIVAL_ID, at: c.now, by: c.uid };
+    c.note = uid === c.uid ? "staff test pass" : `test area for ${name}`;
+    return { until: c.now + STAFF_TEST_PASS_MS, name, self: uid === c.uid };
   },
 };

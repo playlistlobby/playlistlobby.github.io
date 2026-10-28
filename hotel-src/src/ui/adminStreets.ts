@@ -20,6 +20,16 @@ export function mountAdminStreets(el: HTMLElement, ctx: Ctx): () => void {
   };
   stops.push(onValue(ref(db, "config/streetsForce"), (s) => { force = Number(s.val()) || 0; showStatus(); }, () => undefined));
   const timer = window.setInterval(showStatus, 15_000);
+  // the switch that shows the elevator to the players (config/streetsOpen)
+  let streetsOpen = false;
+  const openBtn = h("button", { class: "btn primary", onclick: () => void set(ref(db, "config/streetsOpen"), !streetsOpen).then(() => toast(!streetsOpen ? "The streets are open for players." : "The streets are hidden from players."), () => toast("Couldn't change that.", "err")) }, "...");
+  const openState = h("div", { class: "hint" });
+  stops.push(onValue(ref(db, "config/streetsOpen"), (s) => {
+    streetsOpen = s.val() === true;
+    openBtn.textContent = streetsOpen ? "Hide the streets from players" : "Open the streets for players";
+    openBtn.classList.toggle("danger", streetsOpen);
+    openState.textContent = streetsOpen ? "ON: the elevator stands in the basement, everybody can buy a ticket and ride it (20:00 to 21:00 Danish time)." : "OFF: there is no elevator for players. The staff can test with /test1 (a pass for 2 hours to the arrival room).";
+  }, () => undefined));
   const test = (minutes: number) => () => void call(ctx.profile, "streetsTest", { minutes }).then(() => toast(minutes ? `The elevator runs for ${minutes} minutes.` : "The test switch is off."), (err) => toast((err as Error).message || "That didn't work.", "err"));
 
   // ---- the builder ----
@@ -120,7 +130,9 @@ export function mountAdminStreets(el: HTMLElement, ctx: Ctx): () => void {
   drawControls();
   draw();
   el.replaceChildren(
-    h("div", { class: "osrs-title" }, "The streets: test switch"),
+    h("div", { class: "osrs-title" }, "The streets: open for players"),
+    openBtn, openState,
+    h("div", { class: "osrs-title", style: "margin-top:14px" }, "The streets: test switch"),
     status,
     h("div", { class: "rp-chips" },
       h("button", { class: "btn small primary", onclick: test(60) }, "Run the elevator for 60 min"),

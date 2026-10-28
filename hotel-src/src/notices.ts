@@ -4,6 +4,7 @@ import { onChildAdded, onValue, ref } from "firebase/database";
 import { db } from "./firebase";
 import type { Profile } from "./db";
 import { serverNow } from "./db";
+import { toast } from "./ui/dom";
 import { LOUDSPEAKER_SHOW_MS } from "./shared/loudspeaker";
 
 interface Notice { kind?: string; text?: string; byName?: string; at?: number }
@@ -95,5 +96,18 @@ export function watchOwnName(p: Profile, onChanged: (name: string) => void): () 
     if (typeof name !== "string") return;
     if (first) { first = false; if (name === p.name) return; }
     if (name !== p.name) onChanged(name);
+  }, () => undefined);
+}
+
+/** A staff member sent you to a room (teleports/<uid>, written by the server): you walk there. Only a teleport that came while you were playing counts. */
+export function watchTeleport(p: Profile, go: (room: string) => void): () => void {
+  const startedAt = serverNow();
+  let last = 0;
+  return onValue(ref(db, `teleports/${p.uid}`), (s) => {
+    const t = s.val() as { room?: string; at?: number } | null;
+    if (!t || typeof t.at !== "number" || t.at < startedAt - 5000 || t.at <= last || (t.room !== "arrival" && t.room !== "streets")) return;
+    last = t.at;
+    toast("A staff member sent you to the test area.");
+    window.setTimeout(() => go(t.room!), 600);
   }, () => undefined);
 }

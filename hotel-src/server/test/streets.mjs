@@ -70,6 +70,20 @@ const c = await fresh("t_st_c", { blood: 1000 });
 const poor = await fresh("t_st_poor", { blood: 10 });
 for (const u of [admin, a, b, c, poor]) await act(u, "sync");
 
+console.log("--- /test1 for the staff");
+bad("a player can't use /test1", await act(a, "streetsStaffTest", {}));
+bad("and can't pull another player in", await act(a, "streetsStaffTest", { name: b.name }));
+await owner("DELETE", `streetPass/${admin.uid}`); await owner("DELETE", `teleports/${b.uid}`);
+const t1 = await act(admin, "streetsStaffTest", {});
+check("the admin gets a pass for 2 hours (and walks there himself)", t1.ok && t1.data.self === true && (await owner("GET", `streetPass/${admin.uid}`)) > Date.now() + 119 * 60_000, JSON.stringify(t1));
+await owner("PUT", `usernames/${b.name.toLowerCase()}`, b.uid);
+const t2 = await act(admin, "streetsStaffTest", { name: b.name });
+check("/test1 <name> gives that player a pass and a teleport to the arrival room", t2.ok && t2.data.self === false && (await owner("GET", `streetPass/${b.uid}`)) > Date.now() && (await owner("GET", `teleports/${b.uid}/room`)) === "arrival", JSON.stringify(t2));
+bad("an unknown name", await act(admin, "streetsStaffTest", { name: "nobody_here_x" }));
+const rd = await fetch(`${DB}/teleports/${b.uid}.json?ns=${NS}&auth=${a.token}`);
+check("others can't read a player's teleport", rd.status === 401 || rd.status === 403, String(rd.status));
+await owner("DELETE", `streetPass/${admin.uid}`); await owner("DELETE", `streetPass/${b.uid}`); await owner("DELETE", `teleports/${b.uid}`);
+
 console.log("--- the clock");
 const t0 = Date.now();
 check("20:00 Danish time is open for an hour", S.elevatorRuns(Date.UTC(2026, 0, 15, 19, 30)).open && !S.elevatorRuns(Date.UTC(2026, 0, 15, 21, 30)).open && S.elevatorRuns(Date.UTC(2026, 0, 15, 19, 30)).endsAt > Date.UTC(2026, 0, 15, 19, 30));

@@ -1,12 +1,13 @@
 // The streets (the update after SoundCloud): an event every day at 20:00 Danish time, reached by the elevator in the basement with a ticket.
 //   elevator (basement) -> arrival room (safe, the size of a medium player room) -> the streets (night, a road with cars, bins, customers, knife fights)
-// Pure: the browser and the server both use it. Nothing here is published until STREETS_OPEN is true (the emulator and the admin's test switch always work).
+// Pure: the browser and the server both use it. Players only get in once the admin has switched the streets on (config/streetsOpen); the staff can always test with /test1.
 
 /** the streets by day (true) or at night (false: the first version, still in the code) */
 export const STREETS_DAY = true;
 /** grass on the sidewalks: [x, y, w, h] in tiles (painted on the floor; you can walk on it) */
 export const GRASS_BEDS: Array<[number, number, number, number]> = [[0, 11, 25, 1]];
-export const STREETS_OPEN = false;
+/** what /test1 gives the staff: a pass for this long, so they can test the fights and the customers while the streets are closed */
+export const STAFF_TEST_PASS_MS = 2 * 3_600_000;
 export const ARRIVAL_ID = "arrival";
 export const STREETS_ID = "streets";
 export const isStreetsRoom = (id: string): boolean => id === ARRIVAL_ID || id === STREETS_ID;

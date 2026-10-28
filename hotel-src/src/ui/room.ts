@@ -75,6 +75,7 @@ import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, cont
 import { voteSong } from "../soundcloud";
 import { loadWalkman, openWalkmanMenu } from "../walkman";
 import { openIpod } from "./ipod";
+import { onStreetsFlag } from "../streetsFlag";
 import { albumList, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
@@ -3888,6 +3889,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       const skipM = /^\/skip\s+(\d{1,4})$/i.exec(text);
       if (skipM) { void testCommand("skip", Number(skipM[1])); return; } // TEMP: /skip <minutes> moves your plants, mixers and bins on in time
+      const testM = /^\/test1(?:\s+(.+))?$/i.exec(text);
+      if (testM) { // the staff: to the room the elevator takes you to (the streets are closed to players until the admin opens them), or send a player there
+        const who = (testM[1] ?? "").trim();
+        void call<{ name: string; self: boolean }>(me, "streetsStaffTest", who ? { name: who } : {}).then((r) => {
+          if (r.self) ctx.navigate("room", { roomId: ARRIVAL_ID, from: LOBBY_ID, force: true });
+          else say(`${r.name} is on the way to the test area.`);
+        }, (err) => say((err as Error).message || "Unknown command.", "warn"));
+        return;
+      }
       if (/^\/weed$/i.test(text)) { void testCommand("weed"); return; } // TEMP: testing command (admin only)
       // TEMP: /give <item> [amount] [ass]: any item by its id or its name (admin only)
       const giveM = /^\/give(?:\s+(.+))?$/i.exec(text);
@@ -6113,7 +6123,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (roomId === LOBBY_ID) {
       applyDef(lobbyDef());
       start();
-      unsubs.push(watchLobbyFurni((extras) => { if (!disposed) applyDef(lobbyDef(extras)); })); // pieces the admin added
+      let lobbyExtras: PlacedFurni[] = [];
+      unsubs.push(watchLobbyFurni((extras) => { lobbyExtras = extras; if (!disposed) applyDef(lobbyDef(extras)); })); // pieces the admin added
+      unsubs.push(onStreetsFlag(() => { if (!disposed) applyDef(lobbyDef(lobbyExtras)); })); // the elevator stands there only while the admin has the streets switched on
       roulette = mountRoulette({
         me, stage,
         def: () => def,
