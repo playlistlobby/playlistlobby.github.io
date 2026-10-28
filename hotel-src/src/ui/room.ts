@@ -72,6 +72,7 @@ import { DICE_GAP_MS } from "../shared/dice";
 import { NEW_ACCOUNT_CHAT_MS } from "../shared/mod";
 import { showDeathScreen } from "./deathScreen";
 import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, isScState, reconcileCd, speakerOp, watchCdPlayer } from "../cdplayer";
+import { voteSong } from "../soundcloud";
 import { ALBUM_TRACKS, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
@@ -2258,7 +2259,36 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     loop: h("button", { class: "btn small", title: "Loop this song", onclick: () => void speakerRun("loop", { on: !cdState?.loop }) }, "Loop"),
     prev: h("button", { class: "btn small", title: "Back", onclick: () => void albumOp("prev") }, "⏮"),
     next: h("button", { class: "btn small", title: "Skip", onclick: () => void albumOp("next") }, "⏭"),
+    // SoundCloud on the speaker: everybody in the room can vote on the song that is playing
+    up: h("button", { class: "btn small", title: "Upvote this song", onclick: () => void scVoteNow(1) }, "▲ 0"),
+    down: h("button", { class: "btn small", title: "Downvote this song", onclick: () => void scVoteNow(-1) }, "▼ 0"),
   };
+  let scVoteFor: string | null = null;
+  let scVote = 0;
+  let scUp = 0, scDown = 0;
+  const scSongId = (): string | null => (cdState && isScState(cdState) ? cdState.song?.id ?? cdState.ids?.[cdState.index ?? 0] ?? null : null);
+  function paintVotes(): void {
+    cdUi.up.textContent = `▲ ${scUp}`;
+    cdUi.down.textContent = `▼ ${scDown}`;
+    cdUi.up.classList.toggle("primary", scVote === 1);
+    cdUi.down.classList.toggle("primary", scVote === -1);
+  }
+  /** the votes of the song on the speaker: its counts and what you voted (read again when the song changes) */
+  function loadScVotes(id: string): void {
+    scVoteFor = id; scVote = 0; scUp = 0; scDown = 0; paintVotes();
+    void Promise.all([get(ref(db, `songs/${id}/up`)), get(ref(db, `songs/${id}/down`)), get(ref(db, `myVotes/${me.uid}/${id}`))]).then(([u, d, v]) => {
+      if (scVoteFor !== id) return;
+      scUp = Number(u.val()) || 0; scDown = Number(d.val()) || 0; scVote = Number(v.val()) || 0; paintVotes();
+    }, () => undefined);
+  }
+  async function scVoteNow(v: 1 | -1): Promise<void> {
+    const id = scSongId();
+    if (!id) return;
+    try {
+      const r = await voteSong(me, id, scVote === v ? 0 : v); // (tapping your own vote again takes it back)
+      if (scVoteFor === id) { scUp = r.up; scDown = r.down; scVote = r.v; paintVotes(); }
+    } catch (err) { say((err as Error).message || "That didn't work.", "warn"); }
+  }
   /** the full album: the song before, or the next one */
   async function albumOp(op: "prev" | "next"): Promise<void> {
     const s = cdState;
@@ -2301,6 +2331,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     cdUi.loop.classList.toggle("hidden", !boss);
     cdUi.loop.classList.toggle("primary", !!s?.loop);
     cdUi.pause.textContent = s?.pausedAt ? "Resume" : "Pause";
+    cdUi.up.parentElement?.classList.toggle("hidden", !sc);
+    const sid = sc ? scSongId() : null;
+    if (sid && sid !== scVoteFor) loadScVotes(sid);
   }
 
   /** Called whenever the audio changes; also deals with browsers refusing to autoplay before the first click. */
@@ -2336,6 +2369,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         h("button", { class: "btn small", title: "Louder", onclick: () => step(0.1) }, "+"),
         cdUi.mute),
       h("div", { class: "hint" }, "Everyone in the room hears the same music. Only the volume is your own."),
+      h("div", { class: "cd-row" }, cdUi.up, cdUi.down),
       h("div", { class: "cd-row" }, cdUi.prev, cdUi.pause, cdUi.next, cdUi.restart, cdUi.loop, cdUi.eject));
     stage.append(el);
     cdPopup = { el, timer: window.setInterval(refreshCdPopup, 500) };

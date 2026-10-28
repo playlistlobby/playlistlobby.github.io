@@ -15028,5 +15028,15 @@
   "en": "Traffic light",
   "da": "Lyskryds",
   "where": "src/rooms.ts"
+ },
+ "N2451": {
+  "en": "Upvote this song",
+  "da": "Giv denne sang en op-stemme",
+  "where": "src/ui/room.ts"
+ },
+ "N2452": {
+  "en": "Downvote this song",
+  "da": "Giv denne sang en ned-stemme",
+  "where": "src/ui/room.ts"
  }
 }
