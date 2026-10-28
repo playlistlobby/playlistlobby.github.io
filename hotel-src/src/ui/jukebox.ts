@@ -21,12 +21,16 @@ function cdName(item: string): string {
  * The basement's jukebox, in the game's iOS 6 look: a navigation bar, a "now playing" strip and a grouped list of the CDs in your pockets. Tap one and an iOS alert asks
  * whether to play it for 50 blood; the whole room then hears it (the CD player of the room: one CD at a time) and the CD is yours again when it has finished.
  */
-export function openJukebox(host: HTMLElement, ctx: Ctx, o: { nowPlaying: () => string | null; play: (slot: number) => Promise<void>; onClose: () => void }): JukeboxApi {
+export function openJukebox(host: HTMLElement, ctx: Ctx, o: { nowPlaying: () => string | null; play: (slot: number) => Promise<void>; onClose: () => void; volume: { get: () => number; set: (v: number) => void; muted: () => boolean; toggleMute: () => void } }): JukeboxApi {
   const me = ctx.profile;
   let closed = false;
   let busy = false;
   let alertEl: HTMLElement | null = null;
   const bloodPill = h("span", { class: "jb-blood" }, "");
+  // your own volume: everybody in the room hears the same song, only how loud it is for you is yours
+  const slider = h("input", { class: "jb-slider", type: "range", min: "0", max: "100", step: "1", "aria-label": "Volume", oninput: () => { o.volume.set(Number(slider.value) / 100); render(); } });
+  const muteBtn = h("button", { class: "jb-mute", type: "button", title: "Mute", onclick: () => { o.volume.toggleMute(); render(); } }, "");
+  const volRow = h("div", { class: "jb-vol" }, h("span", { class: "jb-vol-label" }, "Volume"), slider, muteBtn);
   const now = h("div", { class: "jb-now" });
   const list = h("div", { class: "jb-list" });
   const onPocket = (): void => render();
@@ -38,6 +42,7 @@ export function openJukebox(host: HTMLElement, ctx: Ctx, o: { nowPlaying: () => 
         h("div", { class: "jb-title" }, "Jukebox"),
         bloodPill),
       now,
+      volRow,
       h("div", { class: "jb-body" },
         h("div", { class: "jb-head" }, "Your CDs"),
         list,
@@ -67,6 +72,9 @@ export function openJukebox(host: HTMLElement, ctx: Ctx, o: { nowPlaying: () => 
   function render(): void {
     if (closed) return;
     bloodPill.textContent = `${me.blood} blood`;
+    const muted = o.volume.muted();
+    if (document.activeElement !== slider) slider.value = String(Math.round(o.volume.get() * 100));
+    muteBtn.textContent = muted || o.volume.get() === 0 ? "🔇" : "🔊";
     const playing = o.nowPlaying();
     now.className = "jb-now" + (playing ? " on" : "");
     now.replaceChildren(h("span", { class: "jb-note" }, "♪"), h("span", { class: "jb-now-text" }, playing ? `Now playing: ${playing}` : "Nothing is playing"));

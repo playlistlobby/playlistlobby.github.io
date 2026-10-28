@@ -2482,6 +2482,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         jukeboxApi?.close();
       },
       onClose: () => { jukeboxApi = null; },
+      volume: { get: () => cdAudio.volume, set: (v) => cdAudio.setVolume(v), muted: () => cdAudio.muted, toggleMute: () => cdAudio.toggleMute() },
     });
   }
 
@@ -5233,7 +5234,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     g.globalAlpha = 1;
 
     // music notes drifting up out of the CD player (so you can see where the sound comes from)
-    const cdf = def.furni.find((f) => isCdKind(f.kind));
+    const cdf = def.furni.find((f) => f.kind === "jukebox") ?? def.furni.find((f) => isCdKind(f.kind)); // (the notes come out of the jukebox in the basement)
     if (cdf && notes.length) {
       const k = FURNI_KINDS[cdf.kind];
       const base = toScreen(iso(cdf.x + 0.5, cdf.y + 0.5));
