@@ -75,7 +75,7 @@ export const MIX_MS = 10 * 60_000;
 export const STASHBOX_PRICE = 20;
 export const STASHBOX_OWNED_KEY = "stashbox";
 /** the only furniture the stash box takes (the growing kit and the mixer); the rest of the furniture goes in the toolbox */
-export const STASH_PIECES: ReadonlySet<string> = new Set(["f_planter", "f_planter_auto", "f_mixer"]);
+export const STASH_PIECES: ReadonlySet<string> = new Set(["f_planter", "f_planter_auto", "f_mixer", "f_mixer_up", "f_mixer_up2"]);
 /** Blood can only be handed over in trades up to this much per player in any 24 hours (so blood from a glitch can't be spread fast). Counted on the one who gives it. */
 export const TRADE_BLOOD_CAP = 4000;
 export const TRADE_BLOOD_WINDOW_MS = DAY_MS;

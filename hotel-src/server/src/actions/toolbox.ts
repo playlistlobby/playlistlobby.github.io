@@ -216,6 +216,8 @@ export const furniPlace: Action = {
     }
     const autoPot = kind === "f_planter_auto"; // (a kit with its waterer: down in the room it is a kit marked `auto`)
     if (autoPot) kind = "f_planter";
+    const mixUp = kind === "f_mixer_up" ? 1 : kind === "f_mixer_up2" ? 2 : 0; // (an upgraded mixer: down in the room it is a mixer marked `up`)
+    if (mixUp) kind = "f_mixer";
     if (hideout && kind === "f_planter" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_planter").length >= HIDEOUT_MAX_KITS) fail(`A hideout fits ${HIDEOUT_MAX_KITS} growing kits.`);
     if (hideout && kind === "f_mixer" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_mixer").length >= HIDEOUT_MAX_MIXERS) fail(`A hideout fits ${HIDEOUT_MAX_MIXERS} mixers.`);
     // a poster only hangs on a wall, and carries the picture chosen when it is hung (it stays on it; a poster taken down goes back blank)
@@ -229,7 +231,7 @@ export const furniPlace: Action = {
       }
     } else if (a.img !== undefined) fail("Only a poster carries a picture.");
     if (HIDEOUT_ONLY.has(kind) && !hideout) fail("That piece only fits in a hideout.");
-    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, ...(autoPot ? { auto: true } : {}), x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : hideout ? { by: boxOwner ?? c.uid } : {}) };
+    c.extra[`roomsMeta/${room}/furni/${newRowId(c.now)}`] = { kind, ...(autoPot ? { auto: true } : {}), ...(mixUp ? { up: mixUp } : {}), x: Number(a.x), y: Number(a.y), ...(dir ? { dir } : {}), ...(img ? { img } : {}), ...(foreign ? { by: c.uid } : hideout ? { by: boxOwner ?? c.uid } : {}) };
     return {};
   },
 };
@@ -291,10 +293,10 @@ export const furniStore: Action = {
       c.extra[`roomsMeta/${room}/boombox`] = { gone: true };
       return {};
     }
-    const row = await c.db.get<{ kind?: string; plantedAt?: number; mixJob?: unknown; by?: string; auto?: boolean }>(`roomsMeta/${room}/furni/${id}`);
+    const row = await c.db.get<{ kind?: string; plantedAt?: number; mixJob?: unknown; by?: string; auto?: boolean; up?: number | boolean }>(`roomsMeta/${room}/furni/${id}`);
     if (!row?.kind) return fail("That piece isn't in your room.");
     if (foreign && row.by !== c.uid && !c.isAdmin) fail("That isn't yours to take.");
-    const piece = row.kind === "f_planter" && row.auto ? "f_planter_auto" : row.kind; // (the waterer goes into the pot: they are carried as one piece)
+    const piece = row.kind === "f_planter" && row.auto ? "f_planter_auto" : row.kind === "f_mixer" && row.up ? (row.up === 2 ? "f_mixer_up2" : "f_mixer_up") : row.kind; // (the waterer goes into the pot: they are carried as one piece)
     if (typeof row.plantedAt === "number") fail("Harvest the plant first.");
     if (row.mixJob) fail("Collect what's in the mixer first.");
     if (row.kind === "f_boombox") await boomboxFree(c, room);

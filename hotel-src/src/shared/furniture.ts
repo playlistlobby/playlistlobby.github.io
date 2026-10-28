@@ -111,6 +111,8 @@ export const SHIPPED_DIMS: Record<string, { w: number; h: number }> = {
   f_planter: { w: 1, h: 1 },
   f_planter_auto: { w: 1, h: 1 }, // a growing kit with its automatic waterer built in
   f_mixer: { w: 1, h: 1 },
+  f_mixer_up: { w: 1, h: 1 }, // an upgraded mixer carried or stored as one piece (down in a room it is a mixer with `up`)
+  f_mixer_up2: { w: 1, h: 1 },
   f_beatshop: { w: 1, h: 1 }, // the BeatShop vending machine (the record box sells it)
   f_boombox: { w: 1, h: 1 }, // the room's boombox once it has been taken out and carried around
   f_poster: { w: 2, h: 1 },

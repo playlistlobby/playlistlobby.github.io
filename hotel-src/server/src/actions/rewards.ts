@@ -312,7 +312,9 @@ export const fillCan: Action = {
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "wateringcan") fail("That can isn't empty.");
-    w.s.inventory = w.s.inventory.map((x, i) => (i === slot ? { item: "wateringcan_full", qty: 1 } : x));
+    const next = addToInv(takeOneFrom(w.s.inventory, slot), { item: "wateringcan_full", qty: 1 }); // (one can of a stack of empty ones)
+    if (!next) fail("Your pockets are full.");
+    w.s.inventory = next!;
     return {};
   },
 };
@@ -358,7 +360,9 @@ export const water: Action = {
     if (w.s.inventory[slot]?.item !== "wateringcan_full") fail("That can is empty.");
     // one watering, at any time while it grows (the bar need not be empty), keeps the harvest good
     if (typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!) fail("It's already been watered. It'll grow fine now.");
-    w.s.inventory = w.s.inventory.map((x, i) => (i === slot ? { item: "wateringcan", qty: 1 } : x));
+    const emptied = addToInv(takeOneFrom(w.s.inventory, slot), { item: "wateringcan", qty: 1 }); // (one can of a stack of full ones)
+    if (!emptied) fail("Your pockets are full.");
+    w.s.inventory = emptied!;
     c.extra[`${path}/wateredAt`] = c.now;
     return {};
   },
