@@ -15538,5 +15538,30 @@
   "en": "Are you sure bro?",
   "da": "er du sikker bro?",
   "where": "src/ui/room.ts"
+ },
+ "N2553": {
+  "en": "A rich customer",
+  "da": "En rig kunde",
+  "where": "src/streets.ts"
+ },
+ "N2554": {
+  "en": "{…} blood{…}",
+  "da": "{…} blod{…}",
+  "where": "src/streets.ts"
+ },
+ "N2555": {
+  "en": " (they pay well)",
+  "da": " (de betaler godt)",
+  "where": "src/streets.ts"
+ },
+ "N2556": {
+  "en": "Rich customer",
+  "da": "Rig kunde",
+  "where": "src/streets.ts"
+ },
+ "N2557": {
+  "en": "The rich customer pays",
+  "da": "Den rige kunde betaler",
+  "where": "src/streets.ts"
  }
 }

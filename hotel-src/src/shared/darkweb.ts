@@ -25,6 +25,16 @@ export const DW_ORDERS: DwOrder[] = [
  * one of those is that plus the blunt wrap (2), which is how the other rolled things are priced.
  */
 export const dwBase = (item: string): number => sellPrice(item) ?? BAGMAND_SELL[item] ?? (item.startsWith("blunt_") && BAGMAND_SELL[`${item.slice(6)}weed`] !== undefined ? BAGMAND_SELL[`${item.slice(6)}weed`] + 2 : 0);
+/** what one of a drug is worth on the street (what 6ixty pays, or what the bagmand pays: 5 if nobody buys it), for the customers' orders */
+const SPECIAL_WEEDS: Record<string, string> = { cali: "caliweed", pink: "pinkweed", brown: "brownweed", nat: "natryger", loud: "loudpack" };
+export const streetUnit = (item: string): number => {
+  const base = dwBase(item);
+  if (base) return base;
+  const m = /^joint_([a-z]+)$/.exec(item); // (a joint rolled from a special weed: the weed and the paper)
+  if (m && SPECIAL_WEEDS[m[1]] && BAGMAND_SELL[SPECIAL_WEEDS[m[1]]] !== undefined) return BAGMAND_SELL[SPECIAL_WEEDS[m[1]]] + 1;
+  if (item.startsWith("blunt_") && SPECIAL_WEEDS[item.slice(6)] && BAGMAND_SELL[SPECIAL_WEEDS[item.slice(6)]] !== undefined) return BAGMAND_SELL[SPECIAL_WEEDS[item.slice(6)]] + 2;
+  return 5;
+};
 /** what one of an item pays when it is handed in: 1.5 times its worth, rounded up */
 export const dwUnitPay = (item: string): number => Math.ceil(dwBase(item) * DW_MULT);
 /** what a whole order pays when it is filled */

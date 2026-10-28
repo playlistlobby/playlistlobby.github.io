@@ -12,7 +12,8 @@ import { Action, cheb, ID_RE, int, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { isEmulator } from "../env";
 import { addToInv, DUMPSTER_DROPS, takeQtyFrom } from "../../../src/shared/economy";
-import { findSlot, NO_DROP, sellPrice } from "../../../src/shared/items";
+import { streetUnit } from "../../../src/shared/darkweb";
+import { findSlot, NO_DROP } from "../../../src/shared/items";
 import type { InvItem } from "../../../src/shared/items";
 import { floorPiles } from "./floor";
 import {
@@ -131,7 +132,7 @@ export const streetFill: Action = {
     }
     if (need > 0) fail("You haven't got enough of that.");
     w.s.inventory = inv;
-    const unit = sellPrice(cu!.want.item, false, {}) ?? 5;
+    const unit = streetUnit(cu!.want.item);
     const pay = orderPay(unit, cu!.want);
     w.s.blood += pay;
     c.extra[`streetFilled/${k}`] = { by: c.uid, at: c.now };

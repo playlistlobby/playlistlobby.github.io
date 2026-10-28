@@ -50,7 +50,6 @@ export const holdsTicket = (inv: ReadonlyArray<{ item: string } | null>): boolea
 /** a new customer turns up this often; each one stays this long unless somebody fills the order */
 export const CUSTOMER_EVERY_MS = 40_000;
 export const CUSTOMER_STAY_MS = 120_000;
-export const CAR_STAY_MS = 90_000;
 /** the customers on the street at once: about STAY / EVERY (3) */
 export function seeded(seed: number): () => number {
   let a = (seed ^ 0x9e3779b9) | 0;
@@ -66,52 +65,74 @@ export interface Want { item: string; qty: number; mult: number }
 /** the drugs people have most of (the cheap, common ones), and the ones that are rarer */
 export const COMMON_WANTS = ["weed", "joint", "blunt", "mix", "midweed", "superpill", "hash", "shroom"] as const;
 export const RARE_WANTS = ["thca", "codeine", "joint_mid", "blunt_mid", "joint_thca", "joint_hash", "chudmix", "dmt", "lsd", "trollmix"] as const;
-/** the big orders at the cars (7-10 of one thing) */
-export const BIG_WANTS = ["weed", "joint", "blunt", "mix", "superpill", "hash", "midweed", "shroom"] as const;
+/**
+ * What the rich customers ask for: every drug there is, the common ones most often (the number is how often, out of the total).
+ * They pay 3 times what the others do, and they are the only ones who buy the cali weed and the 芬太尼.
+ */
+export const RICH_WANTS: ReadonlyArray<readonly [string, number]> = [
+  ["weed", 12], ["joint", 10], ["blunt", 8], ["mix", 8], ["midweed", 7], ["hash", 7], ["shroom", 7], ["superpill", 6],
+  ["thca", 5], ["codeine", 4], ["ketamine", 5], ["percs", 5], ["heroin", 4], ["opium", 3], ["lsd", 4], ["dmt", 4], ["twocb", 4],
+  ["joint_mid", 4], ["blunt_mid", 3], ["joint_thca", 3], ["joint_hash", 3], ["chudmix", 3], ["trollmix", 3],
+  ["caliweed", 3], ["fentcn", 3], ["pinkweed", 2], ["brownweed", 2], ["natryger", 2], ["loudpack", 1],
+  ["joint_cali", 2], ["blunt_cali", 1], ["joint_pink", 1], ["blunt_pink", 1], ["joint_brown", 1], ["blunt_brown", 1], ["joint_nat", 1], ["blunt_nat", 1], ["joint_loud", 1], ["blunt_loud", 1],
+];
+const RICH_TOTAL = RICH_WANTS.reduce((n, [, w]) => n + w, 0);
+export function richWant(roll: number): string {
+  let left = roll * RICH_TOTAL;
+  for (const [item, w] of RICH_WANTS) { left -= w; if (left < 0) return item; }
+  return RICH_WANTS[0][0];
+}
+/** the pets a rich customer may have along (the rare ones) */
+export const RICH_PETS = ["dragon", "curseddragon", "lion", "velociraptor", "demonmonkey", "dragondog", "rhino", "haloompa", "croco", "pigeonevil", "bunnyevil"] as const;
 export const BIG_MULT = 3;
 export const WALK_MULT = 2;
 
 export interface Customer {
   k: number;
-  kind: "walker" | "car";
+  kind: "walker" | "rich";
   /** when it turned up and when it leaves if nobody fills the order */
   at: number;
   until: number;
   want: Want;
-  /** where it stands: a sidewalk tile (a walker) or the curb lane it pulls over in (a car), the side it came from (-1 = from the left end of the street, 1 = from the right) */
+  /** the sidewalk tile it stands on, and the side it came from (-1 = from the left end of the street, 1 = from the right) */
   x: number;
   y: number;
   from: 1 | -1;
-  /** a number for the look (a walker's clothes, a car's model and colour) */
+  /** a number for the look (the clothes; a rich customer's hat and pet too) */
   look: number;
 }
 /** the rows the walking customers stand in (the two nearest the road) */
 export const STREET_SIDEWALK_ROWS = [2, 9];
 export const ROAD_ROWS = { first: 3, last: 8, lanes: [4, 7], curbs: [3, 8] };
 
+/** a free sidewalk tile for a customer to stand on (not on a lamp or a tree) */
+function spot(r: () => number): { x: number; y: number } {
+  let y = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)];
+  let x = 3 + Math.floor(r() * (STREETS_W - 6));
+  for (let tries = 0; tries < 30 && !isFreeTile(x, y); tries++) { y = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)]; x = 3 + Math.floor(r() * (STREETS_W - 6)); }
+  return { x, y };
+}
+/** the drugs worth 150 or more to the bagmand: a rich customer asks for fewer of them */
+const BAGMAND_SELL_HINT: Record<string, number> = { heroin: 160, ketamine: 170, percs: 160, twocb: 180, caliweed: 255, fentcn: 330, pinkweed: 155, loudpack: 295, natryger: 200 };
+
 /** The customer number k (k = floor(time / CUSTOMER_EVERY_MS)): always the same one for the same k, so every browser and the server agree. */
 export function customerAt(k: number): Customer {
   const r = seeded(k * 7919 + 13);
   const at = k * CUSTOMER_EVERY_MS;
-  const car = r() < 0.2;
-  if (car) {
-    const lane = r() < 0.5 ? 0 : 1;
-    const item = BIG_WANTS[Math.floor(r() * BIG_WANTS.length)];
-    // the cars that pull over ask for a lot of one thing, or (less often) for a little of something rare
-    const rare = r() < 0.3;
-    const want: Want = rare
-      ? { item: RARE_WANTS[Math.floor(r() * RARE_WANTS.length)], qty: 1 + Math.floor(r() * 3), mult: BIG_MULT }
-      : { item, qty: 7 + Math.floor(r() * 4), mult: BIG_MULT };
-    return { k, kind: "car", at, until: at + CAR_STAY_MS, want, x: 5 + Math.floor(r() * (STREETS_W - 11)), y: lane === 0 ? ROAD_ROWS.curbs[0] : ROAD_ROWS.curbs[1], from: -1, look: Math.floor(r() * 1000) }; // (the street is one way: every car drives east, down to the right, because the car art only has the two views that look toward you)
+  const rich = r() < 0.2;
+  if (rich) { // a rich customer: a hat and maybe a pet, a little of any drug, and 3 times the price
+    const item = richWant(r());
+    const dear = (BAGMAND_SELL_HINT[item] ?? 0) >= 150;
+    const want: Want = { item, qty: dear ? 1 + Math.floor(r() * 2) : 1 + Math.floor(r() * 3), mult: BIG_MULT };
+    const { x, y } = spot(r);
+    return { k, kind: "rich", at, until: at + CUSTOMER_STAY_MS, want, x, y, from: r() < 0.5 ? -1 : 1, look: Math.floor(r() * 100000) };
   }
   const roll = r();
   let want: Want;
   if (roll < 0.5) want = { item: COMMON_WANTS[Math.floor(r() * COMMON_WANTS.length)], qty: 1 + Math.floor(r() * 2), mult: WALK_MULT }; // half of them: 1 or 2 of the common stuff
   else if (roll < 0.86) want = { item: COMMON_WANTS[Math.floor(r() * COMMON_WANTS.length)], qty: 3 + Math.floor(r() * 2), mult: WALK_MULT }; // 3 or 4 of it
   else want = { item: RARE_WANTS[Math.floor(r() * RARE_WANTS.length)], qty: 1 + Math.floor(r() * 2), mult: WALK_MULT }; // a little of something rare
-  let row = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)];
-  let wx = 3 + Math.floor(r() * (STREETS_W - 6));
-  for (let tries = 0; tries < 30 && !isFreeTile(wx, row); tries++) { row = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)]; wx = 3 + Math.floor(r() * (STREETS_W - 6)); } // (not on a lamp or a tree)
+  const { x: wx, y: row } = spot(r);
   return { k, kind: "walker", at, until: at + CUSTOMER_STAY_MS, want, x: wx, y: row, from: r() < 0.5 ? -1 : 1, look: Math.floor(r() * 100000) };
 }
 /** the customers that are on the street at this moment (before the filled ones are taken away) */

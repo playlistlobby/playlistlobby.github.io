@@ -9,13 +9,16 @@ import { drawNitroFurni } from "./roomRender";
 import type { Box, Pt } from "./roomRender";
 import { loadNitro, nitroIfReady, spritesFor } from "./nitro";
 import { FURNI_KINDS } from "./rooms";
-import { randomFigure } from "./catalog";
+import { figureToString, itemsFor, parseFigure, randomFigure, swatchesFor } from "./catalog";
+import { drawPet, petSheet } from "./pets";
+import { PET_COLORS } from "./shared/pets";
+import { streetUnit } from "./shared/darkweb";
 import { itemDef } from "./items";
-import { findSlot, sellPrice } from "./shared/items";
+import { findSlot } from "./shared/items";
 import { h, toast } from "./ui/dom";
 import { setLeaveLock } from "./leaveLock";
 import { playSfx } from "./sfx";
-import { bestWeapon, CAR_STAY_MS, customerAt, customersAt, CUSTOMER_EVERY_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
+import { bestWeapon, customerAt, RICH_PETS, customersAt, CUSTOMER_EVERY_MS, CUSTOMER_STAY_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
 import type { Customer, StreetCombat } from "./shared/streets";
 
 const FEET_Y = 94;
@@ -64,46 +67,6 @@ export interface StreetsApi {
   dispose(): void;
 }
 
-// ---- the cars ----------------------------------------------------------------------------------------------------------------------------------
-/** the cars that drive by (and the ones that stop for a customer): the kind (see rooms.ts). The street is one way, east (down to the right): the art only has views that look toward you. */
-const CARS = ["st_car_retro", "st_car_retro_red", "st_car_retro_yellow", "st_car_retro_pink", "st_car_retro_blue", "st_car_retro_orange", "st_car_retro_green"] as const; // (the black mafia car is left out: it is six loose parts and the side that faces us was never drawn)
-const CAR_DIR = 2;
-const AMBIENT_EVERY_MS = 15_000;
-const AMBIENT_LIFE_MS = 26_000;
-const LANE_EAST = ROAD_ROWS.lanes[0], LANE_WEST = ROAD_ROWS.lanes[1];
-
-interface Car { id: string; kind: string; x: number; y: number; stopped: boolean }
-
-function ambientCar(slot: number, now: number): Car | null {
-  const r = seeded(slot * 131 + 5);
-  const t = (now - slot * AMBIENT_EVERY_MS) / 1000;
-  if (t < 0) return null;
-  const lane = r() < 0.5 ? LANE_EAST : LANE_WEST;
-  const speed = 2.6 + r() * 1.2;
-  const kind = CARS[Math.floor(r() * CARS.length)];
-  const x = -4 + speed * t;
-  if (x > STREETS_W + 5) return null;
-  return { id: `amb${slot}`, kind, x, y: lane, stopped: false };
-}
-
-/** a customer's car: drives in along its lane to the curb spot, waits for the order, drives away the way it was going */
-function customerCar(c: Customer, now: number, filledAt: number | null): Car | null {
-  const speed = 3;
-  const startX = -4;
-  const arriveMs = (Math.abs(c.x - startX) / speed) * 1000;
-  const t = now - c.at;
-  const y = c.y === ROAD_ROWS.curbs[0] ? LANE_EAST : LANE_WEST;
-  let x: number;
-  if (t < arriveMs) x = startX + speed * (t / 1000);
-  else if (filledAt !== null && now > filledAt) {
-    const away = (speed * (now - filledAt - 800)) / 1000; // (a moment to count the money)
-    x = c.x + Math.max(0, away);
-    if (x > STREETS_W + 6) return null;
-  } else x = c.x;
-  const kind = CARS[c.look % CARS.length];
-  return { id: `car${c.k}`, kind, x, y, stopped: t >= arriveMs && !(filledAt !== null && now > filledAt + 800) };
-}
-
 // ---- the walking customers ------------------------------------------------------------------------------------------------------------------------
 const figures = new Map<number, string>();
 function figureOf(look: number): string {
@@ -116,6 +79,35 @@ function figureOf(look: number): string {
     figures.set(look, f);
   }
   return f;
+}
+/** a rich customer's look: the clothes of a customer, and an unusual hat (one that costs something in the clothing shop, if there is one) */
+function richFigureOf(look: number): string {
+  const key = look + 1_000_000;
+  let f = figures.get(key);
+  if (!f) {
+    const r = seeded(look * 31 + 7);
+    const gender = look % 2 ? "M" : "F";
+    const parts = parseFigure(figureOf(look));
+    const all = itemsFor("ha", gender);
+    const dear = all.filter((i) => i.price > 0);
+    const pool = dear.length ? dear : all;
+    const hat = pool.length ? pool[Math.floor(r() * pool.length)] : undefined;
+    if (hat) {
+      const sw = swatchesFor("ha");
+      parts.ha = { id: hat.id, colors: Array.from({ length: hat.colors }, () => sw[Math.floor(r() * sw.length)]?.id ?? "1") };
+    }
+    f = figureToString(parts);
+    figures.set(key, f);
+  }
+  return f;
+}
+/** half of the rich customers have a rare pet walking with them */
+function richPetOf(look: number): { type: string; palette: number } | null {
+  const r = seeded(look * 17 + 3);
+  if (r() < 0.5) return null;
+  const type = RICH_PETS[Math.floor(r() * RICH_PETS.length)];
+  const colors = PET_COLORS[type] ?? 0;
+  return { type, palette: colors > 0 ? Math.floor(r() * colors) : 0 };
 }
 const WALK_SPEED = 2.2; // tiles a second (the street is long)
 function walkerPlace(c: Customer, now: number, filledAt: number | null): { x: number; y: number; moving: boolean; dir: number } | null {
@@ -146,7 +138,6 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   let approach = 0;
   let lastDead = 0;
   let boxes = new Map<string, Customer>();
-  void Promise.all(CARS.map((k) => loadNitro(FURNI_KINDS[k].nitro!)));
 
   const stops = [
     onValue(ref(db, "streetCombat"), (s) => {
@@ -281,7 +272,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     orderBox?.remove();
     const it = itemDef(c.want.item);
     const have = me.inventory.reduce((n, s) => n + (s && s.item === c.want.item && !s.lit && !s.inPlayer && !s.ass ? s.qty : 0), 0);
-    const pay = orderPay(sellPrice(c.want.item, false, {}) ?? 5, c.want);
+    const pay = orderPay(streetUnit(c.want.item), c.want);
     const ok = have >= c.want.qty;
     const give = h("button", { class: "btn primary", disabled: !ok, onclick: async () => {
       give.setAttribute("disabled", "");
@@ -289,14 +280,14 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
         const r = await call<{ pay: number }>(me, "streetFill", { k: c.k });
         o.refreshPocket();
         playSfx("coins", 0.5);
-        o.say(`${c.kind === "car" ? "The driver" : "They"} pay${c.kind === "car" ? "s" : ""} ${r.pay} blood. It's a pleasure.`);
+        o.say(`${c.kind === "rich" ? "The rich customer pays" : "They pay"} ${r.pay} blood. It's a pleasure.`);
         close();
       } catch (err) { toast((err as Error).message || "That didn't work.", "err"); give.removeAttribute("disabled"); }
     } }, ok ? `Give them ${c.want.qty}` : `You have ${have}`);
     const close = (): void => { orderBox?.remove(); orderBox = null; };
     orderBox = h("div", { class: "cd-popup st-order", role: "dialog" },
-      h("div", { class: "cd-head" }, h("strong", {}, c.kind === "car" ? "A car pulls over" : "A customer"), h("button", { class: "btn small", onclick: close }, "✕")),
-      h("div", { class: "st-order-row" }, it ? h("img", { src: it.icon, alt: "", class: "st-order-ico" }) : null, h("div", {}, h("div", { class: "st-order-want" }, `${c.want.qty} x ${it?.name ?? c.want.item}`), h("div", { class: "hint" }, `Pays ${pay} blood${c.kind === "car" ? " (a big order)" : ""}`))),
+      h("div", { class: "cd-head" }, h("strong", {}, c.kind === "rich" ? "A rich customer" : "A customer"), h("button", { class: "btn small", onclick: close }, "✕")),
+      h("div", { class: "st-order-row" }, it ? h("img", { src: it.icon, alt: "", class: "st-order-ico" }) : null, h("div", {}, h("div", { class: "st-order-want" }, `${c.want.qty} x ${it?.name ?? c.want.item}`), h("div", { class: "hint" }, `Pays ${pay} blood${c.kind === "rich" ? " (they pay well)" : ""}`))),
       h("div", { class: "cd-row" }, give, h("button", { class: "btn", onclick: close }, "Not now")));
     o.stage.append(orderBox);
   }
@@ -315,14 +306,14 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     const w = icon + tw + 16 * s, hh = 26 * s;
     const x = cx - w / 2, yy = y - hh;
     g.fillStyle = hot ? "#fff6c8" : "#ffffff";
-    g.strokeStyle = c.kind === "car" ? "#d4a017" : "#444";
+    g.strokeStyle = c.kind === "rich" ? "#d4a017" : "#444";
     g.lineWidth = Math.max(1, s);
     g.beginPath(); g.roundRect(x, yy, w, hh, 8 * s); g.fill(); g.stroke();
     g.beginPath(); g.moveTo(cx - 5 * s, yy + hh - 0.5); g.lineTo(cx, yy + hh + 6 * s); g.lineTo(cx + 5 * s, yy + hh - 0.5); g.closePath(); g.fillStyle = hot ? "#fff6c8" : "#fff"; g.fill(); g.stroke();
     g.fillStyle = hot ? "#fff6c8" : "#fff"; g.fillRect(cx - 4.5 * s, yy + hh - 1.5, 9 * s, 3);
     const im = it ? iconOf(it.icon) : null;
     if (im) { g.imageSmoothingEnabled = false; g.drawImage(im, x + 5 * s, yy + 3 * s, icon, icon); }
-    g.fillStyle = c.kind === "car" ? "#8a5a00" : "#222";
+    g.fillStyle = c.kind === "rich" ? "#8a5a00" : "#222";
     g.textBaseline = "middle"; g.textAlign = "left";
     g.fillText(text, x + icon + 9 * s, yy + hh / 2 + 1);
     g.restore();
@@ -332,64 +323,40 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     const now = serverNow();
     const { g, scale } = f;
     boxes = new Map();
-    // the cars that drive by
-    const slot = Math.floor(now / AMBIENT_EVERY_MS);
-    for (let j = slot; j > slot - Math.ceil(AMBIENT_LIFE_MS / AMBIENT_EVERY_MS) - 1; j--) {
-      const car = ambientCar(j, now);
-      if (car) drawCar(f, car, null);
-    }
     // the customers (the ones that were filled walk off, or drive off, before they disappear)
     const last = Math.floor(now / CUSTOMER_EVERY_MS);
-    for (let k = last; k > last - Math.ceil(CAR_STAY_MS / CUSTOMER_EVERY_MS) - 6; k--) {
+    for (let k = last; k > last - Math.ceil(CUSTOMER_STAY_MS / CUSTOMER_EVERY_MS) + 1; k--) {
       const c = customerAt(k);
       const fa = filled.get(k) ?? null;
       if (now < c.at) continue;
       if (fa === null && now >= c.until) continue; // (gone: nobody filled it)
       if (fa !== null && now - fa > 20_000) continue;
       boxes.set(`cust:${k}`, c);
-      if (c.kind === "car") { const car = customerCar(c, now, fa); if (car) drawCar(f, car, c, fa === null && car.stopped); }
-      else drawWalker(f, c, fa);
+      drawWalker(f, c, fa);
     }
-  }
-  function drawCar(f: StreetsFrame, car: Car, c: Customer | null, waiting = false): void {
-    const kind = FURNI_KINDS[car.kind];
-    const n = nitroIfReady(kind.nitro!);
-    // the art is drawn around the sprites' own centre, so a long car sits in its lane whatever its size: the middle of its shadow (the part on the ground) goes on the lane
-    let offX = 0;
-    if (n) {
-      const sh = spritesFor(n, CAR_DIR).filter((sp) => sp.isShadow);
-      const use = sh.length ? sh : spritesFor(n, CAR_DIR);
-      if (use.length) offX = (Math.min(...use.map((sp) => sp.dx)) + Math.max(...use.map((sp) => sp.dx + sp.sw))) / 2;
-    }
-    const depth = car.x + car.y + 0.4;
-    f.list.push({ depth, draw: () => {
-      const ts = (p: Pt): Pt => { const q = f.toScreen(p); return { x: q.x - offX * f.scale, y: q.y }; };
-      const box = drawNitroFurni(f.g, car.kind, car.x, car.y, CAR_DIR, ts, f.scale);
-      if (c && box && waiting) {
-        const cx = (box.x0 + box.x1) / 2;
-        const hot = f.hoverId === `cust:${c.k}`;
-        drawOrderBubble(f.g, cx, box.y0 - 2 * f.scale, c, f.scale, hot);
-        f.objs.push({ id: `cust:${c.k}`, kind: "scustomer", x0: box.x0, y0: box.y0 - 30 * f.scale, x1: box.x1, y1: box.y1, depth });
-      }
-    } });
   }
   function drawWalker(f: StreetsFrame, c: Customer, fa: number | null): void {
     const now = serverNow();
     const place = walkerPlace(c, now, fa);
     if (!place) return;
-    const opts = { figure: figureOf(c.look), dir: place.dir, headDir: place.dir, actions: place.moving ? ["wlk"] : ["std"], gesture: "std", frame: place.moving ? Math.floor(now / 140) % 4 : 0 };
+    const opts = { figure: c.kind === "rich" ? richFigureOf(c.look) : figureOf(c.look), dir: place.dir, headDir: place.dir, actions: place.moving ? ["wlk"] : ["std"], gesture: "std", frame: place.moving ? Math.floor(now / 140) % 4 : 0 };
     let img = getCached(opts);
     if (!img) { void renderAvatar(opts); }
     const w = f.iso(place.x, place.y);
     const feet = f.toScreen({ x: w.x, y: w.y + f.tileHeight / 2 });
     const depth = place.x + place.y + 0.5;
     const waiting = fa === null && !place.moving;
+    const pet = c.kind === "rich" ? richPetOf(c.look) : null;
     const hot = f.hoverId === `cust:${c.k}`;
     f.list.push({ depth, draw: () => {
       const g = f.g;
       g.fillStyle = "rgba(0,0,0,0.22)";
       g.beginPath(); g.ellipse(feet.x, feet.y, 14 * f.scale, 6 * f.scale, 0, 0, Math.PI * 2); g.fill();
       if (!img) img = getCached(opts);
+      if (pet) { // the pet walks at its owner's side (a step behind)
+        const sheet = petSheet(pet.type, pet.palette);
+        if (sheet) drawPet(g, sheet, place.moving ? "mv" : "std", place.dir, place.moving ? Math.floor(now / 160) : 0, feet.x + (place.dir === 2 || place.dir === 3 ? -26 : 26) * f.scale, feet.y + 4 * f.scale, f.scale);
+      }
       if (img) g.drawImage(img, feet.x - (32 + padOf(img).x) * f.scale, feet.y - (FEET_Y + padOf(img).y) * f.scale, img.width * f.scale, img.height * f.scale);
       if (waiting) drawOrderBubble(g, feet.x, feet.y - (FEET_Y + 6) * f.scale, c, f.scale, hot);
     } });
@@ -448,7 +415,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     },
     hoverText(objId) {
       const c = boxes.get(objId);
-      return c ? `${c.kind === "car" ? "Car" : "Customer"}: wants ${c.want.qty} x ${itemDef(c.want.item)?.name ?? c.want.item}` : null;
+      return c ? `${c.kind === "rich" ? "Rich customer" : "Customer"}: wants ${c.want.qty} x ${itemDef(c.want.item)?.name ?? c.want.item}` : null;
     },
     drawPlayer, fight, stopFight, inFight, heal,
     target: () => fightTarget,
