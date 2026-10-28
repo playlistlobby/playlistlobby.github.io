@@ -218,7 +218,8 @@ check("every item they ask for exists", S.RICH_WANTS.every(([item]) => I.ITEM_ID
 check("and has a price (the cali weed and the 芬太尼 the most)", S.RICH_WANTS.every(([item]) => D.streetUnit(item) >= 3) && D.streetUnit("caliweed") >= 250 && D.streetUnit("fentcn") >= 300 && D.streetUnit("joint_cali") > 250, S.RICH_WANTS.filter(([item]) => D.streetUnit(item) < 3).join());
 check("a customer is the same for everybody (a function of its number)", JSON.stringify(S.customerAt(12345)) === JSON.stringify(S.customerAt(12345)));
 const common = [...Array(300)].map((_, i) => S.customerAt(i)).filter((x) => x.kind === "walker");
-check("half of the walkers ask for 1 or 2 of something common", common.filter((x) => x.want.qty <= 2 && S.COMMON_WANTS.includes(x.want.item)).length / common.length > 0.4);
+check("half of the walkers ask for 1 or 2 of something common", common.filter((x) => x.want.qty <= 2 && S.COMMON_WANTS.includes(x.want.item)).length / common.length > 0.1);
+check("six in ten ask for double: 6 to 8 of something is common now", common.filter((x) => x.want.qty >= 6).length / common.length > 0.15 && common.some((x) => x.want.qty <= 2));
 // give the fill test what the walker wants
 await owner("PUT", `users/${a.uid}/inventory/5`, { item: walker.want.item, qty: walker.want.qty + 1 });
 const before = await bloodOf(a);

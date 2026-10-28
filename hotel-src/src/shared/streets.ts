@@ -144,7 +144,14 @@ function spot(r: () => number, rich = false): { x: number; y: number } {
 const BAGMAND_SELL_HINT: Record<string, number> = { heroin: 160, ketamine: 170, percs: 160, twocb: 180, caliweed: 255, fentcn: 330, pinkweed: 155, loudpack: 295, natryger: 200 };
 
 /** The customer number k that turned up at `at`: always the same one for the same k, so every browser and the server agree on who they are and what they ask for. */
+/** six in ten customers ask for double (decided by its own seed, so nothing else about a customer moves) */
+const BIG_ORDER_CHANCE = 0.6;
 export function customerAt(k: number, at = 0): Customer {
+  const c = customerBase(k, at);
+  if (seeded(k * 104729 + 7)() < BIG_ORDER_CHANCE) c.want = { ...c.want, qty: c.want.qty * 2 };
+  return c;
+}
+function customerBase(k: number, at: number): Customer {
   const r = seeded(k * 7919 + 13);
   const rich = r() < RICH_CHANCE; // (every one that was rich before still is)
   if (rich) { // a rich customer: a hat and maybe a pet, a little of any drug, and 3 times the price
