@@ -20,13 +20,11 @@ import type { Ctx } from "../main";
 
 export interface ComputerApi { close(): void; refresh(): void }
 
-type Page = "shop" | "orders" | "members" | "hits" | "settings" | "tables" | "sound";
+type Page = "shop" | "members" | "hits" | "tables" | "sound"; // (the Shop page also holds the orders, the Members page also holds the settings)
 const PAGES: Array<{ id: Page; icon: string; label: string; owner?: boolean; svg?: string }> = [
   { id: "shop", icon: "🛒", label: "Shop" },
-  { id: "orders", icon: "📦", label: "Orders" },
   { id: "members", icon: "👥", label: "Members" },
   { id: "hits", icon: "💀", label: "Hitman" },
-  { id: "settings", icon: "⚙️", label: "Settings" },
   { id: "tables", icon: "💰", label: "Tables", owner: true },
   { id: "sound", icon: "", label: "SoundCloud", svg: "note" },
 ];
@@ -286,12 +284,12 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const focused = document.activeElement instanceof HTMLInputElement && body.contains(document.activeElement) ? document.activeElement : null;
     if (focused) return; // (don't rebuild the page while somebody is typing in it)
     url.textContent = `🔒 hideout.6ix/${page}`;
-    body.replaceChildren(...(page === "shop" ? shopPage() : page === "orders" ? ordersPage() : page === "members" ? membersPage() : page === "hits" ? hitsPage() : page === "settings" ? settingsPage() : tablesPage()));
+    body.replaceChildren(...(page === "shop" ? [...shopPage(), ...ordersPage()] : page === "members" ? [...membersPage(), ...(guestView() ? [] : settingsPage())] : page === "hits" ? hitsPage() : tablesPage()));
     body.scrollTop = scrolled;
     tabs.replaceChildren(...tabsFor());
   }
   render();
-  const off = onFurniIcon(() => { if (page === "shop" || page === "orders") render(); });
+  const off = onFurniIcon(() => { if (page === "shop") render(); });
   const tick = window.setInterval(() => render(), 1000);
   function close(): void {
     if (closed) return;
