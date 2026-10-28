@@ -154,6 +154,7 @@ export function hpNow(c: Pick<StreetCombat, "hp" | "at">, now: number): number {
 export const STREET_PIECES: Array<[string, string, number, number, number]> = [
   ["s_lamp1", "st_lamp", 3, 2, 4], ["s_lamp2", "st_lamp", 10, 2, 4], ["s_lamp3", "st_lamp", 17, 2, 4], ["s_lamp4", "st_lamp", 23, 2, 4],
   ["s_lampf1", "st_lamppost", 6, 9, 2], ["s_lampf2", "st_lamppost", 14, 9, 2], ["s_lampf3", "st_lamppost", 21, 9, 2],
+  ["s_can1", "st_can", 3, 1, 4], ["s_can2", "st_can", 10, 1, 4], ["s_can3", "st_can", 12, 11, 2],
   ["s_bin1", "st_bin", 6, 1, 4], ["s_bin2", "st_bin", 13, 1, 4], ["s_bin3", "st_bin", 20, 1, 4], ["s_bin4", "st_bin", 9, 11, 2], ["s_bin5", "st_bin", 18, 11, 2],
   ["s_hyd1", "st_hydrant", 8, 2, 4], ["s_hyd2", "st_hydrant", 16, 9, 2],
   ["s_bench1", "st_bench", 4, 11, 2], ["s_bench2", "st_bench", 22, 11, 2],

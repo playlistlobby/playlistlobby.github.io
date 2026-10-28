@@ -111,6 +111,7 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the streets (see shared/streets.ts): the elevator in the basement (and in the arrival room, to go back), and the things on the street. The art is from HabboAssets (public/furni/st_*.nitro).
   elevator: { id: "elevator", label: "Elevator", icon: "🛗", w: 1, h: 1, height: 96, color: "#7a1c1c", placeable: false, nitro: "furni/elevator.nitro", rotatable: true, fixed: true, opens: "elevator" },
   st_bin: { id: "st_bin", label: "Trash can", icon: "🗑️", w: 1, h: 1, height: 40, color: "#2f5fa8", placeable: false, nitro: "derived:st_bin_blue", rotatable: true, fixed: true, opens: "streetbin" },
+  st_can: { id: "st_can", label: "Trash can", icon: "🗑️", w: 1, h: 1, height: 40, color: "#555", placeable: false, nitro: "furni/st_trashcan.nitro", rotatable: true, fixed: true, opens: "streetbin" },
   st_lamp: { id: "st_lamp", label: "Street lamp", icon: "💡", w: 1, h: 1, height: 120, color: "#555", placeable: false, nitro: "furni/st_urban_lamp.nitro", rotatable: true, fixed: true },
   st_lamppost: { id: "st_lamppost", label: "Lamp post", icon: "💡", w: 1, h: 1, height: 110, color: "#555", placeable: false, nitro: "furni/st_es_lmppst.nitro", rotatable: true, fixed: true },
   st_hydrant: { id: "st_hydrant", label: "Fire hydrant", icon: "🧯", w: 1, h: 1, height: 36, color: "#a22", placeable: false, nitro: "furni/st_urban_wpost.nitro", rotatable: true, fixed: true },

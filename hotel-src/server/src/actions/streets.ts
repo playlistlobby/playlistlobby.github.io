@@ -75,22 +75,28 @@ export const elevatorDown: Action = {
 // ---- the bins ---------------------------------------------------------------------------------------------------------
 /** a street bin gives two things (and sometimes a third), and can be searched again after 5 minutes */
 const BIN_MS = 300_000;
+/** the plain can: this much of the time what it gives is a bandage */
+const CAN_BANDAGE = 0.1;
 export const streetBin: Action = {
   async run(c, a) {
     const can = text(a.can, /^[A-Za-z0-9_-]{1,30}$/, "can");
     await requireInRoom(c, STREETS_ID);
-    if (!STREET_PIECES.some(([id, kind]) => id === can && kind === "st_bin")) fail("That isn't a bin.");
+    const piece = STREET_PIECES.find(([id, kind]) => id === can && (kind === "st_bin" || kind === "st_can"));
+    if (!piece) fail("That isn't a bin.");
+    const plain = piece![1] === "st_can"; // the plain can: always 1 thing, the lean does nothing to it, and it has a better chance of a bandage
     const w = await c.user();
     const key = `st_${can}`;
     const last = w.s.dumpsters[key] ?? 0;
-    const reload = c.now < w.s.leanUntil ? BIN_MS / 2 : BIN_MS;
+    const reload = !plain && c.now < w.s.leanUntil ? BIN_MS / 2 : BIN_MS;
     if (c.now - last < reload) fail(`That bin was searched a moment ago. Try again in ${Math.max(1, Math.ceil((reload - (c.now - last)) / 60000))}m.`);
     const total = DUMPSTER_DROPS.reduce((n, d) => n + d.chance, 0);
     const pick = (): string => { let r = Math.random() * total; for (const d of DUMPSTER_DROPS) { if (r < d.chance) return d.item; r -= d.chance; } return DUMPSTER_DROPS[0].item; };
-    const picks = 2 + (Math.random() < 0.3 ? 1 : 0) + (c.now < w.s.leanUntil ? 2 : 0);
+    const others = DUMPSTER_DROPS.filter((d) => d.item !== PVP.healItem);
+    const pickPlain = (): string => { if (Math.random() < CAN_BANDAGE) return PVP.healItem; const t = others.reduce((n, d) => n + d.chance, 0); let r = Math.random() * t; for (const d of others) { if (r < d.chance) return d.item; r -= d.chance; } return others[0].item; };
+    const picks = plain ? 1 : 2 + (Math.random() < 0.3 ? 1 : 0) + (c.now < w.s.leanUntil ? 2 : 0);
     const items: string[] = [];
     for (let i = 0; i < picks; i++) {
-      const item = pick();
+      const item = plain ? pickPlain() : pick();
       const next = addToInv(w.s.inventory, { item, qty: 1 });
       if (!next) { if (!items.length) fail("Your inventory is full"); break; }
       w.s.inventory = next;

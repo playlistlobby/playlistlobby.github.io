@@ -128,6 +128,21 @@ check("two or three things come out", bin.data.items.length >= 2 && bin.data.ite
 bad("and not again at once", await act(a, "streetBin", { can: "s_bin1" }));
 ok("another bin is fine", await act(a, "streetBin", { can: "s_bin2" }));
 
+await owner("PUT", `users/${a.uid}/leanUntil`, Date.now() + 600_000);
+const can1 = await act(a, "streetBin", { can: "s_can1" });
+ok("search a plain can", can1);
+check("the plain can gives exactly 1 thing, whatever the lean does to the others", can1.data.items.length === 1, JSON.stringify(can1.data));
+let bandages = 0;
+for (let i = 0; i < 60; i++) {
+  await owner("DELETE", `users/${a.uid}/dumpsters`);
+  await owner("PUT", `users/${a.uid}/inventory`, [{ item: "knife", qty: 1 }]);
+  const r = await act(a, "streetBin", { can: "s_can2" });
+  if (r.ok && r.data.items.includes("bandage")) bandages++;
+}
+check("about 1 in 10 plain cans gives a bandage", bandages >= 1 && bandages <= 17, String(bandages));
+await owner("DELETE", `users/${a.uid}/leanUntil`);
+await owner("DELETE", `users/${a.uid}/dumpsters`);
+
 console.log("--- the customers");
 const now = Date.now();
 const walker = S.customersAt(now).find((x) => x.kind === "walker");
