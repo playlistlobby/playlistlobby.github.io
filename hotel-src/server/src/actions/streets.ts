@@ -17,7 +17,7 @@ import { findSlot, NO_DROP } from "../../../src/shared/items";
 import type { InvItem } from "../../../src/shared/items";
 import { floorPiles } from "./floor";
 import {
-  ARRIVAL_ID, bestWeapon, customerAt, customersAt, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, mergeStreetPieces, orderPay, PVP, StreetOverride, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, swingRoll, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
+  ARRIVAL_ID, bestWeapon, customerAt, CUSTOMER_CAP, CUSTOMER_STAY_MS, CUSTOMERS_PER_PLAYER_PER_MIN, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, mergeStreetPieces, orderPay, PVP, StreetOverride, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, swingRoll, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
 } from "../../../src/shared/streets";
 
 /** the streets are only for the staff and the emulator until the admin switches them on (config/streetsOpen, Admin > Streets) */
@@ -114,12 +114,46 @@ export const streetBin: Action = {
 };
 
 // ---- the customers ------------------------------------------------------------------------------------------------------
+/**
+ * Customers turn up while there are players on the street: 2 a minute for each of them, 18 on the street at most, and one whose order isn't filled leaves after 7 minutes.
+ * The browsers on the street ask every few seconds; whoever asks first does the counting (everything is in streetCustState, so it doesn't matter who).
+ */
+export const streetTick: Action = {
+  locks: () => ["streettick"],
+  async run(c) {
+    await requireInRoom(c, STREETS_ID);
+    const players = (await c.db.get<Record<string, { npc?: boolean; sleeper?: boolean }>>(`rooms/${STREETS_ID}/players`)) ?? {};
+    const present = Object.values(players).filter((p) => p && !p.npc && !p.sleeper).length;
+    const st = (await c.db.get<{ at?: number; carry?: number; k?: number }>("streetCustState")) ?? {};
+    const all = (await c.db.get<Record<string, { at?: number; until?: number }>>("streetCust")) ?? {};
+    const filled = (await c.db.get<Record<string, unknown>>("streetFilled")) ?? {};
+    let live = 0;
+    for (const [k, r] of Object.entries(all)) {
+      if (Number(r?.until) > c.now) { if (!filled[k]) live++; }
+      else if (Number(r?.until) < c.now - 120_000) c.extra[`streetCust/${k}`] = null; // (long gone: swept away)
+    }
+    const dt = Math.min(Math.max(0, c.now - (Number(st.at) || c.now)), 90_000); // (a street that was empty for a while doesn't save up customers)
+    let carry = (Number(st.carry) || 0) + (present * dt * CUSTOMERS_PER_PLAYER_PER_MIN) / 60_000;
+    if (present > 0 && live === 0) carry = Math.max(carry, 1); // (somebody walks onto an empty street: the first customer is there at once)
+    let next = Number(st.k) || Math.floor(c.now / 1000);
+    let spawned = 0;
+    while (carry >= 1 && live + spawned < CUSTOMER_CAP) {
+      next += 1; spawned += 1; carry -= 1;
+      c.extra[`streetCust/${next}`] = { at: c.now, until: c.now + CUSTOMER_STAY_MS };
+    }
+    if (live + spawned >= CUSTOMER_CAP) carry = Math.min(carry, 0.99); // (full: no queue of customers waiting to turn up)
+    c.extra["streetCustState"] = { at: c.now, carry: present > 0 ? carry : 0, k: next };
+    return { spawned, live: live + spawned, present };
+  },
+};
+
 export const streetFill: Action = {
   locks: () => ["streetfill"],
   async run(c, a) {
     const k = int(a.k, 0, 2_000_000_000, "customer");
     await requireInRoom(c, STREETS_ID);
-    const cu = customersAt(c.now).find((x) => x.k === k) ?? (customerAt(k).until > c.now && customerAt(k).at <= c.now ? customerAt(k) : null);
+    const row = await c.db.get<{ at?: number; until?: number }>(`streetCust/${k}`);
+    const cu = row && Number(row.until) > c.now && Number(row.at) <= c.now ? customerAt(k, Number(row.at)) : null; // (a customer the server let turn up, who hasn't left yet)
     if (!cu) fail("They've gone.");
     if (await c.db.get(`streetFilled/${k}`)) fail("Somebody else got there first.");
     const w = await c.user();

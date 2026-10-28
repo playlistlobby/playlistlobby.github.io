@@ -46,11 +46,13 @@ export const TICKET_PRICE = 50;
 export const TICKET_STOCK = 50;
 export const holdsTicket = (inv: ReadonlyArray<{ item: string } | null>): boolean => inv.some((s) => s?.item === TICKET_ITEM);
 
-// ---- the customers (the same for everybody: a customer is a function of the clock) ------------------------------------------
-/** a new customer turns up this often; each one stays this long unless somebody fills the order */
-export const CUSTOMER_EVERY_MS = 40_000;
-export const CUSTOMER_STAY_MS = 120_000;
-/** the customers on the street at once: about STAY / EVERY (3) */
+// ---- the customers: the server lets them turn up (see streetTick), and who they are (what they ask for, how they look) comes from their number -------------------
+/** each player on the street brings this many customers a minute; there are never more than CAP on the street at once; one that is not served leaves after STAY */
+export const CUSTOMERS_PER_PLAYER_PER_MIN = 2;
+export const CUSTOMER_CAP = 18;
+export const CUSTOMER_STAY_MS = 7 * 60_000;
+/** how often the browsers on the street ask the server to let customers turn up */
+export const STREET_TICK_MS = 10_000;
 export function seeded(seed: number): () => number {
   let a = (seed ^ 0x9e3779b9) | 0;
   return () => {
@@ -115,10 +117,9 @@ function spot(r: () => number): { x: number; y: number } {
 /** the drugs worth 150 or more to the bagmand: a rich customer asks for fewer of them */
 const BAGMAND_SELL_HINT: Record<string, number> = { heroin: 160, ketamine: 170, percs: 160, twocb: 180, caliweed: 255, fentcn: 330, pinkweed: 155, loudpack: 295, natryger: 200 };
 
-/** The customer number k (k = floor(time / CUSTOMER_EVERY_MS)): always the same one for the same k, so every browser and the server agree. */
-export function customerAt(k: number): Customer {
+/** The customer number k that turned up at `at`: always the same one for the same k, so every browser and the server agree on who they are and what they ask for. */
+export function customerAt(k: number, at = 0): Customer {
   const r = seeded(k * 7919 + 13);
-  const at = k * CUSTOMER_EVERY_MS;
   const rich = r() < 0.2;
   if (rich) { // a rich customer: a hat and maybe a pet, a little of any drug, and 3 times the price
     const item = richWant(r());
@@ -134,16 +135,6 @@ export function customerAt(k: number): Customer {
   else want = { item: RARE_WANTS[Math.floor(r() * RARE_WANTS.length)], qty: 1 + Math.floor(r() * 2), mult: WALK_MULT }; // a little of something rare
   const { x: wx, y: row } = spot(r);
   return { k, kind: "walker", at, until: at + CUSTOMER_STAY_MS, want, x: wx, y: row, from: r() < 0.5 ? -1 : 1, look: Math.floor(r() * 100000) };
-}
-/** the customers that are on the street at this moment (before the filled ones are taken away) */
-export function customersAt(now: number): Customer[] {
-  const out: Customer[] = [];
-  const last = Math.floor(now / CUSTOMER_EVERY_MS);
-  for (let k = last; k > last - Math.ceil(CUSTOMER_STAY_MS / CUSTOMER_EVERY_MS) - 1; k--) {
-    const c = customerAt(k);
-    if (now >= c.at && now < c.until) out.push(c);
-  }
-  return out;
 }
 /** what a filled order pays: unit price x qty x mult, rounded up (`unit` = what 6ixty pays for one) */
 export const orderPay = (unit: number, w: Want): number => Math.ceil(unit * w.qty * w.mult);

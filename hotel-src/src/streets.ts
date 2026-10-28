@@ -18,7 +18,7 @@ import { findSlot } from "./shared/items";
 import { h, toast } from "./ui/dom";
 import { setLeaveLock } from "./leaveLock";
 import { playSfx } from "./sfx";
-import { bestWeapon, customerAt, RICH_PETS, customersAt, CUSTOMER_EVERY_MS, CUSTOMER_STAY_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
+import { bestWeapon, customerAt, RICH_PETS, STREET_TICK_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
 import type { Customer, StreetCombat } from "./shared/streets";
 
 const FEET_Y = 94;
@@ -131,6 +131,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const me = o.me;
   let combat = new Map<string, StreetCombat & { deadAt?: number; deadBy?: string }>();
   let filled = new Map<number, number>(); // customer number -> when it was filled
+  let customers = new Map<number, { at: number; until: number }>(); // the customers the server has let turn up: number -> when they came and when they leave
   const hits = new Map<string, number>(); // attacker -> the time of the last hit we have shown
   const splats: Array<{ to: string; dmg: number; at: number }> = [];
   let fightTarget: string | null = null;
@@ -152,6 +153,10 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     onValue(query(ref(db, "streetFilled"), orderByKey(), limitToLast(60)), (s) => {
       const v = (s.val() ?? {}) as Record<string, { at?: number }>;
       filled = new Map(Object.entries(v).map(([k, r]) => [Number(k), Number(r?.at) || 0]));
+    }, () => undefined),
+    onValue(query(ref(db, "streetCust"), orderByKey(), limitToLast(60)), (s) => {
+      const v = (s.val() ?? {}) as Record<string, { at?: number; until?: number }>;
+      customers = new Map(Object.entries(v).map(([k, r]) => [Number(k), { at: Number(r?.at) || 0, until: Number(r?.until) || 0 }]));
     }, () => undefined),
     onValue(ref(db, "rooms/streets/hits"), (s) => {
       const v = (s.val() ?? {}) as Record<string, { to?: string; dmg?: number; at?: number; dead?: boolean }>;
@@ -178,6 +183,9 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   }, 2000);
 
   void call(me, "streetEnter").catch(() => undefined);
+  // customers turn up while players are on the street (the server counts: 2 a minute for each player, 18 at most); every browser here asks now and then
+  const customerTick = window.setInterval(() => { if (!disposed && !document.hidden) void call(me, "streetTick").catch(() => undefined); }, STREET_TICK_MS);
+  window.setTimeout(() => { if (!disposed) void call(me, "streetTick").catch(() => undefined); }, 1500);
 
   // ---- the panel at the top: hit points, the bandage, how long the elevator runs ----
   const hpFill = h("i", {});
@@ -334,12 +342,12 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     const { g, scale } = f;
     boxes = new Map();
     // the customers (the ones that were filled walk off, or drive off, before they disappear)
-    const last = Math.floor(now / CUSTOMER_EVERY_MS);
-    for (let k = last; k > last - Math.ceil(CUSTOMER_STAY_MS / CUSTOMER_EVERY_MS) + 1; k--) {
-      const c = customerAt(k);
-      const fa = filled.get(k) ?? null;
+    for (const [k, row] of customers) {
+      const c = customerAt(k, row.at);
+      c.until = row.until;
+      let fa = filled.get(k) ?? null;
       if (now < c.at) continue;
-      if (fa === null && now >= c.until) continue; // (gone: nobody filled it)
+      if (fa === null && now >= c.until) fa = c.until; // (nobody served them in time: they give up and walk away, the way a served one does)
       if (fa !== null && now - fa > 20_000) continue;
       boxes.set(`cust:${k}`, c);
       drawWalker(f, c, fa);
@@ -433,6 +441,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     dispose() {
       disposed = true;
       window.clearInterval(deadTimer);
+      window.clearInterval(customerTick);
       deadBox?.remove();
       setLeaveLock(null);
       stopFight();

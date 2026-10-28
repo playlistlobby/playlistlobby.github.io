@@ -123,6 +123,9 @@
     "streetFilled": {
       ".read": "@PW@"
     },
+    "streetCust": {
+      ".read": "@PW@"
+    },
     "beatBuys": {
       "$uid": {
         ".read": "@PW@ && auth.uid === $uid"
