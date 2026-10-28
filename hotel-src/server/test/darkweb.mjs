@@ -56,7 +56,9 @@ const A = D.DW_ORDERS[0], B = D.DW_ORDERS[1];
 check("two orders", D.DW_ORDERS.length === 2);
 check("order 1: 15 fentanyl, 5 cali weed blunts, 6 2cb", A.lines.find((l) => l.item === "fentcn")?.qty === 15 && A.lines.find((l) => l.item === "blunt_cali")?.qty === 5 && A.lines.find((l) => l.item === "twocb")?.qty === 6);
 check("order 2: 10 chud blunts", B.lines.length === 1 && B.lines[0].item === "blunt_chud" && B.lines[0].qty === 10);
-check("they pay 1.5 x what the item is worth (6ixty's price, or bagmand's for the opium drugs)", D.dwUnitPay("blunt_chud") === 30 && D.dwUnitPay("fentcn") === 495 && D.dwUnitPay("twocb") === 270 && D.dwUnitPay("blunt_cali") === 386, [30, 495, 270, 386].join() + " vs " + ["blunt_chud", "fentcn", "twocb", "blunt_cali"].map(D.dwUnitPay).join());
+check("the orders pay 2,000 and 4,000 in all", A.reward === 2000 && B.reward === 4000 && Math.round(A.lines.reduce((n, l) => n + D.dwUnitPay(A, l.item) * l.qty, 0)) === 2000 && Math.round(B.lines.reduce((n, l) => n + D.dwUnitPay(B, l.item) * l.qty, 0)) === 4000);
+check("a chud blunt pays 400, the share of fentanyl is the biggest", D.dwUnitPay(B, "blunt_chud") === 400 && D.dwUnitPay(A, "fentcn") > D.dwUnitPay(A, "blunt_cali") && D.dwUnitPay(A, "blunt_cali") > D.dwUnitPay(A, "twocb"));
+check("open until 21:00 Danish time (20:00 UTC in winter), closed after", D.dwOpen(Date.UTC(2026, 0, 15, 19, 59)).open && !D.dwOpen(Date.UTC(2026, 0, 15, 20, 0)).open && D.dwOpen(Date.UTC(2026, 6, 15, 18, 59)).open && !D.dwOpen(Date.UTC(2026, 6, 15, 19, 0)).open);
 
 const boss = await fresh("t_dw_boss", { blood: 0, inventory: inv({ item: "fentcn", qty: 10 }, { item: "blunt_chud", qty: 6 }, { item: "twocb", qty: 2, lit: undefined }) });
 const mate = await fresh("t_dw_mate", { inventory: inv({ item: "fentcn", qty: 8 }, { item: "blunt_chud", qty: 9 }) });
@@ -66,17 +68,20 @@ await owner("PUT", `roomsMeta/${ROOM}`, { owner: boss.uid, ownerName: "boss", na
 await owner("DELETE", `darkweb/${boss.uid}`);
 for (const u of [boss, mate, out]) await act(u, "sync");
 
-console.log("--- handing in");
+const openNow = D.dwOpen(Date.now()).open;
+console.log(openNow ? "--- handing in" : "--- closed (after 21:00 Danish time): only the closing is tested");
+if (!openNow) { bad("closed after 21:00", await act(boss, "darkwebGive", { room: ROOM, order: "b", item: "blunt_chud", qty: 1 })); await owner("DELETE", `roomsMeta/${ROOM}`); console.log(`
+${passes} passed, ${fails} failed`); process.exit(fails ? 1 : 0); }
 bad("somebody outside the hideout can't", await act(out, "darkwebGive", { room: ROOM, order: "b", item: "blunt_chud", qty: 2 }));
 bad("not an order", await act(boss, "darkwebGive", { room: ROOM, order: "zz", item: "blunt_chud", qty: 1 }));
 bad("not in that order", await act(boss, "darkwebGive", { room: ROOM, order: "b", item: "fentcn", qty: 1 }));
 bad("nothing on you", await act(boss, "darkwebGive", { room: ROOM, order: "a", item: "blunt_cali", qty: 1 }));
 const g1 = await act(boss, "darkwebGive", { room: ROOM, order: "b", item: "blunt_chud", qty: 6 });
 ok("the owner hands in 6 chud blunts", g1);
-check("paid 6 x 1.5 x the 6ixty price at once", (await state(boss)).blood === D.dwUnitPay("blunt_chud") * 6 && have(await state(boss), "blunt_chud") === 0, JSON.stringify(g1.data));
+check("paid 6 x 400 at once", (await state(boss)).blood === 2400 && have(await state(boss), "blunt_chud") === 0, JSON.stringify(g1.data));
 const g2 = await act(mate, "darkwebGive", { room: ROOM, order: "b", item: "blunt_chud", qty: 9 });
 ok("a member helps (only 4 are still needed)", g2);
-check("so only 4 are taken and paid", g2.data.gave === 4 && have(await state(mate), "blunt_chud") === 5 && (await state(mate)).blood === D.dwUnitPay("blunt_chud") * 4, JSON.stringify(g2.data));
+check("so only 4 are taken and paid", g2.data.gave === 4 && have(await state(mate), "blunt_chud") === 5 && (await state(mate)).blood === 1600, JSON.stringify(g2.data));
 check("the order is done", g2.data.done === true);
 bad("and filled for the day", await act(mate, "darkwebGive", { room: ROOM, order: "b", item: "blunt_chud", qty: 1 }));
 const prog = await owner("GET", `darkweb/${boss.uid}/${S.danishDayKey(Date.now())}/b`);

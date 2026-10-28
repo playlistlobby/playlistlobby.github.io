@@ -13,7 +13,7 @@ import { call } from "../db";
 import { onValue, ref } from "firebase/database";
 import { db } from "../firebase";
 import { danishDayKey } from "../shared/streets";
-import { DW_ORDERS, dwFilled, dwLeft, dwUnitPay } from "../shared/darkweb";
+import { DW_DEADLINE_HOUR, DW_ORDERS, dwFilled, dwLeft, dwOpen, dwPay } from "../shared/darkweb";
 import type { DwProgress } from "../shared/darkweb";
 import { hideoutPriceOf, HIDEOUT_AD_MAX, HIDEOUT_AD_PRICE, HIDEOUT_BOOST_PRICE, HIDEOUT_DESC_MAX, HIDEOUT_MAX_MEMBERS, HIDEOUT_ORDER_MS, HIDEOUT_SHOP, HIDEOUT_NAME_MAX } from "../shared/hideout";
 import { countdownText } from "../shared/raffle";
@@ -155,11 +155,12 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   /** the dark web: today's big orders. Everybody in the hideout hands in what they have; each one is paid at once, and the bars are shared. */
   function darkwebPage(): HTMLElement[] {
     const names = (p: DwProgress | undefined): string => Object.keys(p?.by ?? {}).length ? `Members who have helped: ${Object.keys(p!.by!).length}` : "Nobody has handed anything in yet";
+    const open = dwOpen(serverNow());
     const card = (o: (typeof DW_ORDERS)[number]): HTMLElement => {
       const p = dw[o.id];
       const filled = dwFilled(o, p);
       return h("div", { class: "dw-card" + (filled ? " done" : "") },
-        h("div", { class: "dw-title" }, h("span", {}, o.title), filled ? h("span", { class: "dw-badge" }, "Filled") : null),
+        h("div", { class: "dw-title" }, h("span", {}, o.title), filled ? h("span", { class: "dw-badge" }, "Filled") : h("span", { class: "dw-reward" }, h("img", { src: BLOOD_ICON, alt: "" }), o.reward.toLocaleString("en-US"))),
         ...o.lines.map((l) => {
           const def = itemDef(l.item);
           const got = Math.min(l.qty, Number(p?.got?.[l.item]) || 0);
@@ -171,16 +172,17 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
             h("div", { class: "dw-main" },
               h("div", { class: "dw-name" }, `${def?.name ?? l.item}`, h("span", { class: "dw-count" }, `${got} / ${l.qty}`)),
               h("div", { class: "dw-bar" }, h("div", { class: "dw-fill", style: { width: `${(got / l.qty) * 100}%` } })),
-              h("div", { class: "hint" }, `Pays ${dwUnitPay(l.item)} blood each`)),
+              h("div", { class: "hint" }, `Pays ${dwPay(o, l.item, 1)} blood each`)),
             left <= 0 ? h("span", { class: "dw-tick" }, "✓")
-              : h("button", { class: "btn small primary", disabled: busy || give <= 0, title: have <= 0 ? "You have none on you" : "", onclick: () => void act(async () => { const r = await call<{ gave: number; pay: number; done: boolean }>(me, "darkwebGive", { room: roomId, order: o.id, item: l.item, qty: give }); playSfx("coins", 0.5); return `You handed in ${r.gave} and got ${r.pay} blood.${r.done ? " The order is filled!" : ""}`; }) }, give > 0 ? `Give ${give}` : "Give"));
+              : h("button", { class: "btn small primary", disabled: busy || give <= 0 || !open.open, title: have <= 0 ? "You have none on you" : "", onclick: () => void act(async () => { const r = await call<{ gave: number; pay: number; done: boolean }>(me, "darkwebGive", { room: roomId, order: o.id, item: l.item, qty: give }); playSfx("coins", 0.5); return `You handed in ${r.gave} and got ${r.pay} blood.${r.done ? " The order is filled!" : ""}`; }) }, give > 0 ? `Give ${give}` : "Give"));
         }),
         h("div", { class: "hint" }, names(p)));
     };
     return [
       h("div", { class: "hc-hero ht-hero" }, h("div", { class: "hc-h1" }, "THE DARK WEB"), h("div", { class: "hc-sub" }, "Big orders. The whole hideout fills them together.")),
+      h("div", { class: "dw-clock" + (open.open ? "" : " closed") }, open.open ? `Ships before ${DW_DEADLINE_HOUR}:00 today: ${countdownText(open.leftMs)} left` : `Closed for today (it shut at ${DW_DEADLINE_HOUR}:00). The orders are back tomorrow.`),
       ...DW_ORDERS.map(card),
-      h("div", { class: "hc-foot" }, "Everybody in the hideout can hand in what they have on them. You are paid at once: one and a half times what the same thing is worth to 6ixty or bagmand. The orders start over every day."),
+      h("div", { class: "hc-foot" }, "Everybody in the hideout can hand in what they have on them. Both orders have to be shipped before 21:00. You are paid your share of the order at once, by what each thing is worth. The orders start over every day."),
     ];
   }
 

@@ -15225,8 +15225,8 @@
   "where": "src/ui/hideoutComputer.ts"
  },
  "N2490": {
-  "en": "Everybody in the hideout can hand in what they have on them. You are paid at once: one and a half times what the same thing is worth to 6ixty or bagmand. The orders start over every day.",
-  "da": "Alle i hideoutet kan aflevere det, de har på sig. Du bliver betalt med det samme: halvanden gang hvad det samme er værd hos 6ixty eller bagmand. Ordrerne starter forfra hver dag.",
+  "en": "Everybody in the hideout can hand in what they have on them. Both orders have to be shipped before 21:00. You are paid your share of the order at once, by what each thing is worth. The orders start over every day.",
+  "da": "Alle i hideoutet kan aflevere det, de har på sig. Begge ordrer skal sendes af sted før kl. 21. Du bliver betalt din andel af ordren med det samme, efter hvad hver ting er værd. Ordrerne starter forfra hver dag.",
   "where": "src/ui/hideoutComputer.ts"
  },
  "N2491": {
@@ -15263,5 +15263,20 @@
   "en": "The chud order",
   "da": "Chud-ordren",
   "where": "src/shared/darkweb.ts"
+ },
+ "N2498": {
+  "en": "Ships before {DW_DEADLINE_HOUR}:00 today: {…} left",
+  "da": "Sendes før kl. {DW_DEADLINE_HOUR}:00 i dag: {…} tilbage",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2499": {
+  "en": "Closed for today (it shut at {DW_DEADLINE_HOUR}:00). The orders are back tomorrow.",
+  "da": "Lukket for i dag (den lukkede kl. {DW_DEADLINE_HOUR}:00). Ordrerne er tilbage i morgen.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2500": {
+  "en": "The dark web closed for today at {DW_DEADLINE_HOUR}:00. The orders are back tomorrow.",
+  "da": "Dark web lukkede for i dag kl. {DW_DEADLINE_HOUR}:00. Ordrerne er tilbage i morgen.",
+  "where": "server/src/actions/darkweb.ts"
  }
 }

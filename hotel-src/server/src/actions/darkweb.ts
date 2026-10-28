@@ -1,10 +1,10 @@
 // The dark web (the hideout computer's tab): big orders the whole hideout fills together (see src/shared/darkweb.ts).
-//   darkwebGive {room, order, item, qty}   hand in some of one line of an order; you are paid 1.5 x 6ixty's price for each one at once, and the hideout's bar moves
+//   darkwebGive {room, order, item, qty}   hand in some of one line of an order (before 21:00 Danish time); you are paid your share of the order's reward at once, and the hideout's bar moves
 import { Action, int, requireHideoutMember, text } from "./util";
 import { fail } from "../ctx";
 import { takeQtyFrom } from "../../../src/shared/economy";
 import { danishDayKey } from "../../../src/shared/streets";
-import { DW_ORDERS, dwFilled, dwLeft, dwUnitPay } from "../../../src/shared/darkweb";
+import { DW_DEADLINE_HOUR, DW_ORDERS, dwFilled, dwLeft, dwOpen, dwPay } from "../../../src/shared/darkweb";
 import type { DwProgress } from "../../../src/shared/darkweb";
 
 export const darkwebGive: Action = {
@@ -17,6 +17,7 @@ export const darkwebGive: Action = {
     if (!order) fail("There is no such order.");
     const item = text(a.item, /^[a-z0-9_]{2,24}$/, "item");
     if (!order!.lines.some((l) => l.item === item)) fail("That isn't in the order.");
+    if (!dwOpen(c.now).open) fail(`The dark web closed for today at ${DW_DEADLINE_HOUR}:00. The orders are back tomorrow.`);
     const day = danishDayKey(c.now);
     const base = `darkweb/${owner}/${day}/${order!.id}`;
     const prog = (await c.db.get<DwProgress>(base)) ?? {};
@@ -36,7 +37,7 @@ export const darkwebGive: Action = {
     if (need === want) fail("You haven't got any of that on you.");
     const gave = want - need;
     w.s.inventory = inv;
-    const pay = dwUnitPay(item) * gave;
+    const pay = dwPay(order!, item, gave);
     w.s.blood += pay;
     const got = { ...(prog.got ?? {}), [item]: (Number(prog.got?.[item]) || 0) + gave };
     const next: DwProgress = { got, by: { ...(prog.by ?? {}), [c.uid]: (Number(prog.by?.[c.uid]) || 0) + gave } };

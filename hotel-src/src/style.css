@@ -1855,3 +1855,7 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .dw-card .hint { color: #9a9a9a; }
 .dw-line .btn { flex: none; min-width: 64px; }
 .dw-name { gap: 6px; }
+.dw-reward { display: inline-flex; align-items: center; gap: 4px; color: #ffd36a; letter-spacing: 0; }
+.dw-reward img { width: 14px; height: 14px; }
+.dw-clock { text-align: center; padding: 6px 8px; border-radius: 8px; background: #2a1d1d; color: #ffb3b3; font-weight: 700; }
+.dw-clock.closed { background: #222; color: #aaa; }
