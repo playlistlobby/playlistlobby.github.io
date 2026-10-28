@@ -32,7 +32,7 @@ import { openElevator } from "./elevator";
 import { mountStreets } from "../streets";
 import type { StreetsApi } from "../streets";
 import { ARRIVAL_ELEVATOR, arrivalDef, ARRIVAL_ID, streetsDef, STREETS_ID } from "../rooms";
-import { isStreetsRoom } from "../shared/streets";
+import { isStreetsRoom, STREETS_DAY } from "../shared/streets";
 import { openHideoutComputer, ComputerApi } from "./hideoutComputer";
 import { openHideoutLandlord } from "./hideoutLandlord";
 import { openHideoutDoor } from "./hideoutDoor";
@@ -959,7 +959,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       floorOrigin = again.origin;
     });
     roomTitle.textContent = def.ownerName ? `${def.name} · by ${def.ownerName}` : def.name;
-    stage.classList.toggle("horror", def.theme.style === "grime" || def.theme.style === "street");
+    stage.classList.toggle("horror", def.theme.style === "grime" || (def.theme.style === "street" && !STREETS_DAY));
     stage.classList.toggle("street", def.theme.style === "street");
     defListeners.forEach((l) => l());
   }

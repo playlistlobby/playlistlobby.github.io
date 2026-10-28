@@ -14963,5 +14963,70 @@
   "en": "You aren't hurt.",
   "da": "Du er ikke såret.",
   "where": "server/src/actions/streets.ts"
+ },
+ "N2438": {
+  "en": "Apple tree",
+  "da": "Æbletræ",
+  "where": "src/rooms.ts"
+ },
+ "N2439": {
+  "en": "Orange tree",
+  "da": "Appelsintræ",
+  "where": "src/rooms.ts"
+ },
+ "N2440": {
+  "en": "Pear tree",
+  "da": "Pæretræ",
+  "where": "src/rooms.ts"
+ },
+ "N2441": {
+  "en": "Blossom tree",
+  "da": "Blomstrende træ",
+  "where": "src/rooms.ts"
+ },
+ "N2442": {
+  "en": "Tree in a planter",
+  "da": "Træ i en urtepotte",
+  "where": "src/rooms.ts"
+ },
+ "N2443": {
+  "en": "Planter",
+  "da": "Plantekasse",
+  "where": "src/rooms.ts"
+ },
+ "N2444": {
+  "en": "Market stall",
+  "da": "Markedsbod",
+  "where": "src/rooms.ts"
+ },
+ "N2445": {
+  "en": "Phone box",
+  "da": "Telefonboks",
+  "where": "src/rooms.ts"
+ },
+ "N2446": {
+  "en": "Bird bath",
+  "da": "Fuglebad",
+  "where": "src/rooms.ts"
+ },
+ "N2447": {
+  "en": "Cafe table",
+  "da": "Cafébord",
+  "where": "src/rooms.ts"
+ },
+ "N2448": {
+  "en": "Chair",
+  "da": "Stol",
+  "where": "src/rooms.ts"
+ },
+ "N2449": {
+  "en": "Statue",
+  "da": "Statue",
+  "where": "src/rooms.ts"
+ },
+ "N2450": {
+  "en": "Traffic light",
+  "da": "Lyskryds",
+  "where": "src/rooms.ts"
  }
 }

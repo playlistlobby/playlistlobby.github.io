@@ -189,6 +189,38 @@ export function loadNitro(path: string): Promise<NitroFurni | null> {
         }
         g.putImageData(img, 0, 0);
       }) : Promise.reject(new Error("no bin art"))))
+      : path.startsWith("derived:beetle_") // the old car (a teal beetle) in other colours: the saturated pixels (the paint) change hue, the greys (glass, tyres, chrome) stay
+      ? loadNitro("furni/st_hween_c25_retrocar2.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const shift = BEETLE_HUES[path.slice("derived:beetle_".length)] ?? 0;
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          const r = d[i] / 255, gg = d[i + 1] / 255, b = d[i + 2] / 255;
+          const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b), l = (mx + mn) / 2, c = mx - mn;
+          if (c < 0.12) continue; // (grey: leave it)
+          let hh = mx === r ? ((gg - b) / c) % 6 : mx === gg ? (b - r) / c + 2 : (r - gg) / c + 4;
+          hh = ((hh * 60 + shift) % 360 + 360) % 360;
+          const s2 = Math.min(1, (c / (1 - Math.abs(2 * l - 1) || 1)) * 1.8); // (the teal is a pastel: the new colours are livelier)
+          const l2 = l * 0.9, cc = (1 - Math.abs(2 * l2 - 1)) * s2, x2 = cc * (1 - Math.abs(((hh / 60) % 2) - 1)), m = l2 - cc / 2;
+          const [r2, g2, b2] = hh < 60 ? [cc, x2, 0] : hh < 120 ? [x2, cc, 0] : hh < 180 ? [0, cc, x2] : hh < 240 ? [0, x2, cc] : hh < 300 ? [x2, 0, cc] : [cc, 0, x2];
+          d[i] = Math.round((r2 + m) * 255); d[i + 1] = Math.round((g2 + m) * 255); d[i + 2] = Math.round((b2 + m) * 255);
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no car art"))))
+      : path === "derived:phonebox_red" // the phone box in classic red: the white parts of the box go red, the glass and the shading stay
+      ? loadNitro("furni/st_phonebox.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          const l = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+          if (l < 0.35) continue; // (the dark glass and the outlines)
+          const k = Math.min(1, l * 1.05);
+          d[i] = Math.min(255, Math.round(70 + 190 * k)); d[i + 1] = Math.round(10 + 40 * k * k); d[i + 2] = Math.round(8 + 36 * k * k);
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no phone box art"))))
       : path === "derived:beatshop" // the BeatShop: the vending machine painted purple
       ? loadNitro("furni/olympics_r16_vendingmchn.nitro").then((n) => (n ? derive(n, (g, w, h) => {
         const img = g.getImageData(0, 0, w, h);
@@ -210,6 +242,9 @@ export function loadNitro(path: string): Promise<NitroFurni | null> {
   }
   return p;
 }
+
+/** how far the beetle's teal paint is turned (degrees of hue) for each colour */
+const BEETLE_HUES: Record<string, number> = { red: -170, yellow: -125, pink: 150, blue: 45, orange: -145, green: -70 };
 
 /** Forget a loaded piece (after the admin replaced its art). */
 export function forgetNitro(path: string): void {

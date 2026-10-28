@@ -7,7 +7,7 @@ import type { Profile } from "./db";
 import { getCached, renderAvatar } from "./avatarService";
 import { drawNitroFurni } from "./roomRender";
 import type { Box, Pt } from "./roomRender";
-import { loadNitro } from "./nitro";
+import { loadNitro, nitroIfReady, spritesFor } from "./nitro";
 import { FURNI_KINDS } from "./rooms";
 import { randomFigure } from "./catalog";
 import { itemDef } from "./items";
@@ -62,55 +62,43 @@ export interface StreetsApi {
 }
 
 // ---- the cars ----------------------------------------------------------------------------------------------------------------------------------
-/** the cars that drive by (and the ones that stop for a customer): the kind (see rooms.ts) and how it turns for each way of driving */
-const CARS = ["st_car_taxi", "st_car_pickup", "st_car_retro", "st_car_mafia"] as const;
-/** east = down to the right (x grows), west = up to the left */
-const CAR_DIR: Record<string, { east: number; west: number }> = {
-  st_car_taxi: { east: 2, west: 0 }, st_car_pickup: { east: 2, west: 4 }, st_car_retro: { east: 2, west: 4 }, st_car_mafia: { east: 0, west: 90 },
-};
-const AMBIENT_EVERY_MS = 6500;
-const AMBIENT_LIFE_MS = 22_000;
+/** the cars that drive by (and the ones that stop for a customer): the kind (see rooms.ts). The street is one way, east (down to the right): the art only has views that look toward you. */
+const CARS = ["st_car_retro", "st_car_retro_red", "st_car_retro_yellow", "st_car_retro_pink", "st_car_retro_blue", "st_car_retro_orange", "st_car_retro_green", "st_car_mafia"] as const;
+const CAR_DIR = 2;
+const AMBIENT_EVERY_MS = 15_000;
+const AMBIENT_LIFE_MS = 26_000;
 const LANE_EAST = ROAD_ROWS.lanes[0], LANE_WEST = ROAD_ROWS.lanes[1];
 
-interface Car { id: string; kind: string; x: number; y: number; east: boolean; stopped: boolean }
+interface Car { id: string; kind: string; x: number; y: number; stopped: boolean }
 
 function ambientCar(slot: number, now: number): Car | null {
   const r = seeded(slot * 131 + 5);
   const t = (now - slot * AMBIENT_EVERY_MS) / 1000;
   if (t < 0) return null;
-  const east = r() < 0.5;
-  const speed = 2.6 + r() * 1.4;
+  const lane = r() < 0.5 ? LANE_EAST : LANE_WEST;
+  const speed = 2.6 + r() * 1.2;
   const kind = CARS[Math.floor(r() * CARS.length)];
-  const stops = r() < 0.3;
-  const stopAt = 6 + r() * 12, stopFor = 3 + r() * 3;
-  const w = STREETS_W + 8;
-  let dist = speed * t;
-  if (stops) {
-    const reach = east ? stopAt + 3 : w - 3 - stopAt;
-    if (dist > reach) dist = dist < reach + stopFor * speed ? reach : dist - stopFor * speed;
-  }
-  const x = east ? -3 + dist : STREETS_W + 3 - dist;
-  if (x < -6 || x > STREETS_W + 6) return null;
-  return { id: `amb${slot}`, kind, x, y: east ? LANE_EAST : LANE_WEST, east, stopped: stops && Math.abs(dist - (east ? stopAt + 3 : w - 3 - stopAt)) < 0.01 };
+  const x = -4 + speed * t;
+  if (x > STREETS_W + 5) return null;
+  return { id: `amb${slot}`, kind, x, y: lane, stopped: false };
 }
 
 /** a customer's car: drives in along its lane to the curb spot, waits for the order, drives away the way it was going */
 function customerCar(c: Customer, now: number, filledAt: number | null): Car | null {
-  const east = c.from === -1;
   const speed = 3;
-  const startX = east ? -4 : STREETS_W + 4;
+  const startX = -4;
   const arriveMs = (Math.abs(c.x - startX) / speed) * 1000;
   const t = now - c.at;
-  const y = east ? LANE_EAST : LANE_WEST;
+  const y = c.y === ROAD_ROWS.curbs[0] ? LANE_EAST : LANE_WEST;
   let x: number;
-  if (t < arriveMs) x = startX + (east ? 1 : -1) * speed * (t / 1000);
+  if (t < arriveMs) x = startX + speed * (t / 1000);
   else if (filledAt !== null && now > filledAt) {
     const away = (speed * (now - filledAt - 800)) / 1000; // (a moment to count the money)
-    x = c.x + (east ? 1 : -1) * Math.max(0, away);
-    if (x < -6 || x > STREETS_W + 6) return null;
+    x = c.x + Math.max(0, away);
+    if (x > STREETS_W + 6) return null;
   } else x = c.x;
   const kind = CARS[c.look % CARS.length];
-  return { id: `car${c.k}`, kind, x, y, east, stopped: t >= arriveMs && !(filledAt !== null && now > filledAt + 800) };
+  return { id: `car${c.k}`, kind, x, y, stopped: t >= arriveMs && !(filledAt !== null && now > filledAt + 800) };
 }
 
 // ---- the walking customers ------------------------------------------------------------------------------------------------------------------------
@@ -336,14 +324,19 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     }
   }
   function drawCar(f: StreetsFrame, car: Car, c: Customer | null, waiting = false): void {
-    const d = CAR_DIR[car.kind];
-    const dir = car.east ? d.east : d.west;
     const kind = FURNI_KINDS[car.kind];
-    const len = Math.max(kind.w, kind.h);
-    const ax = car.x - (len > 1 ? 0.5 : 0), ay = car.y;
+    const n = nitroIfReady(kind.nitro!);
+    // the art is drawn around the sprites' own centre, so a long car sits in its lane whatever its size: the middle of its shadow (the part on the ground) goes on the lane
+    let offX = 0;
+    if (n) {
+      const sh = spritesFor(n, CAR_DIR).filter((sp) => sp.isShadow);
+      const use = sh.length ? sh : spritesFor(n, CAR_DIR);
+      if (use.length) offX = (Math.min(...use.map((sp) => sp.dx)) + Math.max(...use.map((sp) => sp.dx + sp.sw))) / 2;
+    }
     const depth = car.x + car.y + 0.4;
     f.list.push({ depth, draw: () => {
-      const box = drawNitroFurni(f.g, car.kind, ax, ay, dir, f.toScreen, f.scale);
+      const ts = (p: Pt): Pt => { const q = f.toScreen(p); return { x: q.x - offX * f.scale, y: q.y }; };
+      const box = drawNitroFurni(f.g, car.kind, car.x, car.y, CAR_DIR, ts, f.scale);
       if (c && box && waiting) {
         const cx = (box.x0 + box.x1) / 2;
         const hot = f.hoverId === `cust:${c.k}`;
@@ -370,7 +363,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       g.beginPath(); g.ellipse(feet.x, feet.y, 14 * f.scale, 6 * f.scale, 0, 0, Math.PI * 2); g.fill();
       if (!img) img = getCached(opts);
       if (img) g.drawImage(img, feet.x - (32 + padOf(img).x) * f.scale, feet.y - (FEET_Y + padOf(img).y) * f.scale, img.width * f.scale, img.height * f.scale);
-      if (waiting && (hot || (Math.floor(now / 1000) + c.look) % 10 < 5)) drawOrderBubble(g, feet.x, feet.y - (FEET_Y + 6) * f.scale, c, f.scale, hot);
+      if (waiting) drawOrderBubble(g, feet.x, feet.y - (FEET_Y + 6) * f.scale, c, f.scale, hot);
     } });
     if (waiting) f.objs.push({ id: `cust:${c.k}`, kind: "scustomer", x0: feet.x - 24 * f.scale, y0: feet.y - (FEET_Y + 28) * f.scale, x1: feet.x + 24 * f.scale, y1: feet.y + 8 * f.scale, depth });
   }

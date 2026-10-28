@@ -1821,3 +1821,6 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .as-cell { cursor: crosshair; }
 .as-out { width: 100%; font-family: monospace; font-size: 11px; box-sizing: border-box; }
 .as-num { width: 64px !important; }
+
+/* the streets by day: a blue sky behind the buildings (the room canvas is transparent above them) */
+.stage.street:not(.horror) { background: radial-gradient(ellipse 60% 40% at 78% 14%, #fff7d6 0%, rgba(255,247,214,0) 60%), linear-gradient(#5aa9e6 0%, #9ed0f2 45%, #dff0fb 100%); }

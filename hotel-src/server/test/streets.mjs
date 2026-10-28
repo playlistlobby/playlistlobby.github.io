@@ -146,7 +146,7 @@ await owner("DELETE", `users/${a.uid}/dumpsters`);
 console.log("--- the customers");
 const now = Date.now();
 const walker = S.customersAt(now).find((x) => x.kind === "walker");
-check("there are customers on the street", S.customersAt(now).length >= 6, String(S.customersAt(now).length));
+check("there are customers on the street", S.customersAt(now).length >= 2, String(S.customersAt(now).length));
 const car = [...Array(40)].map((_, i) => S.customerAt(Math.floor(now / S.CUSTOMER_EVERY_MS) - i)).find((x) => x.kind === "car");
 check("cars ask for much more (7-10) at 3 times the price, or a little of something rare", car && car.want.mult === 3 && (car.want.qty >= 7 || S.RARE_WANTS.includes(car.want.item)), JSON.stringify(car?.want));
 check("a customer is the same for everybody (a function of its number)", JSON.stringify(S.customerAt(12345)) === JSON.stringify(S.customerAt(12345)));

@@ -2,6 +2,10 @@
 //   elevator (basement) -> arrival room (safe, the size of a medium player room) -> the streets (night, a road with cars, bins, customers, knife fights)
 // Pure: the browser and the server both use it. Nothing here is published until STREETS_OPEN is true (the emulator and the admin's test switch always work).
 
+/** the streets by day (true) or at night (false: the first version, still in the code) */
+export const STREETS_DAY = true;
+/** grass on the sidewalks: [x, y, w, h] in tiles (painted on the floor; you can walk on it) */
+export const GRASS_BEDS: Array<[number, number, number, number]> = [[0, 11, 25, 1]];
 export const STREETS_OPEN = false;
 export const ARRIVAL_ID = "arrival";
 export const STREETS_ID = "streets";
@@ -43,10 +47,10 @@ export const holdsTicket = (inv: ReadonlyArray<{ item: string } | null>): boolea
 
 // ---- the customers (the same for everybody: a customer is a function of the clock) ------------------------------------------
 /** a new customer turns up this often; each one stays this long unless somebody fills the order */
-export const CUSTOMER_EVERY_MS = 14_000;
-export const CUSTOMER_STAY_MS = 150_000;
-export const CAR_STAY_MS = 120_000;
-/** the customers on the street at once: about STAY / EVERY (10) */
+export const CUSTOMER_EVERY_MS = 40_000;
+export const CUSTOMER_STAY_MS = 120_000;
+export const CAR_STAY_MS = 90_000;
+/** the customers on the street at once: about STAY / EVERY (3) */
 export function seeded(seed: number): () => number {
   let a = (seed ^ 0x9e3779b9) | 0;
   return () => {
@@ -80,7 +84,8 @@ export interface Customer {
   /** a number for the look (a walker's clothes, a car's model and colour) */
   look: number;
 }
-export const STREET_SIDEWALK_ROWS = [1, 2, 9, 10, 11];
+/** the rows the walking customers stand in (the two nearest the road) */
+export const STREET_SIDEWALK_ROWS = [2, 9];
 export const ROAD_ROWS = { first: 3, last: 8, lanes: [4, 7], curbs: [3, 8] };
 
 /** The customer number k (k = floor(time / CUSTOMER_EVERY_MS)): always the same one for the same k, so every browser and the server agree. */
@@ -96,15 +101,17 @@ export function customerAt(k: number): Customer {
     const want: Want = rare
       ? { item: RARE_WANTS[Math.floor(r() * RARE_WANTS.length)], qty: 1 + Math.floor(r() * 3), mult: BIG_MULT }
       : { item, qty: 7 + Math.floor(r() * 4), mult: BIG_MULT };
-    return { k, kind: "car", at, until: at + CAR_STAY_MS, want, x: 4 + Math.floor(r() * 16), y: lane === 0 ? ROAD_ROWS.curbs[0] : ROAD_ROWS.curbs[1], from: lane === 0 ? -1 : 1, look: Math.floor(r() * 1000) };
+    return { k, kind: "car", at, until: at + CAR_STAY_MS, want, x: 5 + Math.floor(r() * 14), y: lane === 0 ? ROAD_ROWS.curbs[0] : ROAD_ROWS.curbs[1], from: -1, look: Math.floor(r() * 1000) }; // (the street is one way: every car drives east, down to the right, because the car art only has the two views that look toward you)
   }
   const roll = r();
   let want: Want;
   if (roll < 0.5) want = { item: COMMON_WANTS[Math.floor(r() * COMMON_WANTS.length)], qty: 1 + Math.floor(r() * 2), mult: WALK_MULT }; // half of them: 1 or 2 of the common stuff
   else if (roll < 0.86) want = { item: COMMON_WANTS[Math.floor(r() * COMMON_WANTS.length)], qty: 3 + Math.floor(r() * 2), mult: WALK_MULT }; // 3 or 4 of it
   else want = { item: RARE_WANTS[Math.floor(r() * RARE_WANTS.length)], qty: 1 + Math.floor(r() * 2), mult: WALK_MULT }; // a little of something rare
-  const row = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)];
-  return { k, kind: "walker", at, until: at + CUSTOMER_STAY_MS, want, x: 3 + Math.floor(r() * 19), y: row, from: r() < 0.5 ? -1 : 1, look: Math.floor(r() * 100000) };
+  let row = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)];
+  let wx = 3 + Math.floor(r() * 19);
+  for (let tries = 0; tries < 30 && !isFreeTile(wx, row); tries++) { row = STREET_SIDEWALK_ROWS[Math.floor(r() * STREET_SIDEWALK_ROWS.length)]; wx = 3 + Math.floor(r() * 19); } // (not on a lamp or a tree)
+  return { k, kind: "walker", at, until: at + CUSTOMER_STAY_MS, want, x: wx, y: row, from: r() < 0.5 ? -1 : 1, look: Math.floor(r() * 100000) };
 }
 /** the customers that are on the street at this moment (before the filled ones are taken away) */
 export function customersAt(now: number): Customer[] {
@@ -152,14 +159,28 @@ export function hpNow(c: Pick<StreetCombat, "hp" | "at">, now: number): number {
 
 /** Everything that stands on the street: [id, kind, x, y, dir] (x runs down to the right, y down to the left; the road is rows 3-8, the sidewalks 0-2 at the back and 9-11 in front) */
 export const STREET_PIECES: Array<[string, string, number, number, number]> = [
-  ["s_lamp1", "st_lamp", 3, 2, 4], ["s_lamp2", "st_lamp", 10, 2, 4], ["s_lamp3", "st_lamp", 17, 2, 4], ["s_lamp4", "st_lamp", 23, 2, 4],
-  ["s_lampf1", "st_lamppost", 6, 9, 2], ["s_lampf2", "st_lamppost", 14, 9, 2], ["s_lampf3", "st_lamppost", 21, 9, 2],
-  ["s_can1", "st_can", 3, 1, 4], ["s_can2", "st_can", 10, 1, 4], ["s_can3", "st_can", 12, 11, 2],
-  ["s_bin1", "st_bin", 6, 1, 4], ["s_bin2", "st_bin", 13, 1, 4], ["s_bin3", "st_bin", 20, 1, 4], ["s_bin4", "st_bin", 9, 11, 2], ["s_bin5", "st_bin", 18, 11, 2],
-  ["s_hyd1", "st_hydrant", 8, 2, 4], ["s_hyd2", "st_hydrant", 16, 9, 2],
-  ["s_bench1", "st_bench", 4, 11, 2], ["s_bench2", "st_bench", 22, 11, 2],
-  ["s_dump1", "st_dumpster", 15, 1, 4], ["s_dump2", "st_dumpster", 1, 1, 4],
-  ["s_sign1", "st_signs", 11, 9, 2], ["s_road1", "st_roadsign", 19, 8, 2], ["s_block1", "st_blocker", 20, 8, 2], ["s_block2", "st_blocker", 19, 3, 4],
+  // the back sidewalk, against the shops: bins and cans, a dumpster, three market stalls, lamps and trees along the curb
+  ["s_can1", "st_can", 5, 1, 4], ["s_bin1", "st_bin", 6, 1, 4], ["s_stall1", "st_stall1", 8, 1, 4], ["s_dump1", "st_dumpster", 11, 1, 4], ["s_can2", "st_can", 14, 1, 4],
+  ["s_stall2", "st_stall2", 16, 1, 4], ["s_bin2", "st_bin", 19, 1, 4], ["s_stall3", "st_stall3", 21, 1, 4],
+  ["s_lamp1", "st_lamp", 6, 2, 4], ["s_lamp2", "st_lamp", 14, 2, 4], ["s_lamp3", "st_lamp", 22, 2, 4],
+  ["s_tree1", "st_tree_apple", 4, 2, 4], ["s_tree2", "st_tree_blossom", 10, 2, 4], ["s_tree3", "st_tree_orange", 18, 2, 4], ["s_hyd1", "st_hydrant", 20, 2, 4],
+  // the road
   ["s_man1", "st_manhole", 8, 5, 0], ["s_man2", "st_manhole", 17, 6, 0],
-  ["s_tag1", "st_tag1", 6, 0, 4], ["s_tag2", "st_tag2", 12, 0, 4], ["s_tag3", "st_tag3", 18, 0, 4], ["s_tag4", "st_tag1", 0, 6, 2],
+  // the front sidewalk: a phone box, a cafe, the traffic light by the crossing, a bird bath, benches, a statue, and lamps
+  ["s_phone1", "st_phonebox", 1, 9, 4], ["s_lampf1", "st_lamppost", 5, 9, 2], ["s_chair1", "st_cafechair", 6, 9, 2], ["s_table1", "st_cafetable", 7, 9, 0], ["s_chair2", "st_cafechair", 9, 10, 6],
+  ["s_traf1", "st_traffic", 10, 9, 2], ["s_bin4", "st_bin", 10, 10, 2], ["s_bath", "st_birdbath", 12, 10, 0], ["s_lampf2", "st_lamppost", 15, 9, 2], ["s_can3", "st_can", 16, 10, 2],
+  ["s_bench1", "st_bench", 4, 10, 2], ["s_bench2", "st_bench", 19, 10, 2], ["s_lampf3", "st_lamppost", 22, 9, 2], ["s_stat", "st_statue", 24, 10, 4], ["s_sign1", "st_signs", 24, 9, 2],
+  // the grass strip along the front: trees, planters, bushes
+  ["s_ft1", "st_tree_pear", 1, 11, 4], ["s_pl1", "st_planter", 3, 11, 2], ["s_pt1", "st_planttree", 6, 11, 0], ["s_pl2", "st_planter", 9, 11, 2], ["s_ft2", "st_tree_apple", 13, 11, 4],
+  ["s_pl3", "st_planter", 16, 11, 2], ["s_pt2", "st_planttree", 19, 11, 0], ["s_pl4", "st_planter", 21, 11, 2], ["s_ft3", "st_tree_blossom", 24, 11, 4],
 ];
+/** how many tiles each piece covers (a piece turned to face 2 or 6 swaps them): the customers don't stand where something is */
+const PIECE_TILES: Record<string, [number, number]> = { st_stall1: [2, 1], st_stall2: [2, 1], st_stall3: [2, 1], st_dumpster: [2, 1], st_bench: [2, 1], st_cafetable: [2, 2] };
+const BLOCKED = new Set<string>();
+for (const [, kind, px, py, dir] of STREET_PIECES) {
+  const [w, h] = PIECE_TILES[kind] ?? [1, 1];
+  const [fw, fh] = dir === 2 || dir === 6 ? [h, w] : [w, h];
+  if (kind === "st_manhole") continue;
+  for (let dx = 0; dx < fw; dx++) for (let dy = 0; dy < fh; dy++) BLOCKED.add(`${px + dx},${py + dy}`);
+}
+export const isFreeTile = (tx: number, ty: number): boolean => !BLOCKED.has(`${tx},${ty}`);
