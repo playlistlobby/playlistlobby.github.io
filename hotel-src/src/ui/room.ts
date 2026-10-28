@@ -4435,7 +4435,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (r.bounty > 0) {
           const f0 = mine() ? feetOf(mine()!, performance.now()) : null;
           if (f0) floaters.push({ text: `+${r.bounty}`, x: f0.x, y: f0.y - 78 * scale, born: performance.now(), color: "#9dff9a", icon: bloodImg, life: 3200, size: 2 });
-          say(`You shot ${r.name} and collected the ${r.bounty} on their head.`);
+          say(`You shot ${r.name} and collected the ${r.bounty} on their head.${r.key ? " You found a box key on them." : ""}`);
         } else say(`You shot ${r.name}. Nothing on their head: they are down for ${r.secs} seconds.`);
       } catch (err) { closeShootBox(); say((err as Error).message || "The gun jams.", "warn"); }
     } }, rocket ? "Fire" : "Shoot");

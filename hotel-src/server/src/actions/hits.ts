@@ -4,7 +4,7 @@
 import { Action, cheb, ID_RE, int, requireHideoutMember, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { findSlot } from "../../../src/shared/items";
-import { takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
 import { isHideoutId } from "../../../src/shared/hideout";
 import { FAIR_GAME_UIDS, ROULETTE_CHAIRS, HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_ONLINE_FRESH_MS, HIT_ONLINE_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, liveHits, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
 import { bloodPile } from "./floor";
@@ -134,18 +134,23 @@ export const gunShoot: Action = {
     const loss = shotLoss(v.s.blood, !!hit);
     v.s.blood -= loss.drop;
     let got = 0;
+    let key = false;
     if (hit) {
       got = hit.amount;
       w.s.blood += got;
       c.extra[`hits/${hit.id}`] = null;
       if (hit.bagmand) await clearWanted(c, target); // (a claimed bagmand hit: the rooms they stand in close again)
+      if (Math.random() < 0.1) { // doing a hit: 1 time in 10 a box key turns up (not if the pocket is full)
+        const withKey = addToInv(w.s.inventory, { item: "casekey", qty: 1 });
+        if (withKey) { w.s.inventory = withKey; key = true; }
+      }
     }
     const shooterName = String(w.raw?.name ?? "someone").slice(0, 16);
     c.note = hit ? `shot ${name}: bounty ${got}` : `shot ${name}`;
     if (loss.drop > 0) await bloodPile(c, room, typeof theirs!.x === "number" && typeof theirs!.y === "number" ? { x: theirs!.x, y: theirs!.y } : null, loss.drop, target, name);
     c.extra[`sendHome/${target}`] = { at: c.now, by: c.uid, byName: shooterName, lost: loss.drop, secs: loss.secs, shot: true };
     c.extra[`rooms/${room}/events/s${c.now.toString(36)}${Math.random().toString(36).slice(2, 4)}`] = { type: "shot", from: c.uid, to: target, ts: c.now };
-    return { bounty: got, dropped: loss.drop, secs: loss.secs, name };
+    return { bounty: got, dropped: loss.drop, secs: loss.secs, name, key };
   },
 };
 

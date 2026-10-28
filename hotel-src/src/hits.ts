@@ -11,7 +11,7 @@ export const hitPlace = (p: Profile, room: string, target: string, amount: numbe
 /** the hitman site's player list: who is online (no search), or the names with the search in them; the protected ones are not in it */
 export const hitSearch = (p: Profile, q: string): Promise<{ players: Array<{ uid: string; name: string }> }> => call(p, "hitSearch", { q });
 /** shoot somebody in the room with the gun in this pocket slot */
-export const gunShoot = (p: Profile, room: string, target: string, slot: number): Promise<{ bounty: number; dropped: number; secs: number; name: string }> => call(p, "gunShoot", { room, target, slot });
+export const gunShoot = (p: Profile, room: string, target: string, slot: number): Promise<{ bounty: number; dropped: number; secs: number; name: string; key?: boolean }> => call(p, "gunShoot", { room, target, slot });
 
 /** every open hit, live (the biggest first) */
 export function watchHits(cb: (hits: Hit[]) => void): () => void {

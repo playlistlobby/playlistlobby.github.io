@@ -1859,3 +1859,4 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .dw-reward img { width: 14px; height: 14px; }
 .dw-clock { text-align: center; padding: 6px 8px; border-radius: 8px; background: #2a1d1d; color: #ffb3b3; font-weight: 700; }
 .dw-clock.closed { background: #222; color: #aaa; }
+.dw-share { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 8px; background: #101010; border: 1px solid #333; }

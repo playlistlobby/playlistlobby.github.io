@@ -1,6 +1,7 @@
 // The dark web (a tab of the hideout computer): big orders the whole hideout fills together, shipped before 21:00 Danish time. For now two orders a day, the same every day, paid 1.5 times what the same drugs are worth.
 // Pure data: the browser and the server both use it. The progress of a hideout is at darkweb/<owner>/<dayKey>/<orderId> (only the server writes it):
-//   { got: { <item>: <how many the hideout has handed in> }, by: { <uid>: <how many items that member handed in> }, done?: true }
+//   { got: { <item>: <how many the hideout has handed in> }, by: { <uid>: <blood that member's items are worth: their share> }, done?: true, readyAt?: <when it has shipped>, paid?: { <uid>: true } }
+// Nobody is paid for handing in: when the order is filled it ships (DW_SHIP_MS), then every member collects their share (what their items were worth, 1.5 x) on the computer.
 import { sellPrice } from "./items";
 import { BAGMAND_SELL } from "./bagmand";
 import { danishParts } from "./streets";
@@ -11,6 +12,8 @@ export interface DwOrder { id: string; title: string; lines: DwLine[] }
 export const DW_MULT = 1.5;
 /** the orders have to be shipped before this hour (Danish time) every day */
 export const DW_DEADLINE_HOUR = 21;
+/** an order takes this long to ship once it is filled: nobody can collect before */
+export const DW_SHIP_MS = 20 * 60_000;
 export const DW_ORDERS: DwOrder[] = [
   // fentanyl, cali weed blunts and 2cb (the drug made of opium and a shroom): about 2,700 blood in all
   { id: "a", title: "The big shipment", lines: [{ item: "fentcn", qty: 3 }, { item: "blunt_cali", qty: 1 }, { item: "twocb", qty: 3 }] },
@@ -32,6 +35,6 @@ export function dwOpen(now: number): { open: boolean; leftMs: number } {
   const into = (DW_DEADLINE_HOUR - p.h) * 3600 - p.mi * 60 - p.s;
   return { open: into > 0, leftMs: Math.max(0, into * 1000) };
 }
-export interface DwProgress { got?: Record<string, number>; by?: Record<string, number>; done?: boolean }
+export interface DwProgress { got?: Record<string, number>; by?: Record<string, number>; done?: boolean; readyAt?: number; paid?: Record<string, boolean> }
 export const dwLeft = (o: DwOrder, p: DwProgress | null | undefined, item: string): number => Math.max(0, (o.lines.find((l) => l.item === item)?.qty ?? 0) - (Number(p?.got?.[item]) || 0));
 export const dwFilled = (o: DwOrder, p: DwProgress | null | undefined): boolean => o.lines.every((l) => dwLeft(o, p, l.item) === 0);

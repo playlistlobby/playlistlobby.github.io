@@ -45,8 +45,8 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   let searchTimer = 0;
   let searchQ = "";
   let busy = false;
-  let dw: Record<string, DwProgress> = {}; // the hideout's progress on today's dark web orders
-  const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; if (page === "members") render(); }), watchDonated(me.uid, (n) => { donated = n; if (page === "members") render(); }), watchHideoutTill(me.uid, (t) => { till = t; if (page === "tables") render(); }), onValue(ref(db, `darkweb/${roomId.slice(2)}/${danishDayKey(serverNow())}`), (s) => { dw = (s.val() as Record<string, DwProgress> | null) ?? {}; if (page === "darkweb") render(); }, () => undefined)];
+  let dwAll: Record<string, Record<string, DwProgress>> = {}; // the hideout's dark web orders: day -> order -> progress (the days that are not over for somebody who has a share to collect)
+  const stops = [watchHideoutFavs(me.uid, (f) => { favs = f; if (page === "members") render(); }), watchDonated(me.uid, (n) => { donated = n; if (page === "members") render(); }), watchHideoutTill(me.uid, (t) => { till = t; if (page === "tables") render(); }), onValue(ref(db, `darkweb/${roomId.slice(2)}`), (s) => { dwAll = (s.val() as Record<string, Record<string, DwProgress>> | null) ?? {}; if (page === "darkweb") render(); }, () => undefined)];
   const owner = (): boolean => getDef().ownerUid === me.uid;
   /** the staff can open any hideout's computer to see who is in it (they get the Members page only, and can't change anything) */
   const staffView = (): boolean => { const d = getDef(); return me.enterAnywhere && d.ownerUid !== me.uid && !d.hideout?.members?.[me.uid]; };
@@ -156,8 +156,20 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
   function darkwebPage(): HTMLElement[] {
     const names = (p: DwProgress | undefined): string => Object.keys(p?.by ?? {}).length ? `Members who have helped: ${Object.keys(p!.by!).length}` : "Nobody has handed anything in yet";
     const open = dwOpen(serverNow());
+    const today = danishDayKey(serverNow());
+    /** your share of a filled order: shipping, ready to collect, or collected */
+    const shareRow = (day: string, o: (typeof DW_ORDERS)[number], p: DwProgress | undefined): HTMLElement | null => {
+      if (!p?.done || !p.readyAt) return null;
+      const share = Number(p.by?.[me.uid]) || 0;
+      if (share <= 0) return h("div", { class: "hint" }, "You didn't put anything in this one.");
+      if (p.paid?.[me.uid]) return h("div", { class: "dw-share" }, h("span", {}, "Your share"), h("span", { class: "dw-reward" }, h("img", { src: BLOOD_ICON, alt: "" }), share.toLocaleString("en-US")), h("span", { class: "dw-tick" }, "Collected ✓"));
+      const wait = p.readyAt - serverNow();
+      return h("div", { class: "dw-share" }, h("span", {}, "Your share"), h("span", { class: "dw-reward" }, h("img", { src: BLOOD_ICON, alt: "" }), share.toLocaleString("en-US")),
+        wait > 0 ? h("span", { class: "hint" }, `On its way: ${countdownText(wait)}`)
+          : h("button", { class: "btn small primary", disabled: busy, onclick: () => void act(async () => { const r = await call<{ share: number }>(me, "darkwebCollect", { room: roomId, day, order: o.id }); playSfx("coins", 0.5); return `You collected ${r.share} blood.`; }) }, `Collect ${share.toLocaleString("en-US")}`));
+    };
     const card = (o: (typeof DW_ORDERS)[number]): HTMLElement => {
-      const p = dw[o.id];
+      const p = dwAll[today]?.[o.id];
       const filled = dwFilled(o, p);
       return h("div", { class: "dw-card" + (filled ? " done" : "") },
         h("div", { class: "dw-title" }, h("span", {}, o.title), filled ? h("span", { class: "dw-badge" }, "Filled") : h("span", { class: "dw-reward" }, h("img", { src: BLOOD_ICON, alt: "" }), dwTotal(o).toLocaleString("en-US"))),
@@ -172,17 +184,28 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
             h("div", { class: "dw-main" },
               h("div", { class: "dw-name" }, `${def?.name ?? l.item}`, h("span", { class: "dw-count" }, `${got} / ${l.qty}`)),
               h("div", { class: "dw-bar" }, h("div", { class: "dw-fill", style: { width: `${(got / l.qty) * 100}%` } })),
-              h("div", { class: "hint" }, `Pays ${dwUnitPay(l.item)} blood each`)),
+              h("div", { class: "hint" }, `Worth ${dwUnitPay(l.item)} blood each to your share`)),
             left <= 0 ? h("span", { class: "dw-tick" }, "✓")
-              : h("button", { class: "btn small primary", disabled: busy || give <= 0 || !open.open, title: have <= 0 ? "You have none on you" : "", onclick: () => void act(async () => { const r = await call<{ gave: number; pay: number; done: boolean }>(me, "darkwebGive", { room: roomId, order: o.id, item: l.item, qty: give }); playSfx("coins", 0.5); return `You handed in ${r.gave} and got ${r.pay} blood.${r.done ? " The order is filled!" : ""}`; }) }, give > 0 ? `Give ${give}` : "Give"));
+              : h("button", { class: "btn small primary", disabled: busy || give <= 0 || !open.open, title: have <= 0 ? "You have none on you" : "", onclick: () => void act(async () => { const r = await call<{ gave: number; value: number; done: boolean }>(me, "darkwebGive", { room: roomId, order: o.id, item: l.item, qty: give }); playSfx("select", 0.5); return `You handed in ${r.gave}: ${r.value} blood added to your share.${r.done ? " The order is filled and on its way!" : ""}`; }) }, give > 0 ? `Give ${give}` : "Give"));
         }),
-        h("div", { class: "hint" }, names(p)));
+        shareRow(today, o, p) ?? h("div", { class: "hint" }, names(p), h("br"), "Your share is paid 20 minutes after the order is filled."));
     };
+    // shares from an earlier day that nobody has collected yet (an order that was filled just before midnight)
+    const earlier: HTMLElement[] = [];
+    for (const day of Object.keys(dwAll).sort().reverse()) {
+      if (day === today) continue;
+      for (const o of DW_ORDERS) {
+        const p = dwAll[day]?.[o.id];
+        if (!p?.done || !(Number(p.by?.[me.uid]) > 0) || p.paid?.[me.uid]) continue;
+        earlier.push(h("div", { class: "dw-card" }, h("div", { class: "dw-title" }, h("span", {}, `${o.title} (${day.slice(6)}/${day.slice(4, 6)})`), h("span", { class: "dw-badge" }, "Filled")), shareRow(day, o, p)));
+      }
+    }
     return [
       h("div", { class: "hc-hero ht-hero" }, h("div", { class: "hc-h1" }, "THE DARK WEB"), h("div", { class: "hc-sub" }, "Big orders. The whole hideout fills them together.")),
       h("div", { class: "dw-clock" + (open.open ? "" : " closed") }, open.open ? `Ships before ${DW_DEADLINE_HOUR}:00 today: ${countdownText(open.leftMs)} left` : `Closed for today (it shut at ${DW_DEADLINE_HOUR}:00). The orders are back tomorrow.`),
+      ...earlier,
       ...DW_ORDERS.map(card),
-      h("div", { class: "hc-foot" }, "Everybody in the hideout can hand in what they have on them. Both orders have to be shipped before 21:00. You are paid at once: one and a half times what the same thing is worth to 6ixty (or to bagmand, for the opium drugs). The orders start over every day."),
+      h("div", { class: "hc-foot" }, "Everybody in the hideout can hand in what they have on them, and both orders have to be filled before 21:00. When an order is filled it takes 20 minutes to ship. Then everybody collects their own share here: what the things they put in are worth, one and a half times what 6ixty pays (or bagmand, for the opium drugs). The orders start over every day."),
     ];
   }
 

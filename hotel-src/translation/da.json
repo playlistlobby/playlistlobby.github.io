@@ -15278,5 +15278,105 @@
   "en": "The dark web closed for today at {DW_DEADLINE_HOUR}:00. The orders are back tomorrow.",
   "da": "Dark web lukkede for i dag kl. {DW_DEADLINE_HOUR}:00. Ordrerne er tilbage i morgen.",
   "where": "server/src/actions/darkweb.ts"
+ },
+ "N2501": {
+  "en": "You didn't put anything in this one.",
+  "da": "Du puttede ikke noget i denne.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2502": {
+  "en": "Your share",
+  "da": "Din andel",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2503": {
+  "en": "Collected ✓",
+  "da": "Hentet ✓",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2504": {
+  "en": "On its way: {countdownText}",
+  "da": "På vej: {countdownText}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2505": {
+  "en": "You collected {share} blood.",
+  "da": "Du hentede {share} blod.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2506": {
+  "en": "Collect {…}",
+  "da": "Hent {…}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2507": {
+  "en": "Worth {dwUnitPay} blood each to your share",
+  "da": "Giver {dwUnitPay} blod til din andel pr. stk.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2508": {
+  "en": "You handed in {gave}: {value} blood added to your share.{…}",
+  "da": "Du afleverede {gave}: {value} blod lagt til din andel.{…}",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2509": {
+  "en": "The order is filled and on its way!",
+  "da": "Ordren er fyldt og på vej!",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2510": {
+  "en": "Your share is paid 20 minutes after the order is filled.",
+  "da": "Din andel udbetales 20 minutter efter, ordren er fyldt.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2511": {
+  "en": "Ships before {DW_DEADLINE_HOUR}:00 today: {countdownText} left",
+  "da": "Sendes før kl. {DW_DEADLINE_HOUR}:00 i dag: {countdownText} tilbage",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2512": {
+  "en": "Everybody in the hideout can hand in what they have on them, and both orders have to be filled before 21:00. When an order is filled it takes 20 minutes to ship. Then everybody collects their own share here: what the things they put in are worth, one and a half times what 6ixty pays (or bagmand, for the opium drugs). The orders start over every day.",
+  "da": "Alle i hideoutet kan aflevere det, de har på sig, og begge ordrer skal fyldes før kl. 21. Når en ordre er fyldt, tager det 20 minutter at sende den af sted. Så henter alle deres egen andel her: hvad de ting, de puttede i, er værd, halvanden gang hvad 6ixty betaler (eller bagmand, for opium-stofferne). Ordrerne starter forfra hver dag.",
+  "where": "src/ui/hideoutComputer.ts"
+ },
+ "N2513": {
+  "en": "That order hasn't been filled.",
+  "da": "Den ordre er ikke fyldt.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2514": {
+  "en": "The order is still on its way. It has shipped in {…} min.",
+  "da": "Ordren er stadig på vej. Den er sendt af sted om {…} min.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2515": {
+  "en": "You didn't put anything in that order.",
+  "da": "Du puttede ikke noget i den ordre.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2516": {
+  "en": "You have collected your share already.",
+  "da": "Du har allerede hentet din andel.",
+  "where": "server/src/actions/darkweb.ts"
+ },
+ "N2517": {
+  "en": "Heals 3 hit points in a fight on the streets. You can use it again after 6 seconds. Bagmand sells them (10 blood), and the bins give one now and then.",
+  "da": "Heler 3 helbred i en kamp på gaden. Du kan bruge den igen efter 6 sekunder. Bagmand sælger dem (10 blod), og skraldespandene giver en nu og da.",
+  "where": "src/items.ts"
+ },
+ "N2518": {
+  "en": "A key for a mystery box. Bagmand sells them (400 blood), the pay2win machine in the shop does too (5 for 30 kr, or 1 for 10 kr), and now and then somebody who does a hit finds one. One key opens one box.",
+  "da": "En nøgle til en mysteriekasse. Bagmand sælger dem (400 blod), og pay2win-maskinen i butikken gør også (5 for 30 kr eller 1 for 10 kr), og nu og da finder en, der udfører et hit, en. En nøgle åbner en kasse.",
+  "where": "src/items.ts"
+ },
+ "N2519": {
+  "en": "You shot {name} and collected the {bounty} on their head.{…}",
+  "da": "Du skød {name} og tog de {bounty} på deres hoved.{…}",
+  "where": "src/ui/room.ts"
+ },
+ "N2520": {
+  "en": "You found a box key on them.",
+  "da": "Du fandt en nøgle til en kasse på dem.",
+  "where": "src/ui/room.ts"
  }
 }

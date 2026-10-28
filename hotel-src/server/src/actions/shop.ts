@@ -56,7 +56,6 @@ export const buyWalkman: Action = {
     const w = await c.user();
     if (findSlot(w.s.inventory, "walkman") >= 0) fail("You have a walkman already.");
     const entry = await c.itemEntry("walkman");
-    if (!entry.on) fail("It's sold out.");
     if (w.s.blood < entry.price) fail(`You need ${entry.price - w.s.blood} more drops`);
     const next = addToInv(w.s.inventory, { item: "walkman", qty: 1 });
     if (!next) fail("Your inventory is full");

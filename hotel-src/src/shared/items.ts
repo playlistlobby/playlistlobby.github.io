@@ -90,14 +90,14 @@ export const findSlot = (inv: Inventory, item: string): number => inv.findIndex(
 export const findSlotAny = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item);
 
 /** What 6ixty sells, in shelf order. The admin can still switch an item off or change its price (Admin > Shop > Items). */
-export const SIXTY_STOCK = ["cigarette", "pill", "kodimagnyl", "bandage"];
+export const SIXTY_STOCK = ["cigarette", "pill", "kodimagnyl"];
 export const DEFAULT_ITEM_PRICE = 5;
 /** Default shop entry for items that start on sale (everything else starts off). */
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cigarette: { on: true, price: 2 },
   pill: { on: true, price: 3 },
-  walkman: { on: true, price: 100 }, // a portable CD player (the record shop sells it)
-  casekey: { on: true, price: 300 }, // a key for a mystery box (6ixty sells them; the Ducky machine sells 5 for 30 kr, or 1 for 10 kr)
+  walkman: { on: false, price: 100 }, // a portable CD player: the record player in the shop sells it, never 6ixty (on = 6ixty sells it)
+  casekey: { on: false, price: 400 }, // (on = 6ixty sells it: he does not) // a key for a mystery box (bagmand sells them; a hit gives one 1 time in 10; the Ducky machine sells 5 for 30 kr, or 1 for 10 kr)
   cd_ogep: { on: true, price: 20 }, // the OG community EP (the four player songs on one CD): the record player sells it, one per player
   cd_blodig: { on: true, price: 5 }, // the Blodig oktober CD, sold at the record player in the shop: one per player (see buyRecord)
   cd_lykk: { on: true, price: 5 }, // leolegit - blodoktober (prod. Lykk), the same shop and rules
@@ -105,7 +105,7 @@ export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cd_dipdip: { on: true, price: 5 }, // lemonade - Dip Dip, the same shop and rules
   cd: { on: true, price: 2 }, // the Freakme CD, sold at the record player in the shop: one per player, once (see buyRecord)
   wood: { on: true, price: WOOD_PRICE }, // sold by 6ixty in the mines (see buySixty)
-  bandage: { on: true, price: 12 }, // sold by 6ixty: heals 3 hit points in the streets (a test item)
+  bandage: { on: false, price: 10 }, // (on = 6ixty sells it: he does not) // sold by bagmand (3 a visit for each player; see BAGMAND_BUY) and found in the bins: heals 3 hit points in the streets
   kodimagnyl: { on: true, price: 4 }, // sold by 6ixty (the growing kit moved to the vending machine)
   // sold in the shop room's vending machine (not by 6ixty): the admin can still change these prices
   lighter: { on: false, price: 2 },

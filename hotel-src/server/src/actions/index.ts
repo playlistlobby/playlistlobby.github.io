@@ -35,7 +35,7 @@ import { elevatorDown, elevatorUp, streetBin, streetEnter, streetFill, streetHea
 import { beatBegin, beatBuy, beatChatRead, beatChatSend, beatFinish, beatRemove, beatReplyBegin, buyBeatShop } from "./beats";
 import { songBegin, songDelete, songFinish, songSweep, songVote } from "./songs";
 import { loudspeaker } from "./loudspeaker";
-import { darkwebGive } from "./darkweb";
+import { darkwebCollect, darkwebGive } from "./darkweb";
 import { petBuy, petPickup, petRelease, petStockNow } from "./pets";
 import { caseOpen, unusualRemove, unusualWear } from "./cases";
 import { hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutBuy, hideoutCollect, hideoutColors, hideoutInvite, hideoutKick, hideoutLeave, hideoutMember, hideoutOrder, hideoutSearch, hideoutSettings, hideoutUpgrade, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect, hideoutDonate } from "./hideout";
@@ -44,7 +44,7 @@ import { hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutBuy, hideoutColl
 export const ACTIONS: Record<string, Action> = {
   sync, setLook, buyClothes,
   buySixty, buyVending, buyRecord, buyWalkman, buyPoster, claimPurchases, buyFurni, buyRoomUpgrade, roomColors, roomSkins, sellWeed,
-  sixty, usePill, eat, darkwebGive,
+  sixty, usePill, eat, darkwebGive, darkwebCollect,
   consume, stab, syringe, vapePuff, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
   drop, pickup, fentDrop,
   store: storeItem, take: takeItem, stashStore, stashTake, buyStashbox, furniPlace, furniMove, furniStore, furniState,

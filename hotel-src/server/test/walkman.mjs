@@ -40,6 +40,7 @@ const fresh = async (name, extra = {}) => {
 };
 const stand = (u, room) => owner("PUT", `rooms/${room}/players/${u.uid}`, { name: u.name, figure: "x", x: 5, y: 5, dir: 2 });
 const state = async (u) => (await act(u, "sync")).state;
+const have = (st, item) => st.inventory.reduce((n, x) => n + (x && x.item === item ? x.qty : 0), 0);
 const slotOf = (st, item) => st.inventory.findIndex((s) => s && s.item === item);
 const refused = (r) => r.status === 401 || r.status === 403;
 
@@ -110,6 +111,16 @@ st = await state(ip);
 check("500 blood gone, an iPod in the pocket", st.blood === 700 && slotOf(st, "ipod") >= 0, String(st.blood));
 bad("only one per player", await act(ip, "bagmandBuy", { item: "ipod", qty: 1 }));
 bad("6ixty doesn't sell it", await act(ip, "buySixty", { item: "ipod" }));
+const b3 = await act(ip, "bagmandBuy", { item: "bandage", qty: 3 });
+ok("3 bandages from bagmand for 10 each", b3);
+check("30 blood gone", (await state(ip)).blood === 670, String((await state(ip)).blood));
+bad("a 4th bandage in the same visit", await act(ip, "bagmandBuy", { item: "bandage", qty: 1 }));
+bad("6ixty doesn't sell bandages", await act(ip, "buySixty", { item: "bandage" }));
+const bk = await act(ip, "bagmandBuy", { item: "casekey", qty: 1 });
+ok("a box key from bagmand", bk);
+check("it costs 400", (await state(ip)).blood === 270 && have(await state(ip), "casekey") === 1, String((await state(ip)).blood));
+ok("and there are always more keys", await act(ip, "bagmandBuy", { item: "casekey", qty: 0 + 1 }).then((r) => ({ ok: r.ok === false && /more drops/.test(r.error || "") })));
+bad("6ixty doesn't sell keys", await act(ip, "buySixty", { item: "casekey" }));
 await owner("DELETE", "bagmand/force");
 await owner("DELETE", `rooms/lobby/players/${ip.uid}`);
 
