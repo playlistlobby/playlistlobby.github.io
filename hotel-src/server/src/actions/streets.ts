@@ -187,6 +187,12 @@ export const streetHit: Action = {
       mine.kills += 1;
       c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, skullUntil: 0, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
       mine.combatUntil = 0;
+      // everything they carry is gone (the pocket is wiped; blood and what they wear stay)
+      const v = await c.user(target);
+      v.s.inventory = v.s.inventory.map(() => null);
+      // somebody who closed the game in the fight is not standing there any more once they are dead
+      const pr = await c.db.get<{ room?: string } | null>(`presence/${target}`);
+      if (!pr || pr.room !== STREETS_ID) c.extra[`rooms/${STREETS_ID}/players/${target}`] = null;
     } else c.extra[`streetCombat/${target}`] = { ...their, hp: left, at: c.now };
     c.extra[`streetCombat/${c.uid}`] = { ...mine, hp: hpNow(mine, c.now), at: c.now };
     // what everybody in the room sees: a number over the head (and the dead one is sent home by their own browser)

@@ -36,7 +36,7 @@ export const fmtWhen = (ms: number): string => { const m = Math.max(1, Math.roun
 
 // ---- the ticket --------------------------------------------------------------------------------------------------------
 export const TICKET_ITEM = "elevator_ticket";
-export const TICKET_PRICE = 150;
+export const TICKET_PRICE = 50;
 /** tickets on sale per day (the stock fills up again every day) */
 export const TICKET_STOCK = 50;
 export const holdsTicket = (inv: ReadonlyArray<{ item: string } | null>): boolean => inv.some((s) => s?.item === TICKET_ITEM);
@@ -141,8 +141,8 @@ export const PVP = {
   healItem: "bandage",
   healHp: 3,
   healCooldownMs: 6_000,
-  /** what happens to what you carry when you die: nothing yet (the rules for risk are for later) */
-  loseOnDeath: false,
+  /** what happens to what you carry when you die: the whole pocket is lost */
+  loseOnDeath: true,
 } as const;
 export interface StreetCombat { hp: number; at: number; combatUntil: number; skullUntil: number; healAt: number; protectUntil: number; kills: number; deaths: number }
 /** hit points now, with the ones that have come back since `at` */

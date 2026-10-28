@@ -2,6 +2,7 @@
 // behind (a closed tab, a crash, a second window): the player is long gone, or online somewhere else, but the model keeps standing in the room. Whoever is in a room asks the server
 // to sweep it (when they arrive and every few minutes): an entry goes when its player has no presence at all, is online in another room, or has been silent for half an hour.
 import { Action, text } from "./util";
+import { STREETS_ID } from "../../../src/shared/streets";
 
 const ROOM_RE = /^[A-Za-z0-9_-]{1,64}$/;
 /** an entry this new is left alone (the player is only just walking in: their presence may not say so yet) */
@@ -20,6 +21,8 @@ export const roomSweep: Action = {
       if (c.now - joined < NEW_MS) continue;
       const pr = await c.db.get<{ room?: string; seen?: number; since?: number } | null>(`presence/${uid}`);
       const seen = typeof pr?.seen === "number" ? pr.seen : typeof pr?.since === "number" ? pr.since : 0;
+      // a player who closed the game in a street fight stays on the street (and can be killed) until the fight has been quiet for 10 seconds
+      if (room === STREETS_ID && Number(await c.db.get<number>(`streetCombat/${uid}/combatUntil`)) > c.now) continue;
       const gone = !pr || c.now - seen > SILENT_MS; // (logged out, or silent for good)
       const elsewhere = !!pr && typeof pr.room === "string" && pr.room !== "" && pr.room !== room && c.now - seen < SILENT_MS; // (online, standing in another room)
       if (gone || elsewhere) { c.extra[`rooms/${room}/players/${uid}`] = null; removed++; }

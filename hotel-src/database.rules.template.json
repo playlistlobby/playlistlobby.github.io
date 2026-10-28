@@ -1004,6 +1004,9 @@
           "$uid": {
             ".write": "@PW@ && auth.uid === $uid && @KNOWN@ && @IN@ && (!newData.exists() || ($room !== 'arrival' && $room !== 'streets') || @ADMIN@ || root.child('streetPass').child(auth.uid).val() > now) && (!newData.exists() || !root.child('wantedUsers').child(auth.uid).child('until').exists() || root.child('wantedUsers').child(auth.uid).child('until').val() < now || root.child('wantedRooms').child($room).child('uid').val() === auth.uid)",
             ".validate": "newData.hasChildren(['name', 'figure', 'x', 'y', 'dir'])",
+            "off": {
+              ".validate": "newData.isNumber()"
+            },
             "smoke": {
               ".validate": "newData.isNumber()"
             },

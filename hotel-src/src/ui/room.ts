@@ -3317,6 +3317,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   const playersRef = ref(db, `rooms/${roomId}/players`);
   const myRef = ref(db, `rooms/${roomId}/players/${me.uid}`);
+  /** what the database does with my entry when the connection drops: it goes (in the streets it is only marked off, so a fight can't be escaped by closing the game) */
+  const armLeave = (): void => { void (roomId === STREETS_ID ? onDisconnect(myRef).update({ off: serverTimestamp() }) : onDisconnect(myRef).remove()).catch(() => undefined); };
   const chatRef = ref(db, `rooms/${roomId}/chat`);
   function paintFx(): void {
     fxBtn.classList.toggle("on", !!(chatFx.fx || chatFx.fc));
@@ -3468,7 +3470,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (me.cupUntil > serverNow()) mineP.cup = me.cupUntil;
     if (me.chemUntil > serverNow()) mineP.chem = me.chemUntil;
     if (burning) { mineP.smoke = burning; mineP.smokeKind = SMOKABLE[burningItem!.item].kind; }
-    void onDisconnect(myRef).remove();
+    armLeave();
+    if (isStreets) { // closing the game in a street fight is no way out: your entry stays (marked off) while the fight goes on, and you can still be killed
+      unsubs.push(onValue(ref(db, ".info/connected"), (s) => { if (s.val() === true && !disposed) { void update(myRef, { off: null }).catch(() => undefined); armLeave(); } }));
+    }
     if (frozen) { // as 6ixty (or the landlord) you are locked facing the way he faces: nothing you do in the room (a shot, a tap, a gesture) turns you
       const lockedDir = startDir;
       const pin = window.setInterval(() => {
@@ -3599,8 +3604,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const denied = () => kicked("You don't have access to that room.");
     // what the database lists as standing here; people whose session has died (no heartbeat, or no presence any more) are hidden, not drawn as ghosts
     const known = new Map<string, any>();
+    /** a closed game in the streets: whoever is still being fought stays on the street for now */
+    const logged = (uid: string): boolean => isStreets && !!known.get(uid)?.off && !!streetsApi?.fighting(uid);
     // (somebody is drawn here only while they are online AND their presence says this room: an entry left behind by a player who has moved on is a ghost, not somebody standing here)
-    const visible = (uid: string): boolean => !social.presenceLoaded || (social.isOnline(uid) && (uid === me.uid || social.presence.get(uid)?.room === roomId));
+    const visible = (uid: string): boolean => !social.presenceLoaded || (social.isOnline(uid) && (uid === me.uid || social.presence.get(uid)?.room === roomId)) || logged(uid);
     function applyVisibility(): void {
       if (disposed) return;
       let changed = false;
@@ -3613,7 +3620,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (changed) { renderOnline(); syncSleeper(); }
     }
     unsubs.push(social.subscribe(applyVisibility));
-    const ghostTimer = window.setInterval(applyVisibility, 30_000);
+    const ghostTimer = window.setInterval(applyVisibility, isStreets ? 2_000 : 30_000);
     unsubs.push(() => window.clearInterval(ghostTimer));
     unsubs.push(
       onChildAdded(playersRef, (snap) => {
@@ -3629,6 +3636,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (snap.key === me.uid) return;
         const v = snap.val();
         known.set(snap.key!, v);
+        if (isStreets) applyVisibility();
         const p = players.get(snap.key!);
         if (!p) return;
         p.name = v.name;
@@ -3670,7 +3678,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           const mineNow = players.get(me.uid);
           if (!disposed && mineNow) {
             const t = currentTile(mineNow);
-            void onDisconnect(myRef).remove();
+            armLeave();
             set(myRef, { name: shownName, figure: shownFigure(), ...(me.nameColor ? { nc: me.nameColor } : {}), x: t.x, y: t.y, dir: mineNow.dir, ts: serverTimestamp(), ...(asSixty ? { sixty: true } : {}) }).catch(() => undefined);
           }
           return;

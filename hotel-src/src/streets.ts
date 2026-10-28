@@ -55,6 +55,8 @@ export interface StreetsApi {
   fight(uid: string): void;
   stopFight(): void;
   inFight(): boolean;
+  /** somebody is in a fight right now (used to keep the body of a player who closed the game in it) */
+  fighting(uid: string): boolean;
   heal(slot: number): Promise<void>;
   dispose(): void;
 }
@@ -215,7 +217,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
 
   function died(by?: string): void {
     stopFight();
-    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You wake up in your room.`, "warn");
+    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You lost everything you carried. You wake up in your room.`, "warn");
     window.setTimeout(() => { if (!disposed) o.goHome(); }, 1800);
   }
 
@@ -435,6 +437,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       return c ? `${c.kind === "car" ? "Car" : "Customer"}: wants ${c.want.qty} x ${itemDef(c.want.item)?.name ?? c.want.item}` : null;
     },
     drawPlayer, fight, stopFight, inFight, heal,
+    fighting: (uid) => (combat.get(uid)?.combatUntil ?? 0) > serverNow(),
     dispose() {
       disposed = true;
       stopFight();

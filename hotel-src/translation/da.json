@@ -14530,8 +14530,8 @@
   "where": "src/streets.ts"
  },
  "N2351": {
-  "en": "You were killed{…}. You wake up in your room.",
-  "da": "Du blev dræbt{…}. Du vågner op på dit værelse.",
+  "en": "You were killed{…}. You lost everything you carried. You wake up in your room.",
+  "da": "Du blev dræbt{…}. Du mistede alt, du bar på. Du vågner op på dit værelse.",
   "where": "src/streets.ts"
  },
  "N2352": {

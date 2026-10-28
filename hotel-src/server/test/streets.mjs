@@ -81,8 +81,8 @@ bad("not outside the basement", await act(a, "ticketBuy"));
 for (const u of [admin, a, b, c, poor]) await stand(u, "lobby", 3, 3);
 bad("blood is needed", await act(poor, "ticketBuy"));
 const tb = await act(a, "ticketBuy");
-ok("buy the ticket for 150", tb);
-check("150 blood, one ticket", (await bloodOf(a)) === 850 && have(await state(a), "elevator_ticket") === 1 && tb.data.left === 49, JSON.stringify(tb.data));
+ok("buy the ticket for 50", tb);
+check("50 blood, one ticket", (await bloodOf(a)) === 950 && have(await state(a), "elevator_ticket") === 1 && tb.data.left === 49, JSON.stringify(tb.data));
 bad("one per player", await act(a, "ticketBuy"));
 check("the stock counts", (await owner("GET", `streetTickets/${day}/sold`)) === 1);
 await owner("PUT", `streetTickets/${day}/sold`, 50);
@@ -190,9 +190,20 @@ check("a hit that lands kills somebody on 1 hit point", died);
 const dead = await owner("GET", `streetCombat/${b.uid}`);
 check("the dead one is back on full hit points, marked dead, and untouchable for a while", dead.hp === 10 && dead.deaths === 1 && dead.deadBy === a.uid && dead.protectUntil > Date.now(), JSON.stringify(dead));
 check("the killer is credited", (await owner("GET", `streetCombat/${a.uid}/kills`)) === 1);
-check("nothing is lost on death (for now)", have(await state(b), "knife") === 1);
+check("everything in the pocket is lost on death", !(await state(b)).inventory.some((x) => x), JSON.stringify((await state(b)).inventory));
+
+console.log("--- closing the game in a fight");
+const rowOf = (u) => ({ name: u.name, figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", x: 4, y: 4, dir: 2, ts: Date.now() - 60_000, off: Date.now() });
+await owner("DELETE", `presence/${b.uid}`);
+await owner("PUT", `rooms/streets/players/${b.uid}`, rowOf(b));
+await owner("PUT", `streetCombat/${b.uid}`, { hp: 10, at: Date.now(), combatUntil: Date.now() + 8000, skullUntil: 0, healAt: 0, protectUntil: 0, kills: 0, deaths: 0 });
+await act(a, "roomSweep", { room: "streets" });
+check("somebody who closed the game in a fight stays on the street", !!(await owner("GET", `rooms/streets/players/${b.uid}`)));
+await owner("PATCH", `streetCombat/${b.uid}`, { combatUntil: Date.now() - 1000 });
+await act(a, "roomSweep", { room: "streets" });
+check("and goes once the fight has been quiet", !(await owner("GET", `rooms/streets/players/${b.uid}`)));
 
 for (const u of [admin, a, b, c, poor]) for (const r of ["lobby", "shop", "arrival", "streets"]) await owner("DELETE", `rooms/${r}/players/${u.uid}`);
-await owner("DELETE", "config/streetsForce");
+await owner("PUT", "config/streetsForce", Date.now() + 30 * 86_400_000); // (the elevator keeps running in the local test)
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

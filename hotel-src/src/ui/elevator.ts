@@ -11,7 +11,7 @@ import type { Ctx } from "../main";
 export interface ElevatorApi { close(): void }
 
 /**
- * The elevator window. In the basement: the ticket (150 blood, 50 a day, one per player), when it runs (20 to 21), and the ride up (the ticket is used up). In the arrival room: the ride back down.
+ * The elevator window. In the basement: the ticket (50 blood, 50 a day, one per player), when it runs (20 to 21), and the ride up (the ticket is used up). In the arrival room: the ride back down.
  * `onRide` is told where to go once the server has said yes.
  */
 export function openElevator(host: HTMLElement, ctx: Ctx, where: "lobby" | "arrival", onRide: (dir: "up" | "down") => void, onClose: () => void): ElevatorApi {
