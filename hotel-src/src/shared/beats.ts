@@ -10,7 +10,7 @@ export const BEATSHOP_KIND = "f_beatshop";
 export const BEATSHOP_PRICE = 50;
 export const BEATSHOP_OWNED_KEY = "item_f_beatshop";
 /** a seller can have this many beats on sale at a time */
-export const BEATS_MAX = 15;
+export const BEATS_MAX = 5;
 export const BEAT_PRICE_MIN = 1;
 export const BEAT_PRICE_MAX = 10_000;
 /** a cropped preview is this long */

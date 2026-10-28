@@ -110,11 +110,11 @@ check("the full beat is still closed to everybody else", refused(await readAs(ot
 check("and the preview is open", (await readAs(other, `audio/${b2.data.previewId}/0`)).status === 200);
 check("the row says it is not a whole beat", (await readAs(other, `beats/${seller.uid}/${b2.data.id}`)).body?.whole === false);
 
-console.log("--- 15 at most");
-for (let i = 0; i < 13; i++) { const r = await begin(seller, { title: `Beat ${i}`, whole: false }); if (!r.ok) { check(`beat ${i}`, false, JSON.stringify(r)); break; } await owner("PATCH", `beats/${seller.uid}/${r.data.id}`, { ready: true }); await owner("DELETE", `audioUploads/${seller.uid}`); }
+console.log("--- 5 at most");
+for (let i = 0; i < 3; i++) { const r = await begin(seller, { title: `Beat ${i}`, whole: false }); if (!r.ok) { check(`beat ${i}`, false, JSON.stringify(r)); break; } await owner("PATCH", `beats/${seller.uid}/${r.data.id}`, { ready: true }); await owner("DELETE", `audioUploads/${seller.uid}`); }
 const n = Object.keys((await owner("GET", `beats/${seller.uid}`)) ?? {}).length;
-check("15 on sale (2 + 13)", n === 15, String(n));
-bad("the 16th is refused", await begin(seller, { title: "one too many", whole: false }));
+check("5 on sale (2 + 3)", n === 5, String(n));
+bad("the 6th is refused", await begin(seller, { title: "one too many", whole: false }));
 
 console.log("--- taking a beat off");
 ok("take off the open beat (nobody bought it)", await act(seller, "beatRemove", { id: b2.data.id }));
