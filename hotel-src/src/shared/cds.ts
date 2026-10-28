@@ -30,6 +30,8 @@ export const albumIndexOf = (id: string): number => ALBUM_TRACKS.findIndex((t) =
 
 /** What each CD item plays: the id of the track (or "album") and its name. */
 export interface CdDef { track: string; title: string; /** an album CD: which one (see albumList) */ album?: string }
+/** what it costs to play a CD on the basement's jukebox */
+export const JUKEBOX_PRICE = 50;
 export const CD_ITEMS: Record<string, CdDef> = {
   cd: { track: "freakme", title: "Freakme" },
   cd_yellow: { track: "ahmingud", title: "Åhmingud" },

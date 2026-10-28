@@ -5,7 +5,7 @@
 import { Action, int, requireInRoom, text } from "./util";
 import { findSlot } from "../../../src/shared/items";
 import { fail } from "../ctx";
-import { albumList, CD_ITEMS, isCdItem, parsePressedCd } from "../../../src/shared/cds";
+import { albumList, CD_ITEMS, isCdItem, JUKEBOX_PRICE, parsePressedCd } from "../../../src/shared/cds";
 
 interface CdRow { by?: string; endsAt?: number; startedAt?: number; pausedAt?: number; durationMs?: number; track?: string; index?: number; album?: string }
 /** a paused CD that nobody continues is given up after this long */
@@ -39,6 +39,12 @@ export const cdInsert: Action = {
     const def = CD_ITEMS[it!.item];
     const cur = await c.db.get<CdRow>(path(room));
     if (live(cur, c.now)) fail(room === "walk" ? "There is a CD in your walkman already." : "The CD player is busy.");
+    if (a.jukebox === true) { // the basement's jukebox: you pick the CD and pay to have it played (the CD is yours again when it has finished)
+      if (room !== "lobby") fail("The jukebox is in the basement.");
+      if (w.s.blood < JUKEBOX_PRICE) fail(`You need ${JUKEBOX_PRICE - w.s.blood} more drops`);
+      w.s.blood -= JUKEBOX_PRICE;
+      c.note = "jukebox";
+    }
     if (pressed) {
       // a CD made at a CD printer: its song is read from SoundCloud (or from the archive, once it has been taken off), the length comes from there too
       let song = await c.db.get<{ ready?: boolean; title?: string; ownerName?: string; durMs?: number; pieces?: number; mime?: string }>(`songs/${pressed.song}`);

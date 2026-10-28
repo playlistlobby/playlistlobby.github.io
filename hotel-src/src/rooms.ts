@@ -40,7 +40,7 @@ export interface FurniKind {
   /** clicking it walks you over and opens this page ("character" = your clothes, in your own room; "shop" = the clothing shop, from the wardrobe in the shop room) */
   /** a wall piece whose .nitro has its own two ways of facing: which of them goes on the left wall and on the back wall */
   wallArt?: { left: number; back: number };
-  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits" | "board" | "cdpress" | "beatshop" | "elevator" | "streetbin";
+  opens?: "computer" | "hideouts" | "pets" | "character" | "shop" | "furnish" | "vending" | "sink" | "mixer" | "records" | "poster" | "stash" | "ideas" | "ducky" | "mine" | "craft" | "raffle" | "chest" | "poker" | "blackjack" | "hits" | "board" | "cdpress" | "beatshop" | "elevator" | "streetbin" | "jukebox";
   /** a growing kit: weed is planted, watered and harvested in it */
   plant?: boolean;
   /** a table top (px it lifts what stands on it), small things that can stand on one, and the animation numbers a multi-state piece has (see SHOP_PIECES) */
@@ -162,6 +162,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   f_boombox: { id: "f_boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true },
   boombox: { id: "boombox", label: "Boombox", icon: "📻", w: 1, h: 1, height: 34, color: "#8d97ab", placeable: false, nitro: "furni/boombox.nitro", rotatable: true, fixed: true },
   // the stash box the landlord sells (20 drops): a gift box that keeps what you don't want in your pockets
+  // the basement's jukebox (art from HabboAssets, public/furni/vwave_r21_jukebox.nitro): pick a CD and pay to have it played for the whole room
+  jukebox: { id: "jukebox", label: "Jukebox", icon: "🎵", w: 1, h: 1, height: 70, color: "#b86a1a", placeable: false, fixed: true, opens: "jukebox", nitro: "furni/vwave_r21_jukebox.nitro", rotatable: true },
   // the remote bank in the arrival room (a safe, painted red): it opens your stash box from there
   silo: { id: "silo", label: "Remote bank", icon: "🏦", w: 1, h: 1, height: 64, color: "#b02a1a", placeable: false, fixed: true, opens: "stash", nitro: "derived:silo_red", rotatable: true },
   stashbox: { id: "stashbox", label: "Stash box", icon: "🎁", w: 1, h: 1, height: 36, color: "#8a5fd0", placeable: false, fixed: true, opens: "stash", nitro: "furni/stashbox.nitro", rotatable: true },
@@ -385,6 +387,8 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby15", kind: "discordboard", x: 0, y: 2, dir: 2 },
   // the elevator to the streets (the admin moves it where he wants it, like the rest)
   { id: "lobby16", kind: "elevator", x: 0, y: 12, dir: 2 },
+  // the jukebox on the back wall: a CD of yours for 50 blood, played for everybody in the basement
+  { id: "lobby17", kind: "jukebox", x: 2, y: 0, dir: 4 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
@@ -412,7 +416,7 @@ export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
 /** The private copy of the basement: the same room without the pieces the admin put in it, and its door leads back to your own room. */
 export function tutDef(uid: string): RoomDef {
   const lobby = lobbyDef([]);
-  return { ...lobby, id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [], furni: lobby.furni.filter((f) => !ROULETTE_KINDS.has(f.kind) && f.kind !== "ideaboard" && f.kind !== "hdoor") }; // (no roulette and no ideas board during the introduction)
+  return { ...lobby, id: tutRoomId(uid), doorTo: ownRoomId(uid), extraDoors: [], furni: lobby.furni.filter((f) => !ROULETTE_KINDS.has(f.kind) && f.kind !== "ideaboard" && f.kind !== "hdoor" && f.kind !== "jukebox") }; // (no roulette and no ideas board during the introduction)
 }
 
 /** Where the four daily pieces stand in the shop room (every piece is placed facing the same way, each in its own 3x3 corner). */

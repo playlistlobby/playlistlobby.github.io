@@ -100,17 +100,17 @@ export function trackDurationMs(track: CdTrack): Promise<number> {
 }
 
 /** Puts the CD in `slot` into the player of this room (the server checks it is a CD, you are in the room and the player is free). */
-export async function insertCd(me: Profile, slot: number, roomId: string): Promise<CdState> {
+export async function insertCd(me: Profile, slot: number, roomId: string, jukebox = false): Promise<CdState> {
   const pressed = parsePressedCd(me.inventory[slot]?.item);
   if (pressed) { // a pressed CD: the server reads the song and its length itself
-    const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, room: roomId, durationMs: 60_000 });
+    const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, room: roomId, durationMs: 60_000, ...(jukebox ? { jukebox: true } : {}) });
     const startedAt = Number(r.startedAt) || serverNow(), endsAt = Number(r.endsAt) || startedAt + 60_000;
     return { by: me.uid, byName: me.name, track: "pressed", title: pressedTitle(pressed.song) ?? "CD", startedAt, endsAt, durationMs: endsAt - startedAt };
   }
   const def = CD_ITEMS[me.inventory[slot]?.item ?? ""] ?? CD_ITEMS.cd;
   const track = def.track === "album" ? albumCdTrack(0, def.album) : CD_TRACKS[def.track] ?? CD_TRACKS[DEFAULT_CD_TRACK];
   const duration = await trackDurationMs(track);
-  const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, room: roomId, durationMs: Math.round(duration) });
+  const r = await call<{ startedAt?: number; endsAt?: number }>(me, "cdInsert", { slot, room: roomId, durationMs: Math.round(duration), ...(jukebox ? { jukebox: true } : {}) });
   return { by: me.uid, byName: me.name, track: def.track, title: track.title, startedAt: Number(r.startedAt) || serverNow(), endsAt: Number(r.endsAt) || Math.round(serverNow() + duration), durationMs: Math.round(duration), ...(def.track === "album" ? { index: 0, ...(def.album ? { album: def.album } : {}) } : {}) };
 }
 

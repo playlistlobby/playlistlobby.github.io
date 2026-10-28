@@ -15563,5 +15563,95 @@
   "en": "The rich customer pays",
   "da": "Den rige kunde betaler",
   "where": "src/streets.ts"
+ },
+ "N2558": {
+  "en": "Jukebox",
+  "da": "Jukebox",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2559": {
+  "en": "Your CDs",
+  "da": "Dine CD'er",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2560": {
+  "en": "{…} blood",
+  "da": "{…} blod",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2561": {
+  "en": "Nothing is playing",
+  "da": "Der spilles intet",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2562": {
+  "en": "Wait until the song has finished",
+  "da": "Vent til sangen er færdig",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2563": {
+  "en": "Play “{…}”?",
+  "da": "Spil “{…}”?",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2564": {
+  "en": "It costs {…} blood. Everybody in the room hears it.",
+  "da": "Det koster {…} blod. Alle i rummet kan høre den.",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2565": {
+  "en": "You need {…} more blood.",
+  "da": "Du mangler {…} blod.",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2566": {
+  "en": "Play · {…} blood",
+  "da": "Spil · {…} blod",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2567": {
+  "en": "Pick a CD and pay {…} blood to play it for everybody in the room. It comes back to your pocket when it has finished.",
+  "da": "Vælg en CD og betal {…} blod for at spille den for alle i rummet. Den kommer tilbage i din lomme, når den er færdig.",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2568": {
+  "en": "You have no CD with you. The record shop sells them.",
+  "da": "Du har ingen CD på dig. Pladebutikken sælger dem.",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2569": {
+  "en": "Jukebox: play a CD for 50 blood",
+  "da": "Jukebox: spil en CD for 50 blod",
+  "where": "src/ui/room.ts"
+ },
+ "N2570": {
+  "en": "Play a CD",
+  "da": "Spil en CD",
+  "where": "src/ui/room.ts"
+ },
+ "N2571": {
+  "en": "You drop the blood in the slot. The jukebox starts up. ♪ Your CD pops back into your pocket when it has finished.",
+  "da": "Du putter blodet i slidsen. Jukeboxen starter. ♪ Din CD kommer tilbage i din lomme, når den er færdig.",
+  "where": "src/ui/room.ts"
+ },
+ "N2572": {
+  "en": "The jukebox is busy playing {…}'s CD.",
+  "da": "Jukeboxen spiller allerede {…}s CD.",
+  "where": "src/ui/room.ts"
+ },
+ "N2573": {
+  "en": "The jukebox is in the basement.",
+  "da": "Jukeboxen står i kælderen.",
+  "where": "server/src/actions/cd.ts"
+ },
+ "N2574": {
+  "en": "The jukebox doesn't take it.",
+  "da": "Jukeboxen tager den ikke.",
+  "where": "src/ui/jukebox.ts"
+ },
+ "N2575": {
+  "en": "Now playing: {…}",
+  "da": "Spiller nu: {…}",
+  "where": "src/ui/jukebox.ts"
  }
 }

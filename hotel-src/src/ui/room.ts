@@ -129,6 +129,7 @@ import { openRecordShop, RecordShopApi } from "./recordShop";
 import { openPosterShop, PosterShopApi } from "./posterShop";
 import { openStashBox, StashApi } from "./stashbox";
 import { openConfirmBox } from "./confirmBox";
+import { openJukebox, JukeboxApi } from "./jukebox";
 import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { DuckyShopApi, openDuckyShop } from "./duckyShop";
 import { openRaffleShop, RaffleShopApi } from "./raffleShop";
@@ -530,6 +531,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let recordApi: RecordShopApi | null = null;
   let posterApi: PosterShopApi | null = null;
   let stashApi: StashApi | null = null;
+  let jukeboxApi: JukeboxApi | null = null;
   let ideasApi: IdeasBoardApi | null = null;
   let duckyApi: DuckyShopApi | null = null;
   let raffleApi: RaffleShopApi | null = null;
@@ -895,6 +897,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "shopposter") text = "Poster: buy one for your wall";
     else if (hoverObj && hoverObj.kind === "stashbox") text = "Stash box: keep your things here";
     else if (hoverObj && hoverObj.kind === "silo") text = "Remote bank: your stash box";
+    else if (hoverObj && hoverObj.kind === "jukebox") text = "Jukebox: play a CD for 50 blood";
     else if (hoverObj && hoverObj.kind === "ideaboard") text = "Ideas board: post pictures and ideas";
     else if (hoverObj && hoverObj.kind === "ducky") text = "pay2win: things for real money";
     else if (hoverObj && (hoverObj.kind === "gacha" || hoverObj.kind === "raffletable")) text = "Raffle: win the rare piece";
@@ -1199,7 +1202,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     if (obj && !target) {
       if (isCdKind(obj.kind)) openCdPopup();
-      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "silo" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || FURNI_KINDS[obj.kind!]?.opens === "cdpress" || FURNI_KINDS[obj.kind!]?.opens === "beatshop" || FURNI_KINDS[obj.kind!]?.opens === "elevator" || FURNI_KINDS[obj.kind!]?.opens === "streetbin" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
+      else if (isBagKind(obj.kind) || obj.kind === "wardrobe" || obj.kind === "toolbox" || obj.kind === "vending" || obj.kind === "recordplayer" || obj.kind === "vinyltable" || obj.kind === "shopposter" || obj.kind === "f_mixer" || obj.kind === "stashbox" || obj.kind === "silo" || obj.kind === "ideaboard" || obj.kind === "ducky" || obj.kind === "gacha" || obj.kind === "raffletable" || obj.kind === "hcomputer" || obj.kind === "hchest" || obj.kind === "hdoor" || FURNI_KINDS[obj.kind!]?.opens === "poker" || FURNI_KINDS[obj.kind!]?.opens === "blackjack" || FURNI_KINDS[obj.kind!]?.opens === "cdpress" || FURNI_KINDS[obj.kind!]?.opens === "beatshop" || FURNI_KINDS[obj.kind!]?.opens === "elevator" || FURNI_KINDS[obj.kind!]?.opens === "jukebox" || FURNI_KINDS[obj.kind!]?.opens === "streetbin" || obj.kind === "wantedboard" || obj.kind === "discordboard") startBag(obj.id);
       else if (obj.kind === "hlandlord") startHideoutLandlord();
       else if (obj.kind === "pmerchant") startPetMerchant();
       else if (obj.kind === "mypet") pickUpMyPet();
@@ -1263,6 +1266,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "f_mixer") opts.push({ label: "Mix", target: "Mixer", action: () => startBag(obj.id) });
     if (obj?.kind === "stashbox") opts.push({ label: "Open", target: "Stash box", action: () => startBag(obj.id) });
     if (obj?.kind === "silo") opts.push({ label: "Open", target: "Remote bank", action: () => startBag(obj.id) });
+    if (obj?.kind === "jukebox") opts.push({ label: "Play a CD", target: "Jukebox", action: () => startBag(obj.id) });
     if (obj?.kind === "ideaboard") opts.push({ label: "Open", target: "Ideas board", action: () => startBag(obj.id) });
     if (obj?.kind === "wantedboard") opts.push({ label: "Open", target: "Wanted board", action: () => startBag(obj.id) });
     if (obj?.kind === "discordboard") opts.push({ label: "Open", target: "Notice board", action: () => startBag(obj.id) });
@@ -1807,6 +1811,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recordApi?.close();
     posterApi?.close();
     stashApi?.close();
+    jukeboxApi?.close();
     ideasApi?.close();
     duckyApi?.close();
     raffleApi?.close();
@@ -2242,6 +2247,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (opens === "furnish") enterFurnish();
         else if (opens === "vending") openVendingShop();
         else if (opens === "stash") { if (!stashApi) stashApi = openStashBox(stage, ctx, () => panel.refresh(), () => { stashApi = null; }); }
+        else if (opens === "jukebox") openJukeboxWindow();
         else if (opens === "poster") { if (!posterApi) posterApi = openPosterShop(stage, ctx, () => panel.refresh(), () => { posterApi = null; }); }
         else if (opens === "ideas") openIdeas();
         else if (opens === "pets") { if (!petShopApi) petShopApi = openPetShop(stage, ctx, () => panel.refresh(), () => { petShopApi = null; }); }
@@ -2447,6 +2453,23 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     return me.inventory.findIndex((s) => !!s && isCdItem(s.item) && !s.inPlayer);
   }
 
+  /** the basement's jukebox: pick one of your CDs and pay to have it played for the room (the room's CD player, one CD at a time) */
+  function openJukeboxWindow(): void {
+    if (jukeboxApi) return;
+    jukeboxApi = openJukebox(stage, ctx, {
+      nowPlaying: () => (cdPlaying() ? `${cdState!.title} · ${cdState!.byName}` : null),
+      play: async (slot) => {
+        if (cdPlaying()) throw new Error(`The jukebox is busy playing ${cdState!.byName}'s CD.`);
+        await insertCd(me, slot, roomId, true);
+        panel.refresh();
+        logAction(me, "cd", "paid for a CD on the jukebox");
+        say("You drop the blood in the slot. The jukebox starts up. ♪ Your CD pops back into your pocket when it has finished.");
+        jukeboxApi?.close();
+      },
+      onClose: () => { jukeboxApi = null; },
+    });
+  }
+
   function startCd(fid: string): void {
     if (findCdSlot() < 0) { clearSelection(); return say("Your CD is already in the player.", "warn"); }
     if (cdPlaying()) { clearSelection(); return say(`The CD player is busy playing ${cdState!.byName}'s CD.`, "warn"); }
@@ -2491,6 +2514,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     cdState = state;
     cdAudio.sync(state);
     refreshCdPopup();
+    jukeboxApi?.refresh();
     // my CD comes home when it finishes, is ejected, or if I was away while it finished
     void reconcileCd(me, roomId, state).then((returned) => {
       if (!returned) return;
@@ -4758,7 +4782,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (!k?.nitro) return undefined;
     const n = nitroIfReady(k.nitro);
     if (!n || !isAnimated(n)) return undefined;
-    const st = f.st ?? k.defaultState ?? 0;
+    const st = f.kind === "jukebox" ? (cdPlaying() ? 1 : 0) : (f.st ?? k.defaultState ?? 0); // (the jukebox lights up and its notes dance while the room's CD plays)
     const id = f.id ?? f.kind;
     let c = animClock.get(id);
     if (!c || c.st !== st) { c = { st, at: now }; animClock.set(id, c); }
@@ -4886,7 +4910,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const glowSink = k.opens === "sink" && (sinkHintOn() || hotSink);
       const isBoom = f.kind === "boombox" || f.kind === "f_boombox"; // the boombox glows red and floats a CD when you point at it or tap it
       const redGlow = isBoom || k.opens === "records" || k.opens === "elevator"; // so does the record player in the shop
-      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "sink" || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "stash" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin")) {
+      if (b && (k.opens || isBoom) && f.kind !== "vinyltable" && f.kind !== "raffletable" && (k.opens !== "sink" || glowSink) && (isBoom ? isHome : isHome || k.opens === "sink" || k.opens === "pets" || k.opens === "hideouts" || k.opens === "shop" || k.opens === "vending" || k.opens === "records" || k.opens === "stash" || k.opens === "jukebox" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin")) {
         // the bag of clothes: a soft pulsing glow, a floating hanger, and a brighter light when you point at it or walk to it
         const tableId = k.opens === "records" ? def.furni.find((x) => x.kind === "vinyltable")?.id : k.opens === "raffle" ? def.furni.find((x) => x.kind === "raffletable")?.id : undefined; // the record player stands on a table: pointing at the table counts too
         const hot = (!!f.id && hoverObj?.id === f.id) || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === f.id) || (!!tableId && (hoverObj?.id === tableId || ((pending?.type === "bag" || pending?.type === "use") && pending.fid === tableId)));
@@ -4919,10 +4943,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (liftUp) g.restore();
         // the hanger is only a hint: it floats over the bag until you've left your room for the first time, after that it only appears when the mouse is on the bag
         const noHint = k.opens === "mixer" || k.opens === "ducky" || k.opens === "raffle"; // the mixer glows like the rest, but has no little icon floating over it
-        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? hot : k.opens === "records" || k.opens === "beatshop" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
-        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" || k.opens === "elevator" ? ticketImg : k.opens === "streetbin" ? basketIconImg : k.opens === "records" || k.opens === "beatshop" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
+        const showHanger = k.opens === "sink" ? glowSink && hot : k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || k.opens === "streetbin" || k.opens === "hideouts" || k.opens === "computer" || k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? hot : k.opens === "records" || k.opens === "beatshop" || k.opens === "jukebox" || isBoom ? hot : !noHint && (!me.seenDoor || hot); // the sink's drop and the record player's CD only show when you point at them or tap them // the sink flashes a little watering can for as long as the hint lasts
+        const hint = k.opens === "ducky" ? dkImg : k.opens === "raffle" || k.opens === "elevator" ? ticketImg : k.opens === "streetbin" ? basketIconImg : k.opens === "records" || k.opens === "beatshop" || k.opens === "jukebox" || isBoom ? itemImg("cd") : k.opens === "sink" ? waterDropImg : k.opens === "furnish" || k.opens === "hideouts" || k.opens === "computer" ? toolIconImg : k.opens === "vending" ? basketIconImg : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? pieceHint(f.kind) : hangerImg; // the toolbox, the hideout door and the hideout computer float the little house (the building bricks), the vending machine a basket, the bag a hanger
         if (showHanger && hint.complete && hint.naturalWidth) {
-          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "beatshop" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
+          const hs = k.opens === "sink" || k.opens === "records" || k.opens === "beatshop" || k.opens === "jukebox" || k.opens === "ducky" || k.opens === "raffle" || k.opens === "elevator" || isBoom ? (scale * (hot ? 34 : 28)) / Math.max(1, hint.naturalWidth) : scale * (k.opens === "furnish" || k.opens === "vending" || k.opens === "hideouts" || k.opens === "computer" ? (hot ? 0.95 : 0.8) : k.opens === "poker" || k.opens === "blackjack" || k.opens === "chest" || k.opens === "stash" ? (hot ? 0.95 : 0.8) : hot ? 0.5 : 0.42);
           const hw = hint.naturalWidth * hs;
           const hh = hint.naturalHeight * hs;
           const bob = Math.sin(now / 380) * 3 * scale;
@@ -5510,7 +5534,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "elevator" || FURNI_KINDS[f.kind].opens === "stash" || FURNI_KINDS[f.kind].opens === "streetbin" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "elevator" || FURNI_KINDS[f.kind].opens === "jukebox" || FURNI_KINDS[f.kind].opens === "stash" || FURNI_KINDS[f.kind].opens === "streetbin" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -6255,6 +6279,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     recordApi?.close();
     posterApi?.close();
     stashApi?.close();
+    jukeboxApi?.close();
     ideasApi?.close();
     duckyApi?.close();
     raffleApi?.close();
