@@ -43,10 +43,10 @@ export function parseSongs(v: any): Song[] {
   return out;
 }
 
-/** the rating: the share of up votes, smoothed so that one up vote does not beat ten up and one down (Laplace: (up + 1) / (up + down + 2)) */
-export const ratingOf = (s: Pick<Song, "up" | "down">): number => (s.up + 1) / (s.up + s.down + 2);
+/** the rating: the up votes (there are no down votes any more; the ones given before count for nothing) */
+export const ratingOf = (s: Pick<Song, "up" | "down">): number => s.up;
 /** best first: the rating, then more votes, then the older one */
-export const byRating = (a: Song, b: Song): number => ratingOf(b) - ratingOf(a) || b.up + b.down - (a.up + a.down) || a.at - b.at;
+export const byRating = (a: Song, b: Song): number => ratingOf(b) - ratingOf(a) || a.at - b.at;
 /** the Charts: the 10 best-rated songs */
 export const chartsOf = (songs: Song[]): Song[] => [...songs].sort(byRating).slice(0, CHARTS_SIZE);
 
@@ -55,7 +55,7 @@ export function sweepVictims(songs: Song[], now: number): Song[] {
   const total = songs.length;
   const n = Math.min(Math.floor(total * SWEEP_SHARE), Math.max(0, total - CHARTS_SIZE));
   if (n <= 0) return [];
-  return [...songs].filter((s) => now - s.at >= SWEEP_MIN_AGE_MS).sort((a, b) => ratingOf(a) - ratingOf(b) || a.up + a.down - (b.up + b.down) || a.at - b.at).slice(0, n);
+  return [...songs].filter((s) => now - s.at >= SWEEP_MIN_AGE_MS).sort((a, b) => ratingOf(a) - ratingOf(b) || a.at - b.at).slice(0, n);
 }
 
 /** the title of a song: letters, numbers and a few marks, no emoji (SoundCloud has none) */

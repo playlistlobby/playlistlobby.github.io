@@ -104,7 +104,7 @@ export function mountSoundcloud(host: HTMLElement, o: ScOptions): ScHandle {
       h("div", { class: "sc-main" },
         h("div", { class: "sc-title" }, ...(playing ? [eq(going)] : []), h("span", {}, s.title)),
         h("div", { class: "sc-line" }, h("button", { class: "sc-artist", type: "button", onclick: () => { artist = s.owner; render(); } }, s.ownerName), h("span", { class: "sc-meta" }, fmtDur(s.durMs))),
-        h("div", { class: "sc-votes" }, voteBtn(s, 1), h("span", { class: "sc-n up" }, String(s.up)), voteBtn(s, -1), h("span", { class: "sc-n down" }, String(s.down)))),
+        h("div", { class: "sc-votes" }, voteBtn(s, 1), h("span", { class: "sc-n up" }, String(s.up)))),
       h("button", { class: "sc-play" + (going ? " on" : ""), type: "button", "aria-label": `Play ${s.title}`, onclick: () => { if (playing) scPlayer.toggle(); else void scPlayer.playList(list, list.indexOf(s)); } }, scIcon(going ? "pause" : "play")));
   }
   const listOf = (rows: HTMLElement[]): HTMLElement => h("div", { class: "sc-list" }, ...rows);

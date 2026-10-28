@@ -58,7 +58,7 @@ export const songVote: Action = {
   locks: (c, a) => [`song:${String(a?.id ?? "")}`],
   async run(c, a) {
     const id = text(a.id, ID_RE, "song");
-    const v = int(a.v, -1, 1, "vote");
+    const v = int(a.v, 0, 1, "vote"); // (up votes only: an old browser that still sends a down vote is turned away)
     const row = await c.db.get<SongRow>(`songs/${id}`);
     if (!row || !row.ready) fail("That song isn't there any more.");
     if (row!.owner === c.uid) fail("You can't vote on your own song.");

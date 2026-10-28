@@ -2354,7 +2354,6 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     next: h("button", { class: "btn small", title: "Skip", onclick: () => void albumOp("next") }, "⏭"),
     // SoundCloud on the speaker: everybody in the room can vote on the song that is playing
     up: h("button", { class: "btn small", title: "Upvote this song", onclick: () => void scVoteNow(1) }, "▲ 0"),
-    down: h("button", { class: "btn small", title: "Downvote this song", onclick: () => void scVoteNow(-1) }, "▼ 0"),
   };
   let scVoteFor: string | null = null;
   let scVote = 0;
@@ -2362,9 +2361,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const scSongId = (): string | null => (cdState && isScState(cdState) ? cdState.song?.id ?? cdState.ids?.[cdState.index ?? 0] ?? null : null);
   function paintVotes(): void {
     cdUi.up.textContent = `▲ ${scUp}`;
-    cdUi.down.textContent = `▼ ${scDown}`;
     cdUi.up.classList.toggle("primary", scVote === 1);
-    cdUi.down.classList.toggle("primary", scVote === -1);
   }
   /** the votes of the song on the speaker: its counts and what you voted (read again when the song changes) */
   function loadScVotes(id: string): void {
@@ -2374,7 +2371,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       scUp = Number(u.val()) || 0; scDown = Number(d.val()) || 0; scVote = Number(v.val()) || 0; paintVotes();
     }, () => undefined);
   }
-  async function scVoteNow(v: 1 | -1): Promise<void> {
+  async function scVoteNow(v: 1): Promise<void> {
     const id = scSongId();
     if (!id) return;
     try {
@@ -2462,7 +2459,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         h("button", { class: "btn small", title: "Louder", onclick: () => step(0.1) }, "+"),
         cdUi.mute),
       h("div", { class: "hint" }, "Everyone in the room hears the same music. Only the volume is your own."),
-      h("div", { class: "cd-row" }, cdUi.up, cdUi.down),
+      h("div", { class: "cd-row" }, cdUi.up),
       h("div", { class: "cd-row" }, cdUi.prev, cdUi.pause, cdUi.next, cdUi.restart, cdUi.loop, cdUi.eject));
     stage.append(el);
     cdPopup = { el, timer: window.setInterval(refreshCdPopup, 500) };
