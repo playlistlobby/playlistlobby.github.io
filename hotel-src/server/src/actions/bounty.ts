@@ -7,10 +7,11 @@ import { Action, text } from "./util";
 import { Ctx } from "../ctx";
 import { isEmulator } from "../env";
 import {
-  BAGMAND_HIT_BLOOD, BAGMAND_HIT_LATE_MS, BAGMAND_HIT_MAX, BAGMAND_HIT_MIN, BAGMAND_HIT_TTL_MS, bagmandHitPlan, BAGMAN_ROOM,
+  BAGMAND_HIT_BLOOD, BAGMAND_HIT_GAP_MS, BAGMAND_HIT_MAX, BAGMAND_HIT_MIN, BAGMAND_HIT_TTL_MS, bagmandHitPlan, BAGMAN_ROOM,
 } from "../../../src/shared/bagmand";
 import { HIT_ONLINE_FRESH_MS, liveHits, parseHits } from "../../../src/shared/hits";
 import { visitOrNull } from "./bagmand";
+import { currentVisit, VISIT_MS } from "../../../src/shared/bagmand";
 import { guardedUids } from "./hits";
 
 const ROOM_RE = /^[A-Za-z0-9_-]{1,64}$/;
@@ -30,7 +31,7 @@ export async function clearWanted(c: Ctx, uid: string): Promise<void> {
   if (typeof wu.room === "string" && ROOM_RE.test(wu.room)) c.extra[`wantedRooms/${wu.room}`] = null;
 }
 
-interface VisitHits { placed?: number; targets?: Record<string, true>; retryAt?: number }
+interface VisitHits { placed?: number; targets?: Record<string, true>; retryAt?: number; lastAt?: number }
 
 /** Puts out the hit that is due (if any) and takes down the ones that ran out. Anybody can ask: it does nothing when nothing is due. */
 export const bagmandHitTick: Action = {
@@ -42,15 +43,17 @@ export const bagmandHitTick: Action = {
     if (start === null) return { placed: 0 };
     const key = `bagmandHits/${start}`;
     const st = (await c.db.get<VisitHits>(key)) ?? {};
-    const plan = bagmandHitPlan(start);
+    const stay = await c.db.get<number>("bagmand/stayUntil");
+    const end = currentVisit(c.now) === null && typeof stay === "number" && stay > c.now ? stay : start + VISIT_MS; // (a visit he stays on for ends when the admin said)
+    const plan = bagmandHitPlan(start, end);
     const rush = isEmulator(c.env) && (await c.db.get("bagmand/hitsNow")) === true; // (a test: the next hit is due right now)
     let placed = Math.max(0, Math.floor(Number(st.placed) || 0));
     const was = placed;
-    while (!rush && placed < plan.length && c.now > plan[placed] + BAGMAND_HIT_LATE_MS) placed++; // (a slot nobody was around for is dropped)
     const save = (extra: Partial<VisitHits> = {}): void => { if (placed !== was || extra.retryAt !== undefined) c.extra[key] = { ...st, placed, ...extra }; };
     if (placed >= plan.length) { save(); return { placed: 0, done: true }; }
     if (!rush && c.now < plan[placed]) { save(); return { placed: 0, next: plan[placed] }; }
     if (typeof st.retryAt === "number" && c.now < st.retryAt && !rush) return { placed: 0 };
+    if (typeof st.lastAt === "number" && c.now - st.lastAt < BAGMAND_HIT_GAP_MS && !rush) return { placed: 0 }; // (a late visit still puts them out one at a time)
 
     // who: somebody online with more than 1000 blood, not protected, with no hit on them, and not hit by him already in this visit
     const live = liveHits(all, c.now);
@@ -72,7 +75,7 @@ export const bagmandHitTick: Action = {
     c.extra[`hits/${id}`] = { target, targetName: name, amount, by: "bagmand", byName: "Bagmand", hideout: "", hideoutName: "Bagmand", at: c.now, bagmand: true, until };
     c.extra[`wantedUsers/${target}`] = { until, hit: id, ...(ROOM_RE.test(where) ? { room: where } : {}) };
     if (ROOM_RE.test(where)) c.extra[`wantedRooms/${where}`] = { uid: target, until };
-    c.extra[key] = { placed: placed + 1, targets: { ...(st.targets ?? {}), [target]: true } };
+    c.extra[key] = { placed: placed + 1, lastAt: c.now, targets: { ...(st.targets ?? {}), [target]: true } };
     const line = `There's ${amount} blood on ${name}'s head. Whoever shoots them gets it.`; // (bagmand says it in the basement's chat)
     c.extra[`rooms/${BAGMAN_ROOM}/events/y${c.now.toString(36)}${Math.random().toString(36).slice(2, 4)}`] = { type: "bagmandSay", text: line, ts: c.now };
     c.note = `bagmand put ${amount} on ${name}`;

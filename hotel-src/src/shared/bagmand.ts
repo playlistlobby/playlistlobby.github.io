@@ -95,7 +95,7 @@ export const RUSH_SPIN = 3;
 export const DEADLY_DROP = 10;
 
 // ---- bagmand's own bounties -----------------------------------------------------------------------------------------------------------------------
-// While he is in the basement he puts 2 to 5 hits of 300-500 blood on players who carry more than 1000, each one on somebody else, at times spread over his visit (never in the first 5 minutes
+// While he is in the basement he puts 5 hits of 300-500 blood (fewer only when nobody with more than 1000 blood is online) on players who carry more than 1000, each one on somebody else, at times spread over his visit (never in the first 5 minutes
 // or the last 10). A hit is on the wanted board (with where the target is) and anybody with a gun can claim it. While it lasts the target can't hide: any room they stand in is open to everybody.
 //   hits/<id>             { ..., by: "bagmand", bagmand: true, until }   the same node as the players' hits
 //   wantedUsers/<uid>     { until, hit, room? }                          who has a bagmand hit on them now, and the room they stand in (readable by the target only)
@@ -110,19 +110,20 @@ export const BAGMAND_HIT_FIRST_MS = 5 * 60_000;
 export const BAGMAND_HIT_LAST_MS = 10 * 60_000;
 /** a hit lasts this long if nobody claims it */
 export const BAGMAND_HIT_TTL_MS = 60 * 60_000;
-/** a slot of the plan that nobody was around to use is dropped after this (no pile of hits at once) */
-export const BAGMAND_HIT_LATE_MS = 5 * 60_000;
+/** every visit aims for this many hits: a slot is never dropped, it waits until somebody over 1000 blood is online (and the hits are at least BAGMAND_HIT_GAP_MS apart, so a late visit is no pile of hits at once) */
+export const BAGMAND_HITS_PER_VISIT = 5;
+export const BAGMAND_HIT_GAP_MS = 2 * 60_000;
 const mix = (a: number, b: number): number => {
   let x = (a ^ Math.imul(b + 1, 0x9e3779b1)) >>> 0;
   x = Math.imul(x ^ (x >>> 15), 0x85ebca6b) >>> 0;
   x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35) >>> 0;
   return (x ^ (x >>> 16)) >>> 0;
 };
-/** when this visit's hits are put out (ms, ascending): 2 to 5 of them, spread over the minutes from 5 after he arrives to 10 before he leaves (the same for everybody: it comes from the visit's start) */
-export function bagmandHitPlan(start: number): number[] {
+/** when this visit's hits are put out (ms, ascending): 5 of them, spread over the minutes from 5 after he arrives to 10 before he leaves (`end` = when he leaves: a visit that he stays on for is longer). The same for everybody: it comes from the visit's start. */
+export function bagmandHitPlan(start: number, end: number = start + VISIT_MS): number[] {
   const seed = Math.floor(start / 60_000);
-  const n = 2 + (mix(seed, 1) % 4);
-  const w0 = start + BAGMAND_HIT_FIRST_MS, w1 = start + VISIT_MS - BAGMAND_HIT_LAST_MS;
+  const n = BAGMAND_HITS_PER_VISIT;
+  const w0 = start + BAGMAND_HIT_FIRST_MS, w1 = Math.max(w0 + 60_000, end - BAGMAND_HIT_LAST_MS);
   const slot = (w1 - w0) / n;
   return Array.from({ length: n }, (_, k) => Math.round(w0 + (k + 0.5) * slot + ((mix(seed, 10 + k) % 1000) / 1000 - 0.5) * 0.6 * slot));
 }
