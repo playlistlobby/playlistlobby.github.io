@@ -1830,3 +1830,11 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .wk-menu .wk-body { display: flex; flex-direction: column; gap: 6px; }
 .wk-menu .wk-body .btn { white-space: normal; text-align: left; word-break: break-word; }
 .wk-menu .cd-row { flex-wrap: wrap; }
+
+/* the iPod: a phone-sized window with the two apps */
+.ipod-card { max-width: 420px; }
+.ipod-app { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; margin: 6px 0; border-radius: 14px; border: 1px solid rgba(0,0,0,.35); background: linear-gradient(#5b6f93, #36486b); color: #fff; text-align: left; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.3); }
+.ipod-app-ico { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(#8fb3e8, #3d6fc4); display: grid; place-items: center; flex: none; }
+.ipod-app-ico svg { width: 26px; height: 26px; }
+.ipod-app-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ipod-app-text small { opacity: .8; }

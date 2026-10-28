@@ -26,7 +26,7 @@ export interface ItemDef {
   /** furniture kind this item can be used on (e.g. a CD on the CD player, the watering can on the sink) */
   useOnObject?: string;
   /** used on yourself with one click (the syringe, a cigarette) */
-  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear" | "pet" | "vape" | "heal" | "walkman";
+  useSelf?: "syringe" | "smoke" | "pill" | "eat" | "consume" | "speak" | "open" | "wear" | "pet" | "vape" | "heal" | "walkman" | "ipod";
   /** select it, then click a piece of furniture of this kind (the sink, the growing kit) */
   /** can be dropped from the inventory (right-click > Drop) */
   droppable?: boolean;
@@ -550,6 +550,7 @@ for (const [id, name, examine] of bagmandSmokes) ITEMS[id] = { id, name, examine
 // the streets (see shared/streets.ts)
 ITEMS.elevator_ticket = { id: "elevator_ticket", name: "Elevator ticket", examine: "A red ticket for the elevator in the basement. It runs from 20 to 21 every day. The ticket is used up when you ride it. You can only hold one.", icon: assetUrl("ui/ticket.png"), droppable: true };
 ITEMS.walkman = { id: "walkman", name: "Walkman", examine: "A portable CD player. Put a CD in it (tap the walkman, or use a CD on it) and the music plays wherever you go. Only you can hear it. One CD at a time.", icon: assetUrl("items/walkman.png"), useSelf: "walkman" };
+ITEMS.ipod = { id: "ipod", name: "iPod", examine: "Bagmand sells these. Opens SoundCloud and your BeatShop (if you have one) from wherever you are. You can drop it and trade it.", icon: assetUrl("items/ipod.png"), useSelf: "ipod" };
 ITEMS.bandage = { id: "bandage", name: "Bandage", examine: "Heals 3 hit points in a fight on the streets. You can use it again after 6 seconds.", icon: assetUrl("items/bandage.svg"), useSelf: "heal" };
 
 /** The definition of any inventory item: the fixed ones above, or a piece of furniture. */

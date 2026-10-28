@@ -17,6 +17,7 @@ export const BAGMAND_BUY: Record<string, { price: number; stock: number | null; 
   poppyseed: { price: 50, stock: 5, label: "Poppy seed" },
   natryger: { price: 25, stock: null, label: "Bagmands natryger" },
   syringe: { price: 20, stock: null, label: "Syringe" },
+  ipod: { price: 500, stock: 1, label: "iPod" }, // SoundCloud and your BeatShop from anywhere (one per player per visit; it can be dropped and traded)
   gun: { price: 250, stock: 1, label: "Gun" }, // (one use: it shoots once and is gone; one per player per visit)
 };
 /**

@@ -15133,5 +15133,40 @@
   "en": "Listen",
   "da": "Lyt",
   "where": "src/ui/sidepanel.ts"
+ },
+ "N2472": {
+  "en": "Home",
+  "da": "Hjem",
+  "where": "src/ui/ipod.ts"
+ },
+ "N2473": {
+  "en": "iPod",
+  "da": "iPod",
+  "where": "src/ui/ipod.ts"
+ },
+ "N2474": {
+  "en": "Charts, all music, your songs",
+  "da": "Hitlisten, al musik, dine sange",
+  "where": "src/ui/ipod.ts"
+ },
+ "N2475": {
+  "en": "Your beats, sales and chats",
+  "da": "Dine beats, salg og chats",
+  "where": "src/ui/ipod.ts"
+ },
+ "N2476": {
+  "en": "You haven't got a BeatShop (the record shop sells it)",
+  "da": "Du har ingen BeatShop (pladespilleren sælger den)",
+  "where": "src/ui/ipod.ts"
+ },
+ "N2477": {
+  "en": "You haven't got a BeatShop yet. The record shop in the store sells one.",
+  "da": "Du har ikke en BeatShop endnu. Pladespilleren i butikken sælger en.",
+  "where": "src/ui/ipod.ts"
+ },
+ "N2478": {
+  "en": "Bagmand sells these. Opens SoundCloud and your BeatShop (if you have one) from wherever you are. You can drop it and trade it.",
+  "da": "Bagmand sælger dem. Åbner SoundCloud og din BeatShop (hvis du har en), uanset hvor du er. Du kan smide den og bytte den.",
+  "where": "src/items.ts"
  }
 }

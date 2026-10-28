@@ -100,6 +100,19 @@ check("now leolegit", ep.index === 1 && ep.title === "leolegit - blodoktober" &&
 ok("and back", await act(a, "cdControl", { room: "walk", op: "prev", from: 1, durationMs: 94000 }));
 await act(a, "cdControl", { room: "walk", op: "eject" });
 
+console.log("--- the iPod (bagmand, 500 blood, one per player)");
+const ip = await fresh("t_wk_ipod", { blood: 1200 });
+await act(ip, "sync"); await stand(ip, "lobby");
+await owner("PUT", "bagmand/force", Date.now() - 1000);
+const bi = await act(ip, "bagmandBuy", { item: "ipod", qty: 1 });
+ok("buy the iPod from bagmand", bi);
+st = await state(ip);
+check("500 blood gone, an iPod in the pocket", st.blood === 700 && slotOf(st, "ipod") >= 0, String(st.blood));
+bad("only one per player", await act(ip, "bagmandBuy", { item: "ipod", qty: 1 }));
+bad("6ixty doesn't sell it", await act(ip, "buySixty", { item: "ipod" }));
+await owner("DELETE", "bagmand/force");
+await owner("DELETE", `rooms/lobby/players/${ip.uid}`);
+
 for (const u of [a, b]) { await owner("DELETE", `walkman/${u.uid}`); for (const r of ["lobby", "shop"]) await owner("DELETE", `rooms/${r}/players/${u.uid}`); }
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

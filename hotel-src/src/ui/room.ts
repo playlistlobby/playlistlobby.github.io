@@ -74,6 +74,7 @@ import { showDeathScreen } from "./deathScreen";
 import { albumStep, CdAudio, CdState, cdEnded, cdPositionMs, clearCdPlayer, controlCd, insertCd, isScState, reconcileCd, speakerOp, watchCdPlayer } from "../cdplayer";
 import { voteSong } from "../soundcloud";
 import { loadWalkman, openWalkmanMenu } from "../walkman";
+import { openIpod } from "./ipod";
 import { albumList, isCdItem } from "../shared/cds";
 import { fmtTime } from "../music";
 import { EMOTE_BY_ID, EmoteDef, hasEmote, SPIN_DIRS } from "../emotes";
@@ -581,6 +582,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let beatShopApi: { close(): void } | null = null;
   let elevatorApi: { close(): void } | null = null;
   let walkmanApi: { close(): void } | null = null;
+  let ipodApi: { close(): void } | null = null;
   /** the streets: the customers, the cars, the fights (null in every other room) */
   let streetsApi: StreetsApi | null = null;
   let fightWalking = false;
@@ -767,7 +769,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return false;
     },
     onEmote: (id) => performEmote(id),
-    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "vape") void usePuff(slot); else if (what === "walkman") { if (walkmanApi) walkmanApi.close(); else walkmanApi = openWalkmanMenu(stage, me, () => { walkmanApi = null; }); } else if (what === "heal") { if (streetsApi) void streetsApi.heal(slot); else say("A bandage is for a fight on the streets.", "warn"); } else if (what === "eat") void eatBurger(); else void lightUp(slot); },
+    onUseSelf: (what, slot) => { if (what === "open") { if (!caseApi) caseApi = openCaseWindow(stage, ctx, roomId, () => panel.refresh(), () => { caseApi = null; }); } else if (what === "wear") void wearUnusual(me, slot).then(() => { panel.refresh(); say("You put it on."); }, (err) => say((err as Error).message || "It won't go on.", "warn")); else if (what === "pet") void releasePet(me, slot).then(() => { panel.refresh(); say("It walks with you now."); }, (err) => say((err as Error).message || "It won't come out.", "warn")); else if (what === "speak") openLoudspeakerWindow(); else if (what === "syringe") void useSyringe(); else if (what === "pill") void usePill(); else if (what === "consume") void consumeSlot(slot); else if (what === "vape") void usePuff(slot); else if (what === "ipod") { if (ipodApi) ipodApi.close(); else ipodApi = openIpod(stage, ctx, () => { if (!beatShopApi) beatShopApi = openBeatShop(stage, ctx, me.uid, me.name, () => { beatShopApi = null; }); }, () => { ipodApi = null; }); } else if (what === "walkman") { if (walkmanApi) walkmanApi.close(); else walkmanApi = openWalkmanMenu(stage, me, () => { walkmanApi = null; }); } else if (what === "heal") { if (streetsApi) void streetsApi.heal(slot); else say("A bandage is for a fight on the streets.", "warn"); } else if (what === "eat") void eatBurger(); else void lightUp(slot); },
     onDropPick: (slot) => askDrop(slot),
     onCombine: (a, b) => {
       // a CD used on the walkman (either way round) goes into it
@@ -1775,6 +1777,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     beatShopApi?.close();
     elevatorApi?.close();
     walkmanApi?.close();
+    ipodApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
@@ -6190,6 +6193,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     beatShopApi?.close();
     elevatorApi?.close();
     walkmanApi?.close();
+    ipodApi?.close();
     petShopApi?.close();
     caseApi?.close();
     hideoutDoorApi?.close();
