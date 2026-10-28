@@ -278,7 +278,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     const close = (): void => { orderBox?.remove(); orderBox = null; };
     orderBox = h("div", { class: "cd-popup st-order", role: "dialog" },
       h("div", { class: "cd-head" }, h("strong", {}, c.kind === "car" ? "A car pulls over" : "A customer"), h("button", { class: "btn small", onclick: close }, "✕")),
-      h("div", { class: "st-order-row" }, it ? h("img", { src: it.icon, alt: "", class: "st-order-ico" }) : null, h("div", {}, h("div", { class: "st-order-want" }, `${c.want.qty} x ${it?.name ?? c.want.item}`), h("div", { class: "hint" }, `Pays ${pay} blood${c.want.mult >= 2 ? " (a big order)" : ""}`))),
+      h("div", { class: "st-order-row" }, it ? h("img", { src: it.icon, alt: "", class: "st-order-ico" }) : null, h("div", {}, h("div", { class: "st-order-want" }, `${c.want.qty} x ${it?.name ?? c.want.item}`), h("div", { class: "hint" }, `Pays ${pay} blood${c.kind === "car" ? " (a big order)" : ""}`))),
       h("div", { class: "cd-row" }, give, h("button", { class: "btn", onclick: close }, "Not now")));
     o.stage.append(orderBox);
   }
@@ -297,14 +297,14 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     const w = icon + tw + 16 * s, hh = 26 * s;
     const x = cx - w / 2, yy = y - hh;
     g.fillStyle = hot ? "#fff6c8" : "#ffffff";
-    g.strokeStyle = c.want.mult >= 2 ? "#d4a017" : "#444";
+    g.strokeStyle = c.kind === "car" ? "#d4a017" : "#444";
     g.lineWidth = Math.max(1, s);
     g.beginPath(); g.roundRect(x, yy, w, hh, 8 * s); g.fill(); g.stroke();
     g.beginPath(); g.moveTo(cx - 5 * s, yy + hh - 0.5); g.lineTo(cx, yy + hh + 6 * s); g.lineTo(cx + 5 * s, yy + hh - 0.5); g.closePath(); g.fillStyle = hot ? "#fff6c8" : "#fff"; g.fill(); g.stroke();
     g.fillStyle = hot ? "#fff6c8" : "#fff"; g.fillRect(cx - 4.5 * s, yy + hh - 1.5, 9 * s, 3);
     const im = it ? iconOf(it.icon) : null;
     if (im) { g.imageSmoothingEnabled = false; g.drawImage(im, x + 5 * s, yy + 3 * s, icon, icon); }
-    g.fillStyle = c.want.mult >= 2 ? "#8a5a00" : "#222";
+    g.fillStyle = c.kind === "car" ? "#8a5a00" : "#222";
     g.textBaseline = "middle"; g.textAlign = "left";
     g.fillText(text, x + icon + 9 * s, yy + hh / 2 + 1);
     g.restore();

@@ -63,8 +63,8 @@ export const COMMON_WANTS = ["weed", "joint", "blunt", "mix", "midweed", "superp
 export const RARE_WANTS = ["thca", "codeine", "joint_mid", "blunt_mid", "joint_thca", "joint_hash", "chudmix", "dmt", "lsd", "trollmix"] as const;
 /** the big orders at the cars (7-10 of one thing) */
 export const BIG_WANTS = ["weed", "joint", "blunt", "mix", "superpill", "hash", "midweed", "shroom"] as const;
-export const BIG_MULT = 2.5;
-export const WALK_MULT = 1;
+export const BIG_MULT = 3;
+export const WALK_MULT = 2;
 
 export interface Customer {
   k: number;

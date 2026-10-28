@@ -133,7 +133,7 @@ const now = Date.now();
 const walker = S.customersAt(now).find((x) => x.kind === "walker");
 check("there are customers on the street", S.customersAt(now).length >= 6, String(S.customersAt(now).length));
 const car = [...Array(40)].map((_, i) => S.customerAt(Math.floor(now / S.CUSTOMER_EVERY_MS) - i)).find((x) => x.kind === "car");
-check("cars ask for much more (7-10) at 2.5 times the price, or a little of something rare", car && car.want.mult === 2.5 && (car.want.qty >= 7 || S.RARE_WANTS.includes(car.want.item)), JSON.stringify(car?.want));
+check("cars ask for much more (7-10) at 3 times the price, or a little of something rare", car && car.want.mult === 3 && (car.want.qty >= 7 || S.RARE_WANTS.includes(car.want.item)), JSON.stringify(car?.want));
 check("a customer is the same for everybody (a function of its number)", JSON.stringify(S.customerAt(12345)) === JSON.stringify(S.customerAt(12345)));
 const common = [...Array(300)].map((_, i) => S.customerAt(i)).filter((x) => x.kind === "walker");
 check("half of the walkers ask for 1 or 2 of something common", common.filter((x) => x.want.qty <= 2 && S.COMMON_WANTS.includes(x.want.item)).length / common.length > 0.4);
