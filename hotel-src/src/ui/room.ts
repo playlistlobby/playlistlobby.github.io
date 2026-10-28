@@ -32,7 +32,7 @@ import { openElevator } from "./elevator";
 import { mountStreets } from "../streets";
 import type { StreetsApi } from "../streets";
 import { ARRIVAL_ELEVATOR, arrivalDef, ARRIVAL_ID, streetsDef, STREETS_ID } from "../rooms";
-import { isStreetsRoom, STREETS_DAY } from "../shared/streets";
+import { isBuiltInStreetPiece, isStreetsRoom, STREETS_DAY } from "../shared/streets";
 import { openHideoutComputer, ComputerApi } from "./hideoutComputer";
 import { openHideoutLandlord } from "./hideoutLandlord";
 import { openHideoutDoor } from "./hideoutDoor";
@@ -119,6 +119,7 @@ import {
   tutDef,
   tutRoomId,
   watchLobbyFurni,
+  watchStreetsFurni,
   watchMeta,
 } from "../rooms";
 import { AnimState, derive, isAnimated, loadNitro, NitroFurni, nitroIfReady, spritesFor } from "../nitro";
@@ -500,7 +501,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const isHome = isOwnRoom || isHideoutRoom;
   let hideoutGuest = false; // (a guest of a hideout: let in by its owner, may look around but is not a member)
   /** your own room, or (an account with the decorator power) any player's room: furniture and posters can be put down here */
-  const adminLobbyEdit = me.isAdmin && roomId === LOBBY_ID; // the admin furnishes the basement from the same menu, with every piece there is
+  const adminLobbyEdit = me.isAdmin && (roomId === LOBBY_ID || roomId === STREETS_ID); // the admin furnishes the basement and the street from the same menu, with every piece there is
   const adminOwnEdit = me.isAdmin && isOwnRoom; // the admin has every piece there is in his own room too (and the landlord's window)
   const mayFurnish = isHome || (me.decorator && roomId.startsWith("u_")) || adminLobbyEdit;
   /** the private copy of the basement a new player does the introduction in; it looks and works like the basement, but nobody else comes in */
@@ -697,7 +698,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** you can edit your own room; the admin can also edit the public room's extra furniture */
   /** what you may do in this hideout (the owner builds always; a member when the owner allows it and building is not locked) */
   const hideoutCan = () => hideoutRole({ owner: def.ownerUid ?? undefined, lock: def.hideout?.lock, members: def.hideout?.members }, me.uid, me.isAdmin);
-  const isOwner = () => def.ownerUid === me.uid || (def.id === LOBBY_ID && me.isAdmin) || (isHideoutRoom && hideoutCan().canBuild);
+  const isOwner = () => def.ownerUid === me.uid || ((def.id === LOBBY_ID || def.id === STREETS_ID) && me.isAdmin) || (isHideoutRoom && hideoutCan().canBuild);
 
   // ---- DOM ---------------------------------------------------------------------
   const canvas = h("canvas", { class: "room-canvas" });
@@ -1311,7 +1312,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** Picks a piece of furniture up: in your own room it goes into the toolbox's storage (the server does it); the admin removes the basement's extras. */
   async function pickUpPiece(f: PlacedFurni): Promise<void> {
     try {
-      if (def.id === LOBBY_ID) await removeFurni(def.id, f.id);
+      if (def.id === LOBBY_ID || def.id === STREETS_ID) await removeFurni(def.id, f.id);
       else await storeFromRoom(me, def.id, f);
       panel.refresh();
     } catch (err) { toast((err as Error).message || "Couldn't pick that up", "err"); }
@@ -1394,9 +1395,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- furniture placing (owner) ---------------------------------------------------
   function tryPlace(kind: string, t: Pt): void {
     const k = FURNI_KINDS[kind];
-    const adminLobby = def.id === LOBBY_ID && me.isAdmin;
+    const adminLobby = (def.id === LOBBY_ID || def.id === STREETS_ID) && me.isAdmin;
     if (!k || (!k.placeable && !(adminLobby && (k.nitro || INTERACTIVE_KINDS.has(kind))))) return;
-    if (def.furni.length >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
+    if (!adminLobby && def.furni.length >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
     const fp = footprint(kind, toolDir);
     for (let i = 0; i < fp.w; i++) {
       for (let j = 0; j < fp.h; j++) {
@@ -1439,7 +1440,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       done: exitFurnish,
       turn: fzTurn,
       ...(adminLobbyEdit || adminOwnEdit ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter").sort((a, b) => FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}),
-      store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (/^lobby\d+$/.test(f.id) ? Promise.reject(new Error("That one is built into the basement: move it instead.")) : isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one can't be removed.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
+      store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (def.id === LOBBY_ID && /^lobby\d+$/.test(f.id) ? Promise.reject(new Error("That one is built into the basement: move it instead.")) : def.id === LOBBY_ID && isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one can't be removed.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
       pocket: () => { const f = fzPiece(); if (f) void pocketFromRoom(me, def.id, f).then(() => { fzSel = null; refreshFz(); playSfx("select", 0.4); }, (err) => say((err as Error).message, "warn")); },
       select: (id) => { fzSel = id; fzPlacing = null; refreshFz(); },
       mine: () => def.furni.filter((f) => !isFixedPiece(f.id) && (!isHideoutRoom || f.by === me.uid)),
@@ -1451,7 +1452,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         box: () => def.hideout?.box ?? {},
         names: () => ({ ...(def.ownerUid ? { [def.ownerUid]: def.ownerName ?? "owner" } : {}), ...Object.fromEntries(Object.entries(def.hideout?.members ?? {}).map(([u, m]) => [u, m.name])) }),
         note: () => (hideoutCan().canBuild ? null : def.hideout?.lock ? "Building is locked by the owner." : "The owner hasn't given you building rights."),
-        cap: () => def.hideout?.cap ?? MAX_FURNI,
+        cap: () => def.hideout?.cap ?? (adminLobbyEdit ? 999 : MAX_FURNI),
         boxStore: (kind, qty, slot) => void hideoutBoxStore(me, def.id, kind, qty, slot !== undefined ? { slot } : undefined).then(refreshFz, (err) => say((err as Error).message, "warn")),
         boxTake: (kind, qty) => void hideoutBoxTake(me, def.id, kind, qty).then(refreshFz, (err) => say((err as Error).message, "warn")),
       } } : {}),
@@ -1485,15 +1486,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** moves or turns a piece: the basement's pieces are rewritten in its own list (the ones built into the basement can't move) */
   async function movePieceHere(f: PlacedFurni, spot: Spot): Promise<void> {
     if (!adminLobbyEdit) return movePiece(def.id, f, spot, me);
-    if (/^lobby\d+$/.test(f.id)) { await set(ref(db, `lobby/furni/${f.id}`), { kind: f.kind, x: spot.x, y: spot.y, ...(spot.dir ? { dir: spot.dir } : {}) }); return; } // a piece built into the basement: its new spot is kept under its own id
-    if (isFixedLobbyPiece(f.id)) throw new Error("That one can't be moved.");
-    await update(ref(db, `lobby/furni/${f.id}`), { x: spot.x, y: spot.y, dir: spot.dir || null });
+    const base = def.id === STREETS_ID ? "streets/furni" : "lobby/furni";
+    if (def.id === STREETS_ID ? isBuiltInStreetPiece(f.id) : /^lobby\d+$/.test(f.id)) { await set(ref(db, `${base}/${f.id}`), { kind: f.kind, x: spot.x, y: spot.y, ...(spot.dir ? { dir: spot.dir } : {}) }); return; } // a piece built into the room: its new spot is kept under its own id
+    if (def.id === LOBBY_ID && isFixedLobbyPiece(f.id)) throw new Error("That one can't be moved.");
+    await update(ref(db, `${base}/${f.id}`), { x: spot.x, y: spot.y, dir: spot.dir || null });
   }
   async function putDown(t: Pt, what: { kind: string; source: "inv" | "storage" | "catalog" | "box"; slot?: number; owner?: string }, dir: number): Promise<void> {
     const o = originFor(what.kind, dir, t);
     // a wall piece (a poster) snaps to the nearest wall instead of standing where you tapped
     const spot: Spot = FURNI_KINDS[what.kind].wall ? wallSpot(def, what.kind, t, dir) : { x: o.x, y: o.y, dir: FURNI_KINDS[what.kind].rotatable ? dir : 0 };
-    const cap = def.hideout?.cap ?? MAX_FURNI;
+    const cap = def.hideout?.cap ?? (adminLobbyEdit ? 999 : MAX_FURNI);
     if (placedCount(def) >= cap) return say(`That's the limit: ${cap} pieces in this room.`, "warn");
     const why = whyNot(def, what.kind, spot, null, othersOccupy());
     if (why) return say(why, "warn");
@@ -6176,6 +6178,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     if (isStreets) {
       applyDef(streetsDef());
+      unsubs.push(watchStreetsFurni((over) => { if (!disposed) applyDef(streetsDef(over)); })); // what the admin has moved, added or taken away
       start();
       void mountStreets({
         me, stage, say,

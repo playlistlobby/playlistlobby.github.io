@@ -17,7 +17,7 @@ import { findSlot, NO_DROP } from "../../../src/shared/items";
 import type { InvItem } from "../../../src/shared/items";
 import { floorPiles } from "./floor";
 import {
-  ARRIVAL_ID, bestWeapon, customerAt, customersAt, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, orderPay, PVP, STREET_PIECES, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, swingRoll, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
+  ARRIVAL_ID, bestWeapon, customerAt, customersAt, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, mergeStreetPieces, orderPay, PVP, StreetOverride, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, swingRoll, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
 } from "../../../src/shared/streets";
 
 /** the streets are only for the staff and the emulator until the admin switches them on (config/streetsOpen, Admin > Streets) */
@@ -84,7 +84,7 @@ export const streetBin: Action = {
   async run(c, a) {
     const can = text(a.can, /^[A-Za-z0-9_-]{1,30}$/, "can");
     const stand = await requireInRoom(c, STREETS_ID);
-    const piece = STREET_PIECES.find(([id, kind]) => id === can && (kind === "st_bin" || kind === "st_can"));
+    const piece = mergeStreetPieces(await c.db.get<Record<string, StreetOverride>>("streets/furni")).find(([id, kind]) => id === can && (kind === "st_bin" || kind === "st_can")); // (the street as the admin has left it)
     if (!piece) fail("That isn't a bin.");
     const plain = piece![1] === "st_can"; // the plain can: always 1 thing, the lean does nothing to it, and it has a better chance of a bandage
     const w = await c.user();

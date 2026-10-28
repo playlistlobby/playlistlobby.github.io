@@ -67,7 +67,7 @@ export function mountFurnishUi(host: HTMLElement, fh: FurnishHost): FurnishApi {
     const sel = fh.selected();
     const placing = fh.placing();
     top.replaceChildren(
-      h("div", { class: "fz-title" }, "Furnishing ", h("span", { class: "hint" }, `${placedCount(fh.def())}/${fh.hideout?.cap() ?? MAX_FURNI} placed`)),
+      h("div", { class: "fz-title" }, "Furnishing ", h("span", { class: "hint" }, (fh.catalog && !fh.def().ownerUid ? `${placedCount(fh.def())} placed` : `${placedCount(fh.def())}/${fh.hideout?.cap() ?? MAX_FURNI} placed`))),
       h("button", { class: "btn primary small", onclick: () => fh.done() }, "Done"));
 
     if (placing) {

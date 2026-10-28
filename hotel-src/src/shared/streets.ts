@@ -234,6 +234,24 @@ export const STREET_PIECES: Array<[string, string, number, number, number]> = [
   // the second half of the street: the second crossing with its traffic light, more lamps, a phone box and a bench by the shops
   ["s_traf2", "st_traffic", 38, 9, 2], ["s_lampf4", "st_lamppost", 34, 9, 2], ["s_lampf5", "st_lamppost", 45, 9, 2], ["s_lamp4", "st_lamp", 36, 2, 4], ["s_lamp5", "st_lamp", 47, 2, 4],
 ];
+/** what the admin has changed in the street (streets/furni/<id>): a piece moved or added, or one of the built-in pieces taken away (`removed`) */
+export interface StreetOverride { kind?: string; x?: number; y?: number; dir?: number; removed?: boolean }
+/** the street as it stands: the built-in pieces, with the admin's changes put on top */
+export function mergeStreetPieces(over: Record<string, StreetOverride> | null | undefined): Array<[string, string, number, number, number]> {
+  const o = over ?? {};
+  const out: Array<[string, string, number, number, number]> = [];
+  const known = new Set<string>();
+  for (const [id, kind, x, y, dir] of STREET_PIECES) {
+    known.add(id);
+    const v = o[id];
+    if (v?.removed) continue;
+    out.push(v && Number.isFinite(v.x) && Number.isFinite(v.y) ? [id, v.kind ?? kind, v.x!, v.y!, v.dir ?? 0] : [id, kind, x, y, dir]);
+  }
+  for (const [id, v] of Object.entries(o)) if (!known.has(id) && !v?.removed && typeof v?.kind === "string" && Number.isFinite(v.x) && Number.isFinite(v.y)) out.push([id, v.kind, v.x!, v.y!, v.dir ?? 0]);
+  return out;
+}
+/** is this one of the pieces that are part of the street (not one the admin added)? */
+export const isBuiltInStreetPiece = (id: string): boolean => STREET_PIECES.some(([pid]) => pid === id);
 /** the zebra crossings: where each one starts (tiles along the street; each is about 2 wide) */
 export const CROSSINGS = [20.1, 40.1];
 /** how many tiles each piece covers (a piece turned to face 2 or 6 swaps them): the customers don't stand where something is */

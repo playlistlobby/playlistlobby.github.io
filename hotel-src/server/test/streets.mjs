@@ -61,7 +61,7 @@ const refused = (r) => r.status === 401 || r.status === 403;
 const day = S.danishDayKey(Date.now());
 await owner("DELETE", `streetTickets/${day}`);
 await owner("DELETE", "config/streetsForce");
-for (const p of ["streetFilled", "streetLastHit", "rooms/streets/hits"]) await owner("DELETE", p);
+for (const p of ["streetFilled", "streetLastHit", "rooms/streets/hits", "streets/furni"]) await owner("DELETE", p);
 
 const admin = await fresh("t_st_admin", { blood: 1000 });
 await owner("PUT", `roles/${admin.uid}`, "admin");
@@ -357,6 +357,24 @@ await owner("PUT", `users/${a.uid}/inventory`, { 0: { item: "gun", qty: 1 } });
 await owner("DELETE", `streetGun/${a.uid}`);
 bad("somebody else can't join a fight you are in", await (async () => { await owner("PUT", `users/${c.uid}/inventory`, { 0: { item: "gun", qty: 1 } }); await stand(c, "streets", 8, 5); return act(c, "streetShoot", { target: b.uid, slot: 0 }); })());
 await owner("DELETE", `rooms/streets/players/${c.uid}`); await owner("DELETE", `rooms/streets/players/${a.uid}`); await owner("DELETE", `rooms/streets/players/${b.uid}`);
+
+console.log("--- the admin's changes to the street (streets/furni)");
+const base = S.STREET_PIECES.length;
+check("no changes: the street as built", S.mergeStreetPieces(null).length === base);
+const m = S.mergeStreetPieces({ s_can1: { kind: "st_can", x: 7, y: 1, dir: 4 }, s_bin1: { removed: true }, x_new: { kind: "st_bench", x: 3, y: 4, dir: 2 }, x_gone: { removed: true } });
+check("a piece moved", m.find((p) => p[0] === "s_can1")?.slice(2, 4).join() === "7,1");
+check("a built-in piece taken away", !m.some((p) => p[0] === "s_bin1"));
+check("a new piece added", m.some((p) => p[0] === "x_new" && p[1] === "st_bench"));
+check("so the count is right (one less, one more)", m.length === base);
+await stand(a, "streets", 5, 5);
+await owner("PUT", "streets/furni/x_bin", { kind: "st_bin", x: 30, y: 10, dir: 2 });
+await owner("DELETE", `users/${a.uid}/dumpsters`);
+ok("a bin the admin added can be searched", await act(a, "streetBin", { can: "x_bin" }));
+await owner("PUT", "streets/furni/x_bin", { removed: true });
+bad("and not one that is gone", await act(a, "streetBin", { can: "x_bin" }));
+await owner("PUT", "streets/furni/s_bin2", { removed: true }); await owner("DELETE", `users/${a.uid}/dumpsters`);
+bad("or a built-in one the admin took away", await act(a, "streetBin", { can: "s_bin2" }));
+await owner("DELETE", "streets/furni"); await owner("DELETE", `rooms/streets/players/${a.uid}`);
 
 console.log("--- closing the game in a fight");
 const rowOf = (u) => ({ name: u.name, figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", x: 4, y: 4, dir: 2, ts: Date.now() - 60_000, off: Date.now() });

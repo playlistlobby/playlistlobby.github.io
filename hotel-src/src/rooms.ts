@@ -76,7 +76,7 @@ export function footprint(kindId: string, dir = 0): { w: number; h: number } {
 import { SHOP_KIND_PREFIX, SHOP_PIECES } from "./shared/furniture";
 import { RAFFLE_PRIZE_ID } from "./shared/raffle";
 import { MINES_H, MINES_ID, MINES_OPEN, MINES_PIECES, MINES_W } from "./shared/mines";
-import { ARRIVAL_ID, ARRIVAL_SIZE, isStreetsRoom, STREET_PIECES, STREETS_H, STREETS_ID, STREETS_W } from "./shared/streets";
+import { ARRIVAL_ID, ARRIVAL_SIZE, isBuiltInStreetPiece, isStreetsRoom, mergeStreetPieces, StreetOverride, STREET_PIECES, STREETS_H, STREETS_ID, STREETS_W } from "./shared/streets";
 import { streetsFlagOn } from "./streetsFlag";
 import { HIDEOUT_MAX_FURNI, hideoutRoomId, isHideoutId, levelOfSize } from "./shared/hideout";
 export { hideoutRoomId, isHideoutId };
@@ -448,10 +448,10 @@ export function arrivalDef(): RoomDef {
 }
 /** Night: dark blue-black asphalt, the buildings along the back wall. (The look is drawn by renderRoomShell: sidewalks, curbs, a yellow line, lit windows.) */
 export const STREETS_THEME: RoomTheme = { floorA: "#2a2d33", floorB: "#2f3238", wall: "#2a2326", rug: false, rugColor: "#000000", style: "street" };
-export function streetsDef(): RoomDef {
+export function streetsDef(over?: Record<string, StreetOverride> | null): RoomDef {
   return {
     id: STREETS_ID, name: "The streets", ownerUid: null, ownerName: null, access: "open", w: STREETS_W, h: STREETS_H,
-    theme: { ...STREETS_THEME }, rug: null, furni: STREET_PIECES.map(([id, kind, x, y, dir]) => ({ id, kind, x, y, dir })), doorX: 2, doorTo: ARRIVAL_ID,
+    theme: { ...STREETS_THEME }, rug: null, furni: mergeStreetPieces(over).filter(([, kind]) => FURNI_KINDS[kind]).map(([id, kind, x, y, dir]) => ({ id, kind, x, y, dir })), doorX: 2, doorTo: ARRIVAL_ID,
   };
 }
 export { ARRIVAL_ID, STREETS_ID };
@@ -645,14 +645,20 @@ export async function createRoom(p: Profile): Promise<string> {
 export const updateRoom = (id: string, patch: Record<string, unknown>) => update(metaRef(id), patch);
 
 /** Furniture of the public room lives under lobby/furni (admin only); everyone else's under their room. */
-const furniPathOf = (roomId: string) => (roomId === LOBBY_ID ? "lobby/furni" : `roomsMeta/${roomId}/furni`);
+const furniPathOf = (roomId: string) => (roomId === LOBBY_ID ? "lobby/furni" : roomId === STREETS_ID ? "streets/furni" : `roomsMeta/${roomId}/furni`);
 
 export async function placeFurni(id: string, kind: string, x: number, y: number, dir = 0): Promise<void> {
   const f = push(ref(db, furniPathOf(id)));
   await set(f, dir ? { kind, x, y, dir } : { kind, x, y });
 }
 
-export const removeFurni = (id: string, fid: string) => remove(ref(db, `${furniPathOf(id)}/${fid}`));
+/** takes a piece out of the room (the admin, in the basement or the street): one of the street's built-in pieces is marked as removed, the rest are deleted */
+export const removeFurni = (id: string, fid: string) => (id === STREETS_ID && isBuiltInStreetPiece(fid) ? set(ref(db, `streets/furni/${fid}`), { removed: true }) : remove(ref(db, `${furniPathOf(id)}/${fid}`)));
+
+/** what the admin has changed in the street, as it is stored (see mergeStreetPieces) */
+export function watchStreetsFurni(cb: (over: Record<string, StreetOverride>) => void): Unsubscribe {
+  return onValue(ref(db, "streets/furni"), (s) => cb((s.val() ?? {}) as Record<string, StreetOverride>), () => cb({}));
+}
 
 /** Can this player walk straight in? Mirrors the database rules so we can say no politely instead of failing.
  *  Open rooms and friends' rooms: yes. Anyone else needs to be let in (a roomInvites entry), which a knock asks for. */
