@@ -11,6 +11,17 @@ import { logAction } from "../logger";
 import type { Ctx } from "../main";
 
 const fmtClock = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+/** the grey time above a bunch of messages, like iOS Messages: "14:32", "Yesterday 14:32", or the date */
+function fmtStamp(ts: number): string {
+  const d = new Date(ts), now = new Date();
+  const day = (x: Date): number => Math.floor(new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime() / 86_400_000);
+  const diff = day(now) - day(d);
+  if (diff === 0) return fmtClock(ts);
+  if (diff === 1) return `Yesterday ${fmtClock(ts)}`;
+  return `${d.toLocaleDateString([], { day: "numeric", month: "short" })} ${fmtClock(ts)}`;
+}
+/** a new time stamp is shown when this much time has gone since the message before */
+const STAMP_GAP_MS = 15 * 60_000;
 
 // ---- notifications outside the page: a system notification while the game is in the background, and "(2)" in the tab title ----
 /** asks the browser once (it has to come from a tap); nothing happens if it was already answered or isn't supported */
@@ -155,27 +166,35 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
       return;
     }
     const log = h("div", { class: "cw-log" });
-    const field = h("input", { type: "text", maxLength: 200, placeholder: `Message ${friend.name}…`, class: "cw-input", autocomplete: "off" });
+    const field = h("input", { type: "text", maxLength: 200, placeholder: `Message ${friend.name}…`, class: "cw-input", autocomplete: "off" }) as HTMLInputElement;
+    const sendBtn = h("button", { class: "cw-send", type: "submit", disabled: true }, "Send") as HTMLButtonElement;
+    field.addEventListener("input", () => { sendBtn.disabled = !field.value.trim(); });
     const status = h("span", { class: "dot" });
     const head = h("div", { class: "cw-head", onclick: () => el.classList.toggle("min") },
-      status, h("strong", {}, friend.name),
-      h("button", { class: "btn small", onclick: (e: Event) => { e.stopPropagation(); closeChat(uid); } }, "✕"));
+      h("div", { class: "cwh-side" }),
+      h("div", { class: "cw-title" }, status, h("strong", {}, friend.name)),
+      h("div", { class: "cwh-side right" }, h("button", { class: "cw-x", type: "button", "aria-label": "Close", onclick: (e: Event) => { e.stopPropagation(); closeChat(uid); } }, "×")));
     const el = h("div", { class: "chat-window" }, head, log,
       h("form", { class: "cw-form", onsubmit: (e: Event) => {
         e.preventDefault();
         const text = field.value.trim();
         if (!text) return;
         field.value = "";
+        sendBtn.disabled = true;
         askNotifyPermission(); // you have started talking: now is a fair time to ask if they may tell you about the answer
         social.sendDm(uid, text).then(() => playSfx("sent", 0.3), () => toast("That message didn't go through.", "err"));
-      } }, field));
+      } }, field, sendBtn));
     const render = () => {
       status.className = "dot " + (social.isOnline(uid) ? "on" : "");
       const msgs = social.dms.get(uid) ?? [];
-      log.replaceChildren(...(msgs.length === 0
-        ? [h("div", { class: "hint pad" }, "Say hi!")]
-        : msgs.map((m) => h("div", { class: "cw-msg" + (m.from === me.uid ? " mine" : "") },
-            h("div", { class: "cw-bubble" }, m.text), h("div", { class: "cw-time" }, fmtClock(m.ts))))));
+      const rows: HTMLElement[] = [];
+      msgs.forEach((m, i) => {
+        if (i === 0 || m.ts - msgs[i - 1].ts > STAMP_GAP_MS) rows.push(h("div", { class: "cw-stamp" }, fmtStamp(m.ts)));
+        const mine = m.from === me.uid;
+        const lastOfRun = i === msgs.length - 1 || (msgs[i + 1].from === m.from && msgs[i + 1].ts - m.ts <= STAMP_GAP_MS) === false;
+        rows.push(h("div", { class: "cw-msg" + (mine ? " mine" : "") + (lastOfRun ? " tail" : "") }, h("div", { class: "cw-bubble", title: fmtClock(m.ts) }, m.text)));
+      });
+      log.replaceChildren(...(rows.length === 0 ? [h("div", { class: "cw-empty" }, "Say hi!")] : rows));
       log.scrollTop = log.scrollHeight;
     };
     windows.set(uid, { el, log, render });
@@ -233,7 +252,7 @@ export function mountMessenger(root: HTMLElement, ctx: Ctx): () => void {
     const w = windows.get(friend);
     if (w && !w.el.classList.contains("min") && !away) return; // you are looking at that chat right now
     playSfx("message", 0.4);
-    const pop = h("div", { class: "toast ok show msg-toast", onclick: () => { openChat(friend); pop.remove(); } }, `💬 ${f.name}: ${m.text.slice(0, 60)}`);
+    const pop = h("div", { class: "toast ok show msg-toast", onclick: () => { openChat(friend); pop.remove(); } }, h("span", { class: "mt-icon" }), h("span", { class: "mt-text" }, h("b", {}, f.name), h("span", {}, m.text.slice(0, 60))));
     document.body.append(pop);
     setTimeout(() => pop.remove(), 5000);
   });

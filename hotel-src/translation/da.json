@@ -14478,5 +14478,10 @@
   "en": "Beats",
   "da": "Beats",
   "where": "src/ui/beatShop.ts"
+ },
+ "N2341": {
+  "en": "Yesterday {fmtClock}",
+  "da": "I går {fmtClock}",
+  "where": "src/ui/messenger.ts"
  }
 }
