@@ -63,9 +63,9 @@ export const TICKET_STOCK = 50;
 export const holdsTicket = (inv: ReadonlyArray<{ item: string } | null>): boolean => inv.some((s) => s?.item === TICKET_ITEM);
 
 // ---- the customers: the server lets them turn up (see streetTick), and who they are (what they ask for, how they look) comes from their number -------------------
-/** each player on the street brings this many customers a minute; there are never more than CAP on the street at once; one that is not served leaves after STAY */
-export const CUSTOMERS_PER_PLAYER_PER_MIN = 2;
-export const CUSTOMER_CAP = 18;
+/** each player on the street brings this many customers a minute (they stay 7 minutes, so one player has about 4 around); there are never more than CAP on the street at once; one that is not served leaves after STAY */
+export const CUSTOMERS_PER_PLAYER_PER_MIN = 0.6;
+export const CUSTOMER_CAP = 15;
 export const CUSTOMER_STAY_MS = 7 * 60_000;
 /** how often the browsers on the street ask the server to let customers turn up */
 export const STREET_TICK_MS = 10_000;

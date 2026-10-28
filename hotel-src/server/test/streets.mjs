@@ -168,24 +168,24 @@ await owner("DELETE", `users/${a.uid}/dumpsters`);
 
 console.log("--- the customers");
 const now = Date.now();
-// who turns up: 2 a minute for each player on the street, 18 at most, and a customer nobody serves leaves after 7 minutes
-check("customers stay 7 minutes", S.CUSTOMER_STAY_MS === 7 * 60_000 && S.CUSTOMER_CAP === 18 && S.CUSTOMERS_PER_PLAYER_PER_MIN === 2);
+// who turns up: 0.6 a minute for each player on the street, 15 at most, and a customer nobody serves leaves after 7 minutes
+check("customers stay 7 minutes, 15 at most, 0.6 a minute for each player (about 4 at a time for one player)", S.CUSTOMER_STAY_MS === 7 * 60_000 && S.CUSTOMER_CAP === 15 && S.CUSTOMERS_PER_PLAYER_PER_MIN === 0.6);
 for (const u of [admin, a, b, c, poor]) await owner("DELETE", `rooms/streets/players/${u.uid}`);
 await stand(a, "streets", 5, 5); await stand(b, "streets", 9, 5);
 await owner("DELETE", "streetCust"); await owner("DELETE", "streetFilled");
 await owner("PUT", "streetCustState", { at: Date.now() - 60_000, carry: 0, k: 100_000 });
 const t1r = await act(a, "streetTick");
 ok("a tick with two players on the street", t1r);
-check("a minute of players on the street brings 2 customers for each of them (the sparring bots count when they are running)", t1r.data.present >= 2 && t1r.data.spawned === Math.min(S.CUSTOMER_CAP, 2 * t1r.data.present), JSON.stringify(t1r.data));
+check("a minute of players on the street brings 0.6 customers for each of them (the sparring bots count when they are running)", t1r.data.present >= 2 && t1r.data.spawned === Math.min(S.CUSTOMER_CAP, Math.max(1, Math.floor(S.CUSTOMERS_PER_PLAYER_PER_MIN * t1r.data.present))), JSON.stringify(t1r.data));
 const spawned = Object.values((await owner("GET", "streetCust")) ?? {});
 check("who each leave after 7 minutes", spawned.length === t1r.data.spawned && spawned.every((x) => x.until - x.at === 7 * 60_000));
 const t1b = await act(b, "streetTick");
 check("asking again straight away brings no more (nobody saves up)", t1b.data.spawned === 0, JSON.stringify(t1b.data));
 await owner("DELETE", "streetCust");
-await owner("PUT", "streetCust", Object.fromEntries(Array.from({ length: 18 }, (_, i) => [200_000 + i, { at: Date.now() - 1000, until: Date.now() + 300_000 }])));
-await owner("PUT", "streetCustState", { at: Date.now() - 80_000, carry: 0, k: 200_017 });
+await owner("PUT", "streetCust", Object.fromEntries(Array.from({ length: 15 }, (_, i) => [200_000 + i, { at: Date.now() - 1000, until: Date.now() + 300_000 }])));
+await owner("PUT", "streetCustState", { at: Date.now() - 80_000, carry: 0, k: 200_014 });
 const capped = await act(a, "streetTick");
-check("with 18 on the street nobody new turns up", capped.data.spawned === 0 && capped.data.live === 18, JSON.stringify(capped.data));
+check("with 15 on the street nobody new turns up", capped.data.spawned === 0 && capped.data.live === 15, JSON.stringify(capped.data));
 await owner("DELETE", "streetCust");
 await owner("PUT", "streetCustState", { at: Date.now() - 30_000, carry: 0, k: 300_000 });
 const first = await act(a, "streetTick");

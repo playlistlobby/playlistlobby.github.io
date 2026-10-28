@@ -76,8 +76,8 @@ export const elevatorDown: Action = {
 };
 
 // ---- the bins ---------------------------------------------------------------------------------------------------------
-/** a street bin gives two things (and sometimes a third), and can be searched again after 5 minutes */
-const BIN_MS = 300_000;
+/** a street bin gives two things (and sometimes a third), and can be searched again after 15 minutes (the lean halves the wait at a blue bin) */
+const BIN_MS = 900_000;
 /** the plain can: this much of the time what it gives is a bandage */
 const CAN_BANDAGE = 0.1;
 export const streetBin: Action = {
@@ -115,7 +115,7 @@ export const streetBin: Action = {
 
 // ---- the customers ------------------------------------------------------------------------------------------------------
 /**
- * Customers turn up while there are players on the street: 2 a minute for each of them, 18 on the street at most, and one whose order isn't filled leaves after 7 minutes.
+ * Customers turn up while there are players on the street: 0.6 a minute for each of them, 15 on the street at most, and one whose order isn't filled leaves after 7 minutes.
  * The browsers on the street ask every few seconds; whoever asks first does the counting (everything is in streetCustState, so it doesn't matter who).
  */
 export const streetTick: Action = {
