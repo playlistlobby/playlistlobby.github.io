@@ -96,7 +96,7 @@ export const DEFAULT_ITEM_PRICE = 5;
 export const ITEM_DEFAULTS: Record<string, { on: boolean; price: number }> = {
   cigarette: { on: true, price: 2 },
   pill: { on: true, price: 3 },
-  walkman: { on: false, price: 100 }, // a portable CD player: the record player in the shop sells it, never 6ixty (on = 6ixty sells it)
+  walkman: { on: false, price: 20 }, // a portable CD player: the record player in the shop sells it, never 6ixty (on = 6ixty sells it)
   casekey: { on: false, price: 400 }, // (on = 6ixty sells it: he does not) // a key for a mystery box (bagmand sells them; a hit gives one 1 time in 10; the Ducky machine sells 5 for 30 kr, or 1 for 10 kr)
   cd_ogep: { on: true, price: 20 }, // the OG community EP (the four player songs on one CD): the record player sells it, one per player
   cd_blodig: { on: true, price: 5 }, // the Blodig oktober CD, sold at the record player in the shop: one per player (see buyRecord)

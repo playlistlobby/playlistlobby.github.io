@@ -120,7 +120,7 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
         }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${BEATSHOP_PRICE}`);
     // the walkman: a portable CD player (one in the pocket at a time)
     const haveWalk = me.inventory.some((x) => x?.item === "walkman");
-    const walkPrice = 100;
+    const walkPrice = 20;
     const walkBtn = haveWalk
       ? h("button", { class: "btn small", disabled: true, title: "You have one already." }, "Owned")
       : h("button", {

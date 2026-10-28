@@ -1,4 +1,4 @@
-// The walkman: bought in the record shop (100 blood, one in the pocket), holds one CD, plays wherever you are, pause / play / eject, one loaned CD at a time
+// The walkman: bought in the record shop (20 blood, one in the pocket), holds one CD, plays wherever you are, pause / play / eject, one loaned CD at a time
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: node test/walkman.mjs (server/)
 const DB = "http://127.0.0.1:9000";
 const NS = "demo-hotel-default-rtdb";
@@ -45,16 +45,16 @@ const slotOf = (st, item) => st.inventory.findIndex((s) => s && s.item === item)
 const refused = (r) => r.status === 401 || r.status === 403;
 
 const a = await fresh("t_wk_a", { blood: 500 });
-const b = await fresh("t_wk_b", { blood: 50, inventory: inv({ item: "cd", qty: 1 }) });
+const b = await fresh("t_wk_b", { blood: 10, inventory: inv({ item: "cd", qty: 1 }) });
 await act(a, "sync"); await act(b, "sync");
 
 console.log("--- buying");
 bad("not outside the shop", await act(a, "buyWalkman"));
 await stand(a, "shop"); await stand(b, "shop");
 bad("blood is needed", await act(b, "buyWalkman"));
-ok("buy it for 100", await act(a, "buyWalkman"));
+ok("buy it for 20", await act(a, "buyWalkman"));
 let st = await state(a);
-check("100 blood gone, a walkman in the pocket", st.blood === 400 && slotOf(st, "walkman") >= 0, JSON.stringify(st.blood));
+check("20 blood gone, a walkman in the pocket", st.blood === 480 && slotOf(st, "walkman") >= 0, JSON.stringify(st.blood));
 bad("one at a time", await act(a, "buyWalkman"));
 
 console.log("--- playing");
