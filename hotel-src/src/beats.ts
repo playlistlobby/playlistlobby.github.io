@@ -66,17 +66,16 @@ function wavBlob(samples: Float32Array, rate: number): Blob {
   return new Blob([data], { type: "audio/wav" });
 }
 
-export interface BeatUpload { file: File; title: string; price: number; durMs: number; /** null = the whole beat is the preview */ cropStartMs: number | null }
+export interface BeatUpload { file: File; title: string; price: number; durMs: number; /** where the 30 second preview starts */ cropStartMs: number }
 /** Lists a beat: describes it, writes the pieces of the beat (and of its preview), and tells the server it is all there. `onProgress` gets 0..1. */
 export async function uploadBeat(p: Profile, u: BeatUpload, onProgress?: (f: number) => void): Promise<{ id: string }> {
   const price = Math.round(u.price);
   if (!(price >= BEAT_PRICE_MIN && price <= BEAT_PRICE_MAX)) throw new Error(`The price has to be between ${BEAT_PRICE_MIN} and ${BEAT_PRICE_MAX}.`);
-  const preview = u.cropStartMs === null ? null : await cropPreview(u.file, u.cropStartMs);
+  const preview = await cropPreview(u.file, u.cropStartMs);
   const begun = await call<{ id: string; previewId: string | null }>(p, "beatBegin", {
-    title: cleanBeatTitle(u.title) || cleanBeatTitle(titleFromName(u.file.name)), price, durMs: u.durMs, size: u.file.size, mime: u.file.type || "audio/mpeg", whole: preview === null,
-    ...(preview ? { previewSize: preview.size, previewMs: Math.min(PREVIEW_MS, u.durMs - (u.cropStartMs ?? 0)), previewMime: "audio/wav" } : {}),
+    title: cleanBeatTitle(u.title) || cleanBeatTitle(titleFromName(u.file.name)), price, durMs: u.durMs, size: u.file.size, mime: u.file.type || "audio/mpeg", previewSize: preview.size, previewMs: Math.min(PREVIEW_MS, u.durMs - u.cropStartMs), previewMime: "audio/wav",
   });
-  if (preview && begun.previewId) await putPieces(begun.previewId, preview);
+  if (begun.previewId) await putPieces(begun.previewId, preview);
   await putPieces(begun.id, u.file, (f) => onProgress?.(f * 0.95));
   await call(p, "beatFinish", { id: begun.id });
   onProgress?.(1);

@@ -1,4 +1,4 @@
-// The BeatShop: buying the machine, listing beats (preview crop or whole), who can hear/read what, buying, taking a beat off, the chats and the rap replies
+// The BeatShop: buying the machine, listing beats (always with a 30 second preview crop), who can hear/read what, buying, taking a beat off, the chats and the rap replies
 //   terminal 1: npm run emulators (project root)   terminal 2: npm run dev (server/)   terminal 3: node test/beats.mjs (server/)
 const DB = "http://127.0.0.1:9000";
 const NS = "demo-hotel-default-rtdb";
@@ -98,21 +98,23 @@ check("nobody else can read the buyer's list", refused(await readAs(other, `beat
 bad("not twice", await act(buyer, "beatBuy", { owner: seller.uid, id: id1 }));
 check("the beat counts a sale", (await owner("GET", `beats/${seller.uid}/${id1}/sold`)) === 1);
 
-console.log("--- a whole beat is open to listen to");
-const b2 = await begin(seller, { title: "Open Beat", whole: true, previewSize: undefined, previewMs: undefined, price: 7 });
-ok("begin (whole)", b2);
-check("only one upload", b2.data.previewId === null);
+console.log("--- the preview is the only way to listen");
+bad("a beat without a preview is refused", await begin(seller, { title: "No preview", previewSize: undefined, previewMs: undefined }));
+const b2 = await begin(seller, { title: "Open Beat", whole: true, price: 7 });
+ok("asking for a whole-beat preview is ignored", b2);
+check("it still has its own preview file", b2.data.previewId && b2.data.previewId !== b2.data.id);
 await writeAll(seller, b2.data.id, fakeAudio(5000));
+await writeAll(seller, b2.data.previewId, fakeWav(3000));
 ok("finish", await act(seller, "beatFinish", { id: b2.data.id }));
-check("everybody can read it", (await readAs(other, `audio/${b2.data.id}/0`)).status === 200);
-const row2 = (await readAs(other, `beats/${seller.uid}/${b2.data.id}`)).body;
-check("the preview is the beat itself", row2.whole === true && row2.previewId === b2.data.id);
+check("the full beat is still closed to everybody else", refused(await readAs(other, `audio/${b2.data.id}/0`)));
+check("and the preview is open", (await readAs(other, `audio/${b2.data.previewId}/0`)).status === 200);
+check("the row says it is not a whole beat", (await readAs(other, `beats/${seller.uid}/${b2.data.id}`)).body?.whole === false);
 
 console.log("--- 15 at most");
-for (let i = 0; i < 13; i++) { const r = await begin(seller, { title: `Beat ${i}`, whole: true, previewSize: undefined, previewMs: undefined }); if (!r.ok) { check(`beat ${i}`, false, JSON.stringify(r)); break; } await owner("PATCH", `beats/${seller.uid}/${r.data.id}`, { ready: true }); await owner("DELETE", `audioUploads/${seller.uid}`); }
+for (let i = 0; i < 13; i++) { const r = await begin(seller, { title: `Beat ${i}`, whole: false }); if (!r.ok) { check(`beat ${i}`, false, JSON.stringify(r)); break; } await owner("PATCH", `beats/${seller.uid}/${r.data.id}`, { ready: true }); await owner("DELETE", `audioUploads/${seller.uid}`); }
 const n = Object.keys((await owner("GET", `beats/${seller.uid}`)) ?? {}).length;
 check("15 on sale (2 + 13)", n === 15, String(n));
-bad("the 16th is refused", await begin(seller, { title: "one too many", whole: true, previewSize: undefined, previewMs: undefined }));
+bad("the 16th is refused", await begin(seller, { title: "one too many", whole: false }));
 
 console.log("--- taking a beat off");
 ok("take off the open beat (nobody bought it)", await act(seller, "beatRemove", { id: b2.data.id }));

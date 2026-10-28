@@ -14458,5 +14458,15 @@
   "en": "Audio reply",
   "da": "Lydsvar",
   "where": "server/src/actions/beats.ts"
+ },
+ "N2337": {
+  "en": "Preview",
+  "da": "Smagsprøve",
+  "where": "src/ui/beatShop.ts"
+ },
+ "N2338": {
+  "en": "People hear 30 seconds you pick. The whole beat is for buyers.",
+  "da": "Folk hører 30 sekunder du vælger. Hele beatet er til købere.",
+  "where": "src/ui/beatShop.ts"
  }
 }

@@ -26,7 +26,7 @@ const ago = (t: number): string => {
 
 /**
  * A BeatShop machine. For a visitor: the seller's beats, a play button for the preview, the price (tap, "are you sure", then the price turns into a green Download), and a chat with the
- * seller for every beat they bought. For the seller: their beats, a form to list another one (the whole beat as the preview, or 30 seconds of it), and one Messages inbox for all the chats.
+ * seller for every beat they bought. For the seller: their beats, a form to list another one (its preview is 30 seconds you pick), and one Messages inbox for all the chats.
  */
 export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, ownerNameHint: string, onClose: () => void): BeatShopApi {
   const me = ctx.profile;
@@ -42,7 +42,7 @@ export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, owne
   let busy = false;
   let closed = false;
   // the form of a new beat
-  let file: File | null = null, fileMs = 0, title = "", price = 50, whole = false, cropStart = 0, uploading = -1;
+  let file: File | null = null, fileMs = 0, title = "", price = 50, cropStart = 0, uploading = -1;
   // the chat that is open
   let thread: ChatMeta | null = null, msgs: ChatMsg[] = [], draft = "", rap: File | null = null, rapMs = 0, sending = false;
   let threadStops: Array<() => void> = [];
@@ -129,7 +129,7 @@ export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, owne
       const r = await checkBeatFile(f);
       if ("error" in r) { toast(r.error, "err"); fileIn.value = ""; return; }
       file = f; fileMs = r.durMs; if (!title) title = cleanTitle(titleFromName(f.name));
-      cropStart = 0; whole = fileMs <= PREVIEW_MS + 2000;
+      cropStart = 0;
       render();
     } }) as HTMLInputElement;
     const titleIn = h("input", { class: "hc-input", type: "text", maxlength: "40", placeholder: "Beat title", value: title, "aria-label": "Beat title", oninput: () => { title = titleIn.value; } }) as HTMLInputElement;
@@ -142,7 +142,7 @@ export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, owne
       if (!(price >= BEAT_PRICE_MIN && price <= BEAT_PRICE_MAX)) return void toast(`The price has to be between ${BEAT_PRICE_MIN} and ${BEAT_PRICE_MAX}.`, "err");
       uploading = 0; render();
       try {
-        await uploadBeat(me, { file, title, price, durMs: fileMs, cropStartMs: whole ? null : cropStart }, (f) => { uploading = f; prog(); });
+        await uploadBeat(me, { file, title, price, durMs: fileMs, cropStartMs: cropStart }, (f) => { uploading = f; prog(); });
         toast("Your beat is on sale.");
         logAction(me, "buy", "put a beat on sale");
         file = null; title = ""; fileMs = 0; tab = "beats";
@@ -151,7 +151,6 @@ export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, owne
     } }, uploading >= 0 ? "Uploading" : "Put it on sale");
     const bar = h("div", { class: "sc-prog", hidden: uploading < 0 }, h("i", { style: { width: `${Math.round(Math.max(0, uploading) * 100)}%` } }));
     function prog(): void { (bar.firstElementChild as HTMLElement).style.width = `${Math.round(uploading * 100)}%`; }
-    const modeBtn = (isWhole: boolean, label: string, sub: string): HTMLElement => h("button", { class: "bs-mode" + (whole === isWhole ? " on" : ""), type: "button", disabled: !file || (isWhole === false && fileMs < 3000), onclick: () => { whole = isWhole; render(); } }, h("b", {}, label), h("small", {}, sub));
     return [
       seller(),
       h("div", { class: "hc-group sc-upload" },
@@ -160,11 +159,9 @@ export function openBeatShop(host: HTMLElement, ctx: Ctx, ownerUid: string, owne
         h("div", { class: "sc-filerow" }, h("button", { class: "sc-btn", type: "button", disabled: left <= 0 || uploading >= 0, onclick: () => fileIn.click() }, file ? "Another file" : "Choose a file"), h("span", { class: "sc-sub dark" }, file ? `${file.name.slice(0, 26)} - ${fmtDur(fileMs)}` : "No file chosen"), fileIn),
         titleIn,
         h("div", { class: "bs-pricerow" }, h("span", { class: "sc-sub dark" }, "Price in blood"), priceIn),
-        h("div", { class: "hc-label" }, "What people can listen to"),
-        h("div", { class: "bs-modes" },
-          modeBtn(false, "30 seconds", "A preview you pick. The rest is for buyers."),
-          modeBtn(true, "The whole beat", "Everybody can hear all of it.")),
-        ...(!whole && file ? [h("div", { class: "bs-crop" }, slider, startLabel)] : []),
+        h("div", { class: "hc-label" }, "Preview"),
+        h("div", { class: "sc-sub dark" }, "People hear 30 seconds you pick. The whole beat is for buyers."),
+        ...(file ? [h("div", { class: "bs-crop" }, ...(maxStart > 0 ? [slider] : []), startLabel)] : []),
         go, bar),
     ];
   }

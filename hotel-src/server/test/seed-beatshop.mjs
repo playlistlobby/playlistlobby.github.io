@@ -65,7 +65,8 @@ const now = Date.now();
 for (const uid of [A1, A2, A3]) if (!(await owner("GET", `users/${uid}/name`))) await owner("PUT", `users/${uid}`, { name: NAMES[uid], gender: "M", figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", blood: 0, createdAt: now });
 for (const p of ["beats", "beatBuys", "beatChats", "beatChatMsgs"]) await owner("DELETE", p);
 const BEATS = [];
-async function beat(sellerUid, id, title, price, bpm, secs, whole, sold, seed, ago) {
+async function beat(sellerUid, id, title, price, bpm, secs, _unused, sold, seed, ago) {
+  const whole = false; // (every beat has a 30 second preview; the beat itself is for its buyers)
   const samples = loop(bpm, secs, seed);
   const readers = { [sellerUid]: true };
   const pieces = await store(id, wav(samples), { owner: sellerUid, kind: "beat", durMs: secs * 1000, ...(whole ? { public: true } : { readers }) });

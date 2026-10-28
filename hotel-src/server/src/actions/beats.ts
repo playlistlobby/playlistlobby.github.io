@@ -1,6 +1,6 @@
 // The BeatShop (src/shared/beats.ts): buying the machine, listing beats, buying a beat, and the chats between the seller and the buyers.
 //   buyBeatShop                           the record box sells the machine: 50 blood, one per player
-//   beatBegin  {title, price, durMs, size, mime, whole, previewSize?, previewMs?, previewMime?}   describes the beat (and its 30 second preview) for the browser to upload
+//   beatBegin  {title, price, durMs, size, mime, previewSize, previewMs, previewMime}   describes the beat and its 30 second preview (the only preview there is) for the browser to upload
 //   beatFinish {id}                       the pieces are there: the beat is on sale
 //   beatRemove {id}                       take a beat off (a beat people have bought keeps its file for them)
 //   beatBuy    {owner, id}                the blood goes to the seller, the buyer may read the file
@@ -46,15 +46,15 @@ export const beatBegin: Action = {
     const mine = (await c.db.get<Record<string, BeatRow>>(`beats/${c.uid}`)) ?? {};
     const live = Object.values(mine).filter((r) => r.ready === true || c.now - Number(r.at ?? 0) < 3_600_000);
     if (live.length >= BEATS_MAX) fail(`You can have ${BEATS_MAX} beats on sale. Take one off first.`);
-    const whole = a.whole === true;
-    const full = await audioBegin(c, { kind: "beat", size: a.size, durMs: a.durMs, mime: a.mime, public: whole, readers: [c.uid], idPrefix: "b" });
-    let preview: { id: string; pieces: number } | null = null;
-    if (!whole) preview = await audioBegin(c, { kind: "preview", size: a.previewSize, durMs: a.previewMs, mime: a.previewMime ?? "audio/wav", idPrefix: "p" });
+    // a beat is never open to listen to in full: the preview is a short crop (the beat itself is only for its owner and its buyers)
+    const whole = false;
+    const full = await audioBegin(c, { kind: "beat", size: a.size, durMs: a.durMs, mime: a.mime, readers: [c.uid], idPrefix: "b" });
+    const preview = await audioBegin(c, { kind: "preview", size: a.previewSize, durMs: a.previewMs, mime: a.previewMime ?? "audio/wav", idPrefix: "p" });
     c.extra[`beats/${c.uid}/${full.id}`] = {
       title, price, durMs: Number(a.durMs), size: Number(a.size), mime: String(a.mime).toLowerCase(), pieces: full.pieces, whole, sold: 0, at: c.now, ready: false,
-      ...(preview ? { previewId: preview.id, previewPieces: preview.pieces, previewMs: Number(a.previewMs), previewMime: String(a.previewMime ?? "audio/wav").toLowerCase() } : { previewId: full.id, previewPieces: full.pieces, previewMs: Number(a.durMs), previewMime: String(a.mime).toLowerCase() }),
+      previewId: preview.id, previewPieces: preview.pieces, previewMs: Number(a.previewMs), previewMime: String(a.previewMime ?? "audio/wav").toLowerCase(),
     };
-    return { id: full.id, pieces: full.pieces, previewId: preview?.id ?? null, previewPieces: preview?.pieces ?? 0 };
+    return { id: full.id, pieces: full.pieces, previewId: preview.id, previewPieces: preview.pieces };
   },
 };
 
