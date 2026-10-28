@@ -15225,8 +15225,8 @@
   "where": "src/ui/hideoutComputer.ts"
  },
  "N2490": {
-  "en": "Everybody in the hideout can hand in what they have on them. Both orders have to be shipped before 21:00. You are paid your share of the order at once, by what each thing is worth. The orders start over every day.",
-  "da": "Alle i hideoutet kan aflevere det, de har på sig. Begge ordrer skal sendes af sted før kl. 21. Du bliver betalt din andel af ordren med det samme, efter hvad hver ting er værd. Ordrerne starter forfra hver dag.",
+  "en": "Everybody in the hideout can hand in what they have on them. Both orders have to be shipped before 21:00. You are paid at once: one and a half times what the same thing is worth to 6ixty (or to bagmand, for the opium drugs). The orders start over every day.",
+  "da": "Alle i hideoutet kan aflevere det, de har på sig. Begge ordrer skal sendes af sted før kl. 21. Du bliver betalt med det samme: halvanden gang hvad det samme er værd hos 6ixty (eller hos bagmand, for opium-stofferne). Ordrerne starter forfra hver dag.",
   "where": "src/ui/hideoutComputer.ts"
  },
  "N2491": {

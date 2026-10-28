@@ -1,4 +1,4 @@
-// The dark web (a tab of the hideout computer): big orders the whole hideout fills together, shipped before 21:00 Danish time. For now two orders a day (2,000 and 4,000 blood), the same every day.
+// The dark web (a tab of the hideout computer): big orders the whole hideout fills together, shipped before 21:00 Danish time. For now two orders a day, the same every day, paid 1.5 times what the same drugs are worth.
 // Pure data: the browser and the server both use it. The progress of a hideout is at darkweb/<owner>/<dayKey>/<orderId> (only the server writes it):
 //   { got: { <item>: <how many the hideout has handed in> }, by: { <uid>: <how many items that member handed in> }, done?: true }
 import { sellPrice } from "./items";
@@ -6,27 +6,26 @@ import { BAGMAND_SELL } from "./bagmand";
 import { danishParts } from "./streets";
 
 export interface DwLine { item: string; qty: number }
-/** `reward`: what the whole order pays in blood, shared out over its items by their worth */
-export interface DwOrder { id: string; title: string; reward: number; lines: DwLine[] }
+export interface DwOrder { id: string; title: string; lines: DwLine[] }
+/** the dark web pays this much of what the same thing is worth (6ixty's price) */
+export const DW_MULT = 1.5;
 /** the orders have to be shipped before this hour (Danish time) every day */
 export const DW_DEADLINE_HOUR = 21;
 export const DW_ORDERS: DwOrder[] = [
-  // fentanyl, cali weed blunts and 2cb (the drug made of opium and a shroom)
-  { id: "a", title: "The big shipment", reward: 2000, lines: [{ item: "fentcn", qty: 15 }, { item: "blunt_cali", qty: 5 }, { item: "twocb", qty: 6 }] },
-  { id: "b", title: "The chud order", reward: 4000, lines: [{ item: "blunt_chud", qty: 10 }] },
+  // fentanyl, cali weed blunts and 2cb (the drug made of opium and a shroom): about 2,100 blood in all
+  { id: "a", title: "The big shipment", lines: [{ item: "fentcn", qty: 3 }, { item: "blunt_cali", qty: 1 }, { item: "twocb", qty: 1 }] },
+  // 25 chud blunts: 750
+  { id: "b", title: "The chud order", lines: [{ item: "blunt_chud", qty: 25 }] },
 ];
 /**
  * What an item is worth before the dark web adds its half: what 6ixty pays for it; for the things only bagmand buys (the opium drugs) what bagmand pays; a blunt rolled from
  * one of those is that plus the blunt wrap (2), which is how the other rolled things are priced.
  */
 export const dwBase = (item: string): number => sellPrice(item) ?? BAGMAND_SELL[item] ?? (item.startsWith("blunt_") && BAGMAND_SELL[`${item.slice(6)}weed`] !== undefined ? BAGMAND_SELL[`${item.slice(6)}weed`] + 2 : 0);
-/** what one of an item in this order pays: the order's reward split by what the lines are worth */
-export const dwUnitPay = (o: DwOrder, item: string): number => {
-  const total = o.lines.reduce((n, l) => n + dwBase(l.item) * l.qty, 0);
-  return total > 0 ? (o.reward * dwBase(item)) / total : 0;
-};
-/** the pay for handing in `n` of an item */
-export const dwPay = (o: DwOrder, item: string, n: number): number => Math.round(dwUnitPay(o, item) * n);
+/** what one of an item pays when it is handed in: 1.5 times its worth, rounded up */
+export const dwUnitPay = (item: string): number => Math.ceil(dwBase(item) * DW_MULT);
+/** what a whole order pays when it is filled */
+export const dwTotal = (o: DwOrder): number => o.lines.reduce((n, l) => n + dwUnitPay(l.item) * l.qty, 0);
 /** is the dark web open (before the deadline today), and how many ms are left */
 export function dwOpen(now: number): { open: boolean; leftMs: number } {
   const p = danishParts(now);
