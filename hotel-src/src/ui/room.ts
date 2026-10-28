@@ -273,6 +273,32 @@ const posterPicture = (img?: string): CanvasImageSource => {
 };
 /** the blue water drop that flashes over the sink (the blood drop, but blue) */
 const waterDropImg = loadImg(assetUrl("items/waterdrop.svg"));
+/** a music note as a tiny white sprite (hard pixels, a dark edge so it shows on a light wall): drawn blown up, it looks pixelated */
+const noteSprites = new Map<string, HTMLCanvasElement>();
+function noteSprite(glyph: string): HTMLCanvasElement {
+  let c = noteSprites.get(glyph);
+  if (c) return c;
+  c = document.createElement("canvas");
+  c.width = c.height = 13;
+  const x = c.getContext("2d", { willReadFrequently: true })!;
+  x.textAlign = "center";
+  x.textBaseline = "middle";
+  x.font = 'bold 11px "Segoe UI Symbol", "Apple Symbols", sans-serif';
+  x.lineWidth = 2.4;
+  x.strokeStyle = "rgba(20,20,30,1)";
+  x.strokeText(glyph, 6.5, 7);
+  x.fillStyle = "#fff";
+  x.fillText(glyph, 6.5, 7);
+  const img = x.getImageData(0, 0, 13, 13);
+  for (let i = 0; i < img.data.length; i += 4) { // (no soft edges: every pixel is either there or not)
+    img.data[i + 3] = img.data[i + 3] > 110 ? 255 : 0;
+    if (img.data[i + 3] && img.data[i] > 140 && img.data[i + 1] > 140) { img.data[i] = img.data[i + 1] = img.data[i + 2] = 255; } // (the light ones are plain white)
+    else if (img.data[i + 3]) { img.data[i] = 24; img.data[i + 1] = 24; img.data[i + 2] = 34; }
+  }
+  x.putImageData(img, 0, 0);
+  noteSprites.set(glyph, c);
+  return c;
+}
 const itemImgs = new Map<string, HTMLImageElement>();
 const itemImg = (id: string): HTMLImageElement => {
   let im = itemImgs.get(id);
@@ -5136,21 +5162,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (cdf && notes.length) {
       const k = FURNI_KINDS[cdf.kind];
       const base = toScreen(iso(cdf.x + 0.5, cdf.y + 0.5));
-      g.textAlign = "center";
-      g.textBaseline = "middle";
-      g.lineWidth = 3;
-      g.strokeStyle = "rgba(0,0,0,0.65)";
+      g.save();
+      g.imageSmoothingEnabled = false; // (the notes are drawn small and blown up: a little pixelated)
       for (const n of notes) {
         const age = now - n.born;
         const f = age / n.life;
         const x = base.x + (n.ox + Math.sin(age / 240 + n.phase) * 9) * scale;
         const y = base.y - (k.height + 8) * scale - age * 0.045 * scale;
         g.globalAlpha = f < 0.15 ? f / 0.15 : Math.max(0, 1 - (f - 0.55) / 0.45);
-        g.font = `bold ${Math.round((18 + 6 * Math.sin(n.phase)) * Math.max(1, scale))}px "Segoe UI Symbol", "Apple Symbols", sans-serif`;
-        g.strokeText(n.glyph, x, y);
-        g.fillStyle = n.color;
-        g.fillText(n.glyph, x, y);
+        const spr = noteSprite(n.glyph);
+        const size = spr.width * (2.1 + 0.4 * Math.sin(n.phase)) * Math.max(1, scale);
+        g.drawImage(spr, Math.round(x - size / 2), Math.round(y - size / 2), size, size);
       }
+      g.restore();
       g.globalAlpha = 1;
     }
 
@@ -5248,7 +5272,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       lastNote = now;
       const glyphsPool = ["♪", "♫", "♬", "♩"];
       const colors = ["#ffd54a", "#ff7fbf", "#7fe3ff", "#9dff8a"];
-      notes.push({ born: now, life: 2200, glyph: glyphsPool[Math.floor(Math.random() * 4)], ox: (Math.random() - 0.5) * 22, phase: Math.random() * 6, color: colors[Math.floor(Math.random() * 4)] });
+      notes.push({ born: now, life: 2200, glyph: glyphsPool[Math.floor(Math.random() * 4)], ox: (Math.random() - 0.5) * 22, phase: Math.random() * 6, color: "#fff" });
     }
     for (let i = notes.length - 1; i >= 0; i--) if (now - notes[i].born > notes[i].life) notes.splice(i, 1);
 
