@@ -59,6 +59,8 @@ export interface StreetsApi {
   fight(uid: string): void;
   stopFight(): void;
   inFight(): boolean;
+  /** fire a gun from a pocket slot at somebody on the street (0 to 5 hit points, one every 30 seconds) */
+  shoot(uid: string, slot: number): Promise<void>;
   /** who you are going for right now (the one you clicked) */
   target(): string | null;
   /** somebody is in a fight right now (used to keep the body of a player who closed the game in it) */
@@ -257,6 +259,14 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     }
     swinging = false;
   }
+  async function shoot(uid: string, slot: number): Promise<void> {
+    try {
+      const r = await call<{ dmg: number; died?: boolean; looted?: number; spilled?: number }>(me, "streetShoot", { target: uid, slot });
+      o.refreshPocket();
+      o.say(r.dmg ? `Bang! You hit ${o.nameOf(uid)} for ${r.dmg}.` : `Bang! You miss ${o.nameOf(uid)}.`);
+      if (r.died) o.say(`You killed ${o.nameOf(uid)}.${r.looted ? ` You took ${r.looted} ${r.looted === 1 ? "thing" : "things"} from them.` : ""}${r.spilled ? " What didn't fit in your pocket lies on the floor." : ""}`);
+    } catch (err) { o.say((err as Error).message || "The gun won't fire.", "warn"); }
+  }
   async function heal(slot: number): Promise<void> {
     try {
       const r = await call<{ healed: number }>(me, "streetHeal", { slot });
@@ -417,7 +427,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       const c = boxes.get(objId);
       return c ? `${c.kind === "rich" ? "Rich customer" : "Customer"}: wants ${c.want.qty} x ${itemDef(c.want.item)?.name ?? c.want.item}` : null;
     },
-    drawPlayer, fight, stopFight, inFight, heal,
+    drawPlayer, fight, shoot, stopFight, inFight, heal,
     target: () => fightTarget,
     fighting: (uid) => (combat.get(uid)?.combatUntil ?? 0) > serverNow(),
     dispose() {

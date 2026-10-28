@@ -2,7 +2,7 @@
 // and swaps everything in one atomic write. Nothing is ever "in the middle", so nobody can lose or duplicate anything.
 import { Action, ID_RE, text } from "./util";
 import { fail } from "../ctx";
-import { addToInv, BANDAGE_LIMIT_MSG, BANDAGE_MAX, bandagesCarried, takeQtyFrom, TRADE_BLOOD_CAP, tradeBloodLeft, TRADE_BLOOD_WINDOW_MS } from "../../../src/shared/economy";
+import { addToInv, carryMsg, carryMsgFor, overCarry, takeQtyFrom, TRADE_BLOOD_CAP, tradeBloodLeft, TRADE_BLOOD_WINDOW_MS } from "../../../src/shared/economy";
 import { isLaced, NO_DROP } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
@@ -71,7 +71,7 @@ export const tradeFinish: Action = {
       let inv = w.s.inventory;
       for (const r of received.get(w.uid)!) {
         const next = addToInv(inv, { item: r.item, qty: r.qty, ...(r.ass ? { ass: true } : {}), ...(isLaced(r.item) ? { giver: r.giver } : {}) }); // (a laced thing remembers who handed it over)
-        if (!next && r.item === "bandage" && bandagesCarried(inv) + r.qty > BANDAGE_MAX) fail(w.uid === c.uid ? BANDAGE_LIMIT_MSG : `${name} can only carry ${BANDAGE_MAX} bandages at a time.`);
+        if (!next && overCarry(inv, r.item, r.qty)) fail(w.uid === c.uid ? carryMsg(r.item) : carryMsgFor(name, r.item));
         if (!next) fail(`${w.uid === c.uid ? "Your" : `${name}'s`} pocket hasn't got room for all of it. Make some space.`);
         inv = next!;
       }

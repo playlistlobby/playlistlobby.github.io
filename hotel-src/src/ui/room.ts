@@ -1172,7 +1172,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return;
     }
     if (item?.useOnPlayer === "shoot" || item?.useOnPlayer === "rocket") {
-      if (target && target.uid !== me.uid && !target.npc) openShootBox(target.uid);
+      if (target && target.uid !== me.uid && !target.npc && isStreets && streetsApi) { if (selectedSlot !== null) void streetsApi.shoot(target.uid, selectedSlot); } // (on the street a shot is a fight: no bounty box)
+      else if (target && target.uid !== me.uid && !target.npc) openShootBox(target.uid);
       else if (target) say("You can't shoot that.", "warn");
       else { clearSelection(); closeShootBox(); if (t) { pending = null; walkTo(t); } }
       return;
@@ -1950,7 +1951,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const onFloor = res.dropped.length; // (a bandage with 5 already on you: it falls on the floor)
       const kept = [...res.items];
       for (const d of res.dropped) { const i = kept.indexOf(d); if (i >= 0) kept.splice(i, 1); }
-      if (!kept.length) { panel.refresh(); playSfx("give", 0.6); say("You find a bandage, but you already carry 5: it falls on the floor."); logAction(me, "room", "searched a garbage can and found a bandage (dropped)"); return; }
+      const fell = (): void => { for (const d of res.dropped) say(`You find a ${itemDef(d)?.name ?? d}, but you can't carry any more of them: it falls on the floor.`); };
+      if (!kept.length) { panel.refresh(); playSfx("give", 0.6); fell(); logAction(me, "room", "searched a garbage can and found something it couldn't carry"); return; }
       const foundAll = kept;
       const found = foundAll[0];
       panel.refresh();
@@ -1962,7 +1964,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         window.setTimeout(() => { if (!disposed) giftPop(`+1 ${itemDef(extra)?.name ?? extra}`, itemImg(extra)); }, 600 * (i + 1));
         say(`The lean pays off: you find a ${itemDef(extra)?.name ?? extra} as well.`);
       });
-      if (onFloor) say("You find a bandage, but you already carry 5: it falls on the floor.");
+      if (onFloor) fell();
       logAction(me, "room", `searched a garbage can and found a ${found}`);
     } catch (err) {
       say((err as Error).message || "You find nothing but rot.", "warn");
@@ -1989,7 +1991,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const kept = [...r.items];
       for (const d of r.dropped ?? []) { const i = kept.indexOf(d); if (i >= 0) kept.splice(i, 1); }
       if (kept.length) say(`You search the bin and find ${kept.map((i) => itemDef(i)?.name ?? i).join(", ")}.`);
-      if (r.dropped?.length) say("You find a bandage, but you already carry 5: it falls on the floor.");
+      for (const d of r.dropped ?? []) say(`You find a ${itemDef(d)?.name ?? d}, but you can't carry any more of them: it falls on the floor.`);
       playSfx("give", 0.4);
     } catch (err) { say((err as Error).message || "There's nothing in it.", "warn"); }
   }

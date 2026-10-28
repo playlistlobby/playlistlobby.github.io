@@ -116,6 +116,7 @@ export const gunShoot: Action = {
     const target = text(a.target, ID_RE, "target");
     if (target === c.uid) fail("You can't shoot yourself.");
     const room = text(a.room, ROOM_RE, "room");
+    if (room === "streets") fail("On the street a gun is a weapon: shoot from the street screen."); // (streetShoot: 0 to 5 hit points, no bounty)
     const me = await requireInRoom(c, room);
     let theirs = await c.db.get<{ x?: number; y?: number; sit?: boolean }>(`rooms/${room}/players/${target}`);
     // a player who logged out is asleep in their own room: somebody with a hit on them can be shot there (the room is open to everybody while the hit lasts)
@@ -171,6 +172,7 @@ export const rocketFire: Action = {
     const target = text(a.target, ID_RE, "target");
     if (target === c.uid) fail("You can't shoot yourself.");
     const room = text(a.room, ROOM_RE, "room");
+    if (room === "streets") fail("You can't do that on the street.");
     const me = await requireInRoom(c, room);
     const w = await c.user();
     if (findSlot(w.s.inventory, "rocket") < 0) fail("You have no rocket launcher.");

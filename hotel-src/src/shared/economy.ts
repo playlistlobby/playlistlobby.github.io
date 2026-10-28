@@ -269,15 +269,19 @@ export function snapshotPatch(uid: string, before: Snapshot, after: Snapshot): R
 // ---- inventory helpers -------------------------------------------------------------------------------------------------
 
 /** A copy of the inventory with something put in it (stacking where the item stacks); null if there's no room. */
-/** you can carry this many bandages at a time (the stash box takes as many as you like) */
-export const BANDAGE_MAX = 5;
-export const bandagesCarried = (inv: Inventory): number => inv.reduce((n, s) => n + (s && s.item === "bandage" ? s.qty : 0), 0);
-/** what the server says when a bandage would go over the limit */
-export const BANDAGE_LIMIT_MSG = `You can only carry ${BANDAGE_MAX} bandages at a time.`;
-export const bandageCapFull = (inv: Inventory): boolean => bandagesCarried(inv) >= BANDAGE_MAX;
+/** the things you can only carry a few of at a time (the stash box takes as many as you like) */
+export const CARRY_MAX: Record<string, number> = { bandage: 5, gun: 2 };
+const CARRY_NAME: Record<string, string> = { bandage: "bandages", gun: "guns" };
+export const carriedOf = (inv: Inventory, item: string): number => inv.reduce((n, s) => n + (s && s.item === item ? s.qty : 0), 0);
+/** would `qty` more of `item` be more than you may carry? */
+export const overCarry = (inv: Inventory, item: string, qty: number): boolean => CARRY_MAX[item] !== undefined && carriedOf(inv, item) + qty > CARRY_MAX[item];
+/** what the server says when it would be too many: "You can only carry 5 bandages at a time." */
+export const carryMsg = (item: string): string => `You can only carry ${CARRY_MAX[item]} ${CARRY_NAME[item] ?? item} at a time.`;
+/** the same said about somebody else (a trade) */
+export const carryMsgFor = (name: string, item: string): string => `${name} can only carry ${CARRY_MAX[item]} ${CARRY_NAME[item] ?? item} at a time.`;
 
 export function addToInv(inv: Inventory, give: InvItem): Inventory | null {
-  if (give.item === "bandage" && bandagesCarried(inv) + give.qty > BANDAGE_MAX) return null; // (5 at most in your pockets)
+  if (overCarry(inv, give.item, give.qty)) return null; // (5 bandages and 2 guns at most in your pockets)
   if (give.item === TICKET_ITEM && inv.some((s) => s?.item === TICKET_ITEM)) return null; // (one elevator ticket per player: a second one can't be picked up or traded for)
   const out: Inventory = inv.map((s) => (s ? { ...s } : null));
   if (STACKABLE.has(give.item) && !give.lit) {

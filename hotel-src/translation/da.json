@@ -15665,8 +15665,53 @@
   "where": "server/src/actions/trade.ts"
  },
  "N2578": {
-  "en": "You find a bandage, but you already carry 5: it falls on the floor.",
-  "da": "Du finder en bandage, men du har allerede 5 på dig: den falder på gulvet.",
+  "en": "You find a {…}, but you can't carry any more of them: it falls on the floor.",
+  "da": "Du finder en {…}, men du kan ikke bære flere af dem: den falder på gulvet.",
   "where": "src/ui/room.ts"
+ },
+ "N2579": {
+  "en": "A risky chance to sell to new customers",
+  "da": "En risikabel mulighed for at sælge til nye kunder",
+  "where": "src/ui/elevator.ts"
+ },
+ "N2580": {
+  "en": "You can only carry 2 guns at a time.",
+  "da": "du kan kun have 2 pistoler på dig af gangen",
+  "where": "src/shared/economy.ts"
+ },
+ "N2581": {
+  "en": "{…} can only carry 2 guns at a time.",
+  "da": "{…} kan kun have 2 pistoler på sig af gangen",
+  "where": "server/src/actions/trade.ts"
+ },
+ "N2582": {
+  "en": "Reloading: {…} more seconds.",
+  "da": "Genlader: {…} sekunder endnu.",
+  "where": "server/src/actions/streets.ts"
+ },
+ "N2583": {
+  "en": "On the street a gun is a weapon: shoot from the street screen.",
+  "da": "På gaden er en pistol et våben: skyd fra gadeskærmen.",
+  "where": "server/src/actions/hits.ts"
+ },
+ "N2584": {
+  "en": "Bang! You hit {…} for {…}.",
+  "da": "Bang! Du ramte {…} for {…}.",
+  "where": "src/streets.ts"
+ },
+ "N2585": {
+  "en": "Bang! You miss {…}.",
+  "da": "Bang! Du missede {…}.",
+  "where": "src/streets.ts"
+ },
+ "N2586": {
+  "en": "The gun won't fire.",
+  "da": "Pistolen vil ikke skyde.",
+  "where": "src/streets.ts"
+ },
+ "N2587": {
+  "en": "You have no gun.",
+  "da": "Du har ingen pistol.",
+  "where": "server/src/actions/streets.ts"
  }
 }

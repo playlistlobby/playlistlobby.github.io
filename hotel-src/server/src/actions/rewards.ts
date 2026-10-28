@@ -6,7 +6,7 @@ import { isEmulator } from "../env";
 import { skipTime } from "../skipTime";
 import { floorPiles } from "./floor";
 import {
-  addToInv, bandageCapFull, DOUBLE_HARVEST_CHANCE, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabWaitAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
+  addToInv, DOUBLE_HARVEST_CHANCE, overCarry, DUMPSTER_DROPS, SEED_BACK_CHANCE, DUMPSTER_MS, FLAPPY_GAP_MS, LEAN_CUP_MS, LEAN_MS, DMT_MS, DMT_TRIP_MS, LSD_MS, LSD_SPEED, SHROOM_MS, stabGainAt, stabWaitAt, SYRINGE_BLOOD, SYRINGE_CD_MS, takeOneFrom, todayStartAt,
 } from "../../../src/shared/economy";
 import { liveHits, parseHits, HIT_ONLINE_FRESH_MS } from "../../../src/shared/hits";
 import { clearWanted } from "./bounty";
@@ -125,7 +125,7 @@ export const dumpster: Action = {
     const dropped: string[] = [];
     for (let i = 0; i < picks; i++) {
       const item = pick();
-      if (item === "bandage" && bandageCapFull(w.s.inventory)) { dropped.push(item); items.push(item); continue; } // (you carry 5 bandages already: it falls on the floor)
+      if (overCarry(w.s.inventory, item, 1)) { dropped.push(item); items.push(item); continue; } // (you carry 5 bandages / 2 guns already: it falls on the floor)
       const next = addToInv(w.s.inventory, { item, qty: 1 });
       if (!next) { if (items.length === 0) fail("Your inventory is full"); break; }
       w.s.inventory = next;

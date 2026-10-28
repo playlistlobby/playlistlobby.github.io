@@ -161,6 +161,10 @@ export const PVP = {
   regenMs: 20_000,
   /** you reach two tiles (diagonals too): somebody who runs is followed, and hit as soon as they are within reach */
   reach: 2,
+  /** a gun on the street: one shot per gun (it is spent), 0 up to this many hit points, and the next one can be fired this long after, from this far away */
+  gunMaxDmg: 5,
+  gunCooldownMs: 30_000,
+  gunRange: 6,
   /** the bandage heals this much and can be used again after this long */
   healItem: "bandage",
   healHp: 3,

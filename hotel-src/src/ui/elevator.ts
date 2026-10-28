@@ -59,6 +59,7 @@ export function openElevator(host: HTMLElement, ctx: Ctx, where: "lobby" | "arri
     const riding = pass > now;
     const price = h("span", { class: "el-price" }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${TICKET_PRICE}`);
     body.replaceChildren(
+      ...(run.open ? [] : [h("div", { class: "hint el-desc" }, "A risky chance to sell to new customers")]), // (before 20: what the elevator is for)
       h("div", { class: "el-time" + (run.open ? " open" : "") }, run.open ? `The elevator is running. It stops in ${fmtWhen(run.endsAt - now)}.` : `The elevator runs from 20 to 21. It starts in ${fmtWhen(run.nextAt - now)}.`),
       h("div", { class: "sixty-row" },
         ticket ? h("img", { src: ticket.icon, alt: "", class: "sixty-ico" }) : null,

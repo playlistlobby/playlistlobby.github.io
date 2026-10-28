@@ -292,7 +292,7 @@ console.log("--- bandages: 5 at most on you, as many as you like in the stash, 5
 const E = await load("../../src/shared/economy.ts", "economy.mjs");
 let pocket = Array.from({ length: 28 }, () => null);
 for (let i = 0; i < 5; i++) pocket = E.addToInv(pocket, { item: "bandage", qty: 1 });
-check("five bandages fit", E.bandagesCarried(pocket) === 5);
+check("five bandages fit", E.carriedOf(pocket, "bandage") === 5);
 check("a sixth doesn't", E.addToInv(pocket, { item: "bandage", qty: 1 }) === null);
 check("other things still do", E.addToInv(pocket, { item: "weed", qty: 1 }) !== null);
 const drops = Object.fromEntries(E.DUMPSTER_DROPS.map((d) => [d.item, d.chance]));
@@ -322,10 +322,41 @@ check("a bin that gives a bandage to somebody with 5 puts it on the floor", !!dr
 check("and the pocket still has 5", have(await state(a), "bandage") === 5);
 const pile = Object.entries((await owner("GET", "rooms/streets/drops")) ?? {}).find(([, d]) => d.item === "bandage");
 const picked = await act(a, "pickup", { room: "streets", key: pile?.[0] });
-check("picking it up says you can only carry 5", picked.ok === false && picked.error === E.BANDAGE_LIMIT_MSG, JSON.stringify(picked).slice(0, 200));
+check("picking it up says you can only carry 5", picked.ok === false && picked.error === E.carryMsg("bandage"), JSON.stringify(picked).slice(0, 200));
 await owner("PUT", `users/${a.uid}/blood`, 1000);
 await owner("DELETE", `rooms/streets/players/${a.uid}`);
 await owner("DELETE", "rooms/streets/drops");
+
+console.log("--- guns on the street: 0-5 damage, one every 30 seconds, a fight with the one you shot, 2 at a time");
+check("two guns fit, a third doesn't", (() => { let p = Array.from({ length: 28 }, () => null); p = E.addToInv(p, { item: "gun", qty: 1 }); p = E.addToInv(p, { item: "gun", qty: 1 }); return !!p && E.addToInv(p, { item: "gun", qty: 1 }) === null; })());
+check("the message says so", E.carryMsg("gun") === "You can only carry 2 guns at a time.");
+await stand(a, "streets", 5, 5); await stand(b, "streets", 9, 5);
+await owner("PUT", `users/${a.uid}/inventory`, { 0: { item: "knife", qty: 1 }, 1: { item: "gun", qty: 1 }, 2: { item: "gun", qty: 1 } });
+await owner("PUT", `users/${b.uid}/inventory`, { 0: { item: "knife", qty: 1 }, 1: { item: "weed", qty: 3 } });
+await owner("PUT", `streetCombat/${b.uid}`, { hp: 10, at: Date.now(), combatUntil: 0, healAt: 0, protectUntil: 0, kills: 0, deaths: 0 });
+await owner("PUT", `streetCombat/${a.uid}`, { hp: 10, at: Date.now(), combatUntil: 0, healAt: 0, protectUntil: 0, kills: 0, deaths: 0 });
+await owner("DELETE", `streetGun/${a.uid}`); await owner("DELETE", "rooms/streets/events");
+bad("the bounty gun doesn't work on the street", await act(a, "gunShoot", { room: "streets", target: b.uid, slot: 1 }));
+await owner("PUT", `rooms/streets/players/${a.uid}`, { name: a.name, figure: "x", x: 5, y: 5, dir: 2 });
+await stand(c, "streets", 40, 5); // (too far for the gun)
+bad("too far away", await act(a, "streetShoot", { target: c.uid, slot: 1 }));
+const shot = await act(a, "streetShoot", { target: b.uid, slot: 1 });
+ok("a shot from 4 tiles away", shot);
+check("0 to 5 damage", shot.data.dmg >= 0 && shot.data.dmg <= 5, JSON.stringify(shot.data));
+check("the gun is spent", (await state(a)).inventory.filter((x) => x && x.item === "gun").length === 1);
+check("they lost that many hit points", (await owner("GET", `streetCombat/${b.uid}/hp`)) === 10 - shot.data.dmg || shot.data.died);
+check("you are locked in a fight with each other", (await owner("GET", `streetCombat/${a.uid}/foe`)) === b.uid && (await owner("GET", `streetCombat/${b.uid}/foe`)) === a.uid);
+check("everybody sees the shot", Object.values((await owner("GET", "rooms/streets/events")) ?? {}).some((e) => e.type === "shot" && e.from === a.uid && e.to === b.uid));
+const again = await act(a, "streetShoot", { target: b.uid });
+check("the second gun has to wait 30 seconds", again.ok === false && /Reloading/.test(again.error), JSON.stringify(again).slice(0, 160));
+await owner("PUT", `streetGun/${a.uid}`, Date.now() - 31_000);
+const second = await act(a, "streetShoot", { target: b.uid });
+ok("after the wait the next gun fires", second);
+check("every damage is 0 to 5", second.data.dmg >= 0 && second.data.dmg <= 5);
+await owner("PUT", `users/${a.uid}/inventory`, { 0: { item: "gun", qty: 1 } });
+await owner("DELETE", `streetGun/${a.uid}`);
+bad("somebody else can't join a fight you are in", await (async () => { await owner("PUT", `users/${c.uid}/inventory`, { 0: { item: "gun", qty: 1 } }); await stand(c, "streets", 8, 5); return act(c, "streetShoot", { target: b.uid, slot: 0 }); })());
+await owner("DELETE", `rooms/streets/players/${c.uid}`); await owner("DELETE", `rooms/streets/players/${a.uid}`); await owner("DELETE", `rooms/streets/players/${b.uid}`);
 
 console.log("--- closing the game in a fight");
 const rowOf = (u) => ({ name: u.name, figure: "hr-115-42.hd-190-1.ch-215-62.lg-285-91.sh-290-62", x: 4, y: 4, dir: 2, ts: Date.now() - 60_000, off: Date.now() });
