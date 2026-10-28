@@ -14530,8 +14530,8 @@
   "where": "src/streets.ts"
  },
  "N2351": {
-  "en": "You were killed{…}. You lost everything you carried except your knife.",
-  "da": "Du blev dræbt{…}. Du mistede alt, du bar på, undtagen din kniv.",
+  "en": "You were killed{…}. You lost what you carried (not your knife) and 25 blood.",
+  "da": "Du blev dræbt{…}. Du mistede det, du bar på (ikke din kniv), og 25 blod.",
   "where": "src/streets.ts"
  },
  "N2352": {

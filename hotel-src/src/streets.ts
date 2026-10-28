@@ -215,7 +215,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   let deadTimer = 0;
   function died(by: string | undefined, at: number): void {
     stopFight();
-    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You lost everything you carried except your knife.`, "warn");
+    o.say(`You were killed${by ? ` by ${o.nameOf(by)}` : ""}. You lost what you carried (not your knife) and 25 blood.`, "warn");
     update(ref(db, `rooms/streets/players/${me.uid}`), { lay: true, sit: null }).catch(() => undefined); // (everybody sees you on the ground)
     deadBox?.remove();
     const secs = h("b", { class: "st-dead-secs" }, "");
@@ -257,7 +257,8 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     if (d > PVP.reach) { o.walkTo(theirs); return; } // (they ran: follow them, and swing as soon as they are within reach again)
     swinging = true;
     try {
-      await call(me, "streetHit", { target: uid });
+      const r = await call<{ died?: boolean; looted?: number; spilled?: number }>(me, "streetHit", { target: uid });
+      if (r.died) { o.refreshPocket(); o.say(`You killed ${o.nameOf(uid)}.${r.looted ? ` You took ${r.looted} ${r.looted === 1 ? "thing" : "things"} from them.` : ""}${r.spilled ? " What didn't fit in your pocket lies on the floor." : ""}`); }
     } catch (err) {
       const m = (err as Error).message || "";
       if (/arm is still swinging/i.test(m)) { /* wait for the next tick */ }

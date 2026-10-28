@@ -12,7 +12,9 @@ import { Action, cheb, ID_RE, int, requireInRoom, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { isEmulator } from "../env";
 import { addToInv, DUMPSTER_DROPS, takeQtyFrom } from "../../../src/shared/economy";
-import { findSlot, sellPrice } from "../../../src/shared/items";
+import { findSlot, NO_DROP, sellPrice } from "../../../src/shared/items";
+import type { InvItem } from "../../../src/shared/items";
+import { floorPiles } from "./floor";
 import {
   ARRIVAL_ID, bestWeapon, customerAt, customersAt, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, orderPay, PVP, STREET_PIECES, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, swingRoll, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
 } from "../../../src/shared/streets";
@@ -186,15 +188,26 @@ export const streetHit: Action = {
     const left = Math.max(0, hpT - dmg);
     mine.combatUntil = c.now + PVP.combatMs; mine.foe = target;
     their.combatUntil = c.now + PVP.combatMs; their.foe = c.uid;
-    let died = false;
+    let died = false, looted = 0, spilled = 0;
     if (left <= 0) {
       died = true;
       mine.kills += 1;
       c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid };
       mine.foe = undefined; // (the fight is over, but the 10 seconds where you can't leave still run: killing the one who hit you does not lift them)
-      // everything they carry is gone (the pocket is wiped; blood and what they wear stay), except the knife: it is the one thing a player must always have
+      // the killer takes what the dead one carried (the knife stays: it is the one thing a player must always have, and so does everything else that can't be dropped); what doesn't fit in the killer's pocket lies on the floor where they died, along with 25 blood
       const v = await c.user(target);
-      v.s.inventory = v.s.inventory.map((it) => (it && it.item === "knife" ? it : null));
+      const loot: InvItem[] = [];
+      v.s.inventory = v.s.inventory.map((it) => { if (!it || NO_DROP.has(it.item)) return it; loot.push({ item: it.item, qty: it.qty, ...(it.ass ? { ass: true } : {}), ...(it.giver ? { giver: it.giver } : {}) }); return null; });
+      const spill: InvItem[] = [];
+      let carried = w.s.inventory;
+      for (const it of loot) { const next = addToInv(carried, it); if (next) carried = next; else spill.push(it); }
+      w.s.inventory = carried;
+      const lost = Math.min(PVP.deathBlood, Math.max(0, Math.floor(v.s.blood)));
+      v.s.blood -= lost;
+      const where = typeof theirs!.x === "number" && typeof theirs!.y === "number" ? { x: theirs!.x, y: theirs!.y } : null;
+      const dead = String(v.raw.name ?? "someone");
+      await floorPiles(c, STREETS_ID, where, [...(lost > 0 ? [{ item: "blood", qty: lost }] : []), ...spill.map((it) => ({ item: it.item, qty: it.qty, ...(it.ass ? { ass: true } : {}) }))], target, dead);
+      looted = loot.length - spill.length; spilled = spill.length;
       // somebody who closed the game in the fight is not standing there any more once they are dead
       const pr = await c.db.get<{ room?: string } | null>(`presence/${target}`);
       if (!pr || pr.room !== STREETS_ID) c.extra[`rooms/${STREETS_ID}/players/${target}`] = null;
@@ -206,7 +219,7 @@ export const streetHit: Action = {
     c.extra[stabKey(c.now)] = { type: "stab", from: c.uid, to: target, ts: c.now, fight: true }; // (everybody sees the stab animation, as for a normal stab)
     c.extra[`rooms/${STREETS_ID}/hits/${c.uid}`] = { to: target, dmg, at: c.now, ...(died ? { dead: true } : {}) };
     c.note = `${dmg ? `hit ${dmg}` : "missed"}${died ? " (killed)" : ""}`;
-    return { dmg, left, died };
+    return { dmg, left, died, looted, spilled };
   },
 };
 

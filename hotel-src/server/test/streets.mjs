@@ -230,6 +230,9 @@ bad("and not again at once", await act(b, "streetHeal", { slot: 3 }));
 await owner("PATCH", `streetCombat/${b.uid}`, { healAt: 0, hp: 10, at: Date.now() });
 bad("not when you are not hurt", await act(b, "streetHeal", { slot: 3 }));
 // kill b: they have 1 hp, a hits until a swing lands
+await owner("PUT", `users/${b.uid}/inventory/4`, { item: "weed", qty: 5 });
+await owner("DELETE", "rooms/streets/drops");
+const weedBefore = have(await state(a), "weed"), bandBefore = have(await state(a), "bandage"), bBlood = await bloodOf(b);
 await owner("PUT", `streetCombat/${b.uid}`, { hp: 1, at: Date.now(), combatUntil: 0, healAt: 0, protectUntil: 0, kills: 0, deaths: 0 });
 let died = false;
 for (let i = 0; i < 25 && !died; i++) {
@@ -242,7 +245,21 @@ const dead = await owner("GET", `streetCombat/${b.uid}`);
 check("the dead one is back on full hit points, marked dead, and untouchable for a while", dead.hp === 10 && dead.deaths === 1 && dead.deadBy === a.uid && dead.protectUntil > Date.now(), JSON.stringify(dead));
 check("killing the one who hit you does not lift your own 10 seconds (you still can't leave), but you are free to fight somebody else", (await owner("GET", `streetCombat/${a.uid}/combatUntil`)) > Date.now() + 5000 && (await owner("GET", `streetCombat/${a.uid}/foe`)) === null);
 check("the killer is credited", (await owner("GET", `streetCombat/${a.uid}/kills`)) === 1);
-check("everything in the pocket is lost on death, except the knife", (await state(b)).inventory.filter((x) => x).map((x) => x.item).join() === "knife", JSON.stringify((await state(b)).inventory));
+check("the dead one keeps only the knife", (await state(b)).inventory.filter((x) => x).map((x) => x.item).join() === "knife", JSON.stringify((await state(b)).inventory));
+check("the killer takes what they carried", have(await state(a), "weed") === weedBefore + 5 && have(await state(a), "bandage") === bandBefore + 1, `${have(await state(a), "weed")} ${have(await state(a), "bandage")}`);
+check("the dead one drops 25 blood on the floor where they died", (await bloodOf(b)) === bBlood - 25 && Object.values((await owner("GET", "rooms/streets/drops")) ?? {}).some((d) => d.item === "blood" && d.qty === 25 && d.x === 6 && d.y === 5));
+// with no room in the killer's pocket the things lie where the dead one went down
+await owner("PUT", `users/${a.uid}/inventory`, Object.fromEntries(Array.from({ length: 28 }, (_, i) => [i, i === 0 ? { item: "knife", qty: 1 } : { item: "bandage", qty: 1 }])));
+await owner("PUT", `users/${b.uid}/inventory/5`, { item: "joint", qty: 1 }); await owner("DELETE", "rooms/streets/drops"); await stand(b, "streets", 6, 5);
+await owner("PUT", `streetCombat/${b.uid}`, { hp: 1, at: Date.now(), combatUntil: 0, healAt: 0, protectUntil: 0, kills: 0, deaths: 0 });
+let died2 = false, spilled = 0;
+for (let i = 0; i < 25 && !died2; i++) {
+  await owner("DELETE", `streetSwing/${a.uid}`); await owner("PATCH", `streetCombat/${a.uid}`, { foe: null, combatUntil: 0 });
+  const r = await act(a, "streetHit", { target: b.uid });
+  if (r.ok && r.data.died) { died2 = true; spilled = r.data.spilled; }
+}
+const floor2 = Object.values((await owner("GET", "rooms/streets/drops")) ?? {});
+check("what doesn't fit lies on the floor", died2 && spilled === 1 && floor2.some((d) => d.item === "joint") && !(await state(a)).inventory.some((x) => x && x.item === "joint"), JSON.stringify(floor2));
 check("every swing is a stab for everybody in the room to see", Object.values((await owner("GET", "rooms/streets/events")) ?? {}).some((e) => e.type === "stab" && e.fight && e.from === a.uid && e.to === b.uid));
 
 console.log("--- closing the game in a fight");

@@ -144,8 +144,9 @@ export const PVP = {
   healItem: "bandage",
   healHp: 3,
   healCooldownMs: 6_000,
-  /** what happens to what you carry when you die: the whole pocket is lost */
+  /** what happens to what you carry when you die: the killer takes it all (what does not fit lies where you died), except what can't be dropped, and 25 blood lands on the floor */
   loseOnDeath: true,
+  deathBlood: 25,
 } as const;
 /** `foe` is who you are locked in a fight with while `combatUntil` lasts */
 export interface StreetCombat { hp: number; at: number; combatUntil: number; healAt: number; protectUntil: number; kills: number; deaths: number; foe?: string }

@@ -58,20 +58,32 @@ export const fentDrop: Action = {
 
 /** A pile of blood on the floor where somebody went down (or the nearest tile with nothing on it): anybody can pick it up. False if the room has no free tile. */
 export async function bloodPile(c: import("../ctx").Ctx, room: string, at: { x: number; y: number } | null, qty: number, byUid: string, byName: string): Promise<boolean> {
+  return (await floorPiles(c, room, at, [{ item: "blood", qty }], byUid, byName)) === 1;
+}
+
+/** Puts piles on the floor, each on the free tile nearest to `at` (a tile holds one pile). Returns how many found a tile. */
+export async function floorPiles(c: import("../ctx").Ctx, room: string, at: { x: number; y: number } | null, piles: Array<{ item: string; qty: number; ass?: boolean }>, byUid: string, byName: string): Promise<number> {
   const size = await roomSize(c, room);
   const drops = (await c.db.get<Record<string, DropRow>>(`rooms/${room}/drops`)) ?? {};
   const live = (d: DropRow) => !d.exp || d.exp > c.now;
-  let best: { x: number; y: number } | null = null, bd = Infinity;
   const from = at ?? { x: Math.floor(size.w / 2), y: Math.floor(size.h / 2) };
-  for (let y = 0; y < size.h; y++) for (let x = 0; x < size.w; x++) {
-    const d0 = drops[`${x}_${y}`];
-    if (d0 && live(d0)) continue;
-    const dist = Math.hypot(x - from.x, y - from.y);
-    if (dist < bd) { bd = dist; best = { x, y }; }
+  const used = new Set<string>();
+  let placed = 0;
+  for (const pile of piles) {
+    let best: { x: number; y: number } | null = null, bd = Infinity;
+    for (let y = 0; y < size.h; y++) for (let x = 0; x < size.w; x++) {
+      const k = `${x}_${y}`;
+      const d0 = drops[k];
+      if (used.has(k) || (d0 && live(d0))) continue;
+      const dist = Math.hypot(x - from.x, y - from.y);
+      if (dist < bd) { bd = dist; best = { x, y }; }
+    }
+    if (!best) break;
+    used.add(`${best.x}_${best.y}`);
+    c.extra[`rooms/${room}/drops/${best.x}_${best.y}`] = { item: pile.item, qty: pile.qty, ...(pile.ass ? { ass: true } : {}), x: best.x, y: best.y, by: byUid, byName: byName.slice(0, 16), at: c.now, ...(isPublicRoom(room) ? { exp: c.now + DROP_LIFE_MS } : {}) };
+    placed++;
   }
-  if (!best) return false;
-  c.extra[`rooms/${room}/drops/${best.x}_${best.y}`] = { item: "blood", qty, x: best.x, y: best.y, by: byUid, byName: byName.slice(0, 16), at: c.now, ...(isPublicRoom(room) ? { exp: c.now + DROP_LIFE_MS } : {}) };
-  return true;
+  return placed;
 }
 
 export const pickup: Action = {
