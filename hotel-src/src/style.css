@@ -1890,3 +1890,10 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
   .stash-panes { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
   .stash-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); grid-auto-rows: 78px; }
 }
+.confirm-overlay { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 10, .5); }
+.cd-popup.confirm-pop { position: static; width: 290px; max-width: calc(100% - 24px); gap: 8px; box-shadow: 0 10px 34px rgba(0, 0, 0, .65); }
+.confirm-title { color: #ff5a4a; font-size: 18px; letter-spacing: .5px; text-shadow: 0 1px 0 #000; }
+.confirm-line { font-size: 13px; line-height: 1.35; color: #dfe6ff; }
+.confirm-ask { font-weight: 800; text-align: center; margin-top: 2px; }
+.confirm-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 4px; }
+.confirm-buttons .btn { min-width: 96px; }

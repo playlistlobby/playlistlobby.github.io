@@ -2090,7 +2090,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           // arrived at your own room's door (down to the basement) or the shop's door (back to the basement)
           if (streetsApi?.inFight()) return say("You are in a fight. You can't leave.", "warn");
           if (roomId === ARRIVAL_ID && def.doorTo === STREETS_ID) { // the door to the streets asks first: it is not safe out there
-            openConfirmBox(stage, "Go to the streets?", ["It is dangerous out there. Other players can attack you, and if you die you lose everything you carry (except your knife) and 25 blood.", "Are you sure?"], (yes) => {
+            openConfirmBox(stage, "WATCH OUT", ["Behind this door knives do damage, if you die you lose all the items you carry + 25 blood", "Are you sure bro?"], (yes) => {
               if (!yes || disposed) return;
               playSfx("doorOpen", 0.6);
               logAction(me, "visit", "went to the streets");
