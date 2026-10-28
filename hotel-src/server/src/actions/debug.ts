@@ -60,3 +60,37 @@ export const debug: Action = {
     return fail("Unknown command.");
   },
 };
+
+/**
+ * /tp <name>            you go to where that player is
+ * /tp <name> me         that player comes to where you are
+ * /tp <name> <name2>    the first player goes to where the second is
+ * For the admin and the account "emil". The player's browser walks them there (teleports/<uid>, see watchTeleport). The street and its elevator room are left out: they need a ticket.
+ */
+export const staffTp: Action = {
+  async run(c, a) {
+    if (!c.isAdmin && c.caller.email.toLowerCase() !== TESTER_EMAIL) fail("Unknown command.");
+    const find = async (raw: unknown): Promise<{ uid: string; name: string; room: string }> => {
+      const who = text(typeof raw === "string" ? raw.trim().toLowerCase() : "", /^[a-z0-9_ .-]{1,20}$/, "name");
+      const uid = await c.db.get<string>(`usernames/${who}`);
+      if (!uid) fail("There is no player with that name.");
+      const room = await c.db.get<string>(`presence/${uid}/room`);
+      if (!room) fail(`${who} isn't in the game right now.`);
+      const name = String((await c.db.get<string>(`profiles/${uid}/name`)) ?? who).slice(0, 16);
+      return { uid: uid!, name, room: room! };
+    };
+    const first = await find(a.who);
+    const second = a.to === undefined || a.to === "" ? null : String(a.to).trim().toLowerCase() === "me" ? "me" : await find(a.to);
+    let mover = c.uid, dest: string, label: string;
+    if (second === null) { dest = first.room; label = first.name; } // you go to them
+    else if (second === "me") { // they come to you
+      mover = first.uid;
+      dest = (await c.db.get<string>(`presence/${c.uid}/room`)) ?? fail("You aren't in a room.");
+      label = first.name;
+    } else { mover = first.uid; dest = second.room; label = first.name; }
+    if (!/^[a-z0-9_]{1,50}$/.test(dest) || dest === "arrival" || dest === "streets") fail("That room can't be gone to like that: the street needs the elevator.");
+    if (mover !== c.uid) c.extra[`teleports/${mover}`] = { room: dest, at: c.now, by: c.uid };
+    c.note = `tp ${first.name}${second ? " " + (second === "me" ? "to me" : "to " + second.name) : ""}`;
+    return { self: mover === c.uid, room: dest, name: label, moved: mover === c.uid ? c.uid : first.name };
+  },
+};

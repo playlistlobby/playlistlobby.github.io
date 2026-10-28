@@ -105,9 +105,9 @@ export function watchTeleport(p: Profile, go: (room: string) => void): () => voi
   let last = 0;
   return onValue(ref(db, `teleports/${p.uid}`), (s) => {
     const t = s.val() as { room?: string; at?: number } | null;
-    if (!t || typeof t.at !== "number" || t.at < startedAt - 5000 || t.at <= last || (t.room !== "arrival" && t.room !== "streets")) return;
+    if (!t || typeof t.at !== "number" || t.at < startedAt - 5000 || t.at <= last || !/^[a-z0-9_]{1,50}$/.test(String(t.room))) return;
     last = t.at;
-    toast("A staff member sent you to the test area.");
+    toast(t.room === "arrival" || t.room === "streets" ? "A staff member sent you to the test area." : "A staff member moved you.");
     window.setTimeout(() => go(t.room!), 600);
   }, () => undefined);
 }

@@ -7,7 +7,7 @@ import { combineItems, consume, dumpster, fillCan, finishSmoke, flappy, harvest,
 import { drop, fentDrop, pickup } from "./floor";
 import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, storeItem, takeItem } from "./toolbox";
 import { tradeFinish } from "./trade";
-import { debug } from "./debug";
+import { debug, staffTp } from "./debug";
 import { flappyRemove, flappyScore, flappyStart } from "./flappyboard";
 import { backupNow, banPlayer } from "./admin";
 import { giftAnswer, giftCollect, giftSend } from "./gift";
@@ -61,5 +61,5 @@ export const ACTIONS: Record<string, Action> = {
   bagmandBuy, bagmandSell, deadlyStab, bagmandHitTick, bountyShow, roomSweep, songBegin, songFinish, songVote, songDelete, songSweep, loudspeaker, petBuy, petRelease, petPickup, petStockNow, caseOpen, unusualWear, unusualRemove,
   hideoutBuy, hideoutUpgrade, hideoutColors, hideoutSettings, hideoutKick, hideoutLeave, hideoutMember, hideoutSearch, hideoutInvite, hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutOrder, hideoutCollect, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect, hideoutDonate,
   mine, craft,
-  debug, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
+  debug, staffTp, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

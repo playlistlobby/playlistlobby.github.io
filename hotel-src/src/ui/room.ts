@@ -3964,6 +3964,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       }
       const skipM = /^\/skip\s+(\d{1,4})$/i.exec(text);
       if (skipM) { void testCommand("skip", Number(skipM[1])); return; } // TEMP: /skip <minutes> moves your plants, mixers and bins on in time
+      const tpM = /^\/tp\s+(\S+)(?:\s+(\S+))?$/i.exec(text);
+      if (tpM) { // /tp <name> (go to them), /tp <name> me (bring them here), /tp <name> <name2> (send the first to the second): Emil and the admin
+        void call<{ self: boolean; room: string; name: string }>(me, "staffTp", { who: tpM[1], ...(tpM[2] ? { to: tpM[2] } : {}) }).then((r) => {
+          if (r.self) ctx.navigate("room", { roomId: r.room, from: roomId, force: true });
+          else say(`${r.name} is on the way.`);
+        }, (err) => say((err as Error).message || "Unknown command.", "warn"));
+        return;
+      }
       const testM = /^\/test1(?:\s+(.+))?$/i.exec(text);
       if (testM) { // the staff: to the room the elevator takes you to (the streets are closed to players until the admin opens them), or send a player there
         const who = (testM[1] ?? "").trim();
