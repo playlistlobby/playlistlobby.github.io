@@ -5,6 +5,8 @@ import { Action, cheb, ID_RE, int, requireHideoutMember, requireInRoom, text } f
 import { Ctx, fail } from "../ctx";
 import { findSlot } from "../../../src/shared/items";
 import { addToInv, takeQtyFrom } from "../../../src/shared/economy";
+/** how long the room of a player with a hit on them stays open to the hunters while they are logged out */
+const HIT_TARGET_OPEN_MS = 24 * 3_600_000;
 import { isHideoutId } from "../../../src/shared/hideout";
 import { FAIR_GAME_UIDS, ROULETTE_CHAIRS, HIT_HIDEOUT_COOLDOWN_MS, HIT_MAX, HIT_ONLINE_FRESH_MS, HIT_ONLINE_MAX, HIT_MIN, HIT_PERSON_MAX, HIT_PERSON_WINDOW_MS, liveHits, parseHits, ROCKET_COOLDOWN_MS, ROCKET_SECS, SHOT_RANGE, shotLoss } from "../../../src/shared/hits";
 import { bloodPile } from "./floor";
@@ -91,6 +93,8 @@ export const hitPlace: Action = {
     const meta = await c.db.get<{ name?: string }>(`roomsMeta/${room}`);
     const id = `h${c.now.toString(36)}${Math.random().toString(36).slice(2, 5)}`;
     c.extra[`hits/${id}`] = { target, targetName: name.slice(0, 30), amount, by: c.uid, byName: String(w.raw?.name ?? "?").slice(0, 30), hideout: owner, hideoutName: String(meta?.name ?? "A hideout").slice(0, 40), at: c.now };
+    const open = await c.db.get<number>(`hitTargets/${target}/until`);
+    c.extra[`hitTargets/${target}/until`] = Math.max(Number(open) || 0, c.now + HIT_TARGET_OPEN_MS); // (if they log out, their room is open to whoever comes for the hit)
     c.extra[`hitCool/${owner}`] = c.now;
     c.extra[`hitRevenge/${target}/${id}`] = { by: c.uid, byName: String(w.raw?.name ?? "?").slice(0, 30), hideoutName: String(meta?.name ?? "A hideout").slice(0, 40), amount, at: c.now };
     const mine = (await c.db.get<Record<string, { by?: string }>>(`hitRevenge/${c.uid}`)) ?? {}; // (a hit on somebody who put one on you: the revenge is done)
@@ -113,7 +117,10 @@ export const gunShoot: Action = {
     if (target === c.uid) fail("You can't shoot yourself.");
     const room = text(a.room, ROOM_RE, "room");
     const me = await requireInRoom(c, room);
-    const theirs = await c.db.get<{ x?: number; y?: number; sit?: boolean }>(`rooms/${room}/players/${target}`);
+    let theirs = await c.db.get<{ x?: number; y?: number; sit?: boolean }>(`rooms/${room}/players/${target}`);
+    // a player who logged out is asleep in their own room: somebody with a hit on them can be shot there (the room is open to everybody while the hit lasts)
+    const sleeping = !theirs && room === `u_${target}` && !(await c.db.get(`presence/${target}`));
+    if (sleeping) theirs = {};
     if (!theirs) fail("They've left the room.");
     if (await atRoulette(c, room, target, theirs!)) fail("They are at the roulette table: you can't shoot them there.");
     if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > SHOT_RANGE) fail("They're too far away.");
@@ -139,6 +146,7 @@ export const gunShoot: Action = {
       got = hit.amount;
       w.s.blood += got;
       c.extra[`hits/${hit.id}`] = null;
+      if (hits.length === 1) c.extra[`hitTargets/${target}`] = null; // (that was the last hit on them: their room closes again)
       if (hit.bagmand) await clearWanted(c, target); // (a claimed bagmand hit: the rooms they stand in close again)
       if (Math.random() < 0.1) { // doing a hit: 1 time in 10 a box key turns up (not if the pocket is full)
         const withKey = addToInv(w.s.inventory, { item: "casekey", qty: 1 });

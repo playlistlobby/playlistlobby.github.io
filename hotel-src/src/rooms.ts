@@ -650,7 +650,13 @@ export const removeFurni = (id: string, fid: string) => remove(ref(db, `${furniP
 export async function isWantedRoomLive(room: string): Promise<boolean> {
   try {
     const v = (await get(ref(db, `wantedRooms/${room}`))).val() as { until?: number } | null;
-    return !!v && typeof v.until === "number" && v.until > Date.now();
+    if (!!v && typeof v.until === "number" && v.until > Date.now()) return true;
+    if (room.startsWith("u_")) { // a player with a hit on them who logged out is asleep in their own room: it is open to whoever comes for the hit
+      const uid = room.slice(2);
+      const [t, p] = await Promise.all([get(ref(db, `hitTargets/${uid}/until`)), get(ref(db, `presence/${uid}`))]);
+      return Number(t.val()) > Date.now() && !p.exists();
+    }
+    return false;
   } catch { return false; }
 }
 

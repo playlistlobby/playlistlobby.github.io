@@ -996,6 +996,9 @@
         }
       }
     },
+    "hitTargets": {
+      ".read": "@PW@"
+    },
     "teleports": {
       "$uid": {
         ".read": "@PW@ && auth.uid === $uid"
