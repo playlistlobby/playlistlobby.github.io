@@ -15738,5 +15738,10 @@
   "en": "Use some of them, or ask them to offer fewer.",
   "da": "Brug nogle af dem, eller bed dem tilbyde færre.",
   "where": "src/ui/trade.ts"
+ },
+ "N2593": {
+  "en": "Use the Bandage button at the top left of the street.",
+  "da": "Brug Bandage-knappen øverst til venstre på gaden.",
+  "where": "src/ui/sidepanel.ts"
  }
 }
