@@ -48,6 +48,13 @@ await owner("PUT", `roomsMeta/${ROOM}`, { owner: sleeper.uid, ownerName: "sleepe
 await owner("DELETE", `presence/${sleeper.uid}`); await owner("DELETE", `hitTargets/${sleeper.uid}`); await owner("DELETE", `hits`); await owner("DELETE", `rooms/${ROOM}`);
 const hunterPresence = { name: "t_sl_hunter", figure: "x", x: 3, y: 3, dir: 2, ts: Date.now() };
 
+console.log("--- everybody can still walk into their own room (the first version of the rule broke this)");
+await owner("DELETE", `hitTargets/${hunter.uid}`);
+check("a player enters their own room", allowed(await client(hunter, `rooms/u_${hunter.uid}/players/${hunter.uid}`, hunterPresence)) || (await owner("PUT", `roomsMeta/u_${hunter.uid}`, { owner: hunter.uid, ownerName: "h", name: "h", access: "none", w: 8, h: 8 }), allowed(await client(hunter, `rooms/u_${hunter.uid}/players/${hunter.uid}`, hunterPresence))));
+await owner("PUT", `hitTargets/${hunter.uid}/until`, Date.now() + 3_600_000);
+check("also one with a hit on them (online: they are there)", allowed(await client(hunter, `rooms/u_${hunter.uid}/players/${hunter.uid}`, { ...hunterPresence, x: 4 })));
+await owner("DELETE", `hitTargets/${hunter.uid}`); await owner("DELETE", `rooms/u_${hunter.uid}`);
+
 console.log("--- the room of a player without a hit is closed");
 check("a stranger can't walk into the room of somebody who is offline", !allowed(await client(hunter, `rooms/${ROOM}/players/${hunter.uid}`, hunterPresence)));
 
