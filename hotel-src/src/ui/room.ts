@@ -313,7 +313,7 @@ const itemImg = (id: string): HTMLImageElement => {
 
 const STEP_MS = 480;
 /** nobody runs faster than this on the street, whatever they took (no outrunning a fight) */
-const STREET_MAX_SPEED = 2;
+const STREET_MAX_SPEED = 1.25;
 const BUBBLE_MS = 6500;
 /** the dice: how long the die tumbles, and how long the number stays over the head */
 const DICE_TUMBLE_MS = 900, DICE_SHOW_MS = 6500;
@@ -1173,7 +1173,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return;
     }
     if (item?.useOnPlayer === "shoot" || item?.useOnPlayer === "rocket") {
-      if (target && target.uid !== me.uid && !target.npc && isStreets && streetsApi) { if (selectedSlot !== null) void streetsApi.shoot(target.uid, selectedSlot); } // (on the street a shot is a fight: no bounty box)
+      if (target && target.uid !== me.uid && !target.npc && isStreets && streetsApi) { if (selectedSlot !== null) { const gunSlot = selectedSlot; clearSelection(); void streetsApi.shoot(target.uid, gunSlot); } } // (on the street a shot is a fight: no bounty box; the gun goes back in the pocket so the next click is a knife attack)
       else if (target && target.uid !== me.uid && !target.npc) openShootBox(target.uid);
       else if (target) say("You can't shoot that.", "warn");
       else { clearSelection(); closeShootBox(); if (t) { pending = null; walkTo(t); } }
@@ -6003,7 +6003,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (img) img = pokerFx.imageFor(p.uid, img, opts, now); // (and the one who shot themselves after going bust at poker)
       if (img && p.ghost) img = dimmed(img); // (a player who dropped out of a roulette game: a little darker)
       const feet = feetOf(p, now);
-      if (streetsApi && p.uid !== me.uid && !p.npc && !p.sleeper && (hoverPlayer?.uid === p.uid || streetsApi.target() === p.uid)) { // on the street the player under the pointer (or the one you are fighting) stands on a red tile
+      if (streetsApi && p.uid !== me.uid && !p.npc && !p.sleeper && (hoverPlayer?.uid === p.uid || streetsApi.target() === p.uid || streetsApi.foe() === p.uid)) { // on the street the player under the pointer, the one you are going for, and the one you are in a fight with stand on a red tile
         const tw = (TILE_W / 2) * scale, th = (TILE_H / 2) * scale, pulse = 0.5 + 0.5 * Math.sin(now / 350);
         list.push({ depth: -0.4, draw: () => {
           g.beginPath(); g.moveTo(feet.x, feet.y - th); g.lineTo(feet.x + tw, feet.y); g.lineTo(feet.x, feet.y + th); g.lineTo(feet.x - tw, feet.y); g.closePath();

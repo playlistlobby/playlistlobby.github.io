@@ -63,6 +63,8 @@ export interface StreetsApi {
   shoot(uid: string, slot: number): Promise<void>;
   /** who you are going for right now (the one you clicked) */
   target(): string | null;
+  /** who you are locked in a fight with right now */
+  foe(): string | null;
   /** somebody is in a fight right now (used to keep the body of a player who closed the game in it) */
   fighting(uid: string): boolean;
   heal(slot: number): Promise<void>;
@@ -483,6 +485,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     },
     drawPlayer, fight, shoot, stopFight, inFight, heal,
     target: () => fightTarget,
+    foe: () => { const c = combat.get(me.uid); return c && c.combatUntil > serverNow() ? (c.foe ?? null) : null; },
     fighting: (uid) => (combat.get(uid)?.combatUntil ?? 0) > serverNow(),
     dispose() {
       disposed = true;
