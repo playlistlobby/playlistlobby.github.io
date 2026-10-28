@@ -273,6 +273,7 @@ export function openHideoutComputer(host: HTMLElement, ctx: Ctx, roomId: string,
     const isOwner = owner();
     if (page === "tables" && !isOwner) page = "shop";
     if (guestView() && page !== "sound" && page !== "members") page = "sound";
+    body.classList.toggle("sound", page === "sound"); // (SoundCloud has its own bars and fills the whole page)
     if (page !== "sound" && sc) { sc.dispose(); sc = null; } // (leaving SoundCloud stops the music)
     const tabsFor = (): HTMLElement[] => PAGES.filter((p) => (guestView() ? p.id === "sound" || p.id === "members" : !p.owner || isOwner)).map((p) => h("button", { class: "hc-tab" + (page === p.id ? " on" : ""), onclick: () => go(p.id) }, h("span", { class: "hc-tab-ico" }, p.svg ? scIcon(p.svg) : p.icon), h("span", {}, p.label)));
     if (page === "sound") { // SoundCloud stays as it is (the player is in it): it is mounted once and the 1 second refresh leaves it alone
