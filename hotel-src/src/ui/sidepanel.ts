@@ -109,9 +109,10 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
     if (!slot || !def || slot.inPlayer) return [];
     const out: MenuOption[] = [];
     const laced = isLaced(slot.item); // looks like the real thing, but using it kills you (the hotel handles it as a swallow)
-    if (def.useSelf && def.useSelf !== "heal" && !slot.lit) { // (a bandage is used with the Bandage button on the street, never by a tap or a right click: it costs a swing)
-      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "open" ? "Open" : def.useSelf === "wear" ? "Wear" : def.useSelf === "speak" ? "Speak" : def.useSelf === "pet" ? "Let it out" : def.useSelf === "vape" ? "Puff" : def.useSelf === "walkman" ? "Listen" : def.useSelf === "ipod" ? "Open" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : def.useSelf === "consume" ? (slot.item === "codeine" ? "Drink" : "Swallow") : "Draw blood", target: def.name, action: () => opts.onUseSelf(laced ? "consume" : def.useSelf!, i) });
+    if (def.useSelf && !slot.lit) {
+      out.push({ label: def.useSelf === "smoke" ? "Light up" : def.useSelf === "open" ? "Open" : def.useSelf === "wear" ? "Wear" : def.useSelf === "speak" ? "Speak" : def.useSelf === "pet" ? "Let it out" : def.useSelf === "vape" ? "Puff" : def.useSelf === "heal" ? "Heal" : def.useSelf === "walkman" ? "Listen" : def.useSelf === "ipod" ? "Open" : def.useSelf === "pill" ? "Swallow" : def.useSelf === "eat" ? "Eat" : def.useSelf === "consume" ? (slot.item === "codeine" ? "Drink" : "Swallow") : "Draw blood", target: def.name, action: () => opts.onUseSelf(laced ? "consume" : def.useSelf!, i) });
     }
+    if (slot.item === "bandage") return out; // (a bandage only heals: no "Use" that would leave it in your hand and block your attacks)
     const combinable = profile.inventory.some((o, j) => j !== i && !!o && (combine(slot, o) || combine(o, slot)));
     if (def.furniture || def.useOnObject || def.useOnPlayer || def.rolls || combinable || slot.item === "superpill") {
       const use = { label: selected === i ? (def.rolls ? "Put away" : "Cancel") : def.furniture ? "Place" : def.rolls ? "Hold" : "Use", target: def.name, action: () => setSelected(selected === i ? null : i) };
@@ -156,11 +157,10 @@ export function mountSidePanel(root: HTMLElement, ctx: Ctx, opts: PanelOpts): Pa
           if (options.length === 1) options[0].action();
           else if (options.length > 1) showMenu(e.clientX, e.clientY, options);
           else if (def.carvable) opts.say("You've got nothing to cut it with.", "warn");
-          else if (slot?.item === "bandage") opts.say("Use the Bandage button at the top left of the street.", "warn");
         },
         oncontextmenu: (e: MouseEvent) => {
           e.preventDefault();
-          if (!def || opts.slotTap?.(i)) return;
+          if (!def || slot?.item === "bandage" || opts.slotTap?.(i)) return; // (no right-click menu on a bandage)
           const options = optionsFor(i);
           if (options.length) showMenu(e.clientX, e.clientY, options);
         },
