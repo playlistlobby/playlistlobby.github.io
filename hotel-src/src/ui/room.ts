@@ -1222,7 +1222,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (obj.kind === "mypet") pickUpMyPet();
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
-      else if (obj.kind === "reddoor") sixtySay("i morgen, kl 20 deluxe album showcase, 1/1 rare drops", 6000);
+      else if (obj.kind === "reddoor") sixtySay("idag d.30 kl 20, Blodig Oktober deluxe album listening party, 1/1 drops", 6000);
       else if (obj.kind === "bagman") startBagman();
       else if (obj.kind === "minesixty") startMinesSixty();
       else if (obj.kind === "mrock") startMine(obj.id);
