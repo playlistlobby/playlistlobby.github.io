@@ -881,6 +881,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (item) text = hoverPlayer && hoverPlayer.uid !== me.uid ? `Use ${item.name} → ${hoverPlayer.name}` : `Use ${item.name} →`;
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
+    else if (hoverObj && hoverObj.kind === "reddoor") text = "Red door";
     else if (hoverObj && hoverObj.kind === "pmerchant") text = "pets bih: buy a pet";
     else if (hoverObj && hoverObj.kind === "mypet") text = "Your pet: tap to pick it up";
     else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
@@ -1221,6 +1222,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (obj.kind === "mypet") pickUpMyPet();
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
+      else if (obj.kind === "reddoor") sixtySay("i morgen, kl 20 deluxe album showcase, 1/1 rare drops", 6000);
       else if (obj.kind === "bagman") startBagman();
       else if (obj.kind === "minesixty") startMinesSixty();
       else if (obj.kind === "mrock") startMine(obj.id);
@@ -5646,6 +5648,34 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const sixtyHere = [...players.values()].some((q) => q.npc);
       if (!sixtyHere) objs.push({ id: SIXTY.id, kind: "npc", x0: sf.x - 22 * scale, x1: sf.x + 22 * scale, y0: sf.y - FEET_Y * scale, y1: sf.y + 8 * scale, depth: SIXTY.x + SIXTY.y });
       const sHot = hoverObj?.kind === "npc";
+      { // the red door on the back wall behind 6ixty: tapping it makes him tell you what is coming
+        const dh = 92, a = toScreen(iso(SIXTY.x + 0.1, 0)), b = toScreen(iso(SIXTY.x + 0.9, 0));
+        const dHot = hoverObj?.kind === "reddoor";
+        objs.push({ id: "reddoor", kind: "reddoor", x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y0: Math.min(a.y, b.y) - dh * scale, y1: Math.max(a.y, b.y), depth: -1 });
+        list.push({
+          depth: -1,
+          draw: () => {
+            const up = dh * scale, face = (inset: number, top: number): Pt[] => {
+              const lx = a.x + (b.x - a.x) * inset, rx = b.x - (b.x - a.x) * inset;
+              const ly = a.y + (b.y - a.y) * inset, ry = b.y - (b.y - a.y) * inset;
+              return [{ x: lx, y: ly }, { x: rx, y: ry }, { x: rx, y: ry - top }, { x: lx, y: ly - top }];
+            };
+            const poly = (pts: Pt[], fill: string): void => { g.fillStyle = fill; g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); g.fill(); };
+            g.save();
+            poly(face(-0.1, up + 5 * scale), "#2b0b0b"); // the frame
+            poly(face(0, up), dHot ? "#e03030" : "#b01818"); // the door
+            const panel = (y0: number, y1: number): void => { // two sunk panels
+              const lx = a.x + (b.x - a.x) * 0.16, rx = b.x - (b.x - a.x) * 0.16;
+              const ly = a.y + (b.y - a.y) * 0.16, ry = b.y - (b.y - a.y) * 0.16;
+              poly([{ x: lx, y: ly - y0 }, { x: rx, y: ry - y0 }, { x: rx, y: ry - y1 }, { x: lx, y: ly - y1 }], dHot ? "#c42424" : "#8e1010");
+            };
+            panel(up * 0.08, up * 0.44); panel(up * 0.54, up * 0.92);
+            const kx = a.x + (b.x - a.x) * 0.82, ky = a.y + (b.y - a.y) * 0.82 - up * 0.48;
+            g.fillStyle = "#e6c34a"; g.beginPath(); g.arc(kx, ky, 3 * Math.max(1, scale), 0, Math.PI * 2); g.fill();
+            g.restore();
+          },
+        });
+      }
       if (!sixtyHere) list.push({
         depth: SIXTY.x + SIXTY.y + 0.5,
         draw: () => {
