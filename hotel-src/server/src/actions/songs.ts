@@ -6,7 +6,7 @@
 //   songSweep                               the hourly clean-up: the worst quarter of the songs goes (anybody who opens SoundCloud asks; it does nothing when the hour is not up)
 import { Action, int, text, ID_RE } from "./util";
 import { Ctx, fail } from "../ctx";
-import { cleanTitle, parseSongs, SONGS_PER_PLAYER, SONGS_TOTAL_MAX, SWEEP_EVERY_MS, sweepVictims } from "../../../src/shared/songs";
+import { cleanTitle, parseSongs, SONGS_PER_PLAYER, SONGS_TOTAL_MAX, SWEEP_EVERY_MS } from "../../../src/shared/songs";
 import { audioBegin, audioFinish, audioRemove, dropStaleUploads } from "./audio";
 
 interface SongRow { owner?: string; ownerName?: string; title?: string; ready?: boolean; up?: number; down?: number; pressed?: number; at?: number; durMs?: number; size?: number; mime?: string; pieces?: number }
@@ -31,7 +31,7 @@ export const songBegin: Action = {
     // a song that was begun and never finished does not count after an hour
     const live = rows.filter(([, r]) => r.ready === true || c.now - Number(r.at ?? 0) < 3_600_000);
     if (live.filter(([, r]) => r.owner === c.uid).length >= SONGS_PER_PLAYER) fail(`You can have ${SONGS_PER_PLAYER} songs on SoundCloud at a time. Take one off first.`);
-    if (live.length >= SONGS_TOTAL_MAX) fail("SoundCloud is full. The worst songs are taken off every hour: try again later.");
+    if (live.length >= SONGS_TOTAL_MAX) fail("SoundCloud is full.");
     const w = await c.user();
     const { id, pieces } = await audioBegin(c, { kind: "song", size: a.size, durMs: a.durMs, mime: a.mime, idPrefix: "s" });
     c.extra[`songs/${id}`] = { owner: c.uid, ownerName: String(w.raw?.name ?? "?").slice(0, 20), title, durMs: Number(a.durMs), size: Number(a.size), mime: String(a.mime).toLowerCase(), pieces, at: c.now, up: 0, down: 0, ready: false };
@@ -88,7 +88,7 @@ export const songDelete: Action = {
   },
 };
 
-/** Every hour the worst quarter of the songs goes (see sweepVictims). Anybody who has SoundCloud open asks; it does nothing until the hour is up. */
+/** Every hour: an upload that was never finished is cleared away (finished songs stay for good). Anybody who has SoundCloud open asks; it does nothing until the hour is up. */
 export const songSweep: Action = {
   locks: () => ["songs"],
   async run(c) {
@@ -96,7 +96,7 @@ export const songSweep: Action = {
     if (c.now - last < SWEEP_EVERY_MS) return { swept: 0, next: last + SWEEP_EVERY_MS };
     const raw = (await c.db.get<Record<string, SongRow>>("songs")) ?? {};
     const songs = parseSongs(raw);
-    const victims = sweepVictims(songs, c.now);
+    const victims: typeof songs = []; // (songs are no longer taken off for a low rating: only an upload that was never finished goes, below)
     for (const s of victims) removeSong(c, s.id, raw[s.id]);
     // an upload that was never finished goes too (its row and its pieces)
     for (const [id, r] of Object.entries(raw)) if (r.ready !== true && c.now - Number(r.at ?? 0) > 3_600_000) removeSong(c, id, r);

@@ -34,7 +34,9 @@ s.vend.mixer = { day: E.vendDay("mixer", now), n: 5 };
 check("all bought: none left", E.vendLeft(s, "mixer", now) === 0);
 check("at 08:59 UTC the next day (09:59 there): still none", E.vendLeft(s, "mixer", win("2026-01-16T08:59:00Z")) === 0);
 check("at 09:00 UTC the next day: five again", E.vendLeft(s, "mixer", win("2026-01-16T09:00:00Z")) === 5);
-check("a kit still gets smaller with the age of the account", E.vendLeft({ joinAt: now - 30 * 86_400_000, vend: {} }, "planter", now) === 1);
+check("a growing kit is the same as the mixer: 5 for an old account too", E.vendLeft({ joinAt: now - 30 * 86_400_000, vend: {} }, "planter", now) === 5);
+const sp = { joinAt: now - 30 * 86_400_000, vend: { planter: { day: E.vendDay("planter", now), n: 5 } } };
+check("and the kits come back at 10:00 Danish time too", E.vendLeft(sp, "planter", win("2026-01-16T08:59:00Z")) === 0 && E.vendLeft(sp, "planter", win("2026-01-16T09:00:00Z")) === 5);
 check("a lighter has no limit", E.vendLeft(s, "lighter", now) === null);
 
 console.log(fail ? `${fail} FAILED, ${pass} passed` : `all ${pass} passed`);

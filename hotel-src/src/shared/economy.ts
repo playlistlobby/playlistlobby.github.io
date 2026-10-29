@@ -151,14 +151,13 @@ export const STAB_COOLDOWN_MS = 3 * 3_600_000;
 export const stabWaitAt = (last: number | undefined, now: number): number => Math.max(0, (last ?? 0) + STAB_COOLDOWN_MS - now);
 
 /**
- * The vending machine's daily stock. The mixer: 5 a day for everybody, and the 5 come back every morning at 10:00 Danish time.
- * The growing kit: 5 a day on your first day, one fewer every day, never fewer than 1 (and the day starts at midnight).
+ * The vending machine's daily stock. The mixer and the growing kit: 5 each for everybody, and the 5 come back every morning at 10:00 Danish time.
  * (keys are the vending machine's ids)
  */
 export const VENDING_DAILY: Record<string, number> = { mixer: 5, planter: 5 };
 /** the stock that does not get smaller from day to day */
-const VENDING_FLAT: ReadonlySet<string> = new Set(["mixer"]);
-/** when the mixer's stock comes back (Danish time) */
+const VENDING_FLAT: ReadonlySet<string> = new Set(["mixer", "planter"]);
+/** when the mixer's and the growing kit's stock comes back (Danish time) */
 export const MIXER_RESTOCK_HOUR = 10;
 
 /** the moment of the last 10:00 Danish time (summer or winter time as it is then) at or before `now` */

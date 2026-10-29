@@ -123,21 +123,13 @@ const mk = (n, up, down, at = old, pressed = 0) => owner("PUT", `songs/sw${n}`, 
 for (let n = 1; n <= 20; n++) await mk(n, n * 2, 20 - n, n <= 3 ? Date.now() - 60_000 : old, n === 4 ? 2 : 0);
 const sw = await act(b, "songSweep");
 ok("sweep", sw);
-check("the worst quarter (5 of 20) goes, but not the ones under an hour old", sw.data?.swept === 5, JSON.stringify(sw.data));
+check("nothing is taken off for a low rating any more", sw.data?.swept === 0, JSON.stringify(sw.data));
 const left = Object.keys((await owner("GET", "songs")) ?? {});
-check("15 are left", left.length === 15, String(left.length));
-check("the 3 youngest are still there although they are the worst", ["sw1", "sw2", "sw3"].every((k) => left.includes(k)));
-check("the worst of the older ones (4 to 8) are gone, 4 was pressed so its audio stays", ["sw4", "sw5", "sw6", "sw7", "sw8"].every((k) => !left.includes(k)) && (await owner("GET", "songArchive/sw4"))?.title === "s4" && (await owner("GET", "audio/sw4/0")) !== null);
-check("the other worst ones lose their audio", (await owner("GET", "audio/sw5")) === null && (await owner("GET", "audioMeta/sw5")) === null);
-const again = await act(b, "songSweep");
-check("a second sweep within the hour does nothing", again.data?.swept === 0, JSON.stringify(again.data));
-await owner("PUT", "songMeta/lastSweep", Date.now() - 3_700_000);
-const third = await act(b, "songSweep");
-check("an hour later it runs again (15 songs: 3 go)", third.data?.swept === 3 || third.data?.swept === 2, JSON.stringify(third.data));
-await clean();
-for (let n = 1; n <= 10; n++) await mk(n, 0, n);
+check("all 20 are still there, with their audio", left.length === 20 && (await owner("GET", "audio/sw5/0")) !== null && (await owner("GET", "songArchive/sw4")) === null, String(left.length));
+await owner("PUT", "songs/unfinished", { owner: a.uid, ownerName: "t_sc_a", title: "never finished", durMs: 60000, size: 1000, mime: "audio/mpeg", pieces: 1, at: Date.now() - 2 * 3_600_000 });
 await owner("PUT", "songMeta/lastSweep", 0);
-check("with 10 songs nothing is taken off", (await act(b, "songSweep")).data?.swept === 0);
+await act(b, "songSweep");
+check("an upload that was never finished is still cleared away", (await owner("GET", "songs/unfinished")) === null);
 
 console.log("--- donating to a hideout");
 await clean();
