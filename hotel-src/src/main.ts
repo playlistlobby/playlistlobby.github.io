@@ -169,7 +169,7 @@ function showAuth(): void {
           h("div", { class: "logo" }, APP_NAME),
           h("p", { class: "tagline" }, "Sign in to hang out."),
           form,
-          useEmulator ? h("p", { class: "notice" }, "(running against local Firebase emulators)") : null))));
+          useEmulator ? h("p", { class: "emu-notice" }, "(running against local Firebase emulators)") : null))));
 }
 
 /** An account is only played from one window at a time; this window is shut out. (No sign-out: the sign-in is shared with the other window.) */

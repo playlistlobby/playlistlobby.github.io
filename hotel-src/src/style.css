@@ -166,7 +166,7 @@ button, input, select { font-family: var(--font); }
 .auth .tagline { color: #fff; text-align: center; text-shadow: 0 1px 2px rgba(0, 0, 0, .55); margin: 0 0 12px; font-weight: 700; }
 .auth-form { display: grid; gap: 10px; }
 .form-error { color: #d12a20; min-height: 18px; text-align: center; font-weight: 700; text-shadow: 0 1px 0 rgba(255, 255, 255, .8); }
-.notice { font-size: 11px; color: #3c4a52; text-align: center; text-shadow: 0 1px 0 rgba(255, 255, 255, .7); margin-top: 4px; }
+.emu-notice { font-size: 11px; color: #3c4a52; text-align: center; text-shadow: 0 1px 0 rgba(255, 255, 255, .7); margin-top: 4px; }
 .center-screen { height: 100%; display: grid; place-items: center; padding: 16px; background: #c9d6d8 url("/ios6/wallpaper-real.jpg") center top / cover no-repeat; }
 .loading { color: #3c4a52; font-size: 16px; font-weight: 700; text-shadow: 0 1px 0 rgba(255, 255, 255, .8); }
 .center-screen .panel, .lock .panel { background: rgba(255, 255, 255, .92); }
