@@ -38,7 +38,8 @@ export function openEventPanel(host: HTMLElement, me: Profile, tools: StageTools
   };
   /** "are you sure": asked in the panel itself (a browser inside an app may refuse confirm() and prompt(), and then the buttons would do nothing); `word` has to be typed for the dangerous one */
   let pending: { text: string; go: () => void; word?: string } | null = null;
-  const ask = (text: string, go: () => void, word?: string): void => { pending = { text, go, word }; paint(); };
+  let typedWord = ""; // (what is typed in the box survives the panel being drawn again, which happens on every change and every 5 seconds)
+  const ask = (text: string, go: () => void, word?: string): void => { pending = { text, go, word }; typedWord = ""; paint(); };
   const btn = (label: string, onclick: () => void, cls = ""): HTMLElement => h("button", { class: `btn small ${cls}`.trim(), type: "button", disabled: busy, onclick }, label);
 
   async function playAlbum(): Promise<void> {
@@ -58,10 +59,12 @@ export function openEventPanel(host: HTMLElement, me: Profile, tools: StageTools
     let sureBox: HTMLElement | null = null;
     if (pending) {
       const q = pending;
-      const typed = h("input", { type: "text", class: "ev-word", placeholder: `Type ${q.word} here`, autocomplete: "off", oninput: () => { yes.disabled = busy || (!!q.word && typed.value.trim().toUpperCase() !== q.word); } }) as HTMLInputElement;
-      const yes = h("button", { class: "btn small ev-danger", type: "button", disabled: !!q.word, onclick: () => { pending = null; q.go(); } }, "Yes, do it") as HTMLButtonElement;
+      const typed = h("input", { type: "text", class: "ev-word", placeholder: `Type ${q.word} here`, autocomplete: "off", oninput: () => { typedWord = typed.value; yes.disabled = busy || (!!q.word && typed.value.trim().toUpperCase() !== q.word); } }) as HTMLInputElement;
+      const yes = h("button", { class: "btn small ev-danger", type: "button", disabled: !!q.word && typedWord.trim().toUpperCase() !== q.word, onclick: () => { pending = null; typedWord = ""; q.go(); } }, "Yes, do it") as HTMLButtonElement;
+      typed.value = typedWord;
       sureBox = h("div", { class: "ev-sure" }, h("div", {}, q.text), h("div", { class: "hint" }, "Are you sure?"), q.word ? typed : null, h("div", { class: "ev-row" }, yes, h("button", { class: "btn small", type: "button", onclick: () => { pending = null; paint(); } }, "Cancel")));
     }
+    const hadFocus = document.activeElement?.classList.contains("ev-word") ?? false;
     body.replaceChildren(
       ...(sureBox ? [sureBox] : []),
       h("div", { class: "ev-status" }, ...status.map((t) => h("div", {}, t))),
@@ -92,6 +95,7 @@ export function openEventPanel(host: HTMLElement, me: Profile, tools: StageTools
           btn("The page that is left", () => tools.testFinale()),
           btn("Edit that page", () => tools.editFinale())))
         : h("div", {}, h("div", { class: "hint" }, "The test buttons are on the stage."), h("div", { class: "ev-row" }, btn("Go to the stage", () => { goStage(); close(); }))));
+    if (hadFocus) { const w = body.querySelector<HTMLInputElement>(".ev-word"); if (w) { w.focus(); w.setSelectionRange(w.value.length, w.value.length); } }
   }
   const offEvent = onEvent((e) => { ev = e; paint(); });
   const stops = [
