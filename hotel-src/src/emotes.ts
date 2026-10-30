@@ -39,7 +39,7 @@ export const EMOTES: EmoteDef[] = [
   { id: "love", name: "Love", icon: assetUrl("osrs/emote_love.png"), desc: "Hearts everywhere.", price: 2, gesture: "sml", fx: ["❤️", "💕"], ms: 4000 },
   { id: "cheer", name: "Cheer", icon: assetUrl("osrs/emote_cheer.png"), desc: "Hands up, confetti.", price: 2, actions: ["wav"], motion: "hop", fx: ["🎉", "✨"], ms: 3000 },
   { id: "spin", name: "Spin", icon: assetUrl("osrs/emote_spin.png"), desc: "Round and round.", price: 2, motion: "spin", ms: 2200 },
-  { id: "dance", name: "Dance", icon: assetUrl("osrs/emote_dance.png"), desc: "Bust a move.", price: 3, motion: "dance", fx: ["🎵", "🎶"], ms: 6000 },
+  { id: "dance", name: "Dance", icon: assetUrl("osrs/emote_dance.png"), desc: "Bust a move.", price: 3, motion: "dance", fx: ["🎵", "🎶"], ms: 0 },
 ];
 
 export const EMOTE_BY_ID: Record<string, EmoteDef> = Object.fromEntries(EMOTES.map((e) => [e.id, e]));

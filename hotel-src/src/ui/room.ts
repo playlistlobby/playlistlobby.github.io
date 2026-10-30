@@ -1782,9 +1782,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (p.lying && !(introUntil && performance.now() < introUntil)) getUp(); // out of bed first
     if (p.sit && !seatTiles.has(`${dest.x},${dest.y}`)) { p.sit = false; update(ref(db, `rooms/${roomId}/players/${me.uid}`), { sit: null }).catch(() => undefined); } // you get up when you walk
     if (!seatTiles.has(`${dest.x},${dest.y}`)) { p.sitTo = undefined; sitAfter = undefined; }
+    const wasLooping = p.emote?.def.ms === 0; // (a dance that goes on until you walk: it is cleared from the database too, so nobody who comes in later sees it)
     setDestination(p, dest);
     if (p.path.length === 0) return;
-    update(ref(db, `rooms/${roomId}/players/${me.uid}`), { x: dest.x, y: dest.y, dir: dirOf(currentTile(p), p.path[0]) }).catch(console.warn);
+    update(ref(db, `rooms/${roomId}/players/${me.uid}`), { x: dest.x, y: dest.y, dir: dirOf(currentTile(p), p.path[0]), ...(wasLooping ? { emote: null } : {}) }).catch(console.warn);
   }
 
   function advance(p: Player, now: number): void {
