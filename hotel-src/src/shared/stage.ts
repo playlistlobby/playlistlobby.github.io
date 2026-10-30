@@ -24,7 +24,7 @@ export const STAGE_DEFAULT: StagePiece[] = [
   { kind: "stagespeaker", x: 0, y: 3, dir: 0 }, { kind: "stagespeaker", x: 15, y: 3, dir: 0 },
   { kind: "stagemic", x: 6, y: 3, dir: 4 }, { kind: "stagemic", x: 9, y: 3, dir: 4 },
   // the barrier in front of the stage, with a gap in the middle to walk up
-  ...[0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15].map((x) => ({ kind: "stagefence", x, y: 4, dir: 0 })),
+  ...[0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15].map((x) => ({ kind: "stagefence", x, y: 4, dir: 2 })),
   // two more speakers at the front of the crowd
   { kind: "stagespeaker", x: 1, y: 5, dir: 0 }, { kind: "stagespeaker", x: 14, y: 5, dir: 0 },
   // the way out: a door in the left wall at the far end
