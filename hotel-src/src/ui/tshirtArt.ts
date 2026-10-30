@@ -47,15 +47,29 @@ function inkBox(c: HTMLCanvasElement): { x0: number; y0: number; x1: number; y1:
   return x1 < 0 ? null : { x0, y0, x1, y1 };
 }
 
-/** the name as it is printed over the character's head: the game's name font, dark, one line */
+/** the name as it is printed over the character's head: the game's name font, red, pixelated a little (drawn small, every pixel made solid, then blown up) */
 function drawName(g: CanvasRenderingContext2D, name: string, cx: number, baseline: number, px: number): void {
+  const cell = Math.max(1, px / 12); // (one name pixel: the letters are about 12 of them tall)
+  const font = (n: number): string => `${Math.max(6, Math.round(n))}px Verdana, 'Apple Color Emoji', sans-serif`;
+  const small = document.createElement("canvas");
+  const sg = small.getContext("2d", { willReadFrequently: true })!;
+  const fpx = px / cell; // (the font size in name pixels)
+  sg.font = font(fpx);
+  const maxW = (px * 14.5) / cell;
+  const w = Math.min(Math.ceil(sg.measureText(name).width) + 2, Math.ceil(maxW) + 2);
+  const h = Math.ceil(fpx * 1.5);
+  small.width = w; small.height = h;
+  sg.font = font(fpx);
+  sg.textBaseline = "alphabetic";
+  sg.textAlign = "center";
+  sg.fillStyle = "#d01f2b";
+  sg.fillText(name, w / 2, Math.round(fpx * 1.1), Math.max(1, w - 2));
+  const img = sg.getImageData(0, 0, w, h); // (no soft edges: a pixel is either there or not)
+  for (let i = 3; i < img.data.length; i += 4) img.data[i] = img.data[i] > 110 ? 255 : 0;
+  sg.putImageData(img, 0, 0);
   g.save();
-  g.font = `${Math.round(px)}px Verdana, 'Apple Color Emoji', sans-serif`; // (the font the game puts over every player's head)
-  g.textAlign = "center";
-  g.textBaseline = "alphabetic";
-  g.fillStyle = "#15151a";
-  const maxW = px * 14.5; // (a long name is squeezed to fit on the chest)
-  g.fillText(name, cx, baseline, Math.min(g.measureText(name).width, maxW) || maxW);
+  g.imageSmoothingEnabled = false;
+  g.drawImage(small, cx - (w * cell) / 2, baseline - Math.round(fpx * 1.1) * cell, w * cell, h * cell);
   g.restore();
 }
 
