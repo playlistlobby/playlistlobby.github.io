@@ -1,4 +1,4 @@
-import { STAGE_DEFAULT, STAGE_KINDS } from "../shared/stage";
+import { STAGE_BASE_PREFIX, STAGE_DEFAULT, STAGE_KINDS } from "../shared/stage";
 import {
   get,
   onChildAdded,
@@ -1485,7 +1485,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       placing: () => fzPlacing,
       done: exitFurnish,
       turn: fzTurn,
-      ...(adminLobbyEdit || adminOwnEdit || buildCmd || (me.isAdmin && isHideoutRoom) ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter" && k !== "f_planter_auto").sort((a, b) => (roomId === STAGE_ID ? +STAGE_KINDS.has(b) - +STAGE_KINDS.has(a) : 0) || FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}), // (on the stage the stage pieces come first)
+      ...(adminLobbyEdit || adminOwnEdit || buildCmd || (me.isAdmin && isHideoutRoom) ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && k !== "stagefloor" && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter" && k !== "f_planter_auto").sort((a, b) => (roomId === STAGE_ID ? +STAGE_KINDS.has(b) - +STAGE_KINDS.has(a) : 0) || FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}), // (on the stage the stage pieces come first)
       store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (def.id === LOBBY_ID && /^lobby\d+$/.test(f.id) ? Promise.reject(new Error("That one is built into the basement: move it instead.")) : def.id === LOBBY_ID && isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one can't be removed.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
       pocket: () => { const f = fzPiece(); if (f) void pocketFromRoom(me, def.id, f).then(() => { fzSel = null; refreshFz(); playSfx("select", 0.4); }, (err) => say((err as Error).message, "warn")); },
       select: (id) => { fzSel = id; fzPlacing = null; refreshFz(); },
@@ -5627,7 +5627,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           const box = drawFurni(f, now);
           if (box && isDisplayPiece(f.id) && !furnishOn) drawPriceTag(priceOf(f.kind), box.x1, box.y1);
           if (box && !furnishOn && RAFFLE_EFFECTS[f.kind]) drawRareShine(f, box, now); // the rare pieces (the raffle's prizes) shine wherever they stand: in the shop and in your own room
-          if (box && furnishOn) pieceBoxes.push({ id: f.id, box, depth: box.depth });
+          if (box && furnishOn && !f.id.startsWith(STAGE_BASE_PREFIX)) pieceBoxes.push({ id: f.id, box, depth: box.depth }); // (the stage floor is baked in: it can't be picked)
           if (box && FURNI_KINDS[f.kind].seat && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind });
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });

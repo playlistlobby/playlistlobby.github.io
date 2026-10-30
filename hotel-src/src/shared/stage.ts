@@ -10,6 +10,9 @@ export const STAGE_DOOR_X = -5; // (nowhere: the stage has no door on its back w
 /** the pieces made for the stage: they come first in the catalogue there */
 export const STAGE_KINDS: ReadonlySet<string> = new Set(["stagefloor", "djset", "soundtower", "stagespeaker", "stagemic", "stagefence", "stagebar", "stageexit"]);
 
+/** the ids of the stage floor blocks baked into the room (see stageDef) */
+export const STAGE_BASE_PREFIX = "stagebase";
+
 export interface StagePiece { kind: string; x: number; y: number; dir: number }
 
 /** a row of the stage floor: 2x2 blocks, from x0 along the back wall */

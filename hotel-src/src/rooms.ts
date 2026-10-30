@@ -78,7 +78,7 @@ import { RAFFLE_PRIZE_ID } from "./shared/raffle";
 import { MINES_H, MINES_ID, MINES_OPEN, MINES_PIECES, MINES_W } from "./shared/mines";
 import { ARRIVAL_ID, ARRIVAL_SIZE, isBuiltInStreetPiece, isStreetsRoom, mergeStreetPieces, StreetOverride, STREET_PIECES, STREETS_H, STREETS_ID, STREETS_W } from "./shared/streets";
 import { streetsFlagOn } from "./streetsFlag";
-import { STAGE_DOOR_X, STAGE_H, STAGE_ID, STAGE_W } from "./shared/stage";
+import { STAGE_BASE_PREFIX, STAGE_DEFAULT, STAGE_DOOR_X, STAGE_H, STAGE_ID, STAGE_W } from "./shared/stage";
 export { STAGE_ID };
 import { HIDEOUT_MAX_FURNI, hideoutRoomId, isHideoutId, levelOfSize } from "./shared/hideout";
 export { hideoutRoomId, isHideoutId };
@@ -407,10 +407,12 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
 /** The event stage: a white room like the player rooms, with the stage along the back wall. All its pieces come from the database (stage/furni), so the admin can change every one of them. */
 export const STAGE_THEME: RoomTheme = { floorA: "#dcd9e2", floorB: "#e7e4ec", wall: "#eeedf2", rug: false, rugColor: "#000000" };
+/** the stage floor is baked into the room: it comes from the code, is never stored, and can't be picked up or moved */
+const STAGE_BASE: PlacedFurni[] = STAGE_DEFAULT.filter((p) => p.kind === "stagefloor").map((p, i) => ({ id: `${STAGE_BASE_PREFIX}${i + 1}`, kind: p.kind, x: p.x, y: p.y, dir: p.dir }));
 export function stageDef(pieces: PlacedFurni[] = []): RoomDef {
   return {
     id: STAGE_ID, name: "The stage", ownerUid: null, ownerName: null, access: "open", w: STAGE_W, h: STAGE_H,
-    theme: { ...STAGE_THEME }, rug: null, furni: pieces.filter((f) => FURNI_KINDS[f.kind]), doorX: STAGE_DOOR_X, doorTo: LOBBY_ID, // (no door on the back wall: the way out is the exit door piece)
+    theme: { ...STAGE_THEME }, rug: null, furni: [...STAGE_BASE, ...pieces.filter((f) => f.kind !== "stagefloor" && FURNI_KINDS[f.kind])], doorX: STAGE_DOOR_X, doorTo: LOBBY_ID, // (no door on the back wall: the way out is the exit door piece)
   };
 }
 export function watchStageFurni(cb: (pieces: PlacedFurni[]) => void): Unsubscribe {
@@ -422,7 +424,7 @@ export function watchStageFurni(cb: (pieces: PlacedFurni[]) => void): Unsubscrib
 /** puts the stage back the way it starts: everything taken away, the default pieces put down */
 export async function resetStage(pieces: Array<{ kind: string; x: number; y: number; dir: number }>): Promise<void> {
   const rows: Record<string, { kind: string; x: number; y: number; dir?: number }> = {};
-  pieces.forEach((p, i) => { rows[`s${String(i + 1).padStart(3, "0")}`] = p.dir ? { kind: p.kind, x: p.x, y: p.y, dir: p.dir } : { kind: p.kind, x: p.x, y: p.y }; });
+  pieces.filter((p) => p.kind !== "stagefloor").forEach((p, i) => { rows[`s${String(i + 1).padStart(3, "0")}`] = p.dir ? { kind: p.kind, x: p.x, y: p.y, dir: p.dir } : { kind: p.kind, x: p.x, y: p.y }; });
   await set(ref(db, "stage/furni"), rows);
 }
 
