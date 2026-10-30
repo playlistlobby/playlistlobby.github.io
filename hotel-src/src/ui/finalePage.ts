@@ -10,7 +10,7 @@ import { assetUrl } from "../assetUrl";
 import { OGEP_TRACKS } from "../shared/cds";
 import { BLOOD_ICON } from "../items";
 import { h, toast } from "./dom";
-import type { Finale } from "../shared/event";
+import type { Finale, FinaleSong } from "../shared/event";
 
 /** the key a song is hidden under (the database does not allow . # $ [ ] / in a key) */
 const hk = (key: string): string => key.replace(/[.#$\[\]/]/g, "_");
@@ -18,12 +18,13 @@ const hk = (key: string): string => key.replace(/[.#$\[\]/]/g, "_");
 interface Track { key: string; title: string; by: string; src: () => Promise<string> }
 
 /** the songs that are files of the game: the community EP's (the album and the three mystery CDs are not on the page: they are the album) */
-const cdTracks = (): Track[] => {
+const cdTracks = (songs: FinaleSong[]): Track[] => {
+  const onSc = new Set(songs.map((q) => q.title.toLowerCase())); // (a song that is also on SoundCloud is listed once, from there)
   const seen = new Set<string>();
   const out: Track[] = [];
   for (const t of OGEP_TRACKS) {
     const file = t.file ?? `album-${t.id}.mp3`;
-    if (seen.has(file)) continue;
+    if (seen.has(file) || onSc.has(t.title.toLowerCase())) continue;
     seen.add(file);
     out.push({ key: `cd:${t.id}`, title: t.title, by: t.by, src: () => Promise.resolve(assetUrl(`music/${file}`)) });
   }
@@ -71,12 +72,12 @@ export function mountFinale(host: HTMLElement, o: FinaleOptions = {}): () => voi
   const visibleSongs = (): Track[] => {
     const hidden = data.hidden ?? {};
     const sc: Track[] = (data.songs ?? []).filter((s) => !hidden[hk(`sc:${s.id}`)]).map((s) => ({ key: `sc:${s.id}`, title: s.title, by: s.by, src: () => audioUrl(s.id, s.pieces, s.mime) }));
-    return [...cdTracks().filter((t) => !hidden[hk(t.key)]), ...sc];
+    return [...cdTracks(data.songs ?? []).filter((t) => !hidden[hk(t.key)]), ...sc];
   };
 
   function paintSongs(): void {
     const hidden = data.hidden ?? {};
-    const all: Track[] = [...cdTracks(), ...(data.songs ?? []).map((s) => ({ key: `sc:${s.id}`, title: s.title, by: s.by, src: () => audioUrl(s.id, s.pieces, s.mime) }))];
+    const all: Track[] = [...cdTracks(data.songs ?? []), ...(data.songs ?? []).map((s) => ({ key: `sc:${s.id}`, title: s.title, by: s.by, src: () => audioUrl(s.id, s.pieces, s.mime) }))];
     const shown = o.staff ? all : all.filter((t) => !hidden[hk(t.key)]);
     queue = visibleSongs();
     songsEl.replaceChildren(...shown.map((t) => {
