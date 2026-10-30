@@ -2037,3 +2037,8 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .event-panel .ev-word { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #c8d0e0; font: 14px var(--font); }
 .event-panel .ev-sure { margin-bottom: 8px; padding: 8px; border-radius: 8px; border: 2px solid #ff6b6b; background: rgba(120, 10, 10, .45); display: grid; gap: 6px; font-weight: 700; }
 .event-panel .ev-word { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #c8d0e0; font: 14px var(--font); }
+
+.stage > .ev-black { z-index: 60 !important; }
+.stage > .ev-overlay { z-index: 58 !important; }
+.stage > .ev-grave { z-index: 55 !important; }
+.fin-row.empty { opacity: .35; }

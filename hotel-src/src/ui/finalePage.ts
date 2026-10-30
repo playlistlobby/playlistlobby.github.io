@@ -95,7 +95,7 @@ export function mountFinale(host: HTMLElement, o: FinaleOptions = {}): () => voi
     textEl.replaceChildren(...(text ? text.split(/\n+/).map((l) => h("p", {}, l)) : [])); // (nothing there until the admin writes something)
     const rows = data.board ?? [];
     board.replaceChildren(
-      ...(rows.length ? rows.slice(0, 50).map((r, i) => h("div", { class: "fin-row" }, h("span", { class: "fin-rank" }, String(i + 1)), h("span", { class: "fin-name" }, r.name), h("span", { class: "fin-blood" }, h("img", { src: BLOOD_ICON, alt: "" }), r.blood.toLocaleString("da-DK")))) : [h("div", { class: "hint" }, "—")]));
+      ...(rows.length ? Array.from({ length: 20 }, (_, i) => rows[i] ?? null).map((r, i) => !r ? h("div", { class: "fin-row empty" }, h("span", { class: "fin-rank" }, String(i + 1)), h("span", { class: "fin-name" }, "—"), h("span", {})) : h("div", { class: "fin-row" }, h("span", { class: "fin-rank" }, String(i + 1)), h("span", { class: "fin-name" }, r.name), h("span", { class: "fin-blood" }, h("img", { src: BLOOD_ICON, alt: "" }), r.blood.toLocaleString("da-DK")))) : [h("div", { class: "hint" }, "—")]));
     paintSongs();
   }
 

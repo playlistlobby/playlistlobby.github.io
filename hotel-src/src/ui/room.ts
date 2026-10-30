@@ -5702,7 +5702,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (box && (FURNI_KINDS[f.kind].states?.length ?? 0) > 1 && !isDisplayPiece(f.id)) objs.push({ ...box, id: f.id, kind: f.kind }); // a piece you can tap to change
           if (box && isOwnRoom && f.id === BED_ID) objs.push({ ...box, id: f.id, kind: "bed" });
           // the bag of clothes can be clicked in your own room only
-          if (box && (INTERACTIVE_KINDS.has(f.kind) || isBodyBag(f.kind) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "elevator" || FURNI_KINDS[f.kind].opens === "jukebox" || FURNI_KINDS[f.kind].opens === "stash" || FURNI_KINDS[f.kind].opens === "streetbin" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
+          if (box && (INTERACTIVE_KINDS.has(f.kind) || (isBodyBag(f.kind) && roomId !== STAGE_ID) || (FURNI_KINDS[f.kind].opens && (isHome || FURNI_KINDS[f.kind].opens === "sink" || FURNI_KINDS[f.kind].opens === "pets" || FURNI_KINDS[f.kind].opens === "poker" || FURNI_KINDS[f.kind].opens === "blackjack" || FURNI_KINDS[f.kind].opens === "beatshop" || FURNI_KINDS[f.kind].opens === "cdpress" || FURNI_KINDS[f.kind].opens === "elevator" || FURNI_KINDS[f.kind].opens === "jukebox" || FURNI_KINDS[f.kind].opens === "stash" || FURNI_KINDS[f.kind].opens === "streetbin" || FURNI_KINDS[f.kind].opens === "hits" || FURNI_KINDS[f.kind].opens === "board" || FURNI_KINDS[f.kind].opens === "hideouts" || FURNI_KINDS[f.kind].opens === "shop" || FURNI_KINDS[f.kind].opens === "vending" || FURNI_KINDS[f.kind].opens === "records" || FURNI_KINDS[f.kind].opens === "poster" || FURNI_KINDS[f.kind].opens === "ducky" || FURNI_KINDS[f.kind].opens === "raffle")) || FURNI_KINDS[f.kind].plant || isDisplayPiece(f.id))) objs.push({ ...box, id: f.id, kind: f.kind });
         },
       });
     }
@@ -6407,7 +6407,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         const fadeLeft = Math.max(0, KILL_FADE_MS - since);
         setBlack(true, fadeLeft);
         setMuffle(cdAudio.audio, true, 2500); // (the music is in another room now)
-        killTimers.push(window.setTimeout(() => { if (test) testAfter = true; else afterOn = true; redraw(); }, fadeLeft + 100)); // (the room is changed while it is black)
+        const swap = (): void => { if (disposed) return; black.style.transition = "none"; black.style.opacity = "1"; if (test) testAfter = true; else afterOn = true; redraw(); }; // (the room is changed while it is black)
+        const waitBlack = (tries: number): void => { // (only once the black is all the way there: never while it is still fading)
+          if (disposed) return;
+          if (Number(getComputedStyle(black).opacity) >= 0.995 || tries > 60) killTimers.push(window.setTimeout(swap, 250));
+          else killTimers.push(window.setTimeout(() => waitBlack(tries + 1), 50));
+        };
+        killTimers.push(window.setTimeout(() => waitBlack(0), fadeLeft + 50));
         killTimers.push(window.setTimeout(() => { setBlack(false, 1800); setMuffle(cdAudio.audio, false, 1500); if (!test) startPvp(); }, Math.max(0, KILL_WAKE_MS - since)));
       };
       const undoKill = (): void => { clearKillTimers(); afterOn = false; testAfter = false; stopPvp(); setBlack(false, 600); setMuffle(cdAudio.audio, false, 300); redraw(); };
@@ -6427,6 +6433,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         stopDeath?.(); stopDeath = null; closeFinaleOverlay();
         deathRunning = false; deathTest = false; dying = false; faintUntil = 0;
         const q = mine(); if (q) q.faint = false;
+        update(myRef, { lay: null }).catch(() => undefined);
         cdAudio.setVolume(cdAudio.volume); cdAudio.sync(cdState); // (the music that faded out comes back)
       };
       const beginDeath = (test: boolean): void => {
@@ -6434,7 +6441,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         deathRunning = true; deathTest = test; dying = true;
         pvp?.stopFight();
         const q = mine();
-        if (q) { q.path = []; q.faint = true; q.emote = undefined; }
+        if (q) { q.path = []; q.faint = true; q.emote = undefined; q.sit = false; }
+        update(myRef, { lay: true, sit: null }).catch(() => undefined); // (you lie where you fell, on everybody's screen)
+        if (!test) killTimers.push(window.setTimeout(() => { void remove(myRef).catch(() => undefined); }, 10_000)); // (and after 10 seconds you are gone from the room)
         faintUntil = performance.now() + 600_000;
         stopDeath = runDeathSequence(stage, {
           name: me.name, music: cdAudio.audio,

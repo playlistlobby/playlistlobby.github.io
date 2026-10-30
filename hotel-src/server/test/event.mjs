@@ -86,6 +86,7 @@ const k = await act(admin, "eventKill");
 ok("the admin sets it off", k);
 check("the page that is left is on, with a leaderboard", (await owner("GET", "public/finale/on")) === true && Array.isArray(await owner("GET", "public/finale/board")));
 const board = (await owner("GET", "public/finale/board")) ?? [];
+check("the leaderboard has 20 places at most", board.length <= 20);
 check("the leaderboard has the players by blood, not the staff", board.some((r) => r.name === "t_ev_a" && r.blood === 700) && !board.some((r) => r.name === "adminsidia" || r.name === "t_ev_mod"), JSON.stringify(board).slice(0, 200));
 check("a is above b", board.findIndex((r) => r.name === "t_ev_a") < board.findIndex((r) => r.name === "t_ev_b"));
 bad("it can't be set off twice", await act(admin, "eventKill"), /already/);
@@ -104,7 +105,7 @@ for (let i = 0; i < 60 && !died; i++) {
   died = !!(last.data?.died ?? last.died);
 }
 check("b dies from a's knife", died, JSON.stringify(last).slice(0, 200));
-check("b is marked dead, and gone from the room", !!(await owner("GET", `event/dead/${b.uid}`)) && (await owner("GET", `rooms/stage/players/${b.uid}`)) === null);
+check("b is marked dead, and lies where they fell (their browser clears them away after 10 seconds)", !!(await owner("GET", `event/dead/${b.uid}`)) && (await owner("GET", `rooms/stage/players/${b.uid}/lay`)) === true);
 check("nothing was lost: b keeps their blood and items", (await act(b, "sync")).state?.blood === 300);
 bad("a dead player can't fight", await act(b, "eventHit", { target: a.uid }), /dead|aren't in/);
 bad("the dead can't be hit again", await act(a, "eventHit", { target: b.uid }), /dead/);

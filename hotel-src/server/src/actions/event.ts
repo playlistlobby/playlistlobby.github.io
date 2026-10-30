@@ -21,7 +21,7 @@ async function snapshot(c: Ctx): Promise<{ board: NonNullable<Finale["board"]>; 
     .filter(([uid, u]) => !roles[uid] && typeof u?.name === "string" && !FINALE_HIDE_NAMES.has(u.name.toLowerCase()) && Number(u.blood) > 0)
     .map(([, u]) => ({ name: String(u.name).slice(0, 20), blood: Math.floor(Number(u.blood)) }))
     .sort((a, b) => b.blood - a.blood)
-    .slice(0, 100);
+    .slice(0, 20); // (the leaderboard has 20 places)
   const songs = parseSongs(await c.db.get("songs")).sort(byRating).map((s) => ({ id: s.id, title: s.title, by: s.ownerName, pieces: s.pieces, mime: s.mime || "audio/mpeg", durMs: s.durMs }));
   return { board, songs };
 }
@@ -141,7 +141,7 @@ export const eventHit: Action = {
       died = true;
       c.extra[`event/dead/${target}`] = { at: c.now, by: c.uid, byName: String((await c.db.get<string>(`users/${c.uid}/name`)) ?? "someone").slice(0, 16) };
       c.extra[`event/kills/${c.uid}`] = (Number(await c.db.get<number>(`event/kills/${c.uid}`)) || 0) + 1;
-      c.extra[`rooms/stage/players/${target}`] = null; // (they are gone from the room: their own browser takes them through what happens next)
+      c.extra[`rooms/stage/players/${target}/lay`] = true; // (they lie down where they were hit, for everybody to see: their own browser takes them through what happens next and clears them away after 10 seconds)
     }
     c.note = `${dmg ? `hit ${dmg}` : "missed"}${died ? " (killed)" : ""}`;
     return { dmg, left, died };
