@@ -1056,7 +1056,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     });
     roomTitle.textContent = def.ownerName ? `${def.name} · by ${def.ownerName}` : def.name;
     stage.classList.toggle("horror", def.theme.style === "grime" || (def.theme.style === "street" && !STREETS_DAY));
-    stage.classList.toggle("street", def.theme.style === "street");
+    stage.classList.toggle("street", def.theme.style === "street");
     defListeners.forEach((l) => l());
   }
 
@@ -4068,12 +4068,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         return;
       }
       if (/^\/finale$/i.test(text)) { // the admin and emil: the page that is left of the site, with its editor (for testing and changes); "Back" closes it
-        if (!(me.isAdmin || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
+        if (!(me.isAdmin || me.role === "admin" || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
         if (!finaleCmd) { const el = h("div", { class: "ev-overlay" }); stage.append(el); const off = mountFinale(el, { staff: me, onBack: () => { finaleCmd?.off(); finaleCmd?.el.remove(); finaleCmd = null; } }); finaleCmd = { el, off }; }
         return;
       }
       if (/^\/event$/i.test(text)) { // the admin and emil: the panel that runs the event
-        if (!(me.isAdmin || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
+        if (!(me.isAdmin || me.role === "admin" || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
         if (!eventPanelApi) eventPanelApi = openEventPanel(stage, me, stageTools, () => ctx.navigate("room", { roomId: STAGE_ID, from: roomId, force: true }), () => { eventPanelApi = null; });
         return;
       }
