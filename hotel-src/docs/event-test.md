@@ -4,7 +4,7 @@
 After the emulator has been restarted its data is gone: run `node scripts/seed-event-test.mjs` (accounts + a clean event) and `node scripts/seed-og-ep.mjs` (the four SoundCloud songs).
 
 **Accounts** (all with the password `secret1`): `adminsidia` (the admin, shows as 6ixty), `emil` (runs the event too), `djmod` (a moderator: DJ deck, never locked in), `fan1`..`fan4` (ordinary players).
-One account per browser window: use a normal window, a private window and a second browser (the sign-in is shared between tabs of the same browser).
+One account per sign-in: tabs of one browser share it, but every `name.localhost` address is its own sign-in, so open one tab per account at `http://admin.localhost:5173/`, `http://emil.localhost:5173/`, `http://djmod.localhost:5173/`, `http://fan1.localhost:5173/` .. `fan4`. (The worker only accepts these addresses because of `ALLOWED_ORIGINS` in `server/.dev.vars`, which is local and not committed: restart `npm run dev` in `server/` after changing it.)
 
 ## A run-through
 1. **admin:** log in, type `/stage1` (you land on the stage), type `/event`.
