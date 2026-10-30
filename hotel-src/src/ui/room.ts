@@ -6357,11 +6357,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       unsubs.push(watchStageFurni((p) => { // everything on the stage comes from the database; the first admin in puts the starting layout there
         if (disposed) return;
         const first = firstLive; firstLive = false;
-        if (first && !p.length && me.isAdmin) { void resetStage(STAGE_DEFAULT).catch(() => undefined); return; } // (it comes back as the next snapshot)
+        if (first && !p.length && (me.isAdmin || me.role === "admin")) { void resetStage(STAGE_DEFAULT).catch(() => undefined); return; } // (it comes back as the next snapshot)
         pieces = p;
         if (!showingAfter()) redraw();
       }, "live"));
-      unsubs.push(watchStageFurni((p) => { if (disposed) return; loaded2 = true; pieces2 = p; if (showingAfter()) redraw(); }, "after"));
+      let firstAfter = true;
+      unsubs.push(watchStageFurni((p) => { if (disposed) return; const first = firstAfter; firstAfter = false; if (first && !p.length && (me.isAdmin || me.role === "admin")) { void resetStage(STAGE_AFTER_DEFAULT, "after").catch(() => undefined); return; } loaded2 = true; pieces2 = p; if (showingAfter()) redraw(); }, "after"));
 
       // the light show behind the game: switched on from the panel, and every player can switch it off for themselves
       const lightsEl = h("div", { class: "event-lights" }, h("i", { class: "b1" }), h("i", { class: "b2" }), h("i", { class: "b3" }), h("i", { class: "b4" }));
