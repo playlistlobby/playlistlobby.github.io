@@ -8,7 +8,7 @@ import { drop, fentDrop, pickup } from "./floor";
 import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, storeItem, takeItem } from "./toolbox";
 import { tradeFinish } from "./trade";
 import { buildCheck, debug, staffTp, stageGo } from "./debug";
-import { eventAlbum, eventFinaleRefresh, eventHit, eventJoin, eventKill, eventReset, eventSet, eventEndAll } from "./event";
+import { eventAlbum, eventFinaleRefresh, eventDrop, eventHit, eventJoin, eventKill, eventReset, eventSet, eventEndAll } from "./event";
 import { flappyRemove, flappyScore, flappyStart } from "./flappyboard";
 import { backupNow, banPlayer } from "./admin";
 import { giftAnswer, giftCollect, giftSend } from "./gift";
@@ -62,5 +62,5 @@ export const ACTIONS: Record<string, Action> = {
   bagmandBuy, bagmandSell, deadlyStab, bagmandHitTick, bountyShow, roomSweep, songBegin, songFinish, songVote, songDelete, songSweep, loudspeaker, petBuy, petRelease, petPickup, petStockNow, caseOpen, unusualWear, unusualRemove,
   hideoutBuy, hideoutUpgrade, hideoutColors, hideoutSettings, hideoutKick, hideoutLeave, hideoutMember, hideoutSearch, hideoutInvite, hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutOrder, hideoutCollect, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect, hideoutDonate,
   mine, craft,
-  debug, staffTp, stageGo, buildCheck, eventSet, eventJoin, eventKill, eventReset, eventHit, eventAlbum, eventFinaleRefresh, eventEndAll, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
+  debug, staffTp, stageGo, buildCheck, eventSet, eventJoin, eventKill, eventReset, eventHit, eventAlbum, eventFinaleRefresh, eventEndAll, eventDrop, posterAdmin, backupNow, banPlayer, giftSend, giftAnswer, giftCollect,
 };

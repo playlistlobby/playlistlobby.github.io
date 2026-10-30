@@ -3979,6 +3979,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   /** /give: "weed 3", "joint paper", "f_sofa", "research chemical 2 ass" ... */
+  /** an item's id from what somebody typed (an id, a name, the start of a name, or a piece of furniture) */
+  function itemIdOf(query: string): string {
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const q = norm(query);
+    const byId = Object.keys(ITEMS).find((id) => id === query.replace(/\s+/g, "_") || norm(id) === q);
+    const byName = Object.values(ITEMS).find((d) => norm(d.name) === q) ?? Object.values(ITEMS).find((d) => norm(d.name).startsWith(q));
+    const kind = Object.keys(FURNI_KINDS).find((id) => id === query.replace(/\s+/g, "_") || norm(FURNI_KINDS[id].label) === q);
+    return byId ?? byName?.id ?? kind ?? query.replace(/\s+/g, "_");
+  }
   async function giveItem(arg: string): Promise<void> {
     const words = arg.trim().toLowerCase().split(/\s+/).filter(Boolean);
     let ass = false;
@@ -4070,6 +4079,16 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       if (/^\/finale$/i.test(text)) { // the admin and emil: the page that is left of the site, with its editor (for testing and changes); "Back" closes it
         if (!(me.isAdmin || me.role === "admin" || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
         if (!finaleCmd) { const el = h("div", { class: "ev-overlay" }); stage.append(el); const off = mountFinale(el, { staff: me, onBack: () => { finaleCmd?.off(); finaleCmd?.el.remove(); finaleCmd = null; } }); finaleCmd = { el, off }; }
+        return;
+      }
+      const dropM = /^\/drop(?:\s+(.+))?$/i.exec(text);
+      if (dropM) { // the admin and emil: a pile of an item on a random free tile of the stage floor
+        if (!(me.isAdmin || me.role === "admin" || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
+        const words = (dropM[1] ?? "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+        let qty = 1;
+        if (words.length > 1 && /^\d{1,3}$/.test(words[words.length - 1])) qty = Math.max(1, Number(words.pop()));
+        if (!words.length) return say("Usage: /drop <item> [amount]. Examples: /drop blood 50, /drop cigarette 3", "warn");
+        void call<{ x: number; y: number }>(me, "eventDrop", { item: words.join(" ") === "blood" ? "blood" : itemIdOf(words.join(" ")), qty }).then((r) => say(`Dropped at ${r.x},${r.y}.`), (err) => say((err as Error).message || "Unknown command.", "warn"));
         return;
       }
       if (/^\/event$/i.test(text)) { // the admin and emil: the panel that runs the event

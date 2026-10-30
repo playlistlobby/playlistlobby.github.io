@@ -2,6 +2,7 @@
 // event/state (the doors, the lights, the surprise), event/in/<uid> (who went in), event/dead/<uid>, event/hp/<uid>, and public/finale (the page that is left, readable by anybody).
 import { Action, cheb, ID_RE, requireInRoom, text } from "./util";
 import { fail } from "../ctx";
+import { STAGE_H, STAGE_W } from "../../../src/shared/stage";
 import type { Ctx } from "../ctx";
 import { EVENT_PROTECT_MS, EVENT_PVP, eventKilled, FINALE_HIDE_NAMES, KILL_WAKE_MS } from "../../../src/shared/event";
 import type { EventState, Finale, FinaleSong } from "../../../src/shared/event";
@@ -164,5 +165,34 @@ export const eventEndAll: Action = {
     }
     c.note = `event end (${n})`;
     return { ended: n };
+  },
+};
+
+/** /drop <item> [amount]: a pile of that item lands on a random free tile of the floor in front of the stage (the admin and emil; the pile is taken up like any other on the floor) */
+export const eventDrop: Action = {
+  locks: () => ["room:stage"],
+  async run(c, a) {
+    if (!eventAdmin(c)) fail("Unknown command.");
+    const item = text(a.item, /^[A-Za-z0-9_:.-]{1,60}$/, "item");
+    const qty = Math.floor(Number(a.qty ?? 1));
+    if (!Number.isFinite(qty) || qty < 1 || qty > 999) fail("Bad amount.");
+    if (item !== "blood" && !(await c.validItem())(item)) fail("There is no such item.");
+    const st = await stateOf(c);
+    const furni = (await c.db.get<Record<string, { x?: number; y?: number }>>(eventKilled(st, c.now) ? "stage2/furni" : "stage/furni")) ?? {};
+    const taken = new Set<string>();
+    for (const f of Object.values(furni)) if (typeof f?.x === "number" && typeof f?.y === "number") for (let dx = 0; dx <= 1; dx++) for (let dy = 0; dy <= 1; dy++) taken.add(`${f.x + dx}_${f.y + dy}`); // (a piece may cover its tile and the next: keep clear of both)
+    const drops = (await c.db.get<Record<string, { exp?: number }>>("rooms/stage/drops")) ?? {};
+    const free: string[] = [];
+    for (let y = 5; y < STAGE_H - 1; y++) for (let x = 0; x < STAGE_W; x++) {
+      const k = `${x}_${y}`;
+      const d = drops[k];
+      if (!taken.has(k) && !(d && (!d.exp || d.exp > c.now))) free.push(k);
+    }
+    if (!free.length) fail("No free spot on the floor.");
+    const key = free[Math.floor(Math.random() * free.length)];
+    const [x, y] = key.split("_").map(Number);
+    c.extra[`rooms/stage/drops/${key}`] = { item, qty, x, y, by: c.uid, byName: String((await c.db.get<string>(`users/${c.uid}/name`)) ?? "DJ").slice(0, 16), at: c.now, exp: c.now + 60 * 60_000 };
+    c.note = `drop ${item} x${qty}`;
+    return { x, y };
   },
 };
