@@ -7,7 +7,7 @@ import { call } from "../db";
 import type { Profile } from "../db";
 import { audioUrl } from "../audio";
 import { assetUrl } from "../assetUrl";
-import { ALBUM_TRACKS, OGEP_TRACKS } from "../shared/cds";
+import { OGEP_TRACKS } from "../shared/cds";
 import { BLOOD_ICON } from "../items";
 import { h, toast } from "./dom";
 import type { Finale } from "../shared/event";
@@ -17,11 +17,11 @@ const hk = (key: string): string => key.replace(/[.#$\[\]/]/g, "_");
 
 interface Track { key: string; title: string; by: string; src: () => Promise<string> }
 
-/** every song that is a file of the game (the CDs) */
+/** the songs that are files of the game: the community EP's (the album and the three mystery CDs are not on the page: they are the album) */
 const cdTracks = (): Track[] => {
   const seen = new Set<string>();
   const out: Track[] = [];
-  for (const t of [...ALBUM_TRACKS, ...OGEP_TRACKS]) {
+  for (const t of OGEP_TRACKS) {
     const file = t.file ?? `album-${t.id}.mp3`;
     if (seen.has(file)) continue;
     seen.add(file);
@@ -91,10 +91,9 @@ export function mountFinale(host: HTMLElement, o: FinaleOptions = {}): () => voi
 
   function paint(): void {
     const text = (data.text ?? "").trim();
-    textEl.replaceChildren(...(text ? text.split(/\n+/).map((l) => h("p", {}, l)) : [h("p", {}, "Tak for alt.")]));
+    textEl.replaceChildren(...(text ? text.split(/\n+/).map((l) => h("p", {}, l)) : [])); // (nothing there until the admin writes something)
     const rows = data.board ?? [];
     board.replaceChildren(
-      h("h3", {}, "Mest blod"),
       ...(rows.length ? rows.slice(0, 50).map((r, i) => h("div", { class: "fin-row" }, h("span", { class: "fin-rank" }, String(i + 1)), h("span", { class: "fin-name" }, r.name), h("span", { class: "fin-blood" }, h("img", { src: BLOOD_ICON, alt: "" }), r.blood.toLocaleString("da-DK")))) : [h("div", { class: "hint" }, "—")]));
     paintSongs();
   }
@@ -118,17 +117,17 @@ export function mountFinale(host: HTMLElement, o: FinaleOptions = {}): () => voi
   }
 
   const root = h("div", { class: "fin" },
-    h("div", { class: "fin-inner" },
-      o.onBack ? h("button", { class: "btn small fin-back", type: "button", onclick: () => o.onBack!() }, "← Back") : null,
-      h("h1", { class: "fin-title" }, "Blodig oktober"),
+    h("header", { class: "navbar fin-navbar" },
+      h("div", { class: "nav-left" }, o.onBack ? h("button", { class: "btn small", type: "button", onclick: () => o.onBack!() }, "‹ Back") : h("span", {})),
+      h("div", { class: "nav-logo" }, "Blodig oktober"),
+      h("span", {})),
+    h("div", { class: "fin-scroll" }, h("div", { class: "fin-inner" },
       textEl,
       editor,
       h("div", { class: "fin-cols" },
-        board,
-        h("div", { class: "fin-player" },
-          h("h3", {}, "Musik"),
-          h("div", { class: "fin-bar" }, prevBtn, playBtn, nextBtn, nowEl), bar,
-          songsEl))));
+        h("div", { class: "group-title" }, "Mest blod"), board,
+        h("div", { class: "group-title" }, "Musik"),
+        h("div", { class: "fin-player" }, h("div", { class: "fin-bar" }, prevBtn, playBtn, nextBtn, nowEl), bar, songsEl)))));
   host.append(root);
   paint();
 

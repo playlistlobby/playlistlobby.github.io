@@ -654,6 +654,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let pvpOn = false;
   let stageTools: StageTools | null = null;
   let eventPanelApi: EventPanelApi | null = null;
+  let finaleCmd: { el: HTMLElement; off: () => void } | null = null; // (/finale: the page that is left, with its editor)
   const djStaff = me.isMod && !FAIR_GAME_UIDS.includes(me.uid); // (the staff run the DJ deck, except the two who are fair game like everybody else)
   let fightWalking = false;
   let petShopApi: { close(): void } | null = null;
@@ -3522,9 +3523,19 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
   // ---- start: presence, players, chat, events ---------------------------------------
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
+  /** the tile somebody stood on in the concert (remembered by the browser while the event runs): a refresh, or the doors being closed, puts them back there */
+  function stageSpot(): Pt | null {
+    const st = eventNow().state;
+    if (!(st.open || st.sealed || st.kill)) return null;
+    try {
+      const v = JSON.parse(localStorage.getItem("6ix-stage-pos") ?? "null") as { x?: number; y?: number; at?: number } | null;
+      if (v && Number.isFinite(v.x) && Number.isFinite(v.y) && Date.now() - Number(v.at) < 15 * 60_000) return { x: Number(v.x), y: Number(v.y) };
+    } catch { /* private mode */ }
+    return null;
+  }
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = roomId === STAGE_ID ? (opts.arrival === "stage" ? { x: 9, y: 2 } : { x: 1, y: 20 }) : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
+    const want = roomId === STAGE_ID ? (opts.arrival === "stage" ? { x: 9, y: 2 } : stageSpot() ?? { x: 1, y: 20 }) : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -4054,6 +4065,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (r.self) ctx.navigate("room", { roomId: r.room, from: roomId, force: true });
           else say(`${r.name} is on the way.`);
         }, (err) => say((err as Error).message || "Unknown command.", "warn"));
+        return;
+      }
+      if (/^\/finale$/i.test(text)) { // the admin and emil: the page that is left of the site, with its editor (for testing and changes); "Back" closes it
+        if (!(me.isAdmin || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
+        if (!finaleCmd) { const el = h("div", { class: "ev-overlay" }); stage.append(el); const off = mountFinale(el, { staff: me, onBack: () => { finaleCmd?.off(); finaleCmd?.el.remove(); finaleCmd = null; } }); finaleCmd = { el, off }; }
         return;
       }
       if (/^\/event$/i.test(text)) { // the admin and emil: the panel that runs the event
@@ -6311,13 +6327,29 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const afterPieces = (): PlacedFurni[] => (pieces2.length ? pieces2 : STAGE_AFTER_DEFAULT.map((q, i) => ({ id: `after${i + 1}`, kind: q.kind, x: q.x, y: q.y, dir: q.dir }))); // (until the admin has saved his own the starting pieces show)
       const showingAfter = (): boolean => previewAfter || testAfter || afterOn;
       const seedAfter = (): void => { if (me.isAdmin && loaded2 && !seeded2 && !pieces2.length && showingAfter()) { seeded2 = true; void resetStage(STAGE_AFTER_DEFAULT, "after").catch(() => undefined); } };
+      /** the room has changed under somebody's feet: they stay exactly where they are unless a piece now stands on that very tile (then the nearest free one) */
+      const keepMyPlace = (): void => {
+        const q = mine();
+        if (!q || walkable(currentTile(q).x, currentTile(q).y)) return;
+        const at = currentTile(q);
+        let best: Pt | null = null, bd = 1e9;
+        for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) { const d = Math.abs(x - at.x) + Math.abs(y - at.y); if (d < bd && walkable(x, y)) { bd = d; best = { x, y }; } }
+        if (best) { q.from = q.to = q.dest = best; q.path = []; update(myRef, { x: best.x, y: best.y }).catch(() => undefined); }
+      };
       const redraw = (): void => {
         if (disposed) return;
         const after = showingAfter();
         setStageVariant(after ? "after" : "live");
         applyDef(stageDef(after ? afterPieces() : pieces, after ? "after" : "live"));
+        if (after) keepMyPlace();
         seedAfter();
       };
+      const posTimer = window.setInterval(() => { // (where you stand is remembered, for a refresh)
+        const q = mine(); if (!q || deathRunning) return;
+        const t = currentTile(q);
+        try { localStorage.setItem("6ix-stage-pos", JSON.stringify({ x: t.x, y: t.y, at: Date.now() })); } catch { /* private mode */ }
+      }, 2000);
+      unsubs.push(() => window.clearInterval(posTimer));
       applyDef(stageDef());
       start();
       setMusicMuted(false); setSfxMuted(false); // (walking into the concert puts the music and the sound effects on)

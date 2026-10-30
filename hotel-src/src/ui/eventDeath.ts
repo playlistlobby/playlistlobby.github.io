@@ -1,5 +1,5 @@
 // A death in the changed concert room (numbers: src/shared/event.ts): "you were killed" with a 20 second countdown, at 7 the screen fades to black and the music fades out, then a close-up
-// of a grave with the player's name under it and "Tak for alt" on the public room's floor for 5 seconds (with the public room's hum), then black again. After that the caller signs the
+// of a grave with "Tak for alt" over it and the player's name under it, on the public room's floor for 5 seconds (with the public room's hum), then black again. After that the caller signs the
 // player out (secretly) and shows the page that is left.
 import { h } from "./dom";
 import { loadNitro, spritesFor } from "../nitro";
@@ -81,7 +81,7 @@ export function runDeathSequence(host: HTMLElement, o: DeathOptions): () => void
       if (stopped) { stop(); return; }
       stopGrave = stop;
       grave = h("div", { class: "ev-grave", style: { backgroundImage: `url(${GRAVE_FLOOR})` } },
-        h("div", { class: "ev-grave-box" }, canvas, h("div", { class: "ev-grave-name" }, o.name), h("div", { class: "ev-grave-text" }, GRAVE_TEXT)));
+        h("div", { class: "ev-grave-box" }, h("div", { class: "ev-grave-text" }, GRAVE_TEXT), canvas, h("div", { class: "ev-grave-name" }, o.name)));
       host.insertBefore(grave, black);
       setBlack(false, 700);
       later(() => { setBlack(true, 1000); later(() => { o.onDone(); }, 1100); }, 700 + GRAVE_MS);

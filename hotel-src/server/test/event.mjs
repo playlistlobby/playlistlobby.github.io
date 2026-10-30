@@ -110,9 +110,18 @@ bad("a dead player can't fight", await act(b, "eventHit", { target: a.uid }), /d
 bad("the dead can't be hit again", await act(a, "eventHit", { target: b.uid }), /dead/);
 ok("one swing, then the arm is busy", await (async () => { await owner("DELETE", `event/swing/${a.uid}`); await stand(c, 4, 9); return act(a, "eventHit", { target: c.uid }); })());
 bad("the arm is still swinging", await act(a, "eventHit", { target: c.uid }), /swinging/);
+console.log("--- 6ixty has endless hit points");
+const six = await fresh("t_ev_six");
+await owner("PUT", `profiles/${six.uid}`, { name: "6ixty", figure: "x" });
+await act(six, "sync"); await stand(six, 4, 8);
+let sixHits = 0;
+for (let i = 0; i < 12; i++) { await owner("DELETE", `event/swing/${a.uid}`); const r = await act(a, "eventHit", { target: six.uid }); if (r.ok) sixHits++; }
+check("6ixty can be hit again and again", sixHits >= 10, String(sixHits));
+check("... and nothing goes off his bar, he never dies", (await owner("GET", `event/hp/${six.uid}`)) === null && (await owner("GET", `event/dead/${six.uid}`)) === null);
 bad("a player can't end it", await act(a, "eventEndAll"), /Unknown command/);
 const ended = await act(admin, "eventEndAll");
 ok("the admin ends it", ended);
+check("6ixty is not taken by End it", (await owner("GET", `event/dead/${six.uid}`)) === null);
 check("everybody left standing is dead (not the staff)", !!(await owner("GET", `event/dead/${a.uid}`)) && !!(await owner("GET", `event/dead/${c.uid}`)) && (await owner("GET", `event/dead/${mod.uid}`)) === null);
 bad("a dead player can't go in again", await act(a, "eventJoin"), /over for you/);
 

@@ -522,7 +522,7 @@ let finaleStop: (() => void) | null = null;
 function showFinale(): void {
   clear();
   finaleStop?.();
-  const host = h("div", { class: "finale-host" });
+  const host = h("div", { class: "finale-host" }, statusBar());
   app.append(host);
   finaleStop = mountFinale(host, {});
 }

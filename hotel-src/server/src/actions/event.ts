@@ -26,6 +26,9 @@ async function snapshot(c: Ctx): Promise<{ board: NonNullable<Finale["board"]>; 
   return { board, songs };
 }
 
+/** 6ixty (the admin's face, and the real 6ixty) has endless hit points in the changed room: he can be hit, but nothing goes off his bar */
+const isSixty = async (c: Ctx, uid: string): Promise<boolean> => String((await c.db.get<string>(`profiles/${uid}/name`)) ?? "").toLowerCase() === "6ixty" || (await c.db.get<string>(`roles/${uid}`)) === "admin";
+
 /** the doors, the lights: { open?, sealed?, lights? } (sealing also opens) */
 export const eventSet: Action = {
   async run(c, a) {
@@ -126,12 +129,13 @@ export const eventHit: Action = {
     c.extra[`event/swing/${c.uid}`] = c.now;
     const hp = Number(await c.db.get<number>(`event/hp/${target}`)) || EVENT_PVP.maxHp;
     const { dmg } = swingRoll("knife"); // (a swing that misses is a splash: 0)
-    const left = Math.max(0, hp - dmg);
+    const sixty = await isSixty(c, target);
+    const left = sixty ? hp : Math.max(0, hp - dmg); // (6ixty: the hit is shown, but his hit points stay)
     const key = (t: number): string => `rooms/stage/events/f${c.uid.slice(0, 8)}${t.toString(36)}`;
     if (last) c.extra[key(last)] = null; // (the swing before this one has been seen by now)
     c.extra[key(c.now)] = { type: "stab", from: c.uid, to: target, ts: c.now, fight: true };
     c.extra[`rooms/stage/hits/${c.uid}`] = { to: target, dmg, at: c.now, ...(left <= 0 ? { dead: true } : {}) };
-    c.extra[`event/hp/${target}`] = left;
+    if (!sixty) c.extra[`event/hp/${target}`] = left;
     let died = false;
     if (left <= 0) {
       died = true;
@@ -155,7 +159,7 @@ export const eventEndAll: Action = {
     const roles = (await c.db.get<Record<string, string>>("roles")) ?? {};
     let n = 0;
     for (const uid of Object.keys(here)) {
-      if (dead[uid] || roles[uid]) continue; // (staff stay: they run it)
+      if (dead[uid] || roles[uid] || (await isSixty(c, uid))) continue; // (staff stay: they run it, and 6ixty is never taken)
       c.extra[`event/dead/${uid}`] = { at: c.now, by: "", byName: "" };
       n++;
     }
