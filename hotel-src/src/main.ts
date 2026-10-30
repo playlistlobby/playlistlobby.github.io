@@ -465,6 +465,7 @@ async function showHotel(user: User): Promise<void> {
   const stopEventWatch = onEvent((e) => {
     if (p.isMod) return;
     if (e.dead && roomMounted !== STAGE_ID) { void endForever(); return; }
+    if (e.state.kill && e.inAt === 0 && roomMounted !== STAGE_ID) { void endForever(); return; } // (the surprise is set off while somebody who never went in is still in the normal game: for them the site is down too)
     if (e.state.sealed && roomMounted !== STAGE_ID && !e.dead) { void call(p, "eventJoin").catch(() => undefined); go("room", { roomId: STAGE_ID, from: LOBBY_ID, force: true }); }
   });
   const prevCleanup = shellCleanup;
