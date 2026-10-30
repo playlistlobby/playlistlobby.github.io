@@ -19,22 +19,35 @@ export interface StagePiece { kind: string; x: number; y: number; dir: number }
 const floorRow = (y: number): StagePiece[] => [0, 2, 4, 6, 8, 10, 12, 14, 16, 18].map((x) => ({ kind: "stagefloor", x, y, dir: 0 }));
 
 export const STAGE_DEFAULT: StagePiece[] = [
-  // the stage: twenty blocks, the whole width of the room along the back wall and 4 deep
+  // the stage floor: twenty blocks, the whole width of the room along the back wall and 4 deep (baked into the room, see stageDef)
   ...floorRow(0), ...floorRow(2),
-  // the DJ set on the back of the stage, a sound tower at each end, the speakers at the front corners and the mics at the front
-  { kind: "djset", x: 9, y: 1, dir: 0 },
-  { kind: "soundtower", x: 1, y: 1, dir: 0 }, { kind: "soundtower", x: 18, y: 1, dir: 0 },
-  { kind: "stagespeaker", x: 0, y: 3, dir: 0 }, { kind: "stagespeaker", x: 19, y: 3, dir: 0 },
-  { kind: "stagemic", x: 8, y: 3, dir: 4 }, { kind: "stagemic", x: 11, y: 3, dir: 4 },
-  // the barrier in front of the stage, with a gap in the middle to walk up
-  ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19].map((x) => ({ kind: "stagefence", x, y: 4, dir: 2 })),
-  // two more speakers at the front of the crowd
-  { kind: "stagespeaker", x: 1, y: 5, dir: 0 }, { kind: "stagespeaker", x: 18, y: 5, dir: 0 },
-  // the way out: a door in the left wall at the far end
+  // the layout the admin built in the test (saved from the database, so a reset puts back what he made)
+  { kind: "djset", x: 5, y: 1, dir: 0 },
+  { kind: "soundtower", x: 1, y: 1, dir: 0 },
+  { kind: "soundtower", x: 18, y: 1, dir: 0 },
+  { kind: "stagespeaker", x: 0, y: 3, dir: 0 },
+  { kind: "stagespeaker", x: 18, y: 3, dir: 0 },
+  { kind: "stagemic", x: 10, y: 2, dir: 2 },
+  { kind: "stagefence", x: 0, y: 4, dir: 2 },
+  { kind: "stagefence", x: 1, y: 4, dir: 2 },
+  { kind: "stagefence", x: 2, y: 4, dir: 2 },
+  { kind: "stagefence", x: 3, y: 4, dir: 2 },
+  { kind: "stagefence", x: 4, y: 4, dir: 2 },
+  { kind: "stagefence", x: 5, y: 4, dir: 2 },
+  { kind: "stagefence", x: 6, y: 4, dir: 2 },
+  { kind: "stagefence", x: 7, y: 4, dir: 2 },
+  { kind: "stagefence", x: 8, y: 4, dir: 2 },
+  { kind: "stagefence", x: 9, y: 4, dir: 2 },
+  { kind: "stagefence", x: 10, y: 4, dir: 2 },
+  { kind: "stagefence", x: 11, y: 4, dir: 2 },
+  { kind: "stagefence", x: 12, y: 4, dir: 2 },
+  { kind: "stagefence", x: 13, y: 4, dir: 2 },
+  { kind: "stagefence", x: 14, y: 4, dir: 2 },
+  { kind: "stagefence", x: 15, y: 4, dir: 2 },
+  { kind: "stagefence", x: 16, y: 4, dir: 2 },
+  { kind: "stagefence", x: 17, y: 4, dir: 2 },
+  { kind: "stagefence", x: 18, y: 4, dir: 2 },
+  { kind: "stagefence", x: 19, y: 4, dir: 2 },
+  { kind: "tshirtshop", x: 0, y: 12, dir: 2 },
   { kind: "stageexit", x: 0, y: 20, dir: 2 },
-  // the t-shirt shop: a tall wall of shirts on the right, facing the crowd
-  { kind: "tshirtshop", x: 16, y: 10, dir: 0 },
-  // the pub bar along the left wall, and the gold desks after it
-  { kind: "stagepub", x: 1, y: 8, dir: 2 },
-  ...[15, 17].map((y) => ({ kind: "stagebar", x: 1, y, dir: 2 })),
 ];
