@@ -1,4 +1,4 @@
-# Builds public/furni/djbooth_blodig.nitro: the classic7_djbooth art (habboassets.com) with its two screens replaced by the 24 frames of "F:\1A.6ix\dj deck thing.mp4" (12 fps, 2 s loop).
+# Builds public/furni/djbooth_blodig.nitro: the classic7_djbooth art (habboassets.com) with its two screens replaced by ONE picture stretched over both (the 24 frames of "F:\1A.6ix\dj deck thing.mp4", 12 fps, 2 s loop).
 # Run in a folder with classic7_djbooth.json/.png (unpacked from the .nitro) and the frames in vf/v01.png.. (ffmpeg -i video -vf fps=12 vf/v%02d.png). Usage: python build-djbooth.py [chunk]
 import sys, json, struct, zlib, colorsys, glob
 from PIL import Image
@@ -8,34 +8,43 @@ j = json.load(open('classic7_djbooth.json'))
 frames = {k.split('_64_')[1].split('_')[0]: v['frame'] for k, v in j['spritesheet']['frames'].items() if '_64_' in k}
 sd = frames['sd']
 sprites = {k: im.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])) for k, f in frames.items() if k in ('a', 'b')}
-def faceinfo(sp):
-    W, H = sp.size; px = sp.load(); cols = {}
-    for x in range(W):
-        ys = []
-        for y in range(H):
+OFF = {'a': (0, 0), 'b': (32, 16)}             # where each sprite sits in the booth: the file's offsets are measured from the other end, so the sprite 'a' is the LEFT booth and 'b' (on top) the right one
+H = 40                                         # the screens are 40 tall; their top edge is the line y = 19 + x / 2 in booth pixels (both screens lie in one plane)
+top = lambda X: 19 + 0.5 * X
+def facemask(sp):
+    W, Hh = sp.size; px = sp.load(); out = set()
+    for y in range(Hh):
+        for x in range(W):
             r, g, b, a = px[x, y]
             if a < 200: continue
             h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-            if s > 0.35 and v > 0.3: ys.append(y)
-        if ys: cols[x] = (ys[0], ys[-1])
-    full = [x for x, (t, bt) in cols.items() if bt - t >= 37]
-    x0, x1 = min(full), max(full)
-    return x0, x1, {x: cols[x] for x in range(x0, x1 + 1)}
-info = {k: faceinfo(s) for k, s in sprites.items()}
-for k, (x0, x1, c) in info.items(): print(k, x0, x1, c[x0], c[x1])
+            if s > 0.35 and v > 0.3: out.add((x, y))
+            elif r - g > 18 and b - g > 18 and v > 0.25: out.add((x, y))   # the pale pink glints on the edge of each screen
+    return out
+masks = {k: facemask(s) for k, s in sprites.items()}
+# what you can see of the screens: the left booth's whole face, and the right booth's face where the left one doesn't cover it
+opaque_b = {(OFF['b'][0] + x, OFF['b'][1] + y) for y in range(sprites['b'].height) for x in range(sprites['b'].width) if sprites['b'].getpixel((x, y))[3] > 0}
+visible = {(OFF['b'][0] + x, OFF['b'][1] + y) for x, y in masks['b']}
+visible |= {(OFF['a'][0] + x, OFF['a'][1] + y) for x, y in masks['a'] if (OFF['a'][0] + x, OFF['a'][1] + y) not in opaque_b}
+colcount = {}
+for X, Y in visible: colcount[X] = colcount.get(X, 0) + 1
+counted = sorted(X for X, n in colcount.items() if n >= 15)   # (the thin slivers under the pillar don't count as screen)
+NCOL = len(counted)
+rank = {X: i for i, X in enumerate(counted)}
+def col_of(X):
+    return rank[X] if X in rank else rank[min(counted, key=lambda c: abs(c - X))]
+print('screen columns', NCOL, counted[0], counted[-1])
 vids = [Image.open(p).convert('RGB') for p in sorted(glob.glob('vf/v*.png'))]
 N = len(vids)
-def face_frame(vid, x0, x1, cols):
-    fw = x1 - x0 + 1; fh = max(bt - t + 1 for t, bt in cols.values())
-    # crop the 4:3 picture to the face's own shape (the skew along the edge makes it a little longer than it looks)
-    aspect = (fw * 1.118) / fh
-    cw = 660; ch = round(cw / aspect)   # zoomed in on the lettering (it sits in the middle of the picture), cut to the face's own shape
-    cx = 727 - cw // 2; cy = 560 - ch // 2
+def screen_frame(vid):
+    # ONE picture over both screens (they sit side by side in one plane): cut to their joined shape, zoomed on the lettering
+    aspect = (NCOL * 1.118) / H
+    cw = 900; ch = round(cw / aspect)
+    cx = 727 - cw // 2; cy = 560 - ch // 2   # (the lettering sits in the middle of the picture: it runs from the left screen over to the right one)
     crop = vid.crop((cx, cy, cx + cw, cy + ch))
     crop = crop.point(lambda v: min(255, int(255 * ((v / 255) ** 0.72) * 1.35)))   # a screen: brighter, so the thin red lines read at this size
-    gw, gh = max(1, fw // CHUNK), max(1, fh // CHUNK)
-    small = crop.resize((gw, gh), Image.BOX)
-    return small.resize((fw, fh), Image.NEAREST)
+    gw, gh = max(1, NCOL // CHUNK), max(1, H // CHUNK)
+    return crop.resize((gw, gh), Image.BOX).resize((NCOL, H), Image.NEAREST)
 cell_w, cell_h = 60, 78
 cols_per_row = 8
 rows = (N * 2 + cols_per_row - 1) // cols_per_row
@@ -44,18 +53,16 @@ newframes = {}
 idx = 0
 name = 'classic7_djbooth'
 for k in range(N):
+    scr = screen_frame(vids[k])
     for key in ('a', 'b'):
-        sp = sprites[key].copy(); x0, x1, cols = info[key]
-        face = face_frame(vids[k], x0, x1, cols)
-        px = sp.load(); fp = face.load()
-        for x in range(x0, x1 + 1):
-            t, bt = cols[x]
-            for y in range(t, bt + 1):
-                oy = y - t
-                if oy < face.height:
-                    r, g, b = fp[x - x0, oy]
-                    # a touch of screen glow: the picture is a little brighter at the middle
-                    px[x, y] = (r, g, b, 255)
+        sp = sprites[key].copy()
+        px = sp.load(); fp = scr.load()
+        for (x, y) in masks[key]:
+            X, Y = OFF[key][0] + x, OFF[key][1] + y
+            u = col_of(X)
+            v = min(H - 1, max(0, int(Y - top(X))))
+            r, g, b = fp[u, v]
+            px[x, y] = (r, g, b, 255)
         cx = (idx % cols_per_row) * cell_w; cy = (idx // cols_per_row) * cell_h
         sheet.alpha_composite(sp, (cx, cy))
         newframes[f'{name}_{name}_64_{key}_0_{k}'] = {'frame': {'x': cx, 'y': cy, 'w': sp.width, 'h': sp.height}, 'rotated': False, 'trimmed': False, 'spriteSourceSize': {'x': 0, 'y': 0, 'w': sp.width, 'h': sp.height}, 'sourceSize': {'w': sp.width, 'h': sp.height}, 'pivot': {'x': 0.5, 'y': 0.5}}
