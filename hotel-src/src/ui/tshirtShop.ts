@@ -27,7 +27,7 @@ export function openTshirtShop(host: HTMLElement, ctx: Ctx, onClose: () => void)
   const pics: Partial<Record<TshirtDesign, string>> = {}; // the pictures shown on the cards (a data address or a file)
 
   async function loadPictures(): Promise<void> {
-    const [a, b, mine] = await Promise.all([designPicture("a"), designPicture("b"), customShirt(me.figure).then((c) => c.toDataURL("image/png"), () => "")]);
+    const [a, b, mine] = await Promise.all([designPicture("a"), designPicture("b"), customShirt(me.figure, me.name).then((c) => c.toDataURL("image/png"), () => "")]);
     pics.a = a; pics.b = b; pics.me = mine;
     render();
   }
@@ -118,7 +118,7 @@ export function openTshirtOrders(host: HTMLElement, onClose: () => void): Tshirt
   let closed = false;
 
   async function savePrint(r: OrderRow & { id: string }): Promise<void> {
-    const c = await printFile(r.figure ?? "");
+    const c = await printFile(r.figure ?? "", r.playerName ?? "");
     if (!c) { toast("Couldn't draw that character.", "err"); return; }
     const a = document.createElement("a");
     a.href = c.toDataURL("image/png");

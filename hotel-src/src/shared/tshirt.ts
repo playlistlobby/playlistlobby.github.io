@@ -3,7 +3,7 @@
 
 /** 200 kr, in øre */
 export const TSHIRT_PRICE_ORE = 20_000;
-export const TSHIRT_SIZES = ["S", "M", "L", "XL", "XXL"] as const;
+export const TSHIRT_SIZES = ["S", "M", "L", "XL"] as const;
 export type TshirtSize = (typeof TSHIRT_SIZES)[number];
 
 /** the three designs: A and B are pictures the admin can change (public/tshirt/design-a.png, design-b.png, or what he uploaded under tshirtDesigns/<id>), "me" has the player's own character on a blank shirt */

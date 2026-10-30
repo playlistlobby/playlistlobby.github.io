@@ -1,6 +1,6 @@
-// The pictures of the t-shirt shop: the two designs the admin can change, and the player's own character on a blank shirt.
-// The shirt pictures are 1500x1500 mockups (public/tshirt/ holds them at 900x900); the character on the third one is drawn the same size and in the same place
-// as the middle character of design A (scale 3.37, standing on the same line), looking the same way (facing 2).
+// The pictures of the t-shirt shop: the two designs the admin can change, and the player's own character (with their name under it) on a blank shirt.
+// The shirt pictures are see-through 1500x1500 pictures (public/tshirt/ holds them at 900x900); the character on the third one is twice the size of the characters on design A
+// (they are drawn at scale 3.37), looking the same way (facing 2), with the name under it.
 import { get, ref, remove, set } from "firebase/database";
 import { db } from "../firebase";
 import { assetUrl } from "../assetUrl";
@@ -8,7 +8,7 @@ import { renderAvatar } from "../avatarService";
 import type { TshirtDesign } from "../shared/tshirt";
 
 /** the mockup's size, and where the middle character of design A stands in it (centre x, the line its feet are on) */
-const MOCK = 1500, CHAR_X = 751, CHAR_FEET_Y = 757, CHAR_SCALE = 3.37, CHAR_DIR = 2;
+const MOCK = 1500, CHAR_X = 751, CHAR_FEET_Y = 1010, CHAR_SCALE = 3.37 * 2, CHAR_DIR = 2, NAME_Y = 1100, NAME_PX = 66;
 
 const loadImage = (src: string): Promise<HTMLImageElement> => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("no " + src)); i.src = src; });
 
@@ -30,11 +30,9 @@ export async function uploadDesign(id: "a" | "b", file: File): Promise<void> {
   const c = document.createElement("canvas");
   c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
   const g = c.getContext("2d")!;
-  g.fillStyle = "#000"; g.fillRect(0, 0, c.width, c.height); // (the mockups come on black)
   g.drawImage(img, 0, 0, c.width, c.height);
   let url = c.toDataURL("image/png");
   if (url.length > 1_100_000) url = c.toDataURL("image/webp", 0.92);
-  if (url.length > 1_100_000) url = c.toDataURL("image/jpeg", 0.9);
   if (url.length > 1_150_000) throw new Error("That picture is too big even after shrinking it. Try a smaller one.");
   await set(ref(db, `tshirtDesigns/${id}`), url);
 }
@@ -49,8 +47,20 @@ function inkBox(c: HTMLCanvasElement): { x0: number; y0: number; x1: number; y1:
   return x1 < 0 ? null : { x0, y0, x1, y1 };
 }
 
-/** the player's character on the blank shirt: the size of the characters on design A, with its middle on the middle one's line and its shoes on the same line */
-export async function customShirt(figure: string, size = 900): Promise<HTMLCanvasElement> {
+/** the name as it is printed under the character: bold, dark, one line */
+function drawName(g: CanvasRenderingContext2D, name: string, cx: number, baseline: number, px: number): void {
+  g.save();
+  g.font = `bold ${Math.round(px)}px Verdana, "Trebuchet MS", sans-serif`;
+  g.textAlign = "center";
+  g.textBaseline = "alphabetic";
+  g.fillStyle = "#15151a";
+  const maxW = px * 14.5; // (a long name is squeezed to fit on the chest)
+  g.fillText(name, cx, baseline, Math.min(g.measureText(name).width, maxW) || maxW);
+  g.restore();
+}
+
+/** the player's character on the blank shirt: twice the size of the characters on design A, in the middle of the chest, with the player's name under it */
+export async function customShirt(figure: string, name: string, size = 900): Promise<HTMLCanvasElement> {
   const c = document.createElement("canvas");
   c.width = c.height = size;
   const g = c.getContext("2d")!;
@@ -64,18 +74,26 @@ export async function customShirt(figure: string, size = 900): Promise<HTMLCanva
     const y = (CHAR_FEET_Y * size) / MOCK - (box.y1 + 1) * k;
     g.drawImage(av, x, y, av.width * k, av.height * k);
   }
+  if (name) drawName(g, name, (CHAR_X * size) / MOCK, (NAME_Y * size) / MOCK, (NAME_PX * size) / MOCK);
   return c;
 }
 
 /** the character alone, big and see-through, to print from (the admin saves it from the order list) */
-export async function printFile(figure: string, k = 14): Promise<HTMLCanvasElement | null> {
+export async function printFile(figure: string, name = "", k = 14): Promise<HTMLCanvasElement | null> {
   const av = await renderAvatar({ figure, dir: CHAR_DIR, headDir: CHAR_DIR, actions: ["std"], gesture: "std", frame: 0 });
   if (!av) return null;
+  const box = inkBox(av);
+  if (!box) return null;
+  const w = (box.x1 - box.x0 + 1) * k, h = (box.y1 - box.y0 + 1) * k;
+  const px = Math.round(NAME_PX * (k / CHAR_SCALE)); // (the name is the same size next to the character as on the shirt)
+  const gap = name ? Math.round((NAME_Y - CHAR_FEET_Y) * (k / CHAR_SCALE)) : 0;
+  const textW = name ? Math.min(px * 14.5, px * name.length * 0.7) : 0;
   const c = document.createElement("canvas");
-  c.width = av.width * k; c.height = av.height * k;
+  c.width = Math.ceil(Math.max(w, textW) + k * 4); c.height = Math.ceil(h + (name ? gap + px * 0.4 : 0) + k * 2);
   const g = c.getContext("2d")!;
   g.imageSmoothingEnabled = false;
-  g.drawImage(av, 0, 0, c.width, c.height);
+  g.drawImage(av, box.x0, box.y0, box.x1 - box.x0 + 1, box.y1 - box.y0 + 1, (c.width - w) / 2, 0, w, h);
+  if (name) drawName(g, name, c.width / 2, h + gap, px);
   return c;
 }
 
