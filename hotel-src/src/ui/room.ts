@@ -4018,6 +4018,15 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }, (err) => say((err as Error).message || "Unknown command.", "warn"));
         return;
       }
+      const stageM = /^\/stage(?:\s+(.+))?$/i.exec(text);
+      if (stageM) { // the staff: to the event stage, or send a player there
+        const who = (stageM[1] ?? "").trim();
+        void call<{ name: string; self: boolean }>(me, "stageGo", who ? { name: who } : {}).then((r) => {
+          if (r.self) ctx.navigate("room", { roomId: STAGE_ID, from: roomId, force: true });
+          else say(`${r.name} is on the way to the stage.`);
+        }, (err) => say((err as Error).message || "Unknown command.", "warn"));
+        return;
+      }
       const testM = /^\/test1(?:\s+(.+))?$/i.exec(text);
       if (testM) { // the staff: to the room the elevator takes you to (the streets are closed to players until the admin opens them), or send a player there
         const who = (testM[1] ?? "").trim();

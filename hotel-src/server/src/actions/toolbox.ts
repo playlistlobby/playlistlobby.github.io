@@ -2,7 +2,7 @@
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
 import { Action, hideoutAccess, ID_RE, int, requireHideoutMember, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
-import { addToInv, carryMsg, CARRY_MAX, MAX_FURNI, overCarry, STASH_PIECES, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
+import { addToInv, carryMsg, CARRY_MAX, MAX_FURNI, overCarry, ROOM_MAX_KITS, ROOM_MAX_MIXERS, STASH_PIECES, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { isFurniItem, STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
 import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
@@ -220,8 +220,9 @@ export const furniPlace: Action = {
     if (autoPot) kind = "f_planter";
     const mixUp = kind === "f_mixer_up" ? 1 : kind === "f_mixer_up2" ? 2 : 0; // (an upgraded mixer: down in the room it is a mixer marked `up`)
     if (mixUp) kind = "f_mixer";
-    if (hideout && kind === "f_planter" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_planter").length >= HIDEOUT_MAX_KITS) fail(`A hideout fits ${HIDEOUT_MAX_KITS} growing kits.`);
-    if (hideout && kind === "f_mixer" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_mixer").length >= HIDEOUT_MAX_MIXERS) fail(`A hideout fits ${HIDEOUT_MAX_MIXERS} mixers.`);
+    const kitCap = hideout ? HIDEOUT_MAX_KITS : ROOM_MAX_KITS, mixerCap = hideout ? HIDEOUT_MAX_MIXERS : ROOM_MAX_MIXERS; // (the growing kits and the mixers keep their limit)
+    if (kind === "f_planter" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_planter").length >= kitCap) fail(`${hideout ? "A hideout" : "A room"} fits ${kitCap} growing kits.`);
+    if (kind === "f_mixer" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_mixer").length >= mixerCap) fail(`${hideout ? "A hideout" : "A room"} fits ${mixerCap} mixers.`);
     // a poster only hangs on a wall, and carries the picture chosen when it is hung (it stays on it; a poster taken down goes back blank)
     let img: string | undefined;
     if (kind === POSTER_KIND) {

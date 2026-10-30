@@ -362,7 +362,7 @@ export const WALL_TEXTURES: Array<{ id: string; name: string }> = [
 /** Every player room is the same size. */
 export const ROOM_W = 8;
 export const ROOM_H = 8;
-export const MAX_FURNI = 40;
+export const MAX_FURNI = 500;
 
 export const LOBBY_ID = "lobby";
 export const SHOP_ID = "shop";

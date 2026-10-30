@@ -6,6 +6,7 @@ import { skipTime } from "../skipTime";
 import { isEmulator } from "../env";
 import { addToInv } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
+import { FAIR_GAME_UIDS } from "../../../src/shared/hits";
 
 const TESTER_EMAIL = "emil@users.bobba.invalid";
 
@@ -100,5 +101,27 @@ export const staffTp: Action = {
     if (mover !== c.uid) c.extra[`teleports/${mover}`] = { room: dest, at: c.now, by: c.uid };
     c.note = `tp ${first.name}${second ? " " + (second === "me" ? "to me" : "to " + second.name) : ""}`;
     return { self: mover === c.uid, room: dest, name: label, moved: mover === c.uid ? c.uid : first.name };
+  },
+};
+
+/**
+ * /stage (yourself) and /stage <name> (somebody else): the staff go to the event stage, or send a player there. Every admin and mod can, except Mabs and leolegit (the two who are
+ * fair game like everybody else, see FAIR_GAME_UIDS). The player's browser walks them there (teleports/<uid>, see watchTeleport). In the local test everybody can.
+ */
+export const stageGo: Action = {
+  async run(c, a) {
+    if (!(c.isMod && !FAIR_GAME_UIDS.includes(c.uid)) && !isEmulator(c.env)) fail("Unknown command.");
+    const who = typeof a.name === "string" ? a.name.trim().toLowerCase() : "";
+    let uid = c.uid;
+    let name = "";
+    if (who) {
+      const found = await c.db.get<string>(`usernames/${text(who, /^[a-z0-9_ .-]{1,20}$/, "name")}`);
+      if (!found) fail("There is no player with that name.");
+      uid = found!;
+      name = String((await c.db.get<string>(`profiles/${uid}/name`)) ?? who).slice(0, 16);
+    }
+    if (uid !== c.uid) c.extra[`teleports/${uid}`] = { room: "stage", at: c.now, by: c.uid };
+    c.note = uid === c.uid ? "stage" : `stage for ${name}`;
+    return { name, self: uid === c.uid };
   },
 };

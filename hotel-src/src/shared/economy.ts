@@ -60,7 +60,11 @@ export const FLAPPY_GAP_MS = 12_000;
 export const DROP_LIFE_MS = 5 * 60_000;
 export const DROP_LIFE_BULK_MS = 60_000;
 export const BULK_AT = 5;
-export const MAX_FURNI = 40;
+/** how many pieces fit in a player room (a ceiling against abuse; mixers and growing kits have their own limit below) */
+export const MAX_FURNI = 500;
+/** how many growing kits and mixers fit in a player room */
+export const ROOM_MAX_KITS = 40;
+export const ROOM_MAX_MIXERS = 40;
 /** The landlord's three room upgrades, in the order they must be bought: the room becomes size x size for this many drops. Every player room starts at 8 x 8. */
 export const ROOM_UPGRADES: Array<{ size: number; price: number }> = [{ size: 10, price: 25 }, { size: 12, price: 50 }, { size: 14, price: 80 }];
 export const BASE_ROOM_SIZE = 8;
