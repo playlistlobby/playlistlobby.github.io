@@ -1952,3 +1952,14 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .tshirt-shop .tshirt-row { display: grid; grid-template-columns: 90px 1fr; gap: 6px; }
 .tshirt-shop .tshirt-sizes { display: flex; flex-wrap: wrap; gap: 4px; }
 .tshirt-shop .tshirt-go { margin-top: 4px; }
+
+.cd-popup.tshirt-shop { width: min(760px, calc(100% - 20px)); max-height: calc(100% - 60px); z-index: 8; }
+.tshirt-shop .tshirt-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tshirt-shop .tshirt-card { display: grid; gap: 4px; align-content: start; padding: 6px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, .15); background: rgba(0, 0, 0, .25); cursor: pointer; }
+.tshirt-shop .tshirt-card.on { border-color: #ffe27a; background: rgba(255, 226, 122, .12); }
+.tshirt-shop .tshirt-pic { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 6px; background: #000; image-rendering: pixelated; display: block; }
+.tshirt-shop .tshirt-pic.loading { display: grid; place-items: center; color: #b6c2e0; }
+.tshirt-shop .tshirt-admin { display: flex; flex-wrap: wrap; gap: 4px; }
+.tshirt-shop .tshirt-form { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; align-items: start; }
+.tshirt-shop .tshirt-form > .hint, .tshirt-shop .tshirt-form > .tshirt-sizes { grid-column: 1 / -1; }
+@media (max-width: 560px) { .tshirt-shop .tshirt-cards { gap: 4px; } .tshirt-shop .tshirt-form { grid-template-columns: 1fr; } }

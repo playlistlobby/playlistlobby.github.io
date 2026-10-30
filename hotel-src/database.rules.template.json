@@ -1050,6 +1050,13 @@
         }
       }
     },
+    "tshirtDesigns": {
+      ".read": "@PW@",
+      ".write": "@ADMIN@",
+      "$id": {
+        ".validate": "($id === 'a' || $id === 'b') && newData.isString() && newData.val().length < 1200000 && newData.val().matches(/^data:image\\/(png|jpeg|webp);base64,/)"
+      }
+    },
     "tshirtOrders": {
       ".read": "@ADMIN@",
       ".write": false

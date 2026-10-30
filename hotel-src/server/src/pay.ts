@@ -120,7 +120,7 @@ export async function startCheckout(env: Env, uid: string, product: unknown, bod
   const rec: Purchase = { uid, product: productId, amount, status, at: now, session, ...(status === "paid" ? { paidAt: now } : {}), ...(params && Object.keys(params).length ? { params } : {}) };
   const mine: UserPurchase = { product: productId, status, at: now };
   const patch: Record<string, unknown> = { [`purchases/${session}`]: rec, [`userPurchases/${uid}/${session}`]: mine };
-  if (order) patch[`tshirtOrders/${session}`] = { uid, playerName: String((await db.get<string>(`users/${uid}/name`)) ?? "").slice(0, 20), ...order, amount, status, at: now }; // (the name and address stay here, readable by the admin only)
+  if (order) patch[`tshirtOrders/${session}`] = { uid, playerName: String((await db.get<string>(`users/${uid}/name`)) ?? "").slice(0, 20), ...order, ...(order.design === "me" ? { figure: String((await db.get<string>(`profiles/${uid}/figure`)) ?? "").slice(0, 400) } : {}), amount, status, at: now }; // (the name and address stay here, readable by the admin only)
   await db.patch(patch);
   return { url };
 }
