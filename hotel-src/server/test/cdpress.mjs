@@ -60,7 +60,7 @@ bad("no printer in the room", await act(mem, "cdPress", { room: ROOM, song: "cpa
 await owner("PUT", `roomsMeta/${ROOM}/furni/fp1`, { kind: "f_cdpress", x: 3, y: 3, dir: 2, by: boss.uid });
 
 console.log("--- who may press what");
-bad("a song that isn't in the Charts", await act(mem, "cdPress", { room: ROOM, song: "cpbad", colour: "r" }));
+ok("a song that is not in the Charts can be pressed too (every song on SoundCloud can)", await act(mem, "cdPress", { room: ROOM, song: "cpbad", colour: "r" }));
 bad("a song that isn't there", await act(mem, "cdPress", { room: ROOM, song: "nothere", colour: "r" }));
 bad("a colour that isn't there", await act(mem, "cdPress", { room: ROOM, song: "cpa", colour: "z" }));
 const m1 = await act(mem, "cdPress", { room: ROOM, song: "cpa", colour: "r" });

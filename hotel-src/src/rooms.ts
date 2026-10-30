@@ -79,6 +79,11 @@ import { MINES_H, MINES_ID, MINES_OPEN, MINES_PIECES, MINES_W } from "./shared/m
 import { ARRIVAL_ID, ARRIVAL_SIZE, isBuiltInStreetPiece, isStreetsRoom, mergeStreetPieces, StreetOverride, STREET_PIECES, STREETS_H, STREETS_ID, STREETS_W } from "./shared/streets";
 import { streetsFlagOn } from "./streetsFlag";
 import { STAGE_BASE_PREFIX, STAGE_DEFAULT, STAGE_DOOR_X, STAGE_H, STAGE_ID, STAGE_W } from "./shared/stage";
+/** which stage the admin is looking at and furnishing: the concert ("live") or the room after the surprise ("after": its pieces are stored under stage2/furni) */
+let stageVariant: "live" | "after" = "live";
+export const setStageVariant = (v: "live" | "after"): void => { stageVariant = v; };
+export const getStageVariant = (): "live" | "after" => stageVariant;
+export const stageFurniPath = (v: "live" | "after" = stageVariant): string => (v === "after" ? "stage2/furni" : "stage/furni");
 export { STAGE_ID };
 import { HIDEOUT_MAX_FURNI, hideoutRoomId, isHideoutId, levelOfSize } from "./shared/hideout";
 export { hideoutRoomId, isHideoutId };
@@ -250,9 +255,9 @@ if (FURNI_KINDS.f_blackjacktable) FURNI_KINDS.f_blackjacktable.opens = "blackjac
 if (FURNI_KINDS.f_cdpress) FURNI_KINDS.f_cdpress.opens = "cdpress"; // (the CD printer: pick one of the Charts songs and press it onto a CD)
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench", "stageexit", "tshirtshop"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench", "stageexit", "tshirtshop", "djset"]);
 /** the CD player in the basement or a boombox: both play the CD you use on them */
-export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox";
+export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox" || kind === "djset"; // (the DJ deck on the event stage is a CD player too)
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
 export const isBodyBag = (kind: string | undefined): boolean => !!kind && /bodybag/.test(kind);
 
@@ -414,23 +419,23 @@ export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", 
 export const STAGE_THEME: RoomTheme = { floorA: "#dcd9e2", floorB: "#e7e4ec", wall: "#eeedf2", rug: false, rugColor: "#000000" };
 /** the stage floor is baked into the room: it comes from the code, is never stored, and can't be picked up or moved */
 const STAGE_BASE: PlacedFurni[] = STAGE_DEFAULT.filter((p) => p.kind === "stagefloor").map((p, i) => ({ id: `${STAGE_BASE_PREFIX}${i + 1}`, kind: p.kind, x: p.x, y: p.y, dir: p.dir }));
-export function stageDef(pieces: PlacedFurni[] = []): RoomDef {
+export function stageDef(pieces: PlacedFurni[] = [], variant: "live" | "after" = "live"): RoomDef {
   return {
     id: STAGE_ID, name: "The stage", ownerUid: null, ownerName: null, access: "open", w: STAGE_W, h: STAGE_H,
-    theme: { ...STAGE_THEME }, rug: null, furni: [...STAGE_BASE, ...pieces.filter((f) => f.kind !== "stagefloor" && FURNI_KINDS[f.kind])], doorX: STAGE_DOOR_X, doorTo: LOBBY_ID, // (no door on the back wall: the way out is the exit door piece)
+    theme: variant === "after" ? { ...GRIME_THEME } : { ...STAGE_THEME }, rug: null, furni: [...STAGE_BASE, ...pieces.filter((f) => f.kind !== "stagefloor" && FURNI_KINDS[f.kind])], doorX: STAGE_DOOR_X, doorTo: LOBBY_ID, // (no door on the back wall: the way out is the exit door piece)
   };
 }
-export function watchStageFurni(cb: (pieces: PlacedFurni[]) => void): Unsubscribe {
-  return onValue(ref(db, "stage/furni"), (s) => {
+export function watchStageFurni(cb: (pieces: PlacedFurni[]) => void, variant: "live" | "after" = "live"): Unsubscribe {
+  return onValue(ref(db, stageFurniPath(variant)), (s) => {
     const raw = (s.val() ?? {}) as Record<string, { kind: string; x: number; y: number; dir?: number }>;
     cb(Object.entries(raw).map(([id, f]) => ({ id, kind: f.kind, x: f.x, y: f.y, dir: f.dir })));
   }, () => cb([]));
 }
 /** puts the stage back the way it starts: everything taken away, the default pieces put down */
-export async function resetStage(pieces: Array<{ kind: string; x: number; y: number; dir: number }>): Promise<void> {
+export async function resetStage(pieces: Array<{ kind: string; x: number; y: number; dir: number }>, variant: "live" | "after" = "live"): Promise<void> {
   const rows: Record<string, { kind: string; x: number; y: number; dir?: number }> = {};
   pieces.filter((p) => p.kind !== "stagefloor").forEach((p, i) => { rows[`s${String(i + 1).padStart(3, "0")}`] = p.dir ? { kind: p.kind, x: p.x, y: p.y, dir: p.dir } : { kind: p.kind, x: p.x, y: p.y }; });
-  await set(ref(db, "stage/furni"), rows);
+  await set(ref(db, stageFurniPath(variant)), rows);
 }
 
 export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
@@ -686,7 +691,7 @@ export async function createRoom(p: Profile): Promise<string> {
 export const updateRoom = (id: string, patch: Record<string, unknown>) => update(metaRef(id), patch);
 
 /** Furniture of the public room lives under lobby/furni (admin only); everyone else's under their room. */
-const furniPathOf = (roomId: string) => (roomId === LOBBY_ID ? "lobby/furni" : roomId === STAGE_ID ? "stage/furni" : roomId === STREETS_ID ? "streets/furni" : `roomsMeta/${roomId}/furni`);
+const furniPathOf = (roomId: string) => (roomId === LOBBY_ID ? "lobby/furni" : roomId === STAGE_ID ? stageFurniPath() : roomId === STREETS_ID ? "streets/furni" : `roomsMeta/${roomId}/furni`);
 
 export async function placeFurni(id: string, kind: string, x: number, y: number, dir = 0): Promise<void> {
   const f = push(ref(db, furniPathOf(id)));

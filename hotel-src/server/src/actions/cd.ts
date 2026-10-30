@@ -6,6 +6,10 @@ import { Action, int, requireInRoom, text } from "./util";
 import { findSlot } from "../../../src/shared/items";
 import { fail } from "../ctx";
 import { albumList, CD_ITEMS, isCdItem, JUKEBOX_PRICE, parsePressedCd } from "../../../src/shared/cds";
+import { FAIR_GAME_UIDS } from "../../../src/shared/hits";
+
+/** the DJ deck on the event stage: the staff, except the two who are fair game like everybody else (Mabs and leolegit) */
+const djStaff = (c: { isMod: boolean; uid: string }): boolean => c.isMod && !FAIR_GAME_UIDS.includes(c.uid);
 
 interface CdRow { by?: string; endsAt?: number; startedAt?: number; pausedAt?: number; durationMs?: number; track?: string; index?: number; album?: string }
 /** a paused CD that nobody continues is given up after this long */
@@ -15,7 +19,7 @@ const ALBUM_GRACE_MS = 15_000;
 const live = (r: CdRow | null, now: number): boolean => !!r && (r.track === "sc" ||  typeof r.endsAt === "number" && (r.pausedAt ? now - r.pausedAt < PAUSE_MAX_MS : r.endsAt + (r.track === "album" && (r.index ?? 0) < albumList(r.album).length - 1 ? ALBUM_GRACE_MS : 0) > now));
 const roomOf = (v: unknown): string => {
   const room = text(v, /^[A-Za-z0-9_-]{1,60}$/, "room");
-  if (room !== "lobby" && room !== "walk" && !/^[uh]_[A-Za-z0-9]{1,40}$/.test(room)) fail("There's no music player there.");
+  if (room !== "lobby" && room !== "walk" && room !== "stage" && !/^[uh]_[A-Za-z0-9]{1,40}$/.test(room)) fail("There's no music player there.");
   return room;
 };
 /** where a player's CD player keeps its state: a room's speaker, or (room "walk") the player's own walkman */
@@ -27,6 +31,7 @@ export const cdInsert: Action = {
   locks: () => ["cd"],
   async run(c, a) {
     const room = roomOf(a.room ?? "lobby");
+    if (room === "stage" && !djStaff(c)) fail("Only the DJs can use the deck.");
     const w = await c.user();
     if (room === "walk") { if (findSlot(w.s.inventory, "walkman") < 0) fail("You need your walkman for that."); } else await requireInRoom(c, room);
     const path = (r: string): string => pathOf(r, c.uid);
@@ -103,6 +108,7 @@ export const cdControl: Action = {
     const path = (r: string): string => pathOf(r, c.uid);
     const cur = await c.db.get<CdRow & Record<string, unknown>>(path(room));
     const op = text(a.op, /^(pause|play|restart|eject|next|prev|advance)$/, "button");
+    if (room === "stage" && op !== "advance" && !djStaff(c)) fail("Only the DJs can use the deck.");
     const row = cur!;
     if (row?.track === "sc") fail("SoundCloud is on the speaker: use its buttons.");
     const album = row?.track === "album" && typeof row.index === "number";
@@ -117,7 +123,7 @@ export const cdControl: Action = {
       return {};
     }
     if (!live(cur, c.now)) fail("Nothing is playing.");
-    if (row.by !== c.uid && room !== "walk" && room !== `u_${c.uid}` && room !== `h_${c.uid}` && !c.isAdmin) fail("Only the one who put the CD in (or the room's owner) can do that.");
+    if (row.by !== c.uid && room !== "walk" && room !== `u_${c.uid}` && room !== `h_${c.uid}` && !c.isAdmin && !(room === "stage" && djStaff(c))) fail("Only the one who put the CD in (or the room's owner) can do that.");
     const duration = row.durationMs ?? Math.max(10_000, (row.endsAt ?? c.now) - (row.startedAt ?? c.now));
     const started = row.startedAt ?? c.now;
     if (op === "pause") {

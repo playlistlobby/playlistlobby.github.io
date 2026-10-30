@@ -51,3 +51,13 @@ export const STAGE_DEFAULT: StagePiece[] = [
   { kind: "tshirtshop", x: 0, y: 12, dir: 2 },
   { kind: "stageexit", x: 0, y: 20, dir: 2 },
 ];
+
+/**
+ * The room after the surprise (public room textures, see stageDef): the same stage without the t-shirt wall, and body bags lying on the floor.
+ * Its pieces live in the database under stage2/furni (the admin changes them from the /event panel's preview); this is where they start.
+ */
+const BODY_BAGS: Array<[number, number, number]> = [[3, 7, 0], [8, 8, 2], [12, 6, 0], [16, 9, 2], [5, 12, 0], [10, 11, 2], [14, 13, 0], [7, 15, 2], [11, 16, 0], [3, 17, 2], [15, 18, 0], [9, 19, 2]];
+export const STAGE_AFTER_DEFAULT: StagePiece[] = [
+  ...STAGE_DEFAULT.filter((p) => p.kind !== "tshirtshop"),
+  ...BODY_BAGS.map(([x, y, dir]) => ({ kind: "f_bodybag", x, y, dir })),
+];

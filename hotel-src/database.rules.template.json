@@ -87,7 +87,7 @@
     "audio": {
       "$id": {
         "$i": {
-          ".read": "@PW@ && root.child('audioMeta').child($id).child('status').val() === 'ready' && (root.child('audioMeta').child($id).child('kind').val() === 'song' || root.child('audioMeta').child($id).child('kind').val() === 'preview' || root.child('audioMeta').child($id).child('public').val() === true || root.child('audioMeta').child($id).child('readers').child(auth.uid).exists())",
+          ".read": "(root.child('public').child('finale').child('on').val() === true && root.child('audioMeta').child($id).child('status').val() === 'ready' && root.child('audioMeta').child($id).child('kind').val() === 'song') || (@PW@ && root.child('audioMeta').child($id).child('status').val() === 'ready' && (root.child('audioMeta').child($id).child('kind').val() === 'song' || root.child('audioMeta').child($id).child('kind').val() === 'preview' || root.child('audioMeta').child($id).child('public').val() === true || root.child('audioMeta').child($id).child('readers').child(auth.uid).exists()))",
           ".write": "@PW@ && $i.matches(/^([0-9]|1[0-9])$/) && root.child('audioMeta').child($id).child('owner').val() === auth.uid && root.child('audioMeta').child($id).child('status').val() === 'uploading' && newData.isString() && newData.val().length <= 700000"
         }
       }
@@ -1047,6 +1047,28 @@
           "$other": {
             ".validate": false
           }
+        }
+      }
+    },
+    "event": {
+      ".read": "@PW@",
+      ".write": false
+    },
+    "public": {
+      ".read": true,
+      ".write": "@ADMIN@"
+    },
+    "stage2": {
+      "furni": {
+        ".read": "@PW@",
+        ".write": "@ADMIN@",
+        "$f": {
+          ".validate": "newData.hasChildren(['kind', 'x', 'y'])",
+          "kind": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 20" },
+          "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 22" },
+          "dir": { ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6" },
+          "$other": { ".validate": "false" }
         }
       }
     },

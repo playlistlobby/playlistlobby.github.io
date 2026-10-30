@@ -4,7 +4,10 @@ import { SIXTY, watchSixtyLook } from "./npc";
 import { loadEmojiFont } from "./emojiFont";
 import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
-import { createProfile, loadProfile, Profile, watchEconomy } from "./db";
+import { call, createProfile, loadProfile, Profile, watchEconomy } from "./db";
+import { eventNow, lockedIn, onEvent, startEvent } from "./eventState";
+import { FINALE_KEY } from "./shared/event";
+import { mountFinale } from "./ui/finalePage";
 import { watchMyWanted } from "./bounty";
 import { collectPaidCds } from "./payReturn";
 import { checkRaffleAtLogin } from "./raffle";
@@ -38,7 +41,7 @@ import { startStreetsFlag } from "./streetsFlag";
 import { watchTeleport } from "./notices";
 import { watchIdle } from "./idle";
 import { player } from "./music";
-import { fetchMeta, LOBBY_ID, ownRoomId, STREETS_ID, tutRoomId } from "./rooms";
+import { fetchMeta, LOBBY_ID, ownRoomId, STAGE_ID, STREETS_ID, tutRoomId } from "./rooms";
 import { STREET_RETURN_KEY, STREET_RETURN_MS } from "./shared/streets";
 import { logAction } from "./logger";
 import { watchShopConfig } from "./shopConfig";
@@ -73,6 +76,8 @@ export interface Ctx {
   refreshHeader(): void;
   /** tell the room you're standing in that your look changed */
   lookChanged(): void;
+  /** the event is over for this player: they are signed out (without being told) and the page that is left is shown */
+  endForever(): void;
 }
 
 const app = document.getElementById("app")!;
@@ -217,6 +222,8 @@ async function showHotel(user: User): Promise<void> {
   }
   const p = profile;
   await loadRole(p);
+  const ev = startEvent(p.uid); // the album-night event: the doors, who is locked in, the surprise (src/eventState.ts)
+  await ev.ready;
   if (p.isMod && p.name.toLowerCase() === CHATMOD_NAME) { // the chat mod login: no game, only the live chat and the moderation tools
     clear();
     const shell = h("div", { class: "shell modonly" }, h("header", { class: "navbar" }, h("div", { class: "nav-left" }, h("div", { class: "nav-logo" }, "🛡 Chat mod")), h("span", {}), h("div", { class: "nav-right" }, h("button", { class: "btn small", onclick: () => void logout() }, "Log out")))); // (logout from auth.ts: doLogout is made further down, after this early return)
@@ -273,6 +280,7 @@ async function showHotel(user: User): Promise<void> {
     navigate: (v, opts) => go(v, opts),
     refreshHeader: () => bar?.refreshBlood(p.blood),
     lookChanged: () => roomApi?.figureChanged(),
+    endForever: () => void endForever(),
   };
 
   // ---- first run: pick an avatar, then a room (skipped for players who already have both) ----
@@ -297,11 +305,20 @@ async function showHotel(user: User): Promise<void> {
     isAdmin: p.isAdmin,
     isMod: p.isMod,
     onNav: (v) => go(v),
-    onLogout: () => void doLogout(),
+    onLogout: () => { if (!p.isMod && lockedIn(false)) { toast("The doors are shut."); return; } void doLogout(); },
   });
   const shell = h("div", { class: "shell" }, statusBar(), bar.el, roomHost, pageHost);
   app.append(shell);
   ctx.refreshHeader();
+
+  /** The event is over for this player (they died): they are signed out without being told, and what is left of the site is shown (a refresh shows it too: the browser remembers). */
+  let ended = false;
+  const endForever = async (): Promise<void> => {
+    if (ended) return;
+    ended = true;
+    try { localStorage.setItem(FINALE_KEY, "1"); } catch { /* private mode: the page still comes up, the database says the site is down */ }
+    await doLogout();
+  };
 
   /** Leave cleanly: take your avatar and presence out of the room *before* signing out (afterwards the rules would refuse). */
   const doLogout = async () => {
@@ -392,6 +409,7 @@ async function showHotel(user: User): Promise<void> {
   // (testing in the emulator: window.__go("streets") jumps to a room)
   if (import.meta.env.MODE === "emulator") (window as unknown as { __go?: (roomId: string, o?: NavOpts) => void }).__go = (roomId, o) => go("room", { roomId, force: true, ...o });
   function go(view: View, opts: NavOpts = {}): void {
+    if (!p.isMod && lockedIn(false) && (view !== "room" || (opts.roomId ?? lastRoomId) !== STAGE_ID)) { if (view !== "room" || roomMounted !== STAGE_ID) toast("The doors are shut."); return; } // (the concert: nobody leaves)
     if ((view === "admin" || view === "npc") && !p.isAdmin) view = "room";
     if (view === "mod" && !p.isMod) view = "room";
     if (view === "room") {
@@ -436,9 +454,21 @@ async function showHotel(user: User): Promise<void> {
     bar?.setActive(view);
   }
 
-  // Everyone starts in their own room, standing at the door.
-  if (backToStreets) go("room", { roomId: STREETS_ID, from: LOBBY_ID });
+  // Everyone starts in their own room, standing at the door. (During the event: whoever has died is out, whoever is shut in or arrives when the doors are shut lands in the concert room, and once the surprise has been set off the site is only for the ones who were in it.)
+  const e0 = eventNow();
+  const inTheEvent = e0.inAt > 0 && !e0.dead;
+  if (!p.isMod && (e0.dead || (e0.state.kill && !inTheEvent))) void endForever();
+  else if (!p.isMod && (e0.state.sealed || lockedIn(false))) { void call(p, "eventJoin").catch(() => undefined); go("room", { roomId: STAGE_ID, from: LOBBY_ID }); }
+  else if (backToStreets) go("room", { roomId: STREETS_ID, from: LOBBY_ID });
   else go("room", { roomId: ownRoomId(p.uid), arrival: "bed", intro });
+  // the doors get shut while somebody is in the game: they are pulled into the concert room; a death anywhere else ends it
+  const stopEventWatch = onEvent((e) => {
+    if (p.isMod) return;
+    if (e.dead && roomMounted !== STAGE_ID) { void endForever(); return; }
+    if (e.state.sealed && roomMounted !== STAGE_ID && !e.dead) { void call(p, "eventJoin").catch(() => undefined); go("room", { roomId: STAGE_ID, from: LOBBY_ID, force: true }); }
+  });
+  const prevCleanup = shellCleanup;
+  shellCleanup = () => { stopEventWatch(); ev.stop(); prevCleanup?.(); };
 }
 
 // ---- boot ----------------------------------------------------------------------
@@ -464,6 +494,35 @@ function route(user: User | null): void {
     return showAuth();
   }
   if (user) showHotel(user).catch((ex) => toast(friendlyError(ex), "err"));
-  else showAuth();
+  else showLoggedOut();
+}
+
+/** Nobody is signed in: the login box, unless the site is down for everyone (the surprise has been set off, and public/finale says so): then the page that is left. The browser remembers who died, so the page
+ *  shows at once; if the database says the site is back (the admin reset it) the memory is dropped and the login comes back. A hidden "?login" in the address brings the login back (for staff). */
+function showLoggedOut(): void {
+  if (new URLSearchParams(location.search).has("login")) return showAuth();
+  let remembered = false;
+  try { remembered = localStorage.getItem(FINALE_KEY) === "1"; } catch { /* private mode */ }
+  if (remembered) showFinale(); // (right away: nothing flashes)
+  let answered = false;
+  const settle = (on: boolean | null): void => {
+    if (answered) return;
+    answered = true;
+    window.clearTimeout(timer);
+    if (on === true) { if (!remembered) showFinale(); return; }
+    if (on === false) { try { localStorage.removeItem(FINALE_KEY); } catch { /* ignore */ } showAuth(); return; }
+    if (!remembered) showAuth(); // (could not ask: the page stays if it is already up)
+  };
+  const timer = window.setTimeout(() => settle(null), 3500);
+  void get(ref(db, "public/finale/on")).then((s) => settle(s.val() === true), () => settle(null));
+}
+
+let finaleStop: (() => void) | null = null;
+function showFinale(): void {
+  clear();
+  finaleStop?.();
+  const host = h("div", { class: "finale-host" });
+  app.append(host);
+  finaleStop = mountFinale(host, {});
 }
 

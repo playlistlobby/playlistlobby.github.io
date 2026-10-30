@@ -1,4 +1,4 @@
-import { STAGE_BASE_PREFIX, STAGE_DEFAULT, STAGE_KINDS } from "../shared/stage";
+import { STAGE_AFTER_DEFAULT, STAGE_BASE_PREFIX, STAGE_DEFAULT, STAGE_KINDS } from "../shared/stage";
 import {
   get,
   onChildAdded,
@@ -122,6 +122,9 @@ import {
   watchLobbyFurni,
   watchStageFurni,
   resetStage,
+  setStageVariant,
+  stageFurniPath,
+  getStageVariant,
   stageDef,
   STAGE_ID,
   watchStreetsFurni,
@@ -175,7 +178,15 @@ import { VAPE_COOLDOWN_MS } from "../shared/ducky";
 import { bagmandHitTick, bountyShow, wantedUntil } from "../bounty";
 import { playBang, playSfx, playThud } from "../sfx";
 import { gunShoot as gunShootCall, rocketFire as rocketFireCall, watchHits, watchRocketAt } from "../hits";
-import { ROCKET_COOLDOWN_MS, ROCKET_LINE } from "../shared/hits";
+import { FAIR_GAME_UIDS, ROCKET_COOLDOWN_MS, ROCKET_LINE } from "../shared/hits";
+import { eventNow, lockedIn, onEvent } from "../eventState";
+import { EventPvpApi, mountEventPvp } from "../eventPvp";
+import { setMuffle } from "../muffle";
+import { KILL_FADE_MS, KILL_WAKE_MS } from "../shared/event";
+import { runDeathSequence } from "./eventDeath";
+import { EventPanelApi, openEventPanel, StageTools } from "./eventPanel";
+import { mountFinale } from "./finalePage";
+import { setMusicMuted, setSfxMuted } from "../sfx";
 import { BADTRIP_LINES, BADTRIP_MS, BADTRIP_RUN_MS, BADTRIP_SLEEP_MS } from "../shared/items";
 import { bountiesOf, liveHits } from "../shared/hits";
 import type { Hit } from "../shared/hits";
@@ -417,7 +428,7 @@ interface Particle { x: number; y: number; vx: number; vy: number; born: number;
 interface Floater { text: string; x: number; y: number; born: number; color: string; icon?: HTMLImageElement; life?: number; /** how much bigger than usual */ size?: number }
 interface GlyphFx { uid: string; glyph: string; born: number; life: number; ox: number }
 interface Hitbox { id: string; kind?: string; x0: number; y0: number; x1: number; y1: number; depth: number }
-interface NoteFx { born: number; life: number; glyph: string; ox: number; phase: number; color: string }
+interface NoteFx { born: number; life: number; glyph: string; ox: number; phase: number; color: string; src?: number }
 
 type Pending =
   | { type: "stab"; uid: string; since: number; lastTry: number }
@@ -639,6 +650,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let ipodApi: { close(): void } | null = null;
   /** the streets: the customers, the cars, the fights (null in every other room) */
   let streetsApi: StreetsApi | null = null;
+  let pvp: EventPvpApi | null = null; // (the fighting in the changed concert room)
+  let pvpOn = false;
+  let stageTools: StageTools | null = null;
+  let eventPanelApi: EventPanelApi | null = null;
+  const djStaff = me.isMod && !FAIR_GAME_UIDS.includes(me.uid); // (the staff run the DJ deck, except the two who are fair game like everybody else)
   let fightWalking = false;
   let petShopApi: { close(): void } | null = null;
   let chestApi: { close(): void; refresh(): void } | null = null;
@@ -868,7 +884,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const decorateBtn = h("button", { class: "btn small decorate-btn hidden", onclick: () => enterFurnish() }, adminLobbyEdit ? "🛠 Edit room" : "🛠 Decorate");
   stage.append(decorateBtn);
   /** the admin on the event stage: puts the stage back the way it starts (everything he moved is undone) */
-  const resetStageBtn = h("button", { class: "btn small decorate-btn reset-stage-btn hidden", onclick: () => { if (window.confirm("Put the stage back the way it started? Everything you moved or added is lost.")) void resetStage(STAGE_DEFAULT).then(() => toast("The stage is back as it was."), (err) => toast((err as Error).message, "err")); } }, "↺ Reset stage");
+  const resetStageBtn = h("button", { class: "btn small decorate-btn reset-stage-btn hidden", onclick: () => { if (window.confirm("Put the stage back the way it started? Everything you moved or added is lost.")) void resetStage(getStageVariant() === "after" ? STAGE_AFTER_DEFAULT : STAGE_DEFAULT, getStageVariant()).then(() => toast("The stage is back as it was."), (err) => toast((err as Error).message, "err")); } }, "↺ Reset stage");
   stage.append(resetStageBtn);
   /** the admin on the event stage: the list of t-shirt orders (names, addresses, sizes) */
   const ordersBtn = h("button", { class: "btn small decorate-btn orders-btn hidden", onclick: () => { if (!tshirtApi) tshirtApi = openTshirtOrders(stage, () => { tshirtApi = null; }); } }, "📦 Orders");
@@ -1189,6 +1205,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
 
     const obj = pickObj(m.x, m.y);
+    if (pvpOn && pvp && target && target.uid !== me.uid && !target.npc && !target.sleeper) { clearSelection(); pvp.fight(target.uid); return; } // (the changed concert room: a tap on a player is a fight)
 
     // nothing selected: a tap does what the menu would offer (one option -> it happens, several -> you choose)
     if (!selectedDef()) {
@@ -1267,7 +1284,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "reddoor") redDoorTap();
       else if (obj.kind === "tshirtshop") openTshirt();
-      else if (obj.kind === "stageexit") ctx.navigate("room", { roomId: LOBBY_ID, from: STAGE_ID });
+      else if (obj.kind === "stageexit") { if (lockedIn(me.isMod)) say("The doors are shut.", "warn"); else ctx.navigate("room", { roomId: LOBBY_ID, from: STAGE_ID }); }
       else if (obj.kind === "bagman") startBagman();
       else if (obj.kind === "minesixty") startMinesSixty();
       else if (obj.kind === "mrock") startMine(obj.id);
@@ -1348,7 +1365,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "scustomer" && streetsApi && !target) opts.push({ label: "Serve", target: streetsApi.hoverText(obj.id)?.split(":")[0] ?? "Customer", action: () => streetsApi?.click(obj.id) });
     if (obj && FURNI_KINDS[obj.kind!]?.opens === "beatshop") opts.push({ label: "Open", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
     if (obj?.kind === "hchest") opts.push({ label: "Open", target: "Shared stash", action: () => startBag(obj.id) });
-    if (obj?.kind === "stageexit") opts.push({ label: "Leave", target: "Exit door", action: () => ctx.navigate("room", { roomId: LOBBY_ID, from: STAGE_ID }) });
+    if (obj?.kind === "stageexit") opts.push({ label: "Leave", target: "Exit door", action: () => { if (lockedIn(me.isMod)) say("The doors are shut.", "warn"); else ctx.navigate("room", { roomId: LOBBY_ID, from: STAGE_ID }); } });
     if (obj?.kind === "tshirtshop") opts.push({ label: "Shop", target: "T-shirt shop", action: () => openTshirt() });
     if (obj?.kind === "reddoor") opts.push({ label: "Knock", target: "Red door", action: () => redDoorTap() });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
@@ -1548,7 +1565,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** moves or turns a piece: the basement's pieces are rewritten in its own list (the ones built into the basement can't move) */
   async function movePieceHere(f: PlacedFurni, spot: Spot): Promise<void> {
     if (!adminLobbyEdit) return movePiece(def.id, f, spot, me);
-    const base = def.id === STREETS_ID ? "streets/furni" : def.id === STAGE_ID ? "stage/furni" : "lobby/furni";
+    const base = def.id === STREETS_ID ? "streets/furni" : def.id === STAGE_ID ? stageFurniPath() : "lobby/furni";
     if (def.id === STREETS_ID ? isBuiltInStreetPiece(f.id) : /^lobby\d+$/.test(f.id)) { await set(ref(db, `${base}/${f.id}`), { kind: f.kind, x: spot.x, y: spot.y, ...(spot.dir ? { dir: spot.dir } : {}) }); return; } // a piece built into the room: its new spot is kept under its own id
     if (def.id === LOBBY_ID && isFixedLobbyPiece(f.id)) throw new Error("That one can't be moved.");
     await update(ref(db, `${base}/${f.id}`), { x: spot.x, y: spot.y, dir: spot.dir || null });
@@ -2546,6 +2563,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
 
   function startCd(fid: string): void {
+    if (roomId === STAGE_ID && !djStaff) { clearSelection(); return say("Only the DJs touch the deck.", "warn"); }
     if (findCdSlot() < 0) { clearSelection(); return say("Your CD is already in the player.", "warn"); }
     if (cdPlaying()) { clearSelection(); return say(`The CD player is busy playing ${cdState!.byName}'s CD.`, "warn"); }
     chosenCdSlot = findCdSlot(); // the CD you selected, not just the first one in your pocket
@@ -2775,7 +2793,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const sixtyTimers: number[] = [];
   const sixtyAfter = (ms: number, fn: () => void) => { sixtyTimers.push(window.setTimeout(() => { if (!disposed) fn(); }, ms)); };
   const sixtySay = (text: string, ms = 4200) => { sixtyBubble = { text, until: performance.now() + ms }; };
-  const redDoorTap = (): void => { if (import.meta.env.MODE === "emulator") ctx.navigate("room", { roomId: STAGE_ID, from: LOBBY_ID }); else redDoorSay(); }; // (in the test the red door leads to the event stage)
+  const redDoorTap = (): void => { // (the red door leads to the concert once it is opened from the /event panel; staff can always go in)
+    const e = eventNow();
+    if (me.isMod || e.state.open || e.state.sealed) void call(me, "eventJoin").then(() => ctx.navigate("room", { roomId: STAGE_ID, from: LOBBY_ID }), (err) => say((err as Error).message || "The red door is shut.", "warn"));
+    else redDoorSay();
+  };
   const redDoorSay = (): void => sixtySay("idag d.30 kl 20, Blodig Oktober deluxe album listening party, 1/1 drops", 6000); // (the red door behind 6ixty)
   /** he has something for you: the introduction's next step, or one of his jobs (the lighter job a couple of hours after the first blood) */
   const sixtyWants = (): boolean => {
@@ -3927,7 +3949,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const chatSweep = window.setInterval(sweepChat, 20_000);
     unsubs.push(() => window.clearInterval(chatSweep));
     // the lobby has a CD player; its state is shared with everyone in the room
-    if (roomId === LOBBY_ID || roomId.startsWith("u_") || isHideoutRoom) unsubs.push(watchCdPlayer(roomId, onCdState)); // the CD player in the basement, or the boombox in a player's room
+    if (roomId === LOBBY_ID || roomId === STAGE_ID || roomId.startsWith("u_") || isHideoutRoom) unsubs.push(watchCdPlayer(roomId, onCdState)); // the CD player in the basement, or the boombox in a player's room
     renderOnline();
     syncSleeper();
   }
@@ -4032,6 +4054,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           if (r.self) ctx.navigate("room", { roomId: r.room, from: roomId, force: true });
           else say(`${r.name} is on the way.`);
         }, (err) => say((err as Error).message || "Unknown command.", "warn"));
+        return;
+      }
+      if (/^\/event$/i.test(text)) { // the admin and emil: the panel that runs the event
+        if (!(me.isAdmin || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
+        if (!eventPanelApi) eventPanelApi = openEventPanel(stage, me, stageTools, () => ctx.navigate("room", { roomId: STAGE_ID, from: roomId, force: true }), () => { eventPanelApi = null; });
         return;
       }
       const stageM = /^\/stage(1)?(?:\s+(.+))?$/i.exec(text);
@@ -4185,7 +4212,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** the gun in your own hand: while it is selected in your pocket (the bounties show over the heads, tap somebody to shoot) */
   const holdsGun = (p: Player): boolean => p.uid === me.uid && (selectedDef()?.useOnPlayer === "shoot" || selectedDef()?.useOnPlayer === "rocket");
   const holdsKnife = (p: Player, now: number): boolean =>
-    (p.uid === me.uid && (selectedDef()?.useOnPlayer === "stab" || !!mining)) || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
+    (pvpOn && !p.sleeper && !p.npc) || (p.uid === me.uid && (selectedDef()?.useOnPlayer === "stab" || !!mining)) || stabFx.some((fx) => fx.from === p.uid && (now - fx.start) / STAB_MS <= 1.05);
 
   /** Little hearts that drift up over a player's head (a hash joint). (fx, fy) = the player's feet. */
   /** Particles are drawn as chunky pixels on the same grid as the game's art: a round blob made of square cells, snapped to the grid. */
@@ -5324,16 +5351,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
     // music notes drifting up out of the CD player (so you can see where the sound comes from)
     const cdf = def.furni.find((f) => f.kind === "jukebox") ?? def.furni.find((f) => isCdKind(f.kind)); // (the notes come out of the jukebox in the basement)
-    if (cdf && notes.length) {
-      const k = FURNI_KINDS[cdf.kind];
-      const base = toScreen(iso(cdf.x + 0.5, cdf.y + 0.5));
+    const noteSources = roomId === STAGE_ID ? def.furni.filter((f) => f.kind === "stagespeaker" || f.kind === "soundtower" || f.kind === "djset") : cdf ? [cdf] : []; // (on the stage the notes come out of every speaker, and the DJ deck)
+    if (noteSources.length && notes.length) {
       g.save();
       g.imageSmoothingEnabled = false; // (the notes are drawn small and blown up: a little pixelated)
       for (const n of notes) {
+        const sf = noteSources[(n.src ?? 0) % noteSources.length];
+        const k = FURNI_KINDS[sf.kind];
+        const base = toScreen(iso(sf.x + 0.5, sf.y + 0.5));
         const age = now - n.born;
         const f = age / n.life;
         const x = base.x + (n.ox + Math.sin(age / 240 + n.phase) * 9) * scale;
-        const y = base.y - (k.height + 8) * scale - age * 0.045 * scale;
+        const y = base.y - (k.height + 8) * scale - age * 0.045 * scale - raiseAt(sf.x, sf.y) * scale;
         g.globalAlpha = f < 0.15 ? f / 0.15 : Math.max(0, 1 - (f - 0.55) / 0.45);
         const spr = noteSprite(n.glyph);
         const size = spr.width * (1.45 + 0.25 * Math.sin(n.phase)) * Math.max(1, scale);
@@ -5437,7 +5466,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       lastNote = now;
       const glyphsPool = ["♪", "♫", "♬", "♩"];
       const colors = ["#ffd54a", "#ff7fbf", "#7fe3ff", "#9dff8a"];
-      notes.push({ born: now, life: 2200, glyph: glyphsPool[Math.floor(Math.random() * 4)], ox: (Math.random() - 0.5) * 22, phase: Math.random() * 6, color: "#fff" });
+      for (let ni = 0; ni < (roomId === STAGE_ID ? 3 : 1); ni++) notes.push({ born: now, life: 2200, glyph: glyphsPool[Math.floor(Math.random() * 4)], ox: (Math.random() - 0.5) * 22, phase: Math.random() * 6, color: "#fff", src: Math.floor(Math.random() * 1000) });
     }
     for (let i = notes.length - 1; i >= 0; i--) if (now - notes[i].born > notes[i].life) notes.splice(i, 1);
 
@@ -6233,6 +6262,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const dieOn = !!dr && now - dr.start <= DICE_SHOW_MS;
       if (dieOn) bubbles.push(() => drawDie(feet.x, feet.y - (FEET_Y + 4) * scale, dr!.n, now - dr!.start));
       if (streetsApi) { const hy = feet.y - (FEET_Y + 4) * scale; const pu = p.uid; bubbles.push(() => streetsApi?.drawPlayer(g, pu, feet.x, hy, scale, now)); }
+      if (pvp) { const hy = feet.y - (FEET_Y + 4) * scale - stageRaise(p, now) * scale; const pu = p.uid; bubbles.push(() => pvp?.drawPlayer(g, pu, feet.x, hy, scale, now)); }
       if (p.bubble && p.bubble.until > now) {
         const left = p.bubble.until - now;
         const b = p.bubble;
@@ -6271,15 +6301,141 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       return;
     }
     if (roomId === STAGE_ID) {
+      // ---- the album-night event: the concert, the surprise in the middle of it, the fighting and the end (rules: src/shared/event.ts, the server: server/src/actions/event.ts) ----
+      let pieces: PlacedFurni[] = [], pieces2: PlacedFurni[] = []; // the concert room's furniture, and the changed room's
+      let previewAfter = false; // the admin's own look at the changed room
+      let testAfter = false; // ... or the room after a test black-out
+      let afterOn = false; // the surprise has been set off: the room has changed
+      let killSeen = 0;
+      let loaded2 = false, seeded2 = false;
+      const afterPieces = (): PlacedFurni[] => (pieces2.length ? pieces2 : STAGE_AFTER_DEFAULT.map((q, i) => ({ id: `after${i + 1}`, kind: q.kind, x: q.x, y: q.y, dir: q.dir }))); // (until the admin has saved his own the starting pieces show)
+      const showingAfter = (): boolean => previewAfter || testAfter || afterOn;
+      const seedAfter = (): void => { if (me.isAdmin && loaded2 && !seeded2 && !pieces2.length && showingAfter()) { seeded2 = true; void resetStage(STAGE_AFTER_DEFAULT, "after").catch(() => undefined); } };
+      const redraw = (): void => {
+        if (disposed) return;
+        const after = showingAfter();
+        setStageVariant(after ? "after" : "live");
+        applyDef(stageDef(after ? afterPieces() : pieces, after ? "after" : "live"));
+        seedAfter();
+      };
       applyDef(stageDef());
       start();
-      let firstLook = true;
-      unsubs.push(watchStageFurni((pieces) => { // everything on the stage comes from the database; the first admin in puts the starting layout there
+      setMusicMuted(false); setSfxMuted(false); // (walking into the concert puts the music and the sound effects on)
+      let firstLive = true;
+      unsubs.push(watchStageFurni((p) => { // everything on the stage comes from the database; the first admin in puts the starting layout there
         if (disposed) return;
-        const first = firstLook; firstLook = false;
-        if (first && !pieces.length && me.isAdmin) { void resetStage(STAGE_DEFAULT).catch(() => undefined); return; } // (the first admin in puts the starting layout there: it comes back as the next snapshot)
-        applyDef(stageDef(pieces));
+        const first = firstLive; firstLive = false;
+        if (first && !p.length && me.isAdmin) { void resetStage(STAGE_DEFAULT).catch(() => undefined); return; } // (it comes back as the next snapshot)
+        pieces = p;
+        if (!showingAfter()) redraw();
+      }, "live"));
+      unsubs.push(watchStageFurni((p) => { if (disposed) return; loaded2 = true; pieces2 = p; if (showingAfter()) redraw(); }, "after"));
+
+      // the light show behind the game: switched on from the panel, and every player can switch it off for themselves
+      const lightsEl = h("div", { class: "event-lights" }, h("i", { class: "b1" }), h("i", { class: "b2" }), h("i", { class: "b3" }), h("i", { class: "b4" }));
+      stage.prepend(lightsEl);
+      stage.classList.add("has-lights");
+      let lightsGlobal = false, lightsLocalOff = false;
+      try { lightsLocalOff = localStorage.getItem("6ix-lights-off") === "1"; } catch { /* private mode */ }
+      const paintLights = (): void => { stage.classList.toggle("lights-on", lightsGlobal && !lightsLocalOff); };
+      const lightsBtn = h("button", { class: "btn small lights-btn", type: "button", title: "Lights on or off for you", onclick: () => { lightsLocalOff = !lightsLocalOff; try { localStorage.setItem("6ix-lights-off", lightsLocalOff ? "1" : "0"); } catch { /* private mode */ } paintLights(); } }, "💡");
+      stage.append(lightsBtn);
+
+      // the black-out, and the room that wakes up after it
+      const black = h("div", { class: "ev-black" });
+      stage.append(black);
+      const setBlack = (on: boolean, ms: number): void => { black.style.transition = `opacity ${ms}ms linear`; black.style.opacity = on ? "1" : "0"; };
+      const killTimers: number[] = [];
+      const clearKillTimers = (): void => { killTimers.forEach((t) => window.clearTimeout(t)); killTimers.length = 0; };
+      const startPvp = (): void => {
+        if (pvp) return;
+        pvpOn = true;
+        pvp = mountEventPvp({
+          me, stage, say,
+          tileOf: (uid) => { const q = players.get(uid); return q ? currentTile(q) : null; },
+          nameOf: (uid) => players.get(uid)?.name ?? "somebody",
+          walkTo: (t) => walkTo(t),
+          killAt: () => eventNow().state.kill ?? 0,
+        });
+        say("Everyone holds a knife now.", "warn");
+      };
+      const stopPvp = (): void => { pvp?.dispose(); pvp = null; pvpOn = false; };
+      /** the surprise: `at` is when it was set off (server time); a test runs the same thing without fighting (the changed room stays until the panel says back) */
+      const runKill = (at: number, test = false): void => {
+        clearKillTimers();
+        const since = serverNow() - at;
+        if (since >= KILL_WAKE_MS) { // came in late (or refreshed): the room has changed already
+          if (test) testAfter = true; else afterOn = true;
+          redraw();
+          setBlack(true, 0);
+          killTimers.push(window.setTimeout(() => setBlack(false, 1500), 60));
+          if (!test) startPvp();
+          return;
+        }
+        const fadeLeft = Math.max(0, KILL_FADE_MS - since);
+        setBlack(true, fadeLeft);
+        setMuffle(cdAudio.audio, true, 2500); // (the music is in another room now)
+        killTimers.push(window.setTimeout(() => { if (test) testAfter = true; else afterOn = true; redraw(); }, fadeLeft + 100)); // (the room is changed while it is black)
+        killTimers.push(window.setTimeout(() => { setBlack(false, 1800); setMuffle(cdAudio.audio, false, 1500); if (!test) startPvp(); }, Math.max(0, KILL_WAKE_MS - since)));
+      };
+      const undoKill = (): void => { clearKillTimers(); afterOn = false; testAfter = false; stopPvp(); setBlack(false, 600); setMuffle(cdAudio.audio, false, 300); redraw(); };
+
+      // a death: the countdown, the grave, and then the page that is left (the player is signed out without being told)
+      let deathRunning = false, deathTest = false;
+      let stopDeath: (() => void) | null = null;
+      let finaleOverlay: { el: HTMLElement; off: () => void } | null = null;
+      const closeFinaleOverlay = (): void => { finaleOverlay?.off(); finaleOverlay?.el.remove(); finaleOverlay = null; };
+      const showFinaleOverlay = (staff: boolean, onBack: () => void): void => {
+        closeFinaleOverlay();
+        const el = h("div", { class: "ev-overlay" });
+        stage.append(el);
+        finaleOverlay = { el, off: mountFinale(el, { ...(staff ? { staff: me } : {}), onBack }) };
+      };
+      const endDeath = (): void => {
+        stopDeath?.(); stopDeath = null; closeFinaleOverlay();
+        deathRunning = false; deathTest = false; dying = false; faintUntil = 0;
+        const q = mine(); if (q) q.faint = false;
+        cdAudio.setVolume(cdAudio.volume); cdAudio.sync(cdState); // (the music that faded out comes back)
+      };
+      const beginDeath = (test: boolean): void => {
+        if (deathRunning) return;
+        deathRunning = true; deathTest = test; dying = true;
+        pvp?.stopFight();
+        const q = mine();
+        if (q) { q.path = []; q.faint = true; q.emote = undefined; }
+        faintUntil = performance.now() + 600_000;
+        stopDeath = runDeathSequence(stage, {
+          name: me.name, music: cdAudio.audio,
+          onDone: () => { if (test) showFinaleOverlay(false, endDeath); else ctx.endForever(); },
+        });
+      };
+
+      // what the panel may do on this screen only
+      stageTools = {
+        preview: (on) => { previewAfter = on; if (!on) { testAfter = false; clearKillTimers(); setBlack(false, 300); setMuffle(cdAudio.audio, false, 300); } redraw(); },
+        previewing: () => previewAfter || testAfter,
+        testKill: () => runKill(serverNow(), true),
+        testDeath: () => beginDeath(true),
+        testFinale: () => showFinaleOverlay(false, closeFinaleOverlay),
+        editFinale: () => showFinaleOverlay(true, closeFinaleOverlay),
+      };
+
+      unsubs.push(onEvent((e) => {
+        if (disposed) return;
+        lightsGlobal = !!e.state.lights; paintLights();
+        const k = e.state.kill ?? 0;
+        if (k && k !== killSeen) { killSeen = k; runKill(k); }
+        else if (!k && killSeen) { killSeen = 0; undoKill(); }
+        if (e.dead && !deathRunning) beginDeath(false);
+        else if (!e.dead && deathRunning && !deathTest) endDeath(); // (the admin started over)
       }));
+      unsubs.push(() => {
+        clearKillTimers(); stopPvp(); stopDeath?.(); closeFinaleOverlay();
+        setMuffle(cdAudio.audio, false, 100);
+        lightsEl.remove(); lightsBtn.remove(); black.remove();
+        stage.classList.remove("has-lights", "lights-on");
+        stageTools = null; setStageVariant("live");
+      });
       return;
     }
     if (isMines) {

@@ -1963,3 +1963,61 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .tshirt-shop .tshirt-form { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; align-items: start; }
 .tshirt-shop .tshirt-form > .hint, .tshirt-shop .tshirt-form > .tshirt-sizes { grid-column: 1 / -1; }
 @media (max-width: 560px) { .tshirt-shop .tshirt-cards { gap: 4px; } .tshirt-shop .tshirt-form { grid-template-columns: 1fr; } }
+
+/* ---- the album-night event (src/ui/eventPanel.ts, eventDeath.ts, finalePage.ts, room.ts) ---- */
+.stage.has-lights > .room-canvas { position: relative; z-index: 1; }
+.stage.has-lights > .event-lights { z-index: 0; } /* (the basement look gives every child z-index 2: the lights stay behind the room) */
+.stage.has-lights > .room-canvas { z-index: 2; }
+.event-lights { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 1.2s; background: radial-gradient(ellipse 80% 70% at 50% 40%, #2a1650 0%, #120a26 60%, #07040f 100%); }
+.stage.lights-on > .event-lights { opacity: 1; }
+.event-lights i { position: absolute; top: -30%; width: 38%; height: 160%; transform-origin: 50% 0; filter: blur(14px); mix-blend-mode: screen; opacity: .75; }
+.event-lights .b1 { left: 8%;  background: linear-gradient(180deg, rgba(255, 40, 120, .9), rgba(255, 40, 120, 0) 70%); animation: ev-sweep1 5.5s ease-in-out infinite alternate; }
+.event-lights .b2 { left: 32%; background: linear-gradient(180deg, rgba(60, 140, 255, .9), rgba(60, 140, 255, 0) 70%); animation: ev-sweep2 7s ease-in-out infinite alternate; }
+.event-lights .b3 { left: 55%; background: linear-gradient(180deg, rgba(120, 255, 120, .8), rgba(120, 255, 120, 0) 70%); animation: ev-sweep1 6.3s ease-in-out infinite alternate-reverse; }
+.event-lights .b4 { left: 76%; background: linear-gradient(180deg, rgba(255, 200, 60, .85), rgba(255, 200, 60, 0) 70%); animation: ev-sweep2 5s ease-in-out infinite alternate-reverse; }
+@keyframes ev-sweep1 { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
+@keyframes ev-sweep2 { from { transform: rotate(24deg); } to { transform: rotate(-30deg); } }
+@media (prefers-reduced-motion: reduce) { .event-lights i { animation: none; } }
+.lights-btn { position: absolute; left: 10px; bottom: 12px; z-index: 6; }
+.ev-black { position: absolute; inset: 0; z-index: 60; background: #000; opacity: 0; pointer-events: none; }
+.ev-overlay { position: absolute; inset: 0; z-index: 58; overflow-y: auto; background: #08080c; }
+.ev-grave { position: absolute; inset: 0; z-index: 55; display: grid; place-items: center; background: #0d0d10 center / cover; }
+.ev-grave::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,.85) 100%); }
+.ev-grave-box { position: relative; z-index: 1; display: grid; justify-items: center; gap: 10px; max-height: 100%; padding: 12px; }
+.ev-grave-art { image-rendering: pixelated; max-width: 70vw; max-height: 52vh; width: auto; height: auto; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .8)); }
+.ev-grave-name { font: 700 22px Verdana, sans-serif; color: #eee; text-shadow: 0 2px 4px #000; letter-spacing: .5px; }
+.ev-grave-text { font: 400 30px Verdana, sans-serif; color: #c8c8d0; text-shadow: 0 2px 6px #000; }
+.event-panel { width: 340px; max-height: calc(100% - 60px); overflow-y: auto; }
+.event-panel .ev-status { display: grid; gap: 2px; font-size: 12px; color: #dfe6f8; padding: 6px 8px; border-radius: 6px; background: rgba(0, 0, 0, .3); }
+.event-panel .ev-h { margin-top: 8px; font-weight: 700; color: #ffe27a; }
+.event-panel .ev-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.event-panel .ev-danger { background: #8e1818; color: #fff; border-color: #ff6b6b; }
+/* the page that is left */
+.finale-host { position: fixed; inset: 0; overflow-y: auto; background: #08080c; }
+.fin { min-height: 100%; background: radial-gradient(ellipse at 50% 0%, #2a0a0e 0%, #08080c 60%); color: #e9e9ee; font-family: Verdana, sans-serif; }
+.fin-inner { max-width: 880px; margin: 0 auto; padding: 28px 16px 60px; }
+.fin-back { margin-bottom: 8px; }
+.fin-title { margin: 8px 0 14px; font-size: 34px; letter-spacing: 1px; color: #e03a3a; text-align: center; text-shadow: 0 0 22px rgba(224, 58, 58, .45); }
+.fin-text p { margin: 0 0 10px; text-align: center; font-size: 16px; line-height: 1.5; color: #d8d8e0; }
+.fin-cols { display: grid; grid-template-columns: 1fr 1.4fr; gap: 18px; margin-top: 24px; align-items: start; }
+@media (max-width: 700px) { .fin-cols { grid-template-columns: 1fr; } }
+.fin h3 { margin: 0 0 8px; color: #e03a3a; font-size: 15px; letter-spacing: .5px; text-transform: uppercase; }
+.fin-board, .fin-player { padding: 12px; border-radius: 10px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .1); }
+.fin-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 6px; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, .06); font-size: 14px; }
+.fin-rank { color: #8a8a96; }
+.fin-blood { display: inline-flex; align-items: center; gap: 4px; color: #ff6b6b; font-weight: 700; }
+.fin-blood img { width: 12px; height: 18px; image-rendering: pixelated; }
+.fin-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.fin-now { flex: 1; font-size: 13px; color: #cfcfd8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-seek { width: 100%; margin: 0 0 8px; }
+.fin-songs { display: grid; gap: 2px; max-height: 52vh; overflow-y: auto; }
+.fin-song { display: grid; grid-template-columns: 30px 1fr auto; gap: 6px; align-items: center; padding: 4px; border-radius: 6px; }
+.fin-song.on { background: rgba(224, 58, 58, .18); }
+.fin-song.hidden-song { opacity: .45; }
+.fin-song-main { min-width: 0; display: grid; }
+.fin-song-main b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-song-main small { color: #8a8a96; }
+.fin-play { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #555; background: #1a1a22; color: #fff; cursor: pointer; }
+.fin-editor { margin: 14px 0; padding: 10px; border-radius: 10px; border: 1px dashed #e03a3a; background: rgba(224, 58, 58, .08); display: grid; gap: 8px; }
+.fin-area { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 6px; border: 1px solid #555; background: #14141a; color: #eee; font: 14px Verdana, sans-serif; }
+.fin-erow { display: flex; flex-wrap: wrap; gap: 6px; }
