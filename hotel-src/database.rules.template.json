@@ -676,6 +676,30 @@
         }
       }
     },
+    "stage": {
+      "furni": {
+        ".read": "@PW@",
+        ".write": "@ADMIN@",
+        "$f": {
+          ".validate": "newData.hasChildren(['kind', 'x', 'y'])",
+          "kind": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 16"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 18"
+          },
+          "dir": {
+            ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6"
+          },
+          "$other": {
+            ".validate": "false"
+          }
+        }
+      }
+    },
     "lobby": {
       "furni": {
         ".read": "@PW@",

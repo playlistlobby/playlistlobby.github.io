@@ -435,6 +435,7 @@ button, input, select { font-family: var(--font); }
 .sixty-qty { flex: 1; min-width: 60px; }
 .sixty-qty-label { font-size: 12px; color: #ffe27a; min-width: 62px; text-align: right; }
 .decorate-btn { position: absolute; bottom: 12px; right: 12px; z-index: 6; }
+.decorate-btn.reset-stage-btn { right: 150px; }
 .carry-turn { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 6; }
 .poster-editor { width: 270px; max-width: calc(100% - 20px); box-sizing: border-box; left: 50%; right: auto; transform: translateX(-50%); top: 24px; max-height: calc(100% - 40px); overflow-y: auto; }
 .poster-editor .poster-file { color: #fff; font-size: 12px; max-width: 100%; }

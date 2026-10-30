@@ -1,3 +1,4 @@
+import { STAGE_DEFAULT, STAGE_KINDS } from "../shared/stage";
 import {
   get,
   onChildAdded,
@@ -119,6 +120,10 @@ import {
   tutDef,
   tutRoomId,
   watchLobbyFurni,
+  watchStageFurni,
+  resetStage,
+  stageDef,
+  STAGE_ID,
   watchStreetsFurni,
   watchMeta,
 } from "../rooms";
@@ -512,7 +517,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const isHome = isOwnRoom || isHideoutRoom;
   let hideoutGuest = false; // (a guest of a hideout: let in by its owner, may look around but is not a member)
   /** your own room, or (an account with the decorator power) any player's room: furniture and posters can be put down here */
-  const adminLobbyEdit = me.isAdmin && (roomId === LOBBY_ID || roomId === STREETS_ID); // the admin furnishes the basement and the street from the same menu, with every piece there is
+  const adminLobbyEdit = me.isAdmin && (roomId === LOBBY_ID || roomId === STREETS_ID || roomId === STAGE_ID); // the admin furnishes the basement and the street from the same menu, with every piece there is
   const adminOwnEdit = me.isAdmin && isOwnRoom; // the admin has every piece there is in his own room too (and the landlord's window)
   let buildCmd = false; // /build (emil and the admin): the whole catalogue in any room they may build in
   const mayFurnish = isHome || (me.decorator && roomId.startsWith("u_")) || adminLobbyEdit;
@@ -710,7 +715,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** you can edit your own room; the admin can also edit the public room's extra furniture */
   /** what you may do in this hideout (the owner builds always; a member when the owner allows it and building is not locked) */
   const hideoutCan = () => hideoutRole({ owner: def.ownerUid ?? undefined, lock: def.hideout?.lock, members: def.hideout?.members }, me.uid, me.isAdmin);
-  const isOwner = () => def.ownerUid === me.uid || ((def.id === LOBBY_ID || def.id === STREETS_ID) && me.isAdmin) || (isHideoutRoom && hideoutCan().canBuild);
+  const isOwner = () => def.ownerUid === me.uid || ((def.id === LOBBY_ID || def.id === STREETS_ID || def.id === STAGE_ID) && me.isAdmin) || (isHideoutRoom && hideoutCan().canBuild);
 
   // ---- DOM ---------------------------------------------------------------------
   const canvas = h("canvas", { class: "room-canvas" });
@@ -859,6 +864,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** Only for accounts with the decorator power, in somebody else's room: opens the furnishing menu there. */
   const decorateBtn = h("button", { class: "btn small decorate-btn hidden", onclick: () => enterFurnish() }, adminLobbyEdit ? "🛠 Edit room" : "🛠 Decorate");
   stage.append(decorateBtn);
+  /** the admin on the event stage: puts the stage back the way it starts (everything he moved is undone) */
+  const resetStageBtn = h("button", { class: "btn small decorate-btn reset-stage-btn hidden", onclick: () => { if (window.confirm("Put the stage back the way it started? Everything you moved or added is lost.")) void resetStage(STAGE_DEFAULT).then(() => toast("The stage is back as it was."), (err) => toast((err as Error).message, "err")); } }, "↺ Reset stage");
+  stage.append(resetStageBtn);
   /** The admin in his own room: the landlord's window (colours, bigger room, skins, stash box) without going to the shop. */
   const landlordBtn = h("button", { class: "btn small decorate-btn landlord-btn hidden", onclick: () => { if (!landlordApi) landlordApi = openLandlord(stage, ctx, () => panel.refresh(), () => { landlordApi = null; }); } }, "🏠 Landlord");
   stage.append(landlordBtn);
@@ -868,6 +876,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     carryTurnBtn.classList.toggle("hidden", !(it?.furniture && !furnishOn && mayFurnish && FURNI_KINDS[it.id]?.rotatable));
     diceBar.classList.toggle("hidden", !(it?.rolls && !furnishOn));
     landlordBtn.classList.toggle("hidden", !(adminOwnEdit && !furnishOn));
+    resetStageBtn.classList.toggle("hidden", !(roomId === STAGE_ID && me.isAdmin && !furnishOn));
     decorateBtn.classList.toggle("hidden", !(((me.decorator && !isOwnRoom && roomId.startsWith("u_")) || adminLobbyEdit) && !furnishOn));
   }
   /** the name of whoever owns a BeatShop that stands in somebody else's room (looked up the first time you point at it) */
@@ -884,6 +893,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
     else if (hoverObj && hoverObj.kind === "reddoor") text = "Red door";
+    else if (hoverObj && hoverObj.kind === "stageexit") text = "Door: back to the basement";
     else if (hoverObj && hoverObj.kind === "pmerchant") text = "pets bih: buy a pet";
     else if (hoverObj && hoverObj.kind === "mypet") text = "Your pet: tap to pick it up";
     else if (hoverObj && hoverObj.kind === "hlandlord") text = "Landlord: hideouts";
@@ -1021,7 +1031,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     });
     roomTitle.textContent = def.ownerName ? `${def.name} · by ${def.ownerName}` : def.name;
     stage.classList.toggle("horror", def.theme.style === "grime" || (def.theme.style === "street" && !STREETS_DAY));
-    stage.classList.toggle("street", def.theme.style === "street");
+    stage.classList.toggle("street", def.theme.style === "street");
     defListeners.forEach((l) => l());
   }
 
@@ -1056,7 +1066,24 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   resizeObs.observe(stage);
 
   const toScreen = (p: Pt): Pt => ({ x: offX + p.x * scale, y: offY + p.y * scale });
+  /** how high (px) the floor is on a tile: the pieces of the stage floor are raised */
+  function raiseAt(x: number, y: number): number {
+    if (roomId !== STAGE_ID) return 0;
+    let r = 0;
+    for (const f of def.furni) {
+      const k = FURNI_KINDS[f.kind];
+      if (!k.flat || !k.surface) continue;
+      const q = footprint(f.kind, f.dir);
+      if (x >= f.x && x < f.x + q.w && y >= f.y && y < f.y + q.h) r = Math.max(r, k.surface);
+    }
+    return r;
+  }
   function tileAt(mx: number, my: number): Pt | null {
+    const flat = tileAtFlat(mx, my);
+    if (roomId === STAGE_ID) { const up = tileAtFlat(mx, my + 32 * scale); if (up && raiseAt(up.x, up.y) >= 32) return up; } // (pointing at the top of the raised stage floor)
+    return flat;
+  }
+  function tileAtFlat(mx: number, my: number): Pt | null {
     const u = (mx - offX) / scale / (TILE_W / 2);
     const v = (my - offY) / scale / (TILE_H / 2);
     const tx = Math.floor((u + v) / 2);
@@ -1224,7 +1251,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (obj.kind === "mypet") pickUpMyPet();
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
-      else if (obj.kind === "reddoor") redDoorSay();
+      else if (obj.kind === "reddoor") redDoorTap();
+      else if (obj.kind === "stageexit") ctx.navigate("room", { roomId: LOBBY_ID, from: STAGE_ID });
       else if (obj.kind === "bagman") startBagman();
       else if (obj.kind === "minesixty") startMinesSixty();
       else if (obj.kind === "mrock") startMine(obj.id);
@@ -1305,7 +1333,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj?.kind === "scustomer" && streetsApi && !target) opts.push({ label: "Serve", target: streetsApi.hoverText(obj.id)?.split(":")[0] ?? "Customer", action: () => streetsApi?.click(obj.id) });
     if (obj && FURNI_KINDS[obj.kind!]?.opens === "beatshop") opts.push({ label: "Open", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
     if (obj?.kind === "hchest") opts.push({ label: "Open", target: "Shared stash", action: () => startBag(obj.id) });
-    if (obj?.kind === "reddoor") opts.push({ label: "Knock", target: "Red door", action: () => redDoorSay() });
+    if (obj?.kind === "stageexit") opts.push({ label: "Leave", target: "Exit door", action: () => ctx.navigate("room", { roomId: LOBBY_ID, from: STAGE_ID }) });
+    if (obj?.kind === "reddoor") opts.push({ label: "Knock", target: "Red door", action: () => redDoorTap() });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
     if (obj?.kind === "hlandlord") opts.push({ label: "Talk", target: HIDEOUT_LANDLORD.name, action: () => startHideoutLandlord() });
     if (isBagKind(obj?.kind)) opts.push({ label: "Change clothes", target: FURNI_KINDS[obj!.kind!].label, action: () => startBag(obj!.id) });
@@ -1329,7 +1358,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** Picks a piece of furniture up: in your own room it goes into the toolbox's storage (the server does it); the admin removes the basement's extras. */
   async function pickUpPiece(f: PlacedFurni): Promise<void> {
     try {
-      if (def.id === LOBBY_ID || def.id === STREETS_ID) await removeFurni(def.id, f.id);
+      if (def.id === LOBBY_ID || def.id === STREETS_ID || def.id === STAGE_ID) await removeFurni(def.id, f.id);
       else await storeFromRoom(me, def.id, f);
       panel.refresh();
     } catch (err) { toast((err as Error).message || "Couldn't pick that up", "err"); }
@@ -1412,7 +1441,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   // ---- furniture placing (owner) ---------------------------------------------------
   function tryPlace(kind: string, t: Pt): void {
     const k = FURNI_KINDS[kind];
-    const adminLobby = (def.id === LOBBY_ID || def.id === STREETS_ID) && me.isAdmin;
+    const adminLobby = (def.id === LOBBY_ID || def.id === STREETS_ID || def.id === STAGE_ID) && me.isAdmin;
     if (!k || (!k.placeable && !(adminLobby && (k.nitro || INTERACTIVE_KINDS.has(kind))))) return;
     if (!adminLobby && def.furni.length >= MAX_FURNI) return say(`That's the limit: ${MAX_FURNI} pieces per room.`, "warn");
     const fp = footprint(kind, toolDir);
@@ -1456,7 +1485,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       placing: () => fzPlacing,
       done: exitFurnish,
       turn: fzTurn,
-      ...(adminLobbyEdit || adminOwnEdit || buildCmd || (me.isAdmin && isHideoutRoom) ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter" && k !== "f_planter_auto").sort((a, b) => FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}),
+      ...(adminLobbyEdit || adminOwnEdit || buildCmd || (me.isAdmin && isHideoutRoom) ? { catalog: () => Object.keys(FURNI_KINDS).filter((k) => (FURNI_KINDS[k].nitro || INTERACTIVE_KINDS.has(k)) && !isFixedPiece(k) && !/^(bed|bag)_/.test(k) && k !== "stashbox" && k !== "boombox" && k !== "f_planter" && k !== "f_planter_auto").sort((a, b) => (roomId === STAGE_ID ? +STAGE_KINDS.has(b) - +STAGE_KINDS.has(a) : 0) || FURNI_KINDS[a].label.localeCompare(FURNI_KINDS[b].label)) } : {}), // (on the stage the stage pieces come first)
       store: () => { const f = fzPiece(); if (f) void (adminLobbyEdit ? (def.id === LOBBY_ID && /^lobby\d+$/.test(f.id) ? Promise.reject(new Error("That one is built into the basement: move it instead.")) : def.id === LOBBY_ID && isFixedLobbyPiece(f.id) ? Promise.reject(new Error("That one can't be removed.")) : removeFurni(def.id, f.id)) : storeFromRoom(me, def.id, f)).then(() => { fzSel = null; refreshFz(); }, (err) => say((err as Error).message, "warn")); },
       pocket: () => { const f = fzPiece(); if (f) void pocketFromRoom(me, def.id, f).then(() => { fzSel = null; refreshFz(); playSfx("select", 0.4); }, (err) => say((err as Error).message, "warn")); },
       select: (id) => { fzSel = id; fzPlacing = null; refreshFz(); },
@@ -1503,7 +1532,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** moves or turns a piece: the basement's pieces are rewritten in its own list (the ones built into the basement can't move) */
   async function movePieceHere(f: PlacedFurni, spot: Spot): Promise<void> {
     if (!adminLobbyEdit) return movePiece(def.id, f, spot, me);
-    const base = def.id === STREETS_ID ? "streets/furni" : "lobby/furni";
+    const base = def.id === STREETS_ID ? "streets/furni" : def.id === STAGE_ID ? "stage/furni" : "lobby/furni";
     if (def.id === STREETS_ID ? isBuiltInStreetPiece(f.id) : /^lobby\d+$/.test(f.id)) { await set(ref(db, `${base}/${f.id}`), { kind: f.kind, x: spot.x, y: spot.y, ...(spot.dir ? { dir: spot.dir } : {}) }); return; } // a piece built into the room: its new spot is kept under its own id
     if (def.id === LOBBY_ID && isFixedLobbyPiece(f.id)) throw new Error("That one can't be moved.");
     await update(ref(db, `${base}/${f.id}`), { x: spot.x, y: spot.y, dir: spot.dir || null });
@@ -2730,6 +2759,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const sixtyTimers: number[] = [];
   const sixtyAfter = (ms: number, fn: () => void) => { sixtyTimers.push(window.setTimeout(() => { if (!disposed) fn(); }, ms)); };
   const sixtySay = (text: string, ms = 4200) => { sixtyBubble = { text, until: performance.now() + ms }; };
+  const redDoorTap = (): void => { if (import.meta.env.MODE === "emulator") ctx.navigate("room", { roomId: STAGE_ID, from: LOBBY_ID }); else redDoorSay(); }; // (in the test the red door leads to the event stage)
   const redDoorSay = (): void => sixtySay("idag d.30 kl 20, Blodig Oktober deluxe album listening party, 1/1 drops", 6000); // (the red door behind 6ixty)
   /** he has something for you: the introduction's next step, or one of his jobs (the lighter job a couple of hours after the first blood) */
   const sixtyWants = (): boolean => {
@@ -3456,7 +3486,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
+    const want = roomId === STAGE_ID ? { x: 1, y: 16 } : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -4058,6 +4088,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       : em?.def.actions?.includes("wav") ? Math.floor(now / 250) % 2
       : figureAnimated(p.figure) ? Math.floor(now / 110) % 24 // a garment with an animation of its own (sparklers...) keeps playing while you stand still
       : 0;
+    if (roomId === STAGE_ID && !sitting) { const tt = moving ? (now - p.stepStart) / stepOf(p) : 1; yOff -= raiseAt(p.from.x, p.from.y) * (1 - tt) + raiseAt(p.to.x, p.to.y) * tt; } // (the stage floor is raised: whoever walks on it is lifted)
     return { opts: { figure: withLook(roulette ? roulette.figureFor(p.uid, p.figure, sitting) : p.figure, p), dir, headDir: dir, actions, gesture, frame }, yOff };
   }
 
@@ -5497,7 +5528,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     // until you've opened the door once, it flashes to show you where to go
     const flashing = isOwnRoom && !me.seenDoor && !introUntil && started;
     const glow = Math.max(hoverDoor ? 1 : 0, flashing ? 0.55 + 0.45 * Math.sin(performance.now() / 280) : 0);
-    if (!greenScreen) doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime" || def.theme.style === "street");
+    if (!greenScreen && roomId !== STAGE_ID) doorBox = drawRoomDoor(g, def.doorX, toScreen, scale, glow, def.theme.style === "grime" || def.theme.style === "street");
     const doorHint = roomId === LOBBY_ID && lighterStage(me) === "door"; // the lighter job: the shop's door flashes until you have been through it
     extraDoorBoxes = greenScreen ? [] : (def.extraDoors ?? []).map((d, i) => {
       const flash = doorHint && d.to === SHOP_ID;
@@ -6071,7 +6102,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const lift = yOff * scale;
       const smoking = !isMoving(p, now) && isSmoking(p);
 
-      boxes.push({ id: p.uid, x0: feet.x - 22 * scale, x1: feet.x + 22 * scale, y0: feet.y - FEET_Y * scale, y1: feet.y + 8 * scale, depth: pos.x + pos.y });
+      boxes.push({ id: p.uid, x0: feet.x - 22 * scale, x1: feet.x + 22 * scale, y0: feet.y - FEET_Y * scale + (roomId === STAGE_ID ? lift : 0), y1: feet.y + 8 * scale + (roomId === STAGE_ID ? lift : 0), depth: pos.x + pos.y });
       list.push({
         depth: aboveFrontPieces(pos.x + pos.y + 0.5 + (p.sit && !isMoving(p, now) ? 1.2 : 0) + (p.uid === me.uid ? 0.02 : 0), pos), // (you stand on top of anyone on your tile)
         draw: () => {
@@ -6211,6 +6242,18 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       const drawWatch = window.setInterval(() => { if (!disposed && raffleNow.round && serverNow() >= raffleNow.round.drawAt) void call(me, "raffleTick").catch(() => undefined); }, 30_000);
       unsubs.push(() => window.clearInterval(drawWatch));
       void call(me, "raffleTick").catch(() => undefined); // (no round yet, or a draw that is due)
+      return;
+    }
+    if (roomId === STAGE_ID) {
+      applyDef(stageDef());
+      start();
+      let firstLook = true;
+      unsubs.push(watchStageFurni((pieces) => { // everything on the stage comes from the database; the first admin in puts the starting layout there
+        if (disposed) return;
+        const first = firstLook; firstLook = false;
+        if (first && !pieces.length && me.isAdmin) { void resetStage(STAGE_DEFAULT).catch(() => undefined); return; } // (the first admin in puts the starting layout there: it comes back as the next snapshot)
+        applyDef(stageDef(pieces));
+      }));
       return;
     }
     if (isMines) {

@@ -159,6 +159,16 @@ export function loadNitro(path: string): Promise<NitroFurni | null> {
         }
         g.putImageData(img, 0, 0);
       }) : Promise.reject(new Error("no door art"))))
+      : path === "derived:bardesk9" // the gold bar desk in its colour 9 (orange-red): the two coloured layers (c and d) are multiplied by it, the gold trim stays
+      ? loadNitro("furni/mode_gold_bardesk.nitro").then((n) => (n ? derive(n, (g) => {
+        for (const [name, fr] of Object.entries((n.json as any).spritesheet?.frames ?? {}) as Array<[string, { frame: { x: number; y: number; w: number; h: number } }]>) {
+          if (!/_64_[cd]_/.test(name)) continue;
+          const { x, y, w, h } = fr.frame;
+          const img = g.getImageData(x, y, w, h), d = img.data;
+          for (let i = 0; i < d.length; i += 4) { d[i] = Math.round(d[i] * 0xe1 / 255); d[i + 1] = Math.round(d[i + 1] * 0x42 / 255); d[i + 2] = Math.round(d[i + 2] * 0x18 / 255); }
+          g.putImageData(img, x, y);
+        }
+      }) : Promise.reject(new Error("no desk art"))))
       : path === "derived:blue_board" // the notice board: the ideas board in blue
       ? loadNitro("furni/f_ideaboard.nitro").then((n) => (n ? derive(n, (g, w, h) => {
         const img = g.getImageData(0, 0, w, h);

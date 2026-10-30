@@ -78,6 +78,8 @@ import { RAFFLE_PRIZE_ID } from "./shared/raffle";
 import { MINES_H, MINES_ID, MINES_OPEN, MINES_PIECES, MINES_W } from "./shared/mines";
 import { ARRIVAL_ID, ARRIVAL_SIZE, isBuiltInStreetPiece, isStreetsRoom, mergeStreetPieces, StreetOverride, STREET_PIECES, STREETS_H, STREETS_ID, STREETS_W } from "./shared/streets";
 import { streetsFlagOn } from "./streetsFlag";
+import { STAGE_DOOR_X, STAGE_H, STAGE_ID, STAGE_W } from "./shared/stage";
+export { STAGE_ID };
 import { HIDEOUT_MAX_FURNI, hideoutRoomId, isHideoutId, levelOfSize } from "./shared/hideout";
 export { hideoutRoomId, isHideoutId };
 export { MINES_ID };
@@ -175,6 +177,16 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the pet merchant in the shop room: a basket (for now: tap it to buy a pet)
   petbasket: { id: "petbasket", label: "Pet merchant", icon: "🐾", w: 1, h: 1, height: 40, color: "#c8a060", placeable: false, nitro: "furni/market_c19_basket.nitro", rotatable: true, fixed: true, opens: "pets" },
   hdoor: { id: "hdoor", label: "Hideouts", icon: "🚪", w: 1, h: 1, height: 70, color: "#3d5a73", placeable: false, nitro: "furni/teleport_door.nitro", rotatable: true, fixed: true, flat: true, wall: true, wallArt: { left: 2, back: 4 }, opens: "hideouts" },
+  // ---- the event stage (see shared/stage.ts): the admin builds it from these. The stage floor is walked on, and the small pieces on it stand on top of it ----
+  stagefloor: { id: "stagefloor", label: "Stage floor", icon: "🎭", w: 2, h: 2, height: 32, color: "#e8e4ee", placeable: false, nitro: "furni/easter_c26_elvenstage.nitro", rotatable: true, flat: true, surface: 32 },
+  // the way out of the stage: a door in the left wall, at the far end (it leads back to the basement). The stage room has no door on its back wall.
+  stageexit: { id: "stageexit", label: "Exit door", icon: "🚪", w: 1, h: 1, height: 70, color: "#3d5a73", placeable: false, nitro: "furni/teleport_door.nitro", rotatable: true, flat: true, wall: true, wallArt: { left: 2, back: 4 } },
+  stagefence: { id: "stagefence", label: "Barrier", icon: "🚧", w: 1, h: 1, height: 40, color: "#e8e8e8", placeable: false, nitro: "furni/hblooza_fnc.nitro", rotatable: true, small: true },
+  stagespeaker: { id: "stagespeaker", label: "Speakers", icon: "🔈", w: 1, h: 1, height: 50, color: "#d8d8e0", placeable: false, nitro: "furni/modern_c17_speakers.nitro", rotatable: true, small: true },
+  stagemic: { id: "stagemic", label: "Microphone", icon: "🎤", w: 1, h: 1, height: 70, color: "#aaaab4", placeable: false, nitro: "furni/ads_idol_mic.nitro", rotatable: true, small: true },
+  djset: { id: "djset", label: "DJ set", icon: "🎧", w: 1, h: 3, height: 80, color: "#2d4d52", placeable: false, nitro: "furni/party_djset.nitro", rotatable: true, small: true },
+  stagebar: { id: "stagebar", label: "Bar desk", icon: "🍸", w: 2, h: 1, height: 40, color: "#e14218", placeable: false, nitro: "derived:bardesk9", rotatable: true },
+  soundtower: { id: "soundtower", label: "Sound machine", icon: "🔊", w: 1, h: 1, height: 100, color: "#30343a", placeable: false, nitro: "furni/sound_machine_pro.nitro", rotatable: true, small: true, states: [0, 1], defaultState: 1 },
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
   // posters: a frame on the wall; the picture inside is the player's own (chosen when it is hung). The one in the shop room is for sale.
   f_poster: { id: "f_poster", label: "Poster", icon: "🖼️", w: 2, h: 1, height: 60, color: "#55595f", placeable: true, nitro: "furni/poster.nitro", rotatable: true, flat: true, wall: true, poster: true, nudge: { x: 0, y: -52 } },
@@ -233,7 +245,7 @@ if (FURNI_KINDS.f_blackjacktable) FURNI_KINDS.f_blackjacktable.opens = "blackjac
 if (FURNI_KINDS.f_cdpress) FURNI_KINDS.f_cdpress.opens = "cdpress"; // (the CD printer: pick one of the Charts songs and press it onto a CD)
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench", "stageexit"]);
 /** the CD player in the basement or a boombox: both play the CD you use on them */
 export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox";
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
@@ -355,7 +367,7 @@ export const MAX_FURNI = 40;
 export const LOBBY_ID = "lobby";
 export const SHOP_ID = "shop";
 /** rooms with no owner that everyone shares (the basement and the shop) */
-export const isPublicRoom = (id: string) => id === LOBBY_ID || id === SHOP_ID || id === MINES_ID || isStreetsRoom(id) || isTutRoom(id);
+export const isPublicRoom = (id: string) => id === LOBBY_ID || id === STAGE_ID || id === SHOP_ID || id === MINES_ID || isStreetsRoom(id) || isTutRoom(id);
 /** The private copy of the basement a brand-new player walks through the introduction in (nobody else can come in, the body bag is not there). */
 export const tutRoomId = (uid: string) => `tut_${uid}`;
 export const isTutRoom = (id: string) => id.startsWith("tut_");
@@ -393,6 +405,27 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
+/** The event stage: a white room like the player rooms, with the stage along the back wall. All its pieces come from the database (stage/furni), so the admin can change every one of them. */
+export const STAGE_THEME: RoomTheme = { floorA: "#dcd9e2", floorB: "#e7e4ec", wall: "#eeedf2", rug: false, rugColor: "#000000" };
+export function stageDef(pieces: PlacedFurni[] = []): RoomDef {
+  return {
+    id: STAGE_ID, name: "The stage", ownerUid: null, ownerName: null, access: "open", w: STAGE_W, h: STAGE_H,
+    theme: { ...STAGE_THEME }, rug: null, furni: pieces.filter((f) => FURNI_KINDS[f.kind]), doorX: STAGE_DOOR_X, doorTo: LOBBY_ID, // (no door on the back wall: the way out is the exit door piece)
+  };
+}
+export function watchStageFurni(cb: (pieces: PlacedFurni[]) => void): Unsubscribe {
+  return onValue(ref(db, "stage/furni"), (s) => {
+    const raw = (s.val() ?? {}) as Record<string, { kind: string; x: number; y: number; dir?: number }>;
+    cb(Object.entries(raw).map(([id, f]) => ({ id, kind: f.kind, x: f.x, y: f.y, dir: f.dir })));
+  }, () => cb([]));
+}
+/** puts the stage back the way it starts: everything taken away, the default pieces put down */
+export async function resetStage(pieces: Array<{ kind: string; x: number; y: number; dir: number }>): Promise<void> {
+  const rows: Record<string, { kind: string; x: number; y: number; dir?: number }> = {};
+  pieces.forEach((p, i) => { rows[`s${String(i + 1).padStart(3, "0")}`] = p.dir ? { kind: p.kind, x: p.x, y: p.y, dir: p.dir } : { kind: p.kind, x: p.x, y: p.y }; });
+  await set(ref(db, "stage/furni"), rows);
+}
+
 export function lobbyDef(extras: PlacedFurni[] = []): RoomDef {
   const streetsOn = streetsFlagOn() || import.meta.env.MODE === "emulator"; // (the elevator only stands there once the streets are open)
   const builtin = LOBBY_BUILTIN.filter((b) => b.id !== "lobby16" || streetsOn).map((b) => { const o = extras.find((e) => e.id === b.id); return o && Number.isFinite(o.x) && Number.isFinite(o.y) ? { ...b, x: o.x, y: o.y, dir: o.dir ?? 0 } : b; });
@@ -646,7 +679,7 @@ export async function createRoom(p: Profile): Promise<string> {
 export const updateRoom = (id: string, patch: Record<string, unknown>) => update(metaRef(id), patch);
 
 /** Furniture of the public room lives under lobby/furni (admin only); everyone else's under their room. */
-const furniPathOf = (roomId: string) => (roomId === LOBBY_ID ? "lobby/furni" : roomId === STREETS_ID ? "streets/furni" : `roomsMeta/${roomId}/furni`);
+const furniPathOf = (roomId: string) => (roomId === LOBBY_ID ? "lobby/furni" : roomId === STAGE_ID ? "stage/furni" : roomId === STREETS_ID ? "streets/furni" : `roomsMeta/${roomId}/furni`);
 
 export async function placeFurni(id: string, kind: string, x: number, y: number, dir = 0): Promise<void> {
   const f = push(ref(db, furniPathOf(id)));
