@@ -8,7 +8,7 @@ export const STAGE_H = 22;
 export const STAGE_DOOR_X = -5; // (nowhere: the stage has no door on its back wall)
 
 /** the pieces made for the stage: they come first in the catalogue there */
-export const STAGE_KINDS: ReadonlySet<string> = new Set(["stagefloor", "djset", "soundtower", "stagespeaker", "stagemic", "stagefence", "stagebar", "stageexit"]);
+export const STAGE_KINDS: ReadonlySet<string> = new Set(["stagefloor", "djset", "soundtower", "stagespeaker", "stagemic", "stagefence", "stagebar", "stagepub", "stageexit"]);
 
 /** the ids of the stage floor blocks baked into the room (see stageDef) */
 export const STAGE_BASE_PREFIX = "stagebase";
@@ -32,6 +32,7 @@ export const STAGE_DEFAULT: StagePiece[] = [
   { kind: "stagespeaker", x: 1, y: 5, dir: 0 }, { kind: "stagespeaker", x: 18, y: 5, dir: 0 },
   // the way out: a door in the left wall at the far end
   { kind: "stageexit", x: 0, y: 20, dir: 2 },
-  // the bar along the left wall
-  ...[10, 12, 14].map((y) => ({ kind: "stagebar", x: 1, y, dir: 2 })),
+  // the pub bar along the left wall, and the gold desks after it
+  { kind: "stagepub", x: 1, y: 8, dir: 2 },
+  ...[15, 17].map((y) => ({ kind: "stagebar", x: 1, y, dir: 2 })),
 ];

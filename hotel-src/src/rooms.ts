@@ -182,6 +182,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the way out of the stage: a door in the left wall, at the far end (it leads back to the basement). The stage room has no door on its back wall.
   stageexit: { id: "stageexit", label: "Exit door", icon: "🚪", w: 1, h: 1, height: 70, color: "#3d5a73", placeable: false, nitro: "furni/teleport_door.nitro", rotatable: true, flat: true, wall: true, wallArt: { left: 2, back: 4 } },
   stagefence: { id: "stagefence", label: "Barrier", icon: "🚧", w: 1, h: 1, height: 40, color: "#e8e8e8", placeable: false, nitro: "furni/hblooza_fnc.nitro", rotatable: true, small: true },
+  // the pub bar (habbo's public_x_bar): seven tiles of counter with taps, glasses and a till
+  stagepub: { id: "stagepub", label: "Pub bar", icon: "🍺", w: 7, h: 1, height: 60, color: "#2a3036", placeable: false, nitro: "furni/public_x_bar.nitro", rotatable: true },
   stagespeaker: { id: "stagespeaker", label: "Speakers", icon: "🔈", w: 1, h: 1, height: 50, color: "#d8d8e0", placeable: false, nitro: "furni/modern_c17_speakers.nitro", rotatable: true, small: true },
   stagemic: { id: "stagemic", label: "Microphone", icon: "🎤", w: 1, h: 1, height: 70, color: "#aaaab4", placeable: false, nitro: "furni/ads_idol_mic.nitro", rotatable: true, small: true },
   // the DJ booth (habbo's classic7_djbooth) with its two screens playing the album's lettering, pixelated, in a loop (made from "dj deck thing.mp4": see the art's 24 frames)
