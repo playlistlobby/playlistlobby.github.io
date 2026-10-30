@@ -184,7 +184,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   stagefence: { id: "stagefence", label: "Barrier", icon: "🚧", w: 1, h: 1, height: 40, color: "#e8e8e8", placeable: false, nitro: "furni/hblooza_fnc.nitro", rotatable: true, small: true },
   stagespeaker: { id: "stagespeaker", label: "Speakers", icon: "🔈", w: 1, h: 1, height: 50, color: "#d8d8e0", placeable: false, nitro: "furni/modern_c17_speakers.nitro", rotatable: true, small: true },
   stagemic: { id: "stagemic", label: "Microphone", icon: "🎤", w: 1, h: 1, height: 70, color: "#aaaab4", placeable: false, nitro: "furni/ads_idol_mic.nitro", rotatable: true, small: true },
-  djset: { id: "djset", label: "DJ set", icon: "🎧", w: 1, h: 3, height: 80, color: "#2d4d52", placeable: false, nitro: "furni/party_djset.nitro", rotatable: true, small: true },
+  // the DJ booth (habbo's classic7_djbooth) with its two screens playing the album's lettering, pixelated, in a loop (made from "dj deck thing.mp4": see the art's 24 frames)
+  djset: { id: "djset", label: "DJ booth", icon: "🎧", w: 2, h: 1, height: 80, color: "#2d4d52", placeable: false, nitro: "furni/djbooth_blodig.nitro", rotatable: true, small: true, states: [0], defaultState: 0 },
   stagebar: { id: "stagebar", label: "Bar desk", icon: "🍸", w: 2, h: 1, height: 40, color: "#e14218", placeable: false, nitro: "derived:bardesk9", rotatable: true },
   soundtower: { id: "soundtower", label: "Sound machine", icon: "🔊", w: 1, h: 1, height: 100, color: "#30343a", placeable: false, nitro: "furni/sound_machine_pro.nitro", rotatable: true, small: true, states: [0, 1], defaultState: 1 },
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },

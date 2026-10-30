@@ -22,7 +22,7 @@ export const STAGE_DEFAULT: StagePiece[] = [
   // the stage: twenty blocks, the whole width of the room along the back wall and 4 deep
   ...floorRow(0), ...floorRow(2),
   // the DJ set on the back of the stage, a sound tower at each end, the speakers at the front corners and the mics at the front
-  { kind: "djset", x: 9, y: 1, dir: 2 },
+  { kind: "djset", x: 9, y: 1, dir: 0 },
   { kind: "soundtower", x: 1, y: 1, dir: 0 }, { kind: "soundtower", x: 18, y: 1, dir: 0 },
   { kind: "stagespeaker", x: 0, y: 3, dir: 0 }, { kind: "stagespeaker", x: 19, y: 3, dir: 0 },
   { kind: "stagemic", x: 8, y: 3, dir: 4 }, { kind: "stagemic", x: 11, y: 3, dir: 4 },
