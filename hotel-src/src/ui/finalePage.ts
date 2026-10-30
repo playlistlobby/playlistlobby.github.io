@@ -10,6 +10,8 @@ import { assetUrl } from "../assetUrl";
 import { OGEP_TRACKS } from "../shared/cds";
 import { BLOOD_ICON } from "../items";
 import { h, toast } from "./dom";
+import { openTshirtOrders } from "./tshirtShop";
+import type { TshirtShopApi } from "./tshirtShop";
 import type { Finale, FinaleSong } from "../shared/event";
 
 /** the key a song is hidden under (the database does not allow . # $ [ ] / in a key) */
@@ -103,6 +105,7 @@ export function mountFinale(host: HTMLElement, o: FinaleOptions = {}): () => voi
 
   // ---- the editor (the admin and emil) ----
   let editor: HTMLElement | null = null;
+  let orders: TshirtShopApi | null = null; // (the t-shirt orders: name, email, phone, address, size)
   if (o.staff) {
     const area = h("textarea", { class: "fin-area", rows: "5", placeholder: "The text on the page (a blank line starts a new paragraph)" }) as HTMLTextAreaElement;
     area.value = "";
@@ -113,7 +116,8 @@ export function mountFinale(host: HTMLElement, o: FinaleOptions = {}): () => voi
       area,
       h("div", { class: "fin-erow" },
         h("button", { class: "btn small primary", type: "button", onclick: () => void set(ref(db, "public/finale/text"), area.value.slice(0, 2000)).then(() => toast("The text is saved."), (e) => toast((e as Error).message, "err")) }, "Save the text"),
-        h("button", { class: "btn small", type: "button", onclick: () => void call<{ board: number; songs: number }>(o.staff!, "eventFinaleRefresh").then((r) => toast(`Made again: ${r.board} on the leaderboard, ${r.songs} songs.`), (e) => toast((e as Error).message, "err")) }, "Make the leaderboard and song list again")));
+        h("button", { class: "btn small", type: "button", onclick: () => void call<{ board: number; songs: number }>(o.staff!, "eventFinaleRefresh").then((r) => toast(`Made again: ${r.board} on the leaderboard, ${r.songs} songs.`), (e) => toast((e as Error).message, "err")) }, "Make the leaderboard and song list again"),
+        h("button", { class: "btn small", type: "button", onclick: () => { if (!orders) orders = openTshirtOrders(root, () => { orders = null; }); } }, "📦 T-shirt orders")));
     (editor as unknown as { _off: () => void })._off = filler;
   }
 
@@ -135,6 +139,7 @@ export function mountFinale(host: HTMLElement, o: FinaleOptions = {}): () => voi
   return () => {
     stopped = true;
     stop();
+    orders?.close();
     (editor as unknown as { _off?: () => void } | null)?._off?.();
     audio.pause();
     audio.removeAttribute("src");

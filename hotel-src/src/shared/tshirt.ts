@@ -1,5 +1,5 @@
 // The t-shirt shop at the album event: a real t-shirt pre-ordered for real money (200 kr). Only for players who are on the event stage right now.
-// The name and address given when buying are only used to post the shirt: they are stored under tshirtOrders/<payment> (only the admin can read them).
+// The name, address, email and phone number given when buying are only used to post the shirt: they are stored under tshirtOrders/<payment> (only the admin can read them).
 
 /** 200 kr, in øre */
 export const TSHIRT_PRICE_ORE = 20_000;
@@ -15,7 +15,7 @@ export const TSHIRT_DESIGNS = [
 export type TshirtDesign = (typeof TSHIRT_DESIGNS)[number]["id"];
 export const isTshirtDesign = (v: unknown): v is TshirtDesign => TSHIRT_DESIGNS.some((d) => d.id === v);
 
-export interface TshirtOrder { design: TshirtDesign; name: string; street: string; zip: string; city: string; country: string; size: TshirtSize }
+export interface TshirtOrder { design: TshirtDesign; name: string; email: string; phone: string; street: string; zip: string; city: string; country: string; size: TshirtSize }
 
 const clean = (v: unknown, min: number, max: number, what: string): string => {
   const s = typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim() : "";
@@ -32,5 +32,9 @@ export function cleanTshirtOrder(raw: unknown): TshirtOrder {
   if (!(TSHIRT_SIZES as readonly string[]).includes(size)) throw new Error("Pick a size.");
   const zip = clean(o.zip, 3, 10, "your postcode");
   if (!/^[A-Za-z0-9 -]{3,10}$/.test(zip)) throw new Error("That postcode doesn't look right.");
-  return { design: o.design, name: clean(o.name, 3, 60, "your full name"), street: clean(o.street, 4, 80, "your street and number"), zip, city: clean(o.city, 2, 50, "your city"), country: clean(o.country, 2, 40, "your country"), size: size as TshirtSize };
+  const email = clean(o.email, 5, 100, "your email");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Error("That email doesn't look right.");
+  const phone = clean(o.phone, 6, 20, "your phone number");
+  if (!/^\+?[0-9 ()-]{6,20}$/.test(phone) || phone.replace(/\D/g, "").length < 6) throw new Error("That phone number doesn't look right.");
+  return { design: o.design, name: clean(o.name, 3, 60, "your full name"), email, phone, street: clean(o.street, 4, 80, "your street and number"), zip, city: clean(o.city, 2, 50, "your city"), country: clean(o.country, 2, 40, "your country"), size: size as TshirtSize };
 }

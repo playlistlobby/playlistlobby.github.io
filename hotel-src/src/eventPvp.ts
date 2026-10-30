@@ -37,7 +37,6 @@ export function mountEventPvp(o: EventPvpOptions): EventPvpApi {
   let timer = 0;
   let swinging = false;
   let readyAt = 0;
-  let lastTarget: string | null = null;
   let disposed = false;
 
   const stops = [
@@ -95,7 +94,6 @@ export function mountEventPvp(o: EventPvpOptions): EventPvpApi {
     try {
       const r = await call<{ died?: boolean }>(me, "eventHit", { target: uid });
       readyAt = serverNow() + EVENT_PVP.swingMs;
-      lastTarget = uid;
       stopFight(); // (one tap, one swing)
       if (r.died) o.say(`You killed ${o.nameOf(uid)}.`);
     } catch (err) {
@@ -131,18 +129,6 @@ export function mountEventPvp(o: EventPvpOptions): EventPvpApi {
       g.restore();
     }
     while (splats.length && now - splats[0].at > 1400) splats.shift();
-    // the number over the head of the one you last hit: how long until you can swing again
-    if (lastTarget === uid) {
-      const remain = readyAt - serverNow();
-      if (remain > 0) {
-        const text = (remain / 1000).toFixed(1);
-        g.save();
-        g.font = `bold ${Math.round(13 * s)}px Verdana, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
-        g.lineWidth = 3 * s; g.strokeStyle = "rgba(0,0,0,.85)"; g.strokeText(text, cx, headY - 20 * s);
-        g.fillStyle = "#ffffff"; g.fillText(text, cx, headY - 20 * s);
-        g.restore();
-      }
-    }
     void FEET_Y;
   }
 

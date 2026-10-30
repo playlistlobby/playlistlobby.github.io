@@ -5,7 +5,6 @@ import { fail } from "../ctx";
 import type { Ctx } from "../ctx";
 import { EVENT_PROTECT_MS, EVENT_PVP, eventKilled, FINALE_HIDE_NAMES, KILL_WAKE_MS } from "../../../src/shared/event";
 import type { EventState, Finale, FinaleSong } from "../../../src/shared/event";
-import { swingRoll } from "../../../src/shared/streets";
 import { byRating, parseSongs } from "../../../src/shared/songs";
 
 const TESTER_EMAIL = "emil@users.bobba.invalid";
@@ -128,7 +127,7 @@ export const eventHit: Action = {
     if (c.now - last < EVENT_PVP.swingMs) fail("Your arm is still swinging.");
     c.extra[`event/swing/${c.uid}`] = c.now;
     const hp = Number(await c.db.get<number>(`event/hp/${target}`)) || EVENT_PVP.maxHp;
-    const { dmg } = swingRoll("knife"); // (a swing that misses is a splash: 0)
+    const dmg = EVENT_PVP.minDmg + Math.floor(Math.random() * (EVENT_PVP.maxDmg - EVENT_PVP.minDmg + 1)); // (a knife always hits for 1-3)
     const sixty = await isSixty(c, target);
     const left = sixty ? hp : Math.max(0, hp - dmg); // (6ixty: the hit is shown, but his hit points stay)
     const key = (t: number): string => `rooms/stage/events/f${c.uid.slice(0, 8)}${t.toString(36)}`;

@@ -16,7 +16,7 @@ export const KILL_WAKE_MS = 9000;
 export const EVENT_PROTECT_MS = 10_000;
 
 /** the fighting in the changed room: the same rules as the street, but nothing is lost when you die */
-export const EVENT_PVP = { maxHp: 10, swingMs: 1500, reach: 2 } as const;
+export const EVENT_PVP = { maxHp: 10, swingMs: 4000, reach: 2, minDmg: 1, maxDmg: 3 } as const;
 
 /** a death: the screen says it for this long (the countdown); at 7 it fades to black and the music fades out; then the grave for 5 seconds; then black, and the page that is left */
 export const DEAD_SECS = 20;

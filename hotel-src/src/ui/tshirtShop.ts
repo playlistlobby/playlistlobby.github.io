@@ -23,7 +23,7 @@ export function openTshirtShop(host: HTMLElement, ctx: Ctx, onClose: () => void)
   host.append(el);
   let closed = false;
   let busy = false;
-  const v = { design: "" as TshirtDesign | "", name: "", street: "", zip: "", city: "", country: "Danmark", size: "" };
+  const v = { design: "" as TshirtDesign | "", name: "", email: "", phone: "", street: "", zip: "", city: "", country: "Danmark", size: "" };
   const pics: Partial<Record<TshirtDesign, string>> = {}; // the pictures shown on the cards (a data address or a file)
 
   async function loadPictures(): Promise<void> {
@@ -32,7 +32,7 @@ export function openTshirtShop(host: HTMLElement, ctx: Ctx, onClose: () => void)
     render();
   }
 
-  const field = (key: "name" | "street" | "zip" | "city" | "country", label: string, ph: string, auto: string): HTMLElement =>
+  const field = (key: "name" | "email" | "phone" | "street" | "zip" | "city" | "country", label: string, ph: string, auto: string): HTMLElement =>
     h("label", { class: "tshirt-field" }, h("span", { class: "hint" }, label),
       h("input", { type: "text", class: "tshirt-input", maxLength: 80, placeholder: ph, value: v[key], autocomplete: auto, oninput: (e: Event) => { v[key] = (e.target as HTMLInputElement).value; } }));
 
@@ -85,13 +85,15 @@ export function openTshirtShop(host: HTMLElement, ctx: Ctx, onClose: () => void)
       h("div", { class: "tshirt-cards" }, ...TSHIRT_DESIGNS.map(card)),
       h("div", { class: "tshirt-form" },
         field("name", "Full name", "Your name, as on the parcel", "name"),
+        field("email", "Email", "you@example.com", "email"),
+        field("phone", "Phone number", "+45 12 34 56 78", "tel"),
         field("street", "Street and number", "Street 12, 2. th", "address-line1"),
         h("div", { class: "tshirt-row" }, field("zip", "Postcode", "2100", "postal-code"), field("city", "City", "København", "address-level2")),
         field("country", "Country", "Danmark", "country-name"),
         h("div", { class: "hint" }, "Size"),
         sizes),
       h("button", { class: "btn small primary tshirt-go", disabled: busy, onclick: () => void buy() }, busy ? "…" : `Pre-order · ${kr(TSHIRT_PRICE_ORE)}`),
-      h("div", { class: "hint" }, "You pay on a payment page. Your name and address are only used to send the shirt."));
+      h("div", { class: "hint" }, "You pay on a payment page. Your name, address, email and phone number are only used to send the shirt and to reach you about it."));
   }
   render();
   void loadPictures();
@@ -130,13 +132,14 @@ export function openTshirtOrders(host: HTMLElement, onClose: () => void): Tshirt
     if (closed) return;
     const rows = Object.entries((s.val() ?? {}) as Record<string, OrderRow>).map(([id, r]) => ({ id, ...r })).sort((a, b) => a.at - b.at);
     const paid = rows.filter((r) => r.status === "paid" || r.status === "ordered");
-    const csv = ["player;design;name;street;zip;city;country;size;status"].concat(rows.map((r) => [r.playerName ?? "", designLabel(r.design), r.name, r.street, r.zip, r.city, r.country, r.size, r.status].map((x) => String(x).replace(/;/g, ",")).join(";"))).join("\n");
+    const csv = ["player;design;name;email;phone;street;zip;city;country;size;status"].concat(rows.map((r) => [r.playerName ?? "", designLabel(r.design), r.name, r.email ?? "", r.phone ?? "", r.street, r.zip, r.city, r.country, r.size, r.status].map((x) => String(x).replace(/;/g, ",")).join(";"))).join("\n");
     list.replaceChildren(
       h("div", { class: "hint" }, `${paid.length} paid, ${rows.length - paid.length} not paid (yet).`),
       h("button", { class: "btn small primary", onclick: () => { void navigator.clipboard?.writeText(csv).then(() => toast("Copied: paste it into a spreadsheet."), () => toast("Couldn't copy.", "err")); } }, "Copy as a table"),
       ...rows.map((r) => h("div", { class: "ducky-card" + (r.status === "paid" || r.status === "ordered" ? "" : " owned") },
         h("div", { class: "sixty-name" }, `${r.name} · ${r.size}`),
-        h("div", { class: "hint" }, `${designLabel(r.design)} · ${r.street}, ${r.zip} ${r.city}, ${r.country}`),
+        h("div", { class: "hint" }, `${designLabel(r.design)} · ${r.email ?? "no email"} · ${r.phone ?? "no phone"}`),
+        h("div", { class: "hint" }, `${r.street}, ${r.zip} ${r.city}, ${r.country}`),
         h("div", { class: "hint" }, `${r.playerName ?? "?"} · ${r.status}`),
         r.design === "me" && r.figure ? h("button", { class: "btn small", onclick: () => void savePrint(r) }, "Save the character to print") : null)),
       ...(rows.length ? [] : [h("div", { class: "hint" }, "No orders yet.")]));
