@@ -120,7 +120,7 @@ export const stageGo: Action = {
       uid = found!;
       name = String((await c.db.get<string>(`profiles/${uid}/name`)) ?? who).slice(0, 16);
     }
-    if (uid !== c.uid) c.extra[`teleports/${uid}`] = { room: "stage", at: c.now, by: c.uid };
+    if (uid !== c.uid) c.extra[`teleports/${uid}`] = { room: "stage", at: c.now, by: c.uid, ...(a.on === true ? { on: true } : {}) };
     c.note = uid === c.uid ? "stage" : `stage for ${name}`;
     return { name, self: uid === c.uid };
   },

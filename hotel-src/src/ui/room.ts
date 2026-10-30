@@ -486,7 +486,7 @@ export interface RoomApi {
 
 export interface RoomOpts {
   /** how you come in: through the door (default) or standing by your bed (login) */
-  arrival?: "door" | "bed";
+  arrival?: "door" | "bed" | "stage";
   /** play the first-time wake-up: lying in bed, eyes opening, then getting up */
   intro?: boolean;
   /** the room you walked in from (you appear in front of the door that leads back to it) */
@@ -3486,7 +3486,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = roomId === STAGE_ID ? { x: 1, y: 16 } : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
+    const want = roomId === STAGE_ID ? (opts.arrival === "stage" ? { x: 7, y: 2 } : { x: 1, y: 16 }) : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -4018,11 +4018,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }, (err) => say((err as Error).message || "Unknown command.", "warn"));
         return;
       }
-      const stageM = /^\/stage(?:\s+(.+))?$/i.exec(text);
+      const stageM = /^\/stage(1)?(?:\s+(.+))?$/i.exec(text);
       if (stageM) { // the staff: to the event stage, or send a player there
-        const who = (stageM[1] ?? "").trim();
-        void call<{ name: string; self: boolean }>(me, "stageGo", who ? { name: who } : {}).then((r) => {
-          if (r.self) ctx.navigate("room", { roomId: STAGE_ID, from: roomId, force: true });
+        const who = (stageM[2] ?? "").trim(), on = !!stageM[1]; // (/stage1: up on the stage itself)
+        void call<{ name: string; self: boolean }>(me, "stageGo", { ...(who ? { name: who } : {}), ...(on ? { on: true } : {}) }).then((r) => {
+          if (r.self) ctx.navigate("room", { roomId: STAGE_ID, from: roomId, force: true, ...(on ? { arrival: "stage" as const } : {}) });
           else say(`${r.name} is on the way to the stage.`);
         }, (err) => say((err as Error).message || "Unknown command.", "warn"));
         return;

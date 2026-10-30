@@ -58,7 +58,7 @@ export interface NavOpts {
   /** which room to open when view is "room" (defaults to the last room you were in, at first your own) */
   roomId?: string;
   /** how you come into a room: through the door (default) or standing by your bed (login) */
-  arrival?: "door" | "bed";
+  arrival?: "door" | "bed" | "stage";
   /** play the first-time wake-up in bed */
   intro?: boolean;
   /** the room you came from: you appear in front of the door that leads back to it */
@@ -245,7 +245,7 @@ async function showHotel(user: User): Promise<void> {
   const stopEconomy = watchEconomy(p); // what the server writes about you (a trade finishing, ...) shows up at once
   const stopWalkman = startWalkman(p); // (the walkman plays in every room, until you sign out)
   const stopStreetsFlag = startStreetsFlag(); // (is the elevator to the streets switched on?)
-  const stopTeleport = watchTeleport(p, (room) => go("room", { roomId: room, from: LOBBY_ID, force: true })); // (a staff member sent you to the test area: /test1 <name>)
+  const stopTeleport = watchTeleport(p, (room, on) => go("room", { roomId: room, from: LOBBY_ID, force: true, ...(on ? { arrival: "stage" as const } : {}) })); // (a staff member sent you to the test area: /test1 <name>)
   const stopPriceBook = p.isAdmin ? publishPriceBook() : () => undefined; // the admin's game publishes the clothes price list the server charges from
   const stopSeatWatch = watchSession(p.uid, () => {
     // another window took the seat in the same moment: this one stops

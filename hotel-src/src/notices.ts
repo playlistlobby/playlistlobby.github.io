@@ -100,14 +100,14 @@ export function watchOwnName(p: Profile, onChanged: (name: string) => void): () 
 }
 
 /** A staff member sent you to a room (teleports/<uid>, written by the server): you walk there. Only a teleport that came while you were playing counts. */
-export function watchTeleport(p: Profile, go: (room: string) => void): () => void {
+export function watchTeleport(p: Profile, go: (room: string, on?: boolean) => void): () => void {
   const startedAt = serverNow();
   let last = 0;
   return onValue(ref(db, `teleports/${p.uid}`), (s) => {
-    const t = s.val() as { room?: string; at?: number } | null;
+    const t = s.val() as { room?: string; at?: number; on?: boolean } | null;
     if (!t || typeof t.at !== "number" || t.at < startedAt - 5000 || t.at <= last || !/^[a-z0-9_]{1,50}$/.test(String(t.room))) return;
     last = t.at;
     toast(t.room === "arrival" || t.room === "streets" ? "A staff member sent you to the test area." : "A staff member moved you.");
-    window.setTimeout(() => go(t.room!), 600);
+    window.setTimeout(() => go(t.room!, t.on === true), 600);
   }, () => undefined);
 }
