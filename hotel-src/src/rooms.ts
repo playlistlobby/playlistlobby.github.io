@@ -422,7 +422,7 @@ const STAGE_BASE: PlacedFurni[] = STAGE_DEFAULT.filter((p) => p.kind === "stagef
 export function stageDef(pieces: PlacedFurni[] = [], variant: "live" | "after" = "live"): RoomDef {
   return {
     id: STAGE_ID, name: "The stage", ownerUid: null, ownerName: null, access: "open", w: STAGE_W, h: STAGE_H,
-    theme: variant === "after" ? { ...GRIME_THEME } : { ...STAGE_THEME }, rug: null, furni: [...STAGE_BASE, ...pieces.filter((f) => f.kind !== "stagefloor" && FURNI_KINDS[f.kind])], doorX: STAGE_DOOR_X, doorTo: LOBBY_ID, // (no door on the back wall: the way out is the exit door piece)
+    theme: variant === "after" ? { ...GRIME_THEME } : { ...STAGE_THEME }, rug: null, furni: [...STAGE_BASE, ...pieces.filter((f) => f.kind !== "stagefloor" && FURNI_KINDS[f.kind] && f.x + footprint(f.kind, f.dir).w <= STAGE_W && f.y + footprint(f.kind, f.dir).h <= STAGE_H)], doorX: STAGE_DOOR_X, doorTo: LOBBY_ID, // (no door on the back wall: the way out is the exit door piece)
   };
 }
 export function watchStageFurni(cb: (pieces: PlacedFurni[]) => void, variant: "live" | "after" = "live"): Unsubscribe {

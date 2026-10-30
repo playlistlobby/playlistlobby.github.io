@@ -885,7 +885,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   const decorateBtn = h("button", { class: "btn small decorate-btn hidden", onclick: () => enterFurnish() }, adminLobbyEdit ? "🛠 Edit room" : "🛠 Decorate");
   stage.append(decorateBtn);
   /** the admin on the event stage: puts the stage back the way it starts (everything he moved is undone) */
-  const resetStageBtn = h("button", { class: "btn small decorate-btn reset-stage-btn hidden", onclick: () => { if (window.confirm("Put the stage back the way it started? Everything you moved or added is lost.")) void resetStage(getStageVariant() === "after" ? STAGE_AFTER_DEFAULT : STAGE_DEFAULT, getStageVariant()).then(() => toast("The stage is back as it was."), (err) => toast((err as Error).message, "err")); } }, "↺ Reset stage");
+  const resetStageBtn = h("button", { class: "btn small decorate-btn reset-stage-btn hidden", onclick: () => { if (resetStageBtn.textContent !== "Tap again to reset") { resetStageBtn.textContent = "Tap again to reset"; window.setTimeout(() => { resetStageBtn.textContent = "↺ Reset stage"; }, 4000); return; } resetStageBtn.textContent = "↺ Reset stage"; void resetStage(getStageVariant() === "after" ? STAGE_AFTER_DEFAULT : STAGE_DEFAULT, getStageVariant()).then(() => toast("The stage is back as it was."), (err) => toast((err as Error).message, "err")); } }, "↺ Reset stage");
   stage.append(resetStageBtn);
   /** the admin on the event stage: the list of t-shirt orders (names, addresses, sizes) */
   const ordersBtn = h("button", { class: "btn small decorate-btn orders-btn hidden", onclick: () => { if (!tshirtApi) tshirtApi = openTshirtOrders(stage, () => { tshirtApi = null; }); } }, "📦 Orders");
@@ -3535,7 +3535,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   }
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = roomId === STAGE_ID ? (opts.arrival === "stage" ? { x: 9, y: 2 } : stageSpot() ?? { x: 1, y: 20 }) : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
+    const want = roomId === STAGE_ID ? (opts.arrival === "stage" ? { x: 7, y: 2 } : stageSpot() ?? { x: 1, y: 20 }) : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });

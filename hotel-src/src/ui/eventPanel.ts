@@ -36,7 +36,9 @@ export function openEventPanel(host: HTMLElement, me: Profile, tools: StageTools
     try { const r = await call<Record<string, unknown>>(me, action, args); toast(done ? done(r) : `${label}: done.`); } catch (err) { toast((err as Error).message || `${label} failed.`, "err"); }
     busy = false; paint();
   };
-  const sure = (text: string): boolean => window.confirm(`${text}\n\nAre you sure?`);
+  /** "are you sure": asked in the panel itself (a browser inside an app may refuse confirm() and prompt(), and then the buttons would do nothing); `word` has to be typed for the dangerous one */
+  let pending: { text: string; go: () => void; word?: string } | null = null;
+  const ask = (text: string, go: () => void, word?: string): void => { pending = { text, go, word }; paint(); };
   const btn = (label: string, onclick: () => void, cls = ""): HTMLElement => h("button", { class: `btn small ${cls}`.trim(), type: "button", disabled: busy, onclick }, label);
 
   async function playAlbum(): Promise<void> {
@@ -53,13 +55,21 @@ export function openEventPanel(host: HTMLElement, me: Profile, tools: StageTools
       s.kill ? `The surprise was set off ${Math.max(0, Math.round((serverNow() - s.kill) / 1000))} s ago` : "The surprise: not set off",
       `${inRoom} on the stage · ${dead} dead`,
     ];
+    let sureBox: HTMLElement | null = null;
+    if (pending) {
+      const q = pending;
+      const typed = h("input", { type: "text", class: "ev-word", placeholder: `Type ${q.word} here`, autocomplete: "off", oninput: () => { yes.disabled = busy || (!!q.word && typed.value.trim().toUpperCase() !== q.word); } }) as HTMLInputElement;
+      const yes = h("button", { class: "btn small ev-danger", type: "button", disabled: !!q.word, onclick: () => { pending = null; q.go(); } }, "Yes, do it") as HTMLButtonElement;
+      sureBox = h("div", { class: "ev-sure" }, h("div", {}, q.text), h("div", { class: "hint" }, "Are you sure?"), q.word ? typed : null, h("div", { class: "ev-row" }, yes, h("button", { class: "btn small", type: "button", onclick: () => { pending = null; paint(); } }, "Cancel")));
+    }
     body.replaceChildren(
+      ...(sureBox ? [sureBox] : []),
       h("div", { class: "ev-status" }, ...status.map((t) => h("div", {}, t))),
       h("div", { class: "ev-h" }, "Doors"),
       h("div", { class: "ev-row" },
-        btn("Open the red door", () => { if (sure("Players can walk in through the red door, and are locked in once they have.")) void run("Open", "eventSet", { open: true, sealed: false }, () => "The red door is open."); }),
-        btn("Close the doors", () => { if (sure("CLOSE THE DOORS: everybody who is not staff is pulled into the concert room, and so is everybody who logs in.")) void run("Close", "eventSet", { sealed: true }, () => "The doors are shut."); }, "primary")),
-      h("div", { class: "ev-row" }, btn("Back to normal doors", () => { if (sure("Nobody is pulled in or locked in any more (the ones inside stay until they leave).")) void run("Normal", "eventSet", { open: false, sealed: false }); })),
+        btn("Open the red door", () => ask("Players can walk in through the red door, and are locked in once they have.", () => void run("Open", "eventSet", { open: true, sealed: false }, () => "The red door is open."))),
+        btn("Close the doors", () => ask("CLOSE THE DOORS: everybody who is not staff is pulled into the concert room, and so is everybody who logs in.", () => void run("Close", "eventSet", { sealed: true }, () => "The doors are shut.")), "primary")),
+      h("div", { class: "ev-row" }, btn("Back to normal doors", () => ask("Nobody is pulled in or locked in any more (the ones inside stay until they leave).", () => void run("Normal", "eventSet", { open: false, sealed: false })))),
       h("div", { class: "ev-h" }, "Show"),
       h("div", { class: "ev-row" },
         btn(s.lights ? "Lights off" : "Lights on", () => void run("Lights", "eventSet", { lights: !s.lights })),
@@ -67,10 +77,10 @@ export function openEventPanel(host: HTMLElement, me: Profile, tools: StageTools
         btn("Stop the music", () => void run("Stop", "eventAlbum", { op: "stop" }))),
       h("div", { class: "ev-h" }, "The surprise"),
       h("div", { class: "ev-row" },
-        btn("💀 THE SURPRISE", () => { if (sure("This blacks out every screen, changes the room and starts the fighting. Only Reset undoes it.") && window.prompt('Type KILL to set it off.') === "KILL") void run("Surprise", "eventKill", {}, (r) => `Set off. The page that is left has ${r.board} on the leaderboard and ${r.songs} songs.`); }, "ev-danger"),
-        btn("End it", () => { if (sure("Everybody still alive on the stage is sent through the death sequence and out to the page that is left.")) void run("End", "eventEndAll", {}, (r) => `${r.ended} sent on their way.`); })),
+        btn("💀 THE SURPRISE", () => ask("This blacks out every screen, changes the room and starts the fighting. Only Reset undoes it.", () => void run("Surprise", "eventKill", {}, (r) => `Set off. The page that is left has ${r.board} on the leaderboard and ${r.songs} songs.`), "KILL"), "ev-danger"),
+        btn("End it", () => ask("Everybody still alive on the stage is sent through the death sequence and out to the page that is left.", () => void run("End", "eventEndAll", {}, (r) => `${r.ended} sent on their way.`)))),
       h("div", { class: "ev-h" }, "Start over"),
-      h("div", { class: "ev-row" }, btn("Reset everything", () => { if (sure("The doors, the surprise, who went in and who died are all cleared, and the page that is left is switched off.")) void run("Reset", "eventReset", {}, () => "Everything is back to normal."); })),
+      h("div", { class: "ev-row" }, btn("Reset everything", () => ask("The doors, the surprise, who went in and who died are all cleared, and the page that is left is switched off.", () => void run("Reset", "eventReset", {}, () => "Everything is back to normal.")))),
       h("div", { class: "ev-h" }, "Test (only on your own screen)"),
       tools ? h("div", {},
         h("div", { class: "ev-row" },

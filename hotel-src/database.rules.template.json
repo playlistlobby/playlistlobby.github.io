@@ -686,7 +686,7 @@
             ".validate": "newData.isString() && newData.val().length <= 30"
           },
           "x": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 20"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14"
           },
           "y": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 22"
@@ -1065,7 +1065,7 @@
         "$f": {
           ".validate": "newData.hasChildren(['kind', 'x', 'y'])",
           "kind": { ".validate": "newData.isString() && newData.val().length <= 30" },
-          "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 20" },
+          "x": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 14" },
           "y": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 22" },
           "dir": { ".validate": "newData.val() === 0 || newData.val() === 2 || newData.val() === 4 || newData.val() === 6" },
           "$other": { ".validate": "false" }

@@ -8,9 +8,9 @@ export type TshirtSize = (typeof TSHIRT_SIZES)[number];
 
 /** the three designs: A and B are pictures the admin can change (public/tshirt/design-a.png, design-b.png, or what he uploaded under tshirtDesigns/<id>), "me" has the player's own character on a blank shirt */
 export const TSHIRT_DESIGNS = [
-  { id: "a", name: "The three of them", hint: "The landlord, 6ixty and bagmand." },
-  { id: "b", name: "6ixty and the blood", hint: "6ixty with the blood going up." },
-  { id: "me", name: "Your own", hint: "Your character on a blank shirt." },
+  { id: "a", name: "6 mafia", hint: "The landlord, 6ixty and bagmand." },
+  { id: "b", name: "trykker bands", hint: "6ixty with the blood going up." },
+  { id: "me", name: "custom", hint: "Your character on a blank shirt." },
 ] as const;
 export type TshirtDesign = (typeof TSHIRT_DESIGNS)[number]["id"];
 export const isTshirtDesign = (v: unknown): v is TshirtDesign => TSHIRT_DESIGNS.some((d) => d.id === v);

@@ -112,4 +112,4 @@ export async function printFile(figure: string, name = "", k = 14): Promise<HTML
   return c;
 }
 
-export const designLabel = (d: TshirtDesign | string | undefined): string => (d === "a" ? "The three of them" : d === "b" ? "6ixty and the blood" : d === "me" ? "Own character" : "?");
+export const designLabel = (d: TshirtDesign | string | undefined): string => (d === "a" ? "6 mafia" : d === "b" ? "trykker bands" : d === "me" ? "custom" : "?");

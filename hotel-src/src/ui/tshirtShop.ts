@@ -18,7 +18,7 @@ export function openTshirtShop(host: HTMLElement, ctx: Ctx, onClose: () => void)
   const me = ctx.profile;
   const body = h("div", { class: "sixty-body" });
   const el = h("div", { class: "cd-popup sixty-shop tshirt-shop", role: "dialog", "aria-label": "T-shirt shop" },
-    h("div", { class: "cd-head" }, h("strong", {}, "👕 T-shirt shop"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
+    h("div", { class: "cd-head" }, h("strong", {}, "T-shirt shop"), h("button", { class: "btn small", onclick: () => close() }, "✕")),
     body);
   host.append(el);
   let closed = false;
