@@ -146,6 +146,19 @@ export function loadNitro(path: string): Promise<NitroFurni | null> {
         }
         g.putImageData(img, 0, 0);
       }) : Promise.reject(new Error("no board art"))))
+      : path === "derived:red_door" // the hideout door painted red: every pixel keeps its lightness and turns red (only the dark outlines stay)
+      ? loadNitro("furni/teleport_door.nitro").then((n) => (n ? derive(n, (g, w, h) => {
+        const img = g.getImageData(0, 0, w, h);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (!d[i + 3]) continue;
+          const l = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+          if (l < 0.16) continue; // (the dark outlines stay)
+          const k = Math.min(1, l * 1.1);
+          d[i] = Math.min(255, Math.round(70 + 185 * k)); d[i + 1] = Math.round(8 + 48 * k * k); d[i + 2] = Math.round(8 + 38 * k * k);
+        }
+        g.putImageData(img, 0, 0);
+      }) : Promise.reject(new Error("no door art"))))
       : path === "derived:blue_board" // the notice board: the ideas board in blue
       ? loadNitro("furni/f_ideaboard.nitro").then((n) => (n ? derive(n, (g, w, h) => {
         const img = g.getImageData(0, 0, w, h);

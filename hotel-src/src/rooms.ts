@@ -174,6 +174,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   // the door in the basement's left wall, past the roulette table: it leads to your hideouts
   // the pet merchant in the shop room: a basket (for now: tap it to buy a pet)
   petbasket: { id: "petbasket", label: "Pet merchant", icon: "🐾", w: 1, h: 1, height: 40, color: "#c8a060", placeable: false, nitro: "furni/market_c19_basket.nitro", rotatable: true, fixed: true, opens: "pets" },
+  // the red door behind 6ixty: the hideout door (the teleport door) painted red; tap it and 6ixty says what is coming
+  reddoor: { id: "reddoor", label: "Red door", icon: "🚪", w: 1, h: 1, height: 70, color: "#b01818", placeable: false, nitro: "derived:red_door", rotatable: true, fixed: true, flat: true, wall: true, wallArt: { left: 2, back: 4 } },
   hdoor: { id: "hdoor", label: "Hideouts", icon: "🚪", w: 1, h: 1, height: 70, color: "#3d5a73", placeable: false, nitro: "furni/teleport_door.nitro", rotatable: true, fixed: true, flat: true, wall: true, wallArt: { left: 2, back: 4 }, opens: "hideouts" },
   toolbox: { id: "toolbox", label: "Toolbox", icon: "🧰", w: 1, h: 1, height: 22, color: "#b4492f", placeable: false, fixed: true, opens: "furnish", nitro: "furni/ads_twi_toolbx.nitro", rotatable: true },
   // posters: a frame on the wall; the picture inside is the player's own (chosen when it is hung). The one in the shop room is for sale.
@@ -233,7 +235,7 @@ if (FURNI_KINDS.f_blackjacktable) FURNI_KINDS.f_blackjacktable.opens = "blackjac
 if (FURNI_KINDS.f_cdpress) FURNI_KINDS.f_cdpress.opens = "cdpress"; // (the CD printer: pick one of the Charts songs and press it onto a CD)
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench", "reddoor"]);
 /** the CD player in the basement or a boombox: both play the CD you use on them */
 export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox";
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */
@@ -390,6 +392,8 @@ const LOBBY_BUILTIN: PlacedFurni[] = [
   { id: "lobby16", kind: "elevator", x: 0, y: 12, dir: 2 },
   // the jukebox on the back wall: a CD of yours for 50 blood, played for everybody in the basement
   { id: "lobby17", kind: "jukebox", x: 2, y: 0, dir: 4 },
+  // the red door on the back wall, two tiles left of 6ixty (who stands at x 5)
+  { id: "lobby18", kind: "reddoor", x: 3, y: 0, dir: 4 },
 ];
 /** the pieces of the roulette corner (the private copy of the basement in the introduction has none) */
 export const ROULETTE_KINDS: ReadonlySet<string> = new Set(["rtable", "rchair", "gunrack"]);
