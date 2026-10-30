@@ -1078,6 +1078,12 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     }
     return r;
   }
+  /** how high (px) the stage floor lifts a player right now (it eases from one tile's height to the next while they walk) */
+  function stageRaise(p: Player, now: number): number {
+    if (roomId !== STAGE_ID) return 0;
+    const tt = isMoving(p, now) ? (now - p.stepStart) / stepOf(p) : 1;
+    return raiseAt(p.from.x, p.from.y) * (1 - tt) + raiseAt(p.to.x, p.to.y) * tt;
+  }
   function tileAt(mx: number, my: number): Pt | null {
     const flat = tileAtFlat(mx, my);
     if (roomId === STAGE_ID) { const up = tileAtFlat(mx, my + 32 * scale); if (up && raiseAt(up.x, up.y) >= 32) return up; } // (pointing at the top of the raised stage floor)
@@ -3486,7 +3492,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** You come in through the door (the tile in front of it), or on login you're standing by your bed; else the nearest free tile. */
   function spawnTile(): Pt {
     const back = opts.from ? def.extraDoors?.find((d) => d.to === opts.from) : undefined; // coming back through a door: stand in front of it
-    const want = roomId === STAGE_ID ? (opts.arrival === "stage" ? { x: 7, y: 2 } : { x: 1, y: 16 }) : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
+    const want = roomId === STAGE_ID ? (opts.arrival === "stage" ? { x: 9, y: 2 } : { x: 1, y: 20 }) : opts.arrival === "bed" && isOwnRoom ? sideTile() : roomId === LOBBY_ID && opts.from && isHideoutId(opts.from) ? { x: 1, y: 24 } : roomId === LOBBY_ID && opts.from === STAGE_ID ? { x: RED_DOOR_X, y: 1 } : roomId === LOBBY_ID && opts.from && isStreetsRoom(opts.from) ? { x: 1, y: 12 } : roomId === ARRIVAL_ID && opts.from === LOBBY_ID ? { x: ARRIVAL_ELEVATOR.x, y: 1 } : roomId === STREETS_ID ? savedStreetSpot() ?? { x: 2, y: 1 } : { x: back ? back.x : def.doorX, y: 1 };
     const taken = (x: number, y: number) => [...players.values()].some((o) => { const t = currentTile(o); return t.x === x && t.y === y; });
     const tiles: Pt[] = [];
     for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) if (walkable(x, y) && !taken(x, y)) tiles.push({ x, y });
@@ -4097,7 +4103,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       : em?.def.actions?.includes("wav") ? Math.floor(now / 250) % 2
       : figureAnimated(p.figure) ? Math.floor(now / 110) % 24 // a garment with an animation of its own (sparklers...) keeps playing while you stand still
       : 0;
-    if (roomId === STAGE_ID && !sitting) { const tt = moving ? (now - p.stepStart) / stepOf(p) : 1; yOff -= raiseAt(p.from.x, p.from.y) * (1 - tt) + raiseAt(p.to.x, p.to.y) * tt; } // (the stage floor is raised: whoever walks on it is lifted)
+    if (!sitting) yOff -= stageRaise(p, now); // (the stage floor is raised: whoever walks on it is lifted)
     return { opts: { figure: withLook(roulette ? roulette.figureFor(p.uid, p.figure, sitting) : p.figure, p), dir, headDir: dir, actions, gesture, frame }, yOff };
   }
 
@@ -6117,7 +6123,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         draw: () => {
           g.fillStyle = "rgba(0,0,0,0.18)";
           g.beginPath();
-          g.ellipse(feet.x + lunge.x, feet.y + lunge.y, 16 * scale, 7 * scale, 0, 0, Math.PI * 2);
+          g.ellipse(feet.x + lunge.x, feet.y + lunge.y - stageRaise(p, now) * scale, 16 * scale, 7 * scale, 0, 0, Math.PI * 2); // (on the raised stage the shadow is right under them)
           g.fill();
           // facing away from the camera (up-right, up-left, up) the knife hand is behind the body: draw the knife first so the body covers it
           const knifeOut = !isMoving(p, now) && !p.emote && !smoking && holdsKnife(p, now);
@@ -6195,12 +6201,13 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           const tw = g.measureText(shownLabel).width + 10;
           g.fillStyle = targeted ? "rgba(150,20,20,0.85)" : "rgba(0,0,0,0.55)";
           g.beginPath();
-          g.roundRect(feet.x - tw / 2, feet.y + 7 * scale, tw, 14 * Math.max(1, scale), 5);
+          const plateUp = stageRaise(p, now) * scale; // (on the raised stage the name plate rides up with them)
+          g.roundRect(feet.x - tw / 2, feet.y + 7 * scale - plateUp, tw, 14 * Math.max(1, scale), 5);
           g.fill();
           g.fillStyle = p.npc ? "#ff3b3b" : p.nc ? p.nc : p.uid === me.uid ? "#ffe27a" : "#fff";
           g.textBaseline = "top";
           g.textAlign = "center";
-          g.fillText(shownLabel, feet.x, feet.y + 9 * scale);
+          g.fillText(shownLabel, feet.x, feet.y + 9 * scale - plateUp);
           if (p.ghost && roulette) { const gl = roulette.ghostLabel(p.uid); if (gl) drawGhostTag(gl, feet.x, feet.y + lift - (FEET_Y + 4) * scale); }
           if (p.uid !== me.uid && !p.npc && selectedDef()?.useOnPlayer === "shoot") { const bt = bounties.get(p.uid); if (bt) drawBountyTag(bt.amount, bt.count, feet.x, feet.y + lift - (FEET_Y + 12) * scale, now); } // (holding a gun: who has a price on their head)
           if (glowing) { // a little arrow bobbing over his head

@@ -26,7 +26,7 @@ export async function roomSize(c: Ctx, roomId: string): Promise<{ w: number; h: 
   if (roomId === "lobby" || roomId === `tut_${c.uid}`) return { w: 12, h: 26 };
   if (roomId === "shop") return { w: 15, h: 15 };
   if (roomId === "mines") return { w: 14, h: 14 };
-  if (roomId === "stage") return { w: 16, h: 18 };
+  if (roomId === "stage") return { w: 20, h: 22 };
   if (roomId === "arrival") return { w: 11, h: 11 };
   if (roomId === "streets") return { w: STREETS_W, h: STREETS_H };
   if (/^u_[A-Za-z0-9]{1,40}$/.test(roomId)) {
