@@ -323,6 +323,8 @@ function savedStreetSpot(): { x: number; y: number } | null {
 }
 /** nobody runs faster than this on the street, whatever they took (no outrunning a fight) */
 const STREET_MAX_SPEED = 1.25;
+/** the tile of the red door on the basement's back wall (6ixty stands at x 5, the door two tiles to his left) */
+const RED_DOOR_X = 3;
 const BUBBLE_MS = 6500;
 /** the dice: how long the die tumbles, and how long the number stays over the head */
 const DICE_TUMBLE_MS = 900, DICE_SHOW_MS = 6500;
@@ -935,7 +937,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     blocked.add(`${def.doorX},0`); // the door itself stands on this tile; you use it from beside or in front of it
     for (const d of def.extraDoors ?? []) blocked.add(`${d.x},0`);
     seatTiles.clear();
-    if (isBasement) blocked.add(`${SIXTY.x},${SIXTY.y}`); // 6ixty stands in the basement
+    if (isBasement) { blocked.add(`${SIXTY.x},${SIXTY.y}`); blocked.add(`${RED_DOOR_X},0`); } // 6ixty stands in the basement, and the red door behind him
     if (roomId === LOBBY_ID) blocked.add(`${HIDEOUT_LANDLORD.x},${HIDEOUT_LANDLORD.y}`); // the hideout landlord, beside the hideout door
     if (roomId === LOBBY_ID) blocked.add(`${BAGMAN.x},${BAGMAN.y}`); // and bagmand next to the roulette table, in his hours (the tile stays blocked when he is away)
     if (isMines) blocked.add(`${MINES_SIXTY.x},${MINES_SIXTY.y}`); // and in the mines
@@ -5534,6 +5536,10 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const list: Drawable[] = [];
     const boxes: Hitbox[] = [];
     const objs: Hitbox[] = [];
+    if (isBasement && !greenScreen) { // the red door behind 6ixty, on the wall like the other doors: tap it and he tells you what is coming
+      const rb = drawRoomDoor(g, RED_DOOR_X, toScreen, scale, hoverObj?.kind === "reddoor" ? 1 : 0, "red");
+      objs.push({ id: "reddoor", kind: "reddoor", x0: rb.x0, y0: rb.y0, x1: rb.x1, y1: rb.y1, depth: -1 });
+    }
     const bubbles: Array<() => void> = [];
     const pieceBoxes: Array<{ id: string; box: Box; depth: number }> = [];
 
