@@ -48,6 +48,8 @@ export const ratingOf = (s: Pick<Song, "up" | "down">): number => s.up;
 /** best first: the rating, then more votes, then the older one */
 export const byRating = (a: Song, b: Song): number => ratingOf(b) - ratingOf(a) || a.at - b.at;
 /** the Charts: the 10 best-rated songs */
+/** every song, best first (the CD printer can press any of them, not only the Charts) */
+export const rankedSongs = (songs: Song[]): Song[] => [...songs].sort(byRating);
 export const chartsOf = (songs: Song[]): Song[] => [...songs].sort(byRating).slice(0, CHARTS_SIZE);
 
 /** the songs the hourly clean-up takes off: the worst quarter by rating, only songs older than an hour, and never so many that fewer than 10 are left */

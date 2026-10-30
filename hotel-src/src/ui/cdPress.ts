@@ -9,7 +9,7 @@ import { logAction } from "../logger";
 import { watchSongs } from "../soundcloud";
 import { rememberPressedTitle } from "../cdTitles";
 import { fmtDur } from "../shared/audio";
-import { chartsOf } from "../shared/songs";
+import { rankedSongs } from "../shared/songs";
 import type { Song } from "../shared/songs";
 import { PRESS_COLOURS, PRESS_PRICE_DEFAULT, PRESS_PRICE_MAX, PRESS_PRICE_MIN, pressedCdId } from "../shared/cds";
 import type { RoomDef } from "../rooms";
@@ -18,7 +18,7 @@ import type { Ctx } from "../main";
 export interface CdPressApi { close(): void }
 
 /**
- * The CD printer of a hideout: the 10 best songs of SoundCloud's Charts and a colour, and a CD with that song comes out. The owner and the members press for free,
+ * The CD printer of a hideout: any song on SoundCloud and a colour, and a CD with that song comes out. The owner and the members press for free,
  * everybody else pays the owner's price (10-100 blood, it goes to the owner's Tables page).
  */
 export function openCdPress(host: HTMLElement, ctx: Ctx, roomId: string, getDef: () => RoomDef, onChange: () => void, onClose: () => void): CdPressApi {
@@ -63,17 +63,17 @@ export function openCdPress(host: HTMLElement, ctx: Ctx, roomId: string, getDef:
 
   function render(): void {
     if (closed) return;
-    const top = chartsOf(songs);
+    const top = rankedSongs(songs);
     if (pick && !top.some((s) => s.id === pick)) pick = null;
     const rows = top.length ? top.map((s, i) => h("button", { class: "cdp-song" + (pick === s.id ? " on" : ""), type: "button", onclick: () => { pick = s.id; render(); } },
       h("span", { class: "cdp-rank" }, String(i + 1)),
       h("span", { class: "cdp-main" }, h("b", {}, s.title), h("small", {}, `${s.ownerName} · ${fmtDur(s.durMs)}`)),
-      h("span", { class: "cdp-votes" }, `${s.up} / ${s.down}`))) : [h("div", { class: "hint" }, "There are no songs in the Charts yet.")];
+      h("span", { class: "cdp-votes" }, `${s.up} / ${s.down}`))) : [h("div", { class: "hint" }, "There are no songs on SoundCloud yet.")];
     const swatches = PRESS_COLOURS.map((c) => h("button", { class: "cdp-col" + (colour === c.id ? " on" : ""), type: "button", title: c.name, "aria-label": c.name, onclick: () => { colour = c.id; render(); } },
       h("img", { src: assetUrl(`items/${c.file}.png`), alt: "" })));
     const preview = pick ? itemDef(pressedCdId(colour, pick)) : null;
     body.replaceChildren(
-      h("div", { class: "hint" }, "Pick one of the 10 best songs on SoundCloud and a colour. The CD plays on any boombox."),
+      h("div", { class: "hint" }, "Pick any song on SoundCloud (best first) and a colour. The CD plays on any boombox."),
       h("div", { class: "cdp-list" }, ...rows),
       h("div", { class: "cdp-label" }, "Colour"),
       h("div", { class: "cdp-cols" }, ...swatches),
