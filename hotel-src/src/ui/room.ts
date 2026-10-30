@@ -6370,7 +6370,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       stage.classList.add("has-lights");
       let lightsGlobal = false, lightsLocalOff = false;
       try { lightsLocalOff = localStorage.getItem("6ix-lights-off") === "1"; } catch { /* private mode */ }
-      const paintLights = (): void => { stage.classList.toggle("lights-on", lightsGlobal && !lightsLocalOff); };
+      const paintLights = (): void => { stage.classList.toggle("lights-on", lightsGlobal && !lightsLocalOff); lightsBtn.style.opacity = lightsLocalOff ? "0.4" : "1"; };
       const lightsBtn = h("button", { class: "btn small lights-btn", type: "button", title: "Lights on or off for you", onclick: () => { lightsLocalOff = !lightsLocalOff; try { localStorage.setItem("6ix-lights-off", lightsLocalOff ? "1" : "0"); } catch { /* private mode */ } paintLights(); } }, "💡");
       stage.append(lightsBtn);
 
@@ -6464,6 +6464,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
 
       unsubs.push(onEvent((e) => {
         if (disposed) return;
+        if (e.state.lights && !lightsGlobal && lightsLocalOff) { lightsLocalOff = false; try { localStorage.setItem("6ix-lights-off", "0"); } catch { /* private mode */ } } // (the show starting switches it back on for everybody, also for one who had turned it off for themselves)
         lightsGlobal = !!e.state.lights; paintLights();
         const k = e.state.kill ?? 0;
         if (k && k !== killSeen) { killSeen = k; runKill(k); }
