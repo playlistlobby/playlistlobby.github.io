@@ -28,7 +28,8 @@ export async function collectPaidCds(p: Profile): Promise<void> {
         else if (d.product === "fx") toast("The chat tool is yours: tap the ✨ next to the chat bar.");
         else if (d.product === "rename" && d.name) { toast(`You are ${d.name} now. The page reloads.`); window.setTimeout(() => window.location.reload(), 1600); }
       }
-      if (r.items.length || r.ducky.length) { window.dispatchEvent(new Event("pocket-changed")); return; }
+      if (r.tshirt) toast("Your t-shirt is pre-ordered. It will be posted to the address you gave.");
+      if (r.items.length || r.ducky.length || r.tshirt) { window.dispatchEvent(new Event("pocket-changed")); return; }
       if (r.full) { toast("Your pockets are full. Make room, and your CD arrives next time you log in.", "err"); return; }
     } catch { /* the server may be busy: try again */ }
     if (i < tries - 1) await sleep(2000);

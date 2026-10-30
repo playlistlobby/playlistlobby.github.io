@@ -1,0 +1,26 @@
+// The t-shirt shop at the album event: a real t-shirt pre-ordered for real money (200 kr). Only for players who are on the event stage right now.
+// The name and address given when buying are only used to post the shirt: they are stored under tshirtOrders/<payment> (only the admin can read them).
+
+/** 200 kr, in øre */
+export const TSHIRT_PRICE_ORE = 20_000;
+export const TSHIRT_SIZES = ["S", "M", "L", "XL", "XXL"] as const;
+export type TshirtSize = (typeof TSHIRT_SIZES)[number];
+
+export interface TshirtOrder { name: string; street: string; zip: string; city: string; country: string; size: TshirtSize }
+
+const clean = (v: unknown, min: number, max: number, what: string): string => {
+  const s = typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim() : "";
+  if (s.length < min) throw new Error(`Fill in ${what}.`);
+  if (s.length > max) throw new Error(`${what[0].toUpperCase()}${what.slice(1)} is too long.`);
+  return s;
+};
+
+/** checks what the player typed (the browser and the server both use it); throws a message that can be shown */
+export function cleanTshirtOrder(raw: unknown): TshirtOrder {
+  const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const size = String(o.size ?? "");
+  if (!(TSHIRT_SIZES as readonly string[]).includes(size)) throw new Error("Pick a size.");
+  const zip = clean(o.zip, 3, 10, "your postcode");
+  if (!/^[A-Za-z0-9 -]{3,10}$/.test(zip)) throw new Error("That postcode doesn't look right.");
+  return { name: clean(o.name, 3, 60, "your full name"), street: clean(o.street, 4, 80, "your street and number"), zip, city: clean(o.city, 2, 50, "your city"), country: clean(o.country, 2, 40, "your country"), size: size as TshirtSize };
+}

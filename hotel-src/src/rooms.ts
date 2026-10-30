@@ -184,6 +184,8 @@ export const FURNI_KINDS: Record<string, FurniKind> = {
   stagefence: { id: "stagefence", label: "Barrier", icon: "🚧", w: 1, h: 1, height: 40, color: "#e8e8e8", placeable: false, nitro: "furni/hblooza_fnc.nitro", rotatable: true, small: true },
   // the pub bar (habbo's public_x_bar): seven tiles of counter with taps, glasses and a till
   stagepub: { id: "stagepub", label: "Pub bar", icon: "🍺", w: 7, h: 1, height: 60, color: "#2a3036", placeable: false, nitro: "furni/public_x_bar.nitro", rotatable: true },
+  // the t-shirt shop at the event (habbo's ads_aftv_tshirtwall): tap it to pre-order a real t-shirt for 200 kr (only while you are on the stage, see shared/tshirt.ts)
+  tshirtshop: { id: "tshirtshop", label: "T-shirt shop", icon: "👕", w: 3, h: 1, height: 130, color: "#2a2a2e", placeable: false, nitro: "furni/ads_aftv_tshirtwall.nitro", rotatable: true },
   stagespeaker: { id: "stagespeaker", label: "Speakers", icon: "🔈", w: 1, h: 1, height: 50, color: "#d8d8e0", placeable: false, nitro: "furni/modern_c17_speakers.nitro", rotatable: true, small: true },
   stagemic: { id: "stagemic", label: "Microphone", icon: "🎤", w: 1, h: 1, height: 70, color: "#aaaab4", placeable: false, nitro: "furni/ads_idol_mic.nitro", rotatable: true, small: true },
   // the DJ booth (habbo's classic7_djbooth) with its two screens playing the album's lettering, pixelated, in a loop (made from "dj deck thing.mp4": see the art's 24 frames)
@@ -248,7 +250,7 @@ if (FURNI_KINDS.f_blackjacktable) FURNI_KINDS.f_blackjacktable.opens = "blackjac
 if (FURNI_KINDS.f_cdpress) FURNI_KINDS.f_cdpress.opens = "cdpress"; // (the CD printer: pick one of the Charts songs and press it onto a CD)
 
 /** Furniture you can click on and do something with (not just walk around). */
-export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench", "stageexit"]);
+export const INTERACTIVE_KINDS = new Set(["arcade", "cdplayer", "boombox", "f_boombox", "flappy", "dumpster", "rtable", "rchair", "gunrack", "ideaboard", "mrock", "mbench", "stageexit", "tshirtshop"]);
 /** the CD player in the basement or a boombox: both play the CD you use on them */
 export const isCdKind = (kind: string | undefined): boolean => kind === "cdplayer" || kind === "boombox" || kind === "f_boombox";
 /** a body bag (the shop piece or an uploaded one): use a syringe on it for a drop of blood */

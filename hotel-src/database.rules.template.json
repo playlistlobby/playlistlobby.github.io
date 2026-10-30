@@ -1050,6 +1050,10 @@
         }
       }
     },
+    "tshirtOrders": {
+      ".read": "@ADMIN@",
+      ".write": false
+    },
     "hitTargets": {
       ".read": "@PW@"
     },

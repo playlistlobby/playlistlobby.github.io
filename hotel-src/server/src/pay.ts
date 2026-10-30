@@ -6,15 +6,16 @@
 import { Env, isEmulator } from "./env";
 import { Rtdb } from "./rtdb";
 import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE, PayProduct } from "../../src/shared/cds";
+import { cleanTshirtOrder, TSHIRT_PRICE_ORE, TshirtOrder } from "../../src/shared/tshirt";
 import { DUCKY_PAY_NAMES, DuckyDef, duckyOfPayId, isHexColor, NEW_NAME_RE, readableOnDark, RESERVED_NAMES } from "../../src/shared/ducky";
 
 /** a checkout that was started but not paid counts as "on its way" for this long (so nobody can open ten and pay for ten) */
 const OPEN_MS = 45 * 60_000;
-type Status = "open" | "paid" | "claimed" | "stuck";
+type Status = "open" | "paid" | "claimed" | "stuck" | "ordered";
 interface Purchase { uid: string; product: PayProduct; amount: number; status: Status; at: number; session: string; paidAt?: number; item?: string; /** what was chosen before paying (the colour, the new name) */ params?: { color?: string; name?: string } }
 interface UserPurchase { product: PayProduct; status: Status; at: number }
 
-const NAMES = { mystery: "Mystery CD (Blodig oktober)" };
+const NAMES = { mystery: "Mystery CD (Blodig oktober)", tshirt: "T-shirt pre-order (Blodig oktober)" };
 
 export class PayError extends Error {
   constructor(msg: string, readonly status = 400) { super(msg); }
@@ -59,18 +60,31 @@ async function checkDucky(db: Rtdb, uid: string, def: DuckyDef, body: { color?: 
   return {};
 }
 
+/** Can this player pre-order a t-shirt now? Only while standing on the event stage, and one each. Returns the cleaned name, address and size. */
+async function checkTshirt(db: Rtdb, uid: string, raw: unknown, now: number): Promise<TshirtOrder> {
+  if ((await db.get<string>(`presence/${uid}/room`)) !== "stage") throw new PayError("The t-shirt shop is only for players at the event.");
+  let order: TshirtOrder;
+  try { order = cleanTshirtOrder(raw); } catch (e) { throw new PayError((e as Error).message); }
+  const mine = Object.values((await db.get<Record<string, UserPurchase>>(`userPurchases/${uid}`)) ?? {});
+  if (mine.some((p) => p.product === "tshirt" && (p.status === "paid" || p.status === "claimed" || p.status === "ordered" || (p.status === "open" && now - p.at < OPEN_MS)))) throw new PayError("You have already pre-ordered a t-shirt.");
+  return order;
+}
+
 /** POST /pay/checkout { product, ... } with the login token: returns { url } to send the player to. */
-export async function startCheckout(env: Env, uid: string, product: unknown, body: { color?: unknown; name?: unknown } = {}): Promise<{ url: string }> {
+export async function startCheckout(env: Env, uid: string, product: unknown, body: { color?: unknown; name?: unknown; order?: unknown } = {}): Promise<{ url: string }> {
   const dk = duckyOfPayId(product);
-  if (product !== "mystery" && !dk) throw new PayError("Bad product.");
+  const shirt = product === "tshirt";
+  if (product !== "mystery" && !dk && !shirt) throw new PayError("Bad product.");
   const db = new Rtdb(env);
   const now = Date.now();
   let params: { color?: string; name?: string } | undefined;
-  if (dk) params = await checkDucky(db, uid, dk, body, now);
+  let order: TshirtOrder | undefined;
+  if (shirt) order = await checkTshirt(db, uid, body.order, now);
+  else if (dk) params = await checkDucky(db, uid, dk, body, now);
   else await checkEligible(db, uid, "mystery", now);
   const productId = product as PayProduct;
-  const amount = dk ? dk.ore : MYSTERY_PRICE_ORE;
-  const label = dk ? DUCKY_PAY_NAMES[dk.id] : NAMES.mystery;
+  const amount = shirt ? TSHIRT_PRICE_ORE : dk ? dk.ore : MYSTERY_PRICE_ORE;
+  const label = shirt ? NAMES.tshirt : dk ? DUCKY_PAY_NAMES[dk.id] : NAMES.mystery;
   const publicUrl = (env.PUBLIC_URL || (isEmulator(env) ? "http://127.0.0.1:5173/" : "https://playlistmag.studio/hotel/")).replace(/\/?$/, "/");
   let session = "";
   let url = "";
@@ -105,7 +119,9 @@ export async function startCheckout(env: Env, uid: string, product: unknown, bod
   }
   const rec: Purchase = { uid, product: productId, amount, status, at: now, session, ...(status === "paid" ? { paidAt: now } : {}), ...(params && Object.keys(params).length ? { params } : {}) };
   const mine: UserPurchase = { product: productId, status, at: now };
-  await db.patch({ [`purchases/${session}`]: rec, [`userPurchases/${uid}/${session}`]: mine });
+  const patch: Record<string, unknown> = { [`purchases/${session}`]: rec, [`userPurchases/${uid}/${session}`]: mine };
+  if (order) patch[`tshirtOrders/${session}`] = { uid, playerName: String((await db.get<string>(`users/${uid}/name`)) ?? "").slice(0, 20), ...order, amount, status, at: now }; // (the name and address stay here, readable by the admin only)
+  await db.patch(patch);
   return { url };
 }
 
@@ -144,7 +160,7 @@ export async function handleWebhook(env: Env, raw: string, signature: string | n
       const right = obj.currency === "dkk" && obj.amount_total === rec.amount; // paid what it should cost
       const status: Status = right ? "paid" : "stuck";
       if (!right) console.error("stripe amount mismatch", obj.id, obj.amount_total, obj.currency, rec.amount);
-      await db.patch({ [`purchases/${obj.id}/status`]: status, [`purchases/${obj.id}/paidAt`]: Date.now(), [`userPurchases/${rec.uid}/${obj.id}/status`]: status });
+      await db.patch({ [`purchases/${obj.id}/status`]: status, [`purchases/${obj.id}/paidAt`]: Date.now(), [`userPurchases/${rec.uid}/${obj.id}/status`]: status, ...(rec.product === "tshirt" ? { [`tshirtOrders/${obj.id}/status`]: status } : {}) });
     }
   }
   return { status: 200, body: "ok" };

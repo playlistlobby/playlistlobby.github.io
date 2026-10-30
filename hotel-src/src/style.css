@@ -1945,3 +1945,10 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .jb-mute { flex: none; width: 34px; height: 28px; border-radius: 5px; border: 1px solid #3c5578; cursor: pointer; background: linear-gradient(#a9bbd5 0%, #86a0c6 49%, #7792ba 51%, #8aa3c8 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); font-size: 15px; }
 .stash-wear { display: flex; gap: 8px; flex-wrap: wrap; }
 .stash-wear.hidden { display: none; }
+
+.decorate-btn.orders-btn { right: 280px; }
+.tshirt-shop .tshirt-field { display: grid; gap: 2px; }
+.tshirt-shop .tshirt-input { width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 6px; border: 1px solid #c8d0e0; font: 14px var(--font); }
+.tshirt-shop .tshirt-row { display: grid; grid-template-columns: 90px 1fr; gap: 6px; }
+.tshirt-shop .tshirt-sizes { display: flex; flex-wrap: wrap; gap: 4px; }
+.tshirt-shop .tshirt-go { margin-top: 4px; }

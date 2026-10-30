@@ -49,7 +49,7 @@ export default {
       try {
         const who = await applyRole(await verifyToken((request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, ""), env), env);
         if (env.MAINTENANCE && !who.isAdmin) return reply({ ok: false, error: env.MAINTENANCE, maintenance: true }, 503);
-        const body = (await request.json().catch(() => ({}))) as { product?: unknown; color?: unknown; name?: unknown };
+        const body = (await request.json().catch(() => ({}))) as { product?: unknown; color?: unknown; name?: unknown; order?: unknown };
         return reply({ ok: true, ...(await startCheckout(env, who.uid, body.product, body)) });
       } catch (e) {
         if (e instanceof PayError) return reply({ ok: false, error: e.message }, e.status);

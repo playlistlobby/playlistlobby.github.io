@@ -18,8 +18,15 @@ export const claimPurchases: Action = {
     const w = await c.user();
     const items: string[] = [];
     const ducky: Array<Record<string, unknown>> = [];
-    let full = false;
+    let full = false, tshirt = false;
     for (const [id, p] of paid) {
+      if (p.product === "tshirt") { // a t-shirt pre-order: nothing to hand over, it is just confirmed (the admin posts it from the order list)
+        c.extra[`purchases/${id}/status`] = "ordered";
+        c.extra[`userPurchases/${c.uid}/${id}/status`] = "ordered";
+        c.extra[`tshirtOrders/${id}/status`] = "ordered";
+        tshirt = true;
+        continue;
+      }
       const dk = duckyOfPayId(p.product);
       if (dk) { // something from the pay2win machine: given with what was chosen before paying (the colour, the new name)
         const params = (await c.db.get<{ color?: string; name?: string }>(`purchases/${id}/params`)) ?? {};
@@ -60,6 +67,6 @@ export const claimPurchases: Action = {
       c.extra[`userPurchases/${c.uid}/${id}/status`] = "claimed";
       items.push(item);
     }
-    return { items, full, ducky };
+    return { items, full, ducky, tshirt };
   },
 };

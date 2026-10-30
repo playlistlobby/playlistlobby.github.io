@@ -138,6 +138,7 @@ import { openConfirmBox } from "./confirmBox";
 import { openJukebox, JukeboxApi } from "./jukebox";
 import { IdeasBoardApi, openIdeasBoard } from "./ideasBoard";
 import { DuckyShopApi, openDuckyShop } from "./duckyShop";
+import { openTshirtOrders, openTshirtShop, TshirtShopApi } from "./tshirtShop";
 import { openRaffleShop, RaffleShopApi } from "./raffleShop";
 import { announceWin, watchRaffle } from "../raffle";
 import { RAFFLE_EFFECTS } from "../shared/raffle";
@@ -552,6 +553,8 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   let jukeboxApi: JukeboxApi | null = null;
   let ideasApi: IdeasBoardApi | null = null;
   let duckyApi: DuckyShopApi | null = null;
+  let tshirtApi: TshirtShopApi | null = null; // (the t-shirt shop at the event, and the admin's order list)
+  const openTshirt = (): void => { if (!tshirtApi) tshirtApi = openTshirtShop(stage, ctx, () => { tshirtApi = null; }); };
   let raffleApi: RaffleShopApi | null = null;
   /** the raffle in the shop room (what the machine and its prize show) */
   let raffleNow: RaffleView = { round: null, tickets: {}, sold: 0, last: null, waiting: [] };
@@ -867,6 +870,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
   /** the admin on the event stage: puts the stage back the way it starts (everything he moved is undone) */
   const resetStageBtn = h("button", { class: "btn small decorate-btn reset-stage-btn hidden", onclick: () => { if (window.confirm("Put the stage back the way it started? Everything you moved or added is lost.")) void resetStage(STAGE_DEFAULT).then(() => toast("The stage is back as it was."), (err) => toast((err as Error).message, "err")); } }, "↺ Reset stage");
   stage.append(resetStageBtn);
+  /** the admin on the event stage: the list of t-shirt orders (names, addresses, sizes) */
+  const ordersBtn = h("button", { class: "btn small decorate-btn orders-btn hidden", onclick: () => { if (!tshirtApi) tshirtApi = openTshirtOrders(stage, () => { tshirtApi = null; }); } }, "📦 Orders");
+  stage.append(ordersBtn);
   /** The admin in his own room: the landlord's window (colours, bigger room, skins, stash box) without going to the shop. */
   const landlordBtn = h("button", { class: "btn small decorate-btn landlord-btn hidden", onclick: () => { if (!landlordApi) landlordApi = openLandlord(stage, ctx, () => panel.refresh(), () => { landlordApi = null; }); } }, "🏠 Landlord");
   stage.append(landlordBtn);
@@ -877,6 +883,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     diceBar.classList.toggle("hidden", !(it?.rolls && !furnishOn));
     landlordBtn.classList.toggle("hidden", !(adminOwnEdit && !furnishOn));
     resetStageBtn.classList.toggle("hidden", !(roomId === STAGE_ID && me.isAdmin && !furnishOn));
+    ordersBtn.classList.toggle("hidden", !(roomId === STAGE_ID && me.isAdmin && !furnishOn));
     decorateBtn.classList.toggle("hidden", !(((me.decorator && !isOwnRoom && roomId.startsWith("u_")) || adminLobbyEdit) && !furnishOn));
   }
   /** the name of whoever owns a BeatShop that stands in somebody else's room (looked up the first time you point at it) */
@@ -893,6 +900,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverPlayer) text = hoverPlayer.name;
     else if (hoverObj && hoverObj.kind === "npc") text = SIXTY.name;
     else if (hoverObj && hoverObj.kind === "reddoor") text = "Red door";
+    else if (hoverObj && hoverObj.kind === "tshirtshop") text = "T-shirt shop: pre-order the real t-shirt";
     else if (hoverObj && hoverObj.kind === "stageexit") text = "Door: back to the basement";
     else if (hoverObj && hoverObj.kind === "pmerchant") text = "pets bih: buy a pet";
     else if (hoverObj && hoverObj.kind === "mypet") text = "Your pet: tap to pick it up";
@@ -1258,6 +1266,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
       else if (obj.kind === "sink" || isBodyBag(obj.kind) || FURNI_KINDS[obj.kind!]?.plant) startUse(obj.id, null);
       else if (obj.kind === "npc") startSixty();
       else if (obj.kind === "reddoor") redDoorTap();
+      else if (obj.kind === "tshirtshop") openTshirt();
       else if (obj.kind === "stageexit") ctx.navigate("room", { roomId: LOBBY_ID, from: STAGE_ID });
       else if (obj.kind === "bagman") startBagman();
       else if (obj.kind === "minesixty") startMinesSixty();
@@ -1340,6 +1349,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (obj && FURNI_KINDS[obj.kind!]?.opens === "beatshop") opts.push({ label: "Open", target: FURNI_KINDS[obj.kind!].label, action: () => startBag(obj.id) });
     if (obj?.kind === "hchest") opts.push({ label: "Open", target: "Shared stash", action: () => startBag(obj.id) });
     if (obj?.kind === "stageexit") opts.push({ label: "Leave", target: "Exit door", action: () => ctx.navigate("room", { roomId: LOBBY_ID, from: STAGE_ID }) });
+    if (obj?.kind === "tshirtshop") opts.push({ label: "Shop", target: "T-shirt shop", action: () => openTshirt() });
     if (obj?.kind === "reddoor") opts.push({ label: "Knock", target: "Red door", action: () => redDoorTap() });
     if (obj?.kind === "hdoor") opts.push({ label: "Open", target: "Hideouts", action: () => startBag(obj.id) });
     if (obj?.kind === "hlandlord") opts.push({ label: "Talk", target: HIDEOUT_LANDLORD.name, action: () => startHideoutLandlord() });
