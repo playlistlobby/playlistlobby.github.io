@@ -34,6 +34,7 @@ export const buyRecord: Action = {
   async run(c, a) {
     await requireInRoom(c, "shop");
     const item = a?.item === undefined ? "cd" : text(a.item, /^[a-z_]{2,20}$/, "CD");
+    if (item === "cd") fail("That CD isn't sold any more."); // (Freakme is off the shelf)
     if (!BLOOD_CDS.includes(item)) fail("That CD isn't sold for blood.");
     const w = await c.user();
     const key = cdOwnedKey(item);

@@ -1,10 +1,9 @@
 import { h, toast } from "./dom";
 import { buyRecordCd, buyWalkman } from "../db";
 import { buyBeatShop } from "../beats";
-import { startPayment } from "../api";
 import { BLOOD_ICON, furniIcon, itemDef } from "../items";
 import { itemEntry, onShopConfig } from "../shopConfig";
-import { cdOwnedKey, MYSTERY_CDS, MYSTERY_PRICE_ORE } from "../shared/cds";
+import { cdOwnedKey } from "../shared/cds";
 import { BEATSHOP_OWNED_KEY, BEATSHOP_PRICE } from "../shared/beats";
 import { logAction } from "../logger";
 import { playSfx } from "../sfx";
@@ -14,10 +13,7 @@ export interface RecordShopApi {
   close(): void;
 }
 
-/** øre -> "1 kr" / "2,50 kr" */
-const kr = (ore: number): string => `${(ore / 100).toLocaleString("da-DK", { minimumFractionDigits: ore % 100 ? 2 : 0 })} kr`;
-
-/** The record player on the counter in the shop room: the Freakme CD for blood, and the mystery CD for real money (150 kr). */
+/** The record player on the counter in the shop room: the songs and the walkman for blood (the Freakme CD and the mystery CD are no longer sold). */
 export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void, onClose: () => void): RecordShopApi {
   const me = ctx.profile;
   const body = h("div", { class: "sixty-body" });
@@ -26,55 +22,12 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
     body);
   host.append(el);
   let closed = false;
-  let paying = false;
-
-  /** sends the player to the payment page (they come back to the game afterwards and the CD is handed over) */
-  async function pay(product: "mystery"): Promise<void> {
-    if (paying) return;
-    paying = true;
-    render();
-    try {
-      const url = await startPayment(product);
-      logAction(me, "buy", `went to pay for the ${product} CD`);
-      window.location.assign(url);
-    } catch (err) {
-      toast((err as Error).message, "err");
-      paying = false;
-      render();
-    }
-  }
 
   function render(): void {
     if (closed) return;
-    const mysteryHave = MYSTERY_CDS.filter((i) => me.owned[cdOwnedKey(i)]).length;
-    const soldOut = mysteryHave >= MYSTERY_CDS.length;
-    const haveFreak = !!me.owned.item_cd;
-    const freakPrice = itemEntry("cd").price;
-    const freak = itemDef("cd")!;
     const row = (icon: string, name: string, hint: string, button: HTMLElement, extra = ""): HTMLElement =>
       h("div", { class: "sixty-row" }, h("img", { src: icon, alt: "", class: "sixty-ico" }), h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, name, extra), h("div", { class: "hint" }, hint)), button);
-    const mysteryBtn = soldOut
-      ? h("button", { class: "btn small", disabled: true }, "Sold out")
-      : h("button", { class: "btn small primary", disabled: paying, onclick: () => void pay("mystery") }, paying ? "…" : kr(MYSTERY_PRICE_ORE));
-    const freakBtn = haveFreak
-      ? h("button", { class: "btn small", disabled: true, title: "You already bought your CD." }, "Owned")
-      : h("button", {
-          class: "btn small primary",
-          disabled: me.blood < freakPrice,
-          title: me.blood < freakPrice ? `You need ${freakPrice - me.blood} more drops` : "",
-          onclick: async () => {
-            try {
-              await buyRecordCd(me);
-              ctx.refreshHeader();
-              logAction(me, "buy", `bought the Freakme CD for ${freakPrice}`);
-              playSfx("coins", 0.5);
-              toast("The CD was added to your inventory.");
-              onChange();
-              render();
-            } catch (err) { toast((err as Error).message, "err"); }
-          },
-        }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${freakPrice}`);
-    // the songs that cost blood besides Freakme: one of each per player (the same button for each)
+    // the songs that cost blood: one of each per player (the same button for each)
     const bloodCd = (id: string, label: string): HTMLElement => {
       const price = itemEntry(id).price;
       const have = !!me.owned[cdOwnedKey(id)];
@@ -140,9 +93,7 @@ export function openRecordShop(host: HTMLElement, ctx: Ctx, onChange: () => void
           },
         }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${walkPrice}`);
     body.replaceChildren(
-      row(freak.icon, "Freakme", "One song, for blood. One per player.", freakBtn),
       bloodCd("cd_ogep", "OG Community EP"),
-      row(itemDef(MYSTERY_CDS[0])!.icon, "Mystery CD", soldOut ? "You have all three. There are none left." : "en af tre sange fra blodig oktober leaked, du for aldrig den samme cd igen", mysteryBtn, ` ${mysteryHave}/${MYSTERY_CDS.length}`),
       row(itemDef("walkman")!.icon, "Walkman", "A portable CD player: music wherever you go, only you hear it. One CD at a time.", walkBtn),
       row(furniIcon("f_beatshop"), "BeatShop", "A machine to sell your beats in. Put it in your room. One per player.", shopBtn),
       h("div", { class: "hint" }, "Real money is paid on a payment page, and you come back to the game afterwards."));

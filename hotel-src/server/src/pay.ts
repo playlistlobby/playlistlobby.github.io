@@ -74,6 +74,7 @@ async function checkTshirt(db: Rtdb, uid: string, raw: unknown, now: number): Pr
 export async function startCheckout(env: Env, uid: string, product: unknown, body: { color?: unknown; name?: unknown; order?: unknown } = {}): Promise<{ url: string }> {
   const dk = duckyOfPayId(product);
   const shirt = product === "tshirt";
+  if (product === "mystery") throw new PayError("The mystery CD isn't sold any more."); // (off the shelf)
   if (product !== "mystery" && !dk && !shirt) throw new PayError("Bad product.");
   const db = new Rtdb(env);
   const now = Date.now();
