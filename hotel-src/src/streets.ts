@@ -225,19 +225,47 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const hpFill = h("i", {});
   const hpText = h("span", { class: "st-hp-text" }, `${PVP.maxHp}/${PVP.maxHp}`);
   const status = h("div", { class: "st-status" });
-  const bandBtn = h("button", { class: "st-band", type: "button", onclick: () => { const slot = findSlot(me.inventory, PVP.healItem); if (slot < 0) return o.say("You have no bandage.", "warn"); void api.heal(slot); } }, "Bandage");
   const specFill = h("i", {});
   const specBtn = h("button", { class: "st-spec", type: "button", title: "Special: lands 2 or 3 knife swings at once. Charged by 5 swings that land.", onclick: () => void api.special() }, specFill, h("span", {}, "Special"));
-  const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText)), status, bandBtn);
+  const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText)), status);
   // the auto retaliate switch (it is remembered), next to the special: the two stand at the bottom in the middle
   let autoRetaliate = true;
   try { autoRetaliate = localStorage.getItem("6ix-autoretaliate") !== "0"; } catch { /* private mode */ }
-  const retBtn = h("button", { class: "st-ret", type: "button", title: "Hit back by yourself when somebody hits you", onclick: () => {
+  const retBtn = h("button", { class: "st-ret", type: "button", title: "Auto retaliate: hit back by yourself when somebody hits you (green = on)", onclick: () => {
     autoRetaliate = !autoRetaliate;
     try { localStorage.setItem("6ix-autoretaliate", autoRetaliate ? "1" : "0"); } catch { /* private mode */ }
     paintHud();
-  } }, "Auto retaliate");
-  const actions = h("div", { class: "st-actions" }, retBtn, specBtn);
+  } }, "Auto");
+  // the bandage and the gun: square buttons next to the special, greyed out when you carry none, and they fill up (load) while the wait before the next use runs
+  const square = (img: string, title: string, onclick: () => void): { el: HTMLButtonElement; shade: HTMLElement } => {
+    const shade = h("i", {});
+    const el = h("button", { class: "st-sq", type: "button", title, onclick }, h("img", { src: img, alt: "", draggable: false }), shade) as HTMLButtonElement;
+    return { el, shade };
+  };
+  let healReadyAt = 0;
+  const bandSq = square(itemDef(PVP.healItem)?.icon ?? "", "Bandage: heals 3 hit points", () => { const slot = findSlot(me.inventory, PVP.healItem); if (slot < 0) return o.say("You have no bandage.", "warn"); void api.heal(slot); });
+  const gunSq = square(itemDef("gun")?.icon ?? "", "Gun: one shot at the one you are fighting", () => {
+    const slot = findSlot(me.inventory, "gun");
+    if (slot < 0) return o.say("You have no gun.", "warn");
+    const c = combat.get(me.uid);
+    const uid = fightTarget ?? (c && c.combatUntil > serverNow() ? c.foe : undefined) ?? lastTarget?.uid ?? null;
+    if (!uid) return o.say("Fight somebody first, then shoot.", "warn");
+    void shoot(uid, slot);
+  });
+  /** the grey-out and the loading shade over the two square buttons (the shade shrinks as the wait runs out) */
+  function paintSquares(): void {
+    const now = serverNow();
+    const c = combat.get(me.uid);
+    const heal = Math.max(healReadyAt, (c?.healAt ?? 0) + PVP.healCooldownMs);
+    const haveBand = findSlot(me.inventory, PVP.healItem) >= 0, haveGun = findSlot(me.inventory, "gun") >= 0;
+    bandSq.el.classList.toggle("off", !haveBand);
+    gunSq.el.classList.toggle("off", !haveGun);
+    bandSq.shade.style.height = `${Math.max(0, Math.min(100, ((heal - now) / PVP.healCooldownMs) * 100))}%`;
+    gunSq.shade.style.height = `${Math.max(0, Math.min(100, ((gunReadyAt - now) / PVP.gunCooldownMs) * 100))}%`;
+  }
+  const squareTimer = window.setInterval(paintSquares, 150);
+  window.setTimeout(paintSquares, 0);
+  const actions = h("div", { class: "st-actions" }, retBtn, specBtn, bandSq.el, gunSq.el);
   o.stage.append(hud, actions);
   function paintHud(): void {
     const c = combat.get(me.uid);
@@ -250,12 +278,11 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     const prot = !!c && c.protectUntil > now;
     status.textContent = fighting ? "In a fight: you can't leave" : prot ? "Nobody can touch you for a moment" : passUntil > now ? `The elevator stops in ${Math.max(1, Math.round((passUntil - now) / 60000))} min` : "";
     status.classList.toggle("red", fighting);
-    bandBtn.classList.toggle("hidden", findSlot(me.inventory, PVP.healItem) < 0);
     const spec = Math.min(PVP.specialCharge, c?.spec ?? 0);
     specFill.style.width = `${(spec / PVP.specialCharge) * 100}%`;
     specBtn.classList.toggle("ready", spec >= PVP.specialCharge);
     specBtn.classList.toggle("hidden", !bestWeapon(me.inventory));
-    retBtn.textContent = `Auto retaliate: ${autoRetaliate ? "on" : "off"}`;
+    retBtn.textContent = "Auto"; // (green = on, grey = off)
     retBtn.classList.toggle("on", autoRetaliate);
     retBtn.classList.toggle("hidden", !bestWeapon(me.inventory));
   }
@@ -379,6 +406,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       o.refreshPocket();
       playSfx("give", 0.4);
       knifeReadyAt = Math.max(knifeReadyAt, swingAt(serverNow(), PVP.swingTicks)); // (eating takes the place of a swing)
+      healReadyAt = serverNow() + PVP.healCooldownMs;
       o.say(`You use a bandage: +${r.healed} hit points.`);
     } catch (err) { o.say((err as Error).message || "That didn't work.", "warn"); }
   }
@@ -610,6 +638,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       window.clearInterval(hudTimer);
       hud.remove();
       actions.remove();
+      window.clearInterval(squareTimer);
       orderBox?.remove();
     },
   };

@@ -51,6 +51,8 @@ export interface Profile {
   role: "admin" | "mod" | null;
   /** may mute for good (admins, and mods with perks/<uid>/muteForever) */
   muteForever: boolean;
+  /** may put a message on everybody's screen (admins, mabs, and mods with perks/<uid>/announce) */
+  announce: boolean;
   /** may ban for good (admins, and mods with perks/<uid>/banForever) */
   banForever: boolean;
   /** may ban the addresses a player plays from (admins, and mods with perks/<uid>/ipBan) */
@@ -245,6 +247,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     isMod: isAdmin,
     role: null,
     muteForever: false,
+    announce: false,
     banForever: false,
     ipBan: false,
     enterAnywhere: false,

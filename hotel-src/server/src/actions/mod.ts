@@ -206,6 +206,9 @@ const noticeText = (v: unknown): string => {
   return t.slice(0, NOTICE_MAX);
 };
 
+/** may the caller write to everybody? (the admin, Mabs, and a mod who was given perks/<uid>/announce) */
+const mayAnnounce = async (c: Ctx): Promise<boolean> => c.isAdmin || (c.isMod && (String((await c.db.get<string>(`users/${c.uid}/name`)) ?? "").toLowerCase() === "mabs" || (await c.db.get(`perks/${c.uid}/announce`)) === true));
+
 /** Put a message on somebody's screen (`kind` "warn": a warning they have to press OK on; "msg": a message). Mods may message one player; only the admin may write to everybody (`uid: "all"`). */
 export const modNotice: Action = {
   async run(c, a) {
@@ -215,7 +218,7 @@ export const modNotice: Action = {
     const id = `${c.now.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     const row = { kind, text: body, by: c.uid, byName: await callerName(c), at: c.now };
     if (a.uid === "all") {
-      if (!c.isAdmin) fail("Only the admin can write to everybody.");
+      if (!(await mayAnnounce(c))) fail("Only the admin can write to everybody.");
       c.extra[`notices/_all/${id}`] = row;
       await note(c, "message to everybody", "all", "everybody", body);
       return { ok: true };

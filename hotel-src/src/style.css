@@ -1810,15 +1810,24 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .st-status.red { background: rgba(150, 20, 20, .8); }
 /* the special attack on the street: a bar that fills with every swing that lands, and a glowing button when it is full */
 .st-actions { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 10px; }
-.st-ret { height: 46px; padding: 0 14px; border: 2px solid #3a3a46; border-radius: 10px; font: 700 14px/42px var(--font); color: #ddd; text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); background: #2a2a33; cursor: pointer; white-space: nowrap; }
-.st-ret.on { border-color: #2b6d19; color: #fff; background: linear-gradient(#6cc24a, #3b9a1f); }
+.st-ret { height: 46px; min-width: 84px; padding: 0 18px; border: 1px solid #5a5a5a; border-radius: 6px; font: 700 18px/44px var(--font); color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .45); white-space: nowrap; cursor: pointer; background: linear-gradient(#dcdcdc 0%, #b8b8b8 49%, #9c9c9c 51%, #b4b4b4 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 1px 1px rgba(0, 0, 0, .3); }
+.st-ret.on { border-color: #2b6d19; background: linear-gradient(#a8de80 0%, #6cc24a 49%, #4fae2c 51%, #6cc24a 100%); }
+.st-ret:active { filter: brightness(.82); }
 .st-ret.hidden { display: none; }
-.st-spec { position: relative; min-width: 170px; height: 46px; padding: 0 22px; overflow: hidden; border: 2px solid #5a1010; border-radius: 10px; font: 700 18px/42px var(--font); letter-spacing: .04em; color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); background: #3a1414; cursor: default; }
-.st-spec > i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#e24848, #a01c1c); transition: width .25s; }
+/* the bandage and the gun: 46 x 46 squares in the same glossy iOS 6 look; grey when you have none, and the dark shade over them runs down as the wait before the next use ends */
+.st-sq { position: relative; width: 46px; height: 46px; padding: 0; overflow: hidden; border: 1px solid #5a5a5a; border-radius: 6px; cursor: pointer; background: linear-gradient(#f4f4f4 0%, #d6d6d6 49%, #c0c0c0 51%, #d2d2d2 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 1px 1px rgba(0, 0, 0, .3); }
+.st-sq > img { position: relative; width: 30px; height: 30px; object-fit: contain; image-rendering: pixelated; display: block; margin: 7px auto 0; }
+.st-sq > i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: rgba(0, 0, 0, .55); pointer-events: none; }
+.st-sq.off { filter: grayscale(1); opacity: .45; cursor: default; }
+.st-sq:active:not(.off) { filter: brightness(.82); }
+/* the special: the same glossy iOS 6 look as the red Drop button; grey while it charges, the red fills in with every swing that lands */
+.st-spec { position: relative; min-width: 170px; height: 46px; padding: 0 22px; overflow: hidden; border: 1px solid #5a5a5a; border-radius: 6px; font: 700 18px/44px var(--font); color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .45); background: linear-gradient(#dcdcdc 0%, #b8b8b8 49%, #9c9c9c 51%, #b4b4b4 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 1px 1px rgba(0, 0, 0, .3); cursor: default; }
+.st-spec > i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#f59a9a 0%, #e04545 49%, #c62020 51%, #e04a4a 100%); transition: width .25s; }
 .st-spec > span { position: relative; }
-.st-spec.ready { cursor: pointer; border-color: #ffd23a; animation: st-spec-glow 1s infinite alternate; }
+.st-spec.ready { cursor: pointer; border-color: #8e1b1b; animation: st-spec-glow 1s infinite alternate; }
+.st-spec.ready:active { filter: brightness(.82); }
 .st-spec.hidden { display: none; }
-@keyframes st-spec-glow { from { box-shadow: 0 0 2px #ffd23a; } to { box-shadow: 0 0 10px #ffd23a; } }
+@keyframes st-spec-glow { from { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 0 3px #ff5a5a; } to { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 0 12px #ff3030; } }
 .st-band { align-self: flex-start; padding: 3px 12px; border: 1px solid #2b6d19; border-radius: 5px; font: 700 12px var(--font); color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .5); background: linear-gradient(#a8de80 0%, #6cc24a 49%, #4fae2c 50%, #3b9a1f 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); cursor: pointer; }
 .st-dead { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: rgba(60, 0, 0, .62); backdrop-filter: grayscale(.8); pointer-events: auto; }
 .st-dead-card { text-align: center; color: #fff; text-shadow: 0 2px 4px #000; }
