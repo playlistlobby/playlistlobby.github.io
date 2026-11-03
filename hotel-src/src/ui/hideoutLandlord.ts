@@ -1,7 +1,7 @@
 import { h, toast } from "./dom";
 import { hideoutBuy, hideoutUpgrade } from "../hideout";
 import { RoomMeta, watchMeta } from "../rooms";
-import { HIDEOUT_PRICE, HIDEOUT_SIZES, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize } from "../shared/hideout";
+import { HIDEOUT_MAX_FURNI, HIDEOUT_MAX_KITS, HIDEOUT_PRICE, HIDEOUT_SIZES, HIDEOUT_UPGRADE_PRICES, hideoutRoomId, levelOfSize } from "../shared/hideout";
 import { playSfx } from "../sfx";
 import type { Ctx } from "../main";
 import type { Unsubscribe } from "firebase/database";
@@ -40,13 +40,14 @@ export function hideoutLandlordPanel(ctx: Ctx, onChange: () => void): HideoutLan
     }
     const level = typeof meta.level === "number" ? meta.level : levelOfSize(Number(meta.w) || 14);
     const size = HIDEOUT_SIZES[Math.min(level, HIDEOUT_SIZES.length - 1)];
+    const fits = (lv: number): string => `${HIDEOUT_MAX_FURNI[Math.min(lv, HIDEOUT_MAX_FURNI.length - 1)]} pieces · ${HIDEOUT_MAX_KITS[Math.min(lv, HIDEOUT_MAX_KITS.length - 1)]} mixers and pots`; // (growing kits and mixers: the same number of each)
     el.replaceChildren(
-      h("div", { class: "hint" }, `Your hideout is ${size} × ${size}.`),
+      h("div", { class: "hint" }, `Your hideout is ${size} × ${size}: ${fits(level)}.`),
       h("div", { class: "ll-label" }, "Bigger hideout"),
       ...HIDEOUT_UPGRADE_PRICES.map((p, i) => {
         const owned = level > i, next = level === i, s = HIDEOUT_SIZES[i + 1];
         return h("div", { class: "ll-row" + (owned ? " owned" : "") },
-          h("span", { class: "ll-name" }, `${s} × ${s} hideout`),
+          h("span", { class: "ll-name" }, `${s} × ${s} hideout`, h("small", { class: "hint", style: { display: "block" } }, fits(i + 1))),
           owned ? h("span", { class: "ll-done" }, "✓ bought")
             : h("button", { class: "btn small" + (next ? " primary" : ""), disabled: !next || me.blood < p || busy, title: next ? "" : "Buy the smaller one first", onclick: () => void run(async () => { const r = await hideoutUpgrade(me); return `Your hideout is now ${r.size} × ${r.size}.`; }) }, `${p} drops`));
       }),

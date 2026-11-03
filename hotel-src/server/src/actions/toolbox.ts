@@ -1,9 +1,9 @@
 // The toolbox in your own room: storing things, and putting furniture down / moving it / taking it back. A piece exists in exactly one place
 // (your pocket, your storage, or your room), so every change here moves it in one atomic write.
-import { Action, hideoutAccess, ID_RE, int, requireHideoutMember, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
+import { Action, hideoutAccess, ID_RE, int, onTheStreet, requireHideoutMember, requireInRoom, requireOwnRoom, roomSize, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, carryMsg, CARRY_MAX, MAX_FURNI, overCarry, ROOM_MAX_KITS, ROOM_MAX_MIXERS, STASH_PIECES, STORAGE_MAX_ITEMS, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
-import { isFurniItem, STACKABLE } from "../../../src/shared/items";
+import { findSlot, isFurniItem, STACKABLE } from "../../../src/shared/items";
 const BOOMBOX_ID = "boombox";
 import { nextFurniState, POSTER_KIND, posterImageOk, SHIPPED_DIMS, wallPlaceOk } from "../../../src/shared/furniture";
 import { HIDEOUT_MAX_FURNI, HIDEOUT_MAX_KITS, HIDEOUT_MAX_MIXERS, HIDEOUT_ONLY, isHideoutId, levelOfSize } from "../../../src/shared/hideout";
@@ -106,9 +106,11 @@ export const takeItem: Action = {
   },
 };
 
-/** Your stash box is in your own room, and the remote bank in the arrival room opens the same one: you can reach it from either. */
+/** Your stash box is in your own room, and the remote bank in the arrival room opens the same one: you can reach it from either (and from anywhere with an iPod, except on the street). */
 async function requireStashAccess(c: Ctx): Promise<void> {
   if (await c.db.get(`rooms/arrival/players/${c.uid}`)) return;
+  // an iPod in your pocket opens it from anywhere but the street
+  if (findSlot((await c.user()).s.inventory, "ipod") >= 0 && !(await onTheStreet(c))) return;
   await requireOwnRoom(c);
 }
 
@@ -220,7 +222,8 @@ export const furniPlace: Action = {
     if (autoPot) kind = "f_planter";
     const mixUp = kind === "f_mixer_up" ? 1 : kind === "f_mixer_up2" ? 2 : 0; // (an upgraded mixer: down in the room it is a mixer marked `up`)
     if (mixUp) kind = "f_mixer";
-    const kitCap = hideout ? HIDEOUT_MAX_KITS : ROOM_MAX_KITS, mixerCap = hideout ? HIDEOUT_MAX_MIXERS : ROOM_MAX_MIXERS; // (the growing kits and the mixers keep their limit)
+    const lv = Math.min(level, HIDEOUT_MAX_KITS.length - 1);
+    const kitCap = hideout ? HIDEOUT_MAX_KITS[lv] : ROOM_MAX_KITS, mixerCap = hideout ? HIDEOUT_MAX_MIXERS[Math.min(lv, HIDEOUT_MAX_MIXERS.length - 1)] : ROOM_MAX_MIXERS; // (the growing kits and the mixers keep their limit: a hideout fits more with every size upgrade)
     if (kind === "f_planter" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_planter").length >= kitCap) fail(`${hideout ? "A hideout" : "A room"} fits ${kitCap} growing kits.`);
     if (kind === "f_mixer" && Object.values(rows as Record<string, { kind?: string }>).filter((r) => r?.kind === "f_mixer").length >= mixerCap) fail(`${hideout ? "A hideout" : "A room"} fits ${mixerCap} mixers.`);
     // a poster only hangs on a wall, and carries the picture chosen when it is hung (it stays on it; a poster taken down goes back blank)

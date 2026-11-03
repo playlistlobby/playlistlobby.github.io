@@ -10,7 +10,7 @@ export interface IpodApi { close(): void }
  * The iPod: SoundCloud and your own BeatShop, from wherever you are. It opens as a phone-sized window: the home screen with the two apps, and
  * SoundCloud inside it (the same page as in the hideout computers, without the speaker). The BeatShop opens on its own window, as it does at the machine.
  */
-export function openIpod(host: HTMLElement, ctx: Ctx, openBeats: () => void, onClose: () => void): IpodApi {
+export function openIpod(host: HTMLElement, ctx: Ctx, openBeats: () => void, onClose: () => void, storage?: { open(): void; blocked: boolean }): IpodApi {
   const me = ctx.profile;
   let closed = false;
   let page: "home" | "sound" = "home";
@@ -50,6 +50,11 @@ export function openIpod(host: HTMLElement, ctx: Ctx, openBeats: () => void, onC
         if (!haveShop) return toast("You haven't got a BeatShop yet. The record shop in the store sells one.", "err");
         close();
         openBeats();
+      }),
+      app("Storage", storage?.blocked ? "Doesn't work on the street" : "Your storage box, from anywhere", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18v3H3zm1 4h16v8H4zm5 2v2h6v-2z" fill="currentColor"/></svg>', () => {
+        if (!storage || storage.blocked) return toast("There is no signal on the street. Your storage doesn't open here.", "err");
+        close();
+        storage.open();
       }));
   }
   render();
