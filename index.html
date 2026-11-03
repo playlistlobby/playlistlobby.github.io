@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>PlaylistPlanet</title>
-  <link rel="icon" href="icons/6.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/playlistplanet.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/playlistplanet.png">
   <style>
     /* iOS 6 home screen on a white page. The measurements, gloss and label style are the same as the Playlist app's own
        home screen (taken from the Figma "Legacy iOS UI Kit", 320x568 frame): 57px icons with a 10px radius, 11px bold labels.
@@ -45,12 +46,14 @@
     }
     .icon::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--gloss) center / 100% 100% no-repeat; opacity: .6; mix-blend-mode: soft-light; pointer-events: none; }
     .icon::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(0,0,0,.45); opacity: 0; transition: opacity .12s; z-index: 1; }
+    /* the icon picture has its own rounded corners, gloss and shadow: nothing is drawn on top of it */
+    .icon.own { width: calc(66 * var(--u)); height: calc(66 * var(--u)); margin: calc(-4.5 * var(--u)) 0 calc(-4.5 * var(--u)); background-color: transparent; background-size: 100% 100%; border-radius: 0; box-shadow: none; }
+    .icon.own::before, .icon.own::after { display: none; }
+    .app:active .icon.own, .app.pressed .icon.own { filter: brightness(.6); }
     .app:active .icon::before, .app.pressed .icon::before { opacity: 1; } /* iOS 6 darkens a tapped icon */
     .app:focus-visible .icon { box-shadow: 0 0 0 2px rgba(60,120,220,.8), 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.4); }
     .label { font: 700 calc(11 * var(--u)) / 1.2 "Helvetica Neue", Helvetica, Arial, sans-serif; color: #2c3136; text-shadow: 0 1px 0 rgba(255,255,255,.9); white-space: nowrap; }
 
-    footer { position: fixed; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom)); text-align: center; font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif; color: #9aa3a0; }
-    footer a { color: #8a9490; }
     @media (prefers-reduced-motion: reduce) { .screen { transition: opacity .2s ease; } .screen.out { transform: none; } }
   </style>
 </head>
@@ -67,13 +70,12 @@
     <h1 class="sr">PlaylistPlanet</h1>
     <nav class="grid" aria-label="Apps">
       <a class="app" href="hotel/">
-        <span class="icon" style="background-image:url('icons/6.svg')"></span>
+        <span class="icon own" style="background-image:url('icons/playlistplanet.png')"></span>
         <span class="label">PlaylistPlanet</span>
       </a>
     </nav>
   </main>
 
-  <footer>PlaylistPlanet is open source (GPL-3.0): <a href="https://github.com/playlistlobby/playlistlobby.github.io/tree/main/hotel-src">source</a></footer>
 
   <script>
     // live clock in the status bar, formatted like iOS ("9:41 AM")
