@@ -1,6 +1,6 @@
 // Things that pay blood or change what you carry: stabbing, the syringe, Flappy Bird, cats, bins, smoking, rolling, watering, growing.
 import { VAPE_BLOOD_MULT, VAPE_COOLDOWN_MS, VAPE_ITEM, VAPE_MS, VAPE_SPEED } from "../../../src/shared/ducky";
-import { Action, cheb, ID_RE, int, onTheStreet, requireInRoom, requireWorkRoom, text } from "./util";
+import { Action, cheb, ID_RE, int, onTheStreet, peersOf, requireInRoom, requireWorkRoom, text } from "./util";
 import { fail } from "../ctx";
 import { isEmulator } from "../env";
 import { skipTime } from "../skipTime";
@@ -111,9 +111,11 @@ export const dumpster: Action = {
     const extras = (await c.db.get<Record<string, { kind?: string }>>("lobby/furni")) ?? {};
     if (can !== "lobby2" && can !== "lobby3" && can !== "lobby5" && extras[can]?.kind !== "dumpster") fail("That isn't a bin.");
     const w = await c.user();
-    const last = w.s.dumpsters[can] ?? 0;
+    let last = w.s.dumpsters[can] ?? 0;
+    let byPeer = false;
+    for (const p of await peersOf(c)) { const t = Number(await c.db.get(`users/${p}/dumpsters/${can}`)) || 0; if (t > last) { last = t; byPeer = true; } } // (accounts made on one device share the wait on a bin)
     const reload = c.now < w.s.leanUntil ? DUMPSTER_MS / 2 : DUMPSTER_MS; // the lean halves the wait
-    if (c.now - last < reload) fail(`That bin was searched a moment ago. Try again in ${mins(reload - (c.now - last))}.`);
+    if (c.now - last < reload) fail(`That bin was searched a moment ago${byPeer ? " (by an account made on the same device as yours: they share the wait)" : ""}. Try again in ${mins(reload - (c.now - last))}.`);
     const total = DUMPSTER_DROPS.reduce((n, d) => n + d.chance, 0);
     const pick = (): string => {
       let r = Math.random() * total;

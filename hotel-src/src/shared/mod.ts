@@ -15,8 +15,11 @@ export type Role = "admin" | "mod";
 /** a network address as a database key (no dots allowed in keys) */
 export const ipKey = (ip: string): string => ip.replace(/[.#$\[\]/]/g, "_");
 /** accounts that can be made: from one connection a day, from one device a day, and in all per hour (see server/src/actions/signup.ts) */
-export const SIGNUP_IP_PER_DAY = 5;
-export const SIGNUP_DEVICE_PER_DAY = 3;
+export const SIGNUP_IP_PER_DAY = 2;
+export const SIGNUP_DEVICE_PER_DAY = 2;
 export const SIGNUP_ALL_PER_HOUR = 60;
+/** accounts one device can have in all (a device is a browser, and the same browser in a private window: see the x-fp header), and the wait between two accounts made on one device */
+export const SIGNUP_DEVICE_TOTAL = 5;
+export const SIGNUP_DEVICE_GAP_MS = 3_600_000;
 /** the longest message a moderator can put on a screen */
 export const NOTICE_MAX = 200;

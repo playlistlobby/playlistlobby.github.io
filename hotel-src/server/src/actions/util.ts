@@ -8,6 +8,14 @@ export interface Action {
   locks?(c: Ctx, args: any): Promise<string[]> | string[];
 }
 
+/** the accounts that play from the same device as this one (peers/<uid>; a private window of the same browser counts: see the x-fp header in server/src/index.ts), at most 30 */
+export async function peersOf(c: Ctx, uid: string = c.uid): Promise<string[]> {
+  return Object.keys((await c.db.get<Record<string, boolean>>(`peers/${uid}`)) ?? {}).slice(0, 30);
+}
+/** what a player is told when something is not allowed between two accounts that were made on the same device */
+export const SAME_DEVICE_TRADE = "This account was made on the same device as yours, so you can't trade with it, give it things or pick up what it drops. This is to stop people making extra accounts to move things to their main one.";
+export const SAME_DEVICE_HIDEOUT = "This account was made on the same device as accounts that are already in this hideout. A hideout can only have one other account from the same device, to stop people making extra accounts to fill it.";
+
 export function int(v: unknown, min: number, max: number, what: string): number {
   const n = Number(v);
   if (!Number.isInteger(n) || n < min || n > max) return fail(`Bad ${what}.`);

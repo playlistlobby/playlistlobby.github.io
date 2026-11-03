@@ -3,7 +3,7 @@
 //   signups/<key>/<id> = time    key is ip_<address>, dv<device> or "_all"; only the last 24 hours count
 import { Action, text } from "./util";
 import { Ctx, fail } from "../ctx";
-import { CHATMOD_NAME, ipKey, SIGNUP_ALL_PER_HOUR, SIGNUP_DEVICE_PER_DAY, SIGNUP_IP_PER_DAY } from "../../../src/shared/mod";
+import { CHATMOD_NAME, ipKey, SIGNUP_ALL_PER_HOUR, SIGNUP_DEVICE_GAP_MS, SIGNUP_DEVICE_PER_DAY, SIGNUP_DEVICE_TOTAL, SIGNUP_IP_PER_DAY } from "../../../src/shared/mod";
 import { NEW_NAME_RE, RESERVED_NAMES } from "../../../src/shared/ducky";
 
 const DAY = 24 * 3_600_000;
@@ -15,6 +15,21 @@ async function limit(c: Ctx, key: string, windowMs: number, max: number, why: st
   for (const [id, t] of Object.entries(rows)) { if (c.now - t > DAY) c.extra[`signups/${key}/${id}`] = null; else if (c.now - t < windowMs) n++; }
   if (n >= max) fail(why);
   c.extra[`signups/${key}/${c.now.toString(36)}${Math.random().toString(36).slice(2, 6)}`] = c.now;
+}
+
+/** one hour between two accounts made on one device (or one private window of the same browser, see x-fp) */
+async function gap(c: Ctx, key: string): Promise<void> {
+  const rows = (await c.db.get<Record<string, number>>(`signups/${key}`)) ?? {};
+  const last = Math.max(0, ...Object.values(rows).map(Number));
+  if (last && c.now - last < SIGNUP_DEVICE_GAP_MS) fail(`An account was made on this device a moment ago. You can make the next one in ${Math.ceil((SIGNUP_DEVICE_GAP_MS - (c.now - last)) / 60_000)} minutes.`);
+}
+
+/** the most accounts one device can ever have (the accounts that played from it before count too) */
+async function lifetime(c: Ctx, key: string): Promise<void> {
+  const ids = new Set<string>([...Object.keys((await c.db.get<Record<string, unknown>>(`signupTotal/${key}`)) ?? {}), ...Object.keys((await c.db.get<Record<string, unknown>>(`netUsers/${key}`)) ?? {})]);
+  ids.delete(c.uid);
+  if (ids.size >= SIGNUP_DEVICE_TOTAL) fail(`This device already has ${SIGNUP_DEVICE_TOTAL} accounts, the most one device can have.`);
+  c.extra[`signupTotal/${key}/${c.uid}`] = c.now;
 }
 
 /** The new account's profile. Called right after the sign-in was made; safe to call again (an account that has its profile just gets "ok"). */
@@ -30,7 +45,11 @@ export const register: Action = {
     // the limits (the admin and the mods make accounts as they like)
     if (!c.isMod) {
       if (c.ip) await limit(c, `ip_${ipKey(c.ip)}`, DAY, SIGNUP_IP_PER_DAY, "Too many accounts have been made from this connection today. Try again tomorrow.");
-      if (c.net[0]) await limit(c, c.net[0], DAY, SIGNUP_DEVICE_PER_DAY, "Too many accounts have been made on this device today. Try again tomorrow.");
+      for (const key of c.net) { // (the device, and the same browser in a private window: both keys)
+        await gap(c, key);
+        await limit(c, key, DAY, SIGNUP_DEVICE_PER_DAY, "Too many accounts have been made on this device today. Try again tomorrow.");
+        await lifetime(c, key);
+      }
       await limit(c, "_all", 3_600_000, SIGNUP_ALL_PER_HOUR, "A lot of people are signing up right now. Try again in a few minutes.");
     }
     c.extra[`users/${c.uid}`] = { name, gender: "M", figure: "", blood: 0, createdAt: c.now };

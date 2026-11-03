@@ -6,7 +6,7 @@ const byEn = new Map(Object.entries(d).map(([id, v]) => [v.en, id]));
 const set = (en, da, where = "") => {
   const id = byEn.get(en);
   if (id) { d[id].da = da; return; }
-  const nid = "N" + String(Object.keys(d).filter((k) => k.startsWith("N")).length + 1).padStart(3, "0");
+  let nn = Object.keys(d).filter((k) => k.startsWith("N")).length + 1; while (d["N" + String(nn).padStart(3, "0")]) nn++; const nid = "N" + String(nn).padStart(3, "0");
   d[nid] = { en, da, where };
   byEn.set(en, nid);
 };
@@ -271,5 +271,13 @@ set("You swallow the pill. Give it a moment…", "Du sluger pillen. broooo…", 
 set("The door is locked. Finish what Sixty wants first.", "Døren er låst. 6ix vil ikke lukke dig ud.", "src/ui/room.ts");
 set("He isn't getting up.", "han er dead as fuck.", "src/ui/room.ts:943");
 set("you earned your first blood. come back in about {when}, I will have another job.", "du tjente dit første blod. kom tilbage om cirka {when}, så har jeg et andet job 4u.", "src/npc.ts:66");
+// accounts made on one device (alts): trading, hideouts, sign-up limits, shared bin wait and shared daily stock
+set("This account was made on the same device as yours, so you can't trade with it, give it things or pick up what it drops. This is to stop people making extra accounts to move things to their main one.", "Den her konto er lavet på den samme enhed som din, så du kan ikke handle med den, give den ting eller samle det op den smider. Det er for at stoppe folk i at lave ekstra konti til at flytte ting over til hovedkontoen.", "server/src/actions/util.ts");
+set("This account was made on the same device as accounts that are already in this hideout. A hideout can only have one other account from the same device, to stop people making extra accounts to fill it.", "Den her konto er lavet på den samme enhed som konti der allerede er i dette hideout. Et hideout kan kun have én anden konto fra den samme enhed, for at stoppe folk i at lave ekstra konti til at fylde det.", "server/src/actions/util.ts");
+set("An account was made on this device a moment ago. You can make the next one in {minutes} minutes.", "Der blev lige lavet en konto på den her enhed. Du kan lave den næste om {minutes} minutter.", "server/src/actions/signup.ts");
+set("This device already has {n} accounts, the most one device can have.", "Den her enhed har allerede {n} konti, det er det meste én enhed kan have.", "server/src/actions/signup.ts");
+set("That bin was searched a moment ago (by an account made on the same device as yours: they share the wait). Try again in {when}.", "Den skraldespand blev lige ransaget (af en konto lavet på samme enhed som din: I deler ventetiden). Prøv igen om {when}.", "server/src/actions/rewards.ts");
+set("Sold out. New mixers at 10:00 every morning. (Accounts made on the same device share one daily stock.)", "Udsolgt. Nye mixere kl. 10:00 hver morgen. (Konti lavet på samme enhed deler ét dagligt lager.)", "server/src/actions/shop.ts");
+set("Sold out for today. New stock tomorrow. (Accounts made on the same device share one daily stock.)", "Udsolgt for i dag. Nyt lager i morgen. (Konti lavet på samme enhed deler ét dagligt lager.)", "server/src/actions/shop.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);

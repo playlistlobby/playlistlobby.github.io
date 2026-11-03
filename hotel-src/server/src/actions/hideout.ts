@@ -1,7 +1,7 @@
 // Hideouts (see src/shared/hideout.ts): buying one, the owner's tools (size, colours, name, locking builds, members), invites, the shared box, and the
 // computer's orders. Everything about a hideout is written here (the browsers only read roomsMeta/h_<owner>); the furnishing itself is in toolbox.ts.
 import { DONATE_DAILY_MAX } from "../../../src/shared/songs";
-import { Action, ID_RE, int, requireHideoutMember, requireInRoom, requireWorkRoom, text } from "./util";
+import { Action, ID_RE, int, peersOf, requireHideoutMember, requireInRoom, requireWorkRoom, SAME_DEVICE_HIDEOUT, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, lighterHex, STORAGE_MAX_PIECES, takeQtyFrom } from "../../../src/shared/economy";
 import { isFurniItem, NO_DROP } from "../../../src/shared/items";
@@ -247,6 +247,7 @@ export const hideoutInvite: Action = {
     const members = (meta.members ?? {}) as Record<string, unknown>;
     if (members[uid!]) fail("They are already in your hideout.");
     if (Object.keys(members).length >= HIDEOUT_MAX_MEMBERS) fail(`A hideout holds ${HIDEOUT_MAX_MEMBERS} members at most.`);
+    { const inside = new Set([c.uid, ...Object.keys(members)]); if ((await peersOf(c, uid!)).filter((p) => inside.has(p)).length >= 2) fail(SAME_DEVICE_HIDEOUT); } // (an account and one other account from its device: no more)
     c.extra[`hideoutInvites/${uid}/${c.uid}`] = { fromName: await nameOf(c, c.uid), roomName: String(meta.name ?? "hideout").slice(0, HIDEOUT_NAME_MAX), at: c.now };
     return { name: await nameOf(c, uid!) };
   },
@@ -265,6 +266,7 @@ export const hideoutAnswer: Action = {
     const meta = await c.db.get<{ owner?: string; name?: string; members?: Record<string, unknown> }>(`roomsMeta/${room}`);
     if (!meta?.owner) fail("That hideout doesn't exist any more.");
     if (Object.keys(meta!.members ?? {}).length >= HIDEOUT_MAX_MEMBERS) fail("That hideout is full.");
+    { const inside = new Set([owner, ...Object.keys(meta!.members ?? {})]); if ((await peersOf(c)).filter((p) => inside.has(p)).length >= 2) fail(SAME_DEVICE_HIDEOUT); }
     const start = memberDefaults(meta!.members as Record<string, HideoutPerms> | undefined); // (what the owner has turned off for some stays off for a new one)
     c.extra[`roomsMeta/${room}/members/${c.uid}`] = { name: await nameOf(c, c.uid), build: start.build, grow: start.grow, stash: start.stash, at: c.now };
     c.extra[`hideouts/${c.uid}/${owner}`] = { name: String(meta!.name ?? inv!.roomName ?? "hideout").slice(0, HIDEOUT_NAME_MAX), role: "member" };

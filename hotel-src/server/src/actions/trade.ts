@@ -1,6 +1,6 @@
 // Finishing a trade: when both players have accepted and confirmed, the server checks both offers against what they really carry
 // and swaps everything in one atomic write. Nothing is ever "in the middle", so nobody can lose or duplicate anything.
-import { Action, ID_RE, text } from "./util";
+import { Action, ID_RE, SAME_DEVICE_TRADE, peersOf, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, carryMsg, carryMsgFor, overCarry, takeQtyFrom, TRADE_BLOOD_CAP, tradeBloodLeft, TRADE_BLOOD_WINDOW_MS } from "../../../src/shared/economy";
 import { isLaced, NO_DROP } from "../../../src/shared/items";
@@ -22,6 +22,15 @@ function parseOffer(raw: any): Offer {
 
 const sidesName = (sides: Array<{ w: { uid: string }; name: string }>, uid: string): string => sides.find((s) => s.w.uid === uid)?.name ?? "They";
 
+/** asked before a trade invite is sent: accounts that were made on the same device can't trade (the finish refuses too) */
+export const tradeCheck: Action = {
+  async run(c, a) {
+    const uid = text(a.uid, ID_RE, "player");
+    if ((await peersOf(c)).includes(uid)) fail(SAME_DEVICE_TRADE);
+    return {};
+  },
+};
+
 export const tradeFinish: Action = {
   async locks(c, a) {
     const id = text(a?.id, ID_RE, "trade");
@@ -37,6 +46,7 @@ export const tradeFinish: Action = {
     if (c.uid !== A && c.uid !== B) fail("That isn't your trade.");
     if (t.status === "done") return { done: true };
     if (t.status !== "open") fail("That trade was called off.");
+    if ((await peersOf(c, A)).includes(B)) fail(SAME_DEVICE_TRADE); // (accounts from one device can't trade)
     const yes = (o: any, u: string) => o?.[u] === true;
     if (!(yes(t.ready, A) && yes(t.ready, B) && yes(t.confirm, A) && yes(t.confirm, B))) fail("Both of you have to accept and confirm first.");
     const wa = await c.user(A), wb = await c.user(B);

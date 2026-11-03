@@ -2,7 +2,7 @@
 // copied; the receiver accepts it into their pocket or declines it, and a declined gift waits in the sender's "returned" list until they have room.
 //   gifts/<to>/<id>        a gift waiting for its receiver
 //   giftReturns/<from>/<id> a declined gift waiting for its sender
-import { Action, ID_RE, int, text } from "./util";
+import { Action, ID_RE, int, peersOf, SAME_DEVICE_TRADE, text } from "./util";
 import { Ctx, fail } from "../ctx";
 import { addToInv, carryMsg, overCarry, takeQtyFrom } from "../../../src/shared/economy";
 import { isLaced, NO_DROP, STACKABLE } from "../../../src/shared/items";
@@ -30,6 +30,7 @@ export const giftSend: Action = {
     const to = text(a.to, UID_RE, "player");
     if (to === c.uid) fail("You can't send a gift to yourself.");
     if (!(await c.db.get(`friends/${c.uid}/${to}`))) fail("You can only send gifts to your friends.");
+    if ((await peersOf(c)).includes(to)) fail(SAME_DEVICE_TRADE);
     if ((await c.db.keys(`gifts/${to}`)).length >= MAX_WAITING) fail("They have too many gifts waiting. Try again later.");
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");

@@ -1,5 +1,5 @@
 // Putting things on the floor and picking them up. Every pile lives at rooms/<room>/drops/<x>_<y>: the key is the tile, so a tile holds one pile.
-import { Action, cheb, int, isPublicRoom, requireInRoom, roomSize, text } from "./util";
+import { Action, cheb, int, isPublicRoom, peersOf, requireInRoom, roomSize, SAME_DEVICE_TRADE, text } from "./util";
 import { fail } from "../ctx";
 import { isLaced, NO_DROP } from "../../../src/shared/items";
 import { addToInv, BULK_AT, carryMsg, overCarry, DROP_LIFE_BULK_MS, DROP_LIFE_MS, takeQtyFrom } from "../../../src/shared/economy";
@@ -97,6 +97,7 @@ export const pickup: Action = {
     if (!d) return fail("Somebody else got it first.");
     if (d.exp && d.exp <= c.now) { await c.db.patch({ [path]: null }); return fail("It's gone."); }
     if (stand && cheb(stand, { x: d.x, y: d.y }) > 3) fail("It's too far away.");
+    if (d.by && d.by !== c.uid && (await peersOf(c)).includes(d.by)) fail(SAME_DEVICE_TRADE); // (what an account from your own device dropped)
     const w = await c.user();
     if (d.item === "blood") { // a pile of blood (somebody died of fentanyl): it goes straight to your blood
       const n = Math.max(1, Math.floor(Number(d.qty) || 1));

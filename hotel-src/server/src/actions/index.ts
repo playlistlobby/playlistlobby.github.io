@@ -6,7 +6,7 @@ import { eat, sixty, usePill } from "./quest";
 import { combineItems, consume, dumpster, fillCan, finishSmoke, flappy, harvest, light, plant, stab, syringe, vapePuff, water } from "./rewards";
 import { drop, fentDrop, pickup } from "./floor";
 import { furniMove, furniPlace, furniState, furniStore, stashStore, stashTake, storeItem, takeItem } from "./toolbox";
-import { tradeFinish } from "./trade";
+import { tradeCheck, tradeFinish } from "./trade";
 import { buildCheck, debug, staffTp, stageGo } from "./debug";
 import { eventAlbum, eventFinaleRefresh, eventDrop, eventHit, eventJoin, eventKill, eventReset, eventSet, eventEndAll } from "./event";
 import { flappyRemove, flappyScore, flappyStart } from "./flappyboard";
@@ -49,7 +49,7 @@ export const ACTIONS: Record<string, Action> = {
   consume, stab, syringe, vapePuff, flappy, dumpster, light, finishSmoke, combine: combineItems, fillCan, plant, water, harvest,
   drop, pickup, fentDrop,
   store: storeItem, take: takeItem, stashStore, stashTake, stashEnsure, furniPlace, furniMove, furniStore, furniState,
-  tradeFinish, flappyStart, flappyScore, flappyRemove,
+  tradeFinish, tradeCheck, flappyStart, flappyScore, flappyRemove,
   cdInsert, cdReturn, cdControl, speakerConnect, speakerControl, cdPress, cdPressPrice, ticketBuy, elevatorUp, elevatorDown, streetBin, streetFill, streetEnter, streetHit, streetShoot, streetTick, streetReturn, streetHeal, streetsTest, buyBeatShop, beatBegin, beatFinish, beatRemove, beatBuy, beatReplyBegin, beatChatSend, beatChatRead, mix, mixCollect,
   rouletteOpen, rouletteJoin, rouletteLeave, roulettePull, rouletteTick,
   pokerSit, pokerAct, pokerLeave, pokerTick,

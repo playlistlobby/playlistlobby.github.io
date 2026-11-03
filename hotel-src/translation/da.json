@@ -13453,7 +13453,7 @@
   "en": "Somebody with a bounty on them is in there: nobody can hide",
   "da": "Nogen med en dusør på hovedet er derinde: ingen kan gemme sig",
   "where": "src/ui/door.ts"
- },
+ },
  "N2136": {
   "en": "Artist",
   "da": "Kunstner",
@@ -15783,5 +15783,40 @@
   "en": "You can't attack yet: {…} more seconds.",
   "da": "Du kan ikke angribe endnu: {…} sekunder mere.",
   "where": "server/src/actions/streets.ts"
+ },
+ "N9020": {
+  "en": "This account was made on the same device as yours, so you can't trade with it, give it things or pick up what it drops. This is to stop people making extra accounts to move things to their main one.",
+  "da": "Den her konto er lavet på den samme enhed som din, så du kan ikke handle med den, give den ting eller samle det op den smider. Det er for at stoppe folk i at lave ekstra konti til at flytte ting over til hovedkontoen.",
+  "where": "server/src/actions/util.ts"
+ },
+ "N9021": {
+  "en": "This account was made on the same device as accounts that are already in this hideout. A hideout can only have one other account from the same device, to stop people making extra accounts to fill it.",
+  "da": "Den her konto er lavet på den samme enhed som konti der allerede er i dette hideout. Et hideout kan kun have én anden konto fra den samme enhed, for at stoppe folk i at lave ekstra konti til at fylde det.",
+  "where": "server/src/actions/util.ts"
+ },
+ "N9022": {
+  "en": "An account was made on this device a moment ago. You can make the next one in {minutes} minutes.",
+  "da": "Der blev lige lavet en konto på den her enhed. Du kan lave den næste om {minutes} minutter.",
+  "where": "server/src/actions/signup.ts"
+ },
+ "N9023": {
+  "en": "This device already has {n} accounts, the most one device can have.",
+  "da": "Den her enhed har allerede {n} konti, det er det meste én enhed kan have.",
+  "where": "server/src/actions/signup.ts"
+ },
+ "N9024": {
+  "en": "That bin was searched a moment ago (by an account made on the same device as yours: they share the wait). Try again in {when}.",
+  "da": "Den skraldespand blev lige ransaget (af en konto lavet på samme enhed som din: I deler ventetiden). Prøv igen om {when}.",
+  "where": "server/src/actions/rewards.ts"
+ },
+ "N9025": {
+  "en": "Sold out. New mixers at 10:00 every morning. (Accounts made on the same device share one daily stock.)",
+  "da": "Udsolgt. Nye mixere kl. 10:00 hver morgen. (Konti lavet på samme enhed deler ét dagligt lager.)",
+  "where": "server/src/actions/shop.ts"
+ },
+ "N9026": {
+  "en": "Sold out for today. New stock tomorrow. (Accounts made on the same device share one daily stock.)",
+  "da": "Udsolgt for i dag. Nyt lager i morgen. (Konti lavet på samme enhed deler ét dagligt lager.)",
+  "where": "server/src/actions/shop.ts"
  }
 }

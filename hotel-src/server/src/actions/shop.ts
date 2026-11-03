@@ -1,10 +1,10 @@
 // Buying from 6ixty, the vending machine and the shop room's daily pieces. The server decides what is on sale and for how much.
-import { Action, requireInRoom, roomSize, text } from "./util";
+import { Action, peersOf, requireInRoom, roomSize, text } from "./util";
 import { fail } from "../ctx";
 import { addToInv, lighterHex, RECOLOR_PRICE, ROOM_UPGRADES, takeQtyFrom } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, findSlot, ITEM_IDS, SELL_BUNDLE, sellPrice, SIXTY_STOCK, VENDING_STOCK } from "../../../src/shared/items";
 import { furniPeriodStart, furniPicksToday, furniPrice, POSTER_KIND, POSTER_PRICE, SHIPPED_DIMS, SHOP_KIND_PREFIX, SHOP_PIECES } from "../../../src/shared/furniture";
-import { todayStartAt, vendDay, vendLeft } from "../../../src/shared/economy";
+import { todayStartAt, vendDay, vendLeft, vendLimit } from "../../../src/shared/economy";
 import { BLOOD_CDS, cdOwnedKey, isCdItem } from "../../../src/shared/cds";
 import { DEFAULT_FIXED_POS, DEFAULT_PIECE_POS, nearestWallSpot, skinFootprint, skinOf, skinOwnedKey, SkinPart } from "../../../src/shared/skins";
 
@@ -88,8 +88,26 @@ export const buyVending: Action = {
     const price = stock.fixedPrice ?? (await c.itemEntry(stock.id)).price;
     const w = await c.user();
     if (w.s.blood < price) fail(`You need ${price - w.s.blood} more drops`);
-    const left = vendLeft(w.s, stock.id, c.now); // the mixer and the growing kit: a daily stock that gets smaller every day
-    if (left !== null && left <= 0) fail(stock.id === "mixer" ? "Sold out. New mixers at 10:00 every morning." : "Sold out for today. New stock tomorrow.");
+    // the mixer and the growing kit: a daily stock that gets smaller every day, and that accounts made on one device share (what they bought today counts together, and the oldest account sets the size)
+    let left = vendLeft(w.s, stock.id, c.now);
+    let shared = false;
+    if (left !== null) {
+      const peers = await peersOf(c);
+      if (peers.length) {
+        shared = true;
+        const day = vendDay(stock.id, c.now);
+        let limit = vendLimit(stock.id, w.s.joinAt, c.now) ?? Infinity;
+        const got0 = w.s.vend[stock.id];
+        let used = got0 && got0.day === day ? got0.n : 0;
+        for (const p of peers) {
+          limit = Math.min(limit, vendLimit(stock.id, Number(await c.db.get(`users/${p}/createdAt`)) || 0, c.now) ?? Infinity);
+          const v = await c.db.get<{ day?: number; n?: number }>(`users/${p}/vend/${stock.id}`);
+          if (v && v.day === day) used += Number(v.n) || 0;
+        }
+        left = Math.max(0, limit - used);
+      }
+    }
+    if (left !== null && left <= 0) fail(`${stock.id === "mixer" ? "Sold out. New mixers at 10:00 every morning." : "Sold out for today. New stock tomorrow."}${shared ? " (Accounts made on the same device share one daily stock.)" : ""}`);
     const next = addToInv(w.s.inventory, { item: stock.item, qty: stock.qty });
     if (!next) fail("Your inventory is full");
     w.s.inventory = next!;

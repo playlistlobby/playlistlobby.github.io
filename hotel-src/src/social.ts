@@ -15,7 +15,7 @@ import {
   Unsubscribe,
 } from "firebase/database";
 import { db } from "./firebase";
-import { serverNow } from "./db";
+import { call, serverNow } from "./db";
 import type { Profile } from "./db";
 import { ownRoomId } from "./rooms";
 import { SIXTY, sixtyLook } from "./npc";
@@ -577,6 +577,7 @@ class SocialStore {
   /** Asks an online player to trade. The invite goes away by itself if I leave. */
   async inviteToTrade(uid: string): Promise<void> {
     const me = this.me!;
+    await call(me, "tradeCheck", { uid }); // (accounts made on the same device can't trade: the server says so)
     const r = ref(db, `tradeInvites/${uid}/${me.uid}`);
     await set(r, { name: me.name, ts: serverTimestamp() });
     void onDisconnect(r).remove();

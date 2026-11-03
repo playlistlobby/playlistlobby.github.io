@@ -14,6 +14,31 @@ function deviceId(): string {
   } catch { return ""; }
 }
 
+let fpCache = "";
+/**
+ * The browser's own traits (browser and system, language, time zone, screen, graphics card, touch points) as a short hash. It is the same in a private window, where the stored device id above
+ * is new: the server pairs it with the connection's address to tell that two accounts were made in one browser. It only says which accounts share a browser; nothing else is read.
+ */
+function browserTraits(): string {
+  if (fpCache) return fpCache;
+  try {
+    const n = navigator as Navigator & { deviceMemory?: number };
+    let gpu = "";
+    try {
+      const gl = document.createElement("canvas").getContext("webgl");
+      const ext = gl?.getExtension("WEBGL_debug_renderer_info");
+      gpu = gl && ext ? `${gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)}|${gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)}` : "";
+    } catch { /* no graphics info */ }
+    const text = [n.userAgent, n.language, (n.languages ?? []).join(","), `${screen.width}x${screen.height}x${screen.colorDepth}`, window.devicePixelRatio, Intl.DateTimeFormat().resolvedOptions().timeZone, n.hardwareConcurrency, n.deviceMemory ?? "", n.platform, n.maxTouchPoints, gpu].join("~");
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57; // (cyrb53: a small fast hash, enough here: the server hashes it again with the address)
+    for (let i = 0; i < text.length; i++) { const ch = text.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    fpCache = ((h2 >>> 0).toString(16).padStart(8, "0") + (h1 >>> 0).toString(16).padStart(8, "0"));
+  } catch { fpCache = ""; }
+  return fpCache;
+}
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
 }
@@ -29,7 +54,7 @@ async function call(action: string, args: object, forceToken: boolean): Promise<
   if (!user) throw new ApiError("Please log in again.", 401);
   const token = await user.getIdToken(forceToken);
   try {
-    return await fetch(`${base()}/act`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "x-device": deviceId() }, body: JSON.stringify({ a: action, args }) });
+    return await fetch(`${base()}/act`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "x-device": deviceId(), "x-fp": browserTraits() }, body: JSON.stringify({ a: action, args }) });
   } catch (err) {
     if (err instanceof ApiError) throw err;
     throw new ApiError("Can't reach the game server. Check your connection.", 0);
