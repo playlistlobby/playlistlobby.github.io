@@ -228,8 +228,8 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const bandBtn = h("button", { class: "st-band", type: "button", onclick: () => { const slot = findSlot(me.inventory, PVP.healItem); if (slot < 0) return o.say("You have no bandage.", "warn"); void api.heal(slot); } }, "Bandage");
   const specFill = h("i", {});
   const specBtn = h("button", { class: "st-spec", type: "button", title: "Special: lands 2 or 3 knife swings at once. Charged by 5 swings that land.", onclick: () => void api.special() }, specFill, h("span", {}, "Special"));
-  const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText)), status, specBtn, bandBtn);
-  o.stage.append(hud);
+  const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText)), status, bandBtn);
+  o.stage.append(hud, specBtn); // (the special button stands on its own, big, at the bottom in the middle)
   function paintHud(): void {
     const c = combat.get(me.uid);
     const now = serverNow();
@@ -597,6 +597,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       window.clearInterval(passTimer);
       window.clearInterval(hudTimer);
       hud.remove();
+      specBtn.remove();
       orderBox?.remove();
     },
   };

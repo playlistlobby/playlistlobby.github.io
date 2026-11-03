@@ -1809,7 +1809,7 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .st-status:empty { display: none; }
 .st-status.red { background: rgba(150, 20, 20, .8); }
 /* the special attack on the street: a bar that fills with every swing that lands, and a glowing button when it is full */
-.st-spec { position: relative; align-self: flex-start; min-width: 92px; padding: 3px 12px; overflow: hidden; border: 1px solid #5a1010; border-radius: 5px; font: 700 12px var(--font); color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); background: #3a1414; cursor: default; }
+.st-spec { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 5; min-width: 170px; height: 46px; padding: 0 22px; overflow: hidden; border: 2px solid #5a1010; border-radius: 10px; font: 700 18px/42px var(--font); letter-spacing: .04em; color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); background: #3a1414; cursor: default; }
 .st-spec > i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#e24848, #a01c1c); transition: width .25s; }
 .st-spec > span { position: relative; }
 .st-spec.ready { cursor: pointer; border-color: #ffd23a; animation: st-spec-glow 1s infinite alternate; }
