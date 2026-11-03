@@ -48,6 +48,20 @@ export const sync: Action = {
     if (raw.createdAt === undefined) c.extra[`users/${c.uid}/createdAt`] = c.now;
     // the accounts made before the album event are "legacy" accounts (something for them comes later); an account with no date is from before dates were kept
     if (raw.legacy === undefined && (raw.createdAt === undefined || Number(raw.createdAt) < LEGACY_BEFORE_MS)) c.extra[`users/${c.uid}/legacy`] = true;
+    // the crown made for blod and emil: put in the pocket once at login (if there is room), and blod's blood is set to 40,000 with a message to check discord
+    { const nm = String(raw.name ?? "").toLowerCase();
+      if ((nm === "blod" || nm === "emil") && !raw.crownGiven) {
+        const withCrown = addToInv(s.inventory, { item: "unusual_blod", qty: 1 });
+        if (withCrown) {
+          s.inventory = withCrown;
+          c.extra[`users/${c.uid}/crownGiven`] = true;
+          if (nm === "blod") {
+            if (s.blood > 40_000) s.blood = 40_000;
+            c.extra[`notices/${c.uid}/crown1`] = { kind: "msg", text: "check discord", byName: "", at: c.now };
+          }
+          c.note = "crown";
+        }
+      } }
     // the coin flip machine is gone: blood a player still had on an open flip comes back to them (and the flip is wiped), the first time they load the game
     const flips = await c.db.get<Record<string, { by?: string; stake?: number }>>("coinflips/open");
     for (const [id, f] of Object.entries(flips ?? {})) {

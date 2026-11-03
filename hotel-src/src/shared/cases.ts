@@ -59,7 +59,7 @@ export const CASE_RARE_FURNI: string[] = RAFFLE_POOL;
 
 // ---- unusuals: a hat or headpiece with a particle effect of its own -----------------------------------------------------------
 export type { UnusualEffect };
-export interface Unusual { id: string; name: string; /** the figure part it puts on the head (a hat or a headpiece) */ part: string; effect: UnusualEffect; color: string }
+export interface Unusual { id: string; name: string; /** the figure part it puts on the head (a hat or a headpiece) */ part: string; effect: UnusualEffect; color: string; /** made for one person: never comes out of a box */ special?: boolean }
 export const UNUSUALS: Unusual[] = [
   { id: "unusual_flame", name: "Totem Eagle Crown", part: "ha-97015", effect: "totem", color: "#ffb43a" },
   { id: "unusual_star", name: "Untouchable Crown", part: "ha-97058", effect: "untouchable", color: "#ffd23a" },
@@ -73,12 +73,13 @@ export const UNUSUALS: Unusual[] = [
   { id: "unusual_sakura", name: "Completely Confused Frog Hat", part: "ha-97056", effect: "confused", color: "#c9ced6" },
   { id: "unusual_toxic", name: "Buzzing Watermelon", part: "ha-97059", effect: "flies", color: "#6bff3a" },
   { id: "unusual_sparks", name: "Thumbs Up Headband", part: "he-97036", effect: "thumbsup", color: "#ffb43a" },
+  { id: "unusual_blod", name: "blods crown", part: "ha-97063", effect: "bloodtouch", color: "#d01818", special: true }, // (given to blod and emil: not in the boxes)
 ];
 /** the unusual pets: any pet, in any of its colours, with any of the particle effects */
 export function randomUnusualPet(rand: (n: number) => number): string {
   const type = PET_TYPES[rand(PET_TYPES.length)];
   const palette = rand(Math.max(1, PET_COLORS[type] ?? 0));
-  return petItemId({ type, palette, fx: UNUSUAL_FX[rand(UNUSUAL_FX.length)] });
+  return petItemId({ type, palette, fx: UNUSUAL_FX.filter((f) => f !== "bloodtouch")[rand(UNUSUAL_FX.length - 1)] });
 }
 export const unusualOf = (id: unknown): Unusual | undefined => UNUSUALS.find((u) => u.id === id);
-export const UNUSUAL_IDS: string[] = UNUSUALS.map((u) => u.id);
+export const UNUSUAL_IDS: string[] = UNUSUALS.filter((u) => !u.special).map((u) => u.id); // (what the boxes give)
