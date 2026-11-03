@@ -10,7 +10,8 @@ import {
 } from "../../../src/shared/economy";
 import { liveHits, parseHits, HIT_ONLINE_FRESH_MS } from "../../../src/shared/hits";
 import { clearWanted } from "./bounty";
-import { BADTRIP_CHANCE, combine, DRUG_USE, fentanylDeathCost, findSlot, growMsOf, isLaced, PSYCHEDELICS, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
+import { HIDEOUT_MAX_POPPIES, isHideoutId } from "../../../src/shared/hideout";
+import { BADTRIP_CHANCE, combine, DRUG_USE, fentanylDeathCost, findSlot, growMsOf, isLaced, POPPY_WATERS, POPPY_WATER_GAP_MS, PSYCHEDELICS, SMOKABLE, smokeMsOf, unlaced } from "../../../src/shared/items";
 import type { UseDef } from "../../../src/shared/items";
 import type { Inventory } from "../../../src/shared/items";
 
@@ -324,25 +325,31 @@ async function planter(c: import("../ctx").Ctx, fid: unknown, want?: unknown) {
   const room = await requireWorkRoom(c, want); // (your own room, or a hideout you are in: every member may plant, water and harvest)
   const id = text(fid, ID_RE, "kit");
   const path = `roomsMeta/${room}/furni/${id}`;
-  const row = await c.db.get<{ kind?: string; plantedAt?: number; wateredAt?: number; neglect?: boolean; crop?: string; auto?: boolean }>(path);
+  const row = await c.db.get<{ kind?: string; plantedAt?: number; wateredAt?: number; waters?: number; neglect?: boolean; crop?: string; auto?: boolean }>(path);
   if (!row || row.kind !== "f_planter") return fail("That isn't a growing kit.");
-  return { path, row };
+  return { path, row, room };
 }
 
 const roomLock = (c: import("../ctx").Ctx, a: any): string[] => [`room:${typeof a?.room === "string" ? a.room : `u_${c.uid}`}`];
 export const plant: Action = {
   locks: (c, a) => roomLock(c, a),
   async run(c, a) {
-    const { path, row } = await planter(c, a.fid, a.room);
+    const { path, row, room } = await planter(c, a.fid, a.room);
     if (typeof row.plantedAt === "number") fail("Something is already growing there.");
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     const seed = w.s.inventory[slot]?.item;
     if (seed !== "weedseed" && seed !== "shroomspore" && seed !== "poppyseed") fail("That isn't a seed.");
+    if (seed === "poppyseed" && isHideoutId(room)) { // a hideout only grows so many poppies at a time
+      const rows = (await c.db.get<Record<string, { crop?: string; plantedAt?: number }>>(`roomsMeta/${room}/furni`)) ?? {};
+      const growing = Object.values(rows).filter((r) => r?.crop === "poppy" && typeof r.plantedAt === "number").length;
+      if (growing >= HIDEOUT_MAX_POPPIES) fail(`A hideout can only grow ${HIDEOUT_MAX_POPPIES} poppies at a time.`);
+    }
     w.s.inventory = takeOneFrom(w.s.inventory, slot);
     c.extra[`${path}/crop`] = seed === "shroomspore" ? "shroom" : seed === "poppyseed" ? "poppy" : null; // what grows: weed (nothing stored), shrooms or poppies (bagmand's: 4 hours, opium)
     c.extra[`${path}/plantedAt`] = c.now;
     c.extra[`${path}/wateredAt`] = null; // it hasn't been watered yet
+    c.extra[`${path}/waters`] = null;
     c.extra[`${path}/neglect`] = null;
     return {};
   },
@@ -353,11 +360,21 @@ export const water: Action = {
   async run(c, a) {
     const { path, row } = await planter(c, a.fid, a.room);
     if (typeof row.plantedAt !== "number") fail("There's nothing planted there.");
-    if (row.crop === "poppy") fail("A poppy doesn't need water.");
     if (row.auto) fail("An automatic waterer does that for you.");
     const w = await c.user();
     const slot = int(a.slot, 0, 27, "slot");
     if (w.s.inventory[slot]?.item !== "wateringcan_full") fail("That can is empty.");
+    if (row.crop === "poppy") { // a poppy wants POPPY_WATERS waterings, the first any time and then one an hour apart
+      const had = row.waters ?? 0;
+      if (had >= POPPY_WATERS) fail("It has had all its water.");
+      if (had > 0 && typeof row.wateredAt === "number" && c.now - row.wateredAt < POPPY_WATER_GAP_MS) fail(`It isn't thirsty yet. Come back in ${Math.ceil((POPPY_WATER_GAP_MS - (c.now - row.wateredAt)) / 60_000)} minutes.`);
+      const emptiedP = addToInv(takeOneFrom(w.s.inventory, slot), { item: "wateringcan", qty: 1 });
+      if (!emptiedP) fail("Your pockets are full.");
+      w.s.inventory = emptiedP!;
+      c.extra[`${path}/wateredAt`] = c.now;
+      c.extra[`${path}/waters`] = had + 1;
+      return { waters: had + 1 };
+    }
     // one watering, at any time while it grows (the bar need not be empty), keeps the harvest good
     if (typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!) fail("It's already been watered. It'll grow fine now.");
     const emptied = addToInv(takeOneFrom(w.s.inventory, slot), { item: "wateringcan", qty: 1 }); // (one can of a stack of full ones)
@@ -376,15 +393,17 @@ export const harvest: Action = {
     if (c.now - row.plantedAt! < growMsOf(row.crop)) fail("It isn't ready yet.");
     const ass = !(row.auto || (typeof row.wateredAt === "number" && row.wateredAt > row.plantedAt!)); // never got its one watering (an automatic waterer always does it)
     const w = await c.user();
-    if (row.crop === "poppy") { // opium: one per poppy, no seed falls out (a poppy needs no water)
-      const got = addToInv(w.s.inventory, { item: "opium", qty: 1 });
+    if (row.crop === "poppy") { // opium: one per poppy, no seed falls out; weak ("ass") opium if it did not get all its waterings (an automatic waterer gives them all)
+      const weak = !(row.auto || (row.waters ?? 0) >= POPPY_WATERS);
+      const got = addToInv(w.s.inventory, { item: "opium", qty: 1, ...(weak ? { ass: true } : {}) });
       if (!got) fail("Your inventory is full");
       w.s.inventory = got!;
       c.extra[`${path}/crop`] = null;
       c.extra[`${path}/plantedAt`] = null;
       c.extra[`${path}/wateredAt`] = null;
       c.extra[`${path}/neglect`] = null;
-      return { ass: false, crop: "poppy", qty: 1 };
+      c.extra[`${path}/waters`] = null;
+      return { ass: weak, crop: "poppy", qty: 1 };
     }
     const shrooms = row.crop === "shroom";
     const qty = Math.random() < DOUBLE_HARVEST_CHANCE ? 2 : 1; // one per harvest, and now and then two

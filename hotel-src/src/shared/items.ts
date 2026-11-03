@@ -82,7 +82,7 @@ export function parseInventoryWith(raw: unknown, valid: (id: string) => boolean)
 }
 
 /** Things that can never be put on the floor, given or traded (the knife stays with you). */
-export const NO_DROP: ReadonlySet<string> = new Set(["loudspeaker", "knife", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter", "f_planter_auto", "f_mixer_up", "f_mixer_up2", "f_beatshop"]); // (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
+export const NO_DROP: ReadonlySet<string> = new Set(["loudspeaker", "knife", "pickaxe", "machete", "cd_yellow", "cd_green", "cd_blue", "cd_album", "f_mixer", "f_planter", "f_planter_auto", "f_mixer_up", "f_mixer_up2", "f_beatshop", "poppyseed"]); // (poppy seeds stay with the one who bought them: they can't be traded, given, dropped or put in a chest) (the CDs bought with real money stay with the one who bought them; the mixer and the growing kit stay too: new accounts were collecting them from the vending machine and selling them on)
 
 /** First slot holding `item`. Items that are loaned out (inPlayer) don't count as available. */
 export const findSlot = (inv: Inventory, item: string): number => inv.findIndex((s) => s?.item === item && !s.inPlayer);
@@ -208,6 +208,9 @@ export const GROW_MS = 10 * 60_000;
 export const GROW_MS_SHROOM = 25 * 60_000;
 /** how long what is planted takes to grow */
 export const GROW_MS_POPPY = 4 * 3_600_000;
+/** a poppy has to be watered this many times (at most once an hour, the first time straight away) or the opium comes out weak ("ass"); an automatic waterer does it all */
+export const POPPY_WATERS = 4;
+export const POPPY_WATER_GAP_MS = 3_600_000;
 export const growMsOf = (crop?: string): number => (crop === "shroom" ? GROW_MS_SHROOM : crop === "poppy" ? GROW_MS_POPPY : GROW_MS);
 export const WATER_MS = 5 * 60_000;
 export const SMOKE_MS = 60_000;

@@ -518,7 +518,7 @@ for (const u of UNUSUALS) ITEMS[u.id] = { id: u.id, name: `Unusual ${u.name}`, e
 
 // bagmand's things (see src/shared/bagmand.ts): the poppy and what it becomes, his blue weed and the special weeds rolled from them
 const bagmandItems: Array<[string, string, string, Partial<ItemDef>]> = [
-  ["poppyseed", "Poppy seed", "A pinch of tiny black seeds from bagmand. Select it, then click your growing kit to plant it. A poppy takes 4 hours to grow and needs no water. It gives opium.", { useOnObject: "f_planter" }],
+  ["poppyseed", "Poppy seed", "A pinch of tiny black seeds from bagmand. Select it, then click your growing kit to plant it. A poppy takes 4 hours to grow and has to be watered 4 times, once an hour (an automatic waterer does it for you), or the opium turns out weak. It can't be traded or given away. It gives opium.", { useOnObject: "f_planter" }],
   ["opium", "Opium", "The milk of a poppy. Only bagmand buys it (80 drops). Mix it with water for heroin, with lean for ketamine, with a pill for percs, with a shroom for 2cb, with weed for cali weed or with fentanyl for 芬太尼.", {}],
   ["heroin", "Heroin", "Opium boiled down in water. Swallow it: you nod off for 10 seconds, then stabs give 4x blood for 3 minutes. Mix it into weed for brown weed. Bagmand pays 130.", { useSelf: "consume" }],
   ["ketamine", "Ketamine", "Opium stirred into the lean. Swallow it: a horse's head grows on you for a minute, and you run twice as fast. Bagmand pays 140.", { useSelf: "consume" }],

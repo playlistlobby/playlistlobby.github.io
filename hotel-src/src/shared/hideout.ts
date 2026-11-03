@@ -24,6 +24,8 @@ export const HIDEOUT_MAX_MEMBERS = 7;
 /** how many growing kits fit in a hideout, and how many mixers */
 export const HIDEOUT_MAX_KITS = 40;
 export const HIDEOUT_MAX_MIXERS = 40;
+/** how many poppies can grow in a hideout at the same time */
+export const HIDEOUT_MAX_POPPIES = 15;
 /** changing the floor, walls or rug costs 15 times what it costs in a player room, per part */
 export const HIDEOUT_RECOLOR_PRICE = RECOLOR_PRICE * 15;
 export const HIDEOUT_NAME_MAX = 28;

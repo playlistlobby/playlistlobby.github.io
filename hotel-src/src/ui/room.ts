@@ -1922,11 +1922,11 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     clearSelection();
   }
 
-  const planterStatus = (pl: { at: number; water: number; neglect: boolean; crop?: string }): string => {
+  const planterStatus = (pl: { at: number; water: number; neglect: boolean; crop?: string; waters?: number; auto?: boolean }): string => {
     const prog = plantProgress(pl);
     const left = Math.max(0, growMsOf(pl.crop) * (1 - prog));
     const mins = Math.max(1, Math.ceil(left / 60000));
-    const water = pl.crop === "poppy" ? "" : plantWatered(pl) ? "watered" : plantThirsty(pl) ? "THIRSTY: water it now!" : `water bar ${Math.round(plantWater(pl) * 100)}%`;
+    const water = pl.crop === "poppy" ? (plantWatered(pl) ? "watered 4/4" : plantThirsty(pl) ? `THIRSTY: water it now! (${pl.waters ?? 0}/4 so far)` : `watered ${pl.waters ?? 0}/4, thirsty again in a while`) : plantWatered(pl) ? "watered" : plantThirsty(pl) ? "THIRSTY: water it now!" : `water bar ${Math.round(plantWater(pl) * 100)}%`;
     const left2 = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
     return prog >= 1 ? `It's ready to pick!${plantWatered(pl) ? "" : " It looks a bit sad."}` : `Growing: ${Math.round(prog * 100)}% (about ${left2} to go).${water ? ` ${water[0].toUpperCase()}${water.slice(1)}.` : ""}`;
   };
@@ -1969,14 +1969,14 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         if (ss === null) return say("An empty growing kit. Tap a weed seed, shroom spores or a poppy seed in your pocket first, then tap the kit to plant it. (Or turn Autoplant on in the menu.)", "warn");
         await plantSeed(me, def.id, f.id, ss);
         panel.refresh();
-        return say(held?.item === "poppyseed" ? "You press the little black seed into the soil. A poppy takes 4 hours and needs no water." : me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");
+        return say(held?.item === "poppyseed" ? "You press the little black seed into the soil. A poppy takes 4 hours and has to be watered 4 times (the first now, then once an hour), or the opium turns out weak." : me.inventory[ss]?.item === "shroomspore" ? "You press the spores into the soil. Shrooms take 25 minutes, and they need one watering: water them any time." : "You push a seed into the soil. It takes 10 minutes to grow, and it needs one watering: water it any time.");
       }
       const prog = plantProgress(f.plant);
       const canSlot = held?.item === "wateringcan_full" ? slot! : findSlot(me.inventory, "wateringcan_full");
-      if (held?.item === "wateringcan_full" || (prog < 1 && canSlot >= 0 && !plantWatered(f.plant))) {
+      if (held?.item === "wateringcan_full" || (prog < 1 && canSlot >= 0 && !plantWatered(f.plant) && (f.plant.crop !== "poppy" || plantThirsty(f.plant)))) {
         if (canSlot < 0 || canSlot === null) return say("You need a full watering can.", "warn");
-        if (f.plant.crop === "poppy") return say("A poppy doesn't need water.");
-        if (plantWatered(f.plant)) return say("It's already been watered. It'll grow fine now.");
+        if (plantWatered(f.plant)) return say(f.plant.crop === "poppy" ? "It has had all its water." : "It's already been watered. It'll grow fine now.");
+        if (f.plant.crop === "poppy" && !plantThirsty(f.plant)) return say("It isn't thirsty yet. A poppy is watered once an hour.", "warn");
         await waterPlant(me, def.id, f.id, f.plant, canSlot);
         panel.refresh();
         playSfx("select", 0.4);
@@ -1988,9 +1988,9 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         playSfx("give", 0.6);
         if (r.seed) window.setTimeout(() => { if (!disposed && r.seed) giftPop(`+1 ${itemDef(r.seed)?.name ?? r.seed}`, itemImg(r.seed)); }, 700);
         if (r.crop === "poppy") {
-          giftPop("+1 Opium", itemImg("opium"));
-          logAction(me, "room", "picked opium");
-          return say("You cut the pod and scrape off the milk. Opium. Bagmand will want this.");
+          giftPop(`+1 ${r.ass ? "Weak opium" : "Opium"}`, itemImg("opium"));
+          logAction(me, "room", r.ass ? "picked weak opium" : "picked opium");
+          return say(r.ass ? "You cut the pod. The milk is thin and weak: it never got all its water." : "You cut the pod and scrape off the milk. Opium. Bagmand will want this.");
         }
         if (r.crop === "shroom") {
           giftPop(`+${r.qty ?? 1} ${r.ass ? "Weak shroom" : "Shroom"}`, itemImg(r.ass ? "weakshroom" : "shroom"));
@@ -4736,7 +4736,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
           g.fillStyle = color; g.fillRect(cx - bw / 2, yy, bw * Math.max(0, Math.min(1, frac)), bh);
         };
         bar(y, prog, prog >= 1 ? "#9dff5a" : "#4fa93a"); // growth
-        if (pl.crop !== "poppy") bar(y + bh + 3 * scale, water, water > 0 ? "#4aa8e8" : "#7a2a2a"); // water (a poppy needs none)
+        bar(y + bh + 3 * scale, water, water > 0 ? "#4aa8e8" : "#7a2a2a"); // water
         if (prog >= 1) {
           const bounce = Math.sin(now / 260) * 2 * scale;
           g.font = `bold ${Math.round(10 * Math.max(1, scale))}px Verdana, 'Apple Color Emoji', sans-serif`; g.textAlign = "center"; g.textBaseline = "bottom";

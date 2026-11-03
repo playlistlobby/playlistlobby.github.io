@@ -1,7 +1,7 @@
 // The economy's numbers and pure helpers, shared by the browser (to show things) and the server (to decide them).
 // Nothing here may import the browser or Firebase.
 import { TICKET_ITEM } from "./streets";
-import { emptyInventory, findSlotAny, growMsOf, InvItem, Inventory, INV_SIZE, parseInventoryWith, SMOKABLE, SMOKE_MS, STACKABLE, START_BLOOD, WATER_MS } from "./items";
+import { emptyInventory, findSlotAny, growMsOf, InvItem, POPPY_WATERS, POPPY_WATER_GAP_MS, Inventory, INV_SIZE, parseInventoryWith, SMOKABLE, SMOKE_MS, STACKABLE, START_BLOOD, WATER_MS } from "./items";
 
 export const DAY_MS = 86_400_000;
 /** Furniture everybody starts with, waiting in their toolbox's storage (given once, to new players and to everybody who played before). */
@@ -335,13 +335,13 @@ export function compactInv(inv: Inventory): Inventory {
 /** What a stab is worth right now: 1 drop, or more for a while after you finished a cigarette (x2), joint (x3) or blunt (x4). */
 export const stabGainAt = (s: Pick<Snapshot, "boostUntil" | "boostMult">, now: number): number => (s.boostUntil > now ? s.boostMult : 1);
 
-export interface Plant { at: number; water: number; neglect: boolean; /** "shroom" when spores were planted (grows for 25 minutes), else weed */ crop?: string; /** an automatic waterer sits on the pot */ auto?: boolean }
+export interface Plant { at: number; water: number; neglect: boolean; /** "shroom" when spores were planted (grows for 25 minutes), else weed */ crop?: string; /** an automatic waterer sits on the pot */ auto?: boolean; /** how many times a poppy has been watered so far */ waters?: number }
 export const plantProgressAt = (pl: Plant, now: number): number => Math.min(1, (now - pl.at) / growMsOf(pl.crop));
 /** It has had its water: watered at any time since it was planted (before the bar is empty or after). One watering is enough. */
-export const plantWatered = (pl: Plant): boolean => pl.crop === "poppy" || !!pl.auto || pl.water > pl.at; // (a poppy needs no water at all)
+export const plantWatered = (pl: Plant): boolean => pl.crop === "poppy" ? !!pl.auto || (pl.waters ?? 0) >= POPPY_WATERS : !!pl.auto || pl.water > pl.at; // (a poppy needs all its waterings)
 /** Thirsty and not yet watered. */
-export const plantThirsty = (pl: Plant, now: number): boolean => now >= pl.at + WATER_MS && !plantWatered(pl);
+export const plantThirsty = (pl: Plant, now: number): boolean => pl.crop === "poppy" ? !plantWatered(pl) && ((pl.waters ?? 0) === 0 || now >= pl.water + POPPY_WATER_GAP_MS) : now >= pl.at + WATER_MS && !plantWatered(pl);
 /** The water bar: it drains over the first 5 minutes; once it's empty the plant needs its one watering, which fills it for good. */
-export const plantWaterAt = (pl: Plant, now: number): number => (plantWatered(pl) ? 1 : Math.max(0, 1 - (now - pl.at) / WATER_MS));
+export const plantWaterAt = (pl: Plant, now: number): number => (plantWatered(pl) ? 1 : pl.crop === "poppy" ? ((pl.waters ?? 0) === 0 ? 0 : Math.max(0, 1 - (now - pl.water) / POPPY_WATER_GAP_MS)) : Math.max(0, 1 - (now - pl.at) / WATER_MS));
 
 export { emptyInventory, SMOKABLE, SMOKE_MS, START_BLOOD };
