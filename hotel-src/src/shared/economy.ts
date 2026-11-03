@@ -13,7 +13,7 @@ export const STARTER_ITEMS: string[] = [];
 export const DUMPSTER_MS = 600_000;
 export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string }> = [
   // percentages (they add up to 100): a quarter cigarette butts, then seeds and spores (2 seeds to 1 spore) in what is left, a little weed and lean, and now and then a lighter
-  { item: "cigbutt", chance: 19, label: "cigarette butt" },
+  { item: "cigbutt", chance: 22.33, label: "cigarette butt" },
   { item: "weedseed", chance: 39.5, label: "weed seed" },
   { item: "shroomspore", chance: 22, label: "shroom spores" },
   { item: "weed", chance: 6, label: "weed" },
@@ -21,7 +21,7 @@ export const DUMPSTER_DROPS: Array<{ item: string; chance: number; label: string
   { item: "codeine", chance: 2, label: "lean" },
   { item: "lighter", chance: 1, label: "lighter" },
   { item: "gun", chance: 0.5, label: "gun" },
-  { item: "bandage", chance: 5, label: "bandage" }, // (5%: taken from the butts, so the seeds and spores stay where they were)
+  { item: "bandage", chance: 1.67, label: "bandage" }, // (1.67%, a third of what it was: the rest went back to the butts, so the seeds and spores stay where they were)
 ];
 /** the super pill: 4x walking speed for a minute */
 export const SUPERPILL_MS = 60_000;

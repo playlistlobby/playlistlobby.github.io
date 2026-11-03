@@ -55,9 +55,9 @@ export const RESERVED_NAMES: ReadonlySet<string> = new Set(["adminsidia", "admin
 /** øre -> "1 kr" / "2,50 kr" */
 export const kr = (ore: number): string => `${(ore / 100).toLocaleString("da-DK", { minimumFractionDigits: ore % 100 ? 2 : 0 })} kr`;
 
-/** The puff-bar (a vape, sold at the Ducky machine for 20 kr and found in the mystery boxes): puff it once a minute for 35 seconds of walking 1.5 times as fast and double blood from stabs. */
+/** The puff-bar (a vape, sold at the Ducky machine for 20 kr and found in the mystery boxes): puff it once a minute for 35 seconds of walking 2 times as fast and double blood from stabs. */
 export const VAPE_ITEM = "puffbar";
 export const VAPE_COOLDOWN_MS = 60_000;
 export const VAPE_MS = 35_000;
-export const VAPE_SPEED = 1.5;
+export const VAPE_SPEED = 2;
 export const VAPE_BLOOD_MULT = 2;

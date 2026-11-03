@@ -13300,13 +13300,13 @@
   "where": "src/ui/hideoutComputer.ts"
  },
  "N2105": {
-  "en": "A vape with a clammy ape on it. Click it to puff: 35 seconds of walking 1.5x as fast and double blood from stabs, once a minute. You can trade it.",
-  "da": "Vape med en klam abe på. Klik på den for at pulse: 35 sekunder med 1,5 gange gangfart og dobbelt blod fra stik, én gang i minuttet. Du kan bytte den.",
+  "en": "A vape with a clammy ape on it. Click it to puff: 35 seconds of walking 2x as fast and double blood from stabs, once a minute. You can trade it.",
+  "da": "Vape med en klam abe på. Klik på den for at pulse: 35 sekunder med dobbelt gangfart og dobbelt blod fra stik, én gang i minuttet. Du kan bytte den.",
   "where": "src/items.ts"
  },
  "N2106": {
-  "en": "Vape med en klam abe på. Puff it once a minute: 35 seconds of walking 1.5x as fast and double blood from stabs. You can trade it.",
-  "da": "Vape med en klam abe på. Pust til den én gang i minuttet: 35 sekunder med 1,5 gange gangfart og dobbelt blod fra stik. Du kan bytte den.",
+  "en": "Vape med en klam abe på. Puff it once a minute: 35 seconds of walking 2x as fast and double blood from stabs. You can trade it.",
+  "da": "Vape med en klam abe på. Pust til den én gang i minuttet: 35 sekunder med dobbelt gangfart og dobbelt blod fra stik. Du kan bytte den.",
   "where": "src/ui/duckyShop.ts"
  },
  "N2107": {

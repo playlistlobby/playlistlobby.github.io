@@ -311,7 +311,7 @@ export const ITEMS: Record<string, ItemDef> = {
   puffbar: {
     id: "puffbar",
     name: "Puff-bar",
-    examine: "A vape with a clammy ape on it. Click it to puff: 35 seconds of walking 1.5x as fast and double blood from stabs, once a minute. You can trade it.",
+    examine: "A vape with a clammy ape on it. Click it to puff: 35 seconds of walking 2x as fast and double blood from stabs, once a minute. You can trade it.",
     icon: assetUrl("items/puffbar.png"),
     useSelf: "vape",
   },

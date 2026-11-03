@@ -436,7 +436,7 @@ export function watchFlappyBoard(cb: (rows: BoardRow[]) => void, myUid?: string)
 /** A drop of blood caught in Flappy Bird. */
 export const rewardFlappyDrop = (p: Profile, roomId: string): Promise<unknown> => call(p, "flappy", { room: roomId });
 /** The syringe's drop: from yourself, or from a body bag in the room. */
-/** Puffs the puff-bar in a pocket slot: 35 seconds of 1.5x speed and double stab blood (once a minute). */
+/** Puffs the puff-bar in a pocket slot: 35 seconds of 2x speed and double stab blood (once a minute). */
 export const puffVape = (p: Profile, slot: number): Promise<{ until: number }> => call(p, "vapePuff", { slot });
 export const rewardSyringe = (p: Profile, who: "self" | "bag", roomId: string): Promise<unknown> => call(p, "syringe", { who, room: roomId });
 

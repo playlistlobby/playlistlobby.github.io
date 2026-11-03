@@ -3198,7 +3198,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     if (r.rushMs) startRush(p, r.rushMs);
   }
 
-  /** the puff-bar: puff it (once a minute): 35 seconds of 1.5x speed and double stab blood, with the cloud over you (everybody sees it) */
+  /** the puff-bar: puff it (once a minute): 35 seconds of 2x speed and double stab blood, with the cloud over you (everybody sees it) */
   async function usePuff(slot: number): Promise<void> {
     const p = mine();
     if (!p || p.lying || faintUntil || woozy || trippingOn || dying) return;
