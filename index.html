@@ -32,7 +32,7 @@
     .sb-status svg { display: block; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.45)); }
 
     .screen {
-      position: absolute; inset: 0; display: grid; place-items: start center; padding-top: calc(20px + env(safe-area-inset-top) + max(56px, 17vh));
+      position: absolute; inset: 0; display: grid; place-items: center; padding-top: calc(20px + env(safe-area-inset-top));
       transform-origin: var(--ox, 50%) var(--oy, 40%); transition: opacity .38s ease, transform .45s cubic-bezier(.3,.8,.3,1);
     }
     .screen.out { opacity: 0; transform: scale(1.7); } /* opening an app zooms into its icon, like iOS */
@@ -46,13 +46,12 @@
     }
     .icon::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--gloss) center / 100% 100% no-repeat; opacity: .6; mix-blend-mode: soft-light; pointer-events: none; }
     .icon::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(0,0,0,.45); opacity: 0; transition: opacity .12s; z-index: 1; }
-    /* the icon picture has its own rounded corners, gloss and shadow: nothing is drawn on top of it */
-    .icon.own { width: calc(66 * var(--u)); height: calc(66 * var(--u)); margin: calc(-4.5 * var(--u)) 0 calc(-4.5 * var(--u)); background-color: transparent; background-size: 100% 100%; border-radius: 0; box-shadow: none; }
-    .icon.own::before, .icon.own::after { display: none; }
-    .app:active .icon.own, .app.pressed .icon.own { filter: brightness(.6); }
+    /* the icon is your picture as it is (own rounded corners, gloss and shadow, 1088 px): nothing is drawn on it or cropped from it */
+    .icon-img { display: block; width: calc(64 * var(--u)); height: calc(64 * var(--u)); margin: calc(-3.5 * var(--u)) 0 calc(-2 * var(--u)); user-select: none; -webkit-user-drag: none; pointer-events: none; }
+    .app:active .icon-img, .app.pressed .icon-img { filter: brightness(.6); }
     .app:active .icon::before, .app.pressed .icon::before { opacity: 1; } /* iOS 6 darkens a tapped icon */
     .app:focus-visible .icon { box-shadow: 0 0 0 2px rgba(60,120,220,.8), 0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,.4); }
-    .label { font: 700 calc(11 * var(--u)) / 1.2 "Helvetica Neue", Helvetica, Arial, sans-serif; color: #2c3136; text-shadow: 0 1px 0 rgba(255,255,255,.9); white-space: nowrap; }
+    .label { font: 700 calc(11 * var(--u)) / 1.2 "Helvetica Neue", Helvetica, Arial, sans-serif; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.4); white-space: nowrap; } /* the iOS 6 home-screen label: bold, white, with its dark shadow */
 
     @media (prefers-reduced-motion: reduce) { .screen { transition: opacity .2s ease; } .screen.out { transform: none; } }
   </style>
@@ -70,7 +69,7 @@
     <h1 class="sr">PlaylistPlanet</h1>
     <nav class="grid" aria-label="Apps">
       <a class="app" href="hotel/">
-        <span class="icon own" style="background-image:url('icons/playlistplanet.png')"></span>
+        <img class="icon-img" src="icons/playlistplanet.png" alt="" width="1088" height="1088">
         <span class="label">PlaylistPlanet</span>
       </a>
     </nav>
@@ -89,7 +88,7 @@
       a.addEventListener('click', (e) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // let "open in new tab" behave normally
         e.preventDefault();
-        const r = a.querySelector('.icon').getBoundingClientRect();
+        const r = a.querySelector('.icon-img').getBoundingClientRect();
         screen.style.setProperty('--ox', (r.left + r.width / 2) + 'px');
         screen.style.setProperty('--oy', (r.top + r.height / 2) + 'px');
         screen.classList.add('out');
