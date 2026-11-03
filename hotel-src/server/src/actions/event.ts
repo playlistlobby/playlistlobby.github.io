@@ -4,13 +4,13 @@ import { Action, cheb, ID_RE, requireInRoom, text } from "./util";
 import { fail } from "../ctx";
 import { STAGE_H, STAGE_W } from "../../../src/shared/stage";
 import type { Ctx } from "../ctx";
-import { EVENT_PROTECT_MS, EVENT_PVP, eventKilled, FINALE_HIDE_NAMES, KILL_WAKE_MS } from "../../../src/shared/event";
+import { EVENT_ON, EVENT_PROTECT_MS, EVENT_PVP, eventKilled, FINALE_HIDE_NAMES, KILL_WAKE_MS } from "../../../src/shared/event";
 import type { EventState, Finale, FinaleSong } from "../../../src/shared/event";
 import { byRating, parseSongs } from "../../../src/shared/songs";
 
 const TESTER_EMAIL = "emil@users.bobba.invalid";
 /** the admin and the account "emil" run the event */
-export const eventAdmin = (c: Ctx): boolean => c.isAdmin || c.caller.email.toLowerCase() === TESTER_EMAIL;
+export const eventAdmin = (c: Ctx): boolean => EVENT_ON && (c.isAdmin || c.caller.email.toLowerCase() === TESTER_EMAIL);
 const stateOf = async (c: Ctx): Promise<EventState> => (await c.db.get<EventState>("event/state")) ?? {};
 
 /** what the page that is left shows of the game as it stands now: the ones with the most blood (not the staff), and every song that is on SoundCloud */
@@ -43,6 +43,7 @@ export const eventSet: Action = {
 /** a player goes in through the red door while it is open (or lands in the room because the doors are shut): from then on they stay */
 export const eventJoin: Action = {
   async run(c) {
+    if (!EVENT_ON) fail("The red door is closed.");
     const st = await stateOf(c);
     if (!c.isMod) {
       if (!st.open && !st.sealed) fail("The red door is closed.");
@@ -112,6 +113,7 @@ export const eventAlbum: Action = {
 export const eventHit: Action = {
   locks: (c, a) => [`user:${String(a?.target ?? "")}`],
   async run(c, a) {
+    if (!EVENT_ON) fail("Nobody fights.");
     const target = text(a.target, ID_RE, "target");
     if (target === c.uid) fail("You can't fight yourself.");
     const st = await stateOf(c);

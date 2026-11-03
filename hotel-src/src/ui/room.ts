@@ -182,7 +182,7 @@ import { FAIR_GAME_UIDS, ROCKET_COOLDOWN_MS, ROCKET_LINE } from "../shared/hits"
 import { eventNow, lockedIn, onEvent } from "../eventState";
 import { EventPvpApi, mountEventPvp } from "../eventPvp";
 import { setMuffle } from "../muffle";
-import { KILL_FADE_MS, KILL_WAKE_MS } from "../shared/event";
+import { EVENT_ON, KILL_FADE_MS, KILL_WAKE_MS } from "../shared/event";
 import { runDeathSequence } from "./eventDeath";
 import { EventPanelApi, openEventPanel, StageTools } from "./eventPanel";
 import { mountFinale } from "./finalePage";
@@ -972,7 +972,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     blocked.add(`${def.doorX},0`); // the door itself stands on this tile; you use it from beside or in front of it
     for (const d of def.extraDoors ?? []) blocked.add(`${d.x},0`);
     seatTiles.clear();
-    if (isBasement) { blocked.add(`${SIXTY.x},${SIXTY.y}`); blocked.add(`${RED_DOOR_X},0`); } // 6ixty stands in the basement, and the red door behind him
+    if (isBasement) { blocked.add(`${SIXTY.x},${SIXTY.y}`); if (EVENT_ON) blocked.add(`${RED_DOOR_X},0`); } // 6ixty stands in the basement, and the red door behind him
     if (roomId === LOBBY_ID) blocked.add(`${HIDEOUT_LANDLORD.x},${HIDEOUT_LANDLORD.y}`); // the hideout landlord, beside the hideout door
     if (roomId === LOBBY_ID) blocked.add(`${BAGMAN.x},${BAGMAN.y}`); // and bagmand next to the roulette table, in his hours (the tile stays blocked when he is away)
     if (isMines) blocked.add(`${MINES_SIXTY.x},${MINES_SIXTY.y}`); // and in the mines
@@ -4077,6 +4077,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         }, (err) => say((err as Error).message || "Unknown command.", "warn"));
         return;
       }
+      if (!EVENT_ON && /^\/(finale|drop|event|stage1?)(\s|$)/i.test(text)) { say("Unknown command.", "warn"); return; } // (the event is over)
       if (/^\/finale$/i.test(text)) { // the admin and emil: the page that is left of the site, with its editor (for testing and changes); "Back" closes it
         if (!(me.isAdmin || me.role === "admin" || me.name.toLowerCase() === "emil")) { say("Unknown command.", "warn"); return; }
         if (!finaleCmd) { const el = h("div", { class: "ev-overlay" }); stage.append(el); const off = mountFinale(el, { staff: me, onBack: () => { finaleCmd?.off(); finaleCmd?.el.remove(); finaleCmd = null; } }); finaleCmd = { el, off }; }
@@ -5657,7 +5658,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     const list: Drawable[] = [];
     const boxes: Hitbox[] = [];
     const objs: Hitbox[] = [];
-    if (isBasement && !greenScreen) { // the red door behind 6ixty, on the wall like the other doors: tap it and he tells you what is coming
+    if (isBasement && !greenScreen && EVENT_ON) { // the red door behind 6ixty, on the wall like the other doors: tap it and he tells you what is coming
       const rb = drawRoomDoor(g, RED_DOOR_X, toScreen, scale, hoverObj?.kind === "reddoor" ? 1 : 0, "red");
       objs.push({ id: "reddoor", kind: "reddoor", x0: rb.x0, y0: rb.y0, x1: rb.x1, y1: rb.y1, depth: -1 });
     }

@@ -2,7 +2,7 @@
 // and listened to by main.ts (who is locked in, where the first room is) and room.ts (the stage: the doors, the lights, the surprise, the fighting).
 import { onValue, ref } from "firebase/database";
 import { db } from "./firebase";
-import { eventLocked } from "./shared/event";
+import { EVENT_ON, eventLocked } from "./shared/event";
 import type { EventState } from "./shared/event";
 
 export interface EventNow { state: EventState; /** when this player went in (0 = they haven't) */ inAt: number; dead: boolean; /** has the first answer come in? */ ready: boolean }
@@ -19,6 +19,7 @@ export function onEvent(fn: (e: EventNow) => void): () => void { listeners.add(f
 
 /** starts following the event for this player (the first state is awaited by `ready`) */
 export function startEvent(uid: string): { stop: () => void; ready: Promise<void> } {
+  if (!EVENT_ON) return { stop: () => undefined, ready: Promise.resolve() }; // (no event: nothing is locked, nothing is watched)
   let got = 0;
   let resolve!: () => void;
   const ready = new Promise<void>((r) => (resolve = r));

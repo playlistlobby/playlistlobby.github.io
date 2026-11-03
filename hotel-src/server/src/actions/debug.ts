@@ -7,6 +7,7 @@ import { isEmulator } from "../env";
 import { addToInv } from "../../../src/shared/economy";
 import { STACKABLE } from "../../../src/shared/items";
 import { FAIR_GAME_UIDS } from "../../../src/shared/hits";
+import { EVENT_ON } from "../../../src/shared/event";
 
 const TESTER_EMAIL = "emil@users.bobba.invalid";
 
@@ -110,6 +111,7 @@ export const staffTp: Action = {
  */
 export const stageGo: Action = {
   async run(c, a) {
+    if (!EVENT_ON) fail("Unknown command.");
     if (!(c.isMod && !FAIR_GAME_UIDS.includes(c.uid)) && !isEmulator(c.env)) fail("Unknown command.");
     const who = typeof a.name === "string" ? a.name.trim().toLowerCase() : "";
     let uid = c.uid;

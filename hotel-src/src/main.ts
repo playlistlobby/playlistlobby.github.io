@@ -6,7 +6,7 @@ import { auth, db, firebaseReady, useEmulator } from "./firebase";
 import { authState, friendlyError, isAdminUser, login, logout, register } from "./auth";
 import { call, createProfile, loadProfile, Profile, watchEconomy } from "./db";
 import { eventNow, lockedIn, onEvent, startEvent } from "./eventState";
-import { FINALE_KEY } from "./shared/event";
+import { EVENT_ON, FINALE_KEY } from "./shared/event";
 import { mountFinale } from "./ui/finalePage";
 import { watchMyWanted } from "./bounty";
 import { collectPaidCds } from "./payReturn";
@@ -53,7 +53,7 @@ import { otherWindowOpen, publishProfile, releasePresence, social, startPresence
 startUpdateCheck(); // a phone that still runs an old copy reloads to the new one
 startMaintenanceWatch(); // the game can be closed for a while (a message over everything)
 
-export const APP_NAME = "Blodig oktober";
+export const APP_NAME = "PlaylistPlanet";
 
 export type View = "room" | "customize" | "shop" | "admin" | "npc" | "mod";
 
@@ -100,7 +100,7 @@ function showSetup(): void {
     h("div", { class: "center-screen" },
       h("div", { class: "panel auth" },
         h("h1", {}, "Almost there"),
-        h("p", {}, "Blodig oktober needs a Firebase project. Add your config to ", h("code", {}, "src/firebaseConfig.ts"), ":"),
+        h("p", {}, "PlaylistPlanet needs a Firebase project. Add your config to ", h("code", {}, "src/firebaseConfig.ts"), ":"),
         h("ol", {},
           h("li", {}, "Firebase console → create a project → add a Web app, copy its config"),
           h("li", {}, "Build → Authentication → enable the Email/Password provider (usernames are mapped onto it; no real emails are used)"),
@@ -178,8 +178,8 @@ function showLocked(why: "busy" | "taken"): void {
   app.append(h("div", { class: "center-screen" }, h("div", { class: "panel auth" },
     h("h1", {}, "Already open"),
     h("p", {}, why === "busy"
-      ? "This account is open in another window or device. Blodig oktober can only be played from one place at a time. Close it there, then try again."
-      : "This account was opened in another window, so this one has been stopped. Blodig oktober can only be played from one place at a time."),
+      ? "This account is open in another window or device. PlaylistPlanet can only be played from one place at a time. Close it there, then try again."
+      : "This account was opened in another window, so this one has been stopped. PlaylistPlanet can only be played from one place at a time."),
     h("div", { class: "row" }, h("button", { class: "btn primary", onclick: () => location.reload() }, "Try again")))));
 }
 
@@ -357,7 +357,7 @@ async function showHotel(user: User): Promise<void> {
   startPresence(p);
   // a crashed or reloaded earlier visit can leave a ghost of you standing in a room; clear those before walking in
   for (const room of [LOBBY_ID, ownRoomId(p.uid), tutRoomId(p.uid)]) void remove(ref(db, `rooms/${room}/players/${p.uid}`)).catch(() => undefined);
-  logAction(p, "login", "opened Blodig oktober");
+  logAction(p, "login", "opened PlaylistPlanet");
   const stopMessenger = mountMessenger(shell, ctx);
   void collectPaidCds(p); // back from the payment page, or an earlier payment still waiting: the CD is handed over
   checkRaffleAtLogin(p, () => window.dispatchEvent(new Event("pocket-changed"))); // a raffle draw that was due: asked for, and a win is announced
@@ -409,6 +409,7 @@ async function showHotel(user: User): Promise<void> {
   // (testing in the emulator: window.__go("streets") jumps to a room)
   if (import.meta.env.MODE === "emulator") (window as unknown as { __go?: (roomId: string, o?: NavOpts) => void }).__go = (roomId, o) => go("room", { roomId, force: true, ...o });
   function go(view: View, opts: NavOpts = {}): void {
+    if (!EVENT_ON && view === "room" && opts.roomId === STAGE_ID) opts = { ...opts, roomId: LOBBY_ID }; // (the concert room is closed for good)
     if (!p.isMod && lockedIn(false) && (view !== "room" || (opts.roomId ?? lastRoomId) !== STAGE_ID)) { if (view !== "room" || roomMounted !== STAGE_ID) toast("The doors are shut."); return; } // (the concert: nobody leaves)
     if ((view === "admin" || view === "npc") && !p.isAdmin) view = "room";
     if (view === "mod" && !p.isMod) view = "room";
@@ -501,6 +502,7 @@ function route(user: User | null): void {
 /** Nobody is signed in: the login box, unless the site is down for everyone (the surprise has been set off, and public/finale says so): then the page that is left. The browser remembers who died, so the page
  *  shows at once; if the database says the site is back (the admin reset it) the memory is dropped and the login comes back. A hidden "?login" in the address brings the login back (for staff). */
 function showLoggedOut(): void {
+  if (!EVENT_ON) { try { localStorage.removeItem(FINALE_KEY); } catch { /* private mode */ } return showAuth(); } // (the event is over: the login is always there)
   if (new URLSearchParams(location.search).has("login")) return showAuth();
   let remembered = false;
   try { remembered = localStorage.getItem(FINALE_KEY) === "1"; } catch { /* private mode */ }

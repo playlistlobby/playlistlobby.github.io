@@ -6,6 +6,7 @@ import { addToInv, mergeStacks } from "../../../src/shared/economy";
 import { DISABLED_ITEMS, ITEM_IDS, SMOKABLE, smokeMsOf } from "../../../src/shared/items";
 
 import { ipKey } from "../../../src/shared/mod";
+import { LEGACY_BEFORE_MS } from "../../../src/shared/event";
 const CLOTHING_SLOTS = new Set(["hd", "hr", "ha", "he", "ea", "fa", "ch", "cc", "cp", "ca", "lg", "sh", "wa"]);
 
 /**
@@ -45,6 +46,8 @@ export const sync: Action = {
     s.inventory = mergeStacks(s.inventory); // things that stack now (butts) but were lying about one to a slot
     if (raw.blood === undefined) s.blood = START_BLOOD;
     if (raw.createdAt === undefined) c.extra[`users/${c.uid}/createdAt`] = c.now;
+    // the accounts made before the album event are "legacy" accounts (something for them comes later); an account with no date is from before dates were kept
+    if (raw.legacy === undefined && (raw.createdAt === undefined || Number(raw.createdAt) < LEGACY_BEFORE_MS)) c.extra[`users/${c.uid}/legacy`] = true;
     // the coin flip machine is gone: blood a player still had on an open flip comes back to them (and the flip is wiped), the first time they load the game
     const flips = await c.db.get<Record<string, { by?: string; stake?: number }>>("coinflips/open");
     for (const [id, f] of Object.entries(flips ?? {})) {

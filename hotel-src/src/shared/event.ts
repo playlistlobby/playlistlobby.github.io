@@ -6,6 +6,12 @@
 //   kill    when the surprise was set off (server time): the screen fades to black, the room changes, and the fighting starts
 //   Everything else is per player: event/in/<uid> (when they went in), event/dead/<uid> (when they were killed), event/hp/<uid> (their hit points).
 
+/** the album-night event is over: the red door, the concert room, the /event panel and the page that is left are all switched off (the code stays for another time) */
+export const EVENT_ON = false;
+
+/** 2026-10-30 20:00 (Danish time): the accounts made before this are "legacy" accounts (users/<uid>/legacy = true, set by the server at login) */
+export const LEGACY_BEFORE_MS = Date.UTC(2026, 9, 30, 19, 0, 0);
+
 export interface EventState { open?: boolean; sealed?: boolean; lights?: boolean; kill?: number }
 
 /** the screen fades to black over this long once the surprise is set off, and the room is changed while it is black */

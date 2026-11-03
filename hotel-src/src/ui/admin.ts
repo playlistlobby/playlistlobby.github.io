@@ -1,3 +1,4 @@
+import { LEGACY_BEFORE_MS } from "../shared/event";
 import { get, limitToLast, onValue, orderByChild, query, ref } from "firebase/database";
 import { db } from "../firebase";
 import { h, toast } from "./dom";
@@ -34,6 +35,8 @@ interface UserRec {
   stabs: Record<string, number>;
   syringeDay: number;
   createdAt: number;
+  /** made before the album event */
+  legacy: boolean;
 }
 
 async function loadUsers(): Promise<UserRec[]> {
@@ -41,7 +44,7 @@ async function loadUsers(): Promise<UserRec[]> {
   const raw = (snap.val() ?? {}) as Record<string, any>;
   return Object.entries(raw).map(([uid, v]) => ({
     uid, name: v.name ?? "?", figure: v.figure ?? "", gender: v.gender ?? "M", blood: v.blood ?? 0, owned: v.owned ?? {}, inventory: v.inventory ?? {},
-    wardrobe: v.wardrobe ?? {}, stabs: v.stabs ?? {}, syringeDay: v.syringeDay ?? 0, createdAt: v.createdAt ?? 0,
+    wardrobe: v.wardrobe ?? {}, stabs: v.stabs ?? {}, syringeDay: v.syringeDay ?? 0, createdAt: v.createdAt ?? 0, legacy: v.legacy === true || !(v.createdAt >= LEGACY_BEFORE_MS),
   }));
 }
 
@@ -99,7 +102,7 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
           h("td", { class: "num" }, String(u.blood)),
           h("td", { class: "num" }, String(Object.keys(u.owned).length)),
           h("td", { class: "num" }, String(Object.values(u.stabs).filter((d) => d >= todayStart()).length)),
-          h("td", {}, fmtDate(u.createdAt)),
+          h("td", {}, fmtDate(u.createdAt), u.legacy ? " · legacy" : ""),
           h("td", { class: "hint" }, u.uid.slice(0, 8)))))));
       const u = users.find((x) => x.uid === selected);
       detail.replaceChildren(...(u ? [userDetail(u)] : []));
@@ -112,7 +115,7 @@ export function mountAdmin(root: HTMLElement, ctx: Ctx): () => void {
       return h("div", { class: "panel", style: { marginTop: "10px" } },
         h("h2", {}, u.name),
         h("div", { class: "row" }, headThumb(u.figure), h("div", {},
-          h("div", {}, `Gender ${u.gender} · joined ${fmtDate(u.createdAt)} · ${u.blood} drops`),
+          h("div", {}, `Gender ${u.gender} · joined ${fmtDate(u.createdAt)}${u.legacy ? " · legacy account" : ""} · ${u.blood} drops`),
           h("div", { class: "hint" }, `uid ${u.uid}`))),
         h("p", {}, h("b", {}, "Inventory: "), inv.join(", ") || "empty"),
         h("p", {}, h("b", {}, "Owned: "), Object.keys(u.owned).join(", ") || "nothing bought yet"),

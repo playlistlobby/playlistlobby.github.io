@@ -61,6 +61,8 @@ export interface Profile {
   mutedUntil: number;
   /** when the account was made (server time, ms; 0 = unknown) */
   createdAt: number;
+  /** made before the album event: a "legacy" account (users/<uid>/legacy, set by the server at login) */
+  legacy: boolean;
   /** has opened the door at least once (until then the door flashes to show where to go) */
   seenDoor: boolean;
   /** may place furniture and posters in other players' rooms (set by hand on the account, see users/<uid>/decorator) */
@@ -248,6 +250,7 @@ export async function loadProfile(uid: string, isAdmin = false): Promise<Profile
     enterAnywhere: false,
     mutedUntil: 0,
     createdAt: 0,
+    legacy: v.legacy === true,
     seenDoor: !!v.seenDoor,
     nameColor: typeof v.nameColor === "string" && /^#[0-9a-f]{6}$/i.test(v.nameColor) ? v.nameColor : undefined,
     decorator: v.decorator === true,
