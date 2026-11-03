@@ -6521,6 +6521,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
         tileOf: (uid) => { const p = players.get(uid); return p ? currentTile(p) : null; },
         nameOf: (uid) => players.get(uid)?.name ?? "somebody",
         walkTo: (t) => { fightWalking = true; try { walkTo(t); } finally { fightWalking = false; } },
+        free: (x, y) => walkable(x, y),
         goHome: () => ctx.navigate("room", { roomId: ownRoomId(me.uid), arrival: "bed", force: true }),
         goDown: () => ctx.navigate("room", { roomId: LOBBY_ID, from: ARRIVAL_ID, force: true }),
         refreshPocket: () => panel.refresh(),

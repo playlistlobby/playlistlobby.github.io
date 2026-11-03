@@ -199,8 +199,8 @@ export const PVP = {
   spawnProtectMs: 8_000,
   /** one hit point comes back this often */
   regenMs: 20_000,
-  /** you reach two tiles (diagonals too): somebody who runs is followed, and hit as soon as they are within reach */
-  reach: 2,
+  /** a knife fight is one tile apart (diagonals too): both walk to a tile next to each other, and somebody who moves is followed to the tile next to them again */
+  reach: 1,
   /** a gun on the street: one shot per gun (it is spent), 0 up to this many hit points, and the next one can be fired this long after, from this far away */
   gunMaxDmg: 5,
   gunCooldownMs: 30_000,

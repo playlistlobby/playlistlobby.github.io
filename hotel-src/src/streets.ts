@@ -45,6 +45,8 @@ export interface StreetsOptions {
   tileOf: (uid: string) => { x: number; y: number } | null;
   nameOf: (uid: string) => string;
   walkTo: (t: { x: number; y: number }) => void;
+  /** can somebody stand on this tile (nothing in the way, inside the street) */
+  free?: (x: number, y: number) => boolean;
   goHome: () => void;
   goDown: () => void;
   refreshPocket: () => void;
@@ -268,6 +270,18 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   let fightSlot = -1;
   function stopFight(): void { fightTarget = null; window.clearInterval(fightTimer); fightTimer = 0; }
   let lastWalk = 0, specialBusy = false;
+  /** the tile next to `them` that is nearest to `from` (not their own tile, and not one in the way) */
+  function standNextTo(from: { x: number; y: number }, them: { x: number; y: number }): { x: number; y: number } {
+    let best = them, bd = Infinity;
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      if (!dx && !dy) continue;
+      const x = them.x + dx, y = them.y + dy;
+      if (x < 0 || y < 0 || x >= STREETS_W || y >= STREETS_H || (o.free && !o.free(x, y))) continue;
+      const dist = Math.hypot(x - from.x, y - from.y);
+      if (dist < bd) { bd = dist; best = { x, y }; }
+    }
+    return best;
+  }
   function fight(uid: string): void {
     if (!bestWeapon(me.inventory)) return o.say("You need a knife to fight.", "warn");
     stopFight();
@@ -289,6 +303,10 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     if (!theirs) { stopFight(); return o.say("They've gone.", "warn"); }
     if (!mine) return;
     const d = Math.max(Math.abs(mine.x - theirs.x), Math.abs(mine.y - theirs.y));
+    if (fightWeapon === "knife" && d !== 1) { // a knife fight stands one tile apart: walk to the tile next to them (and back to it when they move, or you do)
+      if (performance.now() - lastWalk > 350) { lastWalk = performance.now(); o.walkTo(standNextTo(mine, theirs)); }
+      return;
+    }
     if (d > (fightWeapon === "gun" ? PVP.gunRange - 1 : PVP.reach)) { if (performance.now() - lastWalk > 400) { lastWalk = performance.now(); o.walkTo(theirs); } return; } // (too far: walk up (a gun needs less of a walk), and follow them if they run)
     if (fightWeapon === "gun") { stopFight(); await fireGun(uid, fightSlot); return; }
     if (serverNow() < knifeReadyAt) return; // (the arm is still swinging: the swing comes the moment it is ready)
