@@ -185,7 +185,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
           if (Array.isArray(r.parts)) r.parts.forEach((d, i) => splats.push({ to: r.to!, dmg: Number(d) || 0, at: performance.now() + i * 260 })); // (the special: a number for each of its swings, one after the other)
           else splats.push({ to: r.to, dmg: Number(r.dmg) || 0, at: performance.now() });
           // hit and not fighting: hit back by yourself, after half a swing (as in RuneScape)
-          if (r.to === me.uid && by !== me.uid && !r.dead && !fightTarget && serverNow() - r.at < 2500 && bestWeapon(me.inventory)) retaliate(by);
+          if (autoRetaliate && r.to === me.uid && by !== me.uid && !r.dead && !fightTarget && serverNow() - r.at < 2500 && bestWeapon(me.inventory)) retaliate(by);
         }
       }
     }, () => undefined),
@@ -229,7 +229,16 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const specFill = h("i", {});
   const specBtn = h("button", { class: "st-spec", type: "button", title: "Special: lands 2 or 3 knife swings at once. Charged by 5 swings that land.", onclick: () => void api.special() }, specFill, h("span", {}, "Special"));
   const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText)), status, bandBtn);
-  o.stage.append(hud, specBtn); // (the special button stands on its own, big, at the bottom in the middle)
+  // the auto retaliate switch (it is remembered), next to the special: the two stand at the bottom in the middle
+  let autoRetaliate = true;
+  try { autoRetaliate = localStorage.getItem("6ix-autoretaliate") !== "0"; } catch { /* private mode */ }
+  const retBtn = h("button", { class: "st-ret", type: "button", title: "Hit back by yourself when somebody hits you", onclick: () => {
+    autoRetaliate = !autoRetaliate;
+    try { localStorage.setItem("6ix-autoretaliate", autoRetaliate ? "1" : "0"); } catch { /* private mode */ }
+    paintHud();
+  } }, "Auto retaliate");
+  const actions = h("div", { class: "st-actions" }, retBtn, specBtn);
+  o.stage.append(hud, actions);
   function paintHud(): void {
     const c = combat.get(me.uid);
     const now = serverNow();
@@ -246,6 +255,9 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     specFill.style.width = `${(spec / PVP.specialCharge) * 100}%`;
     specBtn.classList.toggle("ready", spec >= PVP.specialCharge);
     specBtn.classList.toggle("hidden", !bestWeapon(me.inventory));
+    retBtn.textContent = `Auto retaliate: ${autoRetaliate ? "on" : "off"}`;
+    retBtn.classList.toggle("on", autoRetaliate);
+    retBtn.classList.toggle("hidden", !bestWeapon(me.inventory));
   }
   const hudTimer = window.setInterval(paintHud, 1000);
   paintHud();
@@ -597,7 +609,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       window.clearInterval(passTimer);
       window.clearInterval(hudTimer);
       hud.remove();
-      specBtn.remove();
+      actions.remove();
       orderBox?.remove();
     },
   };
