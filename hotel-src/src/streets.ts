@@ -18,7 +18,7 @@ import { findSlot } from "./shared/items";
 import { h, toast } from "./ui/dom";
 import { setLeaveLock } from "./leaveLock";
 import { playSfx } from "./sfx";
-import { STREET_POS_KEY, STREET_RETURN_KEY, STREET_RETURN_MS, bestWeapon, customerAt, RICH_PETS, STREET_TICK_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W } from "./shared/streets";
+import { STREET_POS_KEY, STREET_RETURN_KEY, STREET_RETURN_MS, bestWeapon, customerAt, RICH_PETS, STREET_TICK_MS, hpNow, orderPay, PVP, ROAD_ROWS, seeded, STREETS_H, STREETS_W, swingAt, TICK_MS, tickOf } from "./shared/streets";
 import type { Customer, StreetCombat } from "./shared/streets";
 
 const FEET_Y = 94;
@@ -70,6 +70,8 @@ export interface StreetsApi {
   /** somebody is in a fight right now (used to keep the body of a player who closed the game in it) */
   fighting(uid: string): boolean;
   heal(slot: number): Promise<void>;
+  /** the special (charged by landed swings): 2 or 3 knife swings at once on the one you are fighting, any time */
+  special(): Promise<void>;
   dispose(): void;
 }
 
@@ -171,14 +173,17 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       if (serverNow() - e.ts < PVP.bodyMs) bodies.set(e.uid, { name: String(e.name ?? ""), figure: String(e.figure ?? ""), x: Number(e.x) || 0, y: Number(e.y) || 0, dir: Number(e.dir) || 2, ts: e.ts });
     }, () => undefined),
     onValue(ref(db, "rooms/streets/hits"), (s) => {
-      const v = (s.val() ?? {}) as Record<string, { to?: string; dmg?: number; at?: number; dead?: boolean }>;
+      const v = (s.val() ?? {}) as Record<string, { to?: string; dmg?: number; at?: number; dead?: boolean; parts?: number[] }>;
       for (const [by, r] of Object.entries(v)) {
         if (!r || typeof r.at !== "number" || typeof r.to !== "string") continue;
         if ((hits.get(by) ?? 0) >= r.at) continue;
         const first = !hits.size && serverNow() - r.at > 3000; // (what happened before we came in is not shown)
         hits.set(by, r.at);
         if (!first && serverNow() - r.at < 4000) {
-          splats.push({ to: r.to, dmg: Number(r.dmg) || 0, at: performance.now() });
+          if (Array.isArray(r.parts)) r.parts.forEach((d, i) => splats.push({ to: r.to!, dmg: Number(d) || 0, at: performance.now() + i * 260 })); // (the special: a number for each of its swings, one after the other)
+          else splats.push({ to: r.to, dmg: Number(r.dmg) || 0, at: performance.now() });
+          // hit and not fighting: hit back by yourself, after half a swing (as in RuneScape)
+          if (r.to === me.uid && by !== me.uid && !r.dead && !fightTarget && serverNow() - r.at < 2500 && bestWeapon(me.inventory)) retaliate(by);
         }
       }
     }, () => undefined),
@@ -219,7 +224,9 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   const hpText = h("span", { class: "st-hp-text" }, `${PVP.maxHp}/${PVP.maxHp}`);
   const status = h("div", { class: "st-status" });
   const bandBtn = h("button", { class: "st-band", type: "button", onclick: () => { const slot = findSlot(me.inventory, PVP.healItem); if (slot < 0) return o.say("You have no bandage.", "warn"); void api.heal(slot); } }, "Bandage");
-  const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText)), status, bandBtn);
+  const specFill = h("i", {});
+  const specBtn = h("button", { class: "st-spec", type: "button", title: "Special: lands 2 or 3 knife swings at once. Charged by 5 swings that land.", onclick: () => void api.special() }, specFill, h("span", {}, "Special"));
+  const hud = h("div", { class: "st-hud" }, h("div", { class: "st-hp" }, h("div", { class: "st-hp-bar" }, hpFill, hpText)), status, specBtn, bandBtn);
   o.stage.append(hud);
   function paintHud(): void {
     const c = combat.get(me.uid);
@@ -233,6 +240,10 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     status.textContent = fighting ? "In a fight: you can't leave" : prot ? "Nobody can touch you for a moment" : passUntil > now ? `The elevator stops in ${Math.max(1, Math.round((passUntil - now) / 60000))} min` : "";
     status.classList.toggle("red", fighting);
     bandBtn.classList.toggle("hidden", findSlot(me.inventory, PVP.healItem) < 0);
+    const spec = Math.min(PVP.specialCharge, c?.spec ?? 0);
+    specFill.style.width = `${(spec / PVP.specialCharge) * 100}%`;
+    specBtn.classList.toggle("ready", spec >= PVP.specialCharge);
+    specBtn.classList.toggle("hidden", !bestWeapon(me.inventory));
   }
   const hudTimer = window.setInterval(paintHud, 1000);
   paintHud();
@@ -246,7 +257,8 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     o.goHome();
   }
 
-  // ---- fighting: click a player and you walk up to them and swing once; a number over their head counts down to your next swing (nobody hits back by themselves) ----
+  // ---- fighting, in game ticks of 0.6 s like RuneScape: click a player and you walk up to them and keep swinging by yourself, one swing every 4 ticks, until they fall, you walk away or click somebody else; ----
+  // ---- somebody who is hit and is not fighting hits back by themselves after 2 ticks; the special (charged by 5 landed swings) is the button at the top ----
   const inFight = (): boolean => (combat.get(me.uid)?.combatUntil ?? 0) > serverNow();
   setLeaveLock(inFight);
   /** when your knife (and the gun) can be used again, and who you last attacked: the number over their head counts down to it */
@@ -255,13 +267,20 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
   let fightWeapon: "knife" | "gun" = "knife";
   let fightSlot = -1;
   function stopFight(): void { fightTarget = null; window.clearInterval(fightTimer); fightTimer = 0; }
+  let lastWalk = 0, specialBusy = false;
   function fight(uid: string): void {
     if (!bestWeapon(me.inventory)) return o.say("You need a knife to fight.", "warn");
     stopFight();
     fightWeapon = "knife";
     fightTarget = uid;
-    fightTimer = window.setInterval(() => void tick(), 350);
+    fightTimer = window.setInterval(() => void tick(), 100); // (looks every 0.1 s: the swing goes out a little into the tick it is due)
     void tick();
+  }
+  /** hit and not fighting: swing back after half a swing (2 ticks) */
+  function retaliate(uid: string): void {
+    if (fightTarget || disposed) return;
+    knifeReadyAt = Math.max(knifeReadyAt, swingAt(serverNow(), PVP.retaliateTicks));
+    fight(uid);
   }
   async function tick(): Promise<void> {
     const uid = fightTarget;
@@ -270,19 +289,18 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     if (!theirs) { stopFight(); return o.say("They've gone.", "warn"); }
     if (!mine) return;
     const d = Math.max(Math.abs(mine.x - theirs.x), Math.abs(mine.y - theirs.y));
-    if (d > (fightWeapon === "gun" ? PVP.gunRange - 1 : PVP.reach)) { o.walkTo(theirs); return; } // (too far: walk up (a gun needs less of a walk), and follow them if they run)
+    if (d > (fightWeapon === "gun" ? PVP.gunRange - 1 : PVP.reach)) { if (performance.now() - lastWalk > 400) { lastWalk = performance.now(); o.walkTo(theirs); } return; } // (too far: walk up (a gun needs less of a walk), and follow them if they run)
     if (fightWeapon === "gun") { stopFight(); await fireGun(uid, fightSlot); return; }
     if (serverNow() < knifeReadyAt) return; // (the arm is still swinging: the swing comes the moment it is ready)
     swinging = true;
     try {
       const r = await call<{ died?: boolean; looted?: number; spilled?: number }>(me, "streetHit", { target: uid });
-      knifeReadyAt = serverNow() + PVP.swingMs;
+      knifeReadyAt = swingAt(serverNow(), PVP.swingTicks); // (the next swing: 4 ticks on, a little into the tick)
       lastTarget = { uid, weapon: "knife" };
-      stopFight(); // (one click, one swing)
-      if (r.died) { o.refreshPocket(); o.say(`You killed ${o.nameOf(uid)}.${r.looted ? ` You took ${r.looted} ${r.looted === 1 ? "thing" : "things"} from them.` : ""}${r.spilled ? " What didn't fit in your pocket lies on the floor." : ""}`); }
+      if (r.died) { stopFight(); o.refreshPocket(); o.say(`You killed ${o.nameOf(uid)}.${r.looted ? ` You took ${r.looted} ${r.looted === 1 ? "thing" : "things"} from them.` : ""}${r.spilled ? " What didn't fit in your pocket lies on the floor." : ""}`); }
     } catch (err) {
       const m = (err as Error).message || "";
-      if (/arm is still swinging/i.test(m)) { knifeReadyAt = serverNow() + 400; /* a moment more */ }
+      if (/arm is still swinging/i.test(m)) { knifeReadyAt = swingAt(serverNow(), 1); /* the next tick */ }
       else { stopFight(); o.say(m || "That didn't work.", "warn"); }
     }
     swinging = false;
@@ -306,12 +324,31 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       if (r.died) o.say(`You killed ${o.nameOf(uid)}.${r.looted ? ` You took ${r.looted} ${r.looted === 1 ? "thing" : "things"} from them.` : ""}${r.spilled ? " What didn't fit in your pocket lies on the floor." : ""}`);
     } catch (err) { o.say((err as Error).message || "The gun won't fire.", "warn"); }
   }
+  /** the special: 2 or 3 knife swings at once on the one you are fighting, on the next tick, whenever the bar is full (the swing timer starts over from it, and the auto swings go on) */
+  async function special(): Promise<void> {
+    const c = combat.get(me.uid);
+    if ((c?.spec ?? 0) < PVP.specialCharge) return o.say(`Your special isn't charged: ${PVP.specialCharge} swings that land fill it.`, "warn");
+    const uid = fightTarget ?? (c && c.combatUntil > serverNow() ? c.foe : undefined) ?? lastTarget?.uid ?? null;
+    if (!uid) return o.say("Fight somebody first, then use your special.", "warn");
+    if (specialBusy) return;
+    specialBusy = true;
+    await new Promise((r) => window.setTimeout(r, TICK_MS - (serverNow() % TICK_MS) + 60)); // (on the very next tick)
+    try {
+      const r = await call<{ parts: number[]; died?: boolean; looted?: number; spilled?: number }>(me, "streetSpecial", { target: uid });
+      knifeReadyAt = swingAt(serverNow(), PVP.swingTicks);
+      lastTarget = { uid, weapon: "knife" };
+      o.say(`Special! ${r.parts.join(" + ")} on ${o.nameOf(uid)}.`);
+      if (r.died) { stopFight(); o.refreshPocket(); o.say(`You killed ${o.nameOf(uid)}.${r.looted ? ` You took ${r.looted} ${r.looted === 1 ? "thing" : "things"} from them.` : ""}${r.spilled ? " What didn't fit in your pocket lies on the floor." : ""}`); }
+      else if (!fightTarget) fight(uid); // (the normal swings go on)
+    } catch (err) { o.say((err as Error).message || "The special didn't work.", "warn"); }
+    specialBusy = false;
+  }
   async function heal(slot: number): Promise<void> {
     try {
       const r = await call<{ healed: number }>(me, "streetHeal", { slot });
       o.refreshPocket();
       playSfx("give", 0.4);
-      knifeReadyAt = Math.max(knifeReadyAt, serverNow() + PVP.swingMs); // (eating takes the place of a swing)
+      knifeReadyAt = Math.max(knifeReadyAt, swingAt(serverNow(), PVP.swingTicks)); // (eating takes the place of a swing)
       o.say(`You use a bandage: +${r.healed} hit points.`);
     } catch (err) { o.say((err as Error).message || "That didn't work.", "warn"); }
   }
@@ -476,7 +513,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
     for (const sp of splats) {
       if (sp.to !== uid) continue;
       const age = now - sp.at;
-      if (age > 1300) continue;
+      if (age > 1300 || age < 0) continue; // (a negative age: a later number of the special, not yet)
       const lift = (age / 1300) * 18 * s;
       g.save();
       g.globalAlpha = age > 900 ? 1 - (age - 900) / 400 : 1;
@@ -526,7 +563,7 @@ export async function mountStreets(o: StreetsOptions): Promise<StreetsApi> {
       const c = boxes.get(objId);
       return c ? `${c.kind === "rich" ? "Rich customer" : "Customer"}: wants ${c.want.qty} x ${itemDef(c.want.item)?.name ?? c.want.item}` : null;
     },
-    drawPlayer, fight, shoot, stopFight, inFight, heal,
+    drawPlayer, fight, shoot, stopFight, inFight, heal, special,
     target: () => fightTarget,
     foe: () => { const c = combat.get(me.uid); return c && c.combatUntil > serverNow() ? (c.foe ?? null) : null; },
     fighting: (uid) => (combat.get(uid)?.combatUntil ?? 0) > serverNow(),

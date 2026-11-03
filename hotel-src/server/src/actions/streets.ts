@@ -17,7 +17,7 @@ import { findSlot, NO_DROP } from "../../../src/shared/items";
 import type { InvItem } from "../../../src/shared/items";
 import { floorPiles } from "./floor";
 import {
-  ARRIVAL_ID, bestWeapon, customerAt, CUSTOMER_CAP, CUSTOMER_STAY_MS, CUSTOMERS_PER_PLAYER_PER_MIN, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, mergeStreetPieces, orderPay, PVP, StreetOverride, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, swingRoll, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
+  ARRIVAL_ID, bestWeapon, customerAt, CUSTOMER_CAP, CUSTOMER_STAY_MS, CUSTOMERS_PER_PLAYER_PER_MIN, danishDayKey, elevatorRuns, fmtWhen, holdsTicket, hpNow, tickOf, mergeStreetPieces, orderPay, PVP, StreetOverride, STREETS_ID, STAFF_TEST_PASS_MS, StreetCombat, swingRoll, TICKET_ITEM, TICKET_PRICE, TICKET_STOCK,
 } from "../../../src/shared/streets";
 
 /** the streets are only for the staff and the emulator until the admin switches them on (config/streetsOpen, Admin > Streets) */
@@ -252,15 +252,56 @@ export const streetHit: Action = {
     if (their.combatUntil > c.now && their.foe && their.foe !== c.uid) fail("They are in a fight already.");
     if (mine.combatUntil > c.now && mine.foe && mine.foe !== target) fail("You are in a fight already.");
     const last = Number(await c.db.get<number>(`streetSwing/${c.uid}`)) || 0;
-    if (c.now - last < PVP.swingMs) fail("Your arm is still swinging.");
+    if (last && tickOf(c.now) - tickOf(last) < PVP.swingTicks) fail("Your arm is still swinging."); // (the swings are counted in game ticks)
     c.extra[`streetSwing/${c.uid}`] = c.now;
-    const { dmg } = swingRoll(weapon!); // (a swing that misses is a splash: 0)
+    const { landed, dmg } = swingRoll(weapon!); // (a swing that misses is a splash: 0)
+    if (landed) mine.spec = Math.min(PVP.specialCharge, (mine.spec ?? 0) + 1); // (every swing that lands charges the special)
     const stabKey = (t: number): string => `rooms/${STREETS_ID}/events/f${c.uid.slice(0, 8)}${t.toString(36)}`;
     if (last) c.extra[stabKey(last)] = null; // (the swing before this one has been seen by now: the events don't pile up)
     return applyStrike(c, w, target, theirs!, mine, their, dmg, stabKey(c.now), { type: "stab", from: c.uid, to: target, ts: c.now, fight: true }); // (everybody sees the stab animation, as for a normal stab)
   },
 };
 
+
+/**
+ * The special: charged by 5 landed swings (PVP.specialCharge), it lands 2 or 3 swings of the knife at once (each one is rolled like a normal swing) whenever you click it, even in the middle of the swing
+ * timer. The swing timer starts over from it, so the normal swings go on afterwards. It locks the two of you in a fight and a kill works like any other (see applyStrike).
+ */
+export const streetSpecial: Action = {
+  locks: (c, a) => [`user:${String(a?.target ?? "")}`],
+  async run(c, a) {
+    const target = text(a.target, ID_RE, "target");
+    if (target === c.uid) fail("You can't fight yourself.");
+    const me = await requireInRoom(c, STREETS_ID);
+    await refuseIfCantAttack(c);
+    const theirs = await c.db.get<{ x?: number; y?: number; sleeper?: boolean }>(`rooms/${STREETS_ID}/players/${target}`);
+    if (!theirs) fail("They've left the street.");
+    if (me && typeof theirs!.x === "number" && typeof theirs!.y === "number" && cheb(me, { x: theirs!.x, y: theirs!.y }) > PVP.reach + 1) fail("They're too far away.");
+    if (await c.db.get(`peers/${c.uid}/${target}`)) fail("You can't fight someone who plays on your device.");
+    const w = await c.user();
+    const weapon = bestWeapon(w.s.inventory);
+    if (!weapon) fail("You need a knife for that.");
+    const mine = await combatOf(c, c.uid);
+    const their = await combatOf(c, target);
+    if ((mine.spec ?? 0) < PVP.specialCharge) fail("Your special isn't charged yet.");
+    if (Number(mine.protectUntil) > c.now) mine.protectUntil = 0;
+    if (their.protectUntil > c.now) fail("They just arrived. Give them a moment.");
+    if (their.combatUntil > c.now && their.foe && their.foe !== c.uid) fail("They are in a fight already.");
+    if (mine.combatUntil > c.now && mine.foe && mine.foe !== target) fail("You are in a fight already.");
+    const last = Number(await c.db.get<number>(`streetSwing/${c.uid}`)) || 0;
+    c.extra[`streetSwing/${c.uid}`] = c.now; // (the swing timer starts over from the special)
+    mine.spec = 0;
+    const n = PVP.specialMinHits + Math.floor(Math.random() * (PVP.specialMaxHits - PVP.specialMinHits + 1));
+    const parts: number[] = [];
+    for (let i = 0; i < n; i++) parts.push(swingRoll(weapon!).dmg); // (each of the 2 or 3 swings is rolled like a normal one: a miss is 0)
+    const dmg = parts.reduce((s, x) => s + x, 0);
+    const stabKey = (t: number): string => `rooms/${STREETS_ID}/events/f${c.uid.slice(0, 8)}${t.toString(36)}`;
+    if (last) c.extra[stabKey(last)] = null;
+    const res = await applyStrike(c, w, target, theirs!, mine, their, dmg, stabKey(c.now), { type: "stab", from: c.uid, to: target, ts: c.now, fight: true }, parts);
+    c.note = `special ${parts.join("+")}`;
+    return { ...res, parts };
+  },
+};
 
 /**
  * A gun on the street: the gun is spent, the shot does 0 to 5 hit points, and the next gun can be fired 30 seconds after this one. It locks you and them in a fight, as a knife does,
@@ -298,7 +339,7 @@ export const streetShoot: Action = {
 };
 
 /** the same for a knife and a gun: the damage lands, the two are locked in a fight, and a kill takes the dead one's things (see the comments below) */
-async function applyStrike(c: Ctx, w: Awaited<ReturnType<Ctx["user"]>>, target: string, theirs: { x?: number; y?: number }, mine: StreetCombat, their: StreetCombat, dmg: number, eventKey: string, event: Record<string, unknown>): Promise<{ dmg: number; left: number; died: boolean; looted: number; spilled: number }> {
+async function applyStrike(c: Ctx, w: Awaited<ReturnType<Ctx["user"]>>, target: string, theirs: { x?: number; y?: number }, mine: StreetCombat, their: StreetCombat, dmg: number, eventKey: string, event: Record<string, unknown>, parts?: number[]): Promise<{ dmg: number; left: number; died: boolean; looted: number; spilled: number }> {
     const hpT = hpNow(their, c.now);
     const left = Math.max(0, hpT - dmg);
     mine.combatUntil = c.now + PVP.combatMs; mine.foe = target;
@@ -307,7 +348,7 @@ async function applyStrike(c: Ctx, w: Awaited<ReturnType<Ctx["user"]>>, target: 
     if (left <= 0) {
       died = true;
       mine.kills += 1;
-      c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid, deadByName: String(w.raw.name ?? "someone").slice(0, 16) };
+      c.extra[`streetCombat/${target}`] = { ...their, hp: PVP.maxHp, at: c.now, combatUntil: 0, foe: null, spec: 0, protectUntil: c.now + 30_000, deaths: their.deaths + 1, deadAt: c.now, deadBy: c.uid, deadByName: String(w.raw.name ?? "someone").slice(0, 16) };
       c.extra[`elevatorCool/${target}`] = c.now + PVP.deathCoolMs; // (sent home at once by their browser; the elevator is shut for them for 30 seconds)
       mine.foe = undefined; // (the fight is over, but the 10 seconds where you can't leave still run: killing the one who hit you does not lift them)
       // the killer takes what the dead one carried (the knife stays: it is the one thing a player must always have, and so does everything else that can't be dropped); what doesn't fit in the killer's pocket lies on the floor where they died, along with 25 blood
@@ -333,7 +374,7 @@ async function applyStrike(c: Ctx, w: Awaited<ReturnType<Ctx["user"]>>, target: 
     c.extra[`streetCombat/${c.uid}`] = { ...mine, hp: hpNow(mine, c.now), at: c.now, foe: mine.foe ?? null };
     // what everybody in the room sees: a number over the head (and the dead one is sent home by their own browser)
     c.extra[eventKey] = event;
-    c.extra[`rooms/${STREETS_ID}/hits/${c.uid}`] = { to: target, dmg, at: c.now, ...(died ? { dead: true } : {}) };
+    c.extra[`rooms/${STREETS_ID}/hits/${c.uid}`] = { to: target, dmg, at: c.now, ...(parts ? { parts } : {}), ...(died ? { dead: true } : {}) };
     c.note = `${dmg ? `hit ${dmg}` : "missed"}${died ? " (killed)" : ""}`;
     return { dmg, left, died, looted, spilled };
 }

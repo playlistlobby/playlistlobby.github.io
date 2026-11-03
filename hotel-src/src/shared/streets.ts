@@ -177,10 +177,22 @@ function customerBase(k: number, at: number): Customer {
 export const orderPay = (unit: number, w: Want): number => Math.ceil(unit * w.qty * w.mult);
 
 // ---- the knife fights (RuneScape Classic's rules for a player fight: a roll to hit, a roll for how hard, one fight at a time) -----------------------------
+/** the fight's game tick, like RuneScape's: 0.6 s. Every swing lands on a tick and the time between swings is a number of ticks (the server counts ticks from the clock: tickOf) */
+export const TICK_MS = 600;
+export const tickOf = (ms: number): number => Math.floor(ms / TICK_MS);
+/** the moment (a little into the tick, for the lag) that a swing is sent when it is `ticks` ticks after the one at `ms` */
+export const swingAt = (ms: number, ticks: number): number => (tickOf(ms) + ticks) * TICK_MS + 100;
 export const PVP = {
   maxHp: 10,
-  /** how long you have to wait between two swings (3 game ticks of 0.6 s): a bandage uses up a swing too */
-  swingMs: 1800,
+  /** how long you have to wait between two swings: 4 game ticks of 0.6 s (a knife is as quick as a dagger in RuneScape); a bandage uses up a swing too */
+  swingTicks: 4,
+  swingMs: 4 * TICK_MS,
+  /** the special: it is charged by landed swings (5 of them fill it) and then lands 2 or 3 knife swings at once, any time you click it, ignoring the swing timer */
+  specialCharge: 5,
+  specialMinHits: 2,
+  specialMaxHits: 3,
+  /** somebody who is hit and is not fighting hits back by themselves, after this many ticks (half a swing, as in RuneScape) */
+  retaliateTicks: 2,
   /** after a swing, the two of you are locked in a fight for this long (nobody else can join it): no riding the elevator, no walking out of the room */
   combatMs: 10_000,
   /** nobody can touch you for this long after you walk in */
@@ -208,7 +220,7 @@ export const PVP = {
   deathBlood: 25,
 } as const;
 /** `foe` is who you are locked in a fight with while `combatUntil` lasts */
-export interface StreetCombat { hp: number; at: number; combatUntil: number; healAt: number; protectUntil: number; kills: number; deaths: number; foe?: string }
+export interface StreetCombat { hp: number; at: number; combatUntil: number; healAt: number; protectUntil: number; kills: number; deaths: number; foe?: string; /** landed swings towards the special (0 up to PVP.specialCharge) */ spec?: number }
 
 /**
  * RuneScape Classic's numbers. Everybody fights at the same levels (nobody trains anything here), so what separates two players is the weapon and the luck of the rolls.

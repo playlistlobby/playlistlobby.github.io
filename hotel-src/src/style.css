@@ -1808,6 +1808,13 @@ html.kb .trade-win { max-height: 100%; border-radius: 0; }
 .st-status { padding: 2px 8px; border-radius: 8px; background: rgba(0, 0, 0, .55); color: #e8e8e8; font-size: 11px; width: fit-content; }
 .st-status:empty { display: none; }
 .st-status.red { background: rgba(150, 20, 20, .8); }
+/* the special attack on the street: a bar that fills with every swing that lands, and a glowing button when it is full */
+.st-spec { position: relative; align-self: flex-start; min-width: 92px; padding: 3px 12px; overflow: hidden; border: 1px solid #5a1010; border-radius: 5px; font: 700 12px var(--font); color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); background: #3a1414; cursor: default; }
+.st-spec > i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(#e24848, #a01c1c); transition: width .25s; }
+.st-spec > span { position: relative; }
+.st-spec.ready { cursor: pointer; border-color: #ffd23a; animation: st-spec-glow 1s infinite alternate; }
+.st-spec.hidden { display: none; }
+@keyframes st-spec-glow { from { box-shadow: 0 0 2px #ffd23a; } to { box-shadow: 0 0 10px #ffd23a; } }
 .st-band { align-self: flex-start; padding: 3px 12px; border: 1px solid #2b6d19; border-radius: 5px; font: 700 12px var(--font); color: #fff; text-shadow: 0 -1px 0 rgba(0, 0, 0, .5); background: linear-gradient(#a8de80 0%, #6cc24a 49%, #4fae2c 50%, #3b9a1f 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); cursor: pointer; }
 .st-dead { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: rgba(60, 0, 0, .62); backdrop-filter: grayscale(.8); pointer-events: auto; }
 .st-dead-card { text-align: center; color: #fff; text-shadow: 0 2px 4px #000; }
