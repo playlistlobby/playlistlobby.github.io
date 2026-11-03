@@ -18,8 +18,8 @@ export const STREETS_H = 12;
 
 // ---- when the elevator runs ------------------------------------------------------------------------------------------
 export const EVENT_TZ = "Europe/Copenhagen";
-export const EVENT_HOUR = 20;
-export const EVENT_HOURS = 1;
+export const EVENT_HOUR = 19;
+export const EVENT_HOURS = 2;
 /** clock parts in Danish time */
 export function danishParts(now: number): { y: number; m: number; d: number; h: number; mi: number; s: number } {
   const f = new Intl.DateTimeFormat("en-GB", { timeZone: EVENT_TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
@@ -34,7 +34,7 @@ export const EXTRA_RUNS: Record<string, number[]> = { "20261028": [17] };
 export const runHoursOn = (now: number): number[] => [...(EXTRA_RUNS[danishDayKey(now)] ?? []), EVENT_HOUR].sort((x, y) => x - y);
 const pad2 = (n: number): string => String(n).padStart(2, "0");
 /**
- * Is the elevator running, and until when? Every day from 20 to 21 (and on the days in EXTRA_RUNS at the extra hours too). `windowKey` names the run that is on now, or the next one:
+ * Is the elevator running, and until when? Every day from 19 to 21 (and on the days in EXTRA_RUNS at the extra hours too). `windowKey` names the run that is on now, or the next one:
  * the tickets for sale are counted for it (50 for each run). `forceUntil` is the admin's test switch: the elevator runs until then whatever the clock says.
  */
 export function elevatorRuns(now: number, forceUntil = 0): { open: boolean; endsAt: number; nextAt: number; windowKey: string } {

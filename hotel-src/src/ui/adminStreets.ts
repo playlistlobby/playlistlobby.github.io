@@ -16,7 +16,7 @@ export function mountAdminStreets(el: HTMLElement, ctx: Ctx): () => void {
   const showStatus = (): void => {
     const now = serverNow();
     const r = elevatorRuns(now, force);
-    status.textContent = force > now ? `Test switch is ON: the elevator runs for ${fmtWhen(force - now)} more.` : r.open ? `The elevator is running by the clock (stops in ${fmtWhen(r.endsAt - now)}).` : `The elevator is off. By the clock it runs from 20 to 21 (next in ${fmtWhen(r.nextAt - now)}).`;
+    status.textContent = force > now ? `Test switch is ON: the elevator runs for ${fmtWhen(force - now)} more.` : r.open ? `The elevator is running by the clock (stops in ${fmtWhen(r.endsAt - now)}).` : `The elevator is off. By the clock it runs from 19 to 21 (next in ${fmtWhen(r.nextAt - now)}).`;
   };
   stops.push(onValue(ref(db, "config/streetsForce"), (s) => { force = Number(s.val()) || 0; showStatus(); }, () => undefined));
   const timer = window.setInterval(showStatus, 15_000);

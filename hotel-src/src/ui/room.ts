@@ -925,7 +925,7 @@ export function mountRoom(root: HTMLElement, ctx: Ctx, roomId: string, opts: Roo
     else if (hoverObj && hoverObj.kind === "hcomputer") text = "Computer: order furniture, members, settings";
     else if (hoverObj && hoverObj.kind === "hdoor") text = "Door: your hideouts";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "cdpress") text = "CD printer: press a song onto a CD";
-    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "elevator") text = isArrival ? "Elevator: back to the basement" : "Elevator: runs from 20 to 21";
+    else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "elevator") text = isArrival ? "Elevator: back to the basement" : "Elevator: runs from 19 to 21";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "streetbin") text = "Trash can: search it";
     else if (hoverObj && hoverObj.kind === "scustomer" && streetsApi) text = streetsApi.hoverText(hoverObj.id) ?? "";
     else if (hoverObj && FURNI_KINDS[hoverObj.kind!]?.opens === "beatshop") { const bf = def.furni.find((q) => q.id === hoverObj!.id); const bo = bf?.by ?? def.ownerUid; const bn = (bo && bo === def.ownerUid ? def.ownerName : bo ? beatOwnerNames.get(bo) : "") ?? ""; if (bo && !bn && !beatOwnerNames.has(bo)) { beatOwnerNames.set(bo, ""); void fetchProfile(bo).then((pp) => { if (pp?.name) { beatOwnerNames.set(bo, pp.name); updateHint(); } }, () => undefined); } text = bn ? `${bn}'s BeatShop: listen to beats and buy them` : "BeatShop: listen to beats and buy them"; }

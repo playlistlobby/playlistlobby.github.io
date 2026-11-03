@@ -14645,8 +14645,8 @@
   "where": "src/ui/elevator.ts"
  },
  "N2374": {
-  "en": "The elevator runs from 20 to 21. It starts in {fmtWhen}.",
-  "da": "Elevatoren kører fra 20 til 21. Den starter om {fmtWhen}.",
+  "en": "The elevator runs from 19 to 21. It starts in {fmtWhen}.",
+  "da": "Elevatoren kører fra 19 til 21. Den starter om {fmtWhen}.",
   "where": "src/ui/elevator.ts"
  },
  "N2375": {
@@ -14780,8 +14780,8 @@
   "where": "src/rooms.ts"
  },
  "N2401": {
-  "en": "A red ticket for the elevator in the basement. It runs from 20 to 21 every day. The ticket is used up when you ride it. You can only hold one.",
-  "da": "En rød billet til elevatoren i kælderen. Den kører fra 20 til 21 hver dag. Billetten bliver brugt, når du kører. Du kan kun have en.",
+  "en": "A red ticket for the elevator in the basement. It runs from 19 to 21 every day. The ticket is used up when you ride it. You can only hold one.",
+  "da": "En rød billet til elevatoren i kælderen. Den kører fra 19 til 21 hver dag. Billetten bliver brugt, når du kører. Du kan kun have en.",
   "where": "src/items.ts"
  },
  "N2402": {
@@ -14800,8 +14800,8 @@
   "where": "src/ui/room.ts"
  },
  "N2405": {
-  "en": "Elevator: runs from 20 to 21",
-  "da": "Elevator: kører fra 20 til 21",
+  "en": "Elevator: runs from 19 to 21",
+  "da": "Elevator: kører fra 19 til 21",
   "where": "src/ui/room.ts"
  },
  "N2406": {
@@ -14870,8 +14870,8 @@
   "where": "server/src/actions/streets.ts"
  },
  "N2419": {
-  "en": "The elevator runs from 20 to 21. It starts again in {fmtWhen}.",
-  "da": "Elevatoren kører fra 20 til 21. Den starter igen om {fmtWhen}.",
+  "en": "The elevator runs from 19 to 21. It starts again in {fmtWhen}.",
+  "da": "Elevatoren kører fra 19 til 21. Den starter igen om {fmtWhen}.",
   "where": "server/src/actions/streets.ts"
  },
  "N2420": {
@@ -15715,13 +15715,13 @@
   "where": "server/src/actions/streets.ts"
  },
  "N2588": {
-  "en": "The elevator runs from 17 to 18 and from 20 to 21 today. It starts in {fmtWhen}.",
-  "da": "Elevatoren kører fra 17 til 18 og fra 20 til 21 i dag. Den starter om {fmtWhen}.",
+  "en": "The elevator runs from 17 to 18 and from 19 to 21 today. It starts in {fmtWhen}.",
+  "da": "Elevatoren kører fra 17 til 18 og fra 19 til 21 i dag. Den starter om {fmtWhen}.",
   "where": "src/ui/elevator.ts"
  },
  "N2589": {
-  "en": "The elevator runs every day from 20 to 21. It starts in {fmtWhen}.",
-  "da": "Elevatoren kører hver dag fra 20 til 21. Den starter om {fmtWhen}.",
+  "en": "The elevator runs every day from 19 to 21. It starts in {fmtWhen}.",
+  "da": "Elevatoren kører hver dag fra 19 til 21. Den starter om {fmtWhen}.",
   "where": "src/ui/elevator.ts"
  },
  "N2590": {

@@ -11,7 +11,7 @@ import type { Ctx } from "../main";
 export interface ElevatorApi { close(): void }
 
 /**
- * The elevator window. In the basement: the ticket (50 blood, 50 a day, one per player), when it runs (20 to 21), and the ride up (the ticket is used up). In the arrival room: the ride back down.
+ * The elevator window. In the basement: the ticket (50 blood, 50 a day, one per player), when it runs (19 to 21), and the ride up (the ticket is used up). In the arrival room: the ride back down.
  * `onRide` is told where to go once the server has said yes.
  */
 export function openElevator(host: HTMLElement, ctx: Ctx, where: "lobby" | "arrival", onRide: (dir: "up" | "down") => void, onClose: () => void): ElevatorApi {
@@ -69,7 +69,7 @@ export function openElevator(host: HTMLElement, ctx: Ctx, where: "lobby" | "arri
     const price = h("span", { class: "el-price" }, h("img", { src: BLOOD_ICON, class: "blood-ico", alt: "" }), ` ${TICKET_PRICE}`);
     body.replaceChildren(
       ...(run.open ? [] : [h("div", { class: "hint el-desc" }, "A risky chance to sell to new customers")]), // (before 20: what the elevator is for)
-      h("div", { class: "el-time" + (run.open ? " open" : "") }, run.open ? `The elevator is running. It stops in ${fmtWhen(run.endsAt - now)}.` : (runHoursOn(now).length > 1 ? `The elevator runs from 17 to 18 and from 20 to 21 today. It starts in ${fmtWhen(run.nextAt - now)}.` : `The elevator runs every day from 20 to 21. It starts in ${fmtWhen(run.nextAt - now)}.`)),
+      h("div", { class: "el-time" + (run.open ? " open" : "") }, run.open ? `The elevator is running. It stops in ${fmtWhen(run.endsAt - now)}.` : (runHoursOn(now).length > 1 ? `The elevator runs from 17 to 18 and from 19 to 21 today. It starts in ${fmtWhen(run.nextAt - now)}.` : `The elevator runs every day from 19 to 21. It starts in ${fmtWhen(run.nextAt - now)}.`)),
       h("div", { class: "sixty-row" },
         ticket ? h("img", { src: ticket.icon, alt: "", class: "sixty-ico" }) : null,
         h("div", { class: "sixty-main" }, h("div", { class: "sixty-name" }, "Elevator ticket"), h("div", { class: "hint" }, have ? "You have a ticket. It is used up when you ride." : `${left} of ${TICKET_STOCK} left for this run. One for each player.`)),
