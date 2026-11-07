@@ -68,12 +68,13 @@ let busy = false;
 
 function setBar(mode) {
   const locked = mode === "locked";
+  bar.dataset.mode = step === "email" ? "email" : "message";           // drives the mail <-> iMessage icon swap
   bar.classList.toggle("locked", locked);
   field.disabled = locked || busy;
   send.disabled = locked || busy || !field.value.trim();
   if (mode === "email") { field.type = "email"; field.placeholder = "Your email"; field.setAttribute("aria-label", "Your email"); field.setAttribute("inputmode", "email"); field.setAttribute("autocomplete", "email"); field.maxLength = 100; }
-  if (mode === "message") { field.type = "text"; field.placeholder = "iMessage"; field.setAttribute("aria-label", "Message"); field.setAttribute("inputmode", "text"); field.setAttribute("autocomplete", "off"); field.maxLength = 400; }
-  if (locked) { field.type = "text"; field.placeholder = "iMessage"; field.value = ""; }
+  if (mode === "message") { field.type = "text"; field.placeholder = "Make an inquiry"; field.setAttribute("aria-label", "Make an inquiry"); field.setAttribute("inputmode", "text"); field.setAttribute("autocomplete", "off"); field.maxLength = 400; }
+  if (locked) { field.type = "text"; field.placeholder = "Make an inquiry"; field.value = ""; }
 }
 field.addEventListener("input", () => { bar.classList.remove("bad"); send.disabled = field.disabled || !field.value.trim(); });
 
