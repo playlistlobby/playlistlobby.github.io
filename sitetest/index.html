@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#dce7f1">
 <title>playlist.mag</title>
-<link rel="stylesheet" href="home.css?v=10">
+<link rel="stylesheet" href="home.css?v=11">
 </head>
 <body>
 
@@ -18,11 +18,9 @@
   <!-- the liquid-glass play button; after a tap it turns into the playlist note and moves left -->
   <button class="glass" id="glass" type="button" aria-label="Play">
     <span class="shape"><i class="sh"></i><i class="g"></i><i class="rim"></i></span>
-    <!-- the iOS 6 app icon of the highlighted menu option; it takes the logo's place while you hover -->
+    <!-- the iOS 6 app icon (the project app); it takes the logo's place while you hover any option. Per-option icons are in assets/icons (shop.webp, contact.webp) if they are wanted again -->
     <span class="appicon" aria-hidden="true">
-      <img class="projects" src="assets/icons/projects.webp" alt="" draggable="false">
-      <img class="shop" src="assets/icons/shop.webp" alt="" draggable="false">
-      <img class="contact" src="assets/icons/contact.webp" alt="" draggable="false">
+      <img class="any" src="assets/icons/projects.webp" alt="" draggable="false">
     </span>
   </button>
 
@@ -33,6 +31,6 @@
   </nav>
 </main>
 
-<script type="module" src="home.js?v=9"></script>
+<script type="module" src="home.js?v=10"></script>
 </body>
 </html>

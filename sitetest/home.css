@@ -64,9 +64,7 @@ body.s2 .glass{transform:translate(calc(var(--s) * -23.02),calc(var(--s) * -3.23
 .appicon img{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transform:scale(.84);
   filter:blur(calc(var(--s) * .55)) drop-shadow(0 0 0 rgba(30,50,40,0));
   transition:opacity .5s ease,transform .75s var(--spring),filter .55s ease}
-.glass.app[data-app=projects] .appicon .projects,
-.glass.app[data-app=shop] .appicon .shop,
-.glass.app[data-app=contact] .appicon .contact{opacity:1;transform:none;
+.glass.app .appicon .any{opacity:1;transform:none;
   filter:blur(0) drop-shadow(0 calc(var(--s) * .5) calc(var(--s) * .9) rgba(30,50,40,.32))}
 .glass.app .shape{opacity:0;transform:scale(.9);filter:blur(calc(var(--s) * .45))}
 
