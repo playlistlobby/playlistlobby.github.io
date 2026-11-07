@@ -51,7 +51,7 @@ body.s2 .glass{transform:translate(calc(var(--s) * -23.02),calc(var(--s) * -3.23
 .shape{position:absolute;inset:0;transition:transform .45s var(--spring)}
 .shape i{position:absolute;inset:0;display:block;pointer-events:none}
 .shape .sh svg,.shape .rim svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
-.shape .sh{transform:translateY(5%);filter:blur(calc(var(--s) * 1.1));opacity:.2;transition:opacity .45s ease,filter .45s ease}
+.shape .sh{transform:translateY(5%);filter:blur(calc(var(--s) * 1.1));opacity:.2;transition:opacity .45s ease,filter .45s ease,transform .45s ease}
 .shape .shp{fill:#26402c;transition:fill .4s ease}
 .shape .g{opacity:0;background:rgba(255,255,255,.07);transition:background .4s ease,opacity .4s ease;
   -webkit-backdrop-filter:blur(calc(var(--s) * .38)) saturate(1.5) brightness(1.04);backdrop-filter:blur(calc(var(--s) * .38)) saturate(1.5) brightness(1.04)}
@@ -60,11 +60,11 @@ body.s2 .glass{transform:translate(calc(var(--s) * -23.02),calc(var(--s) * -3.23
 
 /* hovering a menu button: the logo glows green too and swells a little */
 .glass.glow .shape{transform:scale(1.035)}
-.glass.glow .sh{opacity:.42;filter:blur(calc(var(--s) * 1.7));animation:glowpulse 1.6s ease-in-out infinite}
+.glass.glow .sh{opacity:.5;transform:translateY(1%) scale(1.045);filter:blur(calc(var(--s) * 1.9));animation:glowpulse 1.6s ease-in-out infinite}
 .glass.glow .shp{fill:#5fe03a}
 .glass.glow .g{background:linear-gradient(135deg,rgba(190,255,150,.15),rgba(110,230,80,.09))}
-.glass.glow .rim .gr{opacity:.28}
-@keyframes glowpulse{50%{opacity:.26;filter:blur(calc(var(--s) * 2.1))}}
+.glass.glow .rim .gr{opacity:0}
+@keyframes glowpulse{50%{opacity:.3;filter:blur(calc(var(--s) * 2.3))}}
 
 /* ---------- the menu: iOS 6 glossy buttons ---------- */
 .menu{inset:0;pointer-events:none;z-index:6}
