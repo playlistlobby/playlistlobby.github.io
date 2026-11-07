@@ -1,4 +1,4 @@
-/* ===== playlist.mag · Contact: a floating iMessage (iOS 6) conversation =====
+/* ===== playlist.mag · Contact: a floating iMessage (iOS 6) bar and bubbles =====
    Bubbles, tails and the bar come from the playlist chat of the game (Wick) and the Legacy iOS UI Kit "Chat" screen. */
 :root{--font:"Helvetica Neue",Helvetica,Arial,sans-serif;--ink:#1b1b1d;--ease:cubic-bezier(.3,.8,.3,1);--spring:cubic-bezier(.2,.9,.25,1.1)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -14,30 +14,18 @@ button,input{font:inherit;color:inherit}
 .topnav a:hover{color:var(--ink)}
 .topnav a[aria-current]{color:var(--ink);border-color:var(--ink)}
 
-/* the conversation floats in the middle of the page */
-.chat{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;animation:in .8s var(--ease) both}
-@keyframes in{from{opacity:0;transform:translateY(14px) scale(.985)}}
-.who{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:calc(clamp(18px,5vh,44px) + env(safe-area-inset-top));
-  font:700 13px/1 var(--font);color:#5d6877;text-shadow:0 1px 0 rgba(255,255,255,.8)}
-.avatar{width:58px;height:58px;border-radius:50%;display:block;
-  background:radial-gradient(circle at 35% 25%,#ffffff 0%,#dfe8f1 45%,#b9c8d8 100%);
-  box-shadow:inset 0 1px 1px rgba(255,255,255,.95),inset 0 -6px 10px rgba(80,110,140,.18),0 6px 14px rgba(30,50,80,.18),0 0 0 1px rgba(60,85,110,.18);position:relative}
-.avatar::after{content:"";position:absolute;inset:13px;background:#7d8ea3;opacity:.75;
-  -webkit-mask:url(../assets/shapes/note.svg) center/contain no-repeat;mask:url(../assets/shapes/note.svg) center/contain no-repeat}
-/* the log scrolls underneath the glass bar and fades out at the top */
-.log{flex:1;min-height:0;width:min(640px,100%);overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain;display:flex;flex-direction:column;gap:7px;
-  padding:18px 14px calc(104px + env(safe-area-inset-bottom));
-  -webkit-mask-image:linear-gradient(transparent 0,#000 34px);mask-image:linear-gradient(transparent 0,#000 34px)}
-.log::-webkit-scrollbar{display:none}
-.log > :first-child{margin-top:auto}               /* a short conversation sits at the bottom, like in Messages */
-.stamp{align-self:center;margin:6px 0 2px;font:700 12px/16px var(--font);color:#7d879a;text-shadow:0 1px 0 rgba(255,255,255,.75)}
-.meta{align-self:flex-end;margin:-2px 12px 0;font:700 11px/14px var(--font);color:#8b95a5;text-shadow:0 1px 0 rgba(255,255,255,.75)}
+/* the bar floats alone in the middle of the page. Messages are added above it (the stack's top stays put), so they push the bar down. */
+.stack{position:fixed;left:50%;top:calc(50% - 22px);transform:translateX(-50%);width:min(400px,calc(100% - 28px));animation:in .8s var(--ease) both}
+@keyframes in{from{opacity:0;transform:translateX(-50%) translateY(12px) scale(.985)}}
+.log{display:flex;flex-direction:column}
 
 /* iOS 6 speech bubbles. The row floats and pops in; the bubble inside has the gel body, the tail sits behind it. */
-.row{max-width:76%;animation:pop .55s var(--spring) backwards,drift 6.5s ease-in-out .6s infinite;animation-delay:0s,var(--d,0s)}
+.row{max-width:78%;margin-bottom:9px;animation:pop .6s var(--spring) backwards,drift 6.5s ease-in-out .6s infinite;animation-delay:0s,var(--d,0s)}
 .row.in{align-self:flex-start;margin-left:9px;transform-origin:0 100%}
 .row.out{align-self:flex-end;margin-right:9px;transform-origin:100% 100%}
-@keyframes pop{from{opacity:0;transform:scale(.55) translateY(10px)}}
+.row.restored{animation:drift 6.5s ease-in-out infinite;animation-delay:var(--d,0s)}
+.row.gone{transition:opacity .35s ease,transform .35s ease;opacity:0;transform:scale(.85) translateY(-6px)}
+@keyframes pop{from{opacity:0;transform:scale(.5) translateY(14px)}}
 @keyframes drift{50%{transform:translateY(-2.5px)}}
 .b{position:relative;padding:8px 14px;border-radius:18px;font:400 16px/20px var(--font);overflow-wrap:anywhere;white-space:pre-wrap;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 5px rgba(20,35,60,.2)}
@@ -54,17 +42,21 @@ button,input{font:inherit;color:inherit}
 .typing i:nth-child(2){animation-delay:.18s}.typing i:nth-child(3){animation-delay:.36s}
 @keyframes dot{0%,60%,100%{opacity:.35;transform:none}30%{opacity:1;transform:translateY(-3px)}}
 
-/* the message bar: a floating frosted bar, a white field and a glossy blue Send */
-.bar{position:fixed;z-index:25;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(640px,calc(100% - 24px));
-  display:flex;align-items:center;gap:8px;padding:8px;border-radius:27px;
-  background:linear-gradient(rgba(248,250,252,.82),rgba(226,232,240,.88));-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 0 0 .6px rgba(20,35,60,.28),0 12px 30px rgba(30,50,80,.18);animation:in .8s .15s var(--ease) both}
-.field{flex:1;min-width:0;height:38px;padding:0 16px;border-radius:19px;border:0;outline:none;background:#fff;font-size:16px;color:var(--ink);
-  box-shadow:inset 0 1px 2px rgba(0,0,0,.22),0 0 0 .6px rgba(20,35,60,.35),0 1px 0 rgba(255,255,255,.85);transition:box-shadow .2s,opacity .2s}
+/* the message bar: a small frosted bar, a white field and a glossy blue Send */
+.bar{display:flex;align-items:center;gap:6px;padding:5px;border-radius:23px;will-change:transform;
+  background:linear-gradient(rgba(248,250,252,.84),rgba(226,232,240,.9));-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 0 0 .6px rgba(20,35,60,.28),0 10px 26px rgba(30,50,80,.16);transition:opacity .4s ease}
+.bar.shake{animation:shake .45s}
+@keyframes shake{15%,55%{transform:translateX(-7px)}35%,75%{transform:translateX(7px)}}
+.bar.bad .field{box-shadow:inset 0 1px 2px rgba(0,0,0,.2),0 0 0 1.5px rgba(214,70,60,.75),0 0 12px rgba(214,70,60,.3)}
+.bar.locked{opacity:.7}
+.field{flex:1;min-width:0;height:34px;padding:0 14px;border-radius:17px;border:0;outline:none;background:#fff;font-size:16px;color:var(--ink);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.22),0 0 0 .6px rgba(20,35,60,.35),0 1px 0 rgba(255,255,255,.85);transition:box-shadow .25s,opacity .2s}
 .field:focus{box-shadow:inset 0 1px 2px rgba(0,0,0,.22),0 0 0 .6px rgba(20,35,60,.45),0 0 12px 1px rgba(255,255,255,.8)}
-.field:disabled{background:#eef0f3;opacity:.8}
-.field::placeholder{color:#9aa0aa}
-.send{flex:none;height:36px;padding:0 18px;border-radius:18px;border:0;cursor:pointer;color:#fff;font:700 15px/36px var(--font);text-shadow:0 -1px 0 rgba(10,50,120,.4);
+.field:disabled{background:#eef0f3}
+.field::placeholder{color:#9aa0aa;transition:opacity .2s}
+.field.swap::placeholder{opacity:0}
+.send{flex:none;height:32px;padding:0 15px;border-radius:16px;border:0;cursor:pointer;color:#fff;font:700 14px/32px var(--font);text-shadow:0 -1px 0 rgba(10,50,120,.4);
   background:linear-gradient(#86c0fa 0%,#4b95ee 48%,#2c7ae4 52%,#2a74dc 100%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 0 .6px rgba(10,50,120,.55),0 1px 2px rgba(20,35,60,.25);transition:opacity .2s,transform .35s var(--spring),filter .15s}
 .send:disabled{opacity:.5;cursor:default}
@@ -72,11 +64,10 @@ button,input{font:inherit;color:inherit}
 .send:not(:disabled):active{transform:scale(.95);filter:brightness(.92)}
 .send:focus-visible{outline:2px solid rgba(70,130,220,.7);outline-offset:2px}
 
-/* phones: the nav is at the bottom, the bar sits above it */
+/* phones: the nav is at the bottom */
 @media (max-aspect-ratio:9/10){
   .topnav{top:auto;bottom:calc(10px + env(safe-area-inset-bottom));left:0;right:0;justify-content:center;gap:22px}
-  .bar{bottom:calc(44px + env(safe-area-inset-bottom))}
-  .log{padding-bottom:calc(126px + env(safe-area-inset-bottom))}
+  .stack{top:calc(40% - 22px)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
