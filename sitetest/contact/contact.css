@@ -7,12 +7,6 @@ body{overflow:hidden;color:var(--ink);font-family:var(--font);
   background:radial-gradient(ellipse 80% 75% at 50% 42%,#fff 0%,#f1f6fb 38%,#dce7f1 72%,#c3d2e1 100%),#fff}
 button,input{font:inherit;color:inherit}
 
-/* top navigation */
-.topnav{position:fixed;z-index:30;top:calc(14px + env(safe-area-inset-top));right:clamp(14px,2.4vw,40px);display:flex;gap:clamp(14px,1.8vw,30px);
-  font:500 clamp(12px,1.05vw,16px)/1 var(--font);letter-spacing:.14em;text-transform:lowercase}
-.topnav a{color:#4a5565;text-decoration:none;padding:6px 0;border-bottom:1.5px solid transparent;transition:color .2s,border-color .2s}
-.topnav a:hover{color:var(--ink)}
-.topnav a[aria-current]{color:var(--ink);border-color:var(--ink)}
 
 /* the bar floats alone in the middle of the page. Messages are added above it (the stack's top stays put), so they push the bar down. */
 .stack{position:fixed;left:50%;top:calc(50% - 22px);transform:translateX(-50%);width:min(400px,calc(100% - 28px));animation:in .8s var(--ease) both}
@@ -68,9 +62,21 @@ button,input{font:inherit;color:inherit}
 
 /* phones: the nav is at the bottom */
 @media (max-aspect-ratio:9/10){
-  .topnav{top:auto;bottom:calc(10px + env(safe-area-inset-bottom));left:0;right:0;justify-content:center;gap:22px}
   .stack{top:calc(40% - 22px)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
+}
+
+/* the return button (replaces the nav): back to the menu on the home page */
+.return{position:fixed;z-index:30;top:calc(14px + env(safe-area-inset-top));right:clamp(14px,2.4vw,40px);padding:9px 20px 9px 15px;border-radius:999px;text-decoration:none;
+  font:700 clamp(13px,1.1vw,16px)/1 var(--font);color:#3c3c3c;text-shadow:0 1px 0 #fff;
+  background:linear-gradient(#f0f0f1 0%,#d4d4d5 47%,#c4c4c7 47.2%,#f7f7f8 100%);box-shadow:0 5px 12px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.1);
+  transition:filter .15s,transform .15s,box-shadow .35s ease}
+.return::before{content:"\2039";margin-right:6px;font-size:1.25em;line-height:1;vertical-align:-1px}
+.return:hover{filter:brightness(1.03);box-shadow:0 0 22px rgba(176,226,180,.5),0 5px 12px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.1)}
+.return:active{filter:brightness(.93);transform:translateY(1px)}
+.return:focus-visible{outline:2px solid rgba(70,130,220,.7);outline-offset:3px}
+@media (max-aspect-ratio:9/10){
+  .return{top:auto;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;margin-inline:auto;width:fit-content}
 }
