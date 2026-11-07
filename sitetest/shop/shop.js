@@ -68,7 +68,7 @@ function layout() {
   // the ring's near side sticks out below its centre, the far side above: centre it on the window by its extent
   const cp0 = Math.cos(P0), sp0 = Math.sin(P0);
   const near = R * sp0 * (FL / (FL - R * cp0)), far = R * sp0 * (FL / (FL + R * cp0));
-  cx = W / 2; cy = H / 2 - (near - far) / 2 + (portrait ? unit * 3 : 0);
+  cx = W / 2; cy = H / 2 + 22 - (near - far) / 2 + (portrait ? unit * 3 : 0);   // (+22: half the banner on top)
   wheel.style.setProperty("--iw", iw + "px");
 }
 addEventListener("resize", layout);
