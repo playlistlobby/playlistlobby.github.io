@@ -152,7 +152,10 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ios-navbtn:not(:disabled):active{filter:brightness(.8);transform:scale(.94)}
 /* on a desktop screen only the top part of the phone is on screen: keep the picture inside it */
 @media (min-aspect-ratio:9/10){
-  .slide img{max-height:calc(258 * var(--u))}
+  /* the photo fills a frame at the top of the screen: the full width, down to the end of the visible part. It is cropped to fit,
+     from the sides (and from the top of a tall photo), but the bottom of the photo stays. */
+  .slide{padding-top:calc(64 * var(--u))}
+  .slide img{width:100%;max-width:none;height:calc(262 * var(--u));max-height:none;object-fit:cover;object-position:50% 100%}
 }
 
 /* ---------- phones and tall windows: phone on top, text below ---------- */

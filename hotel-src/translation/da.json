@@ -15818,5 +15818,20 @@
   "en": "Sold out for today. New stock tomorrow. (Accounts made on the same device share one daily stock.)",
   "da": "Udsolgt for i dag. Nyt lager i morgen. (Konti lavet på samme enhed deler ét dagligt lager.)",
   "where": "server/src/actions/shop.ts"
+ },
+ "N2602": {
+  "en": "A CD with one of three songs. You never get the same one twice. Real money.",
+  "da": "En CD med en af tre sange. Du får aldrig den samme to gange. Rigtige penge.",
+  "where": "src/ui/recordShop.ts"
+ },
+ "N2603": {
+  "en": "Return",
+  "da": "Tilbage",
+  "where": "src/main.ts"
+ },
+ "N2604": {
+  "en": "Stay on PlaylistPlanet",
+  "da": "Bliv på PlaylistPlanet",
+  "where": "src/main.ts"
  }
 }

@@ -43,7 +43,7 @@ function build() {
     b.className = "sb-app"; b.type = "button"; b.style.setProperty("--i", i);
     b.setAttribute("aria-label", `Open ${p.label}`);
     b.innerHTML = `<span class="sb-icon" style="background-image:url('${esc(p.icon)}')"></span><span class="sb-label">${esc(p.label)}</span>`;
-    b.addEventListener("click", () => openProject(p, b));
+    b.addEventListener("click", () => (p.href ? openLink(p, b) : openProject(p, b)));
     grid.append(b);
   });
   tick();
@@ -64,6 +64,28 @@ function centerIn(el, root) {
   while (n && n !== root) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
   return { x: (x / root.offsetWidth) * 100, y: (y / root.offsetHeight) * 100 };
 }
+
+/* ---------- an app that is a link (the game): the app zooms open, then the page changes ---------- */
+function openLink(p, icon) {
+  if (current) return;
+  current = "link";
+  const home = $("#home");
+  const o = centerIn(icon, screen);
+  home.style.transformOrigin = `${o.x}% ${o.y}%`;
+  icon.classList.add("pressed");
+  setCopy(p.title, p.text);
+  requestAnimationFrame(() => home.classList.add("out"));
+  try { sessionStorage.setItem("pm-from-site", location.pathname); } catch { /* the game just won't show its return button */ }   // only players who come through this app get the way back
+  setTimeout(() => { location.href = p.href; }, matchMedia("(prefers-reduced-motion:reduce)").matches ? 60 : 520);
+}
+// coming back with the browser's back button: the phone is on its home screen again
+addEventListener("pageshow", (e) => {
+  if (!e.persisted || current !== "link") return;
+  current = null;
+  $("#home").classList.remove("out");
+  document.querySelectorAll(".sb-app.pressed").forEach((n) => n.classList.remove("pressed"));
+  setCopy(data.intro.title, data.intro.text);
+});
 
 /* ---------- open / close a project (photo gallery app) ---------- */
 let iconEl = null;

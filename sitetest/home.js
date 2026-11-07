@@ -1,4 +1,8 @@
 // playlist.mag · Home: tap the glass play button -> it MORPHS into the playlist note, the menu comes in.
+/* players who switched on "Stay on PlaylistPlanet" (a switch on the game's login page, only shown to those who came in through the Projects phone) go straight back to the game */
+try {
+  if (localStorage.getItem("pm-stay-planet") === "1" && !location.hash) { sessionStorage.setItem("pm-from-site", location.pathname.replace(/[^/]*$/, "") + "projects/"); location.replace("/hotel/"); }
+} catch { /* no storage: the home page just shows */ }
 const body = document.body;
 const glass = document.getElementById("glass");
 const shape = glass.querySelector(".shape");

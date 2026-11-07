@@ -1,7 +1,9 @@
 {
   "intro": {
     "title": "Projects",
-    "text": ["Tap an app on the phone to open a project."]
+    "text": [
+      "Tap an app on the phone to open a project."
+    ]
   },
   "projects": [
     {
@@ -14,6 +16,16 @@
         "Like this"
       ],
       "photos": "project-1/photos.json"
+    },
+    {
+      "id": "playlistplanet",
+      "label": "PlaylistPlanet",
+      "icon": "assets/ios/icon-playlistplanet.png",
+      "title": "PlaylistPlanet",
+      "text": [
+        "The game. Opening it now."
+      ],
+      "href": "/hotel/"
     }
   ]
 }

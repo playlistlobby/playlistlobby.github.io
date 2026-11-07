@@ -115,6 +115,12 @@ function showLoading(msg: string): void {
 }
 
 /** The lock screen: wallpaper, big clock, and the sign-in form. */
+/** Players who opened the game from the app on the playlist.mag phone get a way back (the page they came from) and a "stay here" switch. Nobody else sees them. */
+const FROM_SITE_KEY = "pm-from-site", STAY_KEY = "pm-stay-planet";
+function siteReturnPath(): string | null {
+  try { const p = sessionStorage.getItem(FROM_SITE_KEY); return p && p.startsWith("/") && !p.startsWith("//") && !p.includes("\\") ? p : null; } catch { return null; }
+}
+
 function showAuth(): void {
   clear();
   player.stop();
@@ -158,10 +164,23 @@ function showAuth(): void {
     h("label", { class: "cellrow" }, h("span", { class: "lbl" }, "Password"), pass)),
   err, submit, toggle);
 
+  // only for players who came in through the app on the website
+  const back = siteReturnPath();
+  let fromSite: HTMLElement | null = null;
+  if (back) {
+    const stay = h("input", { type: "checkbox", id: "stay-planet" }) as HTMLInputElement;
+    try { stay.checked = localStorage.getItem(STAY_KEY) === "1"; } catch { /* no storage: the switch just won't be remembered */ }
+    stay.addEventListener("change", () => { try { if (stay.checked) localStorage.setItem(STAY_KEY, "1"); else localStorage.removeItem(STAY_KEY); } catch { /* ignore */ } });
+    fromSite = h("div", { class: "site-bar" },
+      h("button", { class: "site-back", type: "button", onclick: () => { location.href = back; } }, "Return"),
+      h("label", { class: "stay", for: "stay-planet" }, h("span", {}, "Stay on PlaylistPlanet"), stay, h("i", { class: "switch" })));
+  }
+
   const now = new Date();
   app.append(
     h("div", { class: "shell" }, statusBar(),
       h("div", { class: "lock" },
+        fromSite,
         h("div", { class: "lock-clock" },
           h("div", { class: "t" }, lockTime(now)),
           h("div", { class: "d" }, now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }))),

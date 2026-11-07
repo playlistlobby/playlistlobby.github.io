@@ -279,5 +279,7 @@ set("This device already has {n} accounts, the most one device can have.", "Den 
 set("That bin was searched a moment ago (by an account made on the same device as yours: they share the wait). Try again in {when}.", "Den skraldespand blev lige ransaget (af en konto lavet på samme enhed som din: I deler ventetiden). Prøv igen om {when}.", "server/src/actions/rewards.ts");
 set("Sold out. New mixers at 10:00 every morning. (Accounts made on the same device share one daily stock.)", "Udsolgt. Nye mixere kl. 10:00 hver morgen. (Konti lavet på samme enhed deler ét dagligt lager.)", "server/src/actions/shop.ts");
 set("Sold out for today. New stock tomorrow. (Accounts made on the same device share one daily stock.)", "Udsolgt for i dag. Nyt lager i morgen. (Konti lavet på samme enhed deler ét dagligt lager.)", "server/src/actions/shop.ts");
+set("Return", "Tilbage", "src/main.ts");
+set("Stay on PlaylistPlanet", "Bliv på PlaylistPlanet", "src/main.ts");
 fs.writeFileSync(file, JSON.stringify(d, null, 1), "utf8");
 console.log("entries", Object.keys(d).length, "| cigarette:", d[byEn.get("A cigarette. Click it to light up: you hold it and smoke for a minute, then it's only a butt.")].da);
