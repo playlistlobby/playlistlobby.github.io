@@ -8,7 +8,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{overflow:hidden;font-family:var(--font);color:#1b1b1d;
-  background:radial-gradient(ellipse 80% 75% at 50% 42%,#fff 0%,#f1f6fb 38%,#dce7f1 72%,#c3d2e1 100%),#fff}
+  background:radial-gradient(ellipse 80% 75% at 50% 42%,#fff 0%,#f4f6f8 38%,#e3e8ec 72%,#ccd4db 100%),#fff}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 /* a 16:9 stage (1 s = 1% of its width), the same numbers as the Figma frames (1920 x 1080) */

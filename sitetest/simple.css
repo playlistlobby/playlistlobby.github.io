@@ -3,7 +3,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{display:grid;place-items:center;font-family:var(--font);color:#1b1b1d;overflow:hidden;
-  background:radial-gradient(ellipse 80% 75% at 50% 42%,#fff 0%,#f1f6fb 38%,#dce7f1 72%,#c3d2e1 100%),#fff}
+  background:radial-gradient(ellipse 80% 75% at 50% 42%,#fff 0%,#f4f6f8 38%,#e3e8ec 72%,#ccd4db 100%),#fff}
 main{text-align:center;padding:24px;animation:in .7s cubic-bezier(.3,.8,.3,1) both}
 @keyframes in{from{opacity:0;transform:translateY(12px)}}
 h1{font-size:clamp(40px,7vw,96px);font-weight:500;letter-spacing:-.025em;line-height:1.05}
