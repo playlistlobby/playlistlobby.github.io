@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#dce7f1">
 <title>playlist.mag</title>
-<link rel="stylesheet" href="home.css?v=9">
+<link rel="stylesheet" href="home.css?v=10">
 </head>
 <body>
 
@@ -18,15 +18,21 @@
   <!-- the liquid-glass play button; after a tap it turns into the playlist note and moves left -->
   <button class="glass" id="glass" type="button" aria-label="Play">
     <span class="shape"><i class="sh"></i><i class="g"></i><i class="rim"></i></span>
+    <!-- the iOS 6 app icon of the highlighted menu option; it takes the logo's place while you hover -->
+    <span class="appicon" aria-hidden="true">
+      <img class="projects" src="assets/icons/projects.webp" alt="" draggable="false">
+      <img class="shop" src="assets/icons/shop.webp" alt="" draggable="false">
+      <img class="contact" src="assets/icons/contact.webp" alt="" draggable="false">
+    </span>
   </button>
 
   <nav class="menu" id="menu" aria-label="Main">
-    <a class="gbtn" style="--i:0" href="projects/" tabindex="-1">projects</a>
-    <a class="gbtn" style="--i:1" href="shop/" tabindex="-1">shop</a>
-    <a class="gbtn" style="--i:2" href="contact/" tabindex="-1">contact</a>
+    <a class="gbtn" style="--i:0" href="projects/" data-app="projects" tabindex="-1">projects</a>
+    <a class="gbtn" style="--i:1" href="shop/" data-app="shop" tabindex="-1">shop</a>
+    <a class="gbtn" style="--i:2" href="contact/" data-app="contact" tabindex="-1">contact</a>
   </nav>
 </main>
 
-<script type="module" src="home.js?v=8"></script>
+<script type="module" src="home.js?v=9"></script>
 </body>
 </html>

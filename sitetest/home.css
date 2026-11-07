@@ -40,7 +40,7 @@ body.s2 .glass{transform:translate(calc(var(--s) * -23.02),calc(var(--s) * -3.23
 .glass:focus-visible{outline:none}
 .glass:focus-visible .rim{filter:drop-shadow(0 0 6px #fff)}
 .glass:active .shape{transform:scale(.97)}
-.shape{position:absolute;inset:0;transition:transform .45s var(--spring)}
+.shape{position:absolute;inset:0;transition:transform .45s var(--spring),opacity .45s ease,filter .45s ease}
 .shape i{position:absolute;inset:0;display:block;pointer-events:none}
 .shape .sh svg,.shape .rim svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
 .shape .sh{transform:translateY(5%);filter:blur(calc(var(--s) * 1.1));opacity:.2;transition:opacity .45s ease,filter .45s ease,transform .45s ease}
@@ -57,6 +57,18 @@ body.s2 .glass{transform:translate(calc(var(--s) * -23.02),calc(var(--s) * -3.23
 .glass.glow .g{background:linear-gradient(135deg,rgba(190,255,150,.15),rgba(110,230,80,.09))}
 .glass.glow .rim .gr{opacity:0}
 @keyframes glowpulse{50%{opacity:.3;filter:blur(calc(var(--s) * 2.3))}}
+
+
+/* hovering a menu option: the logo turns into that option's iOS 6 app icon (a smooth swap; moving between options cross-fades) */
+.appicon{position:absolute;inset:0;pointer-events:none}
+.appicon img{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transform:scale(.84);
+  filter:blur(calc(var(--s) * .55)) drop-shadow(0 0 0 rgba(30,50,40,0));
+  transition:opacity .5s ease,transform .75s var(--spring),filter .55s ease}
+.glass.app[data-app=projects] .appicon .projects,
+.glass.app[data-app=shop] .appicon .shop,
+.glass.app[data-app=contact] .appicon .contact{opacity:1;transform:none;
+  filter:blur(0) drop-shadow(0 calc(var(--s) * .5) calc(var(--s) * .9) rgba(30,50,40,.32))}
+.glass.app .shape{opacity:0;transform:scale(.9);filter:blur(calc(var(--s) * .45))}
 
 /* ---------- the menu: iOS 6 glossy buttons ---------- */
 .menu{inset:0;pointer-events:none;z-index:6}

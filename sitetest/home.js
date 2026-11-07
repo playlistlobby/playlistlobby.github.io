@@ -15,7 +15,7 @@ function setScene(two, push = true) {
   glass.setAttribute("aria-label", two ? "Back" : "Play");
   menu.querySelectorAll("a").forEach((a) => (a.tabIndex = two ? 0 : -1));
   morphTo(two ? 1 : 0);
-  if (!two) setGlow(false);
+  if (!two) { clearTimeout(leaveTimer); setGlow(false); }
   if (push) history.replaceState(null, "", two ? "#menu" : location.pathname + location.search);
 }
 glass.addEventListener("click", () => setScene(!scene2));
@@ -34,13 +34,22 @@ addEventListener("pageshow", () => body.classList.remove("leaving")); // back bu
 /* =========================================================
    Hover: the buttons glow green and the logo reacts
    ========================================================= */
-function setGlow(on) { glass.classList.toggle("glow", on); menu.classList.toggle("glowing", on); }
+let leaveTimer = 0;
+function setGlow(on, a) {
+  clearTimeout(leaveTimer);
+  glass.classList.toggle("glow", on);
+  glass.classList.toggle("app", on && !!a);
+  if (on && a) glass.dataset.app = a.dataset.app;
+  menu.classList.toggle("glowing", on);
+}
+const hoverOn = (a) => setGlow(true, a);
+const hoverOff = () => { clearTimeout(leaveTimer); leaveTimer = setTimeout(() => setGlow(false), 140); };   // a short grace, so moving to the next option cross-fades instead of flickering
 menu.querySelectorAll("a").forEach((a) => {
-  a.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") setGlow(true); });
-  a.addEventListener("pointerleave", () => setGlow(false));
-  a.addEventListener("focus", () => { if (a.matches(":focus-visible")) setGlow(true); });
-  a.addEventListener("blur", () => setGlow(false));
-  a.addEventListener("pointerdown", () => setGlow(true));   // touch: lights up while pressed / on the way out
+  a.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") hoverOn(a); });
+  a.addEventListener("pointerleave", hoverOff);
+  a.addEventListener("focus", () => { if (a.matches(":focus-visible")) hoverOn(a); });
+  a.addEventListener("blur", hoverOff);
+  a.addEventListener("pointerdown", () => hoverOn(a));   // touch: the icon shows while pressed / on the way out
 });
 
 /* =========================================================
