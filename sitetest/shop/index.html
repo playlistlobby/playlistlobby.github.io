@@ -6,13 +6,28 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#dce7f1">
 <title>shop · playlist.mag</title>
-<link rel="stylesheet" href="../simple.css?v=1">
+<link rel="preload" as="image" href="assets/tee-playlist.webp" type="image/webp">
+<link rel="stylesheet" href="shop.css?v=2">
 </head>
 <body>
-<main>
-  <h1>shop</h1>
-  <p>Nothing here yet.</p>
-  <a class="gbtn" href="../#menu">go back</a>
+
+<nav class="topnav" aria-label="Main">
+  <a href="../">home</a>
+  <a href="../projects/">projects</a>
+  <a href="./" aria-current="page">shop</a>
+  <a href="../contact/">contact</a>
+</nav>
+
+<main class="wheel" id="wheel" aria-label="Shop">
+  <div class="ring" id="ring" aria-hidden="true"></div>
+  <!-- the shirts are put on the wheel by shop.js -->
+  <div class="hub" id="hub" aria-live="polite">
+    <h1 class="hub-title" id="hub-title">shop</h1>
+    <p class="hub-sub" id="hub-sub">Hover a shirt.</p>
+    <p class="hub-price" id="hub-price"></p>
+  </div>
 </main>
+
+<script type="module" src="shop.js?v=2"></script>
 </body>
 </html>
