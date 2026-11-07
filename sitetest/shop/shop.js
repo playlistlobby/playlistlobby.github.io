@@ -12,8 +12,8 @@ const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
 /* ---------- the products (the same shirt for now) ---------- */
 const PRICE_DKK = 10000;                                        // yes, 10k
 const fmt = (n) => n.toLocaleString("da-DK") + " DKK";            // 10.000 DKK
-const TEE = { id: "playlist-tee", name: "Playlist tee", img: "assets/tee-playlist2.webp", price: PRICE_DKK,
-  blurb: "A white cotton tee with the playlist logo and leaves in liquid glass on the chest." };
+const TEE = { id: "playlist-tee", name: "Playlist tee", img: "assets/tee-playlist3.webp", price: PRICE_DKK,
+  blurb: "A white cotton tee with the playlist logo in liquid glass on the chest." };
 const N = 16;
 const products = Array.from({ length: N }, () => TEE);
 

@@ -21,7 +21,7 @@ input{font:inherit}
 .item{position:absolute;left:0;top:0;width:var(--iw);padding:0;transform-origin:50% 50%;will-change:transform,opacity;outline:none;opacity:0;--g:0}
 .item img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none;user-select:none;
   /* the highlighted shirt glows faintly (--g is how much it is highlighted, 0..1) */
-  filter:drop-shadow(0 0 calc(var(--g) * 16px) rgba(120,232,90,calc(var(--g) * .55)))}
+  filter:drop-shadow(0 0 calc(var(--g) * 16px) rgba(176,226,180,calc(var(--g) * .55)))}
 .item:focus-visible img{filter:drop-shadow(0 0 6px rgba(80,140,230,.7))}
 .item.hidden{visibility:hidden}
 .wheel.away .item{pointer-events:none}
