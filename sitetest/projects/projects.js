@@ -69,23 +69,45 @@ function centerIn(el, root) {
   return { x: (x / root.offsetWidth) * 100, y: (y / root.offsetHeight) * 100 };
 }
 
-/* ---------- an app that is a link (the game): the app zooms open, then the page changes ---------- */
+/* ---------- an app that is a link (the game): the icon opens up to fill the phone like an iOS app, the springboard falls away, the page fades out, then the game loads ---------- */
+function offsetIn(el, root) {
+  let x = 0, y = 0, n = el;
+  while (n && n !== root) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+  return { x, y };
+}
+let launchEls = [];
 function openLink(p, icon) {
   if (current) return;
   current = "link";
+  const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
   const home = $("#home");
+  const art = icon.querySelector(".sb-icon") || icon;
   const o = centerIn(icon, screen);
   home.style.transformOrigin = `${o.x}% ${o.y}%`;
   icon.classList.add("pressed");
   setCopy(p.title, p.text);
-  requestAnimationFrame(() => home.classList.add("out"));
   try { sessionStorage.setItem("pm-from-site", location.pathname); } catch { /* the game just won't show its return button */ }   // only players who come through this app get the way back
-  setTimeout(() => { location.href = p.href; }, matchMedia("(prefers-reduced-motion:reduce)").matches ? 60 : 520);
+
+  // the launch picture starts exactly on the icon
+  const at = offsetIn(art, screen);
+  const l = document.createElement("div");
+  l.className = "launch";
+  l.style.cssText = `left:${at.x}px;top:${at.y}px;width:${art.offsetWidth}px;height:${art.offsetHeight}px;background-image:url('${esc(p.icon)}')`;
+  const fade = document.createElement("div");
+  fade.className = "pagefade";
+  document.body.append(fade);
+  screen.append(l);
+  launchEls = [l, fade];
+  void l.offsetWidth;
+  setTimeout(() => { l.classList.add("go"); l.style.left = l.style.top = "0px"; l.style.width = l.style.height = "100%"; home.classList.add("out"); }, 30);   // inline values would beat the class, so the end size is set inline too
+  setTimeout(() => fade.classList.add("on"), reduce ? 0 : 420);                       // the whole page melts into the game's background
+  setTimeout(() => { location.href = p.href; }, reduce ? 80 : 820);
 }
 // coming back with the browser's back button: the phone is on its home screen again
 addEventListener("pageshow", (e) => {
   if (!e.persisted || current !== "link") return;
   current = null;
+  launchEls.forEach((n) => n.remove()); launchEls = [];
   $("#home").classList.remove("out");
   document.querySelectorAll(".sb-app.pressed").forEach((n) => n.classList.remove("pressed"));
   setCopy(data.intro.title, data.intro.text);
@@ -243,7 +265,7 @@ if (matchMedia("(hover:hover) and (pointer:fine)").matches && !matchMedia("(pref
 }
 
 /* ---------- go ---------- */
-fetch("projects.json").then((r) => r.json()).then((d) => {
+fetch("projects.json?v=3", { cache: "no-cache" }).then((r) => r.json()).then((d) => {
   data = d;
   titleEl.textContent = d.intro.title;
   textEl.innerHTML = d.intro.text.map((p) => `<p>${esc(p)}</p>`).join("");
