@@ -139,6 +139,14 @@ async function unlock() {
   field.value = ""; setBar("email");
 }
 
+/* ---------- keep the banner in view when a phone's keyboard is open (iOS moves the visible part of the page, and fixed bars slide out of it) ---------- */
+const banner = $(".banner");
+if (window.visualViewport && banner) {
+  const vv = window.visualViewport;
+  const pin = () => { banner.style.transform = vv.offsetTop > 0 ? `translateY(${vv.offsetTop}px)` : ""; };
+  vv.addEventListener("scroll", pin); vv.addEventListener("resize", pin);
+}
+
 /* ---------- start ---------- */
 (function start() {
   let saved = [];
