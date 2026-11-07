@@ -15,20 +15,12 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .stage{--s:min(1vw,1.7778vh);position:absolute;left:50%;top:50%;width:calc(var(--s) * 100);height:calc(var(--s) * 56.25);margin:calc(var(--s) * -28.125) 0 0 calc(var(--s) * -50)}
 .stage > *{position:absolute}
 
-/* leaves, behind the person, a bit less saturated, drifting */
+/* leaves, a bit less saturated, drifting */
 .leaves{left:calc(var(--s) * 34.4);top:calc(var(--s) * 17.2);width:calc(var(--s) * 65.6);transform-origin:0 0;z-index:1;
   transition:transform calc(var(--t) * 1.1) var(--ease)}
 .leaves img{display:block;width:100%;filter:saturate(.65);animation:drift 14s ease-in-out infinite alternate}
 @keyframes drift{from{transform:translate(0,0) rotate(0)}to{transform:translate(calc(var(--s) * 1.4),calc(var(--s) * -1.1)) rotate(1.6deg)}}
 body.s2 .leaves{transform:translate(calc(var(--s) * -14.6),calc(var(--s) * -6.8)) scale(1.19) rotate(-6deg)}
-
-/* the person: a transparent video that plays forward and back, slowly */
-.person{left:calc(var(--s) * 25);top:calc(var(--s) * 1.04);width:calc(var(--s) * 43.75);aspect-ratio:1008/1272;transform-origin:0 0;z-index:2;
-  filter:blur(calc(var(--s) * .26));transition:transform calc(var(--t) * 1.1) var(--ease),filter calc(var(--t) * 1.1) var(--ease)}
-.person img,.person video,.person canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;user-select:none}
-.person video[hidden]{display:none}
-
-body.s2 .person{transform:translate(calc(var(--s) * -20.885),calc(var(--s) * -3.125)) scale(1.2);filter:blur(calc(var(--s) * .45))}
 
 /* progressive blur (sharper at the top, softer towards the bottom): fades in with scene 2 */
 .veil{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity calc(var(--t) * 1.1) var(--ease);
@@ -93,16 +85,9 @@ body.s2 .gbtn{opacity:1;transform:none;pointer-events:auto;
 /* leaving the page (to Projects, Shop, Contact) */
 body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,transform .3s ease}
 
-/* a window taller than 16:9 shows the end of the person's picture in the middle of the page: fade it out softly */
-@media (max-aspect-ratio:16/9) and (min-aspect-ratio:9/10){
-  .person{-webkit-mask-image:linear-gradient(#000 84%,transparent 99.5%);mask-image:linear-gradient(#000 84%,transparent 99.5%)}
-}
-
 /* ---------- phones and tall windows: the same two scenes, in vw / dvh like the Figma phone frames ---------- */
 @media (max-aspect-ratio:9/10){
   .stage{--s:1vw;left:0;top:0;margin:0;width:100vw;height:100vh;height:100dvh}
-  .person{left:-32.05vw;top:14.2dvh;bottom:auto;width:161.54vw;transform-origin:0 0;filter:blur(.8vw)}
-  body.s2 .person{transform:translate(-6.4vw,-8.3dvh);filter:blur(1.6vw)}
   .leaves{left:-10.3vw;top:47.4dvh;width:179.5vw}
   body.s2 .leaves{transform:translate(-6vw,-12dvh) scale(1.1) rotate(-8deg)}
   .glass{left:33.33vw;top:42.9dvh;width:30.77vw}
