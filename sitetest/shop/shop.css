@@ -1,10 +1,11 @@
-/* ===== playlist.mag · Shop: a slowly spinning wheel of shirts ===== */
-:root{--font:"Helvetica Neue",Helvetica,Arial,sans-serif;--ink:#1b1b1d;--ease:cubic-bezier(.3,.8,.3,1)}
+/* ===== playlist.mag · Shop: a 3D ring of shirts, and the product page ===== */
+:root{--font:"Helvetica Neue",Helvetica,Arial,sans-serif;--ink:#1b1b1d;--ease:cubic-bezier(.3,.8,.3,1);--spring:cubic-bezier(.2,.9,.25,1.1)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{overflow:hidden;color:var(--ink);font-family:var(--font);touch-action:none;
   background:radial-gradient(ellipse 80% 75% at 50% 42%,#fff 0%,#f1f6fb 38%,#dce7f1 72%,#c3d2e1 100%),#fff}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input{font:inherit}
 
 /* top navigation (same as the Projects page) */
 .topnav{position:fixed;z-index:20;top:calc(14px + env(safe-area-inset-top));right:clamp(14px,2.4vw,40px);display:flex;gap:clamp(14px,1.8vw,30px);
@@ -17,14 +18,77 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .wheel{position:fixed;inset:0;--iw:125px;animation:in .9s var(--ease) both}
 @keyframes in{from{opacity:0;transform:scale(.97)}}
-.item{position:absolute;left:0;top:0;width:var(--iw);padding:0;transform-origin:50% 50%;will-change:transform,opacity;outline:none;opacity:0}
-.item img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none;user-select:none}
+.item{position:absolute;left:0;top:0;width:var(--iw);padding:0;transform-origin:50% 50%;will-change:transform,opacity;outline:none;opacity:0;--g:0}
+.item img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none;user-select:none;
+  /* the highlighted shirt glows faintly (--g is how much it is highlighted, 0..1) */
+  filter:drop-shadow(0 0 calc(var(--g) * 16px) rgba(120,232,90,calc(var(--g) * .55)))}
 .item:focus-visible img{filter:drop-shadow(0 0 6px rgba(80,140,230,.7))}
+.item.hidden{visibility:hidden}
+.wheel.away .item{pointer-events:none}
 
-/* phones and tall windows: the nav goes to the bottom */
+/* ---------- the product page ---------- */
+.product{position:fixed;inset:0;z-index:15;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;visibility:hidden;pointer-events:none}
+.product.show{visibility:visible}
+.product.arrived{pointer-events:auto}
+.pp-inner{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:clamp(54px,9vh,92px) 20px 80px}
+.pp-back{position:fixed;z-index:21;left:clamp(14px,2.4vw,40px);top:calc(12px + env(safe-area-inset-top));padding:8px 18px 8px 14px;border-radius:999px;
+  font:700 clamp(13px,1.1vw,16px)/1 var(--font);color:#3c3c3c;text-shadow:0 1px 0 #fff;
+  background:linear-gradient(#f0f0f1 0%,#d4d4d5 47%,#c4c4c7 47.2%,#f7f7f8 100%);box-shadow:0 5px 12px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.1);
+  opacity:0;transform:translateY(-8px);transition:opacity .4s ease .35s,transform .5s var(--ease) .35s}
+.pp-back span{font-size:1.25em;margin-right:4px;vertical-align:-1px}
+.product.show .pp-back{opacity:1;transform:none}
+.pp-back:active{filter:brightness(.93)}
+.pp-hero{flex:none;width:min(30vw,44vh);display:grid;place-items:center}
+.pp-hero img{display:block;width:100%;height:auto;opacity:0;pointer-events:none;-webkit-user-drag:none;user-select:none}
+.product.arrived .pp-hero img{opacity:1}
+/* the details zoom out into place (the camera pulls back) */
+.pp-info{width:min(520px,100%);text-align:center;margin-top:clamp(12px,3vh,34px);
+  opacity:0;transform:scale(1.22);transform-origin:50% 0;filter:blur(10px);transition:opacity .35s ease,transform .35s ease,filter .35s ease}
+.product.show .pp-info{opacity:1;transform:none;filter:none;transition:opacity .85s ease .15s,transform 1.05s var(--ease) .1s,filter .85s ease .1s}
+.pp-info h2{font-size:clamp(30px,3.6vw,52px);font-weight:500;letter-spacing:-.025em;line-height:1.05}
+.pp-price{margin-top:.35em;font-size:clamp(20px,2vw,28px);font-weight:700;letter-spacing:.01em}
+.pp-blurb{margin:.8em auto 0;max-width:30em;font-size:clamp(14px,1.15vw,17px);line-height:1.4;color:#4a5565}
+.pp-label{margin:1.7em 0 .6em;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6a7686}
+
+/* sizes: iOS 6 segmented buttons */
+.sizes{display:inline-flex;border-radius:9px;box-shadow:0 4px 10px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.12);overflow:hidden}
+.sizes.nudge{animation:nudge .4s}
+@keyframes nudge{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.size{min-width:clamp(54px,5vw,72px);height:clamp(40px,3.4vw,48px);font:700 clamp(14px,1.2vw,17px)/1 var(--font);color:#3c3c3c;text-shadow:0 1px 0 #fff;
+  background:linear-gradient(#f0f0f1 0%,#d4d4d5 47%,#c4c4c7 47.2%,#f7f7f8 100%);transition:filter .15s}
+.size + .size{box-shadow:inset 1px 0 0 rgba(0,0,0,.18)}
+.size:hover{filter:brightness(1.03)}
+.size[aria-pressed=true]{color:#fff;text-shadow:0 -1px 0 rgba(0,40,10,.4);background:linear-gradient(#78d65a 0%,#4fb33a 47%,#3f9c2e 47.2%,#5cc247 100%);box-shadow:inset 0 1px 3px rgba(0,60,10,.35)}
+.size[aria-pressed=true] + .size{box-shadow:inset 1px 0 0 rgba(0,0,0,.25)}
+
+/* buttons (the same glossy iOS 6 look as the home menu) */
+.gbtn{display:inline-flex;align-items:center;justify-content:center;gap:.35em;margin-top:1.8em;width:min(300px,100%);height:clamp(50px,4.2vw,60px);border-radius:12px;
+  font:700 clamp(16px,1.3vw,19px)/1 var(--font);color:#3c3c3c;text-shadow:0 1px 0 #fff;
+  background:linear-gradient(#f0f0f1 0%,#d4d4d5 47%,#c4c4c7 47.2%,#f7f7f8 100%);
+  box-shadow:0 7px 16px rgba(0,0,0,.11),0 2px 5px rgba(0,0,0,.09),0 1px 1px rgba(0,0,0,.08);transition:filter .15s,transform .15s,box-shadow .35s ease}
+.gbtn:hover{filter:brightness(1.03);box-shadow:0 0 28px rgba(120,230,80,.3),0 7px 16px rgba(0,0,0,.11),0 2px 5px rgba(0,0,0,.09)}
+.gbtn:active{filter:brightness(.93);transform:translateY(1px)}
+.gbtn:focus-visible,.size:focus-visible,.pp-back:focus-visible{outline:2px solid rgba(70,130,220,.7);outline-offset:3px}
+
+/* the delivery form */
+.pp-form{text-align:left;animation:formin .6s var(--ease) both}
+@keyframes formin{from{opacity:0;transform:translateY(14px)}}
+.pp-form label{display:block;margin-top:.9em;font-size:12px;font-weight:700;letter-spacing:.06em;color:#6a7686}
+.pp-form input{display:block;width:100%;margin-top:.4em;height:46px;padding:0 14px;border-radius:9px;border:1px solid #b9c2cd;background:#fff;color:var(--ink);font-size:16px;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.18);outline:none;transition:border-color .2s,box-shadow .2s}
+.pp-form input:focus{border-color:#7bd65e;box-shadow:inset 0 1px 3px rgba(0,0,0,.18),0 0 0 3px rgba(120,230,80,.25)}
+.pp-form .row{display:grid;grid-template-columns:1fr 1.6fr;gap:12px}
+.pp-form .pp-label{text-align:center}
+.pp-form .gbtn{display:flex;margin:1.8em auto 0}
+.pp-note{min-height:1.5em;margin-top:1em;font-size:14px;line-height:1.4;color:#a1372b}
+.pp-note:not(:empty){animation:formin .4s var(--ease) both}
+
+/* phones and tall windows: the nav goes to the bottom, the shirt is a bit smaller */
 @media (max-aspect-ratio:9/10){
   .topnav{top:auto;bottom:calc(10px + env(safe-area-inset-bottom));left:0;right:0;justify-content:center;gap:22px}
+  .pp-inner{padding-top:64px;padding-bottom:84px}
+  .pp-hero{width:min(64vw,36vh)}
 }
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
 }

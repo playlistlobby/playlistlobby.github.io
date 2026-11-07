@@ -2,17 +2,35 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#dce7f1">
 <title>contact · playlist.mag</title>
-<link rel="stylesheet" href="../simple.css?v=1">
+<link rel="stylesheet" href="contact.css?v=1">
 </head>
 <body>
-<main>
-  <h1>contact</h1>
-  <p>Nothing here yet.</p>
-  <a class="gbtn" href="../#menu">go back</a>
+
+<nav class="topnav" aria-label="Main">
+  <a href="../">home</a>
+  <a href="../projects/">projects</a>
+  <a href="../shop/">shop</a>
+  <a href="./" aria-current="page">contact</a>
+</nav>
+
+<main class="chat" aria-label="Contact">
+  <header class="who">
+    <span class="avatar" aria-hidden="true"></span>
+    <b>playlist.mag</b>
+  </header>
+  <div class="log" id="log" role="log" aria-live="polite"></div>
 </main>
+
+<form class="bar" id="bar" novalidate>
+  <input class="field" id="field" type="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="email"
+         placeholder="Your email" maxlength="100" aria-label="Message">
+  <button class="send" id="send" type="submit" disabled>Send</button>
+</form>
+
+<script type="module" src="contact.js?v=1"></script>
 </body>
 </html>

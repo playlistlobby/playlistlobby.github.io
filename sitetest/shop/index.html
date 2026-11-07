@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#dce7f1">
 <title>shop · playlist.mag</title>
 <link rel="preload" as="image" href="assets/tee-playlist2.webp" type="image/webp">
-<link rel="stylesheet" href="shop.css?v=3">
+<link rel="stylesheet" href="shop.css?v=8">
 </head>
 <body>
 
@@ -23,6 +23,39 @@
   <!-- the shirts are put on the ring by shop.js -->
 </main>
 
-<script type="module" src="shop.js?v=6"></script>
+<!-- the product page: the clicked shirt glides to the top (the hero), the page zooms out into view around it -->
+<section class="product" id="product" hidden aria-hidden="true" aria-label="Product">
+  <button class="pp-back" id="pp-back" type="button"><span aria-hidden="true">‹</span> shop</button>
+  <div class="pp-inner">
+    <div class="pp-hero"><img id="pp-hero-img" alt="Playlist tee" draggable="false"></div>
+    <div class="pp-info" id="pp-info">
+      <h2 id="pp-title">Playlist tee</h2>
+      <p class="pp-price" id="pp-price">10.000 DKK</p>
+      <p class="pp-blurb" id="pp-blurb"></p>
+
+      <p class="pp-label">Size</p>
+      <div class="sizes" id="pp-sizes" role="group" aria-label="Size"></div>
+
+      <button class="gbtn pp-buy" id="pp-buy" type="button">Buy · <span id="pp-buy-price">10.000 DKK</span></button>
+
+      <form class="pp-form" id="pp-form" hidden novalidate>
+        <p class="pp-label">Delivery</p>
+        <label>Full name<input name="name" type="text" maxlength="60" autocomplete="name" placeholder="Your name, as on the parcel"></label>
+        <label>Email<input name="email" type="email" maxlength="100" autocomplete="email" placeholder="you@example.com"></label>
+        <label>Phone number<input name="phone" type="tel" maxlength="20" autocomplete="tel" placeholder="+45 12 34 56 78"></label>
+        <label>Street and number<input name="street" type="text" maxlength="80" autocomplete="address-line1" placeholder="Street 12, 2. th"></label>
+        <div class="row">
+          <label>Postcode<input name="zip" type="text" maxlength="10" autocomplete="postal-code" placeholder="2100"></label>
+          <label>City<input name="city" type="text" maxlength="50" autocomplete="address-level2" placeholder="København"></label>
+        </div>
+        <label>Country<input name="country" type="text" maxlength="40" autocomplete="country-name" value="Danmark"></label>
+        <button class="gbtn pp-buy" type="submit">Continue to payment</button>
+      </form>
+      <p class="pp-note" id="pp-note" role="status"></p>
+    </div>
+  </div>
+</section>
+
+<script type="module" src="shop.js?v=8"></script>
 </body>
 </html>
