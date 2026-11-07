@@ -1,0 +1,74 @@
+{
+ "photos": [
+  {
+   "src": "photos/01.webp",
+   "thumb": "thumbs/01.webp",
+   "w": 1800,
+   "h": 1013,
+   "alt": "01-person-wide"
+  },
+  {
+   "src": "photos/02.webp",
+   "thumb": "thumbs/02.webp",
+   "w": 1500,
+   "h": 1800,
+   "alt": "02-person-portrait"
+  },
+  {
+   "src": "photos/03.webp",
+   "thumb": "thumbs/03.webp",
+   "w": 1800,
+   "h": 1200,
+   "alt": "03-chrome-logo"
+  },
+  {
+   "src": "photos/04.webp",
+   "thumb": "thumbs/04.webp",
+   "w": 1200,
+   "h": 1500,
+   "alt": "04-logo"
+  },
+  {
+   "src": "photos/05.webp",
+   "thumb": "thumbs/05.webp",
+   "w": 1800,
+   "h": 1013,
+   "alt": "05-menu"
+  },
+  {
+   "src": "photos/06.webp",
+   "thumb": "thumbs/06.webp",
+   "w": 1800,
+   "h": 1013,
+   "alt": "06-play"
+  },
+  {
+   "src": "photos/07.webp",
+   "thumb": "thumbs/07.webp",
+   "w": 1400,
+   "h": 1400,
+   "alt": "07-leaves"
+  },
+  {
+   "src": "photos/08.webp",
+   "thumb": "thumbs/08.webp",
+   "w": 1400,
+   "h": 1400,
+   "alt": "08-globe"
+  },
+  {
+   "src": "photos/09.webp",
+   "thumb": "thumbs/09.webp",
+   "w": 1680,
+   "h": 1260,
+   "alt": "09-bubbles"
+  },
+  {
+   "src": "photos/10.webp",
+   "thumb": "thumbs/10.webp",
+   "w": 1400,
+   "h": 1400,
+   "alt": "10-play-shape"
+  }
+ ]
+}

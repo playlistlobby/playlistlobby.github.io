@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#dce7f1">
+<title>Projects · playlist.mag</title>
+<link rel="preload" as="image" href="assets/iphone-frame.webp" type="image/webp">
+<link rel="stylesheet" href="projects.css?v=4">
+</head>
+<body>
+
+<nav class="topnav" aria-label="Main">
+  <a href="../">home</a>
+  <a href="./" aria-current="page">projects</a>
+  <a href="../shop/">shop</a>
+  <a href="../contact/">contact</a>
+</nav>
+
+<main class="stage" id="stage">
+  <!-- the iPhone: a render from the Blender file (transparent display), the live screen sits under it -->
+  <section class="phone" id="phone" aria-label="Interactive iPhone">
+    <div class="tilt" id="tilt">
+      <div class="screen-bg"></div>
+      <div class="screen" id="screen"></div>
+      <div class="glare"></div>
+      <img class="frame" src="assets/iphone-frame.webp" alt="" width="898" height="1825" draggable="false">
+      <button class="home-hit" id="home-hit" type="button" aria-label="Home button"></button>
+    </div>
+  </section>
+
+  <section class="copy" id="copy" aria-live="polite">
+    <h1 id="title">Projects</h1>
+    <div class="text" id="text"></div>
+  </section>
+</main>
+
+<script type="module" src="projects.js?v=4"></script>
+</body>
+</html>

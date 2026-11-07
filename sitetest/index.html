@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#dce7f1">
+<title>playlist.mag</title>
+<link rel="preload" as="image" href="assets/person-still.webp" type="image/webp">
+<link rel="stylesheet" href="home.css?v=3">
+</head>
+<body>
+
+<main class="stage" id="stage">
+  <div class="leaves" aria-hidden="true"><img src="assets/leaves.webp" alt="" draggable="false"></div>
+
+  <div class="person" aria-hidden="true">
+    <img class="still" src="assets/person-still.webp" alt="" draggable="false">
+    <video id="vid" muted loop playsinline preload="auto" poster="assets/person-still.webp" hidden></video>
+  </div>
+  <div class="veil" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- the liquid-glass play button; after a tap it turns into the playlist note and moves left -->
+  <button class="glass" id="glass" type="button" aria-label="Play">
+    <span class="shape play"><i class="sh"></i><i class="g"></i><i class="rim"></i></span>
+    <span class="shape note"><i class="sh"></i><i class="g"></i><i class="rim"></i></span>
+  </button>
+
+  <nav class="menu" id="menu" aria-label="Main">
+    <a class="gbtn" style="--i:0" href="projects/" tabindex="-1">projects</a>
+    <a class="gbtn" style="--i:1" href="shop/" tabindex="-1">shop</a>
+    <a class="gbtn" style="--i:2" href="contact/" tabindex="-1">contact</a>
+  </nav>
+</main>
+
+<script type="module" src="home.js?v=2"></script>
+</body>
+</html>

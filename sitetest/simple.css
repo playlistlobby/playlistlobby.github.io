@@ -1,0 +1,17 @@
+/* ===== playlist.mag · very simple pages (shop, contact): a title and a "go back" button ===== */
+:root{--font:"Helvetica Neue",Helvetica,Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{display:grid;place-items:center;font-family:var(--font);color:#1b1b1d;overflow:hidden;
+  background:radial-gradient(ellipse 80% 75% at 50% 42%,#fff 0%,#f1f6fb 38%,#dce7f1 72%,#c3d2e1 100%),#fff}
+main{text-align:center;padding:24px;animation:in .7s cubic-bezier(.3,.8,.3,1) both}
+@keyframes in{from{opacity:0;transform:translateY(12px)}}
+h1{font-size:clamp(40px,7vw,96px);font-weight:500;letter-spacing:-.025em;line-height:1.05}
+p{margin-top:.6em;font-size:clamp(15px,1.5vw,22px);color:#4a5565}
+.gbtn{display:inline-flex;align-items:center;justify-content:center;margin-top:clamp(28px,4vw,52px);width:clamp(200px,22vw,300px);height:clamp(50px,5vw,64px);
+  border-radius:12px;text-decoration:none;font:700 clamp(17px,1.5vw,22px)/1 var(--font);color:#3c3c3c;text-shadow:0 1px 0 #fff;
+  background:linear-gradient(#f0f0f1 0%,#d4d4d5 47%,#c4c4c7 47.2%,#f7f7f8 100%);
+  box-shadow:0 7px 16px rgba(0,0,0,.11),0 2px 5px rgba(0,0,0,.09),0 1px 1px rgba(0,0,0,.08);transition:filter .15s,transform .15s}
+.gbtn:hover{filter:brightness(1.03)}
+.gbtn:active{filter:brightness(.93);transform:translateY(1px)}
+.gbtn:focus-visible{outline:2px solid rgba(70,130,220,.8);outline-offset:3px}

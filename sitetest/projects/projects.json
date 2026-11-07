@@ -1,0 +1,19 @@
+{
+  "intro": {
+    "title": "Projects",
+    "text": ["Tap an app on the phone to open a project."]
+  },
+  "projects": [
+    {
+      "id": "project-1",
+      "label": "Playlist1",
+      "icon": "assets/ios/icon-photos.png",
+      "title": "Playlist1",
+      "text": [
+        "text here about the stuff text here about the stuff text here about the stuff,",
+        "Like this"
+      ],
+      "photos": "project-1/photos.json"
+    }
+  ]
+}

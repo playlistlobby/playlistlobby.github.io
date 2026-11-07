@@ -1,0 +1,101 @@
+/* ===== playlist.mag · Home (scene 1: play, scene 2: menu) ===== */
+:root{
+  --font:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --ease:cubic-bezier(.3,.8,.3,1);
+  --spring:cubic-bezier(.2,.9,.25,1.1);
+  --t:1s;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{overflow:hidden;font-family:var(--font);color:#1b1b1d;
+  background:radial-gradient(ellipse 80% 75% at 50% 42%,#fff 0%,#f1f6fb 38%,#dce7f1 72%,#c3d2e1 100%),#fff}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+/* a 16:9 stage (1 s = 1% of its width), the same numbers as the Figma frames (1920 x 1080) */
+.stage{--s:min(1vw,1.7778vh);position:absolute;left:50%;top:50%;width:calc(var(--s) * 100);height:calc(var(--s) * 56.25);margin:calc(var(--s) * -28.125) 0 0 calc(var(--s) * -50)}
+.stage > *{position:absolute}
+
+/* leaves, behind the person, a bit less saturated, drifting */
+.leaves{left:calc(var(--s) * 34.4);top:calc(var(--s) * 17.2);width:calc(var(--s) * 65.6);transform-origin:0 0;z-index:1;
+  transition:transform calc(var(--t) * 1.1) var(--ease)}
+.leaves img{display:block;width:100%;filter:saturate(.65);animation:drift 14s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate(0,0) rotate(0)}to{transform:translate(calc(var(--s) * 1.4),calc(var(--s) * -1.1)) rotate(1.6deg)}}
+body.s2 .leaves{transform:translate(calc(var(--s) * -14.6),calc(var(--s) * -6.8)) scale(1.19) rotate(-6deg)}
+
+/* the person: a transparent video that plays forward and back, slowly */
+.person{left:calc(var(--s) * 25);top:calc(var(--s) * 1.04);width:calc(var(--s) * 43.75);aspect-ratio:1008/1272;transform-origin:0 0;z-index:2;
+  filter:blur(calc(var(--s) * .26));transition:transform calc(var(--t) * 1.1) var(--ease),filter calc(var(--t) * 1.1) var(--ease)}
+.person img,.person video{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;user-select:none}
+.person video[hidden]{display:none}
+.person.still-only img{animation:breathe 9s ease-in-out infinite alternate}
+@keyframes breathe{from{transform:scale(1) translateY(0)}to{transform:scale(1.012) translateY(-.4%)}}
+body.s2 .person{transform:translate(calc(var(--s) * -20.885),calc(var(--s) * -3.125)) scale(1.2);filter:blur(calc(var(--s) * .45))}
+
+/* progressive blur (sharper at the top, softer towards the bottom): fades in with scene 2 */
+.veil{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity calc(var(--t) * 1.1) var(--ease);
+  -webkit-backdrop-filter:blur(calc(var(--s) * .9));backdrop-filter:blur(calc(var(--s) * .9));
+  -webkit-mask-image:linear-gradient(to bottom,transparent 15%,#000 95%);mask-image:linear-gradient(to bottom,transparent 15%,#000 95%)}
+body.s2 .veil{opacity:1}
+
+.vignette{position:fixed;inset:0;z-index:4;pointer-events:none;mix-blend-mode:multiply;
+  background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(115,140,153,0) 45%,rgba(115,140,153,.045) 75%,rgba(115,140,153,.13) 100%);
+  transition:opacity .9s ease}
+
+/* ---------- liquid glass ---------- */
+.glass{z-index:5;left:calc(var(--s) * 42.76);top:calc(var(--s) * 20.99);width:calc(var(--s) * 14.27);aspect-ratio:1000/1006.32;transform-origin:0 0;
+  transition:transform calc(var(--t) * 1.1) var(--ease);animation:glassin 1.1s .1s var(--ease) both}
+@keyframes glassin{from{opacity:0;transform:scale(.86)}}
+body.s2 .glass{transform:translate(calc(var(--s) * -23.02),calc(var(--s) * -3.23)) scale(1.5586)}
+.glass:focus-visible{outline:none}
+.glass:focus-visible .rim{filter:drop-shadow(0 0 6px #fff)}
+.glass:active .shape{transform:scale(.97)}
+.shape{position:absolute;inset:0;transition:opacity .55s ease,filter .55s ease,transform .3s var(--spring)}
+.shape i{position:absolute;inset:0;display:block;pointer-events:none}
+.shape.note{opacity:0;filter:blur(6px)}
+body.s2 .shape.play{opacity:0;filter:blur(6px)}
+body.s2 .shape.note{opacity:1;filter:blur(0)}
+.shape .sh{transform:translateY(5%);filter:blur(calc(var(--s) * 1.1));opacity:.2}
+.shape .sh svg,.shape .rim svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+.shape .g{background:rgba(255,255,255,.07);
+  -webkit-backdrop-filter:blur(calc(var(--s) * .38)) saturate(1.5) brightness(1.04);backdrop-filter:blur(calc(var(--s) * .38)) saturate(1.5) brightness(1.04)}
+.shape.play .g{-webkit-mask:url(assets/shapes/play.svg) center/100% 100% no-repeat;mask:url(assets/shapes/play.svg) center/100% 100% no-repeat}
+.shape.note .g{-webkit-mask:url(assets/shapes/note.svg) center/100% 100% no-repeat;mask:url(assets/shapes/note.svg) center/100% 100% no-repeat}
+
+/* ---------- the menu: iOS 6 glossy buttons ---------- */
+.menu{inset:0;pointer-events:none;z-index:6}
+.gbtn{position:absolute;left:calc(var(--s) * 50);top:calc(var(--s) * (15.57 + var(--i) * 9.22));width:calc(var(--s) * 38.96);height:calc(var(--s) * 6.25);
+  display:flex;align-items:center;justify-content:center;text-decoration:none;
+  border-radius:calc(var(--s) * 1.09);font:700 calc(var(--s) * 2.29)/1 var(--font);color:#3c3c3c;text-shadow:0 1px 0 #fff;
+  background:linear-gradient(#f0f0f1 0%,#d4d4d5 47%,#c4c4c7 47.2%,#f7f7f8 100%);
+  box-shadow:0 calc(var(--s) * .63) calc(var(--s) * 1.46) rgba(0,0,0,.11),0 calc(var(--s) * .16) calc(var(--s) * .42) rgba(0,0,0,.09),0 calc(var(--s) * .05) calc(var(--s) * .1) rgba(0,0,0,.08);
+  opacity:0;transform:translateX(calc(var(--s) * 6)) scale(.97);pointer-events:none;
+  transition:opacity .35s ease,transform .5s var(--ease),filter .15s;}
+body.s2 .gbtn{opacity:1;transform:none;pointer-events:auto;
+  transition:opacity .5s ease calc(.45s + var(--i) * .12s),transform .8s var(--spring) calc(.45s + var(--i) * .12s),filter .15s}
+.gbtn:hover{filter:brightness(1.03)}
+.gbtn:active{filter:brightness(.93);transform:translateY(1px) scale(.995);transition:filter .05s,transform .05s}
+.gbtn:focus-visible{outline:2px solid rgba(70,130,220,.8);outline-offset:3px}
+
+/* leaving the page (to Projects, Shop, Contact) */
+body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,transform .3s ease}
+
+/* a window taller than 16:9 shows the end of the person's picture in the middle of the page: fade it out softly */
+@media (max-aspect-ratio:16/9) and (min-aspect-ratio:9/10){
+  .person{-webkit-mask-image:linear-gradient(#000 84%,transparent 99.5%);mask-image:linear-gradient(#000 84%,transparent 99.5%)}
+}
+
+/* ---------- phones and tall windows: the same two scenes, in vw / dvh like the Figma phone frames ---------- */
+@media (max-aspect-ratio:9/10){
+  .stage{--s:1vw;left:0;top:0;margin:0;width:100vw;height:100vh;height:100dvh}
+  .person{left:-32.05vw;top:14.2dvh;bottom:auto;width:161.54vw;transform-origin:0 0;filter:blur(.8vw)}
+  body.s2 .person{transform:translate(-6.4vw,-8.3dvh);filter:blur(1.6vw)}
+  .leaves{left:-10.3vw;top:47.4dvh;width:179.5vw}
+  body.s2 .leaves{transform:translate(-6vw,-12dvh) scale(1.1) rotate(-8deg)}
+  .glass{left:33.33vw;top:42.9dvh;width:30.77vw}
+  body.s2 .glass{transform:translate(-2.56vw,-27.6dvh) scale(1.25)}
+  .gbtn{left:10.26vw;width:79.5vw;height:16.4vw;border-radius:3.6vw;font-size:5.9vw;top:calc(39.1dvh + var(--i) * 9.95dvh)}
+  .veil{-webkit-backdrop-filter:blur(2.4vw);backdrop-filter:blur(2.4vw)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
+}

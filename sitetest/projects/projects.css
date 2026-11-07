@@ -1,0 +1,169 @@
+/* ===== playlist.mag · Projects ===== */
+:root{
+  --font:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --ink:#1b1b1d;
+  --spring:cubic-bezier(.2,.9,.25,1.1);
+  --ease:cubic-bezier(.3,.8,.3,1);
+  /* the phone render is 898 x 1825; its display hole is 706 x 1254 at (101, 285) */
+  --hole-w:.78619;          /* hole width / frame width */
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  overflow:hidden;color:var(--ink);font-family:var(--font);
+  background:radial-gradient(ellipse 80% 75% at 40% 42%,#fff 0%,#f1f6fb 38%,#dce7f1 72%,#c3d2e1 100%),#fff;
+}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+/* ---------- the stage: a 16:9 area that is centred on any window ---------- */
+.stage{
+  --s:min(1vw,1.7778vh);                 /* one "stage percent" */
+  position:relative;width:calc(var(--s) * 100);height:100vh;margin:0 auto;
+}
+
+/* ---------- the phone ---------- */
+.phone{
+  --pw:calc(var(--s) * 43.5);              /* phone width: like the mockup, it runs off the bottom */
+  --u:calc(var(--pw) * var(--hole-w) / 320); /* one design pixel of the 320 x 568 screen */
+  position:absolute;left:calc(var(--s) * 3.6);top:calc(var(--s) * 2.2);
+  width:var(--pw);aspect-ratio:898/1825;
+  perspective:1800px;
+  animation:phonein 1s var(--ease) both;
+}
+@keyframes phonein{from{opacity:0;transform:translateY(5%)}}
+.tilt{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .35s var(--ease);will-change:transform}
+.frame{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;user-select:none}
+.screen-bg,.screen,.glare{position:absolute;left:11.247%;top:15.616%;width:78.619%;height:68.712%}
+.screen-bg{z-index:0;left:calc(11.247% - .5%);top:calc(15.616% - .25%);width:calc(78.619% + 1%);height:calc(68.712% + .5%);
+  background:#223 url(assets/ios/wallpaper.jpg) center/cover}
+.screen{z-index:1;overflow:hidden;background:transparent;font-family:var(--font);color:#fff;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.glare{z-index:2;pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.06) 32%,rgba(255,255,255,0) 33%),
+             linear-gradient(rgba(255,255,255,.08),rgba(255,255,255,0) 18%);
+  box-shadow:inset 0 0 calc(var(--u) * 10) rgba(0,0,0,.35),inset 0 0 0 1px rgba(0,0,0,.5)}
+.home-hit{position:absolute;z-index:4;left:40.98%;top:86.5%;width:18.93%;aspect-ratio:1;border-radius:50%}
+.home-hit:active{background:rgba(0,0,0,.12)}
+.home-hit:focus-visible{outline:2px solid rgba(255,255,255,.8)}
+
+/* ---------- the text on the right ---------- */
+.copy{position:absolute;left:calc(var(--s) * 51.1);top:calc(var(--s) * 11.6);width:calc(var(--s) * 46)}
+.copy h1{font-size:calc(var(--s) * 6.3);line-height:1.08;font-weight:500;letter-spacing:-.025em;margin-left:-.04em}
+.copy .text{margin-top:calc(var(--s) * 1.6);font-size:calc(var(--s) * 1.45);line-height:1.3;font-weight:400}
+.copy .text p+p{margin-top:.35em}
+.copy h1,.copy .text{transition:opacity .28s ease,transform .38s var(--ease)}
+.copy.swap h1,.copy.swap .text{opacity:0;transform:translateY(calc(var(--s) * .9))}
+.copy{animation:copyin .9s .15s var(--ease) both}
+@keyframes copyin{from{opacity:0;transform:translateY(calc(var(--s) * 1.2))}}
+
+/* ---------- top navigation ---------- */
+.topnav{position:fixed;z-index:20;top:calc(14px + env(safe-area-inset-top));right:clamp(14px,2.4vw,40px);display:flex;gap:clamp(14px,1.8vw,30px);
+  font:500 clamp(12px,1.05vw,16px)/1 var(--font);letter-spacing:.14em;text-transform:lowercase}
+.topnav a{color:#4a5565;text-decoration:none;padding:6px 0;border-bottom:1.5px solid transparent;transition:color .2s,border-color .2s}
+.topnav a:hover{color:var(--ink)}
+.topnav a[aria-current]{color:var(--ink);border-color:var(--ink)}
+
+/* =========================================================
+   The iOS 6 screen (320 x 568 design pixels, scaled with --u).
+   Measurements and looks are taken from the Wick site / Legacy iOS UI Kit.
+   ========================================================= */
+.screen > *{position:absolute;inset:0}
+.screen button{color:inherit}
+
+.home{transform-origin:50% 40%;transition:opacity .4s ease,transform .46s var(--ease)}
+.home.out{transform:scale(1.7);opacity:0;pointer-events:none}
+
+/* status bar */
+.sb-status{position:absolute;z-index:5;top:0;left:0;right:0;height:calc(20 * var(--u));padding:0 calc(6 * var(--u));
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(rgba(0,0,0,.62),rgba(0,0,0,.46));color:#fff;
+  font:700 calc(12 * var(--u))/calc(20 * var(--u)) var(--font);text-shadow:0 -1px 0 rgba(0,0,0,.6)}
+.sb-status > span{display:flex;align-items:center;gap:calc(4 * var(--u))}
+.sb-time{position:absolute;left:50%;transform:translateX(-50%);font-variant-numeric:tabular-nums}
+.sb-bars{display:flex;align-items:flex-end;gap:calc(1 * var(--u));height:calc(9 * var(--u))}
+.sb-bars i{width:calc(2.5 * var(--u));background:#fff;border-radius:calc(.5 * var(--u))}
+.sb-bars i:nth-child(1){height:30%}.sb-bars i:nth-child(2){height:50%}.sb-bars i:nth-child(3){height:70%}.sb-bars i:nth-child(4){height:85%}.sb-bars i:nth-child(5){height:100%}
+.sb-wifi{width:calc(12 * var(--u));height:calc(9 * var(--u))}
+.sb-batt{position:relative;width:calc(22 * var(--u));height:calc(10 * var(--u));border:calc(1 * var(--u)) solid rgba(255,255,255,.9);border-radius:calc(2.5 * var(--u));padding:calc(1 * var(--u))}
+.sb-batt::before{content:"";display:block;height:100%;border-radius:calc(1 * var(--u));background:linear-gradient(#fff,#bfc4cc)}
+.sb-batt::after{content:"";position:absolute;right:calc(-3 * var(--u));top:calc(2.5 * var(--u));width:calc(2 * var(--u));height:calc(4 * var(--u));background:rgba(255,255,255,.9);border-radius:0 calc(1 * var(--u)) calc(1 * var(--u)) 0}
+
+/* springboard */
+.sb-grid{position:absolute;z-index:2;left:0;right:0;top:calc(31 * var(--u));display:grid;grid-template-columns:repeat(4,1fr);row-gap:calc(12 * var(--u));padding:0 calc(8 * var(--u))}
+.sb-app{display:flex;flex-direction:column;align-items:center;gap:calc(5 * var(--u));cursor:pointer;animation:appin .55s var(--spring) both;animation-delay:calc(var(--i,0) * 60ms + .5s)}
+@keyframes appin{from{opacity:0;transform:scale(.6)}}
+.sb-app:focus-visible{outline:none}
+.sb-icon{position:relative;display:block;width:calc(57 * var(--u));height:calc(57 * var(--u));border-radius:calc(10 * var(--u));
+  background:#333 center/cover no-repeat;box-shadow:0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(30,50,40,.32),0 calc(8 * var(--u)) calc(16 * var(--u)) calc(-6 * var(--u)) rgba(30,50,40,.3)}
+.sb-icon::after{content:"";position:absolute;inset:0;border-radius:inherit;background:url(assets/ios/icon-gloss.png) center/100% 100% no-repeat;opacity:.6;mix-blend-mode:soft-light;pointer-events:none}
+.sb-icon::before{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(0,0,0,.45);opacity:0;transition:opacity .12s;z-index:1}
+.sb-app:active .sb-icon::before,.sb-app.pressed .sb-icon::before{opacity:1}
+.sb-app:focus-visible .sb-icon{box-shadow:0 0 0 calc(2 * var(--u)) rgba(255,255,255,.8),0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,.5)}
+.sb-label{font:700 calc(11 * var(--u))/calc(13 * var(--u)) var(--font);color:#2c3136;text-shadow:0 1px 0 rgba(255,255,255,.9);white-space:nowrap}
+.sb-dots{position:absolute;z-index:2;left:0;right:0;bottom:calc(88 * var(--u));display:flex;justify-content:center;gap:calc(9 * var(--u))}
+.sb-dots i{width:calc(6 * var(--u));height:calc(6 * var(--u));border-radius:50%;background:rgba(40,60,70,.9);box-shadow:0 1px 1px rgba(255,255,255,.4)}
+.sb-dots i+i{background:rgba(40,60,70,.35)}
+.sb-dock{position:absolute;z-index:1;left:0;right:0;bottom:0;height:calc(45 * var(--u));pointer-events:none}
+.sb-shelf{position:absolute;inset:0;
+  clip-path:polygon(calc(10 * var(--u)) 0,calc(100% - 10 * var(--u)) 0,100% 91%,100% 100%,0 100%,0 91%);
+  background:url(assets/ios/dock-shelf.png) center top/100% calc(45 * var(--u)) no-repeat;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+
+/* app window (zooms out of the tapped icon) */
+.app{z-index:3;background:#fff;transform:scale(.14);opacity:0;transition:transform .46s var(--ease),opacity .3s ease;pointer-events:none}
+.app.open{transform:none;opacity:1;pointer-events:auto}
+
+.ios-top{position:absolute;z-index:6;top:0;left:0;right:0}
+.ios-top .sb-status{position:relative;background:linear-gradient(rgba(58,78,106,.92),rgba(70,92,122,.9))}
+.ios-nav{position:relative;height:calc(44 * var(--u));display:flex;align-items:center;justify-content:space-between;padding:0 calc(6 * var(--u));
+  background:linear-gradient(rgba(150,170,197,.86) 0%,rgba(112,135,166,.88) 50%,rgba(96,120,152,.9) 51%,rgba(86,110,143,.94) 100%);
+  -webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 .5px 0 rgba(20,35,60,.55),0 calc(8 * var(--u)) calc(20 * var(--u)) calc(-8 * var(--u)) rgba(20,35,60,.35)}
+.ios-title{position:absolute;left:50%;transform:translateX(-50%);font:700 calc(20 * var(--u))/calc(44 * var(--u)) var(--font);color:#fff;text-shadow:0 -1px 0 rgba(20,35,60,.45);white-space:nowrap;pointer-events:none}
+.ios-back{position:relative;height:calc(30 * var(--u));min-width:calc(62 * var(--u));padding:0 calc(10 * var(--u)) 0 calc(16 * var(--u));
+  font:700 calc(12 * var(--u))/calc(30 * var(--u)) var(--font);color:#fff;text-shadow:0 -1px 0 rgba(20,35,60,.5);transition:filter .15s,transform .3s var(--spring)}
+.ios-back svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1;overflow:visible;filter:drop-shadow(0 1px 0 rgba(255,255,255,.25))}
+.ios-back:active{filter:brightness(.8);transform:scale(.96)}
+.ios-back span{position:relative}
+.ios-ghost{min-width:calc(62 * var(--u))}
+
+/* the grid of photos */
+.app-body{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;background:#fff;padding:calc(64 * var(--u) + 4px) calc(4 * var(--u)) calc(8 * var(--u))}
+.app-body::-webkit-scrollbar{display:none}
+.ph-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(4 * var(--u))}
+.th{position:relative;display:block;aspect-ratio:1;background:#e6e9ee;overflow:hidden;padding:0}
+.th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease}
+.th img.on{opacity:1}
+.th:active::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.28)}
+.ph-count{margin:calc(14 * var(--u)) 0 calc(6 * var(--u));text-align:center;font:400 calc(15 * var(--u))/1.3 var(--font);color:#8a8f99}
+
+/* the full-screen viewer */
+.viewer{position:absolute;inset:0;z-index:7;background:#000;opacity:0;pointer-events:none;transform:scale(.3);transition:transform .36s var(--ease),opacity .26s ease}
+.viewer.open{opacity:1;pointer-events:auto;transform:none}
+.strip{position:absolute;top:0;bottom:0;left:-100%;width:300%;display:flex;touch-action:pan-y;will-change:transform}
+.strip.anim{transition:transform .3s var(--ease)}
+.slide{flex:0 0 33.3333%;display:grid;place-items:center;overflow:hidden}
+.slide img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;-webkit-user-drag:none;user-select:none}
+.viewer .ios-top,.viewer .vbar{transition:opacity .25s ease}
+.viewer .ios-top .sb-status,.viewer .ios-nav{background:rgba(0,0,0,.55);box-shadow:none;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.viewer .ios-nav{box-shadow:inset 0 -1px 0 rgba(255,255,255,.12)}
+.viewer.bare .ios-top,.viewer.bare .vbar{opacity:0;pointer-events:none}
+.vbar{position:absolute;z-index:6;left:0;right:0;bottom:0;height:calc(44 * var(--u));display:flex;align-items:center;justify-content:space-around;
+  background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.vbar button{width:calc(60 * var(--u));height:100%;display:grid;place-items:center;opacity:.9;transition:opacity .15s}
+.vbar button:disabled{opacity:.25;cursor:default}
+.vbar button:not(:disabled):active{opacity:.5}
+.vbar svg{width:calc(18 * var(--u));height:calc(18 * var(--u));fill:#fff;filter:drop-shadow(0 -1px 0 rgba(0,0,0,.6))}
+
+/* ---------- phones and tall windows: phone on top, text below ---------- */
+@media (max-aspect-ratio:9/10){
+  .stage{--s:1vw;--mpw:min(66vw,37dvh);width:100vw;height:100vh;height:100dvh}
+  .phone{--pw:var(--mpw);left:50%;top:calc(2.2dvh + env(safe-area-inset-top));margin-left:calc(var(--mpw) / -2)}
+  .copy{left:7vw;right:7vw;width:auto;top:calc(2.2dvh + env(safe-area-inset-top) + var(--mpw) * 2.0323 + 2.4dvh);
+    max-height:calc(100dvh - (2.2dvh + var(--mpw) * 2.0323 + 2.4dvh) - 56px - env(safe-area-inset-bottom));overflow:auto}
+  .copy h1{font-size:max(30px,9.2vw)}
+  .copy .text{font-size:max(15px,4.2vw);margin-top:.5em}
+  .topnav{top:auto;bottom:calc(10px + env(safe-area-inset-bottom));left:0;right:0;justify-content:center;gap:22px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
+}
