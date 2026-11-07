@@ -2,6 +2,10 @@
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+/* the page never scrolls: a refresh must not restore an old scroll position */
+try { history.scrollRestoration = "manual"; } catch { /* old browser */ }
+scrollTo(0, 0);
+
 const screen = $("#screen");
 const copy = $("#copy");
 const titleEl = $("#title");
