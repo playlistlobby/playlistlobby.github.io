@@ -187,3 +187,10 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .tabs a:active{filter:brightness(.9)}
 .tabs a[aria-current]{background:linear-gradient(#4b6a9e,#355487 50%,#2b4a7f 51%,#3a5a8d);box-shadow:inset 0 2px 4px rgba(0,0,0,.45)}
 .tabs a:focus-visible{outline:2px solid #fff;outline-offset:-4px}
+
+/* home button: on its own at the left of the banner, not part of the tab group */
+.homebtn{position:absolute;left:max(8px,env(safe-area-inset-left));top:50%;margin-top:calc(env(safe-area-inset-top) / 2 - 15px);width:38px;height:30px;display:grid;place-items:center;border-radius:6px;border:1px solid #3f5880;
+  background:linear-gradient(#aebdd3 0%,#8ea4c6 49%,#7e97bc 51%,#8da5c8 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.45);transition:filter .15s}
+.homebtn svg{width:18px;height:18px;display:block;filter:drop-shadow(0 -1px 0 rgba(0,0,0,.45))}
+.homebtn:hover{filter:brightness(1.06)}.homebtn:active{filter:brightness(.9)}
+.homebtn:focus-visible{outline:2px solid #fff;outline-offset:-4px}
