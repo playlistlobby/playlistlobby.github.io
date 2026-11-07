@@ -31,11 +31,13 @@ button,input{font:inherit;color:inherit}
   box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 5px rgba(20,35,60,.2)}
 .row.in .b{color:#111;border:1px solid #a9abb0;background:linear-gradient(#fdfdfd 0%,#e6e6e6 48%,#d9d9d9 52%,#e9e9e9 100%)}
 .row.out .b{color:#08213f;border:1px solid #6a9ddc;background:linear-gradient(#e8f2ff 0%,#bcd7fa 24%,#9fc6f6 50%,#abcbf7 100%)}
-.b::before{content:"";position:absolute;bottom:-1px;width:18px;height:17px;z-index:-1;
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") no-repeat center/100% 100%;
-  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") no-repeat center/100% 100%}
-.row.out .b::before{right:-7px;background:#a3c6f4}
-.row.in .b::before{left:-7px;transform:scaleX(-1);background:#dcdcdc}
+.b::before,.b::after{content:"";position:absolute;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") no-repeat center/100% 100%;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 17'%3E%3Cpath d='M0 0C1 9 7 15 18 17C10 17.6 4 15.6 0 12.6Z'/%3E%3C/svg%3E") no-repeat center/100% 100%}
+.b::before{width:20px;height:19px;bottom:-2px;z-index:-1}        /* the outline of the tail, behind the bubble */
+.b::after{width:18px;height:17px;bottom:-1px;z-index:1}          /* the tail itself, over the bubble's outline where they meet, so tail and bubble join without a line */
+.row.out .b::before{right:-8px;background:#6a9ddc}
+.row.out .b::after{right:-7px;background:#abcbf7}
+.row.in .b::before{left:-8px;transform:scaleX(-1);background:#a9abb0}
+.row.in .b::after{left:-7px;transform:scaleX(-1);background:#e9e9e9}
 /* typing dots */
 .typing{display:flex;gap:5px;align-items:center;height:20px;padding:0 3px}
 .typing i{width:8px;height:8px;border-radius:50%;background:#8e9097;animation:dot 1.2s ease-in-out infinite}
