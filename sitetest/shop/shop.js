@@ -61,9 +61,9 @@ function layout() {
   const portrait = H / W > 1.1;
   unit = portrait ? W / 100 : Math.min(W / 100, H / 56.25);
   P0 = portrait ? PITCH_PHONE : PITCH;
-  R = unit * (portrait ? 34 : 24);            // depth radius of the ring (towards / away from you)
+  R = unit * (portrait ? 34 : 19.5);            // depth radius of the ring (towards / away from you)
   RX = R * (portrait ? 1.05 : 1.5);           // it is wider than it is deep, so it uses the width of the window
-  iw = unit * (portrait ? 15 : 10.2);
+  iw = unit * (portrait ? 15 : 8.4);
   FL = R * 2.4;                               // camera distance: the smaller, the stronger the perspective
   // the ring's near side sticks out below its centre, the far side above: centre it on the window by its extent
   const cp0 = Math.cos(P0), sp0 = Math.sin(P0);

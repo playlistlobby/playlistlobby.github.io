@@ -87,8 +87,7 @@ async function openProject(p, icon) {
     <div class="ios-top">${statusBar()}<div class="ios-nav"><button class="ios-back" type="button" id="back">${BACK_SVG}<span>Home</span></button><h2 class="ios-title">${esc(p.label)}</h2><span class="ios-ghost"></span></div></div>
     <div class="viewer" id="viewer">
       <div class="strip" id="strip"></div>
-      <div class="ios-top">${statusBar()}<div class="ios-nav"><button class="ios-back" type="button" id="vback">${BACK_SVG}<span>${esc(p.label)}</span></button><h2 class="ios-title" id="vtitle"></h2><span class="ios-ghost"></span></div></div>
-      <div class="vbar"><button type="button" id="vprev" aria-label="Previous photo"><svg viewBox="0 0 18 18"><path d="M14 1 4 9l10 8z"/></svg></button><button type="button" id="vnext" aria-label="Next photo"><svg viewBox="0 0 18 18"><path d="M4 1l10 8-10 8z"/></svg></button></div>
+      <div class="ios-top">${statusBar()}<div class="ios-nav"><button class="ios-back" type="button" id="vback">${BACK_SVG}<span>${esc(p.label)}</span></button><h2 class="ios-title" id="vtitle"></h2><span class="ios-pager"><button class="ios-navbtn" type="button" id="vprev" aria-label="Previous photo">&lsaquo;</button><button class="ios-navbtn" type="button" id="vnext" aria-label="Next photo">&rsaquo;</button></span></div></div>
     </div>`;
   tick();
   const gridEl = $("#phgrid");
