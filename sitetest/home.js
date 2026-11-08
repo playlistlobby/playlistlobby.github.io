@@ -233,15 +233,17 @@ function startVideo() {
   vid.play().catch(() => person.classList.add("still-only"));
 }
 function startFrames() {
+  const big = !/iphone|ipad|ipod/i.test(ua) && !matchMedia("(pointer:coarse)").matches;     // a Mac gets the bigger pictures (sharp on a retina screen), phones the smaller ones (they have less memory)
+  const FW = big ? 672 : 504, FH = big ? 848 : 636, DIR = big ? "pf3" : "pf2";
   const N = 105, frames = new Array(N);
   let ready = 0;
   const cv = document.createElement("canvas");
-  cv.width = 504; cv.height = 636;
+  cv.width = FW; cv.height = FH;
   const g = cv.getContext("2d");
   const loadOne = (i) => new Promise((res) => {
     const im = new Image(); im.decoding = "async";
     im.onload = im.onerror = () => { ready++; res(); };
-    im.src = `assets/pf2/${String(i + 1).padStart(3, "0")}.webp`;
+    im.src = `assets/${DIR}/${String(i + 1).padStart(3, "0")}.webp`;
     frames[i] = im;
   });
   (async () => {
