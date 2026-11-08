@@ -24,6 +24,8 @@ function setScene(two, push = true) {
   if (push) history.replaceState(null, "", two ? "#menu" : location.pathname + location.search);
 }
 glass.addEventListener("click", () => setScene(!scene2));
+/* the word next to the logo opens the menu too (it is part of the logo) */
+document.querySelector(".wordmark")?.addEventListener("click", () => { if (!scene2) setScene(true); });
 addEventListener("keydown", (e) => { if (e.key === "Escape" && scene2) setScene(false); });
 
 /* leaving the page: a short fade, then go */
