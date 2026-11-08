@@ -9,7 +9,7 @@
 html,body{height:100%}
 /* the page background lives on the root: a solid colour (the gradient's bottom tone) under everything, and the gradient itself on a fixed layer the size of the LARGE viewport.
    On iPhone Safari the body is only as tall as the viewport with its toolbars shown, so a gradient on the body left a white strip below it when the toolbars slide away. */
-html{background:#dde3e8;-webkit-text-size-adjust:100%}
+html{background:#dde3e8;-webkit-text-size-adjust:100%;overflow:hidden}   /* the person and the leaves reach past the screen: clip them at the root so a phone does not widen the page to fit them (that made it zoomed and pannable) */
 html::before{content:"";position:fixed;left:0;right:0;top:0;height:100%;height:100lvh;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 80% 75% at 50% 42%,#f2f4f5 0%,#ecf0f2 38%,#e1e7eb 72%,#ccd4db 100%)}
 
 body{overflow:hidden;font-family:var(--font);color:#1b1b1d;
@@ -148,6 +148,7 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   .wordmark .wm-g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5));backdrop-filter:blur(calc(var(--px) * 9.5))}
   .stage{--s:1vw;--px:calc(var(--s) / 3.9);--w:57.24;--g0:1.25;left:0;top:0;margin:0;width:100vw;height:100vh;height:100dvh}
   body.s2 .stage{--gk:2.6207}
+  .stage{overflow:hidden;overflow:clip}   /* the person and the leaves are bigger than the screen: cut them off at the stage, or the phone widens the page to fit them */
   .shape .g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)));backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)))}
   .person{left:-32.05vw;top:14.2dvh;bottom:auto;width:161.54vw;transform-origin:0 0;opacity:1;filter:blur(.385vw)}
   body.s2 .person{transform:translate(-6.4vw,-8.3dvh);filter:blur(.513vw)}
