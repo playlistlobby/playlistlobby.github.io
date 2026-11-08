@@ -37,6 +37,8 @@ body.s2 .leaves{transform:translate(calc(var(--s) * -14.6),calc(var(--s) * -6.8)
 .person img,.person video,.person canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;user-select:none}
 .person video[hidden]{display:none}
 
+/* multiply: the picture's whites take on the page's own background tone, so the person blends in instead of sitting on it as a lighter cut-out */
+.person{mix-blend-mode:multiply}
 body.s2 .person{transform:translate(calc(var(--s) * -21.354),calc(var(--s) * -1.146)) scale(1.2);filter:blur(calc(var(--s) * .208))}
 
 /* progressive blur (sharper at the top, softer towards the bottom): fades in with scene 2 */
