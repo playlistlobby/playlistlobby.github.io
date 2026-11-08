@@ -160,7 +160,21 @@ async function openProject(p, icon) {
   wireViewer();
 
   requestAnimationFrame(() => requestAnimationFrame(() => { app.classList.add("open"); home.classList.add("out"); }));
+  setTimeout(fitRollPad, 800);
 }
+
+/* On a desktop window the phone runs off the bottom of the window (the page itself never scrolls), so the lower part of the phone's screen is out of sight:
+   the last pictures could never be scrolled into view. The gallery gets that hidden part as extra room at its end, so scrolling to the end brings the last row up to where it can be seen. */
+function fitRollPad() {
+  const roll = document.getElementById("roll");
+  if (!roll) return;
+  roll.style.setProperty("--pad-extra", "0px");
+  if (matchMedia("(max-aspect-ratio:9/10)").matches) return;           // phone layout: the whole page scrolls, nothing is cut off
+  const r = roll.getBoundingClientRect(), k = (r.height / roll.offsetHeight) || 1;
+  const hidden = Math.max(0, r.bottom - innerHeight);
+  roll.style.setProperty("--pad-extra", Math.ceil(hidden / k + 16) + "px");
+}
+addEventListener("resize", fitRollPad);
 
 function closeProject() {
   if (!current) return;

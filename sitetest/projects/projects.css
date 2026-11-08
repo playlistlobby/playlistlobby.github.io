@@ -127,7 +127,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ios-ghost{min-width:calc(62 * var(--u))}
 
 /* the grid of photos */
-.app-body{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;background:#fff;padding:calc(64 * var(--u) + 4px) calc(4 * var(--u)) calc(8 * var(--u))}
+.app-body{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;background:#fff;padding:calc(64 * var(--u) + 4px) calc(4 * var(--u)) calc(8 * var(--u) + var(--pad-extra,0px))}
 .app-body::-webkit-scrollbar{display:none}
 .ph-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(4 * var(--u))}
 .th{position:relative;display:block;aspect-ratio:1;background:#e6e9ee;overflow:hidden;padding:0}
