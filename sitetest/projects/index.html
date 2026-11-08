@@ -15,12 +15,12 @@
 <link rel="preload" as="image" href="assets/ios/icon-gloss.png">
 <link rel="preload" as="image" href="assets/ios/dock-shelf.png">
 <link rel="preload" as="image" href="assets/ios/wallpaper.jpg">
-<link rel="stylesheet" href="projects.css?v=18">
+<link rel="stylesheet" href="projects.css?v=20">
 <script>
 /* ask for the apps right away, both lists at once (projects.js picks the answers up, see early.js) */
 (function(){var B="https://playlistmag-admin.sixplanet.workers.dev",e=window.__early={};e.projects={base:B,p:fetch(B+"/api/projects",{cache:"no-store"}).then(function(r){return r.json()})};e.built={p:fetch("projects.json?v=3",{cache:"no-cache"}).then(function(r){return r.json()})};e.projects.p.catch(function(){});e.built.p.catch(function(){});})();
 </script>
-<script src="../slide.js?v=7"></script>
+<script src="../slide.js?v=8"></script>
 </head>
 <body>
 
@@ -40,6 +40,7 @@
       <div class="screen-bg"></div>
       <div class="screen" id="screen"></div>
       <div class="glare"></div>
+      <div class="lens"></div>
       <img class="frame" src="assets/iphone-frame.webp" alt="" width="898" height="1825" draggable="false">
       <button class="home-hit" id="home-hit" type="button" aria-label="Home button"></button>
     </div>

@@ -35,6 +35,7 @@ menu.addEventListener("click", (e) => {
   if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
   e.preventDefault();
   sfx("tock");
+  if (window.__pmVT) { location.href = a.href; return; }       // the browser does the transition (a soft zoom-fade into the next page)
   body.classList.add("leaving");
   setTimeout(() => (location.href = a.href), 260);
 });
