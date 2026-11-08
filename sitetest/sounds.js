@@ -6,6 +6,9 @@ const NAMES = ["tink", "tock", "sent", "received", "unlock", "lock", "no", "swis
 const KEY = "pm-sound";
 try { const q = new URLSearchParams(location.search).get("sound"); if (q === "off" || q === "on") localStorage.setItem(KEY, q); } catch { /* no storage */ }
 const muted = () => { try { return localStorage.getItem(KEY) === "off"; } catch { return false; } };
+export const soundOn = () => !muted();
+/** switch the sounds on or off (remembered; used by the settings button) */
+export function setSound(on) { try { localStorage.setItem(KEY, on ? "on" : "off"); } catch { /* no storage */ } }
 
 let ctx = null;
 const raw = {}, buf = {};

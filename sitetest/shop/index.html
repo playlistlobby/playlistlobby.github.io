@@ -14,6 +14,7 @@
 <link rel="modulepreload" href="../api.js">
 <link rel="modulepreload" href="../sounds.js">
 <link rel="stylesheet" href="shop.css?v=16">
+<link rel="stylesheet" href="../settings.css?v=1">
 <script>
 /* ask for the products right away (shop.js picks the answer up, see early.js) */
 (function(){var B="https://playlistmag-admin.sixplanet.workers.dev",e=window.__early={};e.shop={base:B,p:fetch(B+"/api/shop",{cache:"no-store"}).then(function(r){return r.json()})};e.shop.p.catch(function(){});})();
@@ -29,6 +30,13 @@
     <a href="../shop/?v=3" aria-current="page">shop</a>
     <a href="../contact/?v=3">contact</a>
   </nav>
+  <div class="settings">
+    <button class="setbtn" id="setbtn" type="button" aria-label="Settings" aria-expanded="false" aria-controls="setpanel"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" fill-rule="evenodd" d="M10.3 2.5h3.4l.5 2.4c.6.2 1.1.5 1.6.9l2.3-.8 1.7 3-1.8 1.6c.1.6.1 1.1 0 1.7l1.8 1.6-1.7 3-2.3-.8c-.5.4-1 .7-1.6.9l-.5 2.4h-3.4l-.5-2.4c-.6-.2-1.1-.5-1.6-.9l-2.3.8-1.7-3 1.8-1.6a5 5 0 0 1 0-1.7L4.2 8l1.7-3 2.3.8c.5-.4 1-.7 1.6-.9ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></button>
+    <div class="setpanel" id="setpanel" role="dialog" aria-label="Settings" hidden>
+      <div class="setrow"><span>Sound</span><div class="seg" data-key="sound"><button type="button" data-v="on">On</button><button type="button" data-v="off">Off</button></div></div>
+      <div class="setrow"><span>Language</span><div class="seg" data-key="lang"><button type="button" data-v="en">English</button><button type="button" data-v="da">Dansk</button></div></div>
+    </div>
+  </div>
 </header>
 
 <main class="wheel" id="wheel" aria-label="Shop">
@@ -86,6 +94,7 @@
   <p class="lb-count" id="lb-count"></p>
 </div>
 
+<script type="module" src="../settings.js?v=1"></script>
 <script type="module" src="shop.js?v=16"></script>
 </body>
 </html>
