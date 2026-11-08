@@ -36,7 +36,8 @@ body.s2 .leaves{transform:translate(calc(var(--s) * -14.6),calc(var(--s) * -6.8)
 .fc{left:0;top:0;width:100%;height:100%;transform-origin:0 0;pointer-events:none;transition:transform calc(var(--t) * 1.1) var(--ease)}
 .fc img{display:block;width:100%;height:100%}
 .sky{z-index:1}
-.plane{z-index:2}
+.plane{z-index:2;transition:transform calc(var(--t) * 1.1) var(--ease),opacity calc(var(--t) * .7) ease}   /* the plane fades away on the way into scene 2 */
+body.s2 .plane{opacity:0}
 .glow{z-index:2}   /* the light on the person: it moves with him */
 body.s2 .sky,body.s2 .plane{transform:translate(calc(var(--s) * -5.5),calc(var(--s) * -3)) scale(1.1)}
 body.s2 .glow{transform:translate(calc(var(--s) * -26.354),calc(var(--s) * -1.354)) scale(1.2)}
