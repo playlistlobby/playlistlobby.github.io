@@ -4,6 +4,7 @@
 //  - click a shirt: the others disappear, the shirt glides to the top of the screen and the product page zooms out into view
 //  - the product page: size, then delivery details (the same fields and checks as the t-shirt shop of the album event, see order.js)
 import { SIZES, cleanOrder } from "./order.js";
+import { API_BASE } from "../api.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const wheel = $("#wheel"), product = $("#product");
@@ -158,13 +159,26 @@ buy.addEventListener("click", () => {
   setTimeout(() => form.querySelector("input")?.focus({ preventScroll: true }), 50);
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 });
-form.addEventListener("submit", (e) => {
+let sending = false;
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (sending) return;
   const v = Object.fromEntries(new FormData(form).entries());
-  try { cleanOrder({ ...v, size }); } catch (err) { note.textContent = err.message; return; }
-  // The payment is not connected on this site yet (the album-event shop paid through the game's server, for logged-in players only).
-  // Nothing is sent anywhere from this form.
-  note.textContent = "Payments aren't switched on yet: nothing was sent and nothing was charged.";
+  let order;
+  try { order = cleanOrder({ ...v, size }); } catch (err) { note.textContent = err.message; return; }
+  // Payments are not switched on: the order is kept as an unpaid request that the owner sees in the admin (/admin/, Orders). Nothing is charged.
+  sending = true; note.textContent = "Sending…";
+  const btn = form.querySelector("[type=submit]"); if (btn) btn.disabled = true;
+  try {
+    const r = await fetch(API_BASE + "/api/order", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(order) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error ? j.error[0].toUpperCase() + j.error.slice(1) + "." : "Something went wrong. Try again in a moment.");
+    note.textContent = "Thank you, your order request is in. Payments aren't switched on yet, so nothing was charged: we'll get in touch to finish it.";
+    form.querySelectorAll("input,button").forEach((x) => (x.disabled = true));
+  } catch (err) {
+    note.textContent = err.message === "Failed to fetch" ? "Can't reach the shop right now. Try again in a moment." : err.message;
+    sending = false; if (btn) btn.disabled = false;
+  }
 });
 
 /* ---------- the loop ---------- */

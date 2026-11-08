@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#dce7f1">
 <title>admin · playlist.mag</title>
-<link rel="stylesheet" href="admin.css?v=1">
+<link rel="stylesheet" href="admin.css?v=2">
 </head>
 <body>
 
@@ -18,6 +18,12 @@
     <button class="btn" id="logout" type="button">Log out</button>
   </div>
 </header>
+
+<nav class="tabsbar" id="tabsbar" hidden aria-label="Admin sections">
+  <button type="button" data-view="apps" class="on">Apps</button>
+  <button type="button" data-view="orders">Orders <b id="nOrd" hidden></b></button>
+  <button type="button" data-view="inq">Inquiries <b id="nInq" hidden></b></button>
+</nav>
 
 <!-- login -->
 <main class="login" id="login">
@@ -41,6 +47,13 @@
   <section class="editor" id="editor"></section>
 </main>
 
+<!-- orders and inquiries from the site -->
+<main class="inbox" id="inbox" hidden>
+  <div class="inbox-head"><h2 id="inboxTitle">Orders</h2><button class="btn small" id="inboxRefresh" type="button">Refresh</button></div>
+  <p class="muted tiny" id="inboxNote"></p>
+  <div id="inboxList" class="inbox-list"></div>
+</main>
+
 <footer class="savebar" id="saveBar" hidden>
   <span id="saveMsg" class="muted"></span>
   <button class="btn primary" id="save" type="button">Save and publish</button>
@@ -48,6 +61,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script type="module" src="admin.js?v=1"></script>
+<script type="module" src="admin.js?v=2"></script>
 </body>
 </html>

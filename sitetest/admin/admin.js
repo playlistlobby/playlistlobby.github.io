@@ -126,13 +126,14 @@ function mediaOf(list) {
 /* ---------- views ---------- */
 function showLogin(msg = "") {
   token = ""; try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* */ }
-  $("#login").hidden = false; $("#admin").hidden = true; $("#saveBar").hidden = true; $("#barRight").hidden = true;
+  $("#login").hidden = false; $("#admin").hidden = true; $("#saveBar").hidden = true; $("#barRight").hidden = true; $("#tabsbar").hidden = true; $("#inbox").hidden = true; view = "apps";
   $("#loginErr").textContent = msg; $("#pw").value = "";
 }
 async function showAdmin() {
   await loadAll();
-  $("#login").hidden = true; $("#admin").hidden = false; $("#saveBar").hidden = false; $("#barRight").hidden = false;
+  $("#login").hidden = true; $("#barRight").hidden = false; $("#tabsbar").hidden = false;
   renderList(); renderEditor();
+  setView("apps"); loadInbox();
   if (!dirty) setDirty(false);
 }
 
@@ -286,6 +287,75 @@ $("#save").addEventListener("click", async () => {
     toast("Saved: the projects page is updated.");
   } catch (err) { $("#saveMsg").textContent = ""; toast(err.message, true); setDirty(true); }
 });
+
+/* ---------- orders and inquiries ---------- */
+let view = "apps";
+let inbox = { inquiries: [], orders: [] };
+const fmt = (iso) => { try { return new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); } catch { return iso; } };
+function setCounts() {
+  const n1 = inbox.orders.filter((o) => !o.done).length, n2 = inbox.inquiries.filter((o) => !o.done).length;
+  const a = $("#nOrd"), b = $("#nInq");
+  a.hidden = !n1; a.textContent = n1; b.hidden = !n2; b.textContent = n2;
+}
+async function loadInbox() {
+  try { inbox = await api("/api/inbox"); } catch (e) { if (e.message !== "Logged out") toast(e.message, true); return; }
+  setCounts(); if (view !== "apps") renderInbox();
+}
+async function markItem(it, done) {
+  try {
+    await api("/api/inbox/" + encodeURIComponent(it.key), { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ done }) });
+    it.done = done; setCounts(); renderInbox();
+  } catch (e) { toast(e.message, true); }
+}
+async function deleteItem(it, kind) {
+  if (!confirm("Delete this " + (kind === "ord" ? "order" : "inquiry") + " for good?")) return;
+  try {
+    await api("/api/inbox/" + encodeURIComponent(it.key), { method: "DELETE" });
+    const list = kind === "ord" ? inbox.orders : inbox.inquiries;
+    list.splice(list.indexOf(it), 1); setCounts(); renderInbox();
+  } catch (e) { toast(e.message, true); }
+}
+function renderInbox() {
+  const orders = view === "orders", list = orders ? inbox.orders : inbox.inquiries;
+  $("#inboxTitle").textContent = orders ? "Orders" : "Inquiries";
+  $("#inboxNote").textContent = orders
+    ? "Order requests from the shop. Payments are not switched on yet, so none of these are paid: contact the buyer to finish each one."
+    : "Messages sent through the contact page (email address first, then the message).";
+  $("#inboxList").replaceChildren(...(list.length ? list.map((it) => {
+    const acts = h("div", { class: "acts" },
+      h("button", { class: "btn small ghost", type: "button", onclick: () => markItem(it, !it.done) }, it.done ? "Mark as new" : (orders ? "Mark as handled" : "Mark as read")),
+      h("button", { class: "btn small danger", type: "button", onclick: () => deleteItem(it, orders ? "ord" : "inq") }, "Delete"));
+    if (orders) {
+      const row = (k, v) => [h("dt", {}, k), h("dd", {}, v)];
+      return h("div", { class: "card msg" + (it.done ? " done" : "") },
+        h("div", { class: "top" },
+          h("span", { class: "who" }, it.name),
+          h("span", {}, h("span", { class: "tag" + (it.done ? "" : " new") }, it.done ? "HANDLED" : "NEW"), " ", h("span", { class: "tag" }, "UNPAID")),
+          h("span", { class: "when" }, fmt(it.at))),
+        h("dl", { class: "grid" },
+          ...row("Item", `${it.product} · size ${it.size} · ${Number(it.price).toLocaleString("da-DK")} ${it.currency}`),
+          ...row("Email", h("a", { href: "mailto:" + it.email }, it.email)),
+          ...row("Phone", h("a", { href: "tel:" + it.phone.replace(/[^+0-9]/g, "") }, it.phone)),
+          ...row("Address", `${it.street}, ${it.zip} ${it.city}, ${it.country}`)),
+        acts);
+    }
+    return h("div", { class: "card msg" + (it.done ? " done" : "") },
+      h("div", { class: "top" },
+        h("span", { class: "who" }, h("a", { href: "mailto:" + it.email }, it.email)),
+        h("span", {}, h("span", { class: "tag" + (it.done ? "" : " new") }, it.done ? "READ" : "NEW")),
+        h("span", { class: "when" }, fmt(it.at))),
+      h("div", { class: "body" }, it.message),
+      acts);
+  }) : [h("div", { class: "card empty-note muted" }, orders ? "No orders yet." : "No inquiries yet.")]));
+}
+function setView(v) {
+  view = v;
+  document.querySelectorAll("#tabsbar button").forEach((b) => b.classList.toggle("on", b.dataset.view === v));
+  $("#admin").hidden = v !== "apps"; $("#saveBar").hidden = v !== "apps"; $("#inbox").hidden = v === "apps";
+  if (v !== "apps") { renderInbox(); loadInbox(); }
+}
+document.querySelectorAll("#tabsbar button").forEach((b) => b.addEventListener("click", () => setView(b.dataset.view)));
+$("#inboxRefresh").addEventListener("click", loadInbox);
 
 /* ---------- login / logout ---------- */
 $("#loginForm").addEventListener("submit", async (e) => {

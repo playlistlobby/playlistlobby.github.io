@@ -2,13 +2,13 @@
 // 1) put your email in the bar (it has to look like a real one), 2) write ONE message: it pops up above the bar and pushes the bar down,
 // 3) the only thing you ever receive: "You will be hearing from us soon". After that the bar is locked for 5 minutes (never shown).
 // The lock lives in this browser (localStorage).
+import { API_BASE } from "../api.js";
 const $ = (s, r = document) => r.querySelector(s);
 const log = $("#log"), bar = $("#bar"), field = $("#field"), send = $("#send");
 const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
 
-/* where an inquiry is delivered: FormSubmit mails it to this address. (The first inquiry ever sent makes FormSubmit mail an activation link to the same address; after one click on it everything arrives.) */
-const MAIL_TO = "emildeconinck@gmail.com";
-const CONTACT_ENDPOINT = "https://formsubmit.co/ajax/" + MAIL_TO;
+/* where an inquiry goes: the site Worker keeps it for the owner, who reads it in the admin (/admin/, Inquiries) */
+const CONTACT_ENDPOINT = API_BASE + "/api/inquiry";
 const REPLY = "You will be hearing from us soon";
 const LOCK_MS = 5 * 60 * 1000;
 const KEY_LOG = "pm-contact-log", KEY_UNTIL = "pm-contact-until";
@@ -80,16 +80,11 @@ function setBar(mode) {
 field.addEventListener("input", () => { bar.classList.remove("bad"); send.disabled = field.disabled || !field.value.trim(); });
 
 async function deliver(payload) {
-  if (!CONTACT_ENDPOINT) { console.info("contact: no endpoint is connected yet, so nothing was delivered"); await wait(300); return; }
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 15000);
   try {
-    const r = await fetch(CONTACT_ENDPOINT, {
-      method: "POST", signal: ctl.signal,
-      headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify({ email: payload.email, message: payload.message, _subject: "playlist.mag inquiry from " + payload.email, _template: "table", _captcha: "false" }),
-    });
+    const r = await fetch(CONTACT_ENDPOINT, { method: "POST", signal: ctl.signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ email: payload.email, message: payload.message }) });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok || String(j.success) === "false") throw new Error(j.message || "not delivered");
+    if (!r.ok) throw new Error(j.error || "not delivered");
   } finally { clearTimeout(timer); }
 }
 

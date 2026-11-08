@@ -91,3 +91,27 @@ label.f small{font-weight:400;color:var(--muted)}
   .apps{position:static}
   .banner h1{font-size:15px}
 }
+
+/* tabs + inbox */
+.tabsbar{display:flex;justify-content:center;gap:0;margin:0 auto 16px}
+.tabsbar button{height:34px;padding:0 20px;margin-left:-1px;font:700 14px var(--font);color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.45);cursor:pointer;
+  background:linear-gradient(#aebdd3 0%,#8ea4c6 49%,#7e97bc 51%,#8da5c8 100%);border:1px solid #3f5880;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+.tabsbar button:first-child{border-radius:7px 0 0 7px;margin-left:0}.tabsbar button:last-child{border-radius:0 7px 7px 0}
+.tabsbar button.on{background:linear-gradient(#4b6a9e,#355487 50%,#2b4a7f 51%,#3a5a8d);box-shadow:inset 0 2px 4px rgba(0,0,0,.45)}
+.tabsbar b{display:inline-block;min-width:20px;padding:0 6px;margin-left:5px;border-radius:10px;background:#e0564d;color:#fff;font-size:12px;line-height:19px;text-shadow:none;text-align:center}
+.inbox{max-width:820px;margin:0 auto;display:grid;gap:12px}
+.inbox-head{display:flex;align-items:center;justify-content:space-between}
+.inbox-head h2{font:700 20px var(--font)}
+.inbox-list{display:grid;gap:10px}
+.msg{display:grid;gap:8px}
+.msg.done{opacity:.6}
+.msg .top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.msg .when{font-size:12px;color:var(--muted)}
+.msg .who{font-weight:700;word-break:break-all}
+.msg .who a,.msg a{color:#1f5fc4}
+.msg .body{white-space:pre-wrap;word-break:break-word;line-height:1.45}
+.msg .grid{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:14px}
+.msg .grid dt{color:var(--muted)}
+.msg .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#fde7c8;color:#7a4b00;border:1px solid #e6b86a}
+.msg .tag.new{background:#d6ecff;color:#0f4a8f;border-color:#8fc0f0}
+.msg .acts{display:flex;gap:8px;justify-content:flex-end}
