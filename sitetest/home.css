@@ -112,16 +112,17 @@ body:not(.s2) .shape.ready .sh{opacity:.06}
 .glass.app .sh{animation:none}
 
 /* ---------- the menu: iOS 6 glossy buttons ---------- */
-.menu{inset:0;pointer-events:none;z-index:6}
+.menu{inset:0;pointer-events:none;z-index:4}   /* under the glass icon, so the buttons slide out from behind it */
 .gbtn{position:absolute;left:calc(var(--s) * 49.635);top:calc(var(--s) * (17.2917 + var(--i) * 8.0729));width:calc(var(--s) * 34.1667);height:calc(var(--s) * 5.5);
   display:flex;align-items:center;justify-content:center;text-decoration:none;
   border-radius:calc(var(--s) * .956);font:700 calc(var(--s) * 2.008)/1 var(--font);color:#3c3c3c;text-shadow:0 1px 0 #fff;
   background:linear-gradient(#f0f0f1 0%,#d4d4d5 47%,#c4c4c7 47.2%,#f7f7f8 100%);
   box-shadow:0 calc(var(--s) * .553) calc(var(--s) * 1.28) rgba(0,0,0,.11),0 calc(var(--s) * .14) calc(var(--s) * .368) rgba(0,0,0,.09),0 calc(var(--s) * .044) calc(var(--s) * .088) rgba(0,0,0,.08);
-  opacity:0;transform:translateX(calc(var(--s) * 6)) scale(.97);pointer-events:none;
+  opacity:0;transform:translate(var(--ex),var(--ey)) scale(.12);pointer-events:none;   /* the buttons start on the note icon (its middle) and come out of it */
+  --ex:calc(var(--s) * -36.2);--ey:calc(var(--s) * (8.06 - var(--i) * 8.0729));
   transition:opacity .35s ease,transform .5s var(--ease),filter .15s;}
 body.s2 .gbtn{opacity:1;transform:none;pointer-events:auto;
-  transition:opacity .5s ease calc(.45s + var(--i) * .12s),transform .8s var(--spring) calc(.45s + var(--i) * .12s),filter .15s,box-shadow .35s ease}
+  transition:opacity .3s ease calc(.4s + var(--i) * .1s),transform .85s var(--spring) calc(.4s + var(--i) * .1s),filter .15s,box-shadow .35s ease}
 @media (hover:hover){
   .gbtn:hover{filter:brightness(1.03)}
 }
@@ -158,7 +159,7 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   body.s2 .leaves{transform:translate(-6vw,-12dvh) scale(1.1) rotate(-8deg)}
   .glass{left:11.54vw;top:47.46dvh;width:14.68vw}
   body.s2 .glass{transform:translate(19.23vw,-32.18dvh) scale(2.6207)}
-  .gbtn{left:10.26vw;width:79.5vw;height:16.4vw;border-radius:3.6vw;font-size:5.9vw;top:calc(39.1dvh + var(--i) * 9.95dvh)}
+  .gbtn{--ex:0px;--ey:calc(24.23dvh - 39.1dvh - var(--i) * 9.95dvh - 8.2vw);left:10.26vw;width:79.5vw;height:16.4vw;border-radius:3.6vw;font-size:5.9vw;top:calc(39.1dvh + var(--i) * 9.95dvh)}
   .veil{-webkit-backdrop-filter:blur(1.45vw);backdrop-filter:blur(1.45vw)}
 }
 @media (prefers-reduced-motion:reduce){
