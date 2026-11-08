@@ -1,6 +1,7 @@
 // playlist.mag · Projects: an interactive iPhone. Tap an app, a photo gallery opens on the phone and the text changes.
 import { API_BASE } from "../api.js";
 import { take } from "../early.js";
+import { sfx } from "../sounds.js";
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -49,7 +50,7 @@ function build() {
     b.className = "sb-app"; b.type = "button"; b.style.setProperty("--i", i);
     b.setAttribute("aria-label", `Open ${p.label}`);
     b.innerHTML = `<span class="sb-icon" style="background-image:url('${esc(p.icon)}')"></span><span class="sb-label">${esc(p.label)}</span>`;
-    b.addEventListener("click", () => (p.href ? openLink(p, b) : openProject(p, b)));
+    b.addEventListener("click", () => { sfx("tock"); if (p.href) openLink(p, b); else openProject(p, b); });
     grid.append(b);
   });
   tick();
@@ -161,6 +162,7 @@ async function openProject(p, icon) {
 
 function closeProject() {
   if (!current) return;
+  sfx("tink");
   if (viewerIdx >= 0) return closeViewer();
   const home = $("#home"), app = $("#app");
   app.classList.remove("open"); home.classList.remove("out");
@@ -192,6 +194,7 @@ function paintStrip() {
   [viewerIdx - 2, viewerIdx + 2].forEach((j) => { if (photos[j] && photos[j].type !== "video") new Image().src = photos[j].src; });
 }
 function openViewer(i, thumb) {
+  sfx("tink");
   viewerIdx = i;
   const v = $("#viewer");
   const o = centerIn(thumb, screen);
@@ -208,6 +211,7 @@ function closeViewer() {
   viewerIdx = -1;
 }
 function go(d) {
+  sfx("tink", 0.45);
   const n = viewerIdx + d;
   if (n < 0 || n >= photos.length) return;
   const s = strip();

@@ -7,6 +7,7 @@
 import { cleanOrder } from "./order.js";
 import { API_BASE } from "../api.js";
 import { take } from "../early.js";
+import { sfx } from "../sounds.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const wheel = $("#wheel"), product = $("#product");
@@ -64,7 +65,7 @@ const els = products.map((p, i) => {
   const im = new Image(); im.alt = ""; im.decoding = "async"; im.draggable = false; im.src = p.img;
   b.append(im);
   wheel.append(b);
-  b.addEventListener("click", () => openProduct(i));
+  b.addEventListener("click", () => { sfx("tock"); openProduct(i); });
   b.addEventListener("focus", () => { if (b.matches(":focus-visible") && mode === "ring") pointAt(items[i].x, items[i].y); });
   b.addEventListener("blur", () => { if (mode === "ring") pointAt(null); });
   return b;
@@ -145,7 +146,7 @@ function closeProduct(fromPop = false) {
   };
   if (product.scrollTop > 40) { product.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(go, 300); } else go();
 }
-$("#pp-back").addEventListener("click", () => closeProduct());
+$("#pp-back").addEventListener("click", () => { sfx("tink"); closeProduct(); });
 addEventListener("keydown", (e) => {
   if (lbOpen()) { if (e.key === "Escape") closeLb(); else if (e.key === "ArrowLeft") showLb(lbI - 1); else if (e.key === "ArrowRight") showLb(lbI + 1); return; }
   if (e.key === "Escape") closeProduct();
@@ -199,7 +200,7 @@ function renderOptions() {
     b.setAttribute("aria-label", c.name); b.title = c.name; b.setAttribute("aria-pressed", String(c.id === color));
     const out = stockFor(p, size, c.id) <= 0; b.disabled = out; b.classList.toggle("out", out);
     b.addEventListener("click", () => {
-      color = c.id; note.textContent = "";
+      sfx("tink"); color = c.id; note.textContent = "";
       if (size && stockOf(p, size, color) <= 0) size = "";
       if (heroImg.getAttribute("src") !== heroSrc()) heroImg.src = heroSrc();
       renderOptions();
@@ -211,7 +212,7 @@ function renderOptions() {
   sizesEl.replaceChildren(...sizes.map((s) => {
     const b = document.createElement("button"); b.type = "button"; b.className = "size"; b.textContent = s.name; b.setAttribute("aria-pressed", String(s.id === size));
     const out = stockFor(p, s.id, color) <= 0; b.disabled = out; b.classList.toggle("out", out);
-    b.addEventListener("click", () => { size = s.id; note.textContent = ""; renderOptions(); });
+    b.addEventListener("click", () => { sfx("tink"); size = s.id; note.textContent = ""; renderOptions(); });
     return b;
   }));
   const n = stockFor(p, size, color), picked = (size || !sizes.length) && (color || !colors.length);
@@ -222,10 +223,10 @@ function renderOptions() {
   buy.disabled = gone;
 }
 buy.addEventListener("click", () => {
-  const nudge = (el, msg) => { note.textContent = msg; el.classList.remove("nudge"); void el.offsetWidth; el.classList.add("nudge"); };
+  const nudge = (el, msg) => { sfx("no"); note.textContent = msg; el.classList.remove("nudge"); void el.offsetWidth; el.classList.add("nudge"); };
   if (onColors(prod).length && !color) return nudge(colorsEl, "Pick a colour first.");
   if (onSizes(prod).length && !size) return nudge(sizesEl, "Pick a size first.");
-  note.textContent = "";
+  note.textContent = ""; sfx("tock");
   form.hidden = false; buy.hidden = true;
   setTimeout(() => form.querySelector("input")?.focus({ preventScroll: true }), 50);
   form.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -241,11 +242,11 @@ function showLb(i) {
   $("#lb-count").textContent = lbList.length > 1 ? `${lbI + 1} / ${lbList.length}` : "";
   $("#lb-prev").hidden = $("#lb-next").hidden = lbList.length < 2;
 }
-function openLb(i) { lbList = gallery(prod); lb.hidden = false; lb.setAttribute("aria-hidden", "false"); showLb(i); $("#lb-x").focus({ preventScroll: true }); }
+function openLb(i) { sfx("tink"); lbList = gallery(prod); lb.hidden = false; lb.setAttribute("aria-hidden", "false"); showLb(i); $("#lb-x").focus({ preventScroll: true }); }
 function closeLb() { lb.hidden = true; lb.setAttribute("aria-hidden", "true"); lbImg.removeAttribute("src"); }
 $("#lb-x").addEventListener("click", closeLb);
-$("#lb-prev").addEventListener("click", () => showLb(lbI - 1));
-$("#lb-next").addEventListener("click", () => showLb(lbI + 1));
+$("#lb-prev").addEventListener("click", () => { sfx("tink"); showLb(lbI - 1); });
+$("#lb-next").addEventListener("click", () => { sfx("tink"); showLb(lbI + 1); });
 lb.addEventListener("click", (e) => { if (e.target === lb) closeLb(); });
 lb.addEventListener("pointerdown", (e) => { lbX = e.clientX; });
 lb.addEventListener("pointerup", (e) => { if (lbX != null && Math.abs(e.clientX - lbX) > 50 && lbList.length > 1) showLb(lbI + (e.clientX < lbX ? 1 : -1)); lbX = null; });
@@ -263,7 +264,7 @@ form.addEventListener("submit", async (e) => {
   if (sending) return;
   const v = Object.fromEntries(new FormData(form).entries());
   let order;
-  try { order = { ...cleanOrder(v), product: prod.id, size, color }; } catch (err) { note.textContent = err.message; return; }
+  try { order = { ...cleanOrder(v), product: prod.id, size, color }; } catch (err) { sfx("no"); note.textContent = err.message; return; }
   // Payments are not switched on: the order is kept as an unpaid request that the owner sees in the admin (/admin/, Orders). Nothing is charged.
   sending = true; note.textContent = "Sending…";
   const btn = form.querySelector("[type=submit]"); if (btn) btn.disabled = true;
@@ -272,9 +273,11 @@ form.addEventListener("submit", async (e) => {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error ? j.error[0].toUpperCase() + j.error.slice(1) + "." : "Something went wrong. Try again in a moment.");
     if (prod.track) { const k = `${prod.id}|${size || "x"}|${color || "x"}`; stock[k] = Math.max(0, (Number(stock[k]) || 0) - 1); }
+    sfx("sent");
     note.textContent = "Thank you, your order request is in. Payments aren't switched on yet, so nothing was charged: we'll get in touch to finish it.";
     form.querySelectorAll("input,button").forEach((x) => (x.disabled = true));
   } catch (err) {
+    sfx("no");
     note.textContent = err.message === "Failed to fetch" ? "Can't reach the shop right now. Try again in a moment." : err.message;
     sending = false; if (btn) btn.disabled = false;
     refreshStock();                                             // it may have been sold out or switched off in the meantime

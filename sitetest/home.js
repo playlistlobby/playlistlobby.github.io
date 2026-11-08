@@ -3,6 +3,7 @@
 try {
   if (localStorage.getItem("pm-stay-planet") === "1" && !location.hash) { sessionStorage.setItem("pm-from-site", location.pathname.replace(/[^/]*$/, "") + "projects/"); location.replace("/hotel/"); }
 } catch { /* no storage: the home page just shows */ }
+import { sfx } from "./sounds.js";
 const body = document.body;
 const glass = document.getElementById("glass");
 const shape = glass.querySelector(".shape");
@@ -23,16 +24,17 @@ function setScene(two, push = true) {
   if (!two) { clearTimeout(leaveTimer); setGlow(false); }
   if (push) history.replaceState(null, "", two ? "#menu" : location.pathname + location.search);
 }
-glass.addEventListener("click", () => setScene(!scene2));
+glass.addEventListener("click", () => { sfx(scene2 ? "lock" : "unlock"); setScene(!scene2); });
 /* the word next to the logo opens the menu too (it is part of the logo) */
-document.querySelector(".wordmark")?.addEventListener("click", () => { if (!scene2) setScene(true); });
-addEventListener("keydown", (e) => { if (e.key === "Escape" && scene2) setScene(false); });
+document.querySelector(".wordmark")?.addEventListener("click", () => { if (!scene2) { sfx("unlock"); setScene(true); } });
+addEventListener("keydown", (e) => { if (e.key === "Escape" && scene2) { sfx("lock"); setScene(false); } });
 
 /* leaving the page: a short fade, then go */
 menu.addEventListener("click", (e) => {
   const a = e.target.closest("a");
   if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
   e.preventDefault();
+  sfx("tock");
   body.classList.add("leaving");
   setTimeout(() => (location.href = a.href), 260);
 });
@@ -52,7 +54,7 @@ function setGlow(on, a) {
 const hoverOn = (a) => setGlow(true, a);
 const hoverOff = () => { clearTimeout(leaveTimer); leaveTimer = setTimeout(() => setGlow(false), 140); };   // a short grace, so moving to the next option cross-fades instead of flickering
 menu.querySelectorAll("a").forEach((a) => {
-  a.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") hoverOn(a); });
+  a.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") { hoverOn(a); sfx("tink", 0.35); } });
   a.addEventListener("pointerleave", hoverOff);
   a.addEventListener("focus", () => { if (a.matches(":focus-visible")) hoverOn(a); });
   a.addEventListener("blur", hoverOff);

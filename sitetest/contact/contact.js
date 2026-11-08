@@ -3,6 +3,7 @@
 // 3) the only thing you ever receive: "You will be hearing from us soon". After that the bar is locked for 5 minutes (never shown).
 // The lock lives in this browser (localStorage).
 import { API_BASE } from "../api.js";
+import { sfx } from "../sounds.js";
 const $ = (s, r = document) => r.querySelector(s);
 const log = $("#log"), bar = $("#bar"), field = $("#field"), send = $("#send");
 const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
@@ -95,7 +96,7 @@ bar.addEventListener("submit", async (e) => {
 
   if (step === "email") {
     if (!looksLikeEmail(text)) {                           // no text for this: the bar just shakes and the field turns red
-      bar.classList.add("bad"); bar.classList.remove("shake"); void bar.offsetWidth; bar.classList.add("shake");
+      sfx("no"); bar.classList.add("bad"); bar.classList.remove("shake"); void bar.offsetWidth; bar.classList.add("shake");
       return;
     }
     email = text; step = "message";
@@ -109,7 +110,7 @@ bar.addEventListener("submit", async (e) => {
 
   // the message
   busy = true; setBar("busy"); field.value = "";
-  bubble("out", text);
+  bubble("out", text); sfx("sent");
   try {
     await deliver({ email, message: text });
     step = "done";
@@ -117,12 +118,12 @@ bar.addEventListener("submit", async (e) => {
     const dots = typingRow();
     await wait(1400);
     dots.remove();
-    bubble("in", REPLY);
+    bubble("in", REPLY); sfx("received");
     store.set(KEY_LOG, JSON.stringify([{ w: "out", t: text }, { w: "in", t: REPLY }]));
     busy = false; lock();
   } catch {
     busy = false; step = "message"; setBar("message");
-    bubble("in", "Sorry, that didn't go through. Please try again in a moment.");
+    bubble("in", "Sorry, that didn't go through. Please try again in a moment."); sfx("no");
   }
 });
 

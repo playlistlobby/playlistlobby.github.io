@@ -150,8 +150,8 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   body.s2 .stage{--gk:2.6207}
   .stage{overflow:hidden;overflow:clip}   /* the person and the leaves are bigger than the screen: cut them off at the stage, or the phone widens the page to fit them */
   .shape .g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)));backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)))}
-  .person{left:-32.05vw;top:14.2dvh;bottom:auto;width:161.54vw;transform-origin:0 0;opacity:1;filter:blur(.385vw)}
-  body.s2 .person{transform:translate(-6.4vw,-8.3dvh);filter:blur(.513vw)}
+  .person{left:-21.03vw;top:15.05dvh;bottom:auto;width:169.08vw;height:208.21vw;aspect-ratio:auto;transform-origin:0 0;opacity:1;filter:blur(.385vw)}
+  body.s2 .person{transform:translate(-17.44vw,-9.12dvh) scale(.9554,.9791);filter:blur(.513vw)}
   .leaves{left:-10.3vw;top:47.4dvh;width:179.5vw}
   body.s2 .leaves{transform:translate(-6vw,-12dvh) scale(1.1) rotate(-8deg)}
   .glass{left:11.54vw;top:47.46dvh;width:14.68vw}
