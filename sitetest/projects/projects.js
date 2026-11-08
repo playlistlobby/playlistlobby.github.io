@@ -279,6 +279,7 @@ async function loadData() {
     clearTimeout(t);
     const j = await r.json();
     if (Array.isArray(j.projects)) d.projects = j.projects;
+    if (j.intro && typeof j.intro.title === "string" && Array.isArray(j.intro.text)) d.intro = j.intro;
   } catch { /* offline or blocked: the built-in apps are shown */ }
   return d;
 }

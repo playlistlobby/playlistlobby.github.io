@@ -1,4 +1,4 @@
-// playlist.mag · Home: tap the glass play button -> it MORPHS into the playlist note, the menu comes in.
+// playlist.mag · Home: tap the glass play button -> it MORPHS into the playlist note, the person slides left and the menu comes in.
 /* players who switched on "Stay on PlaylistPlanet" (a switch on the game's login page, only shown to those who came in through the Projects phone) go straight back to the game */
 try {
   if (localStorage.getItem("pm-stay-planet") === "1" && !location.hash) { sessionStorage.setItem("pm-from-site", location.pathname.replace(/[^/]*$/, "") + "projects/"); location.replace("/hotel/"); }
@@ -7,6 +7,7 @@ const body = document.body;
 const glass = document.getElementById("glass");
 const shape = glass.querySelector(".shape");
 const menu = document.getElementById("menu");
+const vid = document.getElementById("vid");
 const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
 
 /* =========================================================
@@ -165,3 +166,59 @@ async function buildGlass() {
 }
 if (location.hash === "#menu") setScene(true, false);
 buildGlass().then(() => draw(k));
+
+/* =========================================================
+   The person: he moves. 126 frames, played forward and then in reverse (so it loops seamlessly), at 12 fps.
+   - Chrome, Edge, Firefox: one transparent WebM (VP9 + alpha) that already contains the forward-and-back loop.
+   - Safari and everything on iOS can't show transparency in WebM, so they get the same frames as small WebP pictures
+     painted on a canvas at 12 fps (loaded in the background; the still picture shows until they are ready).
+   ========================================================= */
+const FPS = 12;
+const person = document.querySelector(".person");
+const still = person.querySelector(".still");
+const ua = navigator.userAgent;
+const webkit = (/safari/i.test(ua) && !/chrome|chromium|crios|android|edg|opr/i.test(ua)) || /iphone|ipad|ipod/i.test(ua);
+const canWebm = !webkit && !/[?&]frames(&|$)/.test(location.search) && vid.canPlayType('video/webm; codecs="vp9"') !== "";
+
+function startVideo() {
+  vid.src = "assets/person-12fps.webm";
+  vid.playbackRate = 1;
+  vid.addEventListener("playing", () => { vid.hidden = false; setTimeout(() => still.remove(), 400); }, { once: true });
+  vid.play().catch(() => person.classList.add("still-only"));
+}
+function startFrames() {
+  const N = 126, frames = new Array(N);
+  let ready = 0;
+  const cv = document.createElement("canvas");
+  cv.width = 448; cv.height = 565;
+  const g = cv.getContext("2d");
+  const loadOne = (i) => new Promise((res) => {
+    const im = new Image(); im.decoding = "async";
+    im.onload = im.onerror = () => { ready++; res(); };
+    im.src = `assets/pf/${String(i + 1).padStart(3, "0")}.webp`;
+    frames[i] = im;
+  });
+  (async () => {
+    for (let i = 0; i < N; i += 14) await Promise.all(Array.from({ length: Math.min(14, N - i) }, (_, j) => loadOne(i + j)));
+    if (ready < N) return;
+    cv.setAttribute("aria-hidden", "true");
+    person.append(cv);
+    let idx = 0, dir = 1, last = performance.now();
+    g.drawImage(frames[0], 0, 0);
+    const tick = (now) => {
+      if (now - last >= 1000 / FPS) {
+        last += 1000 / FPS * Math.max(1, Math.floor((now - last) / (1000 / FPS)));
+        idx += dir;
+        if (idx >= N - 1) { idx = N - 1; dir = -1; } else if (idx <= 0) { idx = 0; dir = 1; }
+        g.clearRect(0, 0, cv.width, cv.height);
+        g.drawImage(frames[idx], 0, 0);
+        if (still.isConnected) setTimeout(() => still.remove(), 200);
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  })();
+}
+if (reduce) person.classList.add("still-only");
+else if (canWebm) startVideo();
+else { person.classList.add("still-only"); startFrames(); }

@@ -6,13 +6,13 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#dce7f1">
 <title>admin · playlist.mag</title>
-<link rel="stylesheet" href="admin.css?v=2">
+<link rel="stylesheet" href="admin.css?v=3">
 </head>
 <body>
 
 <header class="banner">
   <a class="homebtn" href="../projects/" aria-label="View the projects page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 2.6 11.4h2.7V20h5v-5.6h3.4V20h5v-8.6h2.7Z" fill="#fff"/></svg></a>
-  <h1>Projects admin</h1>
+  <h1>Site admin</h1>
   <div class="bar-right" id="barRight" hidden>
     <span class="dirty" id="dirty" hidden>Unsaved changes</span>
     <button class="btn" id="logout" type="button">Log out</button>
@@ -21,6 +21,7 @@
 
 <nav class="tabsbar" id="tabsbar" hidden aria-label="Admin sections">
   <button type="button" data-view="apps" class="on">Apps</button>
+  <button type="button" data-view="shop">Shop</button>
   <button type="button" data-view="orders">Orders <b id="nOrd" hidden></b></button>
   <button type="button" data-view="inq">Inquiries <b id="nInq" hidden></b></button>
 </nav>
@@ -47,6 +48,16 @@
   <section class="editor" id="editor"></section>
 </main>
 
+<!-- the shop -->
+<main class="admin" id="shopAdmin" hidden>
+  <aside class="apps">
+    <div class="apps-head"><h2>Products</h2><button class="btn small" id="addProduct" type="button">+ Add product</button></div>
+    <ul id="prodList" class="app-list"></ul>
+    <p class="muted tiny">The order here is the order on the shop wheel.</p>
+  </aside>
+  <section class="editor" id="prodEditor"></section>
+</main>
+
 <!-- orders and inquiries from the site -->
 <main class="inbox" id="inbox" hidden>
   <div class="inbox-head"><h2 id="inboxTitle">Orders</h2><button class="btn small" id="inboxRefresh" type="button">Refresh</button></div>
@@ -61,6 +72,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script type="module" src="admin.js?v=2"></script>
+<script type="module" src="admin.js?v=5"></script>
 </body>
 </html>

@@ -2,21 +2,35 @@
 //  - a 3D ring of shirts: tilted with perspective, it turns slowly, stops when you highlight a shirt (which glows faintly),
 //    and the shirts around the cursor grow with a falloff
 //  - click a shirt: the others disappear, the shirt glides to the top of the screen and the product page zooms out into view
-//  - the product page: size, then delivery details (the same fields and checks as the t-shirt shop of the album event, see order.js)
-import { SIZES, cleanOrder } from "./order.js";
+//  - the product page: colour and size, its photos (tap one for the full size), then delivery details (see order.js)
+//  - the products come from the admin (Worker /api/shop: on/off, sizes, colours, stock); without them the built-in tee is shown
+import { cleanOrder } from "./order.js";
 import { API_BASE } from "../api.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const wheel = $("#wheel"), product = $("#product");
 const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
 
-/* ---------- the products (the same shirt for now) ---------- */
-const PRICE_DKK = 10000;                                        // yes, 10k
+/* ---------- the products: the admin's list, or the built-in tee when nothing is saved (or the Worker can't be reached) ---------- */
 const fmt = (n) => n.toLocaleString("da-DK") + " DKK";            // 10.000 DKK
-const TEE = { id: "playlist-tee", name: "Playlist tee", img: "assets/tee-playlist3.webp", price: PRICE_DKK,
-  blurb: "A white cotton tee with the playlist logo in liquid glass on the chest." };
-const N = 16;
-const products = Array.from({ length: N }, () => TEE);
+const DEFAULT_SHOP = [{ id: "playlist-tee", name: "Playlist tee", price: 10000, on: true, track: false, img: "assets/tee-playlist3.webp", photos: [], colors: [],
+  blurb: "A white cotton tee with the playlist logo in liquid glass on the chest.", sizes: ["S", "M", "L", "XL"].map((n) => ({ id: n.toLowerCase(), name: n, on: true })) }];
+async function loadShop() {
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 2500);
+    const r = await fetch(API_BASE + "/api/shop", { cache: "no-store", signal: ctl.signal });
+    clearTimeout(t);
+    const j = await r.json();
+    if (Array.isArray(j.shop)) return { list: j.shop, stock: j.stock || {} };
+  } catch { /* the built-in tee below */ }
+  return { list: DEFAULT_SHOP, stock: {} };
+}
+const shop = await loadShop();
+let stock = shop.stock;                                         // "product|size|colour" -> how many are left (only for products that track their stock)
+const forSale = shop.list.filter((p) => p.on !== false);
+const N = forSale.length ? 16 : 0;                              // the ring always has 16 places; the products take turns on it
+const products = Array.from({ length: N }, (_, i) => forSale[i % forSale.length]);
+if (!N) { const m = document.createElement("p"); m.className = "empty"; m.textContent = "Nothing for sale right now. Check back soon."; wheel.append(m); }
 
 /* ---------- tuning ---------- */
 const TURN = (Math.PI * 2) / 110;   // one turn in 110 seconds (slow)
@@ -113,11 +127,7 @@ function openProduct(i, instant = false, push = true) {
   wheel.classList.add("away");
   product.hidden = false; product.setAttribute("aria-hidden", "false");
   product.scrollTop = 0;
-  $("#pp-title").textContent = products[i].name;
-  $("#pp-price").textContent = fmt(products[i].price);
-  $("#pp-blurb").textContent = products[i].blurb;
-  $("#pp-buy-price").textContent = fmt(products[i].price);
-  heroImg.src = products[i].img;
+  showProduct(products[i]);
   if (push) history.pushState({ p: products[i].id }, "", "#" + products[i].id);
 }
 
@@ -133,39 +143,124 @@ function closeProduct(fromPop = false) {
   if (product.scrollTop > 40) { product.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(go, 300); } else go();
 }
 $("#pp-back").addEventListener("click", () => closeProduct());
-addEventListener("keydown", (e) => { if (e.key === "Escape") closeProduct(); });
+addEventListener("keydown", (e) => {
+  if (lbOpen()) { if (e.key === "Escape") closeLb(); else if (e.key === "ArrowLeft") showLb(lbI - 1); else if (e.key === "ArrowRight") showLb(lbI + 1); return; }
+  if (e.key === "Escape") closeProduct();
+});
+const hashIndex = () => { const id = decodeURIComponent(location.hash.slice(1)); return id ? products.findIndex((p) => p.id === id) : -1; };
 addEventListener("popstate", () => {
-  if (location.hash === "#" + TEE.id) { if (mode === "ring") openProduct(0, false, false); }
+  const k = hashIndex();
+  if (k >= 0) { if (mode === "ring") openProduct(k, false, false); }
   else closeProduct(true);
 });
 
-/* ---------- the product page: size, then delivery details ---------- */
-const sizesEl = $("#pp-sizes"), form = $("#pp-form"), note = $("#pp-note"), buy = $("#pp-buy");
-let size = "";
-SIZES.forEach((s) => {
-  const b = document.createElement("button");
-  b.type = "button"; b.className = "size"; b.textContent = s; b.setAttribute("aria-pressed", "false");
-  b.addEventListener("click", () => {
-    size = s;
-    sizesEl.querySelectorAll(".size").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    note.textContent = "";
-  });
-  sizesEl.append(b);
-});
+/* ---------- the product page: colour, size, photos, then delivery details ---------- */
+const sizesEl = $("#pp-sizes"), colorsEl = $("#pp-colors"), form = $("#pp-form"), note = $("#pp-note"), buy = $("#pp-buy"), left = $("#pp-left"), thumbsEl = $("#pp-thumbs");
+let prod = null, size = "", color = "";
+const onSizes = (p) => (p.sizes || []).filter((x) => x.on !== false), onColors = (p) => (p.colors || []).filter((x) => x.on !== false);
+const stockOf = (p, sid, cid) => (p.track ? Number(stock[`${p.id}|${sid || "x"}|${cid || "x"}`]) || 0 : Infinity);
+/** how many are left of a size/colour; an axis that is not chosen yet counts as "any" */
+function stockFor(p, sid, cid) {
+  const ss = sid ? [sid] : onSizes(p).map((x) => x.id), cs = cid ? [cid] : onColors(p).map((x) => x.id);
+  let best = 0;
+  for (const s of ss.length ? ss : [""]) for (const c of cs.length ? cs : [""]) best = Math.max(best, stockOf(p, s, c));
+  return best;
+}
+const chosenColor = () => onColors(prod).find((c) => c.id === color);
+const gallery = (p) => [{ src: p.img, thumb: p.img, alt: p.name }, ...onColors(p).filter((c) => c.img).map((c) => ({ src: c.img, thumb: c.img, alt: p.name + ", " + c.name })), ...(p.photos || []).map((m) => ({ src: m.src, thumb: m.thumb || m.src, alt: m.alt || p.name }))];
+const heroSrc = () => chosenColor()?.img || prod.img;
+
+function showProduct(p) {
+  prod = p; size = ""; color = "";
+  $("#pp-title").textContent = p.name;
+  $("#pp-price").textContent = fmt(p.price);
+  const blurb = $("#pp-blurb"); blurb.textContent = p.blurb || ""; blurb.hidden = !p.blurb;
+  heroImg.src = p.img; heroImg.alt = p.name;
+  const g = gallery(p);
+  thumbsEl.hidden = g.length < 2;
+  thumbsEl.replaceChildren(...g.map((m, k) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "thumb"; b.setAttribute("aria-label", "Photo " + (k + 1) + " of " + g.length);
+    const im = new Image(); im.src = m.thumb; im.alt = ""; im.loading = "lazy"; im.decoding = "async"; im.draggable = false;
+    b.append(im); b.addEventListener("click", () => openLb(k));
+    return b;
+  }));
+  form.hidden = true; buy.hidden = false; note.textContent = ""; sending = false;
+  form.querySelectorAll("input,button").forEach((x) => (x.disabled = false));
+  renderOptions();
+}
+function renderOptions() {
+  const p = prod, sizes = onSizes(p), colors = onColors(p);
+  $("#pp-colors-wrap").hidden = !colors.length;
+  colorsEl.replaceChildren(...colors.map((c) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "swatch"; b.style.setProperty("--c", c.hex || "#ccc");
+    b.setAttribute("aria-label", c.name); b.title = c.name; b.setAttribute("aria-pressed", String(c.id === color));
+    const out = stockFor(p, size, c.id) <= 0; b.disabled = out; b.classList.toggle("out", out);
+    b.addEventListener("click", () => {
+      color = c.id; note.textContent = "";
+      if (size && stockOf(p, size, color) <= 0) size = "";
+      if (heroImg.getAttribute("src") !== heroSrc()) heroImg.src = heroSrc();
+      renderOptions();
+    });
+    return b;
+  }));
+  $("#pp-color-name").textContent = chosenColor()?.name || "";
+  $("#pp-sizes-wrap").hidden = !sizes.length;
+  sizesEl.replaceChildren(...sizes.map((s) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "size"; b.textContent = s.name; b.setAttribute("aria-pressed", String(s.id === size));
+    const out = stockFor(p, s.id, color) <= 0; b.disabled = out; b.classList.toggle("out", out);
+    b.addEventListener("click", () => { size = s.id; note.textContent = ""; renderOptions(); });
+    return b;
+  }));
+  const n = stockFor(p, size, color), picked = (size || !sizes.length) && (color || !colors.length);
+  left.textContent = p.track && picked && n > 0 && n <= 5 ? (n === 1 ? "Only 1 left" : `Only ${n} left`) : "";
+  const gone = p.track && stockFor(p, "", "") <= 0;
+  const price = document.createElement("span"); price.id = "pp-buy-price"; price.textContent = fmt(p.price);
+  buy.replaceChildren(...(gone ? ["Sold out"] : ["Buy · ", price]));
+  buy.disabled = gone;
+}
 buy.addEventListener("click", () => {
-  if (!size) { note.textContent = "Pick a size first."; sizesEl.classList.remove("nudge"); void sizesEl.offsetWidth; sizesEl.classList.add("nudge"); return; }
+  const nudge = (el, msg) => { note.textContent = msg; el.classList.remove("nudge"); void el.offsetWidth; el.classList.add("nudge"); };
+  if (onColors(prod).length && !color) return nudge(colorsEl, "Pick a colour first.");
+  if (onSizes(prod).length && !size) return nudge(sizesEl, "Pick a size first.");
   note.textContent = "";
   form.hidden = false; buy.hidden = true;
   setTimeout(() => form.querySelector("input")?.focus({ preventScroll: true }), 50);
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 });
+
+/* ---------- the photos, full size ---------- */
+const lb = $("#lb"), lbImg = $("#lb-img");
+let lbList = [], lbI = 0, lbX = null;
+const lbOpen = () => !lb.hidden;
+function showLb(i) {
+  lbI = (i + lbList.length) % lbList.length;
+  lbImg.src = lbList[lbI].src; lbImg.alt = lbList[lbI].alt || "";
+  $("#lb-count").textContent = lbList.length > 1 ? `${lbI + 1} / ${lbList.length}` : "";
+  $("#lb-prev").hidden = $("#lb-next").hidden = lbList.length < 2;
+}
+function openLb(i) { lbList = gallery(prod); lb.hidden = false; lb.setAttribute("aria-hidden", "false"); showLb(i); $("#lb-x").focus({ preventScroll: true }); }
+function closeLb() { lb.hidden = true; lb.setAttribute("aria-hidden", "true"); lbImg.removeAttribute("src"); }
+$("#lb-x").addEventListener("click", closeLb);
+$("#lb-prev").addEventListener("click", () => showLb(lbI - 1));
+$("#lb-next").addEventListener("click", () => showLb(lbI + 1));
+lb.addEventListener("click", (e) => { if (e.target === lb) closeLb(); });
+lb.addEventListener("pointerdown", (e) => { lbX = e.clientX; });
+lb.addEventListener("pointerup", (e) => { if (lbX != null && Math.abs(e.clientX - lbX) > 50 && lbList.length > 1) showLb(lbI + (e.clientX < lbX ? 1 : -1)); lbX = null; });
+$(".pp-hero").addEventListener("click", () => { if (mode === "product") openLb(Math.max(0, gallery(prod).findIndex((m) => m.src === heroSrc()))); });
+async function refreshStock() {
+  const j = await loadShop();
+  if (j.list === DEFAULT_SHOP) return;
+  stock = j.stock;
+  const fresh = j.list.find((p) => prod && p.id === prod.id && p.on !== false);
+  if (fresh && prod) { prod = Object.assign(prod, fresh); renderOptions(); }
+}
 let sending = false;
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (sending) return;
   const v = Object.fromEntries(new FormData(form).entries());
   let order;
-  try { order = cleanOrder({ ...v, size }); } catch (err) { note.textContent = err.message; return; }
+  try { order = { ...cleanOrder(v), product: prod.id, size, color }; } catch (err) { note.textContent = err.message; return; }
   // Payments are not switched on: the order is kept as an unpaid request that the owner sees in the admin (/admin/, Orders). Nothing is charged.
   sending = true; note.textContent = "Sending…";
   const btn = form.querySelector("[type=submit]"); if (btn) btn.disabled = true;
@@ -173,11 +268,13 @@ form.addEventListener("submit", async (e) => {
     const r = await fetch(API_BASE + "/api/order", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(order) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error ? j.error[0].toUpperCase() + j.error.slice(1) + "." : "Something went wrong. Try again in a moment.");
+    if (prod.track) { const k = `${prod.id}|${size || "x"}|${color || "x"}`; stock[k] = Math.max(0, (Number(stock[k]) || 0) - 1); }
     note.textContent = "Thank you, your order request is in. Payments aren't switched on yet, so nothing was charged: we'll get in touch to finish it.";
     form.querySelectorAll("input,button").forEach((x) => (x.disabled = true));
   } catch (err) {
     note.textContent = err.message === "Failed to fetch" ? "Can't reach the shop right now. Try again in a moment." : err.message;
     sending = false; if (btn) btn.disabled = false;
+    refreshStock();                                             // it may have been sold out or switched off in the meantime
   }
 });
 
@@ -274,5 +371,5 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
-// a link straight to the product page (#playlist-tee) opens it at once
-if (location.hash === "#" + TEE.id) openProduct(0, true, false);
+// a link straight to a product page (#playlist-tee) opens it at once
+if (hashIndex() >= 0) openProduct(hashIndex(), true, false);

@@ -11,12 +11,18 @@
 <link rel="preload" as="image" href="assets/icons/projects.webp" type="image/webp">
 <link rel="preload" as="image" href="assets/icons/shop.webp?v=3" type="image/webp">
 <link rel="preload" as="image" href="assets/icons/contact.webp?v=3" type="image/webp">
-<link rel="stylesheet" href="home.css?v=15">
+<link rel="preload" as="image" href="assets/person-still.webp" type="image/webp">
+<link rel="stylesheet" href="home.css?v=16">
 </head>
 <body>
 
 <main class="stage" id="stage">
   <div class="leaves" aria-hidden="true"><img src="assets/leaves.webp" alt="" draggable="false"></div>
+
+  <div class="person" aria-hidden="true">
+    <img class="still" src="assets/person-still.webp" alt="" draggable="false">
+    <video id="vid" muted loop playsinline preload="auto" poster="assets/person-still.webp" hidden></video>
+  </div>
   <div class="veil" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
 
@@ -38,6 +44,6 @@
   </nav>
 </main>
 
-<script type="module" src="home.js?v=12"></script>
+<script type="module" src="home.js?v=13"></script>
 </body>
 </html>

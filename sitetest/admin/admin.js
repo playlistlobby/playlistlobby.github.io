@@ -1,4 +1,4 @@
-// playlist.mag · Projects admin: add, edit and remove the apps on the projects page, with their picture, title, article and media.
+// playlist.mag · Admin: the apps on the projects page (picture, title, article, media, the page text), the shop (products, sizes, colours, photos, stock), and the orders and inquiries.
 // Everything is kept here until "Save and publish"; the picture/video uploads go straight to the Worker.
 import { API_BASE } from "../api.js";
 
@@ -26,19 +26,28 @@ let token = "";
 try { token = sessionStorage.getItem(TOKEN_KEY) || ""; } catch { /* no storage */ }
 let apps = [];                 // the working copy
 let savedMedia = new Set();    // media addresses of the last saved version (to clean up what is no longer used)
-let sel = -1;                  // selected app
-let dirty = false;
+let sel = -1;                  // selected app (-2 = the page text)
+let intro = { title: "Projects", text: [] };   // the text next to the phone while no app is open
+let dirty = false;             // unsaved changes in Apps
+let sdirty = false;            // unsaved changes in Shop
 let busy = 0;                  // running uploads
 
 const res = (u) => (/^https?:\/\//.test(u || "") ? u : "../projects/" + (u || ""));      // preview address of a stored one
-function setDirty(v = true) { dirty = v; $("#dirty").hidden = !v; $("#save").disabled = !v || busy > 0; }
+function updateBar() {
+  const shopView = view === "shop", cur = shopView ? sdirty : dirty, other = shopView ? dirty : sdirty;
+  $("#dirty").hidden = !(cur || other);
+  $("#dirty").textContent = cur ? "Unsaved changes" : "Unsaved changes in " + (shopView ? "Apps" : "Shop");
+  $("#save").disabled = !cur || busy > 0;
+}
+function setDirty(v = true) { dirty = v; updateBar(); }
+function setSDirty(v = true) { sdirty = v; updateBar(); }
 let toastT = 0;
 function toast(msg, bad = false) {
   const t = $("#toast");
   t.textContent = msg; t.classList.toggle("bad", bad); t.classList.add("on");
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), bad ? 6000 : 2600);
 }
-addEventListener("beforeunload", (e) => { if (dirty || busy) { e.preventDefault(); e.returnValue = ""; } });
+addEventListener("beforeunload", (e) => { if (dirty || sdirty || busy) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- talking to the Worker ---------- */
 async function api(path, opts = {}) {
@@ -99,9 +108,11 @@ function videoPoster(file) {
 /* ---------- loading what the site currently shows ---------- */
 async function loadAll() {
   const saved = await api("/api/projects");
+  const d = await (await fetch("../projects/projects.json", { cache: "no-cache" })).json();
+  const i = saved.intro || d.intro || {};
+  intro = { title: i.title || "Projects", text: [...(i.text || [])] };
   let list = saved.projects;
   if (!Array.isArray(list)) {                                   // nothing saved yet: start from the built-in apps
-    const d = await (await fetch("../projects/projects.json", { cache: "no-cache" })).json();
     list = d.projects;
     for (const p of list) {
       if (typeof p.photos === "string") {                       // built-in gallery: read its photos.json into a plain list
@@ -126,15 +137,15 @@ function mediaOf(list) {
 /* ---------- views ---------- */
 function showLogin(msg = "") {
   token = ""; try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* */ }
-  $("#login").hidden = false; $("#admin").hidden = true; $("#saveBar").hidden = true; $("#barRight").hidden = true; $("#tabsbar").hidden = true; $("#inbox").hidden = true; view = "apps";
+  $("#login").hidden = false; $("#admin").hidden = true; $("#saveBar").hidden = true; $("#barRight").hidden = true; $("#tabsbar").hidden = true; $("#inbox").hidden = true; $("#shopAdmin").hidden = true; view = "apps";
   $("#loginErr").textContent = msg; $("#pw").value = "";
 }
 async function showAdmin() {
-  await loadAll();
+  await Promise.all([loadAll(), loadShop()]);
   $("#login").hidden = true; $("#barRight").hidden = false; $("#tabsbar").hidden = false;
-  renderList(); renderEditor();
+  renderList(); renderEditor(); renderPList(); renderPEditor();
   setView("apps"); loadInbox();
-  if (!dirty) setDirty(false);
+  setDirty(false); setSDirty(false);
 }
 
 function iconBox(p, size) {
@@ -143,7 +154,11 @@ function iconBox(p, size) {
 }
 function renderList() {
   const ul = $("#appList");
-  ul.replaceChildren(...apps.map((p, i) => h("li", { class: "app-row" + (i === sel ? " on" : ""), onclick: () => { sel = i; renderList(); renderEditor(); } },
+  ul.replaceChildren(
+    h("li", { class: "app-row" + (sel === -2 ? " on" : ""), onclick: () => { sel = -2; renderList(); renderEditor(); } },
+      h("span", { class: "sb-icon empty", style: "--ic:44px" }, "Aa"),
+      h("span", { class: "nm" }, "Page text", h("small", {}, "Next to the phone"))),
+    ...apps.map((p, i) => h("li", { class: "app-row" + (i === sel ? " on" : ""), onclick: () => { sel = i; renderList(); renderEditor(); } },
     iconBox(p, 44),
     h("span", { class: "nm" }, p.label || "Untitled", h("small", {}, p.href ? "Link: " + p.href : `${(p.photos || []).length} media`)),
     h("span", { class: "arrows" },
@@ -157,8 +172,19 @@ function move(i, d) {
   setDirty(); renderList();
 }
 
+function renderIntro() {
+  const title = h("input", { type: "text", value: intro.title || "", maxLength: 80, placeholder: "Projects", oninput: (e) => { intro.title = e.target.value; setDirty(); } });
+  const text = h("textarea", { placeholder: "Tap an app on the phone to open a project.", oninput: (e) => { intro.text = e.target.value.split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean); setDirty(); } });
+  text.value = (intro.text || []).join("\n\n");
+  $("#editor").replaceChildren(h("div", { class: "card sect" },
+    h("h3", {}, "Page text"),
+    h("p", { class: "muted tiny" }, "What the projects page says next to the phone until an app is opened (and again when it is closed)."),
+    h("label", { class: "f" }, "Title", title),
+    h("label", { class: "f" }, "Text", h("small", {}, "Leave an empty line between paragraphs."), text)));
+}
 function renderEditor() {
   const ed = $("#editor");
+  if (sel === -2) return renderIntro();
   const p = apps[sel];
   if (!p) { ed.replaceChildren(h("div", { class: "card empty-note muted" }, "No apps yet. Press “+ Add app”.")); return; }
 
@@ -270,7 +296,7 @@ $("#addApp").addEventListener("click", () => {
 });
 
 /* ---------- save ---------- */
-$("#save").addEventListener("click", async () => {
+async function saveApps() {
   for (const p of apps) {
     if (!p.label?.trim()) { toast("Every app needs a name under its icon.", true); sel = apps.indexOf(p); renderList(); renderEditor(); return; }
     if (!p.icon) { toast(`“${p.label}” needs an icon picture.`, true); sel = apps.indexOf(p); renderList(); renderEditor(); return; }
@@ -278,7 +304,7 @@ $("#save").addEventListener("click", async () => {
   const btn = $("#save"); btn.disabled = true; $("#saveMsg").textContent = "Saving…";
   try {
     const body = apps.map((p) => ({ id: p.id, label: p.label.trim(), icon: p.icon, title: (p.title || "").trim() || p.label.trim(), text: p.text || [], ...(p.href ? { href: p.href } : { photos: p.photos || [] }) }));
-    const out = await api("/api/projects", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ projects: body }) });
+    const out = await api("/api/projects", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ projects: body, intro: { title: (intro.title || "").trim() || "Projects", text: intro.text || [] } }) });
     const now = mediaOf(out.projects);
     for (const u of savedMedia) if (!now.has(u)) fetch(u, { method: "DELETE", headers: { authorization: "Bearer " + token } }).catch(() => {});   // free what is no longer used
     savedMedia = now;
@@ -286,7 +312,229 @@ $("#save").addEventListener("click", async () => {
     $("#saveMsg").textContent = "Saved. The projects page is updated.";
     toast("Saved: the projects page is updated.");
   } catch (err) { $("#saveMsg").textContent = ""; toast(err.message, true); setDirty(true); }
+}
+$("#save").addEventListener("click", () => (view === "shop" ? saveShop() : saveApps()));
+
+
+/* ---------- the shop: products with pictures, sizes, colours, stock ---------- */
+let products = [];             // the working copy
+let selP = -1;                 // selected product
+let stockLive = {};            // "product|size|colour" -> count, as the shop has it
+let stockTouched = {};         // the counts changed here (only these are sent, so a sale made meanwhile is not overwritten)
+let savedShopMedia = new Set();
+const DEFAULT_SHOP = [{ id: "playlist-tee", name: "Playlist tee", price: 10000, on: true, track: false, img: "assets/tee-playlist3.webp", photos: [], colors: [],
+  blurb: "A white cotton tee with the playlist logo in liquid glass on the chest.", sizes: ["S", "M", "L", "XL"].map((n) => ({ id: n.toLowerCase(), name: n, on: true })) }];
+const resS = (u) => (/^https?:\/\//.test(u || "") ? u : "../shop/" + (u || ""));
+const rid = () => Math.random().toString(36).slice(2, 8);
+const skey = (p, sid, cid) => `${p.id}|${sid || "x"}|${cid || "x"}`;
+const stockOf = (p, sid, cid) => { const k = skey(p, sid, cid); return k in stockTouched ? stockTouched[k] : (stockLive[k] ?? 0); };
+const normP = (p) => ({ ...p, on: p.on !== false, track: !!p.track, blurb: p.blurb || "", photos: (p.photos || []).map((x) => ({ ...x })), sizes: (p.sizes || []).map((x) => ({ ...x, on: x.on !== false })), colors: (p.colors || []).map((x) => ({ ...x, on: x.on !== false })) });
+function shopMediaOf(list) {
+  const s = new Set(), add = (u) => { if (typeof u === "string" && u.startsWith(MEDIA_PREFIX)) s.add(u); };
+  for (const p of list) { add(p.img); (p.photos || []).forEach((m) => { add(m.src); add(m.thumb); }); (p.colors || []).forEach((c) => add(c.img)); }
+  return s;
+}
+async function loadShop() {
+  const j = await api("/api/shop");
+  products = (Array.isArray(j.shop) ? j.shop : JSON.parse(JSON.stringify(DEFAULT_SHOP))).map(normP);
+  stockLive = j.stock || {}; stockTouched = {};
+  savedShopMedia = shopMediaOf(Array.isArray(j.shop) ? products : []);
+  selP = products.length ? 0 : -1;
+}
+
+/* a picture with a see-through background (PNG): trimmed to its content and centred on a square, so every product sits the same on the ring */
+async function cutout(file, side = 1000) {
+  const bmp = await bitmapOf(file);
+  const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)), w = Math.max(1, Math.round(bmp.width * k)), hh = Math.max(1, Math.round(bmp.height * k));
+  const c = document.createElement("canvas"); c.width = w; c.height = hh;
+  const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(bmp, 0, 0, w, hh);
+  const d = x.getImageData(0, 0, w, hh).data;
+  let x0 = w, y0 = hh, x1 = -1, y1 = -1;
+  for (let y = 0; y < hh; y++) for (let xx = 0; xx < w; xx++) if (d[(y * w + xx) * 4 + 3] > 12) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (x1 < 0) { x0 = 0; y0 = 0; x1 = w - 1; y1 = hh - 1; }
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1, m = Math.max(bw, bh), S = Math.round(m * 1.08), out = Math.min(side, S), q = out / S;
+  const o = document.createElement("canvas"); o.width = o.height = out;
+  o.getContext("2d").drawImage(c, x0, y0, bw, bh, ((S - bw) / 2) * q, ((S - bh) / 2) * q, bw * q, bh * q);
+  return (await toBlob(o, "image/webp", 0.92)) || (await toBlob(o, "image/png"));
+}
+async function uploadCutout(file) {
+  if (!file.type.startsWith("image/")) throw new Error("that is not a picture");
+  return uploadBlob(await cutout(file));
+}
+
+const sw = (checked, onchange, title) => h("label", { class: "switch", title }, h("input", { type: "checkbox", checked, onchange: (e) => onchange(e.target.checked) }), h("span", { class: "knob" }));
+const fmtDkk = (n) => Number(n || 0).toLocaleString("da-DK") + " DKK";
+
+function renderPList() {
+  const ul = $("#prodList");
+  ul.replaceChildren(...(products.length ? products.map((p, i) => h("li", { class: "app-row" + (i === selP ? " on" : "") + (p.on ? "" : " off"), onclick: () => { selP = i; renderPList(); renderPEditor(); } },
+    h("span", { class: "pthumb", style: p.img ? `background-image:url('${resS(p.img).replace(/'/g, "%27")}')` : "" }),
+    h("span", { class: "nm" }, p.name || "Untitled", h("small", {}, `${fmtDkk(p.price)} · ${p.on ? "on sale" : "off"}`)),
+    h("span", { class: "arrows" },
+      h("button", { type: "button", title: "Move up", disabled: i === 0, onclick: (e) => { e.stopPropagation(); moveP(i, -1); } }, "▲"),
+      h("button", { type: "button", title: "Move down", disabled: i === products.length - 1, onclick: (e) => { e.stopPropagation(); moveP(i, 1); } }, "▼")))) : [h("li", { class: "muted tiny" }, "No products yet.")]));
+}
+function moveP(i, d) {
+  const j = i + d; if (j < 0 || j >= products.length) return;
+  [products[i], products[j]] = [products[j], products[i]];
+  if (selP === i) selP = j; else if (selP === j) selP = i;
+  setSDirty(); renderPList();
+}
+function moveIn(list, i, d) { const j = i + d; if (j < 0 || j >= list.length) return; [list[i], list[j]] = [list[j], list[i]]; setSDirty(); renderPEditor(); }
+
+function renderPEditor() {
+  const ed = $("#prodEditor"), p = products[selP];
+  if (!p) { ed.replaceChildren(h("div", { class: "card empty-note muted" }, "No products yet. Press “+ Add product”.")); return; }
+  const edited = () => { setSDirty(); renderPList(); };
+
+  // main picture
+  const imgPrev = h("span", { class: "bigthumb", style: p.img ? `background-image:url('${resS(p.img).replace(/'/g, "%27")}')` : "" }, p.img ? null : "?");
+  const imgInput = h("input", { type: "file", accept: "image/*", hidden: true, onchange: async (e) => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    busy++; updateBar();
+    try { p.img = await uploadCutout(f); edited(); renderPEditor(); } catch (err) { toast(err.message, true); } finally { busy--; updateBar(); }
+  } });
+
+  // sizes
+  const sizeRows = p.sizes.map((s, i, all) => h("div", { class: "optrow" + (s.on ? "" : " offrow") },
+    h("input", { type: "text", class: "nm", value: s.name, maxLength: 12, placeholder: "Size", oninput: (e) => { s.name = e.target.value; setSDirty(); renderStock(); } }),
+    sw(s.on, (v) => { s.on = v; setSDirty(); renderPEditor(); }, "On or off"),
+    h("button", { type: "button", class: "mini", title: "Earlier", disabled: i === 0, onclick: () => moveIn(all, i, -1) }, "▲"),
+    h("button", { type: "button", class: "mini", title: "Later", disabled: i === all.length - 1, onclick: () => moveIn(all, i, 1) }, "▼"),
+    h("button", { type: "button", class: "mini x", title: "Remove", onclick: () => { all.splice(i, 1); setSDirty(); renderPEditor(); } }, "✕")));
+
+  // colours
+  const colorRows = p.colors.map((c, i, all) => {
+    const file = h("input", { type: "file", accept: "image/*", hidden: true, onchange: async (e) => {
+      const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+      busy++; updateBar();
+      try { c.img = await uploadCutout(f); setSDirty(); renderPEditor(); } catch (err) { toast(err.message, true); } finally { busy--; updateBar(); }
+    } });
+    return h("div", { class: "optrow" + (c.on ? "" : " offrow") },
+      h("input", { type: "color", class: "hex", value: c.hex || "#cccccc", title: "Colour", oninput: (e) => { c.hex = e.target.value; setSDirty(); renderStock(); } }),
+      h("input", { type: "text", class: "nm", value: c.name, maxLength: 24, placeholder: "Colour name", oninput: (e) => { c.name = e.target.value; setSDirty(); renderStock(); } }),
+      sw(c.on, (v) => { c.on = v; setSDirty(); renderPEditor(); }, "On or off"),
+      h("button", { type: "button", class: "pic" + (c.img ? " has" : ""), title: c.img ? "Change the picture of this colour" : "Add a picture of this colour (optional)", style: c.img ? `background-image:url('${resS(c.img).replace(/'/g, "%27")}')` : "", onclick: () => file.click() }, c.img ? "" : "PNG"),
+      c.img ? h("button", { type: "button", class: "mini", title: "Remove the picture", onclick: () => { delete c.img; setSDirty(); renderPEditor(); } }, "⌫") : null,
+      h("button", { type: "button", class: "mini", title: "Earlier", disabled: i === 0, onclick: () => moveIn(all, i, -1) }, "▲"),
+      h("button", { type: "button", class: "mini", title: "Later", disabled: i === all.length - 1, onclick: () => moveIn(all, i, 1) }, "▼"),
+      h("button", { type: "button", class: "mini x", title: "Remove", onclick: () => { all.splice(i, 1); setSDirty(); renderPEditor(); } }, "✕"),
+      file);
+  });
+
+  // stock: one number for every size and colour
+  const stockBox = h("div", { class: "stockbox" });
+  function renderStock() {
+    if (!p.track) { stockBox.replaceChildren(h("p", { class: "muted tiny" }, "Stock is not counted: the product never sells out. Switch the counting on to set how many there are of each.")); return; }
+    const sizes = p.sizes.length ? p.sizes : [{ id: "x", name: "All" }], colors = p.colors.length ? p.colors : [{ id: "x", name: "All" }];
+    const idOf = (o) => (o.id === "x" ? "" : o.id);
+    const cell = (s, c) => h("td", {}, h("input", { type: "number", min: 0, max: 100000, step: 1, value: String(stockOf(p, idOf(s), idOf(c))),
+      oninput: (e) => { stockTouched[skey(p, idOf(s), idOf(c))] = Math.max(0, Math.round(Number(e.target.value)) || 0); setSDirty(); } }));
+    stockBox.replaceChildren(
+      h("p", { class: "muted tiny" }, "How many are left of each. An order request takes one off; at 0 that size/colour shows as sold out. The counts you change here replace the live ones when you save."),
+      h("div", { class: "tscroll" }, h("table", { class: "stock" },
+        h("thead", {}, h("tr", {}, h("th", {}, ""), ...colors.map((c) => h("th", {}, c.hex ? h("i", { class: "dot", style: `background:${c.hex}` }) : null, c.name || "?")))),
+        h("tbody", {}, ...sizes.map((s) => h("tr", {}, h("th", {}, s.name || "?"), ...colors.map((c) => cell(s, c))))))));
+  }
+  renderStock();
+
+  // more photos
+  const grid = h("div", { class: "media-grid" });
+  const photoInput = h("input", { type: "file", accept: "image/*", multiple: true, hidden: true, onchange: async (e) => {
+    const files = [...e.target.files]; e.target.value = "";
+    for (const f of files) {
+      const tile = h("div", { class: "tile up" }, "Uploading " + f.name.slice(0, 18) + "…");
+      grid.insertBefore(tile, addTile);
+      busy++; updateBar();
+      try { if (!f.type.startsWith("image/")) throw new Error("only pictures"); p.photos.push(await uploadMedia(f)); setSDirty(); }
+      catch (err) { toast(`${f.name}: ${err.message}`, true); }
+      finally { busy--; tile.remove(); updateBar(); }
+      drawPhotos();
+    }
+  } });
+  const addTile = h("div", { class: "addtile", onclick: () => photoInput.click() }, "+ Add photos");
+  function drawPhotos() {
+    grid.replaceChildren(...p.photos.map((m, i, all) => h("div", { class: "tile" },
+      h("img", { src: resS(m.thumb), alt: "", loading: "lazy" }),
+      h("div", { class: "tools" },
+        h("button", { type: "button", title: "Earlier", disabled: i === 0, onclick: () => { [all[i - 1], all[i]] = [all[i], all[i - 1]]; setSDirty(); drawPhotos(); } }, "◀"),
+        h("button", { type: "button", class: "x", title: "Remove", onclick: () => { all.splice(i, 1); setSDirty(); drawPhotos(); } }, "✕"),
+        h("button", { type: "button", title: "Later", disabled: i === all.length - 1, onclick: () => { [all[i + 1], all[i]] = [all[i], all[i + 1]]; setSDirty(); drawPhotos(); } }, "▶")))), addTile);
+  }
+  drawPhotos();
+
+  const trackSw = sw(p.track, (v) => { p.track = v; setSDirty(); renderStock(); }, "Count the stock");
+  ed.replaceChildren(
+    h("div", { class: "card sect" },
+      h("div", { class: "switchrow" }, h("div", {}, h("h3", {}, "On sale"), h("p", { class: "muted tiny" }, "Off hides the product from the shop (it keeps its settings).")), sw(p.on, (v) => { p.on = v; edited(); }, "On or off"))),
+    h("div", { class: "card sect" },
+      h("h3", {}, "Product"),
+      h("label", { class: "f" }, "Name", h("input", { type: "text", value: p.name || "", maxLength: 60, placeholder: "Playlist tee", oninput: (e) => { p.name = e.target.value; edited(); } })),
+      h("label", { class: "f" }, "Price (DKK)", h("input", { type: "text", inputMode: "numeric", value: String(p.price ?? ""), placeholder: "10000", oninput: (e) => { p.price = Math.round(Number(e.target.value.replace(/[^0-9]/g, ""))) || 0; edited(); } })),
+      h("label", { class: "f" }, "Description", h("textarea", { style: "min-height:90px", maxLength: 600, placeholder: "Shown under the price on the product page.", value: p.blurb || "", oninput: (e) => { p.blurb = e.target.value; setSDirty(); } }))),
+    h("div", { class: "card sect" },
+      h("h3", {}, "Picture on the shop wheel"),
+      h("div", { class: "icon-row" }, imgPrev,
+        h("div", {}, h("button", { class: "btn", type: "button", onclick: () => imgInput.click() }, p.img ? "Change picture" : "Upload picture"),
+          h("p", { class: "muted tiny", style: "margin-top:8px" }, "A PNG with a see-through background. It is trimmed and centred automatically. Shown on the wheel and at the top of the product page.")),
+        imgInput)),
+    h("div", { class: "card sect" },
+      h("h3", {}, "Sizes"),
+      h("p", { class: "muted tiny" }, "Name them anything (S, M, 42, One size…). Switch one off to hide it for now. No sizes at all = nothing to pick."),
+      ...sizeRows,
+      h("div", { class: "row-end" },
+        h("button", { class: "btn small", type: "button", onclick: () => { p.sizes.push({ id: rid(), name: "", on: true }); setSDirty(); renderPEditor(); } }, "+ Add size"),
+        p.sizes.length ? null : h("button", { class: "btn small ghost", type: "button", onclick: () => { ["S", "M", "L", "XL"].forEach((n) => p.sizes.push({ id: rid(), name: n, on: true })); setSDirty(); renderPEditor(); } }, "Add S M L XL"))),
+    h("div", { class: "card sect" },
+      h("h3", {}, "Colours"),
+      h("p", { class: "muted tiny" }, "Pick a colour and give it a name. A PNG per colour is optional: when a visitor picks that colour, the shirt on the product page changes to it."),
+      ...colorRows,
+      h("div", { class: "row-end" }, h("button", { class: "btn small", type: "button", onclick: () => { p.colors.push({ id: rid(), name: "", hex: "#ffffff", on: true }); setSDirty(); renderPEditor(); } }, "+ Add colour"))),
+    h("div", { class: "card sect" },
+      h("div", { class: "switchrow" }, h("div", {}, h("h3", {}, "Stock"), h("p", { class: "muted tiny" }, "Count the stock")), trackSw),
+      stockBox),
+    h("div", { class: "card sect" },
+      h("h3", {}, "More photos"),
+      h("p", { class: "muted tiny" }, "Shown as small pictures on the product page; tapping one opens it full size. Pictures are resized automatically."),
+      grid, photoInput),
+    h("div", { class: "row-end" },
+      h("button", { class: "btn danger", type: "button", onclick: () => removeProduct(selP) }, "Delete this product"),
+      h("span", {})));
+}
+function removeProduct(i) {
+  const p = products[i];
+  if (!p || !confirm(`Delete “${p.name || "this product"}” with its pictures and stock? This goes live when you save. (To only hide it, switch it off instead.)`)) return;
+  products.splice(i, 1); selP = Math.min(selP, products.length - 1);
+  setSDirty(); renderPList(); renderPEditor();
+}
+$("#addProduct").addEventListener("click", () => {
+  products.push({ id: "p-" + rid(), name: "New product", price: 100, on: false, track: false, blurb: "", img: "", photos: [], sizes: [], colors: [] });
+  selP = products.length - 1; setSDirty(); renderPList(); renderPEditor();
+  $("#prodEditor").scrollIntoView({ behavior: "smooth", block: "start" });
 });
+
+async function saveShop() {
+  for (const p of products) {
+    const bad = (msg) => { toast(`“${p.name || "Untitled"}”: ${msg}`, true); selP = products.indexOf(p); renderPList(); renderPEditor(); };
+    if (!p.name?.trim()) return bad("give it a name.");
+    if (!(p.price >= 1)) return bad("set a price.");
+    if (!p.img) return bad("upload the picture for the shop wheel.");
+    if (p.sizes.some((s) => !s.name.trim())) return bad("a size has no name.");
+    if (p.colors.some((c) => !c.name.trim())) return bad("a colour has no name.");
+  }
+  $("#save").disabled = true; $("#saveMsg").textContent = "Saving…";
+  try {
+    const body = products.map((p) => ({ id: p.id, name: p.name.trim(), price: p.price, blurb: (p.blurb || "").trim(), on: p.on, track: p.track, img: p.img, photos: p.photos,
+      sizes: p.sizes.map((s) => ({ id: s.id, name: s.name.trim(), on: s.on })), colors: p.colors.map((c) => ({ id: c.id, name: c.name.trim(), hex: c.hex || "#cccccc", on: c.on, ...(c.img ? { img: c.img } : {}) })) }));
+    const out = await api("/api/shop", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ products: body, stock: stockTouched }) });
+    const now = shopMediaOf(out.shop);
+    for (const u of savedShopMedia) if (!now.has(u)) fetch(u, { method: "DELETE", headers: { authorization: "Bearer " + token } }).catch(() => {});
+    savedShopMedia = now; stockLive = out.stock || {}; stockTouched = {};
+    setSDirty(false); renderPEditor();
+    $("#saveMsg").textContent = "Saved. The shop is updated.";
+    toast("Saved: the shop is updated.");
+  } catch (err) { $("#saveMsg").textContent = ""; toast(err.message, true); setSDirty(true); }
+}
 
 /* ---------- orders and inquiries ---------- */
 let view = "apps";
@@ -333,7 +581,7 @@ function renderInbox() {
           h("span", {}, h("span", { class: "tag" + (it.done ? "" : " new") }, it.done ? "HANDLED" : "NEW"), " ", h("span", { class: "tag" }, "UNPAID")),
           h("span", { class: "when" }, fmt(it.at))),
         h("dl", { class: "grid" },
-          ...row("Item", `${it.product} · size ${it.size} · ${Number(it.price).toLocaleString("da-DK")} ${it.currency}`),
+          ...row("Item", `${it.product}${it.color ? " · " + it.color : ""}${it.size ? " · size " + it.size : ""} · ${Number(it.price).toLocaleString("da-DK")} ${it.currency}`),
           ...row("Email", h("a", { href: "mailto:" + it.email }, it.email)),
           ...row("Phone", h("a", { href: "tel:" + it.phone.replace(/[^+0-9]/g, "") }, it.phone)),
           ...row("Address", `${it.street}, ${it.zip} ${it.city}, ${it.country}`)),
@@ -351,8 +599,10 @@ function renderInbox() {
 function setView(v) {
   view = v;
   document.querySelectorAll("#tabsbar button").forEach((b) => b.classList.toggle("on", b.dataset.view === v));
-  $("#admin").hidden = v !== "apps"; $("#saveBar").hidden = v !== "apps"; $("#inbox").hidden = v === "apps";
-  if (v !== "apps") { renderInbox(); loadInbox(); }
+  const edit = v === "apps" || v === "shop";
+  $("#admin").hidden = v !== "apps"; $("#shopAdmin").hidden = v !== "shop"; $("#saveBar").hidden = !edit; $("#inbox").hidden = edit;
+  updateBar();
+  if (!edit) { renderInbox(); loadInbox(); }
 }
 document.querySelectorAll("#tabsbar button").forEach((b) => b.addEventListener("click", () => setView(b.dataset.view)));
 $("#inboxRefresh").addEventListener("click", loadInbox);
@@ -368,7 +618,7 @@ $("#loginForm").addEventListener("submit", async (e) => {
   } catch (err) { $("#loginErr").textContent = err.message; }
   finally { b.disabled = false; }
 });
-$("#logout").addEventListener("click", () => { if (dirty && !confirm("You have unsaved changes. Log out anyway?")) return; dirty = false; showLogin(); });
+$("#logout").addEventListener("click", () => { if ((dirty || sdirty) && !confirm("You have unsaved changes. Log out anyway?")) return; dirty = sdirty = false; showLogin(); });
 
 (async function start() {
   if (!token) return showLogin();
