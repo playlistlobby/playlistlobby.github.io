@@ -1,5 +1,6 @@
 // playlist.mag · Projects: an interactive iPhone. Tap an app, a photo gallery opens on the phone and the text changes.
 import { API_BASE } from "../api.js";
+import { take } from "../early.js";
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
