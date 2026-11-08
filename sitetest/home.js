@@ -119,10 +119,40 @@ const poly = (a, b, t, sc) => {
   }
   return s + "Z";
 };
+/* ---- the light rim ---- */
+const CS = 1.6;                                                        // canvas pixels per shape unit (sharp enough when the glass is scaled up)
+const GK = matchMedia("(max-aspect-ratio:9/10)").matches ? 1.25 : 5.3943, WD = matchMedia("(max-aspect-ratio:9/10)").matches ? 120 : 116.23;   // scene-2 scale and the glass width in design px (see home.css)
+let rimCv = null, rimG = null;
+const FLOOR = 0.04, POW = 1.7;
+function rimLoop(a, b, t, g, wUnits) {
+  const n = a.length / 2, X = new Float64Array(n), Y = new Float64Array(n), I = new Float64Array(n);
+  for (let i = 0; i < n; i++) { X[i] = a[i * 2] + (b[i * 2] - a[i * 2]) * t; Y[i] = a[i * 2 + 1] + (b[i * 2 + 1] - a[i * 2 + 1]) * t; }
+  for (let i = 0; i < n; i++) {
+    const p = (i + n - 1) % n, q = (i + 1) % n;
+    let tx = X[q] - X[p], ty = Y[q] - Y[p]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    const c = Math.abs((-ty) * -0.7071 + tx * -0.7071);              // 1 when the edge faces the top left (or bottom right), 0 when it faces top right / bottom left
+    I[i] = FLOOR + (1 - FLOOR) * Math.pow(c, POW);
+  }
+  g.lineWidth = wUnits * CS; g.lineCap = "butt";
+  for (let i = 0; i < n; i++) {
+    const q = (i + 1) % n, x1 = X[i] * CS, y1 = Y[i] * CS, x2 = X[q] * CS, y2 = Y[q] * CS;
+    const gr = g.createLinearGradient(x1, y1, x2, y2);
+    gr.addColorStop(0, `rgba(255,255,255,${I[i].toFixed(3)})`); gr.addColorStop(1, `rgba(255,255,255,${I[q].toFixed(3)})`);
+    g.strokeStyle = gr; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2 + (x2 - x1) * 0.06, y2 + (y2 - y1) * 0.06); g.stroke();
+  }
+}
+function drawRim(t) {
+  if (!rimG) return;
+  const gk = 1 + (GK - 1) * t, w = 1.35 * 1000 / (WD * gk);          // about 1.3 design px wide in both scenes
+  rimG.clearRect(0, 0, rimCv.width, rimCv.height);
+  rimLoop(P.outer[0], P.outer[1], t, rimG, w);
+  rimLoop(P.inner[0], P.inner[1], t, rimG, w);
+}
 function draw(t) {
   if (!P) return;
   const d = poly(P.outer[0], P.outer[1], t, 1) + poly(P.inner[0], P.inner[1], t, 1);
   for (const p of pathEls) p.setAttribute("d", d);
+  drawRim(t);
   const w = glass.offsetWidth || 1;                                    // layout size (the page's own scale transform is applied on top)
   const px = w / 1000;
   gEl.style.clipPath = `path(evenodd,"${poly(P.outer[0], P.outer[1], t, px) + poly(P.inner[0], P.inner[1], t, px)}")`;
@@ -157,9 +187,11 @@ async function buildGlass() {
   shape.querySelector(".rim").innerHTML = svg(`${defs}
     <path fill="url(#sheen)" fill-rule="evenodd"/>
     <path class="gr" fill="none" stroke-width="16" stroke-linejoin="round"/>
-    <path class="ln" fill="none" stroke="url(#rim)" stroke-linejoin="round"/>
-    <path class="ln2" fill="none" stroke="rgba(38,64,44,.07)" stroke-linejoin="round" transform="translate(0 1.5)"/>`);
+        <path class="ln2" fill="none" stroke="rgba(38,64,44,.07)" stroke-linejoin="round" transform="translate(0 1.5)"/>`);
   pathEls = [...shape.querySelectorAll(".sh path, .rim path")];
+  rimCv = document.createElement("canvas"); rimCv.width = Math.round(1000 * CS); rimCv.height = Math.round(1006.32 * CS); rimCv.setAttribute("aria-hidden", "true");
+  rimG = rimCv.getContext("2d");
+  shape.querySelector(".rim").append(rimCv);
   k = location.hash === "#menu" ? 1 : 0;
   draw(k);
   shape.classList.add("ready");
