@@ -19,7 +19,7 @@
 /* ask for the apps right away, both lists at once (projects.js picks the answers up, see early.js) */
 (function(){var B="https://playlistmag-admin.sixplanet.workers.dev",e=window.__early={};e.projects={base:B,p:fetch(B+"/api/projects",{cache:"no-store"}).then(function(r){return r.json()})};e.built={p:fetch("projects.json?v=3",{cache:"no-cache"}).then(function(r){return r.json()})};e.projects.p.catch(function(){});e.built.p.catch(function(){});})();
 </script>
-<script src="../slide.js?v=4"></script>
+<script src="../slide.js?v=6"></script>
 </head>
 <body>
 

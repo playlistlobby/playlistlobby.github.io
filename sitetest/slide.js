@@ -1,11 +1,12 @@
 /* playlist.mag: moving between the tabs (projects, shop, contact) slides the page the way the tabs are laid out:
    to a tab on the right the page slides out to the left and the next one slides in from the right; to a tab on the left, the other way.
    The banner stays still. Only these three pages take part (home has no slide, so going to or from home is unchanged).
-   Works in every browser (plain animations, no page-transition API). Loaded as a blocking script in <head>. */
+   Chrome, Edge and Safari use the browser's own page transition (the old page and the new one slide together, on the GPU, no gap);
+   every other browser gets the script version below (plain animations). Loaded as a blocking script in <head>. */
 (function () {
   var ORDER = ["projects", "shop", "contact"], KEY = "pm-slide";
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
-  var MS = 480, EASE = "cubic-bezier(.3,.8,.3,1)";
+  var MS = 480, EASE = "cubic-bezier(.3,.8,.3,1)", OUT_MS = 300, OUT_EASE = "cubic-bezier(.45,0,.9,.6)";
 
   function indexOf(url) {
     try {
@@ -17,6 +18,36 @@
   var here = indexOf(location.href);
   if (here < 0) return;
 
+  /* ---- the browser's page transition: both pages move at once, the banner stays ---- */
+  var VT = !!(window.CSS && CSS.supports && CSS.supports("selector(:active-view-transition-type(a))") && "onpagereveal" in window);
+  if (VT) {
+    var E = "cubic-bezier(.45,0,.2,1)", T = ".42s";
+    var vs = document.createElement("style");
+    vs.textContent = "@view-transition{navigation:auto}" +
+      ".banner{view-transition-name:pm-banner}" +
+      "@keyframes pm-out-l{to{transform:translateX(-100%)}}@keyframes pm-in-r{from{transform:translateX(100%)}}" +
+      "@keyframes pm-out-r{to{transform:translateX(100%)}}@keyframes pm-in-l{from{transform:translateX(-100%)}}" +
+      "::view-transition-old(root),::view-transition-new(root){mix-blend-mode:normal}" +
+      "html:active-view-transition-type(pm-forward)::view-transition-old(root){animation:pm-out-l " + T + " " + E + " both}" +
+      "html:active-view-transition-type(pm-forward)::view-transition-new(root){animation:pm-in-r " + T + " " + E + " both}" +
+      "html:active-view-transition-type(pm-back)::view-transition-old(root){animation:pm-out-r " + T + " " + E + " both}" +
+      "html:active-view-transition-type(pm-back)::view-transition-new(root){animation:pm-in-l " + T + " " + E + " both}" +
+      "::view-transition-group(pm-banner),::view-transition-old(pm-banner),::view-transition-new(pm-banner){animation:none}" +
+      "@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}";
+    document.head.appendChild(vs);
+    var typeOf = function (from, to) { return from >= 0 && to >= 0 && from !== to ? (to > from ? "pm-forward" : "pm-back") : null; };
+    addEventListener("pageswap", function (e) {                  // leaving: where are we going?
+      if (!e.viewTransition) return;
+      var to = -1; try { to = indexOf(e.activation.entry.url); } catch (x) { /* unknown */ }
+      var t = typeOf(here, to); if (t) e.viewTransition.types.add(t); else e.viewTransition.skipTransition();
+    });
+    addEventListener("pagereveal", function (e) {                // arriving: where do we come from?
+      if (!e.viewTransition) return;
+      var from = -1; try { from = indexOf(navigation.activation.from.url); } catch (x) { /* unknown */ }
+      var t = typeOf(from, here); if (t) e.viewTransition.types.add(t); else e.viewTransition.skipTransition();
+    });
+  }
+
   // everything on the page except the banner (and scripts) is what slides
   function movers() { return [].filter.call(document.body.children, function (el) { return !el.matches(".banner,script,style,link,.toast"); }); }
   function store(v) { try { if (v == null) sessionStorage.removeItem(KEY); else sessionStorage.setItem(KEY, v); } catch (e) { /* no storage: no slide */ } }
@@ -24,7 +55,7 @@
 
   /* ---- arriving: the page starts off to the side (set before the first paint) and glides in ---- */
   var dir = read(); store(null);
-  if (dir === "1" || dir === "-1") {
+  if (!VT && (dir === "1" || dir === "-1")) {
     var w = innerWidth, from = (dir === "1" ? w : -w) + "px 0";
     var st = document.createElement("style");
     st.textContent = "html{overflow-x:clip}body>*:not(.banner):not(script):not(style):not(link){translate:" + from + "}";
@@ -46,7 +77,7 @@
   /* ---- leaving: the page slides away, then the next one loads ---- */
   var leaving = false;
   document.addEventListener("click", function (e) {
-    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || leaving || reduce) return;
+    if (VT || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || leaving || reduce) return;
     var a = e.target.closest && e.target.closest(".tabs a[href]");
     if (!a) return;
     var to = indexOf(a.href);
@@ -56,9 +87,9 @@
     e.preventDefault(); leaving = true;
     var d = to > here ? 1 : -1;                              // forward = the tab on the right
     document.documentElement.style.overflowX = "clip";
-    els.forEach(function (el) { el.animate([{ translate: "0 0" }, { translate: (-d * innerWidth) + "px 0" }], { duration: MS * 0.8, easing: EASE, fill: "forwards" }); });
+    els.forEach(function (el) { el.animate([{ translate: "0 0" }, { translate: (-d * innerWidth) + "px 0" }], { duration: OUT_MS, easing: OUT_EASE, fill: "forwards" }); });
     store(String(d));
-    setTimeout(function () { location.href = a.href; }, MS * 0.8);
+    setTimeout(function () { location.href = a.href; }, OUT_MS);
   });
 
   /* ---- warm the other two tabs while the visitor looks at this one ----
