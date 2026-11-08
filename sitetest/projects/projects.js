@@ -1,4 +1,5 @@
 // playlist.mag · Projects: an interactive iPhone. Tap an app, a photo gallery opens on the phone and the text changes.
+import { API_BASE } from "../api.js";
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -126,12 +127,15 @@ async function openProject(p, icon) {
   history.replaceState(null, "", `#${p.id}`);
 
   photos = [];
-  try { photos = (await (await fetch(p.photos)).json()).photos; } catch (e) { console.warn("photos.json", e); }
-  const base = p.photos.replace(/[^/]*$/, "");
-  photos = photos.map((x) => ({ ...x, src: base + x.src, thumb: base + x.thumb }));
+  if (Array.isArray(p.photos)) photos = p.photos.map((x) => ({ ...x }));              // saved by the admin: full addresses
+  else if (typeof p.photos === "string") {                                           // built-in: a photos.json next to its pictures
+    try { photos = (await (await fetch(p.photos)).json()).photos; } catch (e) { console.warn("photos.json", e); }
+    const base = p.photos.replace(/[^/]*$/, "");
+    photos = photos.map((x) => ({ ...x, src: base + x.src, thumb: base + x.thumb }));
+  }
 
   app.innerHTML = `
-    <div class="app-body" id="roll"><div class="ph-grid" id="phgrid"></div><p class="ph-count">${photos.length} Photo${photos.length === 1 ? "" : "s"}</p></div>
+    <div class="app-body" id="roll"><div class="ph-grid" id="phgrid"></div><p class="ph-count">${photos.length ? `${photos.length} ${photos.some((x) => x.type === "video") ? "Item" : "Photo"}${photos.length === 1 ? "" : "s"}` : "Nothing here yet"}</p></div>
     <div class="ios-top">${statusBar()}<div class="ios-nav"><button class="ios-back" type="button" id="back">${BACK_SVG}<span>Home</span></button><h2 class="ios-title">${esc(p.label)}</h2><span class="ios-ghost"></span></div></div>
     <div class="viewer" id="viewer">
       <div class="strip" id="strip"></div>
@@ -141,7 +145,7 @@ async function openProject(p, icon) {
   const gridEl = $("#phgrid");
   photos.forEach((ph, i) => {
     const t = document.createElement("button");
-    t.className = "th"; t.type = "button"; t.setAttribute("aria-label", `Photo ${i + 1}`);
+    t.className = "th" + (ph.type === "video" ? " vid" : ""); t.type = "button"; t.setAttribute("aria-label", `${ph.type === "video" ? "Video" : "Photo"} ${i + 1}`);
     const im = new Image(); im.alt = ph.alt || ""; im.decoding = "async"; im.loading = "lazy";
     im.onload = () => im.classList.add("on"); im.src = ph.thumb;
     t.append(im);
@@ -172,6 +176,7 @@ function closeProject() {
 const strip = () => $("#strip");
 function slideHTML(i) {
   const p = photos[i];
+  if (p && p.type === "video") return `<div class="slide"><video src="${esc(p.src)}" poster="${esc(p.thumb || "")}" controls playsinline preload="metadata"></video></div>`;
   return `<div class="slide">${p ? `<img src="${esc(p.src)}" alt="${esc(p.alt || "")}" draggable="false" ${p.w ? `width="${p.w}" height="${p.h}"` : ""}>` : ""}</div>`;
 }
 function paintStrip() {
@@ -183,7 +188,7 @@ function paintStrip() {
   $("#vprev").disabled = viewerIdx <= 0;
   $("#vnext").disabled = viewerIdx >= photos.length - 1;
   // warm the cache for the neighbours two steps away
-  [viewerIdx - 2, viewerIdx + 2].forEach((j) => { if (photos[j]) new Image().src = photos[j].src; });
+  [viewerIdx - 2, viewerIdx + 2].forEach((j) => { if (photos[j] && photos[j].type !== "video") new Image().src = photos[j].src; });
 }
 function openViewer(i, thumb) {
   viewerIdx = i;
@@ -217,7 +222,7 @@ function wireViewer() {
   $("#vnext").addEventListener("click", () => go(1));
   let x0 = 0, dx = 0, drag = false, moved = false, w = 1;
   s.addEventListener("pointerdown", (e) => {
-    if (s.classList.contains("anim")) return;
+    if (s.classList.contains("anim") || (e.target.closest && e.target.closest("video"))) return;   // a video keeps its own controls
     drag = true; moved = false; x0 = e.clientX; dx = 0; w = v.getBoundingClientRect().width || 1;
     s.setPointerCapture(e.pointerId);
   });
@@ -265,12 +270,24 @@ if (matchMedia("(hover:hover) and (pointer:fine)").matches && !matchMedia("(pref
 }
 
 /* ---------- go ---------- */
-fetch("projects.json?v=3", { cache: "no-cache" }).then((r) => r.json()).then((d) => {
+/* the built-in list (projects.json) is the fallback; what the admin saved (the Worker) replaces its apps when it can be reached */
+async function loadData() {
+  const d = await (await fetch("projects.json?v=3", { cache: "no-cache" })).json();
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4500);
+    const r = await fetch(API_BASE + "/api/projects", { cache: "no-store", signal: ctl.signal });
+    clearTimeout(t);
+    const j = await r.json();
+    if (Array.isArray(j.projects)) d.projects = j.projects;
+  } catch { /* offline or blocked: the built-in apps are shown */ }
+  return d;
+}
+loadData().then((d) => {
   data = d;
   titleEl.textContent = d.intro.title;
   textEl.innerHTML = d.intro.text.map((p) => `<p>${esc(p)}</p>`).join("");
   build();
   const want = location.hash.slice(1);
-  const hit = d.projects.find((p) => p.id === want);
-  if (hit) setTimeout(() => openProject(hit, $(".sb-app")), 900);
+  const at = d.projects.findIndex((p) => p.id === want);
+  if (at >= 0 && !d.projects[at].href) setTimeout(() => openProject(d.projects[at], document.querySelectorAll(".sb-app")[at]), 900);
 }).catch((e) => { textEl.textContent = "Couldn't load the projects."; console.error(e); });
