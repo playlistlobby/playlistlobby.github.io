@@ -112,7 +112,7 @@ body:not(.s2) .shape.ready .sh{opacity:.06}
 .glass.app .sh{animation:none}
 
 /* ---------- the menu: iOS 6 glossy buttons ---------- */
-.menu{inset:0;pointer-events:none;z-index:4}   /* under the glass icon, so the buttons slide out from behind it */
+.menu{inset:0;pointer-events:none;z-index:4;clip-path:inset(-50% -20% -50% calc(var(--s) * 44.6))}   /* only what is past the icon's edge shows, so the buttons never show through the frosted glass */   /* under the glass icon, so the buttons slide out from behind it */
 .gbtn{position:absolute;left:calc(var(--s) * 49.635);top:calc(var(--s) * (17.2917 + var(--i) * 8.0729));width:calc(var(--s) * 34.1667);height:calc(var(--s) * 5.5);
   display:flex;align-items:center;justify-content:center;text-decoration:none;
   border-radius:calc(var(--s) * .956);font:700 calc(var(--s) * 2.008)/1 var(--font);color:#3c3c3c;text-shadow:0 1px 0 #fff;
@@ -122,7 +122,7 @@ body:not(.s2) .shape.ready .sh{opacity:.06}
   --ex:calc(var(--s) * -36.2);--ey:calc(var(--s) * (8.06 - var(--i) * 8.0729));
   transition:opacity .35s ease,transform .5s var(--ease),filter .15s;}
 body.s2 .gbtn{opacity:1;transform:none;pointer-events:auto;
-  transition:opacity .3s ease calc(.4s + var(--i) * .1s),transform .85s var(--spring) calc(.4s + var(--i) * .1s),filter .15s,box-shadow .35s ease}
+  transition:opacity .18s ease calc(.22s + var(--i) * .06s),transform .55s var(--spring) calc(.22s + var(--i) * .06s),filter .15s,box-shadow .35s ease}
 @media (hover:hover){
   .gbtn:hover{filter:brightness(1.03)}
 }
@@ -160,6 +160,7 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   .glass{left:11.54vw;top:47.46dvh;width:14.68vw}
   body.s2 .glass{transform:translate(19.23vw,-32.18dvh) scale(2.6207)}
   .gbtn{--ex:0px;--ey:calc(24.23dvh - 39.1dvh - var(--i) * 9.95dvh - 8.2vw);left:10.26vw;width:79.5vw;height:16.4vw;border-radius:3.6vw;font-size:5.9vw;top:calc(39.1dvh + var(--i) * 9.95dvh)}
+  .menu{clip-path:inset(33.3dvh -20% -50% -20%)}   /* phone: the icon is above the buttons */
   .veil{-webkit-backdrop-filter:blur(1.45vw);backdrop-filter:blur(1.45vw)}
 }
 @media (prefers-reduced-motion:reduce){
