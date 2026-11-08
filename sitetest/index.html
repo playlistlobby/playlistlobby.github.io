@@ -12,21 +12,25 @@
 <link rel="preload" as="image" href="assets/icons/projects.webp" type="image/webp">
 <link rel="preload" as="image" href="assets/icons/shop.webp?v=6" type="image/webp">
 <link rel="preload" as="image" href="assets/icons/contact.webp?v=7" type="image/webp">
-<link rel="preload" as="image" href="assets/person-still.webp" type="image/webp">
+<link rel="preload" as="image" href="assets/person-ae-still.webp" type="image/webp">
 <link rel="preload" as="image" href="assets/wordmark.webp" type="image/webp">
 <link rel="preload" as="image" href="assets/wordmark-rim.webp" type="image/webp">
-<link rel="stylesheet" href="home.css?v=36">
+<link rel="stylesheet" href="home.css?v=38">
 <script src="slide.js?v=8"></script>
 </head>
 <body>
 
 <main class="stage" id="stage">
-  <div class="leaves" aria-hidden="true"><img src="assets/leaves.webp" alt="" draggable="false"></div>
+  <!-- the scene behind the UI, layers exported from After Effects (full 1920 x 1080 pictures, placed exactly like the comp) -->
+  <div class="fc sky" aria-hidden="true"><img src="assets/sky-clouds.webp" alt="" draggable="false"></div>
+  <div class="leaves" aria-hidden="true"><img src="assets/leaves-ae.webp" alt="" draggable="false"></div>
 
   <div class="person" aria-hidden="true">
-    <img class="still" src="assets/person-still.webp" alt="" draggable="false">
-    <video id="vid" muted loop playsinline preload="auto" poster="assets/person-still.webp" hidden></video>
+    <img class="still" src="assets/person-ae-still.webp" alt="" draggable="false">
+    <video id="vid" muted loop playsinline preload="auto" poster="assets/person-ae-still.webp" hidden></video>
   </div>
+  <div class="fc plane" aria-hidden="true"><img src="assets/sky-plane.webp" alt="" draggable="false"></div>
+  <div class="fc glow" aria-hidden="true"><img src="assets/glow.webp" alt="" draggable="false"></div>
   <div class="veil" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
 
@@ -55,6 +59,6 @@
   </nav>
 </main>
 
-<script type="module" src="home.js?v=23"></script>
+<script type="module" src="home.js?v=24"></script>
 </body>
 </html>

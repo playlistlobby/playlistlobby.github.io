@@ -205,12 +205,12 @@ if (location.hash === "#menu") setScene(true, false);
 buildGlass().then(() => draw(k));
 
 /* =========================================================
-   The person: he moves. 126 frames, played forward and then in reverse (so it loops seamlessly), at 12 fps.
+   The person: he moves. 105 frames, played forward and then in reverse (so it loops seamlessly), at 10 fps.
    - Chrome, Edge, Firefox: one transparent WebM (VP9 + alpha) that already contains the forward-and-back loop.
    - Safari and everything on iOS can't show transparency in WebM, so they get the same frames as small WebP pictures
-     painted on a canvas at 12 fps (loaded in the background; the still picture shows until they are ready).
+     painted on a canvas at 10 fps (loaded in the background; the still picture shows until they are ready).
    ========================================================= */
-const FPS = 12;
+const FPS = 10;
 const person = document.querySelector(".person");
 const still = person.querySelector(".still");
 const ua = navigator.userAgent;
@@ -218,21 +218,21 @@ const webkit = (/safari/i.test(ua) && !/chrome|chromium|crios|android|edg|opr/i.
 const canWebm = !webkit && !/[?&]frames(&|$)/.test(location.search) && vid.canPlayType('video/webm; codecs="vp9"') !== "";
 
 function startVideo() {
-  vid.src = "assets/person-12fps.webm";
+  vid.src = "assets/person-ae.webm";
   vid.playbackRate = 1;
   vid.addEventListener("playing", () => { vid.hidden = false; setTimeout(() => still.remove(), 400); }, { once: true });
   vid.play().catch(() => person.classList.add("still-only"));
 }
 function startFrames() {
-  const N = 126, frames = new Array(N);
+  const N = 105, frames = new Array(N);
   let ready = 0;
   const cv = document.createElement("canvas");
-  cv.width = 448; cv.height = 565;
+  cv.width = 504; cv.height = 636;
   const g = cv.getContext("2d");
   const loadOne = (i) => new Promise((res) => {
     const im = new Image(); im.decoding = "async";
     im.onload = im.onerror = () => { ready++; res(); };
-    im.src = `assets/pf/${String(i + 1).padStart(3, "0")}.webp`;
+    im.src = `assets/pf2/${String(i + 1).padStart(3, "0")}.webp`;
     frames[i] = im;
   });
   (async () => {
