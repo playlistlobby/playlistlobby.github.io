@@ -163,7 +163,7 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   body.s2 .wordmark{transform:translateX(-30vw)}
   .wordmark .wm-g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5));backdrop-filter:blur(calc(var(--px) * 9.5))}
   .stage{--s:1vw;--px:calc(var(--s) / 3.9);--w:57.24;--g0:1.25;left:0;top:0;margin:0;width:100vw;height:100vh;height:100dvh}
-  body.s2 .stage{--gk:5.2576}
+  body.s2 .stage{--gk:var(--gsc)}
   .stage{overflow:hidden;overflow:clip}   /* the person and the leaves are bigger than the screen: cut them off at the stage, or the phone widens the page to fit them */
   .shape .g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)));backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)))}
   .person{left:-21.03vw;top:15.05dvh;bottom:auto;width:169.08vw;height:208.21vw;aspect-ratio:auto;transform-origin:0 0;opacity:1;filter:blur(.05px)}
@@ -171,9 +171,12 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   .leaves{left:-10.3vw;top:47.4dvh;width:179.5vw}
   body.s2 .leaves{transform:translate(-6vw,-12dvh) scale(1.1) rotate(-8deg)}
   .glass{left:11.54vw;top:47.46dvh;width:14.68vw}
-  body.s2 .glass{transform:translate(-.258vw,-41.53dvh) scale(5.2576)}   /* the note icon of the Figma phone frame: 301 px wide, top left at 44 / 50 */
-  .gbtn{--ex:0px;--ey:calc(23.88dvh - 50dvh - var(--i) * 11.5dvh - 7.82vw);left:12.31vw;width:75.38vw;height:15.64vw;border-radius:2.82vw;font-size:5.9vw;top:calc(50dvh + var(--i) * 11.5dvh)}   /* Figma phone buttons: 294 x 61 at x 48, y 422 / 520 / 616 */
-  .menu{clip-path:inset(41.8dvh -20% -50% -20%)}   /* phone: the icon is above the buttons */
+  body.s2 .glass{transform:translate(var(--gtx),var(--gty)) scale(var(--gsc))}   /* the note icon of the Figma phone frame: 301 px wide, top left at 44 / 50 */
+  /* The Figma phone frame is 390 x 844. A real phone's visible screen is often shorter (browser bars), so the menu is laid out as one block (icon + three buttons,
+     627 design px tall) that is scaled to fit the visible screen: --ks = one design px, --x0 / --y0 = where the block starts. home.js sets them from the real screen size (these are the 390 x 844 values). */
+  :root{--ks:calc(100vw / 390);--x0:0px;--y0:calc(100dvh * .0592);--gsc:5.2576;--gtx:-.258vw;--gty:-41.53dvh}
+  .gbtn{--ex:0px;--ey:calc((-251 - var(--i) * 97) * var(--ks));left:calc(var(--x0) + 48 * var(--ks));width:calc(294 * var(--ks));height:calc(61 * var(--ks));border-radius:calc(11 * var(--ks));font-size:calc(23 * var(--ks));top:calc(var(--y0) + (372 + var(--i) * 97) * var(--ks))}   /* Figma phone buttons: 294 x 61 at x 48, y 422 / 520 / 616 (block starts at y 50) */
+  .menu{clip-path:inset(calc(var(--y0) + 303 * var(--ks)) -20% -50% -20%)}   /* phone: the icon is above the buttons */
   .sky,.plane,.corner,.glow{display:none}
   .veil{-webkit-backdrop-filter:blur(1.45vw);backdrop-filter:blur(1.45vw)}
 }

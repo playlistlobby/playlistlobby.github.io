@@ -126,7 +126,24 @@ const poly = (a, b, t, sc) => {
 };
 /* ---- the light rim ---- */
 const CS = 1.6;                                                        // canvas pixels per shape unit (sharp enough when the glass is scaled up)
-const GK = matchMedia("(max-aspect-ratio:9/10)").matches ? 5.2576 : 4.7323, WD = matchMedia("(max-aspect-ratio:9/10)").matches ? 57.24 : 116.23;   // scene-2 scale and the glass width in design px (see home.css)
+const phoneMq = matchMedia("(max-aspect-ratio:9/10)");
+let GK = phoneMq.matches ? 5.2576 : 4.7323;                              // scene-2 scale of the glass
+const WD = phoneMq.matches ? 57.24 : 116.23;                              // the glass width in design px (see home.css)
+/* Phone: lay the scene-2 menu (icon + 3 buttons = a block 627 design px tall, from the Figma 390 x 844 frame) out for the screen that is really visible. A phone's browser bars make the
+   screen shorter than 844, and the icon (sized by width) used to run into the buttons (placed by height). So the whole block is scaled down when the screen is short. */
+function fitPhone() {
+  const root = document.documentElement.style, names = ["--ks", "--x0", "--y0", "--gsc", "--gtx", "--gty"];
+  if (!phoneMq.matches) { GK = 4.7323; names.forEach((n) => root.removeProperty(n)); return; }
+  const st = document.querySelector(".stage"), W = st.offsetWidth || innerWidth, H = st.offsetHeight || innerHeight;
+  const ks = Math.min(W / 390, H / 700), x0 = (W - 390 * ks) / 2, y0 = (H - 627 * ks) * 0.23;
+  const gsc = 301 * ks / (W * 0.1468);                                   // the glass is 14.68% of the width in scene 1
+  GK = gsc;
+  const set = (n, v) => root.setProperty(n, v);
+  set("--ks", ks.toFixed(4) + "px"); set("--x0", x0.toFixed(2) + "px"); set("--y0", y0.toFixed(2) + "px");
+  set("--gsc", gsc.toFixed(4)); set("--gtx", (x0 + 44 * ks - W * 0.1154).toFixed(2) + "px"); set("--gty", (y0 - H * 0.4746).toFixed(2) + "px");
+}
+fitPhone(); addEventListener("resize", fitPhone); phoneMq.addEventListener("change", fitPhone);
+if (window.visualViewport) visualViewport.addEventListener("resize", fitPhone);
 let rimCv = null, rimG = null;
 const FLOOR = 0.04, POW = 1.7;
 function rimLoop(a, b, t, g, wUnits) {
