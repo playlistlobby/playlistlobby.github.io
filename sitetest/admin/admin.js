@@ -513,6 +513,30 @@ $("#addProduct").addEventListener("click", () => {
   $("#prodEditor").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
+/* test tees: the built-in tee, added in one tap (or many) to try the wheel with different numbers of products */
+function addTestTees(n) {
+  const room = 40 - products.length;
+  if (room <= 0) { toast("The shop already has the most products it can hold (40).", true); return; }
+  let k = products.filter((p) => p.id.startsWith("test-")).length;
+  for (let i = 0; i < Math.min(n, room); i++) {
+    k++;
+    products.push({ id: "test-" + rid(), name: "Test tee " + k, price: 10000, on: true, track: false, blurb: "A test shirt.", img: "assets/tee-playlist3.webp", photos: [], colors: [],
+      sizes: ["S", "M", "L", "XL"].map((nm) => ({ id: nm.toLowerCase(), name: nm, on: true })) });
+  }
+  selP = products.length - 1; setSDirty(); renderPList(); renderPEditor();
+  toast(`${products.filter((p) => p.on).length} products on sale. Save to put them on the wheel.`);
+}
+$("#addTest").addEventListener("click", () => addTestTees(1));
+$("#addTest4").addEventListener("click", () => addTestTees(4));
+$("#fillTest").addEventListener("click", () => { const need = 16 - products.length; if (need > 0) addTestTees(need); else toast("The shop already has 16 or more products."); });
+$("#delTests").addEventListener("click", () => {
+  const n = products.filter((p) => p.id.startsWith("test-")).length;
+  if (!n) { toast("There are no test tees."); return; }
+  if (!confirm(`Remove all ${n} test tees? This goes live when you save.`)) return;
+  products = products.filter((p) => !p.id.startsWith("test-")); selP = products.length ? 0 : -1;
+  setSDirty(); renderPList(); renderPEditor();
+});
+
 async function saveShop() {
   for (const p of products) {
     const bad = (msg) => { toast(`“${p.name || "Untitled"}”: ${msg}`, true); selP = products.indexOf(p); renderPList(); renderPEditor(); };

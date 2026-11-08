@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#dce7f1">
 <link rel="icon" href="data:,">
 <title>admin · playlist.mag</title>
-<link rel="stylesheet" href="admin.css?v=3">
+<link rel="stylesheet" href="admin.css?v=4">
 </head>
 <body>
 
@@ -54,6 +54,13 @@
   <aside class="apps">
     <div class="apps-head"><h2>Products</h2><button class="btn small" id="addProduct" type="button">+ Add product</button></div>
     <ul id="prodList" class="app-list"></ul>
+    <div class="testbar" aria-label="Test products">
+      <span class="muted tiny">For testing the wheel:</span>
+      <button class="btn small ghost" id="addTest" type="button">+ Test tee</button>
+      <button class="btn small ghost" id="addTest4" type="button">+4</button>
+      <button class="btn small ghost" id="fillTest" type="button">Fill to 16</button>
+      <button class="btn small ghost" id="delTests" type="button">Remove test tees</button>
+    </div>
     <p class="muted tiny">The order here is the order on the shop wheel.</p>
   </aside>
   <section class="editor" id="prodEditor"></section>
@@ -73,6 +80,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script type="module" src="admin.js?v=5"></script>
+<script type="module" src="admin.js?v=6"></script>
 </body>
 </html>
