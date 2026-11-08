@@ -5,7 +5,8 @@ import { API_BASE } from "../api.js";
 const $ = (s, r = document) => r.querySelector(s);
 const TOKEN_KEY = "pm-admin-token";
 const MEDIA_PREFIX = API_BASE + "/media/";
-const MAX_FILE = 24 * 1024 * 1024;
+const MAX_FILE = 24 * 1024 * 1024;               // one request (pictures)
+const PART = 8 * 1024 * 1024, MAX_VIDEO = 100 * 1024 * 1024;   // videos over MAX_FILE are sent in parts
 
 /* tiny element builder: h("div", {class:"x", onclick}, child, "text") (text always goes in as text, never as HTML) */
 function h(tag, props = {}, ...kids) {
@@ -61,8 +62,22 @@ async function api(path, opts = {}) {
   return j;
 }
 async function uploadBlob(blob) {
+  if (blob.size > MAX_FILE) return uploadParts(blob);
   const j = await api("/api/media", { method: "POST", headers: { "content-type": blob.type }, body: blob });
   return j.url;
+}
+/* a big video: sent in 8 MB parts (each retried a few times), then put together on the server */
+async function uploadParts(blob) {
+  const parts = Math.ceil(blob.size / PART), type = encodeURIComponent(blob.type);
+  let id = "";
+  for (let i = 0; i < parts; i++) {
+    toast(`Uploading the video… ${Math.round((i / parts) * 100)}%`);
+    for (let tries = 1; ; tries++) {
+      try { id = (await api(`/api/media/part?n=${i}&type=${type}${id ? "&id=" + id : ""}`, { method: "POST", headers: { "content-type": "application/octet-stream" }, body: blob.slice(i * PART, (i + 1) * PART) })).id; break; }
+      catch (e) { if (tries >= 3 || e.message === "Logged out") throw e; await new Promise((r) => setTimeout(r, 800 * tries)); }
+    }
+  }
+  return (await api("/api/media/finish", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, parts, size: blob.size }) })).url;
 }
 
 /* Texts are kept exactly as typed (line breaks and empty lines included) as one block; older texts that were saved as separate paragraphs are shown with an empty line between them, which is how the page showed them. */
@@ -287,7 +302,7 @@ function renderEditor() {
   drawMedia();
   const mediaSect = h("div", { class: "card sect", hidden: !!p.href },
     h("h3", {}, "Media"),
-    h("p", { class: "muted tiny" }, "Pictures and videos shown in the gallery on the phone, in this order. Pictures are resized automatically; a video can be up to 24 MB (mp4 or webm)."),
+    h("p", { class: "muted tiny" }, "Pictures and videos shown in the gallery on the phone, in this order. Pictures are resized automatically; a video can be up to 100 MB (mp4 or webm)."),
     grid, mediaInput);
 
   ed.replaceChildren(
@@ -327,7 +342,7 @@ function renderEditor() {
 async function uploadMedia(f) {
   if (f.type.startsWith("video/")) {
     if (!["video/mp4", "video/webm"].includes(f.type)) throw new Error("videos must be mp4 or webm");
-    if (f.size > MAX_FILE) throw new Error("the video is over 24 MB, compress it first");
+    if (f.size > MAX_VIDEO) throw new Error("the video is over 100 MB, compress it first");
     const poster = await videoPoster(f);
     const [src, thumb] = [await uploadBlob(f), await uploadBlob(poster.blob)];
     return { src, thumb, w: poster.w, h: poster.h, alt: "", type: "video" };

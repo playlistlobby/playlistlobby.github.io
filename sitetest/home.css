@@ -163,7 +163,7 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   body.s2 .wordmark{transform:translateX(-30vw)}
   .wordmark .wm-g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5));backdrop-filter:blur(calc(var(--px) * 9.5))}
   .stage{--s:1vw;--px:calc(var(--s) / 3.9);--w:57.24;--g0:1.25;left:0;top:0;margin:0;width:100vw;height:100vh;height:100dvh}
-  body.s2 .stage{--gk:2.6207}
+  body.s2 .stage{--gk:5.2576}
   .stage{overflow:hidden;overflow:clip}   /* the person and the leaves are bigger than the screen: cut them off at the stage, or the phone widens the page to fit them */
   .shape .g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)));backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)))}
   .person{left:-21.03vw;top:15.05dvh;bottom:auto;width:169.08vw;height:208.21vw;aspect-ratio:auto;transform-origin:0 0;opacity:1;filter:blur(.05px)}
@@ -171,9 +171,9 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   .leaves{left:-10.3vw;top:47.4dvh;width:179.5vw}
   body.s2 .leaves{transform:translate(-6vw,-12dvh) scale(1.1) rotate(-8deg)}
   .glass{left:11.54vw;top:47.46dvh;width:14.68vw}
-  body.s2 .glass{transform:translate(19.23vw,-32.18dvh) scale(2.6207)}
-  .gbtn{--ex:0px;--ey:calc(24.23dvh - 39.1dvh - var(--i) * 9.95dvh - 8.2vw);left:10.26vw;width:79.5vw;height:16.4vw;border-radius:3.6vw;font-size:5.9vw;top:calc(39.1dvh + var(--i) * 9.95dvh)}
-  .menu{clip-path:inset(33.3dvh -20% -50% -20%)}   /* phone: the icon is above the buttons */
+  body.s2 .glass{transform:translate(-.258vw,-41.53dvh) scale(5.2576)}   /* the note icon of the Figma phone frame: 301 px wide, top left at 44 / 50 */
+  .gbtn{--ex:0px;--ey:calc(23.88dvh - 50dvh - var(--i) * 11.5dvh - 7.82vw);left:12.31vw;width:75.38vw;height:15.64vw;border-radius:2.82vw;font-size:5.9vw;top:calc(50dvh + var(--i) * 11.5dvh)}   /* Figma phone buttons: 294 x 61 at x 48, y 422 / 520 / 616 */
+  .menu{clip-path:inset(41.8dvh -20% -50% -20%)}   /* phone: the icon is above the buttons */
   .sky,.plane,.corner,.glow{display:none}
   .veil{-webkit-backdrop-filter:blur(1.45vw);backdrop-filter:blur(1.45vw)}
 }
