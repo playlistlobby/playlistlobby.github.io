@@ -20,12 +20,43 @@ let photos = [];           // [{src, thumb, w, h, alt}] of the open project
 let viewerIdx = -1;
 
 /* ---------- the text on the right ---------- */
-/* a long name gets a smaller type size instead of breaking the layout: k = 1 up to "ok" characters, then shrinking (never below "min") */
-const fitK = (text, ok, min) => { const n = [...String(text || "")].length; return n <= ok ? 1 : Math.max(min, ok / n); };
+/* A long name only gets a smaller type size when it would otherwise not fit: --k (1 = normal) is worked out by measuring the real text against the room it has. */
+function fitNowrap(el, avail, min) {
+  if (!el || !(avail > 0)) return;
+  el.style.setProperty("--k", "1");
+  const w = el.scrollWidth;
+  el.style.setProperty("--k", w > avail ? Math.max(min, avail / w).toFixed(3) : "1");
+}
+let measureCtx = null;
+function fitWords(el, avail, min) {                                  // a heading may wrap, so only its longest word has to fit
+  if (!el || !(avail > 0)) return;
+  el.style.setProperty("--k", "1");
+  const cs = getComputedStyle(el);
+  measureCtx = measureCtx || document.createElement("canvas").getContext("2d");
+  measureCtx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  let m = 0; for (const w of el.textContent.split(/\s+/)) m = Math.max(m, measureCtx.measureText(w).width);
+  el.style.setProperty("--k", m > avail ? Math.max(min, avail / m).toFixed(3) : "1");
+}
+function fitAll() {
+  const grid = document.getElementById("grid");
+  if (grid) {
+    const cs = getComputedStyle(grid), col = (grid.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) / 4;
+    grid.querySelectorAll(".sb-label").forEach((el) => fitNowrap(el, col - 2, .4));
+  }
+  document.querySelectorAll("#app .ios-nav").forEach((nav) => {
+    const back = nav.querySelector(".ios-back"), t = nav.querySelector(".ios-title");
+    if (t) fitNowrap(t, nav.clientWidth - 2 * ((back ? back.offsetWidth : 0) + 10), .55);
+  });
+  document.querySelectorAll("#app .ios-back span").forEach((el) => fitNowrap(el, el.parentElement.clientWidth ? 62 * (parseFloat(getComputedStyle(el).fontSize) / 11) : 0, .55));
+  fitWords(titleEl, titleEl.clientWidth, .5);
+}
+addEventListener("resize", fitAll);
+(document.fonts && document.fonts.ready || Promise.resolve()).then(() => setTimeout(fitAll, 0));
+
 function setCopy(title, paras) {
   copy.classList.add("swap");
   setTimeout(() => {
-    titleEl.textContent = title; titleEl.style.setProperty("--k", fitK(title, 12, .5));
+    titleEl.textContent = title; fitWords(titleEl, titleEl.clientWidth, .5);
     textEl.innerHTML = (paras || []).map((p) => `<p>${esc(p)}</p>`).join("");
     copy.classList.remove("swap");
   }, 280);
@@ -51,11 +82,12 @@ function build() {
     const b = document.createElement("button");
     b.className = "sb-app"; b.type = "button"; b.style.setProperty("--i", i);
     b.setAttribute("aria-label", `Open ${p.label}`);
-    b.innerHTML = `<span class="sb-icon" style="background-image:url('${esc(p.icon)}')"></span><span class="sb-label" style="--k:${fitK(p.label, 9, .66)}">${esc(p.label)}</span>`;
+    b.innerHTML = `<span class="sb-icon" style="background-image:url('${esc(p.icon)}')"></span><span class="sb-label">${esc(p.label)}</span>`;
     b.addEventListener("click", () => { sfx("tock"); if (p.href) openLink(p, b); else openProject(p, b); });
     grid.append(b);
   });
   tick();
+  fitAll(); setTimeout(fitAll, 700);
 }
 
 /* the clock in the status bars */
@@ -140,12 +172,13 @@ async function openProject(p, icon) {
 
   app.innerHTML = `
     <div class="app-body" id="roll"><div class="ph-grid" id="phgrid"></div><p class="ph-count">${photos.length ? `${photos.length} ${photos.some((x) => x.type === "video") ? "Item" : "Photo"}${photos.length === 1 ? "" : "s"}` : "Nothing here yet"}</p></div>
-    <div class="ios-top">${statusBar()}<div class="ios-nav"><button class="ios-back" type="button" id="back">${BACK_SVG}<span>Home</span></button><h2 class="ios-title" style="--k:${fitK(p.label, 11, .6)}">${esc(p.label)}</h2><span class="ios-ghost"></span></div></div>
+    <div class="ios-top">${statusBar()}<div class="ios-nav"><button class="ios-back" type="button" id="back">${BACK_SVG}<span>Home</span></button><h2 class="ios-title">${esc(p.label)}</h2><span class="ios-ghost"></span></div></div>
     <div class="viewer" id="viewer">
       <div class="strip" id="strip"></div>
-      <div class="ios-top">${statusBar()}<div class="ios-nav"><button class="ios-back" type="button" id="vback">${BACK_SVG}<span style="--k:${fitK(p.label, 9, .6)}">${esc(p.label)}</span></button><h2 class="ios-title" id="vtitle"></h2><span class="ios-pager"><button class="ios-navbtn" type="button" id="vprev" aria-label="Previous photo">&lsaquo;</button><button class="ios-navbtn" type="button" id="vnext" aria-label="Next photo">&rsaquo;</button></span></div></div>
+      <div class="ios-top">${statusBar()}<div class="ios-nav"><button class="ios-back" type="button" id="vback">${BACK_SVG}<span>${esc(p.label)}</span></button><h2 class="ios-title" id="vtitle"></h2><span class="ios-pager"><button class="ios-navbtn" type="button" id="vprev" aria-label="Previous photo">&lsaquo;</button><button class="ios-navbtn" type="button" id="vnext" aria-label="Next photo">&rsaquo;</button></span></div></div>
     </div>`;
   tick();
+  fitAll(); setTimeout(fitAll, 700);
   const gridEl = $("#phgrid");
   photos.forEach((ph, i) => {
     const t = document.createElement("button");
