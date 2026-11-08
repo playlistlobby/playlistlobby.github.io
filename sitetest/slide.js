@@ -61,6 +61,35 @@
     setTimeout(function () { location.href = a.href; }, MS * 0.8);
   });
 
+  /* ---- warm the other two tabs while the visitor looks at this one ----
+     Once this page is loaded and the browser is idle, the other tabs' pages and everything they list (styles, scripts, pictures) are fetched
+     into the browser cache at low priority, so going there only has to wait for its own data. Nothing is shown or run. */
+  var warmed = false;
+  function warm() {
+    if (warmed) return; warmed = true;
+    var c = navigator.connection;
+    if (c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || ""))) return;       // not on a slow or metered connection
+    ORDER.forEach(function (name, k) {
+      if (k === here) return;
+      var a = document.querySelector('.tabs a[href*="/' + name + '/"]');
+      if (!a || !window.fetch) return;
+      var url = a.href;
+      fetch(url, { priority: "low" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (html) {
+        var seen = {};
+        html.replace(/(?:href|src)="([^"#]+\.(?:css|js|webp|png|jpe?g)(?:\?[^"]*)?)"/g, function (m, u) {
+          var abs = new URL(u, url).href;
+          if (seen[abs] || abs === url) return m;
+          seen[abs] = 1;
+          var l = document.createElement("link"); l.rel = "prefetch"; l.href = abs; document.head.appendChild(l);
+          return m;
+        });
+      }).catch(function () { /* offline: nothing to warm */ });
+    });
+  }
+  function whenIdle() { (window.requestIdleCallback || function (f) { setTimeout(f, 300); })(warm, { timeout: 2500 }); }
+  if (document.readyState === "complete") whenIdle(); else addEventListener("load", whenIdle);
+  document.addEventListener("pointerover", function (e) { if (e.target.closest && e.target.closest(".tabs a")) warm(); }, { passive: true });   // hovering a tab warms them at once
+
   // coming back with the browser's back button: show the page normally
   addEventListener("pageshow", function (e) {
     if (!e.persisted) return;

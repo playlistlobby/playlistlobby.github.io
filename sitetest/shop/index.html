@@ -7,8 +7,17 @@
 <meta name="theme-color" content="#dce7f1">
 <title>shop · playlist.mag</title>
 <link rel="preload" as="image" href="assets/tee-playlist3.webp" type="image/webp">
+<link rel="icon" href="data:,">
+<link rel="modulepreload" href="shop.js?v=15">
+<link rel="modulepreload" href="order.js">
+<link rel="modulepreload" href="../early.js">
+<link rel="modulepreload" href="../api.js">
 <link rel="stylesheet" href="shop.css?v=15">
-<script src="../slide.js?v=3"></script>
+<script>
+/* ask for the products right away (shop.js picks the answer up, see early.js) */
+(function(){var B="https://playlistmag-admin.sixplanet.workers.dev",e=window.__early={};e.shop={base:B,p:fetch(B+"/api/shop",{cache:"no-store"}).then(function(r){return r.json()})};e.shop.p.catch(function(){});})();
+</script>
+<script src="../slide.js?v=4"></script>
 </head>
 <body>
 
@@ -76,6 +85,6 @@
   <p class="lb-count" id="lb-count"></p>
 </div>
 
-<script type="module" src="shop.js?v=14"></script>
+<script type="module" src="shop.js?v=15"></script>
 </body>
 </html>

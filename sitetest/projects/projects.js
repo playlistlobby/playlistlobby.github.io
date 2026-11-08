@@ -272,12 +272,13 @@ if (matchMedia("(hover:hover) and (pointer:fine)").matches && !matchMedia("(pref
 /* ---------- go ---------- */
 /* the built-in list (projects.json) is the fallback; what the admin saved (the Worker) replaces its apps when it can be reached */
 async function loadData() {
-  const d = await (await fetch("projects.json?v=3", { cache: "no-cache" })).json();
+  // both lists are asked for at the same time (the page head may already have started them, see early.js)
+  const built = take("built") || fetch("projects.json?v=3", { cache: "no-cache" }).then((r) => r.json());
+  const api = take("projects") || fetch(API_BASE + "/api/projects", { cache: "no-store" }).then((r) => r.json());
+  api.catch(() => {});
+  const d = await built;
   try {
-    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4500);
-    const r = await fetch(API_BASE + "/api/projects", { cache: "no-store", signal: ctl.signal });
-    clearTimeout(t);
-    const j = await r.json();
+    const j = await Promise.race([api, new Promise((_, no) => setTimeout(no, 4500))]);
     if (Array.isArray(j.projects)) d.projects = j.projects;
     if (j.intro && typeof j.intro.title === "string" && Array.isArray(j.intro.text)) d.intro = j.intro;
   } catch { /* offline or blocked: the built-in apps are shown */ }

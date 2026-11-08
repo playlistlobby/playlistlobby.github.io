@@ -6,6 +6,7 @@
 //  - the products come from the admin (Worker /api/shop: on/off, sizes, colours, stock); without them the built-in tee is shown
 import { cleanOrder } from "./order.js";
 import { API_BASE } from "../api.js";
+import { take } from "../early.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const wheel = $("#wheel"), product = $("#product");
@@ -17,10 +18,8 @@ const DEFAULT_SHOP = [{ id: "playlist-tee", name: "Playlist tee", price: 10000, 
   blurb: "A white cotton tee with the playlist logo in liquid glass on the chest.", sizes: ["S", "M", "L", "XL"].map((n) => ({ id: n.toLowerCase(), name: n, on: true })) }];
 async function loadShop() {
   try {
-    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 2500);
-    const r = await fetch(API_BASE + "/api/shop", { cache: "no-store", signal: ctl.signal });
-    clearTimeout(t);
-    const j = await r.json();
+    const early = take("shop");                                 // the request that was started in the page head, if there is one
+    const j = await Promise.race([early || fetch(API_BASE + "/api/shop", { cache: "no-store" }).then((r) => r.json()), new Promise((_, no) => setTimeout(no, 2500))]);
     if (Array.isArray(j.shop)) return { list: j.shop, stock: j.stock || {} };
   } catch { /* the built-in tee below */ }
   return { list: DEFAULT_SHOP, stock: {} };
@@ -28,8 +27,11 @@ async function loadShop() {
 const shop = await loadShop();
 let stock = shop.stock;                                         // "product|size|colour" -> how many are left (only for products that track their stock)
 const forSale = shop.list.filter((p) => p.on !== false);
-const N = forSale.length ? 16 : 0;                              // the ring always has 16 places; the products take turns on it
-const products = Array.from({ length: N }, (_, i) => forSale[i % forSale.length]);
+const products = forSale;                                       // every product once on the ring: the wheel shows exactly what the admin has switched on
+const N = products.length;
+// the ring shrinks when there are few products (full size from 16 on, a little bigger for very many), so 3 or 4 shirts still sit close and look good; one shirt just stands in the middle
+const itemFit = N <= 16 ? 1 + 0.6 * (1 - Math.sqrt(Math.max(0, N - 1) / 15)) : 1;       // and the shirts grow a little when there are few, so the wheel never looks empty
+const ringFit = N <= 1 ? 0 : N <= 16 ? 0.38 + 0.62 * Math.sqrt((N - 1) / 15) : Math.min(1.4, 1 + (N - 16) * 0.02);
 if (!N) { const m = document.createElement("p"); m.className = "empty"; m.textContent = "Nothing for sale right now. Check back soon."; wheel.append(m); }
 
 /* ---------- tuning ---------- */
@@ -76,10 +78,11 @@ function layout() {
   const portrait = H / W > 1.1;
   unit = portrait ? W / 100 : Math.min(W / 100, H / 56.25);
   P0 = portrait ? PITCH_PHONE : PITCH;
-  R = unit * (portrait ? 34 : 19.5);            // depth radius of the ring (towards / away from you)
+  const R0 = unit * (portrait ? 34 : 19.5);       // depth radius of the full ring (towards / away from you)
+  R = R0 * ringFit;
   RX = R * (portrait ? 1.05 : 1.5);           // it is wider than it is deep, so it uses the width of the window
-  iw = unit * (portrait ? 15 : 8.4);
-  FL = R * 2.4;                               // camera distance: the smaller, the stronger the perspective
+  iw = unit * (portrait ? 15 : 8.4) * itemFit;
+  FL = R0 * 2.4;                              // camera distance: the smaller, the stronger the perspective
   // the ring's near side sticks out below its centre, the far side above: centre it on the window by its extent
   const cp0 = Math.cos(P0), sp0 = Math.sin(P0);
   const near = R * sp0 * (FL / (FL - R * cp0)), far = R * sp0 * (FL / (FL + R * cp0));
@@ -347,7 +350,7 @@ function frame(now) {
   for (let i = 0; i < N; i++) {
     const it = items[i], el = els[i];
     const g = (frozenWs && openT > 0) ? frozenWs[i] : ws[i];
-    const depth = (it.zc / R + 1) / 2;                                // 0 far .. 1 near
+    const depth = R ? (it.zc / R + 1) / 2 : 1;                                // 0 far .. 1 near
     let s = it.s * (1 + GROW * g), x = it.x, y = it.y;
     let op = Math.min(1, 0.5 + 0.5 * depth + 0.5 * g);
     let z = 10 + Math.round(depth * 60) + Math.round(g * 200);
