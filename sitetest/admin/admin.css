@@ -163,3 +163,16 @@ table.stock input{width:76px;padding:6px 8px;border-radius:8px;border:1px solid 
 .crop-zoom input{flex:1}
 .crop-zoom span{font:700 20px var(--font);color:var(--muted);width:16px;text-align:center}
 .crop-btns{display:flex;gap:8px;width:100%;align-items:center}
+
+/* the fitting dialog (crop, scale, position of a picture in the phone) */
+.tile .tools button{width:23px}
+.tile img.cr{position:absolute;left:0;top:0;width:auto;height:auto;max-width:none;object-fit:fill}
+.fit-card{width:min(400px,100%)}
+.fit-tabs{display:flex;gap:6px;flex-wrap:wrap;justify-self:stretch}
+.fit-tab{flex:1;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:#fff;font:600 13px var(--font);cursor:pointer;white-space:nowrap}
+.fit-tab.on{background:#2c7ae4;border-color:#2c7ae4;color:#fff}
+.fit-stage{display:flex;justify-content:center;align-items:center;width:100%;padding:8px 0}
+.fit-frame{position:relative;overflow:hidden;max-width:100%;background:#000;box-shadow:0 0 0 1px var(--line),0 6px 18px rgba(30,50,80,.25);cursor:grab;touch-action:none;user-select:none}
+.fit-frame.grid{background:#e6e9ee}
+.fit-frame:active{cursor:grabbing}
+.fit-img{position:absolute;max-width:none;max-height:none;height:auto;display:block;pointer-events:none;-webkit-user-drag:none}

@@ -142,6 +142,78 @@ function cropIcon(source) {
     paint();
   });
 }
+/* ---------- fitting a picture into the phone: the thumbnail, the desktop viewer, the phone viewer ----------
+   A picture's place in a frame is {l, t, w}: its left edge, top edge and width, as fractions of the frame (the height follows from the picture's shape).
+   No saved place = the page's own default (the thumbnail and the desktop viewer fill the frame, the desktop one from the bottom; the phone viewer shows the whole picture). */
+const FRAMES = {
+  grid:  { label: "Thumbnail",      note: "The small square in the gallery.", F: 1, pw: 240 },
+  desk:  { label: "Desktop viewer", note: "The picture when it is opened on a computer (the top part of the phone).", F: 320 / 262, pw: 320 },
+  phone: { label: "Phone viewer",   note: "The picture when it is opened on a phone: the whole phone screen.", F: 320 / 568, pw: 190 },
+};
+const boxCss = (b) => `left:${+(b.l * 100).toFixed(3)}%;top:${+(b.t * 100).toFixed(3)}%;width:${+(b.w * 100).toFixed(3)}%`;
+const minWidthOf = (kind, A) => { const F = FRAMES[kind].F; return kind === "phone" ? Math.min(1, A / F) : Math.max(1, A / F); };
+function defaultBox(kind, A) {
+  const F = FRAMES[kind].F, w = minWidthOf(kind, A), hh = w * F / A;
+  return { l: (1 - w) / 2, t: kind === "desk" ? 1 - hh : (1 - hh) / 2, w };
+}
+function clampBox(kind, A, b) {
+  const F = FRAMES[kind].F, mw = minWidthOf(kind, A), w = Math.min(mw * 4, Math.max(mw, b.w)), hh = w * F / A;
+  const lim = (v, size) => (size >= 1 ? Math.min(0, Math.max(1 - size, v)) : Math.min(1 - size, Math.max(0, v)));   // a picture bigger than the frame always covers it
+  return { l: lim(b.l, w), t: lim(b.t, hh), w };
+}
+/* the fitting dialog: resolves to the new {grid, desk, phone} (only the ones that were set; {} = everything default), or null when cancelled */
+function cropMedia(m) {
+  return new Promise(async (done) => {
+    const video = m.type === "video", src = res(video ? m.thumb : m.src);
+    const pic = new Image();
+    try { await new Promise((ok, no) => { pic.onload = ok; pic.onerror = no; pic.src = src; }); } catch { toast("That picture can't be loaded.", true); return done(null); }
+    const A = pic.naturalWidth / pic.naturalHeight, kinds = video ? ["grid"] : ["grid", "desk", "phone"];
+    const st = {}; kinds.forEach((k) => { st[k] = m.crop && m.crop[k] ? clampBox(k, A, m.crop[k]) : null; });
+    let kind = "grid";
+    const boxOf = () => st[kind] || defaultBox(kind, A);
+    const img = h("img", { src, alt: "", draggable: "false", class: "fit-img" });
+    const frame = h("div", { class: "fit-frame" }, img);
+    const zoom = h("input", { type: "range", min: "1", max: "4", step: "0.01", value: "1", "aria-label": "Zoom" });
+    const tabs = h("div", { class: "fit-tabs" });
+    const note = h("p", { class: "muted tiny" });
+    const paint = () => {
+      const f = FRAMES[kind], b = boxOf();
+      frame.style.width = f.pw + "px"; frame.style.aspectRatio = String(f.F); frame.className = "fit-frame " + kind;
+      img.style.cssText = boxCss(b);
+      zoom.value = String(b.w / minWidthOf(kind, A));
+      tabs.replaceChildren(...kinds.map((k) => h("button", { type: "button", class: "fit-tab" + (k === kind ? " on" : ""), onclick: () => { kind = k; paint(); } }, FRAMES[k].label + (st[k] ? " •" : ""))));
+      note.textContent = f.note + (st[kind] ? "" : " (Now: the default fit.)");
+    };
+    const set = (b) => { st[kind] = clampBox(kind, A, b); paint(); };
+    zoom.addEventListener("input", () => {
+      const b = boxOf(), F = FRAMES[kind].F, hh = b.w * F / A, w = minWidthOf(kind, A) * Number(zoom.value), h2 = w * F / A;
+      const cx = (0.5 - b.l) / b.w, cy = (0.5 - b.t) / hh;                 // keep the middle of the frame on the same spot of the picture
+      set({ l: 0.5 - cx * w, t: 0.5 - cy * h2, w });
+    });
+    let drag = null;
+    frame.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, b: boxOf() }; frame.setPointerCapture(e.pointerId); });
+    frame.addEventListener("pointermove", (e) => { if (!drag) return; const r = frame.getBoundingClientRect(); set({ l: drag.b.l + (e.clientX - drag.x) / r.width, t: drag.b.t + (e.clientY - drag.y) / r.height, w: drag.b.w }); });
+    const end = () => { drag = null; };
+    frame.addEventListener("pointerup", end); frame.addEventListener("pointercancel", end);
+    frame.addEventListener("wheel", (e) => { e.preventDefault(); zoom.value = String(Math.min(4, Math.max(1, Number(zoom.value) * (e.deltaY < 0 ? 1.06 : 1 / 1.06)))); zoom.dispatchEvent(new Event("input")); }, { passive: false });
+    const close = (v) => { back.remove(); document.removeEventListener("keydown", onKey); done(v); };
+    const onKey = (e) => { if (e.key === "Escape") close(null); };
+    const back = h("div", { class: "crop-back", onclick: (e) => { if (e.target === back) close(null); } },
+      h("div", { class: "card crop-card fit-card", role: "dialog", "aria-label": "Fit the picture" },
+        h("h3", {}, "Crop, scale and position"),
+        h("p", { class: "muted tiny" }, "Drag the picture to move it, use the slider (or the mouse wheel) to zoom. Each place has its own setting." + (video ? " (A video can only be placed in its thumbnail.)" : "")),
+        tabs, h("div", { class: "fit-stage" }, frame), note,
+        h("div", { class: "crop-zoom" }, h("span", {}, "\u2212"), zoom, h("span", {}, "+")),
+        h("div", { class: "crop-btns" },
+          h("button", { class: "btn ghost", type: "button", onclick: () => { st[kind] = null; paint(); } }, "Default fit"),
+          h("span", { style: "flex:1" }),
+          h("button", { class: "btn ghost", type: "button", onclick: () => close(null) }, "Cancel"),
+          h("button", { class: "btn primary", type: "button", onclick: () => { const o = {}; kinds.forEach((k) => { if (st[k]) o[k] = { l: +st[k].l.toFixed(4), t: +st[k].t.toFixed(4), w: +st[k].w.toFixed(4) }; }); close(o); } }, "Save"))));
+    document.body.append(back); document.addEventListener("keydown", onKey);
+    paint();
+  });
+}
+
 async function squareIcon(file) {                               // centre-cropped square, 256 px; the gloss/shading is added by CSS like the other apps
   const bmp = await bitmapOf(file);
   const side = Math.min(bmp.width, bmp.height);
@@ -291,10 +363,15 @@ function renderEditor() {
   const addTile = h("div", { class: "addtile", onclick: () => mediaInput.click() }, "+ Add pictures or videos");
   function drawMedia() {
     grid.replaceChildren(...(p.photos || []).map((m, i, all) => h("div", { class: "tile" },
-      h("img", { src: res(m.thumb), alt: "", loading: "lazy" }),
+      h("img", { src: res(m.thumb), alt: "", loading: "lazy", ...(m.crop && m.crop.grid ? { class: "cr", style: boxCss(m.crop.grid) } : {}) }),
       m.type === "video" ? h("span", { class: "badge" }, "VIDEO") : null,
       h("div", { class: "tools" },
         h("button", { type: "button", title: "Earlier", disabled: i === 0, onclick: () => { [all[i - 1], all[i]] = [all[i], all[i - 1]]; setDirty(); drawMedia(); } }, "◀"),
+        h("button", { type: "button", title: "Crop, scale and position" + (m.crop ? " (changed)" : ""), onclick: async () => {
+          const c = await cropMedia(m); if (c === null) return;
+          if (Object.keys(c).length) m.crop = c; else delete m.crop;
+          setDirty(); drawMedia();
+        } }, m.crop ? "\u2726" : "\u2922"),
         h("button", { type: "button", class: "x", title: "Remove", onclick: () => { all.splice(i, 1); setDirty(); drawMedia(); renderList(); } }, "✕"),
         h("button", { type: "button", title: "Later", disabled: i === all.length - 1, onclick: () => { [all[i + 1], all[i]] = [all[i], all[i + 1]]; setDirty(); drawMedia(); } }, "▶"))
     )), addTile);

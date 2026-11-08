@@ -55,6 +55,8 @@ function fitAll() {
 addEventListener("resize", fitAll);
 (document.fonts && document.fonts.ready || Promise.resolve()).then(() => setTimeout(fitAll, 0));
 
+/* where a picture sits in its frame (set in the admin): left edge, top edge and width as fractions of the frame */
+const boxCss = (b) => `left:${+(b.l * 100).toFixed(3)}%;top:${+(b.t * 100).toFixed(3)}%;width:${+(b.w * 100).toFixed(3)}%`;
 function setCopy(title, paras, btn) {
   copy.classList.add("swap");
   setTimeout(() => {
@@ -187,6 +189,7 @@ async function openProject(p, icon) {
     const t = document.createElement("button");
     t.className = "th" + (ph.type === "video" ? " vid" : ""); t.type = "button"; t.setAttribute("aria-label", `${ph.type === "video" ? "Video" : "Photo"} ${i + 1}`);
     const im = new Image(); im.alt = ph.alt || ""; im.decoding = "async"; im.loading = "lazy";
+    if (ph.crop && ph.crop.grid) { im.classList.add("cr"); im.style.cssText = boxCss(ph.crop.grid); }
     im.onload = () => im.classList.add("on"); im.src = ph.thumb;
     t.append(im);
     t.addEventListener("click", () => openViewer(i, t));
@@ -232,6 +235,8 @@ const strip = () => $("#strip");
 function slideHTML(i) {
   const p = photos[i];
   if (p && p.type === "video") return `<div class="slide"><video src="${esc(p.src)}" poster="${esc(p.thumb || "")}" controls playsinline preload="metadata"></video></div>`;
+  const cb = p && p.crop && p.crop[matchMedia("(max-aspect-ratio:9/10)").matches ? "phone" : "desk"];
+  if (p && cb) return `<div class="slide"><span class="frm"><img class="cr" style="${boxCss(cb)}" src="${esc(p.src)}" alt="${esc(p.alt || "")}" draggable="false" ${p.w ? `width="${p.w}" height="${p.h}"` : ""}></span></div>`;
   return `<div class="slide">${p ? `<img src="${esc(p.src)}" alt="${esc(p.alt || "")}" draggable="false" ${p.w ? `width="${p.w}" height="${p.h}"` : ""}>` : ""}</div>`;
 }
 function paintStrip() {

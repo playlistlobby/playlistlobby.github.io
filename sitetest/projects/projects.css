@@ -243,3 +243,10 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .game-btn:active{filter:brightness(.93);transform:translateY(1px)}
 .game-btn:focus-visible{outline:2px solid #2c7ae4;outline-offset:3px}
 @media (max-aspect-ratio:9/10){.game-btn{font-size:max(15px,4.2vw);margin-top:1em;border-radius:3.2vw}}
+
+/* pictures the admin has cropped / scaled / moved: the picture is placed inside a frame (the thumbnail cell, or the viewer's picture area) */
+.th img.cr{inset:auto;width:auto;height:auto;max-width:none;object-fit:fill}
+.frm{position:relative;display:block;overflow:hidden;flex:none;width:100%}
+.slide img.cr{position:absolute;max-width:none;max-height:none;height:auto;object-fit:fill}
+@media (min-aspect-ratio:9/10){.frm{height:calc(262 * var(--u))}}
+@media (max-aspect-ratio:9/10){.frm{align-self:stretch}}
