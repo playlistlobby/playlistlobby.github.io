@@ -18,33 +18,42 @@
   var here = indexOf(location.href);
   if (here < 0) return;
 
-  /* ---- the browser's page transition: both pages move at once, the banner stays ---- */
+  /* ---- the browser's page transition: the content of both pages moves at once, the banner and the background stay ----
+     Each page's content (everything but the banner) is given its own transition name while the transition runs, so it is lifted out of the
+     page's background and slides on its own; the background itself is never moved. (Names differ per page, so old and new content
+     never get paired up and morphed into each other.) */
   var VT = !!(window.CSS && CSS.supports && CSS.supports("selector(:active-view-transition-type(a))") && "onpagereveal" in window);
   if (VT) {
-    var E = "cubic-bezier(.45,0,.2,1)", T = ".42s";
-    var vs = document.createElement("style");
-    vs.textContent = "@view-transition{navigation:auto}" +
-      ".banner{view-transition-name:pm-banner}" +
-      "@keyframes pm-out-l{to{transform:translateX(-100%)}}@keyframes pm-in-r{from{transform:translateX(100%)}}" +
-      "@keyframes pm-out-r{to{transform:translateX(100%)}}@keyframes pm-in-l{from{transform:translateX(-100%)}}" +
-      "::view-transition-old(root),::view-transition-new(root){mix-blend-mode:normal}" +
-      "html:active-view-transition-type(pm-forward)::view-transition-old(root){animation:pm-out-l " + T + " " + E + " both}" +
-      "html:active-view-transition-type(pm-forward)::view-transition-new(root){animation:pm-in-r " + T + " " + E + " both}" +
-      "html:active-view-transition-type(pm-back)::view-transition-old(root){animation:pm-out-r " + T + " " + E + " both}" +
-      "html:active-view-transition-type(pm-back)::view-transition-new(root){animation:pm-in-l " + T + " " + E + " both}" +
-      "::view-transition-group(pm-banner),::view-transition-old(pm-banner),::view-transition-new(pm-banner){animation:none}" +
-      "@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}";
-    document.head.appendChild(vs);
+    var E = "cubic-bezier(.45,0,.2,1)", T = ".42s", css = "@view-transition{navigation:auto}.banner{view-transition-name:pm-banner}" +
+      "@keyframes pm-out-l{to{transform:translateX(-100vw)}}@keyframes pm-in-r{from{transform:translateX(100vw)}}" +
+      "@keyframes pm-out-r{to{transform:translateX(100vw)}}@keyframes pm-in-l{from{transform:translateX(-100vw)}}@keyframes pm-fade{from{opacity:0}}" +
+      "::view-transition-old(root),::view-transition-new(root){mix-blend-mode:normal}";
+    [["pm-forward", "pm-out-l", "pm-in-r"], ["pm-back", "pm-out-r", "pm-in-l"]].forEach(function (d) {
+      var h = "html:active-view-transition-type(" + d[0] + ")";
+      css += h + "::view-transition-old(*){animation:" + d[1] + " " + T + " " + E + " both}" +
+             h + "::view-transition-new(*){animation:" + d[2] + " " + T + " " + E + " both}" +
+             h + "::view-transition-old(root){animation:none}" +                                  // the background: old stays, new fades over it (they are the same picture)
+             h + "::view-transition-new(root){animation:pm-fade " + T + " ease both}" +
+             h + "::view-transition-old(pm-banner)," + h + "::view-transition-new(pm-banner){animation:none}";   // the banner does not move
+    });
+    css += "@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}";
+    var vs = document.createElement("style"); vs.textContent = css; document.head.appendChild(vs);
     var typeOf = function (from, to) { return from >= 0 && to >= 0 && from !== to ? (to > from ? "pm-forward" : "pm-back") : null; };
+    var nameContent = function () { var els = movers(); els.forEach(function (el, i) { el.style.viewTransitionName = "pm-" + ORDER[here] + "-" + i; }); return els; };
+    var clearNames = function (els) { els.forEach(function (el) { el.style.viewTransitionName = ""; }); };
     addEventListener("pageswap", function (e) {                  // leaving: where are we going?
       if (!e.viewTransition) return;
       var to = -1; try { to = indexOf(e.activation.entry.url); } catch (x) { /* unknown */ }
-      var t = typeOf(here, to); if (t) e.viewTransition.types.add(t); else e.viewTransition.skipTransition();
+      var t = typeOf(here, to);
+      if (t) { e.viewTransition.types.add(t); var els = nameContent(); setTimeout(function () { clearNames(els); }, 3000); }   // (cleared again in case the visit is cancelled)
+      else e.viewTransition.skipTransition();
     });
     addEventListener("pagereveal", function (e) {                // arriving: where do we come from?
       if (!e.viewTransition) return;
       var from = -1; try { from = indexOf(navigation.activation.from.url); } catch (x) { /* unknown */ }
-      var t = typeOf(from, here); if (t) e.viewTransition.types.add(t); else e.viewTransition.skipTransition();
+      var t = typeOf(from, here);
+      if (t) { e.viewTransition.types.add(t); var els = nameContent(); e.viewTransition.finished.then(function () { clearNames(els); }, function () { clearNames(els); }); }
+      else e.viewTransition.skipTransition();
     });
   }
 
