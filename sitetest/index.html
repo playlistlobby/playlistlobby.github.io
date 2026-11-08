@@ -12,7 +12,8 @@
 <link rel="preload" as="image" href="assets/icons/shop.webp?v=3" type="image/webp">
 <link rel="preload" as="image" href="assets/icons/contact.webp?v=3" type="image/webp">
 <link rel="preload" as="image" href="assets/person-still.webp" type="image/webp">
-<link rel="stylesheet" href="home.css?v=18">
+<link rel="preload" as="image" href="assets/wordmark.webp" type="image/webp">
+<link rel="stylesheet" href="home.css?v=19">
 </head>
 <body>
 
@@ -25,6 +26,9 @@
   </div>
   <div class="veil" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
+
+  <!-- the rest of the logo: the word next to the play glass (slides behind the glass and fades when the menu opens) -->
+  <div class="wordmark"><img src="assets/wordmark.webp" alt="playlist" draggable="false"></div>
 
   <!-- the liquid-glass play button; after a tap it turns into the playlist note and moves left -->
   <button class="glass" id="glass" type="button" aria-label="Play">
