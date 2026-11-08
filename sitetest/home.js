@@ -123,7 +123,7 @@ const poly = (a, b, t, sc) => {
 };
 /* ---- the light rim ---- */
 const CS = 1.6;                                                        // canvas pixels per shape unit (sharp enough when the glass is scaled up)
-const GK = matchMedia("(max-aspect-ratio:9/10)").matches ? 1.25 : 5.3943, WD = matchMedia("(max-aspect-ratio:9/10)").matches ? 120 : 116.23;   // scene-2 scale and the glass width in design px (see home.css)
+const GK = matchMedia("(max-aspect-ratio:9/10)").matches ? 2.6207 : 5.3943, WD = matchMedia("(max-aspect-ratio:9/10)").matches ? 57.24 : 116.23;   // scene-2 scale and the glass width in design px (see home.css)
 let rimCv = null, rimG = null;
 const FLOOR = 0.04, POW = 1.7;
 function rimLoop(a, b, t, g, wUnits) {

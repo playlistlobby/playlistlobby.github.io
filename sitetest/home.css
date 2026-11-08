@@ -143,16 +143,18 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
 
 /* ---------- phones and tall windows: the same two scenes, in vw / dvh like the Figma phone frames ---------- */
 @media (max-aspect-ratio:9/10){
-  .wordmark{display:none}   /* the Figma phone frame has no word next to the logo */
-  .stage{--s:1vw;--px:calc(var(--s) / 3.9);--w:120;--g0:1.25;left:0;top:0;margin:0;width:100vw;height:100vh;height:100dvh}
-  body.s2 .stage{--gk:1.25}
+  .wordmark{left:27.07vw;top:45.55dvh;width:61.63vw}   /* the logo is 300 of the frame's 390 px wide, its middle on the middle of the screen */
+  body.s2 .wordmark{transform:translateX(-30vw)}
+  .wordmark .wm-g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5));backdrop-filter:blur(calc(var(--px) * 9.5))}
+  .stage{--s:1vw;--px:calc(var(--s) / 3.9);--w:57.24;--g0:1.25;left:0;top:0;margin:0;width:100vw;height:100vh;height:100dvh}
+  body.s2 .stage{--gk:2.6207}
   .shape .g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)));backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)))}
   .person{left:-32.05vw;top:14.2dvh;bottom:auto;width:161.54vw;transform-origin:0 0;opacity:1;filter:blur(.385vw)}
   body.s2 .person{transform:translate(-6.4vw,-8.3dvh);filter:blur(.513vw)}
   .leaves{left:-10.3vw;top:47.4dvh;width:179.5vw}
   body.s2 .leaves{transform:translate(-6vw,-12dvh) scale(1.1) rotate(-8deg)}
-  .glass{left:33.33vw;top:42.9dvh;width:30.77vw}
-  body.s2 .glass{transform:translate(-2.56vw,-27.6dvh) scale(1.25)}
+  .glass{left:11.54vw;top:47.46dvh;width:14.68vw}
+  body.s2 .glass{transform:translate(19.23vw,-32.18dvh) scale(2.6207)}
   .gbtn{left:10.26vw;width:79.5vw;height:16.4vw;border-radius:3.6vw;font-size:5.9vw;top:calc(39.1dvh + var(--i) * 9.95dvh)}
   .veil{-webkit-backdrop-filter:blur(1.45vw);backdrop-filter:blur(1.45vw)}
 }
