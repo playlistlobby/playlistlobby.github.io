@@ -13,6 +13,8 @@ const screen = $("#screen");
 const copy = $("#copy");
 const titleEl = $("#title");
 const textEl = $("#text");
+const copyBtn = $("#copyBtn");
+copyBtn.addEventListener("click", (e) => { if (e.target.closest("a")) sfx("tock"); });
 
 let data = null;
 let current = null;        // the open project
@@ -53,11 +55,12 @@ function fitAll() {
 addEventListener("resize", fitAll);
 (document.fonts && document.fonts.ready || Promise.resolve()).then(() => setTimeout(fitAll, 0));
 
-function setCopy(title, paras) {
+function setCopy(title, paras, btn) {
   copy.classList.add("swap");
   setTimeout(() => {
     titleEl.textContent = title; fitWords(titleEl, titleEl.clientWidth, .5);
     textEl.innerHTML = (paras && paras.length) ? `<p class="pre">${esc(paras.join("\n\n"))}</p>` : "";
+    copyBtn.innerHTML = btn && btn.href && btn.label ? `<a class="game-btn" href="${esc(btn.href)}">${esc(btn.label)}<span aria-hidden="true">\u203a</span></a>` : "";
     copy.classList.remove("swap");
   }, 280);
 }
@@ -122,7 +125,7 @@ function openLink(p, icon) {
   const o = centerIn(icon, screen);
   home.style.transformOrigin = `${o.x}% ${o.y}%`;
   icon.classList.add("pressed");
-  setCopy(p.title, p.text);
+  setCopy(p.title, p.text, p.button);
   try { sessionStorage.setItem("pm-from-site", location.pathname); } catch { /* the game just won't show its return button */ }   // only players who come through this app get the way back
 
   // the launch picture starts exactly on the icon
@@ -159,7 +162,7 @@ async function openProject(p, icon) {
   const o = centerIn(icon, screen);
   home.style.transformOrigin = app.style.transformOrigin = `${o.x}% ${o.y}%`;
   icon.classList.add("pressed");
-  setCopy(p.title, p.text);
+  setCopy(p.title, p.text, p.button);
   history.replaceState(null, "", `#${p.id}`);
 
   photos = [];

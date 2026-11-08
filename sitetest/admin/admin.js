@@ -249,6 +249,8 @@ function renderEditor() {
   const title = h("input", { type: "text", value: p.title || "", maxLength: 32, placeholder: "Big title next to the phone", oninput: (e) => { p.title = e.target.value; setDirty(); } });
   const text = h("textarea", { placeholder: "Write the article here. Line breaks and empty lines appear on the page exactly as you type them.", oninput: (e) => { p.text = packText(e.target.value); setDirty(); } });
   text.value = unpackText(p.text);
+  const btnLabel = h("input", { type: "text", value: (p.button && p.button.label) || "", maxLength: 24, placeholder: "Button name, e.g. Play the game", oninput: (e) => { p.button = { ...(p.button || {}), label: e.target.value }; setDirty(); } });
+  const btnHref = h("input", { type: "text", value: (p.button && p.button.href) || "", maxLength: 120, placeholder: "Where it goes, e.g. /hotel/", oninput: (e) => { p.button = { ...(p.button || {}), href: e.target.value.trim() }; setDirty(); } });
   const href = h("input", { type: "text", value: p.href || "", placeholder: "Leave empty for a normal gallery app", oninput: (e) => {
     p.href = e.target.value.trim() || undefined;
     if (p.href && !p.photos) p.photos = undefined; else if (!p.href && !p.photos) p.photos = [];
@@ -308,6 +310,11 @@ function renderEditor() {
       h("label", { class: "f" }, "Name under the icon", h("small", {}, "Up to 16 characters."), label),
       h("label", { class: "f" }, "Title", h("small", {}, "The big heading next to the phone when the app is open. Up to 32 characters."), title),
       h("label", { class: "f" }, "Article", text)),
+    h("div", { class: "card sect" },
+      h("h3", {}, "Button under the text"),
+      h("p", { class: "muted tiny" }, "Optional. A button under the article that opens a page of the site, like the game: /hotel/. Leave both empty for no button."),
+      h("label", { class: "f" }, "Button name", btnLabel),
+      h("label", { class: "f" }, "Opens (an address on this site)", btnHref)),
     mediaSect,
     h("div", { class: "card sect" },
       h("h3", {}, "Link (optional)"),
@@ -357,7 +364,7 @@ async function saveApps() {
   }
   const btn = $("#save"); btn.disabled = true; $("#saveMsg").textContent = "Saving…";
   try {
-    const body = apps.map((p) => ({ id: p.id, label: p.label.trim(), icon: p.icon, title: (p.title || "").trim() || p.label.trim(), text: p.text || [], ...(p.href ? { href: p.href } : { photos: p.photos || [] }) }));
+    const body = apps.map((p) => ({ id: p.id, label: p.label.trim(), icon: p.icon, title: (p.title || "").trim() || p.label.trim(), text: p.text || [], button: (p.button && p.button.label && p.button.href) ? { label: p.button.label.trim(), href: p.button.href.trim() } : null, ...(p.href ? { href: p.href } : { photos: p.photos || [] }) }));
     const out = await api("/api/projects", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ projects: body, intro: { title: (intro.title || "").trim() || "Projects", text: intro.text || [] } }) });
     const now = mediaOf(out.projects);
     for (const u of savedMedia) if (!now.has(u)) fetch(u, { method: "DELETE", headers: { authorization: "Bearer " + token } }).catch(() => {});   // free what is no longer used
