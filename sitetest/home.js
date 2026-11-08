@@ -210,6 +210,8 @@ buildGlass().then(() => draw(k));
    - Safari and everything on iOS can't show transparency in WebM, so they get the same frames as small WebP pictures
      painted on a canvas at 10 fps (loaded in the background; the still picture shows until they are ready).
    ========================================================= */
+/* ?off=sky,glow,vignette,veil,bg,blur switches single effects off (to find out which one a browser has trouble with) */
+try { (new URLSearchParams(location.search).get("off") || "").split(",").filter(Boolean).forEach((n) => document.documentElement.classList.add("off-" + n.trim())); } catch { /* old browser */ }
 /* wider than 16:9: how much the sky layers must grow (about their right edge) to reach the window's left edge */
 const stageEl = document.getElementById("stage");
 const fitSky = () => { const W = stageEl.offsetWidth || 1; document.documentElement.style.setProperty("--wk", Math.max(1, (innerWidth + W) / (2 * W)).toFixed(4)); };
