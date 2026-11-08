@@ -80,6 +80,49 @@ async function scaled(bmp, maxSide, type = "image/webp", q = 0.86) {
   if (!b) b = await toBlob(c, "image/jpeg", q);
   return { blob: b, w: c.width, h: c.height };
 }
+/* the icon cropper: drag the picture, zoom with the slider or the wheel; the result is a square 512 px picture (zoomed out = empty edges stay see-through).
+   source: a File, or the address of a picture (to adjust the icon that is already there). Resolves to a Blob, or null when cancelled. */
+function cropIcon(source) {
+  return new Promise(async (done) => {
+    let bmp;
+    try { bmp = typeof source === "string" ? await createImageBitmap(await (await fetch(source, { cache: "no-store" })).blob()) : await bitmapOf(source); }
+    catch { toast("That picture can't be read.", true); return done(null); }
+    const S = 300;                                                  // size of the preview square in px
+    const cv = h("canvas", { width: S, height: S, class: "crop-cv" });
+    const g = cv.getContext("2d");
+    const base = Math.max(S / bmp.width, S / bmp.height);           // zoom 1 = the picture just covers the square
+    let z = 1, ox = 0, oy = 0;
+    const draw = (ctx, size, k) => {
+      const s = base * z * k, w = bmp.width * s, hh = bmp.height * s;
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(bmp, size / 2 + ox * k - w / 2, size / 2 + oy * k - hh / 2, w, hh);
+    };
+    const paint = () => { g.fillStyle = "#e9edf2"; g.fillRect(0, 0, S, S); draw(g, S, 1); };
+    const zoom = h("input", { type: "range", min: "0.4", max: "4", step: "0.01", value: "1", "aria-label": "Zoom", oninput: (e) => { z = Number(e.target.value); paint(); } });
+    const setZ = (v) => { z = Math.min(4, Math.max(0.4, v)); zoom.value = String(z); paint(); };
+    let drag = null;
+    cv.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, ox, oy }; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener("pointermove", (e) => { if (!drag) return; const r = cv.getBoundingClientRect(), k = S / r.width; ox = drag.ox + (e.clientX - drag.x) * k; oy = drag.oy + (e.clientY - drag.y) * k; paint(); });
+    const end = () => { drag = null; };
+    cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+    cv.addEventListener("wheel", (e) => { e.preventDefault(); setZ(z * (e.deltaY < 0 ? 1.06 : 1 / 1.06)); }, { passive: false });
+    const close = (v) => { back.remove(); document.removeEventListener("keydown", onKey); done(v); };
+    const onKey = (e) => { if (e.key === "Escape") close(null); };
+    const use = h("button", { class: "btn primary", type: "button", onclick: async () => {
+      const out = document.createElement("canvas"); out.width = out.height = 512; draw(out.getContext("2d"), 512, 512 / S);
+      close((await toBlob(out, "image/webp", 0.92)) || (await toBlob(out, "image/png")));
+    } }, "Use this icon");
+    const back = h("div", { class: "crop-back", onclick: (e) => { if (e.target === back) close(null); } },
+      h("div", { class: "card crop-card", role: "dialog", "aria-label": "Fit the icon" },
+        h("h3", {}, "Fit the icon"),
+        h("p", { class: "muted tiny" }, "Drag the picture to move it, use the slider (or the mouse wheel) to make it bigger or smaller."),
+        h("div", { class: "crop-frame" }, cv, h("span", { class: "crop-mask", "aria-hidden": "true" })),
+        h("div", { class: "crop-zoom" }, h("span", {}, "\u2212"), zoom, h("span", {}, "+")),
+        h("div", { class: "crop-btns" }, h("button", { class: "btn ghost", type: "button", onclick: () => { z = 1; ox = oy = 0; zoom.value = "1"; paint(); } }, "Reset"), h("span", { style: "flex:1" }), h("button", { class: "btn ghost", type: "button", onclick: () => close(null) }, "Cancel"), use)));
+    document.body.append(back); document.addEventListener("keydown", onKey);
+    paint();
+  });
+}
 async function squareIcon(file) {                               // centre-cropped square, 256 px; the gloss/shading is added by CSS like the other apps
   const bmp = await bitmapOf(file);
   const side = Math.min(bmp.width, bmp.height);
@@ -193,13 +236,13 @@ function renderEditor() {
   const iconInput = h("input", { type: "file", accept: "image/*", hidden: true, onchange: async (e) => {
     const f = e.target.files[0]; e.target.value = ""; if (!f) return;
     busy++; setDirty(dirty);
-    try { p.icon = await uploadBlob(await squareIcon(f)); setDirty(); renderList(); renderEditor(); }
+    try { const blob = await cropIcon(f); if (!blob) return; p.icon = await uploadBlob(blob); setDirty(); renderList(); renderEditor(); }
     catch (err) { toast(err.message, true); }
     finally { busy--; setDirty(dirty); }
   } });
 
-  const label = h("input", { type: "text", value: p.label || "", maxLength: 24, placeholder: "Name under the icon", oninput: (e) => { p.label = e.target.value; setDirty(); renderList(); } });
-  const title = h("input", { type: "text", value: p.title || "", maxLength: 80, placeholder: "Big title next to the phone", oninput: (e) => { p.title = e.target.value; setDirty(); } });
+  const label = h("input", { type: "text", value: p.label || "", maxLength: 16, placeholder: "Name under the icon", oninput: (e) => { p.label = e.target.value; setDirty(); renderList(); } });
+  const title = h("input", { type: "text", value: p.title || "", maxLength: 32, placeholder: "Big title next to the phone", oninput: (e) => { p.title = e.target.value; setDirty(); } });
   const text = h("textarea", { placeholder: "Write the article here. Leave an empty line between paragraphs.", oninput: (e) => { p.text = e.target.value.split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean); setDirty(); } });
   text.value = (p.text || []).join("\n\n");
   const href = h("input", { type: "text", value: p.href || "", placeholder: "Leave empty for a normal gallery app", oninput: (e) => {
@@ -246,13 +289,20 @@ function renderEditor() {
       h("h3", {}, "Icon"),
       h("div", { class: "icon-row" }, iconPrev,
         h("div", {},
-          h("button", { class: "btn", type: "button", onclick: () => iconInput.click() }, p.icon ? "Change picture" : "Upload picture"),
-          h("p", { class: "muted tiny", style: "margin-top:8px" }, "Any picture. It is cropped square and shaded like the other apps on the phone.")),
+          h("div", { class: "icon-btns" },
+            h("button", { class: "btn", type: "button", onclick: () => iconInput.click() }, p.icon ? "Change picture" : "Upload picture"),
+            p.icon ? h("button", { class: "btn ghost", type: "button", onclick: async () => {
+              busy++; setDirty(dirty);
+              try { const blob = await cropIcon(res(p.icon)); if (!blob) return; p.icon = await uploadBlob(blob); setDirty(); renderList(); renderEditor(); }
+              catch (err) { toast(err.message, true); }
+              finally { busy--; setDirty(dirty); }
+            } }, "Resize / move") : null),
+          h("p", { class: "muted tiny", style: "margin-top:8px" }, "Any picture. You fit it in the square yourself; it is shaded like the other apps on the phone.")),
         iconInput)),
     h("div", { class: "card sect" },
       h("h3", {}, "Text"),
-      h("label", { class: "f" }, "Name under the icon", label),
-      h("label", { class: "f" }, "Title", h("small", {}, "The big heading next to the phone when the app is open."), title),
+      h("label", { class: "f" }, "Name under the icon", h("small", {}, "Up to 16 characters."), label),
+      h("label", { class: "f" }, "Title", h("small", {}, "The big heading next to the phone when the app is open. Up to 32 characters."), title),
       h("label", { class: "f" }, "Article", text)),
     mediaSect,
     h("div", { class: "card sect" },

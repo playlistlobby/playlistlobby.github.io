@@ -53,7 +53,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 /* ---------- the text on the right ---------- */
 .copy{position:absolute;left:calc(var(--s) * 51.1);top:calc(var(--s) * 11.6);width:calc(var(--s) * 46)}
-.copy h1{font-size:calc(var(--s) * 6.3);line-height:1.08;font-weight:500;letter-spacing:-.025em;margin-left:-.04em}
+.copy h1{font-size:calc(var(--s) * 6.3 * var(--k,1));overflow-wrap:anywhere;line-height:1.08;font-weight:500;letter-spacing:-.025em;margin-left:-.04em}
 .copy .text{margin-top:calc(var(--s) * 1.6);font-size:calc(var(--s) * 1.45);line-height:1.3;font-weight:400}
 .copy .text p+p{margin-top:.35em}
 .copy h1,.copy .text{transition:opacity .28s ease,transform .38s var(--ease)}
@@ -99,7 +99,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .sb-icon::before{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(0,0,0,.45);opacity:0;transition:opacity .12s;z-index:1}
 .sb-app:active .sb-icon::before,.sb-app.pressed .sb-icon::before{opacity:1}
 .sb-app:focus-visible .sb-icon{box-shadow:0 0 0 calc(2 * var(--u)) rgba(255,255,255,.8),0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,.5)}
-.sb-label{font:700 calc(11 * var(--u))/calc(13 * var(--u)) var(--font);color:#2c3136;text-shadow:0 1px 0 rgba(255,255,255,.9);white-space:nowrap}
+.sb-label{font:700 calc(11 * var(--u) * var(--k,1))/calc(13 * var(--u)) var(--font);color:#2c3136;text-shadow:0 1px 0 rgba(255,255,255,.9);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .sb-dots{position:absolute;z-index:2;left:0;right:0;bottom:calc(88 * var(--u));display:flex;justify-content:center;gap:calc(9 * var(--u))}
 .sb-dots i{width:calc(6 * var(--u));height:calc(6 * var(--u));border-radius:50%;background:rgba(40,60,70,.9);box-shadow:0 1px 1px rgba(255,255,255,.4)}
 .sb-dots i+i{background:rgba(40,60,70,.35)}
@@ -118,7 +118,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   background:linear-gradient(rgba(150,170,197,.86) 0%,rgba(112,135,166,.88) 50%,rgba(96,120,152,.9) 51%,rgba(86,110,143,.94) 100%);
   -webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 .5px 0 rgba(20,35,60,.55),0 calc(8 * var(--u)) calc(20 * var(--u)) calc(-8 * var(--u)) rgba(20,35,60,.35)}
-.ios-title{position:absolute;left:50%;transform:translateX(-50%);font:700 calc(20 * var(--u))/calc(44 * var(--u)) var(--font);color:#fff;text-shadow:0 -1px 0 rgba(20,35,60,.45);white-space:nowrap;pointer-events:none}
+.ios-title{position:absolute;left:50%;transform:translateX(-50%);max-width:calc(150 * var(--u));overflow:hidden;text-overflow:ellipsis;font:700 calc(20 * var(--u) * var(--k,1))/calc(44 * var(--u)) var(--font);color:#fff;text-shadow:0 -1px 0 rgba(20,35,60,.45);white-space:nowrap;pointer-events:none}
 .ios-back{position:relative;height:calc(30 * var(--u));min-width:calc(62 * var(--u));padding:0 calc(10 * var(--u)) 0 calc(16 * var(--u));
   font:700 calc(12 * var(--u))/calc(30 * var(--u)) var(--font);color:#fff;text-shadow:0 -1px 0 rgba(20,35,60,.5);transition:filter .15s,transform .3s var(--spring)}
 .ios-back svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1;overflow:visible;filter:drop-shadow(0 1px 0 rgba(255,255,255,.25))}
@@ -173,7 +173,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   .phone{--pw:var(--mpw);left:50%;top:calc(2.2dvh + 48px + env(safe-area-inset-top));margin-left:calc(var(--mpw) / -2)}
   .copy{position:relative;left:auto;right:auto;top:auto;width:auto;max-height:none;overflow:visible;
     margin:calc(2.2dvh + 48px + env(safe-area-inset-top) + var(--mpw) * 2.0323 + 2.4dvh) 7vw 0;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
-  .copy h1{font-size:max(30px,9.2vw)}
+  .copy h1{font-size:calc(max(30px,9.2vw) * var(--k,1))}
   .copy .text{font-size:max(15px,4.2vw);margin-top:.5em}
 }
 @media (prefers-reduced-motion:reduce){
@@ -229,3 +229,5 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   background:radial-gradient(circle at 38% 34%,rgba(120,150,230,.85) 0,rgba(54,64,140,.7) 28%,rgba(18,14,44,.9) 60%,#02030a 100%)}
 .lens::after{content:"";position:absolute;left:30%;top:24%;width:24%;height:24%;border-radius:50%;
   background:radial-gradient(circle,rgba(255,255,255,.9) 0,rgba(255,255,255,.35) 45%,rgba(255,255,255,0) 72%)}
+
+.ios-back span{max-width:calc(70 * var(--u));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(1em * var(--k,1))}
