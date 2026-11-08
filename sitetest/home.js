@@ -151,14 +151,14 @@ async function buildGlass() {
   try { await loadShapes(); } catch (e) { console.warn("shapes", e); return; }
   const svg = (inner) => `<svg viewBox="0 0 1000 1006.32" aria-hidden="true">${inner}</svg>`;
   const defs = `<defs>
-    <linearGradient id="rim" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="1006"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".35" stop-color="#fff" stop-opacity=".06"/><stop offset=".7" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity=".9"/></linearGradient>
+    <linearGradient id="rim" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="1006"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".4" stop-color="#fff" stop-opacity=".62"/><stop offset=".7" stop-color="#fff" stop-opacity=".62"/><stop offset="1" stop-color="#fff" stop-opacity="1"/></linearGradient>
     <linearGradient id="sheen" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="1006"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>`;
   shape.querySelector(".sh").innerHTML = svg(`<path class="shp" fill-rule="evenodd"/>`);
   shape.querySelector(".rim").innerHTML = svg(`${defs}
     <path fill="url(#sheen)" fill-rule="evenodd"/>
     <path class="gr" fill="none" stroke-width="16" stroke-linejoin="round"/>
-    <path fill="none" stroke="url(#rim)" stroke-width="7" stroke-linejoin="round"/>
-    <path fill="none" stroke="rgba(38,64,44,.22)" stroke-width="2.5" stroke-linejoin="round" transform="translate(0 1.5)"/>`);
+    <path class="ln" fill="none" stroke="url(#rim)" stroke-linejoin="round"/>
+    <path class="ln2" fill="none" stroke="rgba(38,64,44,.07)" stroke-linejoin="round" transform="translate(0 1.5)"/>`);
   pathEls = [...shape.querySelectorAll(".sh path, .rim path")];
   k = location.hash === "#menu" ? 1 : 0;
   draw(k);
