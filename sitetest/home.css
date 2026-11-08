@@ -10,7 +10,13 @@ html,body{height:100%}
 /* the page background lives on the root: a solid colour (the gradient's bottom tone) under everything, and the gradient itself on a fixed layer the size of the LARGE viewport.
    On iPhone Safari the body is only as tall as the viewport with its toolbars shown, so a gradient on the body left a white strip below it when the toolbars slide away. */
 html{background:#dde3e8;-webkit-text-size-adjust:100%;overflow:hidden}   /* the person and the leaves reach past the screen: clip them at the root so a phone does not widen the page to fit them (that made it zoomed and pannable) */
-html::before{content:"";position:fixed;left:0;right:0;top:0;height:100%;height:100lvh;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 80% 75% at 50% 42%,#f2f4f5 0%,#ecf0f2 38%,#e1e7eb 72%,#ccd4db 100%)}
+/* the bright middle of the background sits under the person's hand (the hand with the phone) and follows it from scene 1 to scene 2:
+   --cx / --cy are the middle (registered, so they can transition); X and Y in the formulas are the hand's place on the 100 x 56.25 stage, S one stage unit */
+@property --cx{syntax:"<length>";inherits:true;initial-value:0px}
+@property --cy{syntax:"<length>";inherits:true;initial-value:0px}
+html{--S:min(1vw,1.7778vh);--cx:calc(50vw + (29.7 - 50) * var(--S));--cy:calc(50vh + (11.2 - 28.125) * var(--S));transition:--cx calc(var(--t) * 1.1) var(--ease),--cy calc(var(--t) * 1.1) var(--ease)}
+html:has(body.s2){--cx:calc(50vw + (9.3 - 50) * var(--S));--cy:calc(50vh + (12.1 - 28.125) * var(--S))}
+html::before{content:"";position:fixed;left:0;right:0;top:0;height:100%;height:100lvh;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 95% 90% at var(--cx) var(--cy),#f2f4f5 0%,#ecf0f2 38%,#e1e7eb 72%,#ccd4db 100%)}
 
 body{overflow:hidden;font-family:var(--font);color:#1b1b1d;
   }
@@ -37,8 +43,6 @@ body.s2 .leaves{transform:translate(calc(var(--s) * -14.6),calc(var(--s) * -6.8)
 .person img,.person video,.person canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;user-select:none}
 .person video[hidden]{display:none}
 
-/* multiply: the picture's whites take on the page's own background tone, so the person blends in instead of sitting on it as a lighter cut-out */
-.person{mix-blend-mode:multiply}
 body.s2 .person{transform:translate(calc(var(--s) * -21.354),calc(var(--s) * -1.146)) scale(1.2);filter:blur(calc(var(--s) * .208))}
 
 /* progressive blur (sharper at the top, softer towards the bottom): fades in with scene 2 */
@@ -151,6 +155,8 @@ body.leaving .stage{opacity:0;transform:scale(1.02);transition:opacity .3s ease,
   .wordmark .wm-g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5));backdrop-filter:blur(calc(var(--px) * 9.5))}
   .stage{--s:1vw;--px:calc(var(--s) / 3.9);--w:57.24;--g0:1.25;left:0;top:0;margin:0;width:100vw;height:100vh;height:100dvh}
   body.s2 .stage{--gk:2.6207}
+  html{--cx:12vw;--cy:calc(15.05dvh + 38.3vw)}
+  html:has(body.s2){--cx:12vw;--cy:calc(5.93dvh + 37.5vw)}
   .stage{overflow:hidden;overflow:clip}   /* the person and the leaves are bigger than the screen: cut them off at the stage, or the phone widens the page to fit them */
   .shape .g{-webkit-backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)));backdrop-filter:blur(calc(var(--px) * 9.5 / var(--gk)))}
   .person{left:-21.03vw;top:15.05dvh;bottom:auto;width:169.08vw;height:208.21vw;aspect-ratio:auto;transform-origin:0 0;opacity:1;filter:blur(.385vw)}
