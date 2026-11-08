@@ -212,6 +212,8 @@ buildGlass().then(() => draw(k));
    ========================================================= */
 /* ?off=sky,glow,vignette,veil,bg,blur switches single effects off (to find out which one a browser has trouble with) */
 try { (new URLSearchParams(location.search).get("off") || "").split(",").filter(Boolean).forEach((n) => document.documentElement.classList.add("off-" + n.trim())); } catch { /* old browser */ }
+/* the three app icons that show on hover are decoded up front, so none of them is still a blank white square when it first fades in */
+document.querySelectorAll(".appicon img").forEach((im) => { try { im.decode && im.decode().catch(() => {}); } catch { /* old browser */ } });
 /* wider than 16:9: how much the sky layers must grow (about their right edge) to reach the window's left edge */
 const stageEl = document.getElementById("stage");
 const fitSky = () => { const W = stageEl.offsetWidth || 1; document.documentElement.style.setProperty("--wk", Math.max(1, (innerWidth + W) / (2 * W)).toFixed(4)); };
