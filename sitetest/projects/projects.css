@@ -56,6 +56,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .copy h1{font-size:calc(var(--s) * 6.3 * var(--k,1));overflow-wrap:anywhere;line-height:1.08;font-weight:500;letter-spacing:-.025em;margin-left:-.04em}
 .copy .text{margin-top:calc(var(--s) * 1.6);font-size:calc(var(--s) * 1.45);line-height:1.3;font-weight:400}
 .copy .text p+p{margin-top:.35em}
+.copy .text p.pre{white-space:pre-wrap;overflow-wrap:anywhere}   /* the text shows its line breaks and empty lines exactly as typed in the admin */
 .copy h1,.copy .text{transition:opacity .28s ease,transform .38s var(--ease)}
 .copy.swap h1,.copy.swap .text{opacity:0;transform:translateY(calc(var(--s) * .9))}
 .copy{animation:copyin .9s .15s var(--ease) both}

@@ -57,7 +57,7 @@ function setCopy(title, paras) {
   copy.classList.add("swap");
   setTimeout(() => {
     titleEl.textContent = title; fitWords(titleEl, titleEl.clientWidth, .5);
-    textEl.innerHTML = (paras || []).map((p) => `<p>${esc(p)}</p>`).join("");
+    textEl.innerHTML = (paras && paras.length) ? `<p class="pre">${esc(paras.join("\n\n"))}</p>` : "";
     copy.classList.remove("swap");
   }, 280);
 }
@@ -341,7 +341,7 @@ async function loadData() {
 loadData().then((d) => {
   data = d;
   titleEl.textContent = d.intro.title;
-  textEl.innerHTML = d.intro.text.map((p) => `<p>${esc(p)}</p>`).join("");
+  textEl.innerHTML = d.intro.text.length ? `<p class="pre">${esc(d.intro.text.join("\n\n"))}</p>` : "";
   build();
   const want = location.hash.slice(1);
   const at = d.projects.findIndex((p) => p.id === want);

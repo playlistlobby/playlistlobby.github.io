@@ -65,6 +65,10 @@ async function uploadBlob(blob) {
   return j.url;
 }
 
+/* Texts are kept exactly as typed (line breaks and empty lines included) as one block; older texts that were saved as separate paragraphs are shown with an empty line between them, which is how the page showed them. */
+const packText = (v) => { const t = String(v || "").replace(/\r\n?/g, "\n").replace(/^\n+|\s+$/g, ""); return t.trim() ? [t] : []; };
+const unpackText = (a) => (Array.isArray(a) ? a : []).join("\n\n");
+
 /* ---------- pictures: resized in the browser so the uploads stay small ---------- */
 const toBlob = (c, type, q) => new Promise((ok) => c.toBlob((b) => ok(b), type, q));
 async function bitmapOf(file) {
@@ -217,13 +221,13 @@ function move(i, d) {
 
 function renderIntro() {
   const title = h("input", { type: "text", value: intro.title || "", maxLength: 80, placeholder: "Projects", oninput: (e) => { intro.title = e.target.value; setDirty(); } });
-  const text = h("textarea", { placeholder: "Tap an app on the phone to open a project.", oninput: (e) => { intro.text = e.target.value.split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean); setDirty(); } });
-  text.value = (intro.text || []).join("\n\n");
+  const text = h("textarea", { placeholder: "Tap an app on the phone to open a project.", oninput: (e) => { intro.text = packText(e.target.value); setDirty(); } });
+  text.value = unpackText(intro.text);
   $("#editor").replaceChildren(h("div", { class: "card sect" },
     h("h3", {}, "Page text"),
     h("p", { class: "muted tiny" }, "What the projects page says next to the phone until an app is opened (and again when it is closed)."),
     h("label", { class: "f" }, "Title", title),
-    h("label", { class: "f" }, "Text", h("small", {}, "Leave an empty line between paragraphs."), text)));
+    h("label", { class: "f" }, "Text", h("small", {}, "Line breaks and empty lines appear on the page exactly as you type them."), text)));
 }
 function renderEditor() {
   const ed = $("#editor");
@@ -243,8 +247,8 @@ function renderEditor() {
 
   const label = h("input", { type: "text", value: p.label || "", maxLength: 16, placeholder: "Name under the icon", oninput: (e) => { p.label = e.target.value; setDirty(); renderList(); } });
   const title = h("input", { type: "text", value: p.title || "", maxLength: 32, placeholder: "Big title next to the phone", oninput: (e) => { p.title = e.target.value; setDirty(); } });
-  const text = h("textarea", { placeholder: "Write the article here. Leave an empty line between paragraphs.", oninput: (e) => { p.text = e.target.value.split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean); setDirty(); } });
-  text.value = (p.text || []).join("\n\n");
+  const text = h("textarea", { placeholder: "Write the article here. Line breaks and empty lines appear on the page exactly as you type them.", oninput: (e) => { p.text = packText(e.target.value); setDirty(); } });
+  text.value = unpackText(p.text);
   const href = h("input", { type: "text", value: p.href || "", placeholder: "Leave empty for a normal gallery app", oninput: (e) => {
     p.href = e.target.value.trim() || undefined;
     if (p.href && !p.photos) p.photos = undefined; else if (!p.href && !p.photos) p.photos = [];
