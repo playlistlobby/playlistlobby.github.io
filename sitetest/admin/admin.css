@@ -176,3 +176,5 @@ table.stock input{width:76px;padding:6px 8px;border-radius:8px;border:1px solid 
 .fit-frame.grid{background:#e6e9ee}
 .fit-frame:active{cursor:grabbing}
 .fit-img{position:absolute;max-width:none;max-height:none;height:auto;display:block;pointer-events:none;-webkit-user-drag:none}
+
+.msg .tag.ok{background:#d9f2c9;color:#1f5a14;border-color:#86c36b}

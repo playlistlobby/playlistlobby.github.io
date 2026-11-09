@@ -156,3 +156,10 @@ input{font:inherit}
 .lb-prev{left:14px}.lb-next{right:14px}
 .lb-count{position:absolute;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom));text-align:center;font-size:13px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.8)}
 .lb-count:empty{display:none}
+
+/* the message when the buyer comes back from the payment page */
+.pay-banner{position:fixed;left:50%;top:64px;z-index:60;max-width:min(92vw,520px);padding:12px 18px;border-radius:12px;text-align:center;font:600 14px/1.35 var(--font,"Helvetica Neue",Helvetica,Arial,sans-serif);color:#1d3a22;cursor:pointer;
+  background:linear-gradient(#e6f6dc,#cfeab9);border:1px solid #8cc06f;box-shadow:0 6px 18px rgba(30,60,30,.25),inset 0 1px 0 rgba(255,255,255,.7);
+  opacity:0;transform:translate(-50%,-10px);transition:opacity .35s ease,transform .45s cubic-bezier(.3,.8,.3,1)}
+.pay-banner.bad{color:#5b2a14;background:linear-gradient(#fbeede,#f4d9b8);border-color:#d9a971}
+.pay-banner.on{opacity:1;transform:translate(-50%,0)}

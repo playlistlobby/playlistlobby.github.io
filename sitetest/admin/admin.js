@@ -743,7 +743,11 @@ function renderInbox() {
   const orders = view === "orders", list = orders ? inbox.orders : inbox.inquiries;
   $("#inboxTitle").textContent = orders ? "Orders" : "Inquiries";
   $("#inboxNote").textContent = orders
-    ? "Order requests from the shop. Payments are not switched on yet, so none of these are paid: contact the buyer to finish each one."
+    ? (inbox.payments && !inbox.webhook
+        ? "WARNING: card payments are on, but the webhook secret (STRIPE_WEBHOOK_SECRET) is not set on the Worker, so paid orders will NOT be marked as paid here. Check the payments in your Stripe dashboard until it is set."
+        : inbox.payments
+        ? "Orders from the shop, paid through Stripe. PAID = Stripe confirmed the payment, you can send it. AWAITING PAYMENT = the buyer is still on the payment page (the item is held for 30 minutes); NOT PAID = they left or it timed out."
+        : "Order requests from the shop. Payments are not switched on yet, so none of these are paid: contact the buyer to finish each one.")
     : "Messages sent through the contact page (email address first, then the message).";
   $("#inboxList").replaceChildren(...(list.length ? list.map((it) => {
     const acts = h("div", { class: "acts" },
@@ -754,13 +758,15 @@ function renderInbox() {
       return h("div", { class: "card msg" + (it.done ? " done" : "") },
         h("div", { class: "top" },
           h("span", { class: "who" }, it.name),
-          h("span", {}, h("span", { class: "tag" + (it.done ? "" : " new") }, it.done ? "HANDLED" : "NEW"), " ", h("span", { class: "tag" }, "UNPAID")),
+          h("span", {}, h("span", { class: "tag" + (it.done ? "" : " new") }, it.done ? "HANDLED" : "NEW"), " ", h("span", { class: "tag" + (it.paid ? " ok" : "") }, it.paid ? "PAID" : it.status === "pending" ? "AWAITING PAYMENT" : it.status === "cancelled" || it.status === "expired" ? "NOT PAID" : "UNPAID")),
           h("span", { class: "when" }, fmt(it.at))),
         h("dl", { class: "grid" },
           ...row("Item", `${it.product}${it.color ? " · " + it.color : ""}${it.size ? " · size " + it.size : ""} · ${Number(it.price).toLocaleString("da-DK")} ${it.currency}`),
           ...row("Email", h("a", { href: "mailto:" + it.email }, it.email)),
           ...row("Phone", h("a", { href: "tel:" + it.phone.replace(/[^+0-9]/g, "") }, it.phone)),
-          ...row("Address", `${it.street}, ${it.zip} ${it.city}, ${it.country}`)),
+          ...row("Address", `${it.street}, ${it.zip} ${it.city}, ${it.country}`),
+          ...(it.paid ? row("Payment", it.intent ? h("a", { href: "https://dashboard.stripe.com/payments/" + encodeURIComponent(it.intent), target: "_blank", rel: "noopener" }, `${Number((it.amount ?? it.price * 100) / 100).toLocaleString("da-DK")} ${it.currency} · open in Stripe`) : "Paid") : []),
+          ...(it.late ? row("Note", "Paid after the item was released: check that it is still in stock.") : [])),
         acts);
     }
     return h("div", { class: "card msg" + (it.done ? " done" : "") },

@@ -21,11 +21,13 @@ async function loadShop() {
   try {
     const early = take("shop");                                 // the request that was started in the page head, if there is one
     const j = await Promise.race([early || fetch(API_BASE + "/api/shop", { cache: "no-store" }).then((r) => r.json()), new Promise((_, no) => setTimeout(no, 2500))]);
-    if (Array.isArray(j.shop)) return { list: j.shop, stock: j.stock || {} };
+    if (Array.isArray(j.shop)) return { list: j.shop, stock: j.stock || {}, payments: !!j.payments };
+    if (j && "payments" in j) return { list: DEFAULT_SHOP, stock: {}, payments: !!j.payments };
   } catch { /* the built-in tee below */ }
-  return { list: DEFAULT_SHOP, stock: {} };
+  return { list: DEFAULT_SHOP, stock: {}, payments: false };
 }
 const shop = await loadShop();
+let payments = shop.payments;                                   // the Worker has Stripe switched on: the form leads to the payment page
 let stock = shop.stock;                                         // "product|size|colour" -> how many are left (only for products that track their stock)
 const forSale = shop.list.filter((p) => p.on !== false);
 const products = forSale;                                       // every product once on the ring: the wheel shows exactly what the admin has switched on
@@ -259,6 +261,7 @@ async function refreshStock() {
   if (fresh && prod) { prod = Object.assign(prod, fresh); renderOptions(); }
 }
 let sending = false;
+if (payments) { const sb = form.querySelector("[type=submit]"); if (sb) sb.textContent = "Continue to payment"; }
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (sending) return;
@@ -266,12 +269,17 @@ form.addEventListener("submit", async (e) => {
   let order;
   try { order = { ...cleanOrder(v), product: prod.id, size, color }; } catch (err) { sfx("no"); note.textContent = err.message; return; }
   // Payments are not switched on: the order is kept as an unpaid request that the owner sees in the admin (/admin/, Orders). Nothing is charged.
-  sending = true; note.textContent = "Sending…";
+  sending = true; note.textContent = payments ? "One moment…" : "Sending…";
   const btn = form.querySelector("[type=submit]"); if (btn) btn.disabled = true;
   try {
     const r = await fetch(API_BASE + "/api/order", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(order) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error ? j.error[0].toUpperCase() + j.error.slice(1) + "." : "Something went wrong. Try again in a moment.");
+    if (j.checkout) {                                           // Stripe's payment page: the item is held for 30 minutes while the buyer pays
+      sfx("sent"); note.textContent = "Taking you to the secure payment…";
+      location.href = j.checkout;
+      return;
+    }
     if (prod.track) { const k = `${prod.id}|${size || "x"}|${color || "x"}`; stock[k] = Math.max(0, (Number(stock[k]) || 0) - 1); }
     sfx("sent");
     note.textContent = "Thank you, your order request is in. Payments aren't switched on yet, so nothing was charged: we'll get in touch to finish it.";
@@ -283,6 +291,26 @@ form.addEventListener("submit", async (e) => {
     refreshStock();                                             // it may have been sold out or switched off in the meantime
   }
 });
+
+/* ---------- back from the payment page ---------- */
+// "back" from Stripe can show this page again as it was (form locked): unlock it
+addEventListener("pageshow", (e) => { if (e.persisted && sending && !form.hidden) { sending = false; form.querySelectorAll("input,button").forEach((x) => (x.disabled = false)); note.textContent = ""; refreshStock(); } });
+function payBanner(text, bad) {
+  const b = document.createElement("div"); b.className = "pay-banner" + (bad ? " bad" : ""); b.setAttribute("role", "status"); b.textContent = text;
+  const close = () => { b.classList.remove("on"); setTimeout(() => b.remove(), 400); };
+  b.addEventListener("click", close); document.body.append(b);
+  requestAnimationFrame(() => b.classList.add("on")); setTimeout(close, 12000);
+}
+{
+  const q = new URLSearchParams(location.search);
+  if (q.get("paid")) { payBanner("Thank you! Your payment went through. A receipt is on its way to your email."); sfx("sent"); }
+  else if (q.get("cancelled")) {
+    payBanner("The payment was cancelled. Nothing was charged.", true);
+    const o = q.get("o");
+    if (o) fetch(API_BASE + "/api/order-cancel", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ o }) }).then(() => refreshStock()).catch(() => {});
+  }
+  if (q.get("paid") || q.get("cancelled")) history.replaceState(null, "", location.pathname);
+}
 
 /* ---------- the loop ---------- */
 let angle = Math.random() * Math.PI * 2, omega = reduce ? 0 : TURN;
