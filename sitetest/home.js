@@ -17,10 +17,13 @@ const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
 let scene2 = false;
 function setScene(two, push = true) {
   scene2 = two;
+  clearTimeout(bakeT);
+  if (!two) unbake();
   body.classList.toggle("s2", two);
   glass.setAttribute("aria-label", two ? "Back" : "Play");
   menu.querySelectorAll("a").forEach((a) => (a.tabIndex = two ? 0 : -1));
   morphTo(two ? 1 : 0);
+  if (two) bakeT = setTimeout(bake, reduce ? 60 : 1250);
   if (!two) { clearTimeout(leaveTimer); setGlow(false); }
   if (push) history.replaceState(null, "", two ? "#menu" : location.pathname + location.search);
 }
@@ -128,22 +131,33 @@ const poly = (a, b, t, sc) => {
 const CS = 1.6;                                                        // canvas pixels per shape unit (sharp enough when the glass is scaled up)
 const phoneMq = matchMedia("(max-aspect-ratio:9/10)");
 let GK = phoneMq.matches ? 5.2576 : 4.7323;                              // scene-2 scale of the glass
-const WD = phoneMq.matches ? 57.24 : 116.23;                              // the glass width in design px (see home.css)
+let WD = phoneMq.matches ? 57.24 : 116.23;                                // the glass width in design px (see home.css)
+/* Phone sharpness: a 57 px element scaled up 5x can be drawn from a small bitmap by the phone's browser (soft edges). So once the glass has grown into the big note icon it is made
+   that big for real ("baked": real width / position, no transform), and going back to scene 1 undoes it first. The frosted layer is also built 3x as big and scaled down (see home.css). */
+let baked = false, bakeT = 0, gscNow = 5.2576, gwNow = 301;
+const syncRim = () => { if (!phoneMq.matches) { GK = 4.7323; WD = 116.23; } else if (baked) { GK = 1; WD = gwNow; } else { GK = gscNow; WD = 57.24; } };
 /* Phone: lay the scene-2 menu (icon + 3 buttons = a block 627 design px tall, from the Figma 390 x 844 frame) out for the screen that is really visible. A phone's browser bars make the
    screen shorter than 844, and the icon (sized by width) used to run into the buttons (placed by height). So the whole block is scaled down when the screen is short. */
 function fitPhone() {
   const root = document.documentElement.style, names = ["--ks", "--x0", "--y0", "--gsc", "--gtx", "--gty"];
-  if (!phoneMq.matches) { GK = 4.7323; names.forEach((n) => root.removeProperty(n)); return; }
+  if (!phoneMq.matches) { if (baked) { baked = false; glass.classList.remove("baked"); } names.concat("--gw").forEach((n) => root.removeProperty(n)); syncRim(); return; }
   const st = document.querySelector(".stage"), W = st.offsetWidth || innerWidth, H = st.offsetHeight || innerHeight;
   const ks = Math.min(W / 390, H / 700), x0 = (W - 390 * ks) / 2, y0 = (H - 627 * ks) * 0.23;
   const gsc = 301 * ks / (W * 0.1468);                                   // the glass is 14.68% of the width in scene 1
-  GK = gsc;
+  gscNow = gsc; gwNow = 301 * ks; syncRim();
   const set = (n, v) => root.setProperty(n, v);
+  set("--gw", gwNow.toFixed(2));
   set("--ks", ks.toFixed(4) + "px"); set("--x0", x0.toFixed(2) + "px"); set("--y0", y0.toFixed(2) + "px");
   set("--gsc", gsc.toFixed(4)); set("--gtx", (x0 + 44 * ks - W * 0.1154).toFixed(2) + "px"); set("--gty", (y0 - H * 0.4746).toFixed(2) + "px");
 }
-fitPhone(); addEventListener("resize", fitPhone); phoneMq.addEventListener("change", fitPhone);
+fitPhone(); addEventListener("resize", () => { fitPhone(); if (baked) draw(k); }); phoneMq.addEventListener("change", fitPhone);
 if (window.visualViewport) visualViewport.addEventListener("resize", fitPhone);
+function bake() { if (!scene2 || baked || !phoneMq.matches) return; baked = true; glass.classList.add("baked"); syncRim(); draw(k); }
+function unbake() {
+  if (!baked) return;
+  glass.style.transition = "none"; baked = false; glass.classList.remove("baked"); syncRim(); draw(k);
+  void glass.offsetWidth; glass.style.transition = "";                  // the style is settled (same look, scaled again) before the transform starts to move
+}
 let rimCv = null, rimG = null;
 const FLOOR = 0.04, POW = 1.7;
 function rimLoop(a, b, t, g, wUnits) {
@@ -176,7 +190,7 @@ function draw(t) {
   for (const p of pathEls) p.setAttribute("d", d);
   drawRim(t);
   const w = glass.offsetWidth || 1;                                    // layout size (the page's own scale transform is applied on top)
-  const px = w / 1000;
+  const px = w / 1000 * (phoneMq.matches ? 3 : 1);                     // phones: the frosted layer is 3x as big (see home.css)
   gEl.style.clipPath = `path(evenodd,"${poly(P.outer[0], P.outer[1], t, px) + poly(P.inner[0], P.inner[1], t, px)}")`;
 }
 // the same easing as the CSS transform of the glass, so the shape and its move stay together
