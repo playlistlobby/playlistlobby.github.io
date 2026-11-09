@@ -168,7 +168,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 @media (max-aspect-ratio:9/10){
   html{overscroll-behavior:none}
   /* --vis = how much of the phone shows above the bottom edge: its top bezel and the part of the screen the viewer needs (the same 326 design px as on a desktop window) */
-  .stage{--s:1vw;--mpw:min(90vw,43dvh);--vis:calc(var(--mpw) * 1.118 + 14px);width:100vw;height:100vh;height:100dvh;margin:0;overflow:hidden;overflow:clip}
+  .stage{--s:1vw;--mpw:min(108vw,51.6dvh);--vis:calc(var(--mpw) * 1.118 + 14px);width:100vw;height:100vh;height:100dvh;margin:0;overflow:hidden;overflow:clip}
   .phone{--pw:var(--mpw);left:50%;top:calc(100% - var(--vis));margin-left:calc(var(--mpw) / -2)}
   .copy{left:7vw;right:7vw;width:auto;top:calc(48px + env(safe-area-inset-top) + 1.6dvh);bottom:calc(var(--vis) + 2dvh);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .copy::-webkit-scrollbar{display:none}
