@@ -147,8 +147,7 @@ function cropIcon(source) {
    No saved place = the page's own default (the thumbnail and the desktop viewer fill the frame, the desktop one from the bottom; the phone viewer shows the whole picture). */
 const FRAMES = {
   grid:  { label: "Thumbnail",      note: "The small square in the gallery.", F: 1, pw: 240 },
-  desk:  { label: "Desktop viewer", note: "The picture when it is opened on a computer (the top part of the phone).", F: 320 / 262, pw: 320 },
-  phone: { label: "Phone viewer",   note: "The picture when it is opened on a phone: the whole phone screen.", F: 320 / 568, pw: 190 },
+  desk:  { label: "Opened picture", note: "The picture when it is opened (the frame at the top of the phone: the same on computers and on phones).", F: 320 / 262, pw: 320 },
 };
 const boxCss = (b) => `left:${+(b.l * 100).toFixed(3)}%;top:${+(b.t * 100).toFixed(3)}%;width:${+(b.w * 100).toFixed(3)}%`;
 const minWidthOf = (kind, A) => { const F = FRAMES[kind].F; return kind === "phone" ? Math.min(1, A / F) : Math.max(1, A / F); };
@@ -167,7 +166,7 @@ function cropMedia(m) {
     const video = m.type === "video", src = res(video ? m.thumb : m.src);
     const pic = new Image();
     try { await new Promise((ok, no) => { pic.onload = ok; pic.onerror = no; pic.src = src; }); } catch { toast("That picture can't be loaded.", true); return done(null); }
-    const A = pic.naturalWidth / pic.naturalHeight, kinds = video ? ["grid"] : ["grid", "desk", "phone"];
+    const A = pic.naturalWidth / pic.naturalHeight, kinds = video ? ["grid"] : ["grid", "desk"];
     const st = {}; kinds.forEach((k) => { st[k] = m.crop && m.crop[k] ? clampBox(k, A, m.crop[k]) : null; });
     let kind = "grid";
     const boxOf = () => st[kind] || defaultBox(kind, A);

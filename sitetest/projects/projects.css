@@ -157,23 +157,22 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ios-navbtn:disabled{opacity:.35;cursor:default}
 .ios-navbtn:not(:disabled):active{filter:brightness(.8);transform:scale(.94)}
 /* on a desktop screen only the top part of the phone is on screen: keep the picture inside it */
-@media (min-aspect-ratio:9/10){
+@media all{
   /* the photo fills a frame at the top of the screen: the full width, down to the end of the visible part. It is cropped to fit,
      from the sides (and from the top of a tall photo), but the bottom of the photo stays. */
   .slide{padding-top:calc(64 * var(--u))}
   .slide img{width:100%;max-width:none;height:calc(262 * var(--u));max-height:none;object-fit:cover;object-position:50% 100%}
 }
 
-/* ---------- phones and tall windows: phone on top, text below ---------- */
+/* ---------- phones and tall windows: like the desktop page: the phone sits at the bottom of the screen with only its top showing, the article is above it and scrolls on its own ---------- */
 @media (max-aspect-ratio:9/10){
-  /* on a phone the page scrolls: the phone sits at the top, the text under it, and the page grows with the text */
-  html,body{height:auto;min-height:100%}
-  html{overscroll-behavior-y:none}   /* pulling the page past its end must not show anything but the page colour (set on the root above) */
-  body{overflow-x:hidden;overflow-y:auto}
-  .stage{--s:1vw;--mpw:min(66vw,37dvh);width:100vw;height:auto;min-height:100vh;min-height:100dvh;overflow:visible;display:flow-root}
-  .phone{--pw:var(--mpw);left:50%;top:calc(2.2dvh + 48px + env(safe-area-inset-top));margin-left:calc(var(--mpw) / -2)}
-  .copy{position:relative;left:auto;right:auto;top:auto;width:auto;max-height:none;overflow:visible;
-    margin:calc(2.2dvh + 48px + env(safe-area-inset-top) + var(--mpw) * 2.0323 + 2.4dvh) 7vw 0;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+  html{overscroll-behavior:none}
+  /* --vis = how much of the phone shows above the bottom edge: its top bezel and the part of the screen the viewer needs (the same 326 design px as on a desktop window) */
+  .stage{--s:1vw;--mpw:min(80vw,37.6dvh);--vis:calc(var(--mpw) * 1.118 + 14px);width:100vw;height:100vh;height:100dvh;margin:0;overflow:hidden;overflow:clip}
+  .phone{--pw:var(--mpw);left:50%;top:calc(100% - var(--vis));margin-left:calc(var(--mpw) / -2)}
+  .copy{left:7vw;right:7vw;width:auto;top:calc(48px + env(safe-area-inset-top) + 1.6dvh);bottom:calc(var(--vis) + 2dvh);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .copy::-webkit-scrollbar{display:none}
+  .copy.more{-webkit-mask-image:linear-gradient(#000 calc(100% - 34px),transparent);mask-image:linear-gradient(#000 calc(100% - 34px),transparent)}   /* there is more text below: the end fades out */
   .copy h1{font-size:calc(max(30px,9.2vw) * var(--k,1))}
   .copy .text{font-size:max(15px,4.2vw);margin-top:.5em}
 }
@@ -214,13 +213,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 /* videos in the gallery */
 .slide video{display:block;max-width:100%;max-height:100%;background:#000;object-fit:contain}
-@media (min-aspect-ratio:9/10){.slide video{width:100%;height:calc(262 * var(--u));max-height:none}}
+.slide video{width:100%;height:calc(262 * var(--u));max-height:none}
 .th.vid::after{content:"";position:absolute;left:50%;top:50%;width:calc(22 * var(--u));height:calc(22 * var(--u));margin:calc(-11 * var(--u)) 0 0 calc(-11 * var(--u));border-radius:50%;background:rgba(0,0,0,.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6.5v11l9-5.5Z' fill='%23fff'/%3E%3C/svg%3E") center/70% no-repeat;box-shadow:0 0 0 calc(1 * var(--u)) rgba(255,255,255,.7);pointer-events:none}
 
-/* on a phone the whole phone screen is visible: the photo (or video) sits in the middle of it, not at the top with black underneath */
-@media (max-aspect-ratio:9/10){
-  .slide{align-items:center;padding-top:0}
-}
 
 /* the iPhone's front camera: the picture of the phone has a see-through hole here (that is why it was white), so a dark glass lens sits behind it */
 .lens{position:absolute;z-index:2;left:50.46%;top:6.15%;width:3.95%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
@@ -248,5 +243,4 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .th img.cr{inset:auto;width:auto;height:auto;max-width:none;object-fit:fill}
 .frm{position:relative;display:block;overflow:hidden;flex:none;width:100%}
 .slide img.cr{position:absolute;max-width:none;max-height:none;height:auto;object-fit:fill}
-@media (min-aspect-ratio:9/10){.frm{height:calc(262 * var(--u))}}
-@media (max-aspect-ratio:9/10){.frm{align-self:stretch}}
+.frm{height:calc(262 * var(--u))}

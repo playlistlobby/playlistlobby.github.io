@@ -51,12 +51,17 @@ function fitAll() {
   });
   document.querySelectorAll("#app .ios-back span").forEach((el) => fitNowrap(el, el.parentElement.clientWidth ? 62 * (parseFloat(getComputedStyle(el).fontSize) / 11) : 0, .55));
   fitWords(titleEl, titleEl.clientWidth, .5);
+  updateMore();
 }
 addEventListener("resize", fitAll);
 (document.fonts && document.fonts.ready || Promise.resolve()).then(() => setTimeout(fitAll, 0));
 
 /* where a picture sits in its frame (set in the admin): left edge, top edge and width as fractions of the frame */
 const boxCss = (b) => `left:${+(b.l * 100).toFixed(3)}%;top:${+(b.t * 100).toFixed(3)}%;width:${+(b.w * 100).toFixed(3)}%`;
+/* the article scrolls on its own on a phone: fade its end while there is more below */
+const updateMore = () => copy.classList.toggle("more", copy.scrollHeight - copy.scrollTop - copy.clientHeight > 6);
+copy.addEventListener("scroll", updateMore, { passive: true });
+addEventListener("resize", updateMore);
 function setCopy(title, paras, btn) {
   copy.classList.add("swap");
   setTimeout(() => {
@@ -64,6 +69,7 @@ function setCopy(title, paras, btn) {
     textEl.innerHTML = (paras && paras.length) ? `<p class="pre">${esc(paras.join("\n\n"))}</p>` : "";
     copyBtn.innerHTML = btn && btn.href && btn.label ? `<a class="game-btn" href="${esc(btn.href)}">${esc(btn.label)}<span aria-hidden="true">\u203a</span></a>` : "";
     copy.classList.remove("swap");
+    copy.scrollTop = 0; updateMore(); setTimeout(updateMore, 450);
   }, 280);
 }
 
@@ -208,7 +214,6 @@ function fitRollPad() {
   const roll = document.getElementById("roll");
   if (!roll) return;
   roll.style.setProperty("--pad-extra", "0px");
-  if (matchMedia("(max-aspect-ratio:9/10)").matches) return;           // phone layout: the whole page scrolls, nothing is cut off
   const r = roll.getBoundingClientRect(), k = (r.height / roll.offsetHeight) || 1;
   const hidden = Math.max(0, r.bottom - innerHeight);
   roll.style.setProperty("--pad-extra", Math.ceil(hidden / k + 16) + "px");
@@ -235,7 +240,7 @@ const strip = () => $("#strip");
 function slideHTML(i) {
   const p = photos[i];
   if (p && p.type === "video") return `<div class="slide"><video src="${esc(p.src)}" poster="${esc(p.thumb || "")}" controls playsinline preload="metadata"></video></div>`;
-  const cb = p && p.crop && p.crop[matchMedia("(max-aspect-ratio:9/10)").matches ? "phone" : "desk"];
+  const cb = p && p.crop && p.crop.desk;
   if (p && cb) return `<div class="slide"><span class="frm"><img class="cr" style="${boxCss(cb)}" src="${esc(p.src)}" alt="${esc(p.alt || "")}" draggable="false" ${p.w ? `width="${p.w}" height="${p.h}"` : ""}></span></div>`;
   return `<div class="slide">${p ? `<img src="${esc(p.src)}" alt="${esc(p.alt || "")}" draggable="false" ${p.w ? `width="${p.w}" height="${p.h}"` : ""}>` : ""}</div>`;
 }
