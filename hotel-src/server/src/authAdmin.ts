@@ -17,3 +17,15 @@ export async function setSignInEmail(env: Env, uid: string, email: string): Prom
   if (j?.error?.message?.includes("EMAIL_EXISTS")) return false;
   throw new Error(`couldn't change the sign-in address (${r.status} ${j?.error?.message ?? ""})`);
 }
+
+/** Sets the password of `uid` (admin only, called from modSetPassword). */
+export async function setPassword(env: Env, uid: string, password: string): Promise<void> {
+  const emu = isEmulator(env);
+  const base = emu ? `${env.AUTH_EMU_URL ?? "http://127.0.0.1:9099"}/identitytoolkit.googleapis.com` : "https://identitytoolkit.googleapis.com";
+  const r = await fetch(`${base}/v1/projects/${env.FIREBASE_PROJECT_ID}/accounts:update`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${emu ? "owner" : await accessToken(env)}`, "content-type": "application/json" },
+    body: JSON.stringify({ localId: uid, password }),
+  });
+  if (!r.ok) throw new Error(`couldn't change the password (${r.status})`);
+}

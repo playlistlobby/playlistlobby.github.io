@@ -23,7 +23,7 @@ import { rouletteJoin, rouletteLeave, rouletteOpen, roulettePull, rouletteTick }
 import { ideaComment, ideaDelete, ideaLike, ideaPost } from "./ideas";
 import { duckyBuy } from "./ducky";
 import { craft, mine } from "./mines";
-import { modAlts, modBan, modBanMany, modBlood, modDismissReport, modIpBan, modIps, modKick, modMute, modNotice, modPromote, modRename, reportPlayer } from "./mod";
+import { modAlts, modBan, modBanMany, modBlood, modDismissReport, modIpBan, modIps, modKick, modMute, modNotice, modPromote, modRename, modSetPassword, reportPlayer } from "./mod";
 import { rollDice } from "./dice";
 import { register } from "./signup";
 import { raffleBuy, raffleCollect, raffleRemove, raffleTick } from "./raffle";
@@ -57,7 +57,7 @@ export const ACTIONS: Record<string, Action> = {
   bjSit, bjBet, bjAct, bjLeave, bjDealer, bjTick: bjTickAction,
   ideaPost, ideaComment, ideaLike, ideaDelete,
   duckyBuy, rollDice, register,
-  modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick, modRename,
+  modMute, modBan, modBanMany, modPromote, modAlts, modDismissReport, reportPlayer, modBlood, modIpBan, modIps, modNotice, modKick, modRename, modSetPassword,
   raffleBuy, raffleCollect, raffleRemove, raffleTick,
   bagmandBuy, bagmandSell, deadlyStab, bagmandHitTick, bountyShow, roomSweep, songBegin, songFinish, songVote, songDelete, songSweep, loudspeaker, petBuy, petRelease, petPickup, petStockNow, caseOpen, unusualWear, unusualRemove,
   hideoutBuy, hideoutUpgrade, hideoutColors, hideoutSettings, hideoutKick, hideoutLeave, hideoutMember, hideoutSearch, hideoutInvite, hideoutAnswer, hideoutBoxStore, hideoutBoxTake, hideoutOrder, hideoutCollect, hideoutBoost, hideoutChestPut, hideoutChestTake, attachUpgrade, hideoutFavorite, hideoutTillCollect, hideoutDonate,

@@ -239,6 +239,7 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
     const minIn = field("mp-min", "Minutes", "number", "60");
     const bloodIn = field("mp-blood", "Blood", "number", "100");
     const nameIn = field("mp-rename", "New name for this player");
+    const pwIn = field("mp-setpw", "New password for this player");
     const sec = (title: string, ...kids: Array<HTMLElement | null>): HTMLElement => h("div", { class: "mp-group" }, h("div", { class: "mp-sec" }, title), ...kids.filter((k): k is HTMLElement => !!k));
     const row = (...kids: HTMLElement[]): HTMLElement => h("div", { class: "mp-q on" }, ...kids);
     const btn = (label: string, onclick: () => void, cls = ""): HTMLElement => h("button", { class: `btn small ${cls}`, type: "button", onclick }, label);
@@ -266,6 +267,8 @@ export function mountModPage(host: HTMLElement, ctx: Ctx): () => void {
           btn("Lift address ban", () => void run("Address ban lifted.", () => call(me, "modIpBan", { uid: p.uid, on: false })))),
         nameIn,
         row(btn("✏️ Rename", () => void run("Renamed.", async () => { const r = await call<{ name: string }>(me, "modRename", { uid: p.uid, name: nameIn.value.trim() }); picked = { uid: p.uid, name: r.name }; }))),
+        pwIn,
+        row(btn("🔑 Set password", () => { if (pwIn.value.length >= 6 && confirm(`Set a new password for ${p.name}?`)) void run("Password changed.", async () => { await call(me, "modSetPassword", { uid: p.uid, password: pwIn.value }); pwIn.value = ""; }); })),
         bloodIn,
         row(btn("🩸 Give", () => void run("Blood given.", () => call(me, "modBlood", { uid: p.uid, delta: Math.abs(Number(bloodIn.value)) }))),
           btn("🩸 Take", () => void run("Blood taken.", () => call(me, "modBlood", { uid: p.uid, delta: -Math.abs(Number(bloodIn.value)) })))),

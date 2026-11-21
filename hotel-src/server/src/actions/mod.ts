@@ -7,7 +7,7 @@
 //   reports/<id>  { from, fromName, target, targetName, reason, at }
 import { Action, int, text } from "./util";
 import { Ctx, fail } from "../ctx";
-import { setSignInEmail } from "../authAdmin";
+import { setPassword, setSignInEmail } from "../authAdmin";
 import { NEW_NAME_RE, RESERVED_NAMES } from "../../../src/shared/ducky";
 import { ipKey, MOD_BAN_MS, MOD_MUTE_MS, MUTE_FOREVER_MS, NOTICE_MAX, REPORT_LIMIT, REPORT_WINDOW_MS } from "../../../src/shared/mod";
 
@@ -111,6 +111,21 @@ export const modBan: Action = {
       return { ok: true };
     }
     return banOne(c, uid, a);
+  },
+};
+
+/** Admin: set a player's password (they sign in with the new one; their open sessions keep working until they expire). */
+export const modSetPassword: Action = {
+  locks: (c, a) => [`user:${String(a?.uid ?? "")}`],
+  async run(c, a) {
+    if (!c.isAdmin) fail("Only the admin can do that.");
+    const uid = text(a.uid, UID_RE, "player");
+    const name = await mayAct(c, uid);
+    const pw = typeof a.password === "string" ? a.password : "";
+    if (pw.length < 6 || pw.length > 128) fail("The password must be 6 to 128 characters.");
+    await setPassword(c.env, uid, pw);
+    await note(c, "password", uid, name);
+    return { ok: true };
   },
 };
 
